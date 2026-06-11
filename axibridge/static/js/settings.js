@@ -52,7 +52,36 @@ export function initSettingsTab() {
       <div class="hint">Estimator constants calibrate the ±15% time estimate to your machine.
         Host/port apply on next start. No authentication — bind wisely.</div>
       <div class="row"><button id="btn-cal-reset" class="danger">Reset holder calibration (disable compensation)</button></div>
+    </div>
+
+    <div class="panel">
+      <h2>Server</h2>
+      <div class="row"><button id="btn-restart">⟳ Restart server</button></div>
+      <div class="hint">Re-executes the server process in place (picks up code changes).
+        Unsaved project changes are lost — save first. Refused while plotting.
+        The page reconnects by itself.</div>
     </div>`;
+
+  const restart = $("btn-restart");
+  restart.onclick = async () => {
+    if (!restart.dataset.armed) { // two-click arm, same pattern as layer delete
+      restart.dataset.armed = "1";
+      restart.textContent = "sure? unsaved work is lost";
+      restart.style.color = "var(--rust)";
+      setTimeout(() => {
+        delete restart.dataset.armed;
+        restart.textContent = "⟳ Restart server";
+        restart.style.color = "";
+      }, 2500);
+      return;
+    }
+    try {
+      await api.post("/api/server/restart");
+      restart.textContent = "restarting…";
+      restart.disabled = true;
+      // the SSE stream drops, auto-reconnects, and onReconnect re-hydrates
+    } catch (e) { actions.oops(e); }
+  };
 
   $("btn-proj-new").onclick = async () => {
     if (!confirm("Start a new empty project? Unsaved changes are lost.")) return;

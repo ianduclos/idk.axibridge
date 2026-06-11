@@ -11,6 +11,10 @@ the estimator times and the plotter draws.
 
 from __future__ import annotations
 
+import os
+import sys
+import threading
+import time
 from pathlib import Path as FsPath
 from typing import Any
 
@@ -67,6 +71,29 @@ def get_state() -> dict[str, Any]:
             "settings": settings_store.settings.model_json_schema(),
         },
     }
+
+
+@router.post("/server/restart")
+def restart_server() -> dict[str, str]:
+    """Re-exec the server process in place: same interpreter, same CLI args,
+    same environment — picks up code changes without touching the launcher.
+    The open project lives in memory only, so unsaved changes are lost (the
+    UI warns). Python fds are close-on-exec (PEP 446): the serial port and
+    the listening socket release across the exec, and uvicorn's SO_REUSEADDR
+    lets the new process rebind immediately."""
+    if manager.job_state != "idle":
+        raise HTTPException(status_code=409, detail="stop the current job before restarting")
+
+    def _restart() -> None:
+        time.sleep(0.5)  # let this response reach the browser first
+        try:
+            manager.shutdown()  # pen up, release the port politely
+        except Exception:
+            pass
+        os.execv(sys.executable, [sys.executable, "-m", "axibridge", *sys.argv[1:]])
+
+    threading.Thread(target=_restart, name="axibridge-restart", daemon=True).start()
+    return {"restarting": "now"}
 
 
 @router.get("/events")
