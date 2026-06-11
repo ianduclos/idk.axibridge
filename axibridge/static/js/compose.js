@@ -10,6 +10,7 @@ import { mul, translate, rotate, scale, matToObj, objToMat } from "./canvas.js";
 const $ = (id) => document.getElementById(id);
 let genParams = {};
 const expandedSteps = new Set(); // "layerId:index" — effect steps open in the UI
+let selAnchor = null;            // last plain/cmd-clicked layer id, for shift-range
 
 export function initComposeTab() {
   $("tab-compose").innerHTML = `
@@ -180,10 +181,22 @@ export function renderLayerList() {
     row.append(eye, swatch, name, est, occ, up, down, dup, del);
     row.onclick = (e) => {
       if (e.target.tagName === "BUTTON") return;
-      const multi = e.shiftKey || e.metaKey || e.ctrlKey;
-      actions.setSelection(multi ? toggle(S.selection, layer.id) : [layer.id]);
+      const displayed = [...S.state.project.layers].reverse().map((l) => l.id);
+      if (e.shiftKey && selAnchor && displayed.includes(selAnchor)) {
+        // range select, file-manager style: anchor … clicked (inclusive)
+        const i = displayed.indexOf(selAnchor);
+        const j = displayed.indexOf(layer.id);
+        const range = displayed.slice(Math.min(i, j), Math.max(i, j) + 1);
+        actions.setSelection([...new Set([...S.selection, ...range])]);
+      } else if (e.metaKey || e.ctrlKey) {
+        actions.setSelection(toggle(S.selection, layer.id)); // individual toggle
+        selAnchor = layer.id;
+      } else {
+        actions.setSelection([layer.id]);
+        selAnchor = layer.id;
+      }
     };
-    row.title = "click: select — shift/⌘-click: add to selection (select two layers to interpolate)";
+    row.title = "click: select — shift-click: range — ⌘-click: toggle (select two layers to interpolate)";
     wrap.appendChild(row);
   });
   renderLayerDetail();

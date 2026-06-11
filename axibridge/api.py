@@ -234,6 +234,7 @@ def get_limits() -> SoftLimits:
 @router.put("/limits")
 def put_limits(limits: SoftLimits) -> SoftLimits:
     manager.limits = limits
+    settings_store.update({"soft_limits": limits.model_dump()})  # survives restarts
     return limits
 
 

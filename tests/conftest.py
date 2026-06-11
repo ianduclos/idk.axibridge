@@ -29,5 +29,6 @@ def fresh_session(tmp_path):
         "projects_root": str(tmp_path / "projects"),
         "holder_calibration": {"dx_per_mm": 0.0, "dy_per_mm": 0.0},
         "backend_params": {},
+        "soft_limits": {},
     })
     yield

@@ -29,6 +29,7 @@ from .backends.saxi import SaxiBackend
 from .backends.simulator import SimulatorBackend
 from .events import bus
 from .model import PathDocument
+from .stores import settings_store
 
 
 class SoftLimits(BaseModel):
@@ -64,7 +65,10 @@ class MachineManager:
         for b in (NativeAxidrawBackend(), SimulatorBackend(), SaxiBackend()):
             self.backends[b.id] = b
         self.active_id = "simulator"  # safe default: usable with no hardware
-        self.limits = SoftLimits()
+        try:  # soft limits persist machine-level (~/.axibridge/settings.json)
+            self.limits = SoftLimits(**settings_store.settings.soft_limits)
+        except Exception:
+            self.limits = SoftLimits()
         self._lock = threading.RLock()
         self._job_thread: threading.Thread | None = None
         self._control: JobControl | None = None
@@ -194,15 +198,28 @@ class MachineManager:
     # -- plotting ----------------------------------------------------------------
 
     def check_envelope(self, doc: PathDocument) -> list[str]:
-        """Pre-flight warnings (also surfaced in the UI before start)."""
+        """Pre-flight warnings (also surfaced in the UI before start).
+
+        The guarded window shifts with the machine origin: after a mid-bed
+        set-origin, design coordinates land at origin+xy physically, so the
+        usable design-frame window shrinks accordingly. Ignoring this is how
+        an 'all inside the guide' plot grinds past the bed edge."""
         warnings = []
         b = doc.bounds()
         if b and self.limits.enabled:
+            ox, oy = self.active.origin_offset() if self.active.connected else (0.0, 0.0)
             xmin, ymin, xmax, ymax = b
-            if xmin < 0 or ymin < 0 or xmax > self.limits.width or ymax > self.limits.height:
+            if (xmin + ox < 0 or ymin + oy < 0
+                    or xmax + ox > self.limits.width or ymax + oy > self.limits.height):
+                offset_note = (
+                    f" (machine origin is offset by ({ox:.1f}, {oy:.1f}) mm — "
+                    "set-origin at the home corner to clear)"
+                    if abs(ox) > 0.05 or abs(oy) > 0.05 else ""
+                )
                 warnings.append(
-                    f"geometry bounds ({xmin:.1f},{ymin:.1f})–({xmax:.1f},{ymax:.1f}) exceed the "
-                    f"soft envelope {self.limits.width}×{self.limits.height} mm"
+                    f"geometry bounds ({xmin:.1f},{ymin:.1f})–({xmax:.1f},{ymax:.1f}) "
+                    f"exceed the soft envelope {self.limits.width}×{self.limits.height} mm"
+                    + offset_note
                 )
         return warnings
 

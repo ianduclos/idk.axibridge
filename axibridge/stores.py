@@ -82,6 +82,8 @@ class Settings(BaseModel):
     #: last-used motion params per backend id — machine-level defaults that
     #: survive restarts; a project's own stored params still win over these.
     backend_params: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    #: soft-limit envelope (machine.SoftLimits dump) — survives restarts
+    soft_limits: dict[str, Any] = Field(default_factory=dict)
     # Estimator calibration (formerly constants buried in estimate.py).
     max_speed_mm_s: float = Field(default=279.4, gt=0, title="Max XY speed (mm/s)")
     max_accel_mm_s2: float = Field(default=4000.0, gt=0, title="Max acceleration (mm/s²)")

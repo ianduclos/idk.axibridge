@@ -214,3 +214,46 @@ def test_asset_rotate_changes_gradient_axis():
     ys = [y for _, y in out.points]
     # rotated map: brightness varies along Y, so a horizontal line moves uniformly
     assert max(ys) - min(ys) < 1.5
+
+
+def test_envelope_guard_accounts_for_origin_offset(monkeypatch):
+    from axibridge.machine import manager
+    from axibridge.model import Layer, PathDocument
+
+    doc = PathDocument(layers=[Layer(id=1, name="t", paths=[
+        Path(points=[(5.0, 5.0), (280.0, 200.0)])])])
+
+    class _Fake:
+        connected = True
+        def origin_offset(self):
+            return (50.0, 30.0)
+
+    assert manager.check_envelope(doc) == []  # fits at origin (0,0)
+    monkeypatch.setitem(manager.backends, manager.active_id, _Fake())
+    warns = manager.check_envelope(doc)
+    assert warns and "origin is offset" in warns[0]
+
+
+def test_depth_displace_layer_anchor_follows_translation():
+    asset_store.replace_all({})
+    name = asset_store.put("ramp.png", _png_gradient())
+    eff = get_effect("depth_displace")
+    line = Path(points=[(30.0, 40.0), (110.0, 40.0)])
+    base = dict(image=name, x=0, y=0, width=80, amplitude=10, angle_deg=90,
+                step=2, smoothing=0)
+    moved_ctx = EffectContext(translation=(30.0, 0.0))
+    # layer anchor: map placed at x=0 LAYER frame = 30 paper; line spans it fully
+    [anch] = eff.apply([line], eff.Params(**base, anchor="layer"), moved_ctx)
+    assert max(y for _, y in anch.points) > 45.0
+    # paper anchor with the same translation: line starts past the map's bright zone shifted
+    [pap] = eff.apply([line], eff.Params(**base, anchor="paper"), moved_ctx)
+    assert anch.points != pap.points
+
+
+def test_soft_limits_persist_via_settings_store():
+    from axibridge.machine import MachineManager
+    from axibridge.stores import settings_store
+
+    settings_store.update({"soft_limits": {"enabled": False, "width": 430, "height": 297}})
+    m = MachineManager()
+    assert m.limits.enabled is False and m.limits.width == 430

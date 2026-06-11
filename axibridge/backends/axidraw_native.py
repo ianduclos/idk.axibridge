@@ -55,6 +55,9 @@ class NativeParams(BaseModel):
     model: int = Field(
         default=1, ge=1, le=6, title="AxiDraw model",
         description="1=V3/SE/A4, 2=V3/A3 or SE/A3, 3=V3 XLX, 4=MiniKit, 5=SE/A1, 6=SE/A2",
+        # hidden from the auto-form: it's a hardware identity, not a knob —
+        # wrong values let pyaxidraw command past the V3's physical travel
+        json_schema_extra={"hidden": True},
     )
 
 
@@ -242,6 +245,9 @@ class NativeAxidrawBackend(ExecutionBackend):
 
     def position(self) -> tuple[float, float]:
         return (self._pos[0] - self._origin[0], self._pos[1] - self._origin[1])
+
+    def origin_offset(self) -> tuple[float, float]:
+        return self._origin
 
     def raw(self, command: str, expect_reply: bool = True) -> str:
         """The trapdoor. Commands are sent verbatim (CR appended if missing).

@@ -222,6 +222,7 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
   display: flex; align-items: center; gap: 6px;
   border: 1px solid var(--line); border-radius: 5px; background: var(--bed);
   padding: 4px 7px; margin: 4px 0; cursor: pointer; font-size: 12px;
+  user-select: none; /* shift/cmd-click selects layers, not label text */
 }
 .layer-row.selected { border-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent); }
 .layer-row .swatch {

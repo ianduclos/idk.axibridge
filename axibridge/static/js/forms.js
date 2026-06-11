@@ -14,6 +14,7 @@ export function renderForm(container, schema, values, onChange) {
   container.innerHTML = "";
   const props = schema.properties || {};
   for (const [key, spec] of Object.entries(props)) {
+    if (spec.hidden) continue; // declared but not user-facing (e.g. hardware identity)
     // pydantic emits {anyOf:[...]} for optionals; take the first concrete type
     const s = spec.type ? spec : (spec.anyOf || []).find((a) => a.type) || spec;
     const field = document.createElement("div");

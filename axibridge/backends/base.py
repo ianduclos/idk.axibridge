@@ -155,6 +155,12 @@ class ExecutionBackend(ABC):
         long as nothing skipped steps."""
         return (0.0, 0.0)
 
+    def origin_offset(self) -> tuple[float, float]:
+        """Where the user origin sits in the connect frame. Non-zero after a
+        mid-bed set-origin; the envelope guard must shift the guarded window
+        by this much or a design-frame-legal plot exceeds the physical bed."""
+        return (0.0, 0.0)
+
     def raw(self, command: str, expect_reply: bool = True) -> str:
         """Raw EBB pass-through. The trapdoor."""
         raise NotImplementedError(f"{self.id}: raw EBB access not supported")

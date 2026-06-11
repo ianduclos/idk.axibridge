@@ -186,7 +186,11 @@ function mapGhosts() {
     for (const step of layer.effects || []) {
       const p = step.params || {};
       if (step.effect === "depth_displace" && step.enabled && p.show_map && dims[p.image]) {
-        out.push(ghost(p, p.x ?? 0, p.y ?? 0, null));
+        // layer-anchored maps ride the layer's translation (matches the server)
+        const anchored = (p.anchor ?? "layer") === "layer";
+        const tx = anchored ? layer.transform.e : 0;
+        const ty = anchored ? layer.transform.f : 0;
+        out.push(ghost(p, (p.x ?? 0) + tx, (p.y ?? 0) + ty, null));
       }
     }
     const sp = layer.source?.params || {};

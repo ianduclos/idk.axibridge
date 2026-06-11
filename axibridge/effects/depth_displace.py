@@ -41,8 +41,14 @@ class DepthDisplaceParams(BaseModel):
     rotate: Literal[0, 90, 180, 270] = Field(
         default=0, title="Rotate map (°)",
         description="Clockwise on paper — match the image to the view orientation")
+    anchor: Literal["layer", "paper"] = Field(
+        default="layer", title="Anchor",
+        description="layer: the map rides along when you drag the layer — "
+                    "paper: the map is pinned to the bed (share one global map "
+                    "across layers by giving each the same image + paper anchor)")
     x: float = Field(default=0.0, ge=-400, le=400, title="Map x (mm)",
-                     description="Paper-space position of the image's left edge",
+                     description="The image's left edge — in layer frame when "
+                                 "anchored to the layer, paper frame otherwise",
                      json_schema_extra={"viewAxis": True})
     y: float = Field(default=0.0, ge=-400, le=400, title="Map y (mm)",
                      json_schema_extra={"viewAxis": True})
@@ -97,6 +103,10 @@ class DepthDisplace(EffectModule):
         map_h = params.width * ih / iw
         sx = iw / params.width
         sy = ih / map_h
+        # layer anchor: the map's placement follows the layer's translation
+        # (drag the layer, the relief comes along); paper anchor pins it
+        tx, ty = ctx.translation if params.anchor == "layer" else (0.0, 0.0)
+        map_x, map_y = params.x + tx, params.y + ty
         dirx = math.cos(math.radians(params.angle_deg))
         diry = math.sin(math.radians(params.angle_deg))
         along_normal = params.direction == "path normal"
@@ -106,8 +116,8 @@ class DepthDisplace(EffectModule):
 
         def lattice(px: float, py: float):
             """Paper point -> (x0,y0,x1,y1,tx,ty) bilinear weights, or None off-map."""
-            fx = (px - params.x) * sx - 0.5
-            fy = (py - params.y) * sy - 0.5
+            fx = (px - map_x) * sx - 0.5
+            fy = (py - map_y) * sy - 0.5
             if fx < -0.5 or fy < -0.5 or fx > iw - 0.5 or fy > ih - 0.5:
                 return None
             x0, y0 = math.floor(fx), math.floor(fy)
