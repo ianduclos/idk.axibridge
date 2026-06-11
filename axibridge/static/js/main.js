@@ -1,0 +1,396 @@
+// axibridge v2 frontend orchestrator. Zero-build ES modules on purpose: no
+// toolchain on the Pi, view-source debuggable, and every control surface is
+// rendered from server-declared schemas (see forms.js).
+//
+// Data flow: hydrate from /api/state → tabs render → canvas shows RESOLVED
+// geometry from /api/compose/resolved (the same resolve the plotter consumes)
+// → SSE pushes machine status & job progress one-way.
+
+import { api, subscribe } from "./api.js";
+import { CanvasEditor, mul, objToMat, matToObj } from "./canvas.js";
+import { initComposeTab, renderLayerList, renderLayerDetail } from "./compose.js";
+import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
+import { initPensTab, renderPensTab } from "./pens.js";
+import { initSettingsTab, renderSettingsTab } from "./settings.js";
+
+const $ = (id) => document.getElementById(id);
+
+export const S = {
+  state: null,      // /api/state snapshot
+  resolved: null,   // /api/compose/resolved payload
+  selection: [],    // selected layer ids
+  plotTarget: "all",
+  plan: null,
+};
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function log(text, cls = "") {
+  const div = $("job-log");
+  if (!div) return;
+  const line = document.createElement("div");
+  if (cls) line.className = cls;
+  line.textContent = text;
+  div.appendChild(line);
+  while (div.childNodes.length > 200) div.removeChild(div.firstChild);
+  div.scrollTop = div.scrollHeight;
+}
+
+let errTimer;
+const oops = (e) => {
+  console.error(e);
+  log(`✗ ${e.message}`, "err");
+  // also surface where it's visible from ANY tab (the job log lives in Plot)
+  const g = $("global-error");
+  if (g) {
+    g.textContent = `✗ ${e.message}`;
+    clearTimeout(errTimer);
+    errTimer = setTimeout(() => { g.textContent = ""; }, 8000);
+  }
+};
+
+// ---- canvas ------------------------------------------------------------------
+
+const canvas = new CanvasEditor($("canvas"), {
+  onSelect(ids) {
+    S.selection = ids;
+    renderLayerList();
+    renderSelReadout();
+  },
+  async onTransform(ids, delta) {
+    // commit delta ∘ transform for each dragged layer, then re-resolve
+    try {
+      for (const id of ids) {
+        const layer = S.state.project.layers.find((l) => l.id === id);
+        if (!layer) continue;
+        const next = matToObj(mul(delta, objToMat(layer.transform)));
+        layer.transform = next; // optimistic, server confirms via refresh
+        await api.patch(`/api/layers/${id}`, { transform: next });
+      }
+      await actions.refreshResolved();
+      renderLayerDetail(); // placement numerics track the drag
+    } catch (e) { oops(e); }
+  },
+  async onGuideMove(pos) {
+    try {
+      const guide = { ...S.state.project.guide, ...pos };
+      await api.put("/api/project", { guide });
+      S.state.project.guide = guide;
+      renderSettingsTab();
+    } catch (e) { oops(e); }
+  },
+  onDoubleClick(id) {
+    S.selection = [id];
+    renderLayerList();
+    document.querySelector('#tabs button[data-tab="compose"]').click();
+  },
+});
+
+// ---- shared actions (imported by the tab modules) ------------------------------
+
+export const actions = {
+  oops,
+  log,
+  debounce,
+  canvas: () => canvas,
+
+  async refreshAll() {
+    await actions.refreshState();
+    initTabs();          // re-init tab DOM against the new project
+    await actions.refreshResolved();
+  },
+
+  async refreshState() {
+    S.state = await api.get("/api/state");
+    renderHeader();
+    renderPlotTab();
+    renderPensTab();
+    renderSettingsTab();
+    canvas.setData({
+      bed: S.state.bed,
+      guide: S.state.project.guide,
+      view: S.state.project.view,
+    });
+  },
+
+  async refreshProject() {
+    S.state.project = await api.get("/api/project");
+    renderPlotTab(); // target list may have changed
+  },
+
+  async refreshResolved() {
+    S.resolved = await api.get("/api/compose/resolved");
+    canvas.setData({ layers: S.resolved.layers, images: mapGhosts() });
+    renderLayerList();
+    renderSelReadout();
+    await actions.refreshPlan();
+  },
+
+  refreshPlan: debounce(async () => {
+    try {
+      const r = await api.get(`/api/plan?target=${encodeURIComponent(S.plotTarget)}`);
+      S.plan = r.job;
+      canvas.setPlan(r.job);
+      $("estimate").textContent =
+        `est. ${fmtTime(r.job.total_duration)} · ${(r.job.pen_down_distance / 1000).toFixed(2)}m ink · ` +
+        `${r.job.pen_lifts} lifts`;
+      $("plan-warnings").textContent = (r.warnings || []).join("; ");
+    } catch (e) {
+      if (e.message?.includes("nothing") || e.message?.includes("unknown layer")) {
+        $("estimate").textContent = "";
+        canvas.setPlan(null);
+      } else { oops(e); }
+    }
+  }, 200),
+
+  patchLayer: (() => {
+    const debounced = debounce(commitPatch, 350);
+    return (id, patch, opts = {}) => {
+      // optimistic local update so the UI doesn't flicker
+      const layer = S.state.project.layers.find((l) => l.id === id);
+      if (layer) Object.assign(layer, patch);
+      renderLayerList();
+      if (opts.debounce) debounced(id, patch);
+      else commitPatch(id, patch);
+    };
+  })(),
+
+  setSelection(ids) {
+    S.selection = ids;
+    canvas.setSelection(ids);
+    renderLayerList();
+    renderSelReadout();
+  },
+};
+
+// Collect "show map" ghost images: depth-displace effects place their map in
+// paper space; image-hatch generators place it in the layer's local frame
+// (so it rides the layer transform).
+function mapGhosts() {
+  const dims = Object.fromEntries((S.state.assets || []).map((a) => [a.name, a]));
+  const out = [];
+  for (const layer of S.state.project.layers) {
+    if (!layer.visible) continue;
+    for (const step of layer.effects || []) {
+      const p = step.params || {};
+      if (step.effect === "depth_displace" && step.enabled && p.show_map && dims[p.image]) {
+        const d = dims[p.image];
+        const w = p.width ?? 150;
+        out.push({ href: `/api/assets/${p.image}`, x: p.x ?? 0, y: p.y ?? 0,
+                   width: w, height: w * d.height / d.width });
+      }
+    }
+    const sp = layer.source?.params || {};
+    if (layer.source?.generator === "image_hatch" && sp.show_map && dims[sp.image]) {
+      const d = dims[sp.image];
+      const w = sp.width ?? 150;
+      out.push({ href: `/api/assets/${sp.image}`, x: 0, y: 0,
+                 width: w, height: w * d.height / d.width,
+                 transform: objToMat(layer.transform) });
+    }
+  }
+  return out;
+}
+
+async function commitPatch(id, patch) {
+  try {
+    await api.patch(`/api/layers/${id}`, patch);
+    await actions.refreshResolved();
+    renderLayerDetail();
+  } catch (e) { oops(e); }
+}
+
+// ---- header / status -------------------------------------------------------------
+
+function renderHeader() {
+  const m = S.state.machine;
+  const backend = S.state.backends.find((b) => b.active);
+  const pill = $("status-pill");
+  let cls = "";
+  if (m.connected) cls = m.job_state === "idle" ? "ok" : "busy";
+  pill.textContent = `${backend?.label || m.backend} · ${m.connected ? m.job_state : "disconnected"}`;
+  pill.className = `pill ${cls}`;
+  $("project-name").value = S.state.project.name;
+  // toolbar toggles reflect server state (view is saved in the project)
+  document.querySelectorAll("#view-toggle button").forEach((b) =>
+    b.classList.toggle("on", b.dataset.view === S.state.project.view));
+}
+
+function renderSelReadout() {
+  const el = $("sel-readout");
+  if (!S.selection.length) { el.textContent = "nothing selected"; return; }
+  const names = S.selection.map((id) =>
+    S.state.project.layers.find((l) => l.id === id)?.name || id);
+  const box = canvas.selectionBBox();
+  el.textContent = `${names.join(", ")}` +
+    (box ? ` — ${box.w.toFixed(1)}×${box.h.toFixed(1)}mm at (${box.x.toFixed(1)}, ${box.y.toFixed(1)})` : "");
+}
+
+function fmtTime(s) {
+  if (!isFinite(s)) return "—";
+  const m = Math.floor(s / 60);
+  return m >= 1 ? `${m}m ${Math.round(s % 60)}s` : `${s.toFixed(1)}s`;
+}
+
+// ---- header controls ---------------------------------------------------------------
+
+$("project-name").onchange = async () => {
+  try {
+    await api.put("/api/project", { name: $("project-name").value });
+    S.state.project.name = $("project-name").value;
+  } catch (e) { oops(e); }
+};
+$("btn-save").onclick = async () => {
+  try {
+    const r = await api.post("/api/project/save", {});
+    log(`saved: ${r.saved}`);
+    renderSettingsTab();
+  } catch (e) { oops(e); }
+};
+
+// ---- canvas toolbar ----------------------------------------------------------------
+
+for (const btn of document.querySelectorAll("#view-toggle button")) {
+  btn.onclick = async () => {
+    document.querySelectorAll("#view-toggle button").forEach((b) => b.classList.toggle("on", b === btn));
+    canvas.setData({ view: btn.dataset.view });
+    try { await api.put("/api/project", { view: btn.dataset.view }); } catch (e) { oops(e); }
+  };
+}
+for (const btn of document.querySelectorAll("#mode-toggle button")) {
+  btn.onclick = () => {
+    document.querySelectorAll("#mode-toggle button").forEach((b) => b.classList.toggle("on", b === btn));
+    canvas.mode = btn.dataset.mode;
+    canvas.render();
+  };
+}
+$("show-travel").onchange = () => { canvas.showTravel = $("show-travel").checked; canvas.render(); };
+$("show-order").onchange = () => { canvas.showOrder = $("show-order").checked; canvas.render(); };
+$("show-guide").onchange = () => { canvas.showGuide = $("show-guide").checked; canvas.render(); };
+$("btn-animate").onclick = () => {
+  if (canvas.animating) {
+    canvas.stopAnimation();
+    $("btn-animate").textContent = "▶ Animate";
+  } else if (S.plan) {
+    canvas.startAnimation(Number($("anim-speed").value) || 20, () => {
+      $("btn-animate").textContent = "▶ Animate";
+    });
+    $("btn-animate").textContent = "■ Stop";
+  }
+};
+
+// ---- tabs -------------------------------------------------------------------------
+
+for (const btn of document.querySelectorAll("#tabs button")) {
+  btn.onclick = () => {
+    document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b === btn));
+    for (const tab of ["compose", "plot", "pens", "settings"]) {
+      $(`tab-${tab}`).hidden = tab !== btn.dataset.tab;
+    }
+  };
+}
+
+function initTabs() {
+  initComposeTab();
+  initPlotTab();
+  initPensTab();
+  initSettingsTab();
+  renderLayerList();
+}
+
+// ---- keyboard -----------------------------------------------------------------------
+
+document.addEventListener("keydown", async (e) => {
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  if ((e.key === "Backspace" || e.key === "Delete") && S.selection.length) {
+    e.preventDefault();
+    try {
+      await api.post("/api/layers/delete", { ids: S.selection }); // one undo step
+      actions.setSelection([]);
+      await actions.refreshProject();
+      await actions.refreshResolved();
+    } catch (err) { oops(err); }
+  } else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
+    e.preventDefault();
+    try {
+      await api.post("/api/undo");
+      await actions.refreshProject();
+      // selection may reference layers the undo removed
+      actions.setSelection(S.selection.filter((id) => S.state.project.layers.some((l) => l.id === id)));
+      await actions.refreshResolved();
+      renderLayerDetail();
+    } catch (err) {
+      if (!/nothing to undo/.test(err.message || "")) oops(err);
+    }
+  }
+});
+
+// ---- SSE ---------------------------------------------------------------------------
+
+function onEvent(ev) {
+  if (ev.type === "status") {
+    if (S.state) {
+      S.state.machine = ev;
+      renderHeader();
+      applyCapabilities();
+      if (ev.position) canvas.setMachinePos(ev.position, false);
+    }
+  } else if (ev.type === "backend") {
+    actions.refreshState().catch(oops);
+  } else if (ev.type === "job") {
+    onJobEvent(ev);
+  }
+}
+
+function onJobEvent(ev) {
+  const bar = $("progress-bar");
+  switch (ev.kind) {
+    case "started":
+      if (bar) bar.style.width = "0%";
+      log(`started${ev.paths_total ? ` · ${ev.paths_total} paths` : ""}`);
+      break;
+    case "position":
+      canvas.setMachinePos(ev.position, ev.pen_down);
+      if (bar && ev.progress !== undefined) bar.style.width = `${ev.progress * 100}%`;
+      if (ev.remaining !== undefined) $("estimate").textContent = `remaining ${fmtTime(ev.remaining)}`;
+      break;
+    case "progress":
+      if (bar && ev.progress !== undefined) bar.style.width = `${ev.progress * 100}%`;
+      if (ev.position) canvas.setMachinePos(ev.position, !!ev.pen_down);
+      if (ev.paths_done !== undefined) log(`path ${ev.paths_done}/${ev.paths_total}`);
+      break;
+    case "message":
+      log(ev.message);
+      break;
+    case "finished":
+      if (bar) bar.style.width = "100%";
+      log("✓ finished");
+      actions.refreshPlan();
+      break;
+    case "stopped":
+      log("■ stopped");
+      break;
+    case "error":
+      log(`✗ ${ev.message}`, "err");
+      break;
+  }
+}
+
+// ---- boot --------------------------------------------------------------------------
+
+subscribe(onEvent, () => actions.refreshAll().catch(oops));
+(async () => {
+  try {
+    await actions.refreshState();
+    initTabs();
+    await actions.refreshResolved();
+  } catch (e) {
+    $("status-pill").textContent = "backend unreachable";
+    $("status-pill").className = "pill err";
+    console.error(e);
+  }
+})();

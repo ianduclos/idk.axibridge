@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Optional launchd agent: axibridge always-on at login.
+
+  THE TRADEOFF, so it's a choice and not a surprise: idle CPU is ~0%, but the
+  server holds a constant ~100 MB resident set 24/7. That is right for an
+  always-reachable Pi-style setup and usually wrong for intermittent desktop
+  use, where the double-clickable launch/axibridge.command is the better fit.
+
+  Install:
+    1. Edit the two ABSOLUTE paths below (no ~ expansion in launchd).
+    2. cp launch/com.axibridge.plist ~/Library/LaunchAgents/
+    3. launchctl load ~/Library/LaunchAgents/com.axibridge.plist
+  Remove:
+    launchctl unload ~/Library/LaunchAgents/com.axibridge.plist
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.axibridge</string>
+  <key>ProgramArguments</key>
+  <array>
+    <!-- pinned interpreter: the one with pyaxidraw installed -->
+    <string>/Users/ianduclos/_SecondBrain/01_Projects/idk.axibridge/.venv/bin/python</string>
+    <string>-m</string>
+    <string>axibridge</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/ianduclos/_SecondBrain/01_Projects/idk.axibridge</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>/tmp/axibridge.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/axibridge.err</string>
+</dict>
+</plist>

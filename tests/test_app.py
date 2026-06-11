@@ -1,0 +1,127 @@
+"""API integration tests: the full v2 loop on the simulator, no hardware."""
+
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+from axibridge.app import create_app
+
+
+@pytest.fixture()
+def client():
+    with TestClient(create_app()) as c:  # context manager runs lifespan
+        yield c
+
+
+def test_state_shape(client):
+    st = client.get("/api/state").json()
+    assert {b["id"] for b in st["backends"]} == {"native", "simulator", "saxi"}
+    assert [m["id"] for m in st["modules"]["effects"]] == [
+        "coherent_jitter", "depth_displace", "hatch_fill", "multipass",
+    ]
+    assert {m["id"] for m in st["modules"]["sources"]} >= {"grid", "flowfield", "lissajous", "polygon"}
+    assert st["bed"] == {"width": 300.0, "height": 218.0}
+    assert "plot_options" in st["schemas"]
+    # capability asymmetry advertised
+    native = next(b for b in st["backends"] if b["id"] == "native")
+    saxi = next(b for b in st["backends"] if b["id"] == "saxi")
+    assert native["capabilities"]["raw_ebb"] and not saxi["capabilities"]["raw_ebb"]
+    assert "cornering" not in native["params_schema"]["properties"]
+
+
+def test_layer_lifecycle_and_resolved(client):
+    r = client.post("/api/layers/generate",
+                    json={"module": "lissajous", "params": {"size": 100, "points_per_turn": 256}})
+    liss_id = r.json()["id"]
+    r = client.post("/api/layers/generate",
+                    json={"module": "polygon", "params": {"sides": 6, "radius": 25, "filled": True}})
+    hex_id = r.json()["id"]
+    client.patch(f"/api/layers/{hex_id}", json={
+        "occluder": True,
+        "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 30, "f": 30},
+    })
+
+    res = client.get("/api/compose/resolved").json()
+    by_id = {l["id"]: l for l in res["layers"]}
+    assert by_id[liss_id]["stats"]["paths"] > 1, "resolved endpoint must show the occlusion"
+    assert by_id[liss_id]["stats"]["est_s"] > 0
+
+    # plan per target uses resolved geometry
+    plan_all = client.get("/api/plan?target=all").json()
+    plan_one = client.get(f"/api/plan?target={hex_id}").json()
+    assert 0 < plan_one["job"]["total_duration"] < plan_all["job"]["total_duration"]
+
+    # reorder kills the mask (occluder below)
+    client.post("/api/layers/order", json={"ids": [hex_id, liss_id]})
+    res2 = client.get("/api/compose/resolved").json()
+    assert {l["id"]: l for l in res2["layers"]}[liss_id]["stats"]["paths"] == 1
+
+    client.delete(f"/api/layers/{hex_id}")
+    assert len(client.get("/api/project").json()["layers"]) == 1
+
+
+def test_plot_single_layer_on_simulator(client):
+    r = client.post("/api/layers/generate",
+                    json={"module": "polygon", "params": {"sides": 4, "radius": 20}})
+    layer_id = r.json()["id"]
+    client.put("/api/params/simulator", json={"time_scale": 1000})
+    assert client.post("/api/connect", json={}).status_code == 200
+    assert client.post("/api/plot/start", json={"target": layer_id}).status_code == 200
+    deadline = time.time() + 15
+    while time.time() < deadline:
+        if client.get("/api/state").json()["machine"]["job_state"] == "idle":
+            break
+        time.sleep(0.1)
+    else:
+        pytest.fail("simulator plot did not finish")
+
+
+def test_plot_empty_target_refused(client):
+    client.post("/api/connect", json={})
+    r = client.post("/api/plot/start", json={"target": "all"})
+    assert r.status_code == 409
+    assert "nothing to plot" in r.json()["detail"]
+
+
+def test_jog_limits_and_guide_origin(client):
+    client.post("/api/connect", json={})
+    r = client.post("/api/machine/jog", json={"dx": 50, "dy": 20})
+    assert r.json()["position"] == [50, 20]
+    assert client.post("/api/machine/jog", json={"dx": 5000, "dy": 0}).status_code == 409
+    # origin = guide corner: current position becomes the guide's (x, y)
+    guide = client.get("/api/project").json()["guide"]
+    client.post("/api/machine/origin", json={"x": guide["x"], "y": guide["y"]})
+    st = client.get("/api/state").json()["machine"]
+    assert st["position"] == [pytest.approx(guide["x"]), pytest.approx(guide["y"])]
+
+
+def test_pens_and_settings_endpoints(client):
+    pen = client.post("/api/pens", json={"name": "brush", "barrel_diameter_mm": 14}).json()
+    assert pen["id"] in {p["id"] for p in client.get("/api/pens").json()}
+    cal = client.post("/api/calibration/holder/compute",
+                      json={"diameter_1": 8, "diameter_2": 14, "dx_mm": 0.9, "dy_mm": -0.3}).json()
+    assert cal["dx_per_mm"] == pytest.approx(0.15)
+    assert cal["dy_per_mm"] == pytest.approx(-0.05)
+    # too-close diameters refused
+    r = client.post("/api/calibration/holder/compute",
+                    json={"diameter_1": 10, "diameter_2": 10.2, "dx_mm": 1, "dy_mm": 0})
+    assert r.status_code == 422
+    client.delete(f"/api/pens/{pen['id']}")
+
+
+def test_project_save_load_api(client):
+    client.post("/api/layers/generate", json={"module": "polygon", "params": {}})
+    client.put("/api/project", json={"name": "api roundtrip"})
+    r = client.post("/api/project/save", json={})
+    assert r.status_code == 200
+    assert "api roundtrip" in client.get("/api/projects").json()
+    client.post("/api/project/new")
+    assert client.get("/api/project").json()["layers"] == []
+    r = client.post("/api/project/load", json={"name": "api roundtrip"})
+    assert len(r.json()["layers"]) == 1
+
+
+def test_raw_refused_on_simulator(client):
+    client.post("/api/connect", json={})
+    assert client.post("/api/machine/raw", json={"command": "QM"}).status_code == 409
