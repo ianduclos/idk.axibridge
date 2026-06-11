@@ -5,8 +5,8 @@ modules; the fourth (execution backends) is registered in code:
 
 | Kind | Signature | Directory | Worked example |
 |---|---|---|---|
-| **Source** | `params → PathDocument` | `axibridge/sources/` | `lissajous.py`, `polygon.py` |
-| **Effect** | `(list[Path], params, ctx) → list[Path]` | `axibridge/effects/` | `coherent_jitter.py`, `multipass.py` |
+| **Source** | `params → PathDocument` | `axibridge/sources/` | `polygon.py` (minimal), `flowfield.py`, `image_threshold.py` (asset-driven) |
+| **Effect** | `(list[Path], params, ctx) → list[Path]` | `axibridge/effects/` | `multipass.py` (minimal), `coherent_jitter.py`, `depth_displace.py` (asset-driven, crop/split) |
 | **Transform** | `(PathDocument, params) → PathDocument` | `axibridge/transforms/` | `vpype_ops.py` |
 | **Backend** | lifecycle + `plot(doc, params, control, emit)` | `axibridge/backends/` | `simulator.py` |
 
@@ -36,15 +36,33 @@ Rendering rules (`static/js/forms.js`):
 
 | Schema shape | Control |
 |---|---|
-| `number`/`integer` with `ge`+`le` | slider + spinbox |
+| `number`/`integer` with `ge`+`le` | slider + spinbox (slider commits on release) |
 | `number`/`integer` unbounded | spinbox |
 | `bool` | checkbox |
 | `str` | text input |
 | `enum`/`Literal` | dropdown |
+| `str` + `json_schema_extra={"format": "asset"}` | dropdown over uploaded image assets, with inline upload |
 
 `title` is the label; `description` the tooltip. **Always bound numerics** —
 unbounded values reach an open-loop machine with no limit switches.
 Validation is server-side and automatic: bad values 422 before your code runs.
+
+Two more `json_schema_extra` tags with frontend meaning:
+
+- `{"viewAxis": True}` on a paper-space x/y pair: in portrait view the label
+  letter swaps and the displayed value negates, so the fader moves things
+  the way the rotated bed *looks*. Only use on fields with symmetric bounds.
+- `show_map: bool` params ghost the module's image asset on the canvas.
+  This is wired client-side in `main.js mapGhosts()`, which special-cases
+  module ids (it needs to know where the image sits) — a new image-driven
+  module wanting a ghost must add a case there. Preview only; never plotted.
+
+Image-driven modules read pixels through `assets.asset_store`:
+`grayscale(name, blur_px)` (cached per blur radius — derive `blur_px` from a
+`smoothing` mm param × image px / placed mm width) and `alpha(name)`
+(unblurred crop mask, `None` when absent). If the named asset is missing,
+**pass through / return empty, don't raise** in effects (a stored project
+must still resolve); generators may raise a helpful `ValueError`.
 
 ## Writing a Source (generator)
 

@@ -34,6 +34,7 @@ before structural changes.
 | Generators / effects / plot-pass ops | `axibridge/sources/` `effects/` `transforms/` |
 | Backends (native / simulator / saxi) + port arbitration | `axibridge/backends/`, `machine.py` |
 | Pen library & machine settings (global JSON stores) | `axibridge/stores.py` |
+| Roadmap / future direction | `ROADMAP.md` |
 | Project folder save/load/zip | `axibridge/project_io.py` |
 | HTTP API | `axibridge/api.py` |
 | Canvas editor / tabs | `axibridge/static/js/canvas.js`, `compose.js`, `plot.js`, … |
@@ -54,6 +55,19 @@ before structural changes.
   Bound every numeric field — unbounded values reach an open-loop machine.
 - Backend `deactivate()` MUST release the serial port / kill subprocesses;
   `MachineManager.select_backend` is the only switching point.
+- **pyaxidraw options are ints.** `NativeAxidrawBackend._apply` casts every
+  numeric option with `int(round())` — a float reaches EBB command strings
+  verbatim (`SP,1,253.0,1`), firmware rejects it, and the stray reply
+  desynchronises plotink's serial bookkeeping ("USB lost" on a healthy
+  link). Never remove the cast or set `ad.options.*` anywhere else.
+- **Undo discipline**: every `Session` method that mutates the project MUST
+  call `self._checkpoint()` once, under `self._lock`, before mutating —
+  and rely on module purity (geometry lists are shared by reference, never
+  mutated in place; they are only ever replaced wholesale).
+- Image assets live in the `assets.asset_store` singleton (name → bytes,
+  cached grayscale/alpha); they travel in the project folder's `assets/`.
+  Effects/generators reference them by name via a string param with
+  `json_schema_extra={"format": "asset"}` (renders as dropdown + upload).
 - `estimate.py` is an estimator, never a motion planner.
 - In the svgelements-based reader, mm conversion uses svgelements' own
   constant (`_SE_PX_PER_MM` ≠ 96/25.4) — required for exact save/load

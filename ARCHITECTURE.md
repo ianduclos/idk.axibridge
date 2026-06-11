@@ -125,12 +125,41 @@ it replaced v1's user-arranged pipeline because creative reshaping moved
 into per-layer effect stacks, leaving optimisation as a property of the
 *pass*, not the artwork.
 
+### Undo, duplication, consolidation
+
+The session keeps an 8-deep undo deque. Snapshots are cheap by construction:
+the `Project` model is deep-copied, but geometry lists are shared by
+*reference* — safe because the module contract forbids in-place mutation
+(lists are only ever replaced wholesale). Every mutating `Session` method
+checkpoints once under the lock; bulk operations (multi-delete) are one
+checkpoint so one ⌘Z restores the lot. **Consolidate** bakes a layer's
+transform + effect stack into its source geometry (resolved output is
+bit-identical; the layer's `source.type` becomes `"baked"` but keeps
+generator provenance, so *regenerate* explicitly reverts the bake).
+**Duplicate** copies a layer sharing the same source-geometry list.
+
+### Image assets (depth maps, threshold sources)
+
+`assets.py` holds a module-level store (name → bytes, with cached
+grayscale-at-blur-radius and alpha decodes) — a singleton, like the pen
+stores, so effects (which only see paths+params) and the session (which owns
+save/load) reach it without import cycles. Modules reference assets by name
+through a string param tagged `json_schema_extra={"format": "asset"}`; the
+form renderer turns that into a dropdown over uploaded assets with an inline
+upload button. `show_map` params ghost the image on the canvas — preview
+only, computed client-side in `main.js mapGhosts()`, which currently
+special-cases the module ids that have placements (a known wart: a new
+image-driven module wanting a ghost must add a case there). Brightness
+sampling is bilinear over a Gaussian-blurred copy (the `smoothing` param, in
+paper mm) — pixel steps and 8-bit banding never reach the geometry.
+
 ## Persistence
 
 A **project is a folder**: `project.json` (the full `Project` model,
 pretty-printed, diff-able) plus `sources/*.svg` — uploaded files verbatim,
-generated layers snapshotted as SVG (exact geometry survives generator-code
-drift; generator id+params stay in the manifest for re-editing). Zip
+generated *and baked* layers snapshotted as SVG (exact geometry survives
+generator-code drift; generator id+params stay in the manifest for
+re-editing) — plus `assets/*` (image assets, verbatim). Zip
 export/import wraps the folder. Machine-level state stays out of projects:
 pen library and settings (holder vector, estimator constants, projects root,
 host/port) live in `~/.axibridge/`. A subtle but load-bearing detail: the
@@ -203,3 +232,13 @@ surprise.
   Zero calibration ⇒ identical.
 - saxi flags (`--no-sort-paths`, etc.) assume a current saxi;
   `SaxiBackend._build_cmd` is the single place to touch if they drift.
+- pyaxidraw's numeric options must be **ints** (`_apply` casts); a float
+  leaks into EBB command strings, the firmware errors, and the stray reply
+  permanently desynchronises plotink's one-command-one-response reads —
+  presenting as "USB connection lost" on a healthy link. Belt-and-braces:
+  `_flush_stale()` drains the receive buffer before each command sequence.
+- The path model has no holes: a traced hole (image_threshold) is its own
+  closed filled loop. `hatch_fill` reassembles nesting even-odd, but
+  occlusion masks union filled paths — holes read as solid to layers below.
+- `POST /api/server/restart` re-execs the process in place (same argv/env);
+  the in-memory project does not survive it.
