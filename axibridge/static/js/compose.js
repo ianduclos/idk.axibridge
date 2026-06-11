@@ -9,6 +9,7 @@ import { mul, translate, rotate, scale, matToObj, objToMat } from "./canvas.js";
 
 const $ = (id) => document.getElementById(id);
 let genParams = {};
+const expandedSteps = new Set(); // "layerId:index" — effect steps open in the UI
 
 export function initComposeTab() {
   $("tab-compose").innerHTML = `
@@ -227,6 +228,26 @@ export function renderLayerDetail() {
   const panel = $("layer-detail-panel");
   const wrap = $("layer-detail");
   if (!panel || !wrap) return;
+  if (S.selection.length === 2) { // pair selected: offer interpolation
+    const [a, b] = S.selection.map((id) => S.state.project.layers.find((l) => l.id === id));
+    if (a && b) {
+      panel.hidden = false;
+      $("detail-name").textContent = `${a.name} + ${b.name}`;
+      wrap.innerHTML = `
+        <div class="row"><button id="btn-tween" class="primary">⇄ Create interpolation layer</button></div>
+        <div class="hint">A new layer that morphs between the two selected layers (t slider,
+        sweep stamping). Needs the same generator on both sides, or identical path structure
+        (what "duplicate layer" gives you). Edits to either layer update the morph live.</div>`;
+      wrap.querySelector("#btn-tween").onclick = async () => {
+        try {
+          await api.post("/api/layers/tween", { a: a.id, b: b.id });
+          await actions.refreshProject();
+          await actions.refreshResolved();
+        } catch (e) { actions.oops(e); }
+      };
+      return;
+    }
+  }
   const layer = S.state.project.layers.find((l) => l.id === S.selection[0]);
   if (S.selection.length !== 1 || !layer) {
     panel.hidden = true;
@@ -316,12 +337,15 @@ export function renderLayerDetail() {
   fx.querySelector("#fx-add").onclick = () => {
     const mod = S.state.modules.effects.find((m) => m.id === fxSel.value);
     if (!mod) return;
+    expandedSteps.add(`${layer.id}:${layer.effects.length}`); // open the new step
     const effects = [...layer.effects, { effect: mod.id, enabled: true, params: { ...mod.defaults } }];
     actions.patchLayer(layer.id, { effects });
   };
   const steps = fx.querySelector("#fx-steps");
   layer.effects.forEach((step, i) => {
     const mod = S.state.modules.effects.find((m) => m.id === step.effect);
+    const key = `${layer.id}:${i}`;
+    const open = expandedSteps.has(key);
     const div = document.createElement("div");
     div.className = "step" + (step.enabled ? "" : " disabled");
     const head = document.createElement("div");
@@ -331,7 +355,12 @@ export function renderLayerDetail() {
     cb.onchange = () => commitEffects(layer, i, { enabled: cb.checked });
     const nm = document.createElement("span");
     nm.className = "name";
-    nm.textContent = mod?.label || step.effect;
+    nm.textContent = `${open ? "▾" : "▸"} ${mod?.label || step.effect}`;
+    nm.title = "click to expand / collapse";
+    nm.onclick = () => {
+      open ? expandedSteps.delete(key) : expandedSteps.add(key);
+      renderLayerDetail();
+    };
     const up = btn("↑", "earlier", () => swapEffects(layer, i, i - 1));
     const dn = btn("↓", "later", () => swapEffects(layer, i, i + 1));
     const rm = btn("✕", "remove", () => {
@@ -340,15 +369,42 @@ export function renderLayerDetail() {
     });
     head.append(cb, nm, up, dn, rm);
     div.appendChild(head);
-    const form = document.createElement("div");
-    form.className = "form";
-    if (mod) {
+    if (open && mod) {
+      const form = document.createElement("div");
+      form.className = "form";
       const values = { ...mod.defaults, ...step.params };
       renderForm(form, mod.schema, values, () => commitEffects(layer, i, { params: values }));
+      div.appendChild(form);
     }
-    div.appendChild(form);
     steps.appendChild(div);
   });
+
+  // -- interpolation controls (tween layers)
+  if (layer.source.type === "tween") {
+    const p = layer.source.params || {};
+    const nameOf = (id) => S.state.project.layers.find((l) => l.id === id)?.name || `${id} (missing!)`;
+    const tw = document.createElement("div");
+    tw.innerHTML = `<h3>Interpolation</h3>
+      <div class="hint">A: ${nameOf(p.a)} → B: ${nameOf(p.b)} — edits to A/B update this layer live.
+      Non-blendable differences (seeds, toggles, mismatched stacks) jump at t = 0.5.</div>
+      <div class="form" id="tw-form"></div>`;
+    wrap.appendChild(tw);
+    const schema = JSON.parse(JSON.stringify(S.state.schemas.tween));
+    delete schema.properties.a;
+    delete schema.properties.b;
+    const values = {
+      t: p.t ?? 0.5, sweep: p.sweep ?? 1,
+      sweep_from: p.sweep_from ?? 0, sweep_to: p.sweep_to ?? 1,
+    };
+    const commit = actions.debounce(async () => {
+      try {
+        layer.source.params = { ...p, ...values }; // optimistic
+        await api.put(`/api/layers/${layer.id}/tween`, values);
+        await actions.refreshResolved();
+      } catch (e) { actions.oops(e); }
+    }, 250);
+    renderForm(tw.querySelector("#tw-form"), schema, values, commit);
+  }
 
   // -- generator params (regenerate; baked layers can return to live output)
   if (layer.source.generator && ["generator", "baked"].includes(layer.source.type)) {

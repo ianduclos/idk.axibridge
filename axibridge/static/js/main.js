@@ -299,6 +299,45 @@ function initTabs() {
   initPensTab();
   initSettingsTab();
   renderLayerList();
+  applyPanelCollapse();
+}
+
+// ---- sidebar: drag-resize + collapsible panels (state in localStorage) -------------
+
+{
+  const saved = localStorage.getItem("sidebar-w");
+  if (saved) document.documentElement.style.setProperty("--sidebar-w", saved);
+  const rz = $("sidebar-resize");
+  rz.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    rz.setPointerCapture(e.pointerId);
+    const onMove = (ev) => {
+      const w = Math.min(Math.max(window.innerWidth - ev.clientX, 340), window.innerWidth * 0.7);
+      document.documentElement.style.setProperty("--sidebar-w", `${Math.round(w)}px`);
+    };
+    rz.addEventListener("pointermove", onMove);
+    rz.addEventListener("pointerup", () => {
+      rz.removeEventListener("pointermove", onMove);
+      localStorage.setItem("sidebar-w",
+        getComputedStyle(document.documentElement).getPropertyValue("--sidebar-w").trim());
+    }, { once: true });
+  });
+}
+
+const panelKey = (h2) => "panel:" + h2.textContent.trim().slice(0, 24);
+
+document.addEventListener("click", (e) => {
+  const h2 = e.target.closest?.(".panel > h2");
+  if (!h2 || e.target.closest("button, input, select, a")) return;
+  const panel = h2.parentElement;
+  panel.classList.toggle("collapsed");
+  localStorage.setItem(panelKey(h2), panel.classList.contains("collapsed") ? "1" : "");
+});
+
+function applyPanelCollapse() {
+  document.querySelectorAll(".panel > h2").forEach((h2) => {
+    h2.parentElement.classList.toggle("collapsed", localStorage.getItem(panelKey(h2)) === "1");
+  });
 }
 
 // ---- keyboard -----------------------------------------------------------------------

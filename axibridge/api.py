@@ -31,6 +31,7 @@ from .machine import SoftLimits, manager
 from .registry import describe_modules
 from .session import session
 from .stores import Pen, pen_library, settings_store
+from .tween import TweenParams
 
 router = APIRouter(prefix="/api")
 
@@ -69,6 +70,7 @@ def get_state() -> dict[str, Any]:
             "plot_options": PlotOptions.model_json_schema(),
             "pen": Pen.model_json_schema(),
             "settings": settings_store.settings.model_json_schema(),
+            "tween": TweenParams.model_json_schema(),
         },
     }
 
@@ -340,6 +342,32 @@ def delete_layers(body: DeleteLayersBody) -> dict[str, Any]:
     except KeyError as e:
         raise _fail(e, 404)
     return {"deleted": body.ids}
+
+
+class TweenBody(BaseModel):
+    a: str
+    b: str
+
+
+@router.post("/layers/tween")
+def create_tween(body: TweenBody) -> dict[str, Any]:
+    """Interpolation layer between two compatible layers."""
+    try:
+        return session.create_tween_layer(body.a, body.b).model_dump()
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+
+
+@router.put("/layers/{layer_id}/tween")
+def put_tween_params(layer_id: str, values: dict[str, Any]) -> dict[str, Any]:
+    try:
+        return session.set_tween_params(layer_id, values).model_dump()
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 422)
 
 
 @router.post("/layers/{layer_id}/duplicate")

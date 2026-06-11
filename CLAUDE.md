@@ -31,6 +31,7 @@ before structural changes.
 | One open project + the resolve pipeline + undo history | `axibridge/session.py` |
 | Image assets (depth maps), name → bytes/grayscale | `axibridge/assets.py` |
 | Module registry (Source / Effect / Transform) | `axibridge/registry.py` |
+| Layer interpolation (tween layers, param/affine lerp) | `axibridge/tween.py` |
 | Generators / effects / plot-pass ops | `axibridge/sources/` `effects/` `transforms/` |
 | Backends (native / simulator / saxi) + port arbitration | `axibridge/backends/`, `machine.py` |
 | Pen library & machine settings (global JSON stores) | `axibridge/stores.py` |

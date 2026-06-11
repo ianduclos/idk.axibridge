@@ -83,7 +83,8 @@ def save_project(
     point at their (re)written snapshots."""
     (project_dir / "sources").mkdir(parents=True, exist_ok=True)
     for layer in project.layers:
-        if layer.source.type in ("generator", "baked"):
+        # tween snapshots are a load-time fallback: refs re-materialise live
+        if layer.source.type in ("generator", "baked", "tween"):
             relname = f"sources/gen-{layer.id}.svg"
             (project_dir / relname).write_text(
                 snapshot_svg(source_geometry.get(layer.id, []))

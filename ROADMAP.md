@@ -45,7 +45,13 @@ Cheapest-first:
   Saves real plots, cheap to do at path granularity (native backend plots
   path-at-a-time already).
 
-## Mid term — interpolation (the layer-variant idea)
+## Mid term — interpolation (the layer-variant idea) — **SHIPPED June 2026**
+
+Implemented as designed below (`tween.py`; tween layers with t/sweep, live
+refs, endpoint-exact lerp, delete-guard). Kept here for the reasoning.
+Perspective shipped too. Remaining from "near term": zoom/pan (deferred by
+choice), drag-reorder, keyboard nudge, polar wrap, image contours, Hershey
+text, plot resume.
 
 The wish: duplicate a layer, tweak generator params / effects / transform,
 then **interpolate between the two**. This does *not* need a node graph:

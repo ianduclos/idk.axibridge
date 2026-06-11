@@ -17,7 +17,7 @@ import threading
 from collections import deque
 from typing import Any
 
-from . import compose
+from . import compose, tween
 from .compose import Affine, CanvasLayer, EffectStep, LayerSource, PlotOptions, Project
 from .machine import manager
 from .model import Path, PathDocument
@@ -40,6 +40,8 @@ class Session:
         #: (module purity contract), so sharing references is safe — only the
         #: project model needs a deep copy.
         self._history: deque[tuple[Project, dict[str, list[Path]], dict[str, str]]] = deque(maxlen=8)
+        #: tween layer id -> (content key, materialised paths)
+        self._tween_cache: dict[str, tuple[str, list[Path]]] = {}
 
     # -- undo -----------------------------------------------------------------
 
@@ -155,14 +157,26 @@ class Session:
         self.delete_layers([layer_id])
 
     def delete_layers(self, layer_ids: list[str]) -> None:
-        """Bulk delete = ONE history entry, so one undo restores the lot."""
+        """Bulk delete = ONE history entry, so one undo restores the lot.
+        Refused if a surviving tween layer references a deleted one."""
         with self._lock:
             layers = [self.project.layer(i) for i in layer_ids]  # all-or-nothing
+            doomed = set(layer_ids)
+            for other in self.project.layers:
+                if other.id in doomed or other.source.type != "tween":
+                    continue
+                p = other.source.params or {}
+                if p.get("a") in doomed or p.get("b") in doomed:
+                    raise RuntimeError(
+                        f"layer is referenced by interpolation layer {other.name!r} — "
+                        "delete that first (or together)"
+                    )
             self._checkpoint()
             for layer in layers:
                 self.project.layers.remove(layer)
                 self.source_geometry.pop(layer.id, None)
                 self._shaped_cache.pop(layer.id, None)
+                self._tween_cache.pop(layer.id, None)
 
     def reorder_layers(self, ordered_ids: list[str]) -> None:
         with self._lock:
@@ -171,6 +185,42 @@ class Session:
             self._checkpoint()
             by_id = {l.id: l for l in self.project.layers}
             self.project.layers = [by_id[i] for i in ordered_ids]
+
+    def create_tween_layer(self, a_id: str, b_id: str) -> CanvasLayer:
+        """Interpolation layer between two compatible layers (see tween.py).
+        Validated NOW with a human-readable reason; the references are live."""
+        with self._lock:
+            la = self.project.layer(a_id)
+            lb = self.project.layer(b_id)
+            reason = tween.check_compatible(
+                la, lb, self.source_geometry.get(a_id, []), self.source_geometry.get(b_id, [])
+            )
+            if reason:
+                raise RuntimeError(reason)
+            self._checkpoint()
+            layer = CanvasLayer(
+                name=f"{la.name} ⇄ {lb.name}",
+                source=LayerSource(
+                    type="tween",
+                    params=tween.TweenParams(a=a_id, b=b_id).model_dump(),
+                ),
+                pen_id=la.pen_id,
+            )
+            idx = max(self.project.layers.index(la), self.project.layers.index(lb))
+            self.project.layers.insert(idx + 1, layer)
+            self.source_geometry[layer.id] = []  # materialised on next resolve
+            return layer
+
+    def set_tween_params(self, layer_id: str, values: dict[str, Any]) -> CanvasLayer:
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            if layer.source.type != "tween":
+                raise RuntimeError("not an interpolation layer")
+            current = dict(layer.source.params or {})
+            merged = tween.TweenParams(**{**current, **values})  # validates bounds
+            self._checkpoint()
+            layer.source.params = merged.model_dump()
+            return layer
 
     def duplicate_layer(self, layer_id: str) -> CanvasLayer:
         """Copy a layer (new id) directly above the original — same source,
@@ -200,6 +250,7 @@ class Session:
         with self._lock:
             layer = self.project.layer(layer_id)
             self._checkpoint()
+            self._materialize_tweens()  # a stale tween must bake its CURRENT look
             shaped = compose.shape_layer(layer, self.source_geometry.get(layer_id, []))
             self.source_geometry[layer_id] = shaped
             layer.transform = Affine()
@@ -213,9 +264,41 @@ class Session:
 
     def resolved(self) -> dict[str, list[Path]]:
         with self._lock:
+            self._materialize_tweens()
             return compose.resolve_project(
                 self.project, self.source_geometry, self.pens(), self._shaped_cache
             )
+
+    def _materialize_tweens(self) -> None:
+        """Refresh every tween layer's source geometry from its referenced
+        layers (they are live references). Cached on a content key of both
+        definitions + the tween params, so an untouched tween costs one hash.
+        Called under the lock, only from resolved() — the single resolve
+        path stays single."""
+        import json
+
+        for layer in self.project.layers:
+            if layer.source.type != "tween":
+                continue
+            refs = []
+            for rid in (layer.source.params or {}).get("a"), (layer.source.params or {}).get("b"):
+                try:
+                    ref = self.project.layer(rid)
+                    refs.append({
+                        "src": ref.source.model_dump(),
+                        "tf": ref.transform.model_dump(),
+                        "fx": [s.model_dump() for s in ref.effects],
+                        "geo": id(self.source_geometry.get(ref.id)),
+                    })
+                except KeyError:
+                    refs.append(None)
+            key = json.dumps({"refs": refs, "p": layer.source.params}, sort_keys=True)
+            hit = self._tween_cache.get(layer.id)
+            if hit is not None and hit[0] == key:
+                continue
+            paths = tween.materialize(layer, self.project, self.source_geometry)
+            self._tween_cache[layer.id] = (key, paths)
+            self.source_geometry[layer.id] = paths  # replaced wholesale, never mutated
 
     def resolved_document(self, target: str = "all") -> PathDocument:
         """Un-compensated resolved geometry — what the preview renders."""

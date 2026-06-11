@@ -99,10 +99,12 @@ class LayerSource(BaseModel):
     uploaded file (verbatim copy in ``sources/``) and one layer within it.
     ``baked`` layers had their transform+effects consolidated into the source
     geometry; generator provenance (if any) is kept so "regenerate" can return
-    them to live generator output.
+    them to live generator output. ``tween`` layers interpolate two sibling
+    layers (see tween.py); their ``params`` hold a TweenParams dict and their
+    geometry is re-materialised from the referenced layers at every resolve.
     """
 
-    type: Literal["generator", "svg", "baked"]
+    type: Literal["generator", "svg", "baked", "tween"]
     generator: str | None = None
     params: dict[str, Any] | None = None
     file: str | None = None          # project-relative: sources/<name>.svg
