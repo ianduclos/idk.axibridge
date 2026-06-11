@@ -222,6 +222,41 @@ class Session:
             layer.source.params = merged.model_dump()
             return layer
 
+    def explode_tween(self, layer_id: str) -> list[CanvasLayer]:
+        """Split a tween into one baked layer per sweep step (each gets its
+        own pen / occlusion / further editing). The live tween stays, hidden,
+        so the morph can be re-tuned and re-exploded. One undo step."""
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            if layer.source.type != "tween":
+                raise RuntimeError("not an interpolation layer")
+            p = tween.TweenParams(**(layer.source.params or {}))
+            self._checkpoint()
+            ts = [p.t] if p.sweep <= 1 else [
+                p.sweep_from + (p.sweep_to - p.sweep_from) * i / (p.sweep - 1)
+                for i in range(p.sweep)
+            ]
+            created: list[CanvasLayer] = []
+            idx = self.project.layers.index(layer)
+            for i, t in enumerate(ts):
+                step = layer.model_copy(deep=True)
+                step.source.params = {**(layer.source.params or {}), "t": t, "sweep": 1}
+                paths = tween.materialize(step, self.project, self.source_geometry)
+                shaped = compose.shape_layer(layer, paths)  # tween's own tf/fx baked in
+                data = layer.model_dump()
+                del data["id"]
+                data.update(
+                    name=f"{layer.name} t={t:.2f}", visible=True,
+                    transform=Affine().model_dump(), effects=[],
+                    source={"type": "baked"},
+                )
+                nl = CanvasLayer(**data)
+                self.project.layers.insert(idx + 1 + i, nl)
+                self.source_geometry[nl.id] = shaped
+                created.append(nl)
+            layer.visible = False
+            return created
+
     def duplicate_layer(self, layer_id: str) -> CanvasLayer:
         """Copy a layer (new id) directly above the original — same source,
         transform, effects, pen. Geometry list is shared by reference; it is

@@ -370,6 +370,17 @@ def put_tween_params(layer_id: str, values: dict[str, Any]) -> dict[str, Any]:
         raise _fail(e, 422)
 
 
+@router.post("/layers/{layer_id}/explode")
+def explode_tween(layer_id: str) -> dict[str, Any]:
+    """Split a tween's sweep into individual baked layers."""
+    try:
+        return {"layers": [l.model_dump() for l in session.explode_tween(layer_id)]}
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+
+
 @router.post("/layers/{layer_id}/duplicate")
 def duplicate_layer(layer_id: str) -> dict[str, Any]:
     try:

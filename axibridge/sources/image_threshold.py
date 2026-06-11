@@ -18,6 +18,7 @@ filled paths, so holes read as solid to layers below.
 from __future__ import annotations
 
 import math
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -32,6 +33,9 @@ class ImageThresholdParams(BaseModel):
                        json_schema_extra={"format": "asset"})
     show_map: bool = Field(default=False, title="Show image on canvas",
                            description="Preview-only ghost of the source image")
+    rotate: Literal[0, 90, 180, 270] = Field(
+        default=0, title="Rotate image (°)",
+        description="Clockwise on paper — match the image to the view orientation")
     width: float = Field(default=150.0, ge=10, le=400, title="Width (mm)",
                          description="Height follows the image aspect ratio")
     threshold: float = Field(default=0.5, ge=0.0, le=1.0, title="Threshold",
@@ -132,12 +136,12 @@ class ImageThreshold(SourceModule):
         p = params
         if not p.image:
             raise ValueError("upload an image asset (Compose tab) and pick it in 'Image'")
-        probe = asset_store.grayscale(p.image)
+        probe = asset_store.grayscale(p.image, rotate=p.rotate)
         if probe is None:
             raise ValueError(f"no asset named {p.image!r}")
         blur_px = p.smoothing * probe[1] / p.width if p.smoothing > 0 else 0.0
-        rows, iw, ih = asset_store.grayscale(p.image, blur_px)
-        alpha = asset_store.alpha(p.image)
+        rows, iw, ih = asset_store.grayscale(p.image, blur_px, rotate=p.rotate)
+        alpha = asset_store.alpha(p.image, rotate=p.rotate)
         w_mm, h_mm = p.width, p.width * ih / iw
         sx, sy = iw / w_mm, ih / h_mm
         outside = p.threshold + 1.0  # any value safely above the threshold

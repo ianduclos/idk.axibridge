@@ -196,3 +196,21 @@ def test_duplicate_layer():
     assert [p.points for p in r[layer.id]] == [p.points for p in r[copy.id]]
     assert session.undo()
     assert copy.id not in {l.id for l in session.project.layers}
+
+
+def test_asset_rotate_changes_gradient_axis():
+    asset_store.replace_all({})
+    name = asset_store.put("ramp.png", _png_gradient())  # bright at high x
+    rows0, w0, h0 = asset_store.grayscale(name)
+    rows90, w90, h90 = asset_store.grayscale(name, rotate=90)
+    assert (w90, h90) == (h0, w0)
+    # clockwise 90: the bright right edge becomes the bottom edge
+    assert rows0[0][-1] > 0.9 and rows90[-1][0] > 0.9
+    eff = get_effect("depth_displace")
+    line = Path(points=[(0.0, 40.0), (80.0, 40.0)])
+    p = eff.Params(image=name, x=0, y=0, width=80, amplitude=10,
+                   angle_deg=90, step=2, smoothing=0, rotate=90)
+    [out] = eff.apply([line], p, EffectContext())
+    ys = [y for _, y in out.points]
+    # rotated map: brightness varies along Y, so a horizontal line moves uniformly
+    assert max(ys) - min(ys) < 1.5

@@ -171,25 +171,27 @@ export const actions = {
 // (so it rides the layer transform).
 function mapGhosts() {
   const dims = Object.fromEntries((S.state.assets || []).map((a) => [a.name, a]));
+  // aspect of the placed (possibly rotated) image: 90/270 swap the sides
+  const ghost = (p, x, y, transform) => {
+    const d = dims[p.image];
+    const w = p.width ?? 150;
+    const rot = p.rotate || 0;
+    const aspect = rot % 180 ? d.width / d.height : d.height / d.width;
+    return { href: `/api/assets/${p.image}`, x, y, width: w, height: w * aspect,
+             rot, transform };
+  };
   const out = [];
   for (const layer of S.state.project.layers) {
     if (!layer.visible) continue;
     for (const step of layer.effects || []) {
       const p = step.params || {};
       if (step.effect === "depth_displace" && step.enabled && p.show_map && dims[p.image]) {
-        const d = dims[p.image];
-        const w = p.width ?? 150;
-        out.push({ href: `/api/assets/${p.image}`, x: p.x ?? 0, y: p.y ?? 0,
-                   width: w, height: w * d.height / d.width });
+        out.push(ghost(p, p.x ?? 0, p.y ?? 0, null));
       }
     }
     const sp = layer.source?.params || {};
     if (layer.source?.generator === "image_threshold" && sp.show_map && dims[sp.image]) {
-      const d = dims[sp.image];
-      const w = sp.width ?? 150;
-      out.push({ href: `/api/assets/${sp.image}`, x: 0, y: 0,
-                 width: w, height: w * d.height / d.width,
-                 transform: objToMat(layer.transform) });
+      out.push(ghost(sp, 0, 0, objToMat(layer.transform)));
     }
   }
   return out;
@@ -324,6 +326,36 @@ function initTabs() {
         getComputedStyle(document.documentElement).getPropertyValue("--sidebar-w").trim());
     }, { once: true });
   });
+}
+
+// ---- fast tooltips: surface title text instantly instead of the ~1 s native delay
+
+{
+  const tip = document.createElement("div");
+  tip.id = "tooltip";
+  tip.hidden = true;
+  document.body.appendChild(tip);
+  let timer = null;
+  document.addEventListener("pointerover", (e) => {
+    clearTimeout(timer);
+    tip.hidden = true;
+    const el = e.target.closest?.("[title], [data-tip]");
+    if (!el) return;
+    if (el.getAttribute("title")) { // move title → data-tip: suppress the native bubble
+      el.dataset.tip = el.getAttribute("title");
+      el.removeAttribute("title");
+    }
+    if (!el.dataset.tip) return;
+    timer = setTimeout(() => {
+      tip.textContent = el.dataset.tip;
+      tip.hidden = false;
+      const r = el.getBoundingClientRect();
+      tip.style.left = `${Math.max(4, Math.min(r.left, window.innerWidth - tip.offsetWidth - 8))}px`;
+      tip.style.top = `${Math.min(r.bottom + 6, window.innerHeight - tip.offsetHeight - 4)}px`;
+    }, 150);
+  });
+  document.addEventListener("pointerout", () => { clearTimeout(timer); tip.hidden = true; });
+  document.addEventListener("pointerdown", () => { clearTimeout(timer); tip.hidden = true; });
 }
 
 const panelKey = (h2) => "panel:" + h2.textContent.trim().slice(0, 24);

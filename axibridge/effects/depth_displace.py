@@ -38,6 +38,9 @@ class DepthDisplaceParams(BaseModel):
                        json_schema_extra={"format": "asset"})
     show_map: bool = Field(default=False, title="Show map on canvas",
                            description="Preview-only ghost of the image at its placement")
+    rotate: Literal[0, 90, 180, 270] = Field(
+        default=0, title="Rotate map (°)",
+        description="Clockwise on paper — match the image to the view orientation")
     x: float = Field(default=0.0, ge=-400, le=400, title="Map x (mm)",
                      description="Paper-space position of the image's left edge",
                      json_schema_extra={"viewAxis": True})
@@ -83,14 +86,14 @@ class DepthDisplace(EffectModule):
         decoded = None
         if params.image:
             blur_px = 0.0
-            probe = asset_store.grayscale(params.image)
+            probe = asset_store.grayscale(params.image, rotate=params.rotate)
             if probe is not None and params.smoothing > 0:
                 blur_px = params.smoothing * probe[1] / params.width
-            decoded = asset_store.grayscale(params.image, blur_px)
+            decoded = asset_store.grayscale(params.image, blur_px, rotate=params.rotate)
         if decoded is None or (params.amplitude == 0 and params.crop == "off"):
             return list(paths)  # no map yet: pass through, don't error the resolve
         rows, iw, ih = decoded
-        alpha = asset_store.alpha(params.image)
+        alpha = asset_store.alpha(params.image, rotate=params.rotate)
         map_h = params.width * ih / iw
         sx = iw / params.width
         sy = ih / map_h

@@ -180,8 +180,10 @@ export function renderLayerList() {
     row.append(eye, swatch, name, est, occ, up, down, dup, del);
     row.onclick = (e) => {
       if (e.target.tagName === "BUTTON") return;
-      actions.setSelection(e.shiftKey ? toggle(S.selection, layer.id) : [layer.id]);
+      const multi = e.shiftKey || e.metaKey || e.ctrlKey;
+      actions.setSelection(multi ? toggle(S.selection, layer.id) : [layer.id]);
     };
+    row.title = "click: select — shift/⌘-click: add to selection (select two layers to interpolate)";
     wrap.appendChild(row);
   });
   renderLayerDetail();
@@ -385,10 +387,21 @@ export function renderLayerDetail() {
     const nameOf = (id) => S.state.project.layers.find((l) => l.id === id)?.name || `${id} (missing!)`;
     const tw = document.createElement("div");
     tw.innerHTML = `<h3>Interpolation</h3>
-      <div class="hint">A: ${nameOf(p.a)} → B: ${nameOf(p.b)} — edits to A/B update this layer live.
+      <div class="hint">A: ${nameOf(p.a)} → B: ${nameOf(p.b)} — interpolates generator params,
+      effect params and position/rotation/scale (not a shape morph). Edits to A/B update live.
       Non-blendable differences (seeds, toggles, mismatched stacks) jump at t = 0.5.</div>
-      <div class="form" id="tw-form"></div>`;
+      <div class="form" id="tw-form"></div>
+      <div class="row"><button id="tw-explode"
+        title="bake each sweep step into its own layer (pen/occlusion editable per step); the tween stays, hidden">
+        ÷ Split into layers</button></div>`;
     wrap.appendChild(tw);
+    tw.querySelector("#tw-explode").onclick = async () => {
+      try {
+        await api.post(`/api/layers/${layer.id}/explode`);
+        await actions.refreshProject();
+        await actions.refreshResolved();
+      } catch (e) { actions.oops(e); }
+    };
     const schema = JSON.parse(JSON.stringify(S.state.schemas.tween));
     delete schema.properties.a;
     delete schema.properties.b;

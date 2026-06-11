@@ -119,14 +119,20 @@ export class CanvasEditor {
       this.world.appendChild(this.guideEl);
     }
 
-    // ghosted image maps (depth maps / hatch sources) under the geometry
+    // ghosted image maps (depth maps / threshold sources) under the geometry.
+    // The server samples a pre-rotated image; the ghost reproduces that by
+    // drawing the original rotated into the same placed rect.
     for (const im of this.images || []) {
-      const img = el("image", {
-        href: im.href, x: im.x, y: im.y, width: im.width, height: im.height,
-        class: "map-ghost", preserveAspectRatio: "none",
-      });
-      if (im.transform) img.setAttribute("transform", matStr(im.transform));
-      this.world.appendChild(img);
+      const { x, y, width: w, height: h, rot = 0 } = im;
+      const attrs = { href: im.href, class: "map-ghost", preserveAspectRatio: "none" };
+      let local = "";
+      if (rot === 90) { Object.assign(attrs, { width: h, height: w }); local = `translate(${x + w} ${y}) rotate(90)`; }
+      else if (rot === 180) { Object.assign(attrs, { width: w, height: h }); local = `translate(${x + w} ${y + h}) rotate(180)`; }
+      else if (rot === 270) { Object.assign(attrs, { width: h, height: w }); local = `translate(${x} ${y + h}) rotate(-90)`; }
+      else Object.assign(attrs, { x, y, width: w, height: h });
+      const outer = im.transform ? matStr(im.transform) : "";
+      if (outer || local) attrs.transform = `${outer} ${local}`.trim();
+      this.world.appendChild(el("image", attrs));
     }
 
     this.layersGroup = el("g", {});
@@ -284,7 +290,7 @@ export class CanvasEditor {
       return;
     }
     if (layerId) {
-      if (e.shiftKey) {
+      if (e.shiftKey || e.metaKey || e.ctrlKey) { // toggle into multi-selection
         this.selection.has(layerId) ? this.selection.delete(layerId) : this.selection.add(layerId);
         this._renderSelection();
         this.cb.onSelect([...this.selection]);

@@ -139,3 +139,18 @@ def test_perspective_preserves_closure_and_foreshortens():
     assert max(xs_top) - min(xs_top) < max(xs_bot) - min(xs_bot)
     # zero tilt is a no-op
     assert eff.apply([sq], eff.Params(tilt_x=0, tilt_y=0), EffectContext()) == [sq]
+
+
+def test_explode_tween_creates_layer_per_step():
+    a, b = _pair()
+    tw = session.create_tween_layer(a.id, b.id)
+    session.set_tween_params(tw.id, {"sweep": 5})
+    per_step = len(session.resolved()[tw.id]) // 5
+    created = session.explode_tween(tw.id)
+    assert len(created) == 5
+    assert all(l.source.type == "baked" for l in created)
+    assert not session.project.layer(tw.id).visible  # tween kept, hidden
+    r = session.resolved()
+    assert all(len(r[l.id]) == per_step for l in created)
+    assert session.undo()  # one step undoes the whole explode
+    assert created[0].id not in {l.id for l in session.project.layers}
