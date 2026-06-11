@@ -11,11 +11,15 @@ def _gen(module_id, **params):
     return src.generate(src.Params(**params))
 
 
-def test_grid_counts_and_border_off():
-    doc = _gen("grid", cells_x=4, cells_y=3, border=True)
+def test_grid_counts_and_trim():
+    doc = _gen("grid", cells_x=4, cells_y=3, trim=0)
     assert len(doc.layers[0].paths) == (4 + 1) + (3 + 1)
-    doc = _gen("grid", cells_x=4, cells_y=3, border=False)
+    doc = _gen("grid", cells_x=4, cells_y=3, trim=1)  # the old "no border"
     assert len(doc.layers[0].paths) == (4 - 1) + (3 - 1)
+    doc = _gen("grid", cells_x=8, cells_y=6, trim=2)
+    assert len(doc.layers[0].paths) == (8 + 1 - 4) + (6 + 1 - 4)
+    doc = _gen("grid", cells_x=2, cells_y=2, trim=10)  # over-trim: empty, not crash
+    assert doc.layers[0].paths == []
 
 
 def test_grid_overshoot_extends_past_area():

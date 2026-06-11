@@ -482,7 +482,12 @@ def download_svg(target: str) -> Response:
         doc = session.resolved_document(target)
     except KeyError as e:
         raise _fail(e, 404)
-    return Response(content=svg_io.doc_to_svg(doc), media_type="image/svg+xml")
+    name = project_io.safe_name(session.project.name)
+    return Response(
+        content=svg_io.doc_to_svg(doc),
+        media_type="image/svg+xml",
+        headers={"Content-Disposition": f'attachment; filename="{name}.svg"'},
+    )
 
 
 # -- plot control -------------------------------------------------------------------

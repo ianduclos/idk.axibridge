@@ -308,7 +308,9 @@ function initTabs() {
   const saved = localStorage.getItem("sidebar-w");
   if (saved) document.documentElement.style.setProperty("--sidebar-w", saved);
   const rz = $("sidebar-resize");
-  rz.addEventListener("pointerdown", (e) => {
+  // guard: a stale cached index.html may predate the element — a missing
+  // handle must degrade to "no resizing", never to a dead UI
+  if (rz) rz.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     rz.setPointerCapture(e.pointerId);
     const onMove = (ev) => {

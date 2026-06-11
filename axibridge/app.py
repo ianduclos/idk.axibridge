@@ -33,9 +33,22 @@ async def _lifespan(app: FastAPI):
     manager.shutdown()
 
 
+class _RevalidatedStatic(StaticFiles):
+    """Static files with `Cache-Control: no-cache` — the browser revalidates
+    every file on every load (cheap 304s when unchanged). Without this, a
+    cached index.html can pair with freshly-fetched JS modules after a server
+    update: the version mix throws at module scope and the whole UI goes
+    blank. Zero-build means the server owns cache correctness."""
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="axibridge", lifespan=_lifespan)
     app.include_router(router)
     # html=True serves index.html at "/"; mounted last so /api wins.
-    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+    app.mount("/", _RevalidatedStatic(directory=STATIC_DIR, html=True), name="static")
     return app
