@@ -80,3 +80,11 @@ before structural changes.
   suite hardware-free; hardware checks are run manually (connect, firmware
   string, pen cycle, small jogs). Raw EBB commands bypass soft limits and
   desync dead reckoning by design.
+- **Mac → Pi workflow**: the AxiDraw can hang off a Raspberry Pi (`ssh idkpi`
+  over Tailscale; EBB on `/dev/ttyACM0`; AxiDraw API venv at
+  `~/axibridge/.venv`, NOT a full axibridge install — its old systemd unit is
+  stopped/disabled on purpose). Use the **"AxiDraw via Pi (ssh)"** backend
+  (`backends/pi_ssh.py`): plot = resolved SVG → scp → `axicli`; pen/jog are
+  short `axicli -m manual` calls. Carriage must start at the home corner.
+  Motors need the barrel-jack PSU; without it axicli "plots" silently with
+  nothing moving — useful for dry runs, confusing if unexpected.

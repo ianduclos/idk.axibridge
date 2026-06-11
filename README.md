@@ -117,6 +117,27 @@ Frontend is zero-build (vanilla ES modules, vendored fonts — works offline);
 SSE reconnects across roaming; all state lives server-side, so any browser
 on the tailnet picks up the same canvas. `tailscale serve 2942` gives HTTPS.
 
+## …or run on the Mac, plot through a Pi (the lightweight way)
+
+The alternative to a full Pi deployment: axibridge runs **on the
+workstation**, and the Pi is just an `axicli` runtime with the AxiDraw on
+USB. Select the **"AxiDraw via Pi (ssh)"** backend in the Plot tab — a plot
+exports the resolved geometry to SVG, scps it over Tailscale, and runs
+`axicli` remotely; pen toggle and jog ride the same pipe. Pi needs only:
+
+```bash
+python3 -m venv ~/axibridge/.venv
+~/axibridge/.venv/bin/pip install https://cdn.evilmadscientist.com/dl/ad/public/AxiDraw_API.zip
+sudo usermod -aG dialout $USER
+```
+
+plus key-based ssh from the workstation (the backend uses `BatchMode` — it
+never prompts). Set the host alias and the **absolute** axicli path in the
+backend params (non-interactive ssh has a minimal PATH). Park the carriage
+at the home corner before plotting: every axicli run homes to wherever it
+starts. No pause and no live position on this path — stop kills the job and
+best-effort raises the pen.
+
 ## The five-minute tour
 
 1. **Compose**: generate a polygon (filled) and a lissajous; drag them to

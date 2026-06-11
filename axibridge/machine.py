@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 
 from .backends.axidraw_native import NativeAxidrawBackend
 from .backends.base import ExecutionBackend, JobControl
+from .backends.pi_ssh import PiSshBackend
 from .backends.saxi import SaxiBackend
 from .backends.simulator import SimulatorBackend
 from .events import bus
@@ -62,7 +63,7 @@ def find_ebb_port() -> str | None:
 class MachineManager:
     def __init__(self) -> None:
         self.backends: dict[str, ExecutionBackend] = {}
-        for b in (NativeAxidrawBackend(), SimulatorBackend(), SaxiBackend()):
+        for b in (NativeAxidrawBackend(), SimulatorBackend(), SaxiBackend(), PiSshBackend()):
             self.backends[b.id] = b
         self.active_id = "simulator"  # safe default: usable with no hardware
         try:  # soft limits persist machine-level (~/.axibridge/settings.json)
