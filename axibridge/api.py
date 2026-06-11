@@ -315,6 +315,14 @@ def delete_layers(body: DeleteLayersBody) -> dict[str, Any]:
     return {"deleted": body.ids}
 
 
+@router.post("/layers/{layer_id}/duplicate")
+def duplicate_layer(layer_id: str) -> dict[str, Any]:
+    try:
+        return session.duplicate_layer(layer_id).model_dump()
+    except KeyError as e:
+        raise _fail(e, 404)
+
+
 @router.post("/layers/{layer_id}/consolidate")
 def consolidate_layer(layer_id: str) -> dict[str, Any]:
     """Bake the layer's transform + effect stack into its source geometry."""

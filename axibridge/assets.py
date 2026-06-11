@@ -27,12 +27,15 @@ class AssetStore:
         self._data: dict[str, bytes] = {}
         #: (name, blur_px rounded) -> decoded grayscale
         self._gray: dict[tuple[str, float], tuple[list[list[float]], int, int]] = {}
+        #: name -> alpha rows, or None for images without an alpha channel
+        self._alpha: dict[str, list[list[float]] | None] = {}
 
     def put(self, name: str, data: bytes) -> str:
         name = safe_asset_name(name)
         with self._lock:
             self._data[name] = data
             self._gray = {k: v for k, v in self._gray.items() if k[0] != name}
+            self._alpha.pop(name, None)
         return name
 
     def names(self) -> list[str]:
@@ -57,6 +60,30 @@ class AssetStore:
         with self._lock:
             self._data = dict(assets)
             self._gray.clear()
+            self._alpha.clear()
+
+    def alpha(self, name: str) -> list[list[float]] | None:
+        """Alpha channel as rows in [0,1], or None if absent/opaque. Same
+        dimensions as ``grayscale``; unblurred — it's a hard crop mask."""
+        with self._lock:
+            if name in self._alpha:
+                return self._alpha[name]
+            data = self._data.get(name)
+        if data is None:
+            return None
+        from PIL import Image
+
+        img = Image.open(io.BytesIO(data))
+        rows = None
+        if "A" in img.getbands():
+            a = img.getchannel("A")
+            w, h = a.size
+            px = a.tobytes()  # mode "L": one byte per pixel, row-major
+            if min(px) < 255:  # an all-opaque alpha is no mask at all
+                rows = [[px[y * w + x] / 255.0 for x in range(w)] for y in range(h)]
+        with self._lock:
+            self._alpha[name] = rows
+        return rows
 
     def all(self) -> dict[str, bytes]:
         with self._lock:
@@ -82,7 +109,7 @@ class AssetStore:
         if key[1] > 0:
             img = img.filter(ImageFilter.GaussianBlur(key[1]))
         w, h = img.size
-        px = list(img.getdata())
+        px = img.tobytes()  # mode "L": one byte per pixel, row-major
         rows = [[px[y * w + x] / 255.0 for x in range(w)] for y in range(h)]
         result = (rows, w, h)
         with self._lock:

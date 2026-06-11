@@ -125,23 +125,74 @@ def test_depth_displace_bias_pulls_dark_back():
     assert min(ys) < 39.0 and max(ys) > 41.0  # signed around mid-gray
 
 
-def test_image_hatch_darker_means_denser():
-    import math as _m
+def test_image_threshold_traces_closed_filled_outlines():
+    from axibridge.registry import get_source
+
     asset_store.replace_all({})
     name = asset_store.put("ramp.png", _png_gradient())
-    src = __import__("axibridge.registry", fromlist=["get_source"]).get_source("image_hatch")
-    doc = src.generate(src.Params(image=name, width=80, levels=3, spacing=2,
-                                  angle_deg=0, smoothing=0, min_run=0.5))
+    src = get_source("image_threshold")
+    doc = src.generate(src.Params(image=name, width=80, threshold=0.5,
+                                  smoothing=0, detail=1.0, min_area=4))
     paths = doc.layers[0].paths
-    assert paths
-    def ink(x0, x1):
-        return sum(_m.dist(p.points[0], p.points[-1]) for p in paths
-                   if x0 <= (p.points[0][0] + p.points[-1][0]) / 2 < x1)
-    assert ink(0, 40) > ink(40, 80) * 1.5  # dark (left) half denser
-    assert doc.width == pytest.approx(80)
+    assert len(paths) == 1  # the dark left half, closed along the image edge
+    p = paths[0]
+    assert p.filled and p.points[0] == p.points[-1]
+    xs = [x for x, _ in p.points]
+    assert max(xs) < 45  # the 0.5-brightness boundary sits near x = 80*(127/255/0.18)... mid-left
+    assert min(xs) >= -1.5  # closes just outside the left edge (padding ring)
 
 
-def test_image_hatch_requires_image():
-    src = __import__("axibridge.registry", fromlist=["get_source"]).get_source("image_hatch")
+def test_image_threshold_respects_alpha():
+    import io as _io
+
+    from PIL import Image
+
+    from axibridge.registry import get_source
+
+    # all-black image, right half transparent -> only the left half traces
+    img = Image.new("LA", (8, 8), (0, 255))
+    for y in range(8):
+        for x in range(4, 8):
+            img.putpixel((x, y), (0, 0))
+    buf = _io.BytesIO(); img.save(buf, "PNG")
+    asset_store.replace_all({})
+    name = asset_store.put("mask.png", buf.getvalue())
+    src = get_source("image_threshold")
+    doc = src.generate(src.Params(image=name, width=80, smoothing=0, detail=1.0, min_area=4))
+    [p] = doc.layers[0].paths
+    assert max(x for x, _ in p.points) < 50  # transparent right half excluded
+
+
+def test_image_threshold_requires_image():
+    from axibridge.registry import get_source
+
     with pytest.raises(ValueError):
-        src.generate(src.Params())
+        get_source("image_threshold").generate(get_source("image_threshold").Params())
+
+
+def test_depth_displace_background_and_crop():
+    asset_store.replace_all({})
+    name = asset_store.put("ramp.png", _png_gradient())
+    eff = get_effect("depth_displace")
+    line = Path(points=[(-20.0, 40.0), (100.0, 40.0)])  # extends past the 0..80 map
+    # background depth: off-map treated as brightness 1 -> displaced like white
+    p_bg = eff.Params(image=name, x=0, y=0, width=80, amplitude=10, background=1.0,
+                      angle_deg=90, step=2, smoothing=0)
+    [out] = eff.apply([line], p_bg, EffectContext())
+    assert out.points[0][1] == pytest.approx(50.0)  # off-map start pushed by full depth
+    # crop: off-map points dropped, path split away from the overhang
+    p_crop = p_bg.model_copy(update={"crop": "outside map"})
+    pieces = eff.apply([line], p_crop, EffectContext())
+    assert all(0 <= x <= 80 for piece in pieces for x, _ in piece.points)
+
+
+def test_duplicate_layer():
+    layer = session.add_generated_layer("polygon", {"sides": 3, "radius": 10})
+    copy = session.duplicate_layer(layer.id)
+    assert copy.id != layer.id and copy.name == f"{layer.name} copy"
+    ids = [l.id for l in session.project.layers]
+    assert ids.index(copy.id) == ids.index(layer.id) + 1
+    r = session.resolved()
+    assert [p.points for p in r[layer.id]] == [p.points for p in r[copy.id]]
+    assert session.undo()
+    assert copy.id not in {l.id for l in session.project.layers}

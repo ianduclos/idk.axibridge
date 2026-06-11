@@ -72,6 +72,7 @@ class HatchFill(EffectModule):
 
     def apply(self, paths: list[Path], params: HatchFillParams, ctx: EffectContext) -> list[Path]:
         out: list[Path] = []
+        shapes: list[Polygon] = []
         for path in paths:
             pts = path.points
             closed = len(pts) > 3 and pts[0] == pts[-1]
@@ -83,19 +84,28 @@ class HatchFill(EffectModule):
             poly = Polygon(pts)
             if not poly.is_valid:
                 poly = poly.buffer(0)
-            if params.inset > 0:
-                poly = poly.buffer(-params.inset)
-            if poly.is_empty:
+            if not poly.is_empty:
+                shapes.append(poly)
+        if not shapes:
+            return out
+        # even-odd assembly: a closed loop nested inside another is a HOLE
+        # (image-threshold traces holes as their own loops) — XOR is the
+        # standard even-odd fill rule and degenerates to union for disjoint
+        # shapes, so plain multi-shape layers behave as before
+        region = shapes[0]
+        for poly in shapes[1:]:
+            region = region.symmetric_difference(poly)
+        if params.inset > 0:
+            region = region.buffer(-params.inset)
+        polys = region.geoms if hasattr(region, "geoms") else [region]
+        angles = [params.angle_deg]
+        if params.cross:
+            angles.append(math.fmod(params.angle_deg + 90.0, 180.0))
+        for sub in polys:
+            if not isinstance(sub, Polygon) or sub.is_empty:
                 continue
-            polys = poly.geoms if hasattr(poly, "geoms") else [poly]
-            for sub in polys:
-                if not isinstance(sub, Polygon) or sub.is_empty:
-                    continue
-                angles = [params.angle_deg]
-                if params.cross:
-                    angles.append(math.fmod(params.angle_deg + 90.0, 180.0))
-                for a in angles:
-                    for line in _hatch(sub, params.spacing, a):
-                        if len(line) >= 2:
-                            out.append(Path(points=line, filled=False))
+            for a in angles:
+                for line in _hatch(sub, params.spacing, a):
+                    if len(line) >= 2:
+                        out.append(Path(points=line, filled=False))
         return out

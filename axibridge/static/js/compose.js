@@ -148,6 +148,13 @@ export function renderLayerList() {
 
     const up = btn("↑", "raise (towards top/occluding)", () => move(layer.id, +1));
     const down = btn("↓", "lower", () => move(layer.id, -1));
+    const dup = btn("⧉", "duplicate layer", async () => {
+      try {
+        await api.post(`/api/layers/${layer.id}/duplicate`);
+        await actions.refreshProject();
+        await actions.refreshResolved();
+      } catch (e) { actions.oops(e); }
+    });
     // two-click delete — native confirm() dialogs are blockable/suppressible
     // by the browser, which reads as "the button does nothing"
     const del = btn("✕", "delete layer (click twice)", async () => {
@@ -169,7 +176,7 @@ export function renderLayerList() {
       } catch (e) { actions.oops(e); }
     });
 
-    row.append(eye, swatch, name, est, occ, up, down, del);
+    row.append(eye, swatch, name, est, occ, up, down, dup, del);
     row.onclick = (e) => {
       if (e.target.tagName === "BUTTON") return;
       actions.setSelection(e.shiftKey ? toggle(S.selection, layer.id) : [layer.id]);

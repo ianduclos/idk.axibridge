@@ -167,7 +167,7 @@ export const actions = {
 };
 
 // Collect "show map" ghost images: depth-displace effects place their map in
-// paper space; image-hatch generators place it in the layer's local frame
+// paper space; image-threshold generators place it in the layer's local frame
 // (so it rides the layer transform).
 function mapGhosts() {
   const dims = Object.fromEntries((S.state.assets || []).map((a) => [a.name, a]));
@@ -184,7 +184,7 @@ function mapGhosts() {
       }
     }
     const sp = layer.source?.params || {};
-    if (layer.source?.generator === "image_hatch" && sp.show_map && dims[sp.image]) {
+    if (layer.source?.generator === "image_threshold" && sp.show_map && dims[sp.image]) {
       const d = dims[sp.image];
       const w = sp.width ?? 150;
       out.push({ href: `/api/assets/${sp.image}`, x: 0, y: 0,

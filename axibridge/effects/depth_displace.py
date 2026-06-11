@@ -50,6 +50,14 @@ class DepthDisplaceParams(BaseModel):
     bias: float = Field(default=0.0, ge=0.0, le=1.0, title="Bias",
                         description="Brightness that maps to zero — 0: black stays put, "
                                     "0.5: signed around mid-gray (darker pulls back)")
+    background: float = Field(default=0.0, ge=0.0, le=1.0, title="Background depth",
+                              description="Brightness assumed outside the image (and under "
+                                          "transparent pixels) — 0 with zero bias keeps the "
+                                          "background still")
+    crop: Literal["off", "outside map", "transparent", "outside + transparent"] = Field(
+        default="off", title="Crop",
+        description="Drop geometry beyond the image edge and/or where PNG alpha < 0.5 "
+                    "(cut paths split; closed shapes that get cut stop occluding as solids)")
     direction: Literal["fixed angle", "path normal"] = Field(
         default="fixed angle", title="Direction",
         description="Fixed angle is invisible on lines parallel to it; "
@@ -79,41 +87,61 @@ class DepthDisplace(EffectModule):
             if probe is not None and params.smoothing > 0:
                 blur_px = params.smoothing * probe[1] / params.width
             decoded = asset_store.grayscale(params.image, blur_px)
-        if decoded is None or params.amplitude == 0:
+        if decoded is None or (params.amplitude == 0 and params.crop == "off"):
             return list(paths)  # no map yet: pass through, don't error the resolve
         rows, iw, ih = decoded
+        alpha = asset_store.alpha(params.image)
         map_h = params.width * ih / iw
         sx = iw / params.width
         sy = ih / map_h
         dirx = math.cos(math.radians(params.angle_deg))
         diry = math.sin(math.radians(params.angle_deg))
         along_normal = params.direction == "path normal"
+        crop_outside = params.crop in ("outside map", "outside + transparent")
+        crop_alpha = alpha is not None and params.crop in ("transparent", "outside + transparent")
+        bg_depth = (params.background - params.bias) * params.amplitude
 
-        def depth(px: float, py: float) -> float:
-            """Displacement in mm at a paper point; 0 off the map."""
+        def lattice(px: float, py: float):
+            """Paper point -> (x0,y0,x1,y1,tx,ty) bilinear weights, or None off-map."""
             fx = (px - params.x) * sx - 0.5
             fy = (py - params.y) * sy - 0.5
             if fx < -0.5 or fy < -0.5 or fx > iw - 0.5 or fy > ih - 0.5:
-                return 0.0
+                return None
             x0, y0 = math.floor(fx), math.floor(fy)
-            tx, ty = fx - x0, fy - y0
-            x0c, y0c = max(x0, 0), max(y0, 0)
-            x1c, y1c = min(x0 + 1, iw - 1), min(y0 + 1, ih - 1)
-            top = rows[y0c][x0c] * (1 - tx) + rows[y0c][x1c] * tx
-            bot = rows[y1c][x0c] * (1 - tx) + rows[y1c][x1c] * tx
-            v = top * (1 - ty) + bot * ty
-            if params.invert:  # inside the map only — off-map must stay put
+            return (max(x0, 0), max(y0, 0), min(x0 + 1, iw - 1), min(y0 + 1, ih - 1),
+                    fx - x0, fy - y0)
+
+        def bilinear(grid, lat) -> float:
+            x0, y0, x1, y1, tx, ty = lat
+            top = grid[y0][x0] * (1 - tx) + grid[y0][x1] * tx
+            bot = grid[y1][x0] * (1 - tx) + grid[y1][x1] * tx
+            return top * (1 - ty) + bot * ty
+
+        def probe_point(px: float, py: float) -> tuple[float, bool]:
+            """(displacement mm, keep?) at a paper point."""
+            lat = lattice(px, py)
+            if lat is None:
+                return bg_depth, not crop_outside
+            if alpha is not None and bilinear(alpha, lat) < 0.5:
+                return bg_depth, not crop_alpha
+            v = bilinear(rows, lat)
+            if params.invert:  # inside the map only — background has its own knob
                 v = 1.0 - v
-            return (v - params.bias) * params.amplitude
+            return (v - params.bias) * params.amplitude, True
 
         out: list[Path] = []
         for path in paths:
             closed = len(path.points) > 2 and path.points[0] == path.points[-1]
             pts = _resample(path.points, params.step)
             n = len(pts)
-            moved = []
+            moved: list[tuple[float, float] | None] = []
+            cropped_any = False
             for i, (px, py) in enumerate(pts):
-                d = depth(px, py)
+                d, keep = probe_point(px, py)
+                if not keep:
+                    moved.append(None)
+                    cropped_any = True
+                    continue
                 if along_normal:
                     # local tangent from neighbours; closed paths wrap past
                     # the duplicated seam point (pts[0] == pts[n-1])
@@ -128,7 +156,20 @@ class DepthDisplace(EffectModule):
                     moved.append((px - d * ty / norm, py + d * tx / norm))
                 else:
                     moved.append((px + d * dirx, py + d * diry))
-            if closed and len(moved) > 1:
-                moved[-1] = moved[0]  # displacement is positional, but be exact
-            out.append(Path(points=moved, filled=path.filled))
+            if not cropped_any:
+                if closed and len(moved) > 1:
+                    moved[-1] = moved[0]  # displacement is positional, but be exact
+                out.append(Path(points=moved, filled=path.filled))
+                continue
+            # crop split the path: emit kept runs; closure (and with it the
+            # filled/occluder property) is gone for the pieces by definition
+            run: list[tuple[float, float]] = []
+            for p in [*moved, None]:
+                if p is not None:
+                    run.append(p)
+                elif len(run) >= 2:
+                    out.append(Path(points=run, filled=False))
+                    run = []
+                else:
+                    run = []
         return out

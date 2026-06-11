@@ -80,3 +80,15 @@ def test_hatch_fill_cross_doubles_coverage():
     single = eff.apply([_square()], eff.Params(cross=False), EffectContext())
     double = eff.apply([_square()], eff.Params(cross=True), EffectContext())
     assert len(double) > len(single) * 1.7
+
+
+def test_hatch_fill_treats_nested_loops_as_holes():
+    eff = get_effect("hatch_fill")
+    outer = _square()
+    hole = Path(points=[(15, 15), (25, 15), (25, 25), (15, 25), (15, 15)], filled=True)
+    out = eff.apply([outer, hole], eff.Params(spacing=2.0, angle_deg=0, inset=0), EffectContext())
+    hatch = [p for p in out if not p.filled]
+    assert hatch
+    for line in hatch:
+        for x, y in line.points:
+            assert not (15.5 < x < 24.5 and 15.5 < y < 24.5), "hatch entered the hole"

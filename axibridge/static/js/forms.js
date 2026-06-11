@@ -96,28 +96,36 @@ export function renderForm(container, schema, values, onChange) {
     } else if (s.type === "number" || s.type === "integer") {
       const min = s.minimum ?? s.exclusiveMinimum;
       const max = s.maximum ?? s.exclusiveMaximum;
+      // axis-tagged fields in portrait are negated for display, so the fader
+      // moves things the way the rotated bed looks (raising "y" = up-screen).
+      // The bounds are symmetric on these fields, so negation stays in range.
+      const flip = spec.viewAxis && S.state?.project?.view === "portrait";
+      const show = (v) => (flip ? -v : v);
       const num = document.createElement("input");
       num.type = "number";
-      num.value = val;
-      if (min !== undefined) num.min = min;
-      if (max !== undefined) num.max = max;
+      num.value = show(val);
+      if (min !== undefined) num.min = flip ? -max : min;
+      if (max !== undefined) num.max = flip ? -min : max;
       num.step = s.type === "integer" ? 1 : stepFor(min, max);
       let range = null;
       if (min !== undefined && max !== undefined) {
         range = document.createElement("input");
         range.type = "range";
-        range.min = min; range.max = max; range.value = val;
+        range.min = num.min; range.max = num.max; range.value = show(val);
         range.step = num.step;
-        range.oninput = () => { num.value = range.value; set(Number(range.value)); };
+        // live number readout while dragging; commit ONCE on release — a
+        // mid-drag commit re-renders the panel and kills the drag
+        range.oninput = () => { num.value = range.value; };
+        range.onchange = () => { num.value = range.value; set(show(Number(range.value))); };
         ctl.appendChild(range);
       }
       num.onchange = () => {
         let v = Number(num.value);
-        if (min !== undefined) v = Math.max(v, min);
-        if (max !== undefined) v = Math.min(v, max);
+        if (num.min !== "") v = Math.max(v, Number(num.min));
+        if (num.max !== "") v = Math.min(v, Number(num.max));
         num.value = v;
         if (range) range.value = v;
-        set(v);
+        set(show(v));
       };
       ctl.appendChild(num);
     } else { // string and anything else

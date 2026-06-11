@@ -172,6 +172,23 @@ class Session:
             by_id = {l.id: l for l in self.project.layers}
             self.project.layers = [by_id[i] for i in ordered_ids]
 
+    def duplicate_layer(self, layer_id: str) -> CanvasLayer:
+        """Copy a layer (new id) directly above the original — same source,
+        transform, effects, pen. Geometry list is shared by reference; it is
+        only ever replaced wholesale (regen/consolidate), never mutated."""
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            self._checkpoint()
+            data = layer.model_dump()
+            del data["id"]  # CanvasLayer mints a fresh one
+            data["name"] = f"{layer.name} copy"
+            copy = CanvasLayer(**data)
+            copy.source.file = None  # snapshot belongs to the original; rewritten on save
+            idx = self.project.layers.index(layer)
+            self.project.layers.insert(idx + 1, copy)
+            self.source_geometry[copy.id] = self.source_geometry.get(layer_id, [])
+            return copy
+
     def consolidate_effects(self, layer_id: str) -> CanvasLayer:
         """Bake transform + effect stack into the source geometry.
 
