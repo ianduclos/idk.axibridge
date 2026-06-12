@@ -28,3 +28,71 @@ def test_capabilities_are_honest():
     assert caps.jog and caps.pen_control
     assert not caps.pause_resume and not caps.raw_ebb and not caps.live_position
     assert not caps.requires_serial_port
+
+
+def test_plot_detaches_and_polls(monkeypatch):
+    import types
+
+    from axibridge.backends.base import JobControl
+    from axibridge.model import Layer, Path, PathDocument
+
+    b = PiSshBackend()
+    b._connected = True
+    calls = []
+
+    def fake_run(cmd, capture_output=True, text=True, timeout=None):
+        calls.append(" ".join(cmd))
+        joined = " ".join(cmd)
+        if cmd[0] == "scp":
+            return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+        if "setsid nohup" in joined:
+            return types.SimpleNamespace(returncode=0, stdout="4242\n", stderr="")
+        if "cat" in joined and ".exit" in joined:
+            # first poll: still running; second: done
+            n = sum(".exit" in c and "cat" in c for c in calls)
+            return types.SimpleNamespace(returncode=0,
+                                         stdout="RUNNING\n" if n < 2 else "0\n", stderr="")
+        if "tail" in joined:
+            return types.SimpleNamespace(returncode=0, stdout="Elapsed time: 1.0\n", stderr="")
+        return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr("axibridge.backends.pi_ssh.subprocess.run", fake_run)
+    monkeypatch.setattr("axibridge.backends.pi_ssh.time.sleep", lambda s: None)
+    doc = PathDocument(layers=[Layer(id=1, name="t", paths=[Path(points=[(0, 0), (5, 0)])])])
+    events = []
+    b.plot(doc, PiSshParams(), JobControl(), events.append)
+    kinds = [e["kind"] for e in events]
+    assert kinds[0] == "started" and kinds[-1] == "finished"
+    assert any("setsid nohup" in c for c in calls)       # detached launch
+    assert any("NTFY_URL" in c for c in calls)           # completion notify wired
+
+
+def test_plot_stop_kills_remote_group(monkeypatch):
+    import types
+
+    from axibridge.backends.base import JobControl
+    from axibridge.model import Layer, Path, PathDocument
+
+    b = PiSshBackend()
+    b._connected = True
+    control = JobControl()
+    calls = []
+
+    def fake_run(cmd, capture_output=True, text=True, timeout=None):
+        joined = " ".join(cmd)
+        calls.append(joined)
+        if cmd[0] == "scp":
+            return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+        if "setsid nohup" in joined:
+            return types.SimpleNamespace(returncode=0, stdout="777\n", stderr="")
+        return types.SimpleNamespace(returncode=0, stdout="RUNNING\n", stderr="")
+
+    monkeypatch.setattr("axibridge.backends.pi_ssh.subprocess.run", fake_run)
+    monkeypatch.setattr("axibridge.backends.pi_ssh.time.sleep",
+                        lambda s: control.stop())  # stop arrives mid-poll
+    doc = PathDocument(layers=[Layer(id=1, name="t", paths=[Path(points=[(0, 0), (5, 0)])])])
+    events = []
+    b.plot(doc, PiSshParams(), control, events.append)
+    assert events[-1]["kind"] == "stopped"
+    assert any("kill -TERM -- -777" in c for c in calls)   # process GROUP killed
+    assert any("raise_pen" in c for c in calls)            # pen lifted after

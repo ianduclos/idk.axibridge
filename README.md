@@ -135,7 +135,10 @@ plus key-based ssh from the workstation (the backend uses `BatchMode` — it
 never prompts). Set the host alias and the **absolute** axicli path in the
 backend params (non-interactive ssh has a minimal PATH). Park the carriage
 at the home corner before plotting: every axicli run homes to wherever it
-starts. No pause and no live position on this path — stop kills the job and
+starts. Jobs run **detached** on the Pi (setsid): the Mac can sleep, roam or
+drop off the network mid-plot and the job finishes anyway — completion pings
+the Pi's ntfy topic, and the app reconciles when it wakes. No pause and no
+live position on this path — Stop kills the detached job over ssh and
 best-effort raises the pen.
 
 ## The five-minute tour

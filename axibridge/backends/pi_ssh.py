@@ -25,10 +25,12 @@ absolute venv path because non-interactive ssh has a minimal PATH.
 
 from __future__ import annotations
 
+import shlex
 import shutil
 import subprocess
 import tempfile
 import threading
+import time
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -68,7 +70,7 @@ class PiSshBackend(ExecutionBackend):
         self._connected = False
         self._host = ""
         self._axicli = ""
-        self._proc: subprocess.Popen | None = None
+        self._job: tuple[str, str] | None = None  # (remote pid, exit-marker path)
         self._lock = threading.Lock()
         self._pos = (0.0, 0.0)  # dead-reckoned from jogs, this session
 
@@ -89,9 +91,11 @@ class PiSshBackend(ExecutionBackend):
             progress_granularity="job",
             notes=(
                 "Carriage must start at the home corner (each axicli run "
-                "homes to its start position). Stop kills the ssh session "
-                "and then best-effort raises the pen. Jog/pen are one ssh "
-                "round-trip each (~1-2 s)."
+                "homes to its start position). Jobs run DETACHED on the Pi: "
+                "they survive the Mac sleeping or dropping off the network, "
+                "and completion pings the Pi's ntfy topic. Stop kills the "
+                "detached job over ssh and best-effort raises the pen. "
+                "Jog/pen are one ssh round-trip each (~1-2 s)."
             ),
         )
 
@@ -149,14 +153,9 @@ class PiSshBackend(ExecutionBackend):
         self.deactivate()
 
     def deactivate(self) -> None:
+        # No local process to release: jobs run detached on the Pi (the
+        # manager refuses backend switches mid-job; Stop kills via ssh).
         with self._lock:
-            if self._proc is not None and self._proc.poll() is None:
-                self._proc.terminate()
-                try:
-                    self._proc.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    self._proc.kill()
-            self._proc = None
             self._connected = False
 
     @property
@@ -191,6 +190,12 @@ class PiSshBackend(ExecutionBackend):
     # -- plotting --------------------------------------------------------------
 
     def plot(self, doc: PathDocument, params: PiSshParams, control: JobControl, emit: EmitFn) -> None:
+        """Detached execution: the job is launched on the Pi under setsid and
+        survives the Mac sleeping, roaming or dropping ssh entirely — this
+        thread only POLLS for the exit marker. Completion also pings the
+        Pi's ntfy topic (read from /etc/idkpi/idkpi.env, root-only, via
+        sudo -n), so "start a plot and walk away" actually works. Stop kills
+        the detached process group over a fresh ssh and raises the pen."""
         self._require()
         self._host = params.host
         self._axicli = params.axicli_path
@@ -198,46 +203,84 @@ class PiSshBackend(ExecutionBackend):
         with tempfile.NamedTemporaryFile("w", suffix=".svg", delete=False) as f:
             f.write(svg)
             local = f.name
-        emit({"kind": "started", "paths_total": sum(len(l.paths) for l in doc.layers)})
         scp = subprocess.run(["scp", "-q", *_SSH_OPTS, local, f"{self._host}:{params.remote_tmp}"],
                              capture_output=True, text=True)
         if scp.returncode != 0:
             raise RuntimeError(f"scp to {self._host}: {scp.stderr.strip()[:300]}")
-        # -tt: force a tty so killing the local ssh HUPs the remote axicli
-        cmd = ["ssh", "-tt", *_SSH_OPTS, self._host,
-               self._axicli, params.remote_tmp, "--report_time", *self._flags(params)]
+
+        log, exit_f = f"{params.remote_tmp}.log", f"{params.remote_tmp}.exit"
+        axicli_cmd = " ".join(
+            shlex.quote(a) for a in
+            [self._axicli, params.remote_tmp, "--report_time", *self._flags(params)]
+        )
+        inner = (
+            f"{axicli_cmd} > {shlex.quote(log)} 2>&1; ec=$?; "
+            f"echo $ec > {shlex.quote(exit_f)}; "
+            # notify: NTFY_URL lives in a root-only env file; sudo -n is passwordless
+            'url=$( (cat /etc/idkpi/idkpi.env 2>/dev/null || sudo -n cat /etc/idkpi/idkpi.env 2>/dev/null) '
+            "| sed -n 's/^NTFY_URL=\"\\(.*\\)\"/\\1/p'); "
+            '[ -n "$url" ] && curl -s -m 10 -d "axibridge: plot finished (exit $ec)" "$url" '
+            ">/dev/null 2>&1; true"
+        )
+        launch = (
+            f"rm -f {shlex.quote(exit_f)}; "
+            f"setsid nohup sh -c {shlex.quote(inner)} >/dev/null 2>&1 < /dev/null & echo $!"
+        )
+        r = self._ssh([launch], timeout=20)
+        if r.returncode != 0 or not r.stdout.strip().isdigit():
+            raise RuntimeError(f"could not launch remote job: {(r.stderr or r.stdout).strip()[:300]}")
+        pid = r.stdout.strip()
         with self._lock:
-            self._proc = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            proc = self._proc
+            self._job = (pid, exit_f)
+        emit({"kind": "started", "paths_total": sum(len(l.paths) for l in doc.layers)})
+        emit({"kind": "message",
+              "message": f"detached on {self._host} (pid {pid}) — survives Mac sleep; "
+                         "ntfy pings on completion"})
 
-        stopper = threading.Thread(target=self._watch_control, args=(control, proc), daemon=True)
-        stopper.start()
-        for line in proc.stdout:  # axicli is quiet; surface whatever it says
-            text = line.strip()
-            if text:
-                emit({"kind": "message", "message": f"axicli: {text[:200]}"})
-        code = proc.wait()
-        with self._lock:
-            self._proc = None
-        if control.stopped:
-            # HUP'd axicli may leave the pen down — best-effort lift
-            try:
-                self._axicli_run(params, ["-m", "manual", "-M", "raise_pen"])
-            except Exception:
-                pass
-            emit({"kind": "stopped"})
-        elif code != 0:
-            raise RuntimeError(f"axicli exited with code {code}")
-        else:
-            emit({"kind": "finished"})
-
-    def _watch_control(self, control: JobControl, proc: subprocess.Popen) -> None:
-        """Bridge JobControl.stop() to ssh termination (remote gets HUP)."""
-        import time
-
-        while proc.poll() is None:
-            if control.stopped:
-                proc.terminate()
+        misses = 0
+        try:
+            while True:
+                if control.stopped:
+                    self._kill_remote(pid)
+                    try:  # the killed job may leave the pen down
+                        self._axicli_run(params, ["-m", "manual", "-M", "raise_pen"])
+                    except Exception:
+                        pass
+                    emit({"kind": "stopped"})
+                    return
+                time.sleep(3.0)
+                try:
+                    poll = self._ssh([f"cat {shlex.quote(exit_f)} 2>/dev/null || echo RUNNING"],
+                                     timeout=15)
+                except subprocess.TimeoutExpired:
+                    poll = None
+                if poll is None or poll.returncode != 0:
+                    misses += 1  # network blip / Mac just woke: the job doesn't care, keep polling
+                    if misses in (5, 100):
+                        emit({"kind": "message",
+                              "message": f"lost contact with {self._host} — job continues there; retrying"})
+                    continue
+                misses = 0
+                out = poll.stdout.strip()
+                if out == "RUNNING" or not out:
+                    continue
+                code = int(out) if out.lstrip("-").isdigit() else 1
+                tail = self._ssh([f"tail -n 5 {shlex.quote(log)} 2>/dev/null"], timeout=15)
+                for line in (tail.stdout or "").strip().splitlines():
+                    if line.strip():
+                        emit({"kind": "message", "message": f"axicli: {line.strip()[:200]}"})
+                if code != 0:
+                    raise RuntimeError(f"axicli exited with code {code} (see {log} on {self._host})")
+                emit({"kind": "finished"})
                 return
-            time.sleep(0.3)
+        finally:
+            with self._lock:
+                self._job = None
+
+    def _kill_remote(self, pid: str) -> None:
+        """Kill the detached job's whole process group (setsid leader)."""
+        try:
+            self._ssh([f"kill -TERM -- -{pid} 2>/dev/null; sleep 1; "
+                       f"kill -KILL -- -{pid} 2>/dev/null; true"], timeout=15)
+        except Exception:
+            pass
