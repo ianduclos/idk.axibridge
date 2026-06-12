@@ -10,8 +10,11 @@
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
 
-export function renderForm(container, schema, values, onChange) {
+export function renderForm(container, schema, values, onChange, opts = {}) {
   container.innerHTML = "";
+  // fields tagged json_schema_extra={"group": "..."} collapse into a <details>
+  // appended after the plain fields (keeps ten near-identical forms uncrammed)
+  const groups = new Map();
   const props = schema.properties || {};
   for (const [key, spec] of Object.entries(props)) {
     if (spec.hidden) continue; // declared but not user-facing (e.g. hardware identity)
@@ -115,8 +118,17 @@ export function renderForm(container, schema, values, onChange) {
         range.min = num.min; range.max = num.max; range.value = show(val);
         range.step = num.step;
         // live number readout while dragging; commit ONCE on release — a
-        // mid-drag commit re-renders the panel and kills the drag
-        range.oninput = () => { num.value = range.value; };
+        // mid-drag commit re-renders the panel and kills the drag. Forms
+        // may pass opts.onLive(key, value) to observe mid-drag values (live
+        // preview); it updates `values` but never fires the commit callback.
+        range.oninput = () => {
+          num.value = range.value;
+          if (opts.onLive) {
+            const v = show(Number(range.value));
+            values[key] = v;
+            opts.onLive(key, v);
+          }
+        };
         range.onchange = () => { num.value = range.value; set(show(Number(range.value))); };
         ctl.appendChild(range);
       }
@@ -137,8 +149,21 @@ export function renderForm(container, schema, values, onChange) {
       ctl.appendChild(inp);
     }
     field.appendChild(ctl);
-    container.appendChild(field);
+    if (spec.group) {
+      if (!groups.has(spec.group)) {
+        const det = document.createElement("details");
+        det.className = "form-group";
+        const sum = document.createElement("summary");
+        sum.textContent = spec.group;
+        det.appendChild(sum);
+        groups.set(spec.group, det);
+      }
+      groups.get(spec.group).appendChild(field);
+    } else {
+      container.appendChild(field);
+    }
   }
+  for (const det of groups.values()) container.appendChild(det);
 }
 
 function stepFor(min, max) {

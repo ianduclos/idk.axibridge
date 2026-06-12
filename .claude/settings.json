@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/python -m pytest *)",
+      "Bash(curl -s http://127.0.0.1:*)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(curl -sI http://127.0.0.1:*)",
+      "Bash(ping *)",
+      "Bash(arp *)",
+      "Bash(fastfetch *)"
+    ]
+  }
+}

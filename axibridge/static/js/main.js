@@ -8,7 +8,7 @@
 
 import { api, subscribe } from "./api.js";
 import { CanvasEditor, mul, objToMat, matToObj } from "./canvas.js";
-import { initComposeTab, renderLayerList, renderLayerDetail } from "./compose.js";
+import { initComposeTab, renderLayerList, renderLayerDetail, setGenProgress } from "./compose.js";
 import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
 import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
@@ -193,8 +193,10 @@ function mapGhosts() {
         out.push(ghost(p, (p.x ?? 0) + tx, (p.y ?? 0) + ty, null));
       }
     }
+    // any image-driven generator (image + show_map params) ghosts its source
+    // in the layer's local frame, so it rides the layer transform
     const sp = layer.source?.params || {};
-    if (layer.source?.generator === "image_threshold" && sp.show_map && dims[sp.image]) {
+    if (layer.source?.generator && sp.show_map && sp.image && dims[sp.image]) {
       out.push(ghost(sp, 0, 0, objToMat(layer.transform)));
     }
   }
@@ -420,6 +422,8 @@ function onEvent(ev) {
     actions.refreshState().catch(oops);
   } else if (ev.type === "job") {
     onJobEvent(ev);
+  } else if (ev.type === "gen") {
+    setGenProgress(ev.frac ?? 0, ev.msg || "");
   }
 }
 

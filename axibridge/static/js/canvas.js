@@ -176,6 +176,8 @@ export class CanvasEditor {
 
     this.travelGroup = el("g", {});
     this.world.appendChild(this.travelGroup);
+    this.previewGroup = el("g", { class: "gen-preview" });
+    this.world.appendChild(this.previewGroup);
     this.overlay = el("g", {});
     this.world.appendChild(this.overlay);
     this.animMarker = el("circle", { r: 1.6, class: "anim-marker", visibility: "hidden" });
@@ -184,8 +186,34 @@ export class CanvasEditor {
     this.world.appendChild(this.machineMarker);
 
     this._renderTravel();
+    this._renderGenPreview();
     this._renderSelection();
     this.updateMachineMarker();
+  }
+
+  // live generator preview: transient mm-space polylines (document frame, or
+  // an existing layer's frame via `transform`), drawn dashed above the layers.
+  // State survives full re-renders; cleared by passing null.
+  setGenPreview(preview) {
+    this.genPreview = preview; // {lines: [[[x,y],...],...], transform: mat|null} | null
+    this._renderGenPreview();
+  }
+
+  _renderGenPreview() {
+    if (!this.previewGroup) return;
+    this.previewGroup.innerHTML = "";
+    if (!this.genPreview?.lines?.length) {
+      this.previewGroup.removeAttribute("transform");
+      return;
+    }
+    const { lines, transform } = this.genPreview;
+    if (transform) this.previewGroup.setAttribute("transform", matStr(transform));
+    else this.previewGroup.removeAttribute("transform");
+    // one <path> for everything: cheap even at preview-cap point counts
+    const d = lines
+      .map((line) => "M " + line.map(([x, y]) => `${x} ${y}`).join(" L "))
+      .join(" ");
+    this.previewGroup.appendChild(el("path", { d, class: "gen-preview-path", fill: "none" }));
   }
 
   _renderTravel() {

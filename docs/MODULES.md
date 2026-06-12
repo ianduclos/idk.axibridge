@@ -47,15 +47,23 @@ Rendering rules (`static/js/forms.js`):
 unbounded values reach an open-loop machine with no limit switches.
 Validation is server-side and automatic: bad values 422 before your code runs.
 
-Two more `json_schema_extra` tags with frontend meaning:
+Three more `json_schema_extra` tags with frontend meaning:
 
 - `{"viewAxis": True}` on a paper-space x/y pair: in portrait view the label
   letter swaps and the displayed value negates, so the fader moves things
   the way the rotated bed *looks*. Only use on fields with symmetric bounds.
+- `{"group": "Tone"}` (any name) collapses those fields into a closed
+  `<details>` at the bottom of the form — use for shared boilerplate params
+  so a long form stays scannable.
 - `show_map: bool` params ghost the module's image asset on the canvas.
-  This is wired client-side in `main.js mapGhosts()`, which special-cases
-  module ids (it needs to know where the image sits) — a new image-driven
-  module wanting a ghost must add a case there. Preview only; never plotted.
+  For **generators** this is automatic: any generator layer whose params
+  carry `image` + `show_map` (+ `width`/`rotate`) ghosts in the layer's
+  local frame. Effects that place their map in paper space (depth_displace)
+  are still special-cased in `main.js mapGhosts()`. Preview only; never
+  plotted.
+
+Generators with a `format:"asset"` param are listed under the
+"📷 Image-driven" optgroup in the Add-layer picker automatically.
 
 Image-driven modules read pixels through `assets.asset_store`:
 `grayscale(name, blur_px)` (cached per blur radius — derive `blur_px` from a
@@ -79,6 +87,14 @@ Contract:
 - Deterministic for fixed params (seed any randomness): "regenerate" and
   project-loading both re-run you. (Projects also snapshot generated
   geometry to SVG, so old artworks survive changes to your code.)
+- Slow generators should call `registry.report_progress(frac, msg)` from
+  their loops — it feeds the Generate button's load bar over SSE and is a
+  no-op outside a request. Call it freely; the API layer throttles.
+- **Pixel-space image generators** (the plotterfun family): subclass
+  `sources/_pixelgen.PixelGenParams` (image/rotate/width/show_map + the
+  collapsed Tone group), sample darkness 0–255 through `ImageSampler`, and
+  return via `pixel_doc(...)` — it scales the fixed 800-px working canvas
+  to the `width` mm placement. Copy `sources/subline.py`.
 
 ## Writing an Effect — the v2 per-layer stack
 

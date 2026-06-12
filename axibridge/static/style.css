@@ -208,10 +208,16 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .log .err { color: var(--rust); }
 
 .progress { height: 7px; background: var(--paper-deep); border-radius: 999px; overflow: hidden; margin: 8px 0; border: 1px solid var(--line); }
-#progress-bar { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+#progress-bar, #gen-progress-bar { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+/* live generator preview: dashed transient ghost, never interactive */
+.gen-preview { pointer-events: none; }
+.gen-preview-path { stroke: var(--accent); stroke-width: 0.3; stroke-opacity: 0.65; stroke-dasharray: 1.4 1; stroke-linecap: round; }
 
 /* forms (auto-generated from JSON Schema) */
 .form .field { margin: 6px 0; }
+.form-group { margin: 8px 0 4px; border: 1px solid var(--line); border-radius: 5px; padding: 2px 8px 4px; }
+.form-group > summary { cursor: pointer; font-size: 11.5px; color: var(--ink-soft); user-select: none; }
 .form .field > label { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-soft); }
 .form .ctl { display: flex; gap: 7px; align-items: center; }
 .form .ctl input[type="number"] { width: 5.2em; }

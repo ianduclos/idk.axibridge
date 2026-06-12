@@ -28,7 +28,7 @@ from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
 from .events import bus
 from .machine import SoftLimits, manager
-from .registry import describe_modules
+from .registry import describe_modules, get_source, progress_scope
 from .session import session
 from .stores import Pen, pen_library, settings_store
 from .tween import TweenParams
@@ -246,10 +246,81 @@ class GenerateBody(BaseModel):
     params: dict[str, Any] = Field(default_factory=dict)
 
 
+def _gen_progress_sink() -> Any:
+    """SSE sink for report_progress: the generate request itself blocks until
+    done (the button awaits it), so progress is broadcast-only UI feed.
+    Throttled here, not in the modules — they may call per inner-loop row."""
+    last = {"t": 0.0, "frac": -1.0, "msg": ""}
+
+    def sink(frac: float, msg: str = "") -> None:
+        now = time.monotonic()
+        if msg == last["msg"] and now - last["t"] < 0.1 and frac - last["frac"] < 0.02:
+            return
+        last.update(t=now, frac=frac, msg=msg)
+        bus.emit({"type": "gen", "frac": round(min(max(frac, 0.0), 1.0), 3), "msg": msg})
+
+    return sink
+
+
+#: live-preview responses cap their point count; the wire and the canvas both
+#: stay light, and the real layer (created on "Convert to layer") is exact.
+_PREVIEW_MAX_PTS = 60_000
+
+
+@router.post("/generators/preview")
+def preview_generator(body: GenerateBody) -> dict[str, Any]:
+    """Run a generator WITHOUT touching the project: no layer, no undo
+    checkpoint, no lock — safe to call on every (debounced) slider move.
+    Feeds the dashed preview overlay; progress streams like a real generate."""
+    try:
+        src = get_source(body.module)
+    except KeyError as e:
+        raise _fail(e, 404)
+    try:
+        with progress_scope(_gen_progress_sink()):
+            doc = src.generate(src.Params(**body.params))
+    except Exception as e:
+        raise _fail(e, 400)
+    paths = [p for layer in doc.layers for p in layer.paths]
+    return {**_preview_payload(paths), "width": doc.width, "height": doc.height}
+
+
+def _preview_payload(paths: list[Any]) -> dict[str, Any]:
+    lines = [[(round(x, 2), round(y, 2)) for x, y in p.points] for p in paths]
+    total = sum(len(line) for line in lines)
+    stride = -(-total // _PREVIEW_MAX_PTS)  # ceil
+    if stride > 1:
+        lines = [
+            line[::stride] + (line[-1:] if (len(line) - 1) % stride else [])
+            for line in lines
+        ]
+    return {"lines": lines, "points": total, "decimated": stride > 1}
+
+
+class EffectsPreviewBody(BaseModel):
+    effects: list[dict[str, Any]]
+
+
+@router.post("/layers/{layer_id}/effects/preview")
+def preview_layer_effects(layer_id: str, body: EffectsPreviewBody) -> dict[str, Any]:
+    """Shape one layer with a candidate effect stack, read-only — the live
+    preview for effect-param drags. Output is paper-space (post transform +
+    effects, pre occlusion), so the overlay needs no client transform."""
+    try:
+        with progress_scope(_gen_progress_sink()):
+            paths = session.preview_layer_effects(layer_id, body.effects)
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+    return _preview_payload(paths)
+
+
 @router.post("/layers/generate")
 def add_generated_layer(body: GenerateBody) -> dict[str, Any]:
     try:
-        layer = session.add_generated_layer(body.module, body.params)
+        with progress_scope(_gen_progress_sink()):
+            layer = session.add_generated_layer(body.module, body.params)
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:
@@ -315,7 +386,8 @@ class RegenerateBody(BaseModel):
 @router.post("/layers/{layer_id}/regenerate")
 def regenerate_layer(layer_id: str, body: RegenerateBody) -> dict[str, Any]:
     try:
-        return session.regenerate_layer(layer_id, body.params).model_dump()
+        with progress_scope(_gen_progress_sink()):
+            return session.regenerate_layer(layer_id, body.params).model_dump()
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:

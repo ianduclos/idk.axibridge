@@ -111,6 +111,20 @@ class Session:
             self._shaped_cache.pop(layer_id, None)
             return layer
 
+    def preview_layer_effects(self, layer_id: str, effects: list[dict[str, Any]]) -> list[Path]:
+        """Shape a layer with a CANDIDATE effect stack — strictly read-only:
+        no checkpoint, no cache writes, nothing stored. Feeds the live
+        preview overlay; the commit still happens through update_layer."""
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            src = self.source_geometry.get(layer_id)
+            candidate = layer.model_copy(deep=True)
+        if src is None:
+            raise RuntimeError("layer has no source geometry to preview (tween layers preview live already)")
+        candidate.effects = [EffectStep(**e) for e in effects]
+        # outside the lock: shape_layer is pure and src is never mutated in place
+        return compose.shape_layer(candidate, src)
+
     def add_svg_layers(
         self, svg_text: str, filename: str, quantization_mm: float
     ) -> list[CanvasLayer]:

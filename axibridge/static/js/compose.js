@@ -11,6 +11,91 @@ const $ = (id) => document.getElementById(id);
 let genParams = {};
 const expandedSteps = new Set(); // "layerId:index" — effect steps open in the UI
 let selAnchor = null;            // last plain/cmd-clicked layer id, for shift-range
+let busyBtn = null;              // Generate/Regenerate button awaiting the server
+
+// SSE "gen" events land here (main.js dispatches) while a generate request
+// is in flight; the request itself completing is what ends the busy state.
+export function setGenProgress(frac, msg) {
+  const bar = $("gen-progress-bar");
+  if (bar) bar.style.width = `${Math.round(frac * 100)}%`;
+  const m = $("gen-progress-msg");
+  if (m) { m.hidden = !msg; m.textContent = msg || ""; }
+  if (busyBtn) busyBtn.textContent = `${Math.round(frac * 100)}%${msg ? " · " + msg : ""}`;
+}
+
+function genBusy(on, btn = $("btn-generate")) {
+  busyBtn = on ? btn : null;
+  if (btn) {
+    btn.disabled = on;
+    if (!on) btn.textContent = btn.dataset.label || btn.textContent;
+    else { btn.dataset.label = btn.textContent; btn.textContent = "…"; }
+  }
+  const p = $("gen-progress");
+  if (p) p.hidden = !on;
+  if (on) setGenProgress(0, "");
+  else { const m = $("gen-progress-msg"); if (m) m.hidden = true; }
+}
+
+// ---- live generator preview --------------------------------------------------
+//
+// Debounced + strictly serialized: at most one /generators/preview request in
+// flight, the latest params always win, stale responses are dropped by
+// sequence number — sliders can move as fast as they like without piling
+// work on the server or racing the overlay. The endpoint never touches the
+// project, so previewing can't pollute undo history or corrupt state.
+
+let livePreview = localStorage.getItem("axb-live-preview") === "1";
+
+const preview = {
+  timer: null, inflight: false, next: null, seq: 0,
+  key: null,  // "new" (add panel) or a layer id — stale ghosts clear on switch
+  schedule(req) {                       // req = {key, url, body, transform|null}
+    if (!livePreview) return;
+    this.key = req.key || null;
+    this.next = req;
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this._run(), 250);
+  },
+  async _run() {
+    if (this.inflight || !this.next) return;
+    const req = this.next;
+    this.next = null;
+    this.inflight = true;
+    const seq = ++this.seq;
+    const p = $("gen-progress");
+    if (p && !busyBtn) p.hidden = false;  // ride the same bar, unless a real generate owns it
+    try {
+      const r = await api.post(req.url, req.body);
+      if (seq === this.seq) {
+        actions.canvas().setGenPreview({ lines: r.lines, transform: req.transform || null });
+        note(r.decimated ? `preview decimated (${Math.round(r.points / 1000)}k pts — the real thing is exact)` : "");
+      }
+    } catch (e) {
+      if (seq === this.seq) note(e.message); // quiet inline note, no toast spam mid-drag
+    } finally {
+      this.inflight = false;
+      if (p && !busyBtn) p.hidden = true;
+      if (this.next) this._run();           // params moved meanwhile: run once more
+    }
+  },
+  clear() {
+    clearTimeout(this.timer);
+    this.next = null;
+    this.key = null;
+    this.seq++;                             // orphan any in-flight response
+    actions.canvas().setGenPreview(null);
+    note("");
+  },
+};
+
+function note(msg) {
+  const el = $("gen-live-note");
+  if (el) el.textContent = msg;
+}
+
+const genPreviewReq = (key, module, params, transform = null) => ({
+  key, url: "/api/generators/preview", body: { module, params }, transform,
+});
 
 export function initComposeTab() {
   $("tab-compose").innerHTML = `
@@ -18,9 +103,11 @@ export function initComposeTab() {
       <h2>Add layer</h2>
       <div class="row">
         <select id="gen-select"></select>
-        <button id="btn-generate" class="primary">Generate</button>
+        <button id="btn-generate" class="primary">Convert to layer</button>
       </div>
       <div id="gen-form" class="form"></div>
+      <div id="gen-progress" class="progress" hidden><div id="gen-progress-bar"></div></div>
+      <div id="gen-progress-msg" class="hint" hidden></div>
       <div class="row" style="margin-top:10px">
         <input type="file" id="svg-file" accept=".svg,image/svg+xml" style="flex:1">
       </div>
@@ -33,12 +120,16 @@ export function initComposeTab() {
       <div class="hint">An uploaded SVG contributes its layers as layers.</div>
       <div class="row" style="margin-top:10px">
         <input type="file" id="asset-file" accept="image/png,image/jpeg" style="flex:1">
-        <button id="btn-asset">Add depth map</button>
+        <button id="btn-asset">Add image asset</button>
       </div>
       <div class="hint" id="asset-list"></div>
     </div>
     <div class="panel">
       <h2>Layers <span class="hint">(top of list = drawn on top / occludes below)</span></h2>
+      <label class="hint" style="cursor:pointer" title="ghost the result of generator/effect sliders while you drag, before committing">
+        <input type="checkbox" id="gen-live"> live preview (generators &amp; effects)
+      </label>
+      <div id="gen-live-note" class="hint"></div>
       <div id="layer-list"></div>
     </div>
     <div class="panel" id="layer-detail-panel" hidden>
@@ -47,20 +138,41 @@ export function initComposeTab() {
     </div>`;
 
   const sel = $("gen-select");
+  // image-driven generators (any param with format:"asset") group separately
+  const usesImage = (m) => Object.values(m.schema.properties || {}).some(
+    (p) => (p.format || ((p.anyOf || []).find((a) => a.format) || {}).format) === "asset");
+  const optgroups = { false: group("Procedural"), true: group("📷 Image-driven") };
+  function group(label) {
+    const g = document.createElement("optgroup");
+    g.label = label;
+    sel.appendChild(g);
+    return g;
+  }
   for (const m of S.state.modules.sources) {
     const o = document.createElement("option");
     o.value = m.id; o.textContent = m.label; o.title = m.description;
-    sel.appendChild(o);
+    optgroups[usesImage(m)].appendChild(o);
   }
   sel.onchange = renderGenForm;
+  const live = $("gen-live");
+  live.checked = livePreview;
+  live.onchange = () => {
+    livePreview = live.checked;
+    localStorage.setItem("axb-live-preview", livePreview ? "1" : "0");
+    if (livePreview) preview.schedule(genPreviewReq("new", sel.value, { ...genParams }));
+    else preview.clear();
+  };
   renderGenForm();
 
   $("btn-generate").onclick = async () => {
+    genBusy(true);
     try {
       await api.post("/api/layers/generate", { module: sel.value, params: genParams });
+      preview.clear(); // the real layer replaces the dashed ghost
       await actions.refreshProject();
       await actions.refreshResolved();
     } catch (e) { actions.oops(e); }
+    finally { genBusy(false); }
   };
 
   $("btn-upload").onclick = async () => {
@@ -95,15 +207,21 @@ function renderAssetList() {
   if (!el) return;
   const names = (S.state.assets || []).map((a) => a.name ?? a);
   el.textContent = names.length
-    ? `image assets: ${names.join(", ")} — used by "Depth map displace" and "Image hatch"`
-    : "Image assets feed the depth-displace effect and the image-hatch generator.";
+    ? `image assets: ${names.join(", ")} — feed the 📷 generators and the depth-displace effect`
+    : "Image assets feed the 📷 image-driven generators and the depth-displace effect.";
 }
 
 function renderGenForm() {
   const m = S.state.modules.sources.find((x) => x.id === $("gen-select").value);
   if (!m) return;
   genParams = { ...m.defaults };
-  renderForm($("gen-form"), m.schema, genParams, () => {});
+  // portrait view draws the bed rotated 90° CW, so a y-down image reads
+  // sideways at rotate=0 — pre-rotate 270 ("CW on paper") to read upright
+  if ("rotate" in genParams && S.state?.project?.view === "portrait") genParams.rotate = 270;
+  preview.clear();
+  const sched = () => preview.schedule(genPreviewReq("new", m.id, { ...genParams }));
+  renderForm($("gen-form"), m.schema, genParams, sched, { onLive: sched });
+  sched();
 }
 
 // ---- layer list ------------------------------------------------------------
@@ -243,6 +361,10 @@ export function renderLayerDetail() {
   const panel = $("layer-detail-panel");
   const wrap = $("layer-detail");
   if (!panel || !wrap) return;
+  // a regen preview ghost belongs to one layer: drop it when focus moves on
+  if (preview.key && preview.key !== "new" && !S.selection.includes(preview.key)) {
+    preview.clear();
+  }
   if (S.selection.length === 2) { // pair selected: offer interpolation
     const [a, b] = S.selection.map((id) => S.state.project.layers.find((l) => l.id === id));
     if (a && b) {
@@ -353,7 +475,13 @@ export function renderLayerDetail() {
     const mod = S.state.modules.effects.find((m) => m.id === fxSel.value);
     if (!mod) return;
     expandedSteps.add(`${layer.id}:${layer.effects.length}`); // open the new step
-    const effects = [...layer.effects, { effect: mod.id, enabled: true, params: { ...mod.defaults } }];
+    const params = { ...mod.defaults };
+    // portrait view draws the bed rotated 90° CW: image-driven effects (depth
+    // maps) default to rotate 270 so the map reads upright, like generators
+    if ("rotate" in params && "image" in params && S.state?.project?.view === "portrait") {
+      params.rotate = 270;
+    }
+    const effects = [...layer.effects, { effect: mod.id, enabled: true, params }];
     actions.patchLayer(layer.id, { effects });
   };
   const steps = fx.querySelector("#fx-steps");
@@ -388,7 +516,18 @@ export function renderLayerDetail() {
       const form = document.createElement("div");
       form.className = "form";
       const values = { ...mod.defaults, ...step.params };
-      renderForm(form, mod.schema, values, () => commitEffects(layer, i, { params: values }));
+      // drag = ghost the candidate stack (read-only server-side); release =
+      // clear the ghost and commit for real (one resolve, one undo step)
+      const sched = () => preview.schedule({
+        key: layer.id,
+        url: `/api/layers/${layer.id}/effects/preview`,
+        body: { effects: layer.effects.map((s, j) => (j === i ? { ...s, params: { ...values } } : s)) },
+        transform: null, // effects output paper space already
+      });
+      renderForm(form, mod.schema, values, () => {
+        preview.clear();
+        commitEffects(layer, i, { params: values });
+      }, { onLive: sched });
       div.appendChild(form);
     }
     steps.appendChild(div);
@@ -443,13 +582,21 @@ export function renderLayerDetail() {
         <button id="btn-regen" class="primary">Regenerate</button>`;
       wrap.appendChild(gen);
       const values = { ...mod.defaults, ...(layer.source.params || {}) };
-      renderForm(gen.querySelector("#regen-form"), mod.schema, values, () => {});
-      gen.querySelector("#btn-regen").onclick = async () => {
+      // live preview ghosts the would-be geometry in the layer's frame;
+      // Regenerate commits it (one undo checkpoint, not one per slider move)
+      const sched = () => preview.schedule(
+        genPreviewReq(layer.id, layer.source.generator, { ...values }, objToMat(layer.transform)));
+      renderForm(gen.querySelector("#regen-form"), mod.schema, values, sched, { onLive: sched });
+      const regenBtn = gen.querySelector("#btn-regen");
+      regenBtn.onclick = async () => {
+        genBusy(true, regenBtn);
         try {
           await api.post(`/api/layers/${layer.id}/regenerate`, { params: values });
+          preview.clear();
           await actions.refreshProject();
           await actions.refreshResolved();
         } catch (e) { actions.oops(e); }
+        finally { genBusy(false, regenBtn); }
       };
     }
   }

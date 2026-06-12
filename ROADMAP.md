@@ -35,15 +35,59 @@ Cheapest-first:
   - *Dash / stitch*: cut paths into dashes (gap, phase) for texture.
   - *Lens / attractor warp*: radial push/pull with falloff about a point —
     the hand-placed complement to the depth map.
+  - *Crop*: rectangular crop with left/right/top/bottom insets (mm) — clip
+    paths at the box edges, drop what falls outside. Like occlusion's
+    clipping but user-placed; bound insets so the box can't invert.
 - **Image contours generator**: reuse `image_threshold`'s marching squares
   at N thresholds → nested contour rings (topographic shading). Most of the
   code already exists; it is the natural sibling of threshold + hatch.
+- **Generator quality-of-life** (deferred by choice June 2026, when the ten
+  plotterfun ports landed; the progress bar + grouped picker shipped then,
+  and live param preview followed — `/api/generators/preview` + the dashed
+  overlay; toggle persists in localStorage, requests are debounced and
+  strictly serialized, responses decimated past 60k points):
+  - *Presets & favourites*: named param sets per generator in a global JSON
+    store (pattern: `stores.py` pen library), plus starred generators
+    pinned at the top of the picker.
+  - *CMYK / greyscale separation* (re-affirmed June 2026 — high conviction):
+    image-driven generators (anything with a
+    `format:"asset"` param — the picker already detects this) get a
+    "separate channels" mode emitting one layer per C/M/Y/K channel, each
+    assignable to a pen. Needs `asset_store` channel decode + a multi-layer
+    return path from generate (the PathDocument already supports it).
 - **Hershey/single-stroke text generator**: classic plotter need; fonts are
   public domain (Hershey set), output is plain polylines.
 - **Plot resume**: the job already reports `paths_done`; persist the last
   finished index and offer "resume from path N" after a USB/power failure.
   Saves real plots, cheap to do at path granularity (native backend plots
   path-at-a-time already).
+- **Interpolation-layer ergonomics** (user wishes, June 2026):
+  - New tween layers should insert **between** the two source layers in
+    z-order — specifically just below the upper one — not on top of the
+    stack; a morph reads as belonging to its parents.
+  - Dividing sweep copies into separate layers: `÷ Split into layers`
+    exists (bakes each sweep step, tween stays hidden) — revisit the flow
+    so it feels first-class (placement of the split layers, per-copy pens
+    without hunting, maybe split-on-create option).
+- **Survey off-kilter generation/effect ideas**: a research pass over the
+  plotter-art space (and beyond plotterfun) for unusual-but-effective
+  generators and effects worth porting or inventing — keep a shortlist
+  with a sample image each before committing to any.
+
+## Pending brainstorm — animation
+
+Wanted (June 2026), undesigned; capture the axes before designing:
+
+- **Within one print**: sweep/morph sequences as motion trails — the tween
+  sweep already stamps K copies; what's missing is treating them as frames
+  (easing curves, per-frame fades via pen pressure/multipass density?).
+- **Across prints**: frame sequences for flipbooks / stop-motion — N plots
+  varying a parameter (or t) per sheet. Needs batch plotting UX (pause
+  between sheets, registration marks) and a "render frames" export.
+- **Inputs**: importing video frames as image assets in bulk (one layer or
+  one project-frame per video frame); interpolating any numeric param over
+  frames is the tween machinery generalised to a timeline.
+- Colour separation (above) intersects: per-frame AND per-pen matrices.
 
 ## Mid term — interpolation (the layer-variant idea) — **SHIPPED June 2026**
 
@@ -74,6 +118,15 @@ then **interpolate between the two**. This does *not* need a node graph:
 - This is the best candidate for "before v3": it delivers the node-graph
   payoff (variation as a first-class object) with zero model rewrite.
 
+## Far / undecided — AI-assisted inputs
+
+Very down the line, deliberately after the manual pipeline is comfortable:
+monocular **depth-map estimation** (MiDaS-class) so any photo yields a
+depth asset for `depth_displace` without hand-painting; possibly
+segmentation for auto-masking subjects. Constraint: keep it an *asset
+producer* (a tool that writes into `assets/`), not a resolve-path stage —
+the resolve pipeline stays deterministic and offline.
+
 ## Far / undecided — the node question
 
 Intuition: modules are already pure functions; a node editor is "just" UI
@@ -99,9 +152,10 @@ deliberately:
 
 ## Documentation / robustness debts
 
-- `main.js mapGhosts()` special-cases module ids for show-map ghosts —
-  generalise (e.g. modules declare a `placement` schema tag) when a third
-  image-driven module appears.
+- ~~`main.js mapGhosts()` special-cases module ids for show-map ghosts~~ —
+  done June 2026: any generator layer with `image` + `show_map` params
+  ghosts in the layer frame; only the depth-displace *effect* (paper-space
+  placement) remains special-cased, correctly.
 - The IPR has no hole representation; holes are separate filled loops.
   `hatch_fill` reassembles even-odd, occlusion does not. If holes start to
   matter for occlusion, that is an IPR change — design, don't patch.

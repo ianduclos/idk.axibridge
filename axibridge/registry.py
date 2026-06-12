@@ -38,7 +38,9 @@ from __future__ import annotations
 import importlib
 import pkgutil
 from abc import ABC, abstractmethod
-from typing import Any
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Any, Callable, Iterator
 
 from pydantic import BaseModel
 
@@ -47,6 +49,35 @@ from .model import Path, PathDocument
 
 class ModuleParams(BaseModel):
     """Base class for module parameter models (plain pydantic is fine too)."""
+
+
+# -- generation progress -------------------------------------------------------
+#
+# Slow generators call ``report_progress`` from inside ``generate``; it is a
+# no-op unless the caller (the API layer, which owns the event bus) installed
+# a sink with ``progress_scope``. A contextvar so concurrent generations from
+# two clients can't cross-talk; it survives FastAPI's threadpool because
+# anyio copies the context into the worker thread.
+
+_progress: ContextVar[Callable[[float, str], None] | None] = ContextVar(
+    "generation_progress", default=None
+)
+
+
+def report_progress(frac: float, msg: str = "") -> None:
+    """Cheap to call in inner loops: a sink decides throttling, not the module."""
+    cb = _progress.get()
+    if cb is not None:
+        cb(frac, msg)
+
+
+@contextmanager
+def progress_scope(sink: Callable[[float, str], None]) -> Iterator[None]:
+    token = _progress.set(sink)
+    try:
+        yield
+    finally:
+        _progress.reset(token)
 
 
 class SourceModule(ABC):

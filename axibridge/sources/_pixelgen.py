@@ -1,0 +1,158 @@
+"""Shared scaffolding for the plotterfun-family image generators.
+
+These sources are ports of mitxela's plotterfun generators
+(https://github.com/mitxela/plotterfun, MIT licence): each samples an
+uploaded image asset for per-pixel "darkness" and traces a line pattern
+over it. They work in a fixed pixel space — the asset is resampled so the
+working width is ``WORK_W`` px (plotterfun's canvas width), so every
+px-calibrated parameter (spacing, amplitude, …) means the same thing for
+any source resolution — and the result is scaled to ``width`` mm on output
+(height follows the image aspect ratio, exactly like image_threshold).
+
+``ImageSampler`` replicates plotterfun's ``pixelProcessor`` tone pipeline:
+brightness, contrast (the 259-curve), optional invert, min/max clamps,
+flattened to a *darkness* value in 0..255 (255 = draw hardest); sampling
+outside the image returns 0. The tone fields carry
+``json_schema_extra={"group": "Tone"}`` — forms.js renders grouped fields
+in a collapsed <details>, keeping ten near-identical forms uncrammed.
+"""
+
+from __future__ import annotations
+
+import math
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+from ..assets import asset_store
+from ..model import Layer, Path, PathDocument
+
+#: plotterfun's canvas width: its slider ranges are calibrated against this.
+WORK_W = 800
+#: very tall images cap here instead (working width shrinks to keep aspect).
+MAX_H = 1600
+
+_TONE = {"group": "Tone"}
+
+
+class ImageBaseParams(BaseModel):
+    """Image selection + placement, shared by every pixel-space generator."""
+
+    image: str = Field(default="", title="Image (asset)",
+                       description="Uploaded image asset that drives the pattern",
+                       json_schema_extra={"format": "asset"})
+    rotate: Literal[0, 90, 180, 270] = Field(
+        default=0, title="Rotate image (°)",
+        description="Clockwise on paper — match the image to the view orientation")
+    width: float = Field(default=150.0, ge=10, le=400, title="Width (mm)",
+                         description="Height follows the image aspect ratio")
+    show_map: bool = Field(default=False, title="Show image on canvas",
+                           description="Preview-only ghost of the source image")
+
+
+class PixelGenParams(ImageBaseParams):
+    """Adds plotterfun's shared tone controls (rendered as a collapsed group)."""
+
+    invert: bool = Field(default=False, title="Invert",
+                         description="Draw the light areas instead",
+                         json_schema_extra=_TONE)
+    brightness: float = Field(default=0, ge=-100, le=100, title="Brightness",
+                              json_schema_extra=_TONE)
+    contrast: float = Field(default=0, ge=-100, le=100, title="Contrast",
+                            json_schema_extra=_TONE)
+    min_brightness: float = Field(default=0, ge=0, le=255, title="Min brightness",
+                                  json_schema_extra=_TONE)
+    max_brightness: float = Field(default=255, ge=0, le=255, title="Max brightness",
+                                  json_schema_extra=_TONE)
+
+
+def working_dims(p: ImageBaseParams) -> tuple[int, int]:
+    """Pixel dimensions of the working canvas for this image: WORK_W wide,
+    aspect preserved, height capped at MAX_H. Raises like the generators do
+    so error messages stay consistent."""
+    if not p.image:
+        raise ValueError("upload an image asset and pick it in 'Image'")
+    probe = asset_store.grayscale(p.image, rotate=p.rotate)
+    if probe is None:
+        raise ValueError(f"no asset named {p.image!r}")
+    _, iw, ih = probe
+    w = WORK_W
+    h = max(round(w * ih / iw), 2)
+    if h > MAX_H:
+        h = MAX_H
+        w = max(round(h * iw / ih), 2)
+    return w, h
+
+
+def luma_grid(p: ImageBaseParams, blur_px: float = 0.0) -> tuple[list[list[float]], int, int]:
+    """Working-resolution luma rows in 0..255 (255 = white), no tone applied."""
+    w, h = working_dims(p)
+    rows, w, h = asset_store.grayscale(p.image, blur_px, p.rotate, size=(w, h))
+    return [[v * 255.0 for v in row] for row in rows], w, h
+
+
+def _tone_lut(p: PixelGenParams) -> list[float]:
+    """Byte luma -> darkness 0..255; the exact pixelProcessor arithmetic."""
+    cf = (259 * (p.contrast + 255)) / (255 * (259 - p.contrast))
+    out = []
+    for v in range(256):
+        b = (cf * (v - 128) + 128 + p.brightness) if p.contrast != 0 else v + p.brightness
+        if p.invert:
+            b = min(255 - p.min_brightness, 255 - b)
+        else:
+            b = max(p.min_brightness, b)
+        out.append(max(p.max_brightness - b, 0.0))
+    return out
+
+
+class ImageSampler:
+    """Callable (x, y) -> darkness 0..255 over the working canvas; 0 outside."""
+
+    def __init__(self, p: PixelGenParams, blur_px: float = 0.0):
+        w, h = working_dims(p)
+        rows, w, h = asset_store.grayscale(p.image, blur_px, p.rotate, size=(w, h))
+        self.w, self.h = w, h
+        lut = _tone_lut(p)
+        self.grid = [[lut[int(v * 255 + 0.5)] for v in row] for row in rows]
+
+    def __call__(self, x: float, y: float) -> float:
+        xi, yi = math.floor(x), math.floor(y)
+        if 0 <= xi < self.w and 0 <= yi < self.h:
+            return self.grid[yi][xi]
+        return 0.0
+
+
+def pixel_doc(
+    p: ImageBaseParams,
+    work_w: int,
+    work_h: int,
+    lines: list[list[tuple[float, float]]],
+    name: str,
+    source: str,
+    filled: bool = False,
+) -> PathDocument:
+    """Scale working-pixel polylines to mm and wrap them as a document."""
+    s = p.width / work_w
+    paths = [
+        Path(points=[(x * s, y * s) for x, y in line], filled=filled)
+        for line in lines
+        if len(line) >= 2
+    ]
+    return PathDocument(
+        layers=[Layer(id=1, name=name, color="#26241f", paths=paths)],
+        width=p.width,
+        height=work_h * s,
+        source=source,
+    )
+
+
+def circle(cx: float, cy: float, r: float, min_seg: int = 10) -> list[tuple[float, float]]:
+    """Closed polyline circle (first == last), segment count following radius."""
+    r = max(r, 0.001)
+    n = max(min_seg, min(int(r * 3), 64))
+    pts = [
+        (cx + r * math.cos(2 * math.pi * i / n), cy + r * math.sin(2 * math.pi * i / n))
+        for i in range(n)
+    ]
+    pts.append(pts[0])
+    return pts
