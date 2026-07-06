@@ -35,9 +35,11 @@ Cheapest-first:
   - *Dash / stitch*: cut paths into dashes (gap, phase) for texture.
   - *Lens / attractor warp*: radial push/pull with falloff about a point —
     the hand-placed complement to the depth map.
-  - *Crop*: rectangular crop with left/right/top/bottom insets (mm) — clip
-    paths at the box edges, drop what falls outside. Like occlusion's
-    clipping but user-placed; bound insets so the box can't invert.
+  - *Crop*: ~~rectangular crop~~ — **shipped July 2026 as a plot-pass
+    option** (PlotOptions.crop: guide/bed/custom + inward margin, vpype
+    `crop` before merge/sort; exports and estimates included; canvas shows
+    a dashed frame). A per-layer crop *effect* (this item's original form)
+    is still open if paper-space per-layer clipping is ever wanted.
 - **Image contours generator**: reuse `image_threshold`'s marching squares
   at N thresholds → nested contour rings (topographic shading). Most of the
   code already exists; it is the natural sibling of threshold + hatch.

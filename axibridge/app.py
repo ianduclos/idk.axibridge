@@ -22,6 +22,10 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
+    # ring the logs for the in-app panel — from the LIFESPAN, not create_app:
+    # uvicorn applies its dictConfig between the two, which would strip the
+    # handler from its propagate=False loggers (uvicorn.error / .access).
+    logbuf.install()
     bus.attach_loop(asyncio.get_running_loop())
     load_builtin_modules()
     # If an AxiDraw is plugged in, grab it right away (background thread —
@@ -48,7 +52,6 @@ class _RevalidatedStatic(StaticFiles):
 
 
 def create_app() -> FastAPI:
-    logbuf.install()  # ring the logs: the app-shell window has no terminal
     app = FastAPI(title="axibridge", lifespan=_lifespan)
     app.include_router(router)
     # html=True serves index.html at "/"; mounted last so /api wins.
