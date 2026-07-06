@@ -52,6 +52,7 @@ export class CanvasEditor {
     this.bed = { width: 300, height: 218 };
     this.layers = [];          // resolved layer payloads from /api/compose/resolved
     this.guide = null;         // {x,y,width,height}
+    this.crop = null;          // {x,y,width,height} | null — non-interactive, plot-time clip
     this.view = "portrait";
     this.mode = "schematic";   // | "ink"
     this.showTravel = false;
@@ -69,10 +70,11 @@ export class CanvasEditor {
     svg.addEventListener("dblclick", (e) => this._onDbl(e));
   }
 
-  setData({ layers, bed, guide, view, images }) {
+  setData({ layers, bed, guide, crop, view, images }) {
     if (layers) this.layers = layers;
     if (bed) this.bed = bed;
     if (guide) this.guide = guide;
+    if (crop !== undefined) this.crop = crop; // may be explicitly null (crop off) — must still overwrite
     if (view) this.view = view;
     if (images) this.images = images; // ghosted source/depth maps (preview only)
     this.selection = new Set([...this.selection].filter((id) => this.layers.some((l) => l.id === id)));
@@ -117,6 +119,16 @@ export class CanvasEditor {
         class: "guide-rect", "data-guide": "1",
       });
       this.world.appendChild(this.guideEl);
+    }
+
+    // dashed, non-interactive crop frame — plot/estimate/export clip; the
+    // Compose preview above is NEVER cropped, so this is purely informational.
+    if (this.crop) {
+      this.world.appendChild(el("rect", {
+        x: this.crop.x, y: this.crop.y,
+        width: this.crop.width, height: this.crop.height,
+        class: "crop-rect",
+      }));
     }
 
     // ghosted image maps (depth maps / threshold sources) under the geometry.

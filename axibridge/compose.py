@@ -155,6 +155,17 @@ class PlotOptions(BaseModel):
     simplify: bool = Field(default=False, title="Simplify (drop redundant points)")
     simplify_tolerance_mm: float = Field(default=0.05, ge=0.001, le=2.0, title="Simplify tolerance (mm)")
     reloop: bool = Field(default=False, title="Reloop closed paths (randomise seams)")
+    crop: Literal["off", "guide", "bed", "custom"] = Field(
+        default="off", title="Crop to",
+        description="Clip plotted output (and exports/estimates) to: the paper "
+                    "guide, the whole bed, or a custom rectangle")
+    crop_margin_mm: float = Field(
+        default=0.0, ge=0.0, le=100.0, title="Crop margin (mm)",
+        description="Inward inset from the crop rectangle's edges")
+    crop_x: float = Field(default=1.5, ge=0, le=300, title="Custom crop x (mm)")
+    crop_y: float = Field(default=4.0, ge=0, le=218, title="Custom crop y (mm)")
+    crop_w: float = Field(default=297.0, ge=1, le=300, title="Custom crop width (mm)")
+    crop_h: float = Field(default=210.0, ge=1, le=218, title="Custom crop height (mm)")
 
 
 class Project(BaseModel):

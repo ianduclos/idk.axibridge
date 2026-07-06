@@ -124,6 +124,7 @@ export function initSettingsTab() {
       await api.put("/api/project", { guide });
       S.state.project.guide = guide;
       actions.canvas().setData({ guide });
+      actions.refreshCropFrame(); // crop="guide" tracks the guide rect
     } catch (e) { actions.oops(e); }
   }, 250);
   for (const id of ["guide-w", "guide-h", "guide-x", "guide-y"]) $(id).onchange = pushGuide;

@@ -24,6 +24,27 @@ export const S = {
   masterT: null,    // master-timeline scrub (0..1); null = no scrub. UI-only.
 };
 
+// The active crop rectangle, mirroring Session._crop_rect client-side (mode ->
+// rect, inset by crop_margin_mm on all four sides), or null when crop is off
+// or the margin collapses it — same rule the server uses, so the dashed
+// canvas frame always matches what plot/estimate/export will actually clip.
+function cropRectFor(project) {
+  const opts = project.plot_options;
+  if (!opts || opts.crop === "off") return null;
+  let x, y, w, h;
+  if (opts.crop === "guide") {
+    ({ x, y, width: w, height: h } = project.guide);
+  } else if (opts.crop === "bed") {
+    x = 0; y = 0; w = S.state.bed.width; h = S.state.bed.height;
+  } else {
+    x = opts.crop_x; y = opts.crop_y; w = opts.crop_w; h = opts.crop_h;
+  }
+  const m = opts.crop_margin_mm || 0;
+  x += m; y += m; w -= 2 * m; h -= 2 * m;
+  if (w <= 0 || h <= 0) return null;
+  return { x, y, width: w, height: h };
+}
+
 function debounce(fn, ms) {
   let t;
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
@@ -81,6 +102,7 @@ const canvas = new CanvasEditor($("canvas"), {
       await api.put("/api/project", { guide });
       S.state.project.guide = guide;
       renderSettingsTab();
+      actions.refreshCropFrame(); // crop="guide" tracks the guide rect
     } catch (e) { oops(e); }
   },
   onDoubleClick(id) {
@@ -113,8 +135,16 @@ export const actions = {
     canvas.setData({
       bed: S.state.bed,
       guide: S.state.project.guide,
+      crop: cropRectFor(S.state.project),
       view: S.state.project.view,
     });
+  },
+
+  // re-derive the dashed crop frame from current state and push it to the
+  // canvas — call after anything that can change crop mode/margin/fields OR
+  // the guide (crop="guide" tracks the guide rect).
+  refreshCropFrame() {
+    canvas.setData({ crop: cropRectFor(S.state.project) });
   },
 
   async refreshProject() {

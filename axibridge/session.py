@@ -657,9 +657,34 @@ class Session:
         )
         return self._optimize(doc)
 
+    def _crop_rect(self) -> tuple[float, float, float, float] | None:
+        """The active crop rectangle (mode -> rect, inset by ``crop_margin_mm``
+        on all four sides), or None when crop is off or the margin collapses
+        the rect to non-positive width/height. Never raises."""
+        opts = self.project.plot_options
+        if opts.crop == "off":
+            return None
+        if opts.crop == "guide":
+            g = self.project.guide
+            x, y, w, h = g.x, g.y, g.width, g.height
+        elif opts.crop == "bed":
+            x, y, w, h = 0.0, 0.0, compose.BED_WIDTH, compose.BED_HEIGHT
+        else:  # "custom"
+            x, y, w, h = opts.crop_x, opts.crop_y, opts.crop_w, opts.crop_h
+        m = opts.crop_margin_mm
+        x, y = x + m, y + m
+        w, h = w - 2 * m, h - 2 * m
+        if w <= 0 or h <= 0:
+            return None
+        return (x, y, w, h)
+
     def _optimize(self, doc: PathDocument) -> PathDocument:
         opts = self.project.plot_options
+        crop_rect = self._crop_rect()
         cmds: list[str] = []
+        if crop_rect is not None:
+            x, y, w, h = crop_rect
+            cmds.append(f"crop {x}mm {y}mm {w}mm {h}mm")
         if opts.merge:
             cmds.append(f"linemerge --tolerance {opts.merge_tolerance_mm}mm")
         if opts.reloop:
@@ -673,6 +698,23 @@ class Session:
         import vpype_cli
 
         vdoc = vpype_cli.execute(" ".join(cmds), document=doc_to_vpype(doc))
+        out = doc_from_vpype(vdoc, source=doc.source)
+        out.width, out.height = doc.width, doc.height
+        return out
+
+    def cropped(self, doc: PathDocument) -> PathDocument:
+        """Apply ONLY the active crop to ``doc`` via the same vpype round-trip
+        ``_optimize`` uses — for exports (SVG download, animation frames) that
+        must respect the crop without applying the other plot-pass options.
+        No-op (returns ``doc`` unchanged) when crop is off or there's nothing
+        to crop."""
+        crop_rect = self._crop_rect()
+        if crop_rect is None or not doc.layers:
+            return doc
+        import vpype_cli
+
+        x, y, w, h = crop_rect
+        vdoc = vpype_cli.execute(f"crop {x}mm {y}mm {w}mm {h}mm", document=doc_to_vpype(doc))
         out = doc_from_vpype(vdoc, source=doc.source)
         out.width, out.height = doc.width, doc.height
         return out

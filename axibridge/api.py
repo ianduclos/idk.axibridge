@@ -747,7 +747,7 @@ def get_plan(target: str = "all") -> dict[str, Any]:
 @router.get("/doc/{target}/svg")
 def download_svg(target: str) -> Response:
     try:
-        doc = session.resolved_document(target)
+        doc = session.cropped(session.resolved_document(target))
     except KeyError as e:
         raise _fail(e, 404)
     name = project_io.safe_name(session.project.name)
@@ -776,7 +776,7 @@ def export_animation_frames(
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for i in range(frames):
             t_i = t_from + (t_to - t_from) * i / (frames - 1) if frames > 1 else t_from
-            doc = session.resolved_document(master_t=t_i)
+            doc = session.cropped(session.resolved_document(master_t=t_i))
             if any(layer.paths for layer in doc.layers):
                 any_geometry = True
             zf.writestr(f"frame_{i:04d}.svg", svg_io.doc_to_svg(doc))

@@ -470,6 +470,7 @@ function renderPlotOptions() {
     try {
       await api.put("/api/project", { plot_options: values });
       S.state.project.plot_options = values;
+      actions.refreshCropFrame(); // crop mode/margin/rect fields may have changed
       await actions.refreshPlan();
     } catch (e) { actions.oops(e); }
   }, 300));

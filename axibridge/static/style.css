@@ -106,6 +106,7 @@ main {
   cursor: grab;
 }
 .guide-rect:active { cursor: grabbing; }
+.crop-rect { fill: none; stroke: var(--rust); stroke-width: .5; stroke-dasharray: 2 3; pointer-events: none; }
 .layer-hit { fill: none; stroke: transparent; stroke-width: 3; pointer-events: stroke; cursor: grab; }
 .layer.selected .layer-hit { cursor: grabbing; }
 .sel-box { fill: none; stroke: var(--accent); stroke-width: .5; stroke-dasharray: 2 2; }
