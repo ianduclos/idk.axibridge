@@ -270,3 +270,26 @@ def test_animate_non_sequence_layer_adds_no_frame_key():
     tw = session.animate_layer(layer.id)
     b = session.project.layer(tw.source.params["b"])
     assert "frame" not in (b.source.params or {})
+
+
+def test_asset_endpoint_serves_the_requested_frame(client):
+    """The canvas ghost overlay must track the frame the generator samples —
+    a prefix without ?frame= serves frame 0 (legacy), ?frame= picks like
+    resolve_frame, and plain assets ignore the query."""
+    client.post("/api/assets/sequence", files=_imgfiles([0, 120, 240]))
+    first = asset_store.get("shot#0000.jpg")
+    last = asset_store.get("shot#0002.jpg")
+    assert first != last
+
+    assert client.get("/api/assets/shot%23").content == first          # legacy default
+    assert client.get("/api/assets/shot%23?frame=0").content == first
+    assert client.get("/api/assets/shot%23?frame=1").content == last
+    assert client.get("/api/assets/shot%23?frame=0.5").content == asset_store.get("shot#0001.jpg")
+    assert client.get("/api/assets/shot%23?frame=2").status_code == 422  # bounded
+
+    plain = client.post(
+        "/api/assets", files={"file": ("still.png", _png(90), "image/png")})
+    assert plain.status_code == 200
+    name = plain.json()["name"]
+    assert (client.get(f"/api/assets/{name}?frame=1").content
+            == client.get(f"/api/assets/{name}").content)

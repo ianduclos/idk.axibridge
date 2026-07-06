@@ -510,8 +510,15 @@ def list_assets() -> dict[str, Any]:
 
 
 @router.get("/assets/{name}")
-def get_asset(name: str) -> Response:
-    """Raw image bytes — the canvas's show-map overlay reads this."""
+def get_asset(
+    name: str, frame: float | None = Query(default=None, ge=0.0, le=1.0)
+) -> Response:
+    """Raw image bytes — the canvas's show-map overlay reads this. For a
+    sequence prefix, ``frame`` (0..1) picks the frame the overlay should show
+    (the same mapping the generators use); without it a prefix serves its
+    first frame."""
+    if frame is not None:
+        name = asset_store.resolve_frame(name, frame)
     data = asset_store.get(name)
     if data is None:
         raise HTTPException(status_code=404, detail=f"no asset named {name!r}")

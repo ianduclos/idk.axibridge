@@ -184,8 +184,11 @@ function mapGhosts() {
     const w = p.width ?? 150;
     const rot = p.rotate || 0;
     const aspect = rot % 180 ? d.width / d.height : d.height / d.width;
-    // encode: sequence prefixes contain '#', which a raw URL would truncate
-    return { href: `/api/assets/${encodeURIComponent(p.image)}`, x, y, width: w, height: w * aspect,
+    // encode: sequence prefixes contain '#', which a raw URL would truncate.
+    // ?frame= keeps the overlay on the SAME frame the generator samples —
+    // without it a sequence ghost is stuck on its first frame.
+    const frame = p.frame != null ? `?frame=${encodeURIComponent(p.frame)}` : "";
+    return { href: `/api/assets/${encodeURIComponent(p.image)}${frame}`, x, y, width: w, height: w * aspect,
              rot, transform };
   };
   const out = [];
