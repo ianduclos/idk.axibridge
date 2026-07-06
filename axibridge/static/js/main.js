@@ -8,7 +8,7 @@
 
 import { api, subscribe } from "./api.js";
 import { CanvasEditor, mul, objToMat, matToObj } from "./canvas.js";
-import { initComposeTab, renderLayerList, renderLayerDetail, setGenProgress, logDeleted } from "./compose.js";
+import { initComposeTab, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, logDeleted } from "./compose.js";
 import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
 import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
@@ -119,6 +119,7 @@ export const actions = {
   log,
   debounce,
   canvas: () => canvas,
+  setSeqProgress, // forms.js's inline sequence-asset upload rides the same gen-progress bar
 
   async refreshAll() {
     await actions.refreshState();
@@ -399,7 +400,7 @@ function initTabs() {
       const r = el.getBoundingClientRect();
       tip.style.left = `${Math.max(4, Math.min(r.left, window.innerWidth - tip.offsetWidth - 8))}px`;
       tip.style.top = `${Math.min(r.bottom + 6, window.innerHeight - tip.offsetHeight - 4)}px`;
-    }, 150);
+    }, 500);
   });
   document.addEventListener("pointerout", () => { clearTimeout(timer); tip.hidden = true; });
   document.addEventListener("pointerdown", () => { clearTimeout(timer); tip.hidden = true; });

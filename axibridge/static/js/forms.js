@@ -83,9 +83,12 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
         const fs = [...file.files];
         if (!fs.length) return;
         const isVideo = fs.length === 1 && /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(fs[0].name);
+        const isSequence = fs.length > 1 || isVideo;
+        // sequence import emits gen-progress SSE — same bar the generators use
+        if (isSequence) actions.setSeqProgress(true);
         try {
           let r;
-          if (fs.length > 1 || isVideo) {
+          if (isSequence) {
             const fd = new FormData();
             for (const f of fs) fd.append("files", f);
             r = await api.upload("/api/assets/sequence", fd);
@@ -98,6 +101,7 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
           fill(r.name);
           set(r.name);
         } catch (err) { actions.oops(err); }
+        finally { if (isSequence) actions.setSeqProgress(false); }
         file.value = "";
       };
       ctl.appendChild(up);

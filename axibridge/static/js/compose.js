@@ -36,6 +36,16 @@ function genBusy(on, btn = $("btn-generate")) {
   else { const m = $("gen-progress-msg"); if (m) m.hidden = true; }
 }
 
+// Same bar, for callers with no "Generate"-style button to repurpose (the
+// forms.js inline sequence-asset upload). Same guard as the live-preview
+// code below: a real generate in flight keeps ownership of the bar.
+export function setSeqProgress(on) {
+  const p = $("gen-progress");
+  if (p && !busyBtn) p.hidden = !on;
+  if (on) setGenProgress(0, "");
+  else { const m = $("gen-progress-msg"); if (m) m.hidden = true; }
+}
+
 // ---- live generator preview --------------------------------------------------
 //
 // Debounced + strictly serialized: at most one /generators/preview request in
@@ -257,9 +267,12 @@ export function initComposeTab() {
     const files = [...$("asset-file").files];
     if (!files.length) return actions.oops(new Error("choose a PNG/JPEG (or a video, or several images) first"));
     const isVideo = files.length === 1 && /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(files[0].name);
+    const isSequence = files.length > 1 || isVideo;
+    const btn = $("btn-asset");
+    if (isSequence) genBusy(true, btn); // sequence import emits gen-progress SSE
     try {
       let r;
-      if (files.length > 1 || isVideo) {
+      if (isSequence) {
         const fd = new FormData();
         for (const f of files) fd.append("files", f);
         const frames = $("asset-frames").value, start = $("asset-start").value, every = $("asset-every").value;
@@ -276,6 +289,7 @@ export function initComposeTab() {
       renderAssetList();
       renderLayerDetail(); // asset selects in effect forms pick up the new name
     } catch (e) { actions.oops(e); }
+    finally { if (isSequence) genBusy(false, btn); }
   };
   renderAssetList();
 
@@ -531,19 +545,34 @@ export function renderLayerDetail() {
   const hasFrame = !!(genMod && genMod.schema && genMod.schema.properties
     && "frame" in genMod.schema.properties);
   if (hasFrame) {
+    // a sequence-backed image ("clip#") shows/edits the offset in FRAME units,
+    // which the user actually thinks in; other frame-capable sources (no
+    // discrete frame count to anchor to) keep the plain normalized 0..1 input
+    const imgName = (layer.source.params || {}).image;
+    const seqAsset = (S.state.assets || []).find((a) => (a.name ?? a) === imgName && a.frames > 1);
+    const frames = seqAsset?.frames;
+    const label = frames ? "frame offset (frames)" : "frame offset";
+    const step = frames ? 1 : 0.01;
+    const min = frames ? -(frames - 1) : -1;
+    const max = frames ? frames - 1 : 1;
+    const shown = frames ? Math.round((layer.frame_offset ?? 0) * (frames - 1)) : (layer.frame_offset ?? 0);
+    const title = frames
+      ? `time-shift this layer's clip by N frames of the ${frames}-frame clip — duplicates can trail, and animations lerp it A→B (+6 = six frames later in the clip)`
+      : "time-shift this layer's clip (added to 'frame', clamped 0..1) — duplicates can trail, and animations lerp it A→B";
     const foff = document.createElement("div");
     foff.innerHTML = `
       <h3>Frame displacement</h3>
       <div class="row">
-        <label>frame offset</label>
-        <input type="number" id="ld-frame-offset" step="0.01" min="-1" max="1"
-          value="${layer.frame_offset ?? 0}" style="width:5.5em"
-          title="time-shift this layer's clip (added to 'frame', clamped 0..1) — duplicates can trail, and animations lerp it A→B">
+        <label>${label}</label>
+        <input type="number" id="ld-frame-offset" step="${step}" min="${min}" max="${max}"
+          value="${shown}" style="width:5.5em" title="${title}">
       </div>`;
     wrap.appendChild(foff);
     foff.querySelector("#ld-frame-offset").onchange = async (e) => {
+      let v = Number(e.target.value);
+      if (frames) v = Math.max(-1, Math.min(1, v / (frames - 1)));
       try {
-        await api.patch(`/api/layers/${layer.id}`, { frame_offset: +e.target.value });
+        await api.patch(`/api/layers/${layer.id}`, { frame_offset: v });
         await actions.refreshProject();
         await actions.refreshResolved();
         renderLayerDetail();
@@ -691,32 +720,96 @@ export function renderLayerDetail() {
       effect params and position/rotation/scale (not a shape morph). Edits to A/B update live.
       Non-blendable differences (seeds, toggles, mismatched stacks) jump at t = 0.5.</div>
       <div class="form" id="tw-form"></div>
-      <label class="hint" style="cursor:pointer"
-        title="the master timeline scrubber (and later frame rendering) drives this tween's t">
-        <input type="checkbox" id="tw-follow"> Follow timeline
-      </label>
-      <div class="row" title="this tween holds A before 'from', animates inside the window, holds B after 'to' — overlap windows to overlap clips">
-        <label>window from</label>
-        <input type="number" id="tw-window-from" min="0" max="1" step="0.01" style="width:4.5em">
-        <label>to</label>
-        <input type="number" id="tw-window-to" min="0" max="1" step="0.01" style="width:4.5em">
-      </div>
+      <details id="tw-stamping" class="form-group" ${p.sweep > 1 ? "open" : ""}>
+        <summary>Stamping (sweep)</summary>
+        <div class="hint">stamp N copies of the morph from/to — a motion trail; with "follow
+          timeline", the whole ladder advances as you scrub</div>
+        <div class="row">
+          <label>sweep</label>
+          <input type="number" id="tw-sweep" min="1" max="60" step="1" style="width:4.5em">
+        </div>
+        <div class="row">
+          <label>sweep from</label>
+          <input type="number" id="tw-sweep-from" min="0" max="1" step="0.01" style="width:4.5em">
+          <label>to</label>
+          <input type="number" id="tw-sweep-to" min="0" max="1" step="0.01" style="width:4.5em">
+        </div>
+      </details>
+      <details id="tw-timeline" class="form-group" ${p.follow_master ? "open" : ""}>
+        <summary>Timeline</summary>
+        <div class="hint">scrubbing morphs A→B inside this window; with stamping on, it pushes
+          every stamp forward instead</div>
+        <label class="hint" style="cursor:pointer"
+          title="the master timeline scrubber (and later frame rendering) drives this tween's t">
+          <input type="checkbox" id="tw-follow"> Follow timeline
+        </label>
+        <div class="row" id="tw-window-row" title="this tween holds A before 'active from', animates inside the window, holds B after 'active to' — overlap windows to overlap clips">
+          <label>active from</label>
+          <input type="number" id="tw-window-from" min="0" max="1" step="0.01" style="width:4.5em">
+          <label>to</label>
+          <input type="number" id="tw-window-to" min="0" max="1" step="0.01" style="width:4.5em">
+        </div>
+      </details>
       <div class="row">
         <button id="tw-edit-a" title="select keyframe A (${nameOf(p.a)})">edit A</button>
         <button id="tw-edit-b" title="select keyframe B (${nameOf(p.b)})">edit B</button>
-      </div>
-      <div class="row">
         <button id="tw-static" title="a second interpolation over the same A/B: fixed-t in-between or sweep stamping, independent of the timeline">＋ Static in-between</button>
-      </div>
-      <div class="row"><button id="tw-explode"
-        title="bake each sweep step into its own layer (pen/occlusion editable per step); the tween stays, hidden">
-        ÷ Split into layers</button></div>`;
+        <button id="tw-explode"
+          title="bake each sweep step into its own layer (pen/occlusion editable per step); the tween stays, hidden">÷ Split into layers</button>
+      </div>`;
     wrap.appendChild(tw);
     tw.querySelector("#tw-edit-a").onclick = () => actions.setSelection([p.a]);
     tw.querySelector("#tw-edit-b").onclick = () => actions.setSelection([p.b]);
+
+    // -- the auto-rendered form now carries only `t`; sweep/window are plain
+    // bound inputs below, committed through the same debounced PUT merge
+    const schema = JSON.parse(JSON.stringify(S.state.schemas.tween));
+    delete schema.properties.a;
+    delete schema.properties.b;
+    delete schema.properties.follow_master; // rendered under "Timeline", not a form field
+    delete schema.properties.window_from;   // rendered under "Timeline", not a form field
+    delete schema.properties.window_to;
+    delete schema.properties.sweep;         // rendered under "Stamping (sweep)", not a form field
+    delete schema.properties.sweep_from;
+    delete schema.properties.sweep_to;
+    const values = {
+      t: p.t ?? 0.5, sweep: p.sweep ?? 1,
+      sweep_from: p.sweep_from ?? 0, sweep_to: p.sweep_to ?? 1,
+    };
+    const commit = actions.debounce(async () => {
+      try {
+        layer.source.params = { ...p, ...values }; // optimistic
+        await api.put(`/api/layers/${layer.id}/tween`, values);
+        await actions.refreshResolved();
+      } catch (e) { actions.oops(e); }
+    }, 250);
+    renderForm(tw.querySelector("#tw-form"), schema, values, commit);
+
+    // -- stamping (sweep): plain inputs, bound into the same `values` +
+    // debounced commit the t-slider uses (one PUT code path, not two)
+    const bindNum = (id, key, min, max) => {
+      const el = tw.querySelector(id);
+      el.value = values[key];
+      el.onchange = () => {
+        let v = Number(el.value);
+        v = Math.max(min, Math.min(max, v));
+        el.value = v;
+        values[key] = v;
+        commit();
+      };
+    };
+    bindNum("#tw-sweep", "sweep", 1, 60);
+    bindNum("#tw-sweep-from", "sweep_from", 0, 1);
+    bindNum("#tw-sweep-to", "sweep_to", 0, 1);
+
+    // -- timeline: follow-master checkbox + window (window only matters, and
+    // only shows, once the layer actually follows the scrubber)
     const follow = tw.querySelector("#tw-follow");
     follow.checked = !!p.follow_master;
+    const winRow = tw.querySelector("#tw-window-row");
+    winRow.hidden = !follow.checked;
     follow.onchange = async () => {
+      winRow.hidden = !follow.checked;
       try {
         layer.source.params = { ...layer.source.params, follow_master: follow.checked };
         await api.put(`/api/layers/${layer.id}/tween`, { follow_master: follow.checked });
@@ -737,6 +830,7 @@ export function renderLayerDetail() {
     };
     winFrom.onchange = commitWindow;
     winTo.onchange = commitWindow;
+
     tw.querySelector("#tw-static").onclick = async () => {
       try {
         const created = await api.post("/api/layers/tween", { a: p.a, b: p.b });
@@ -752,24 +846,6 @@ export function renderLayerDetail() {
         await actions.refreshResolved();
       } catch (e) { actions.oops(e); }
     };
-    const schema = JSON.parse(JSON.stringify(S.state.schemas.tween));
-    delete schema.properties.a;
-    delete schema.properties.b;
-    delete schema.properties.follow_master; // rendered as the checkbox below, not a form field
-    delete schema.properties.window_from;   // rendered as the number inputs below, not a form field
-    delete schema.properties.window_to;
-    const values = {
-      t: p.t ?? 0.5, sweep: p.sweep ?? 1,
-      sweep_from: p.sweep_from ?? 0, sweep_to: p.sweep_to ?? 1,
-    };
-    const commit = actions.debounce(async () => {
-      try {
-        layer.source.params = { ...p, ...values }; // optimistic
-        await api.put(`/api/layers/${layer.id}/tween`, values);
-        await actions.refreshResolved();
-      } catch (e) { actions.oops(e); }
-    }, 250);
-    renderForm(tw.querySelector("#tw-form"), schema, values, commit);
   } else {
     const hint = document.createElement("div");
     hint.className = "hint";
