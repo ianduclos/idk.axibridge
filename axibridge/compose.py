@@ -124,6 +124,11 @@ class CanvasLayer(BaseModel):
     receives_occlusion: bool = True
     occlusion_margin_mm: float = Field(default=0.0, ge=-20, le=20,
                                        description="Signed: + opens a gap, − bleeds under")
+    frame_offset: float = Field(
+        default=0.0, ge=-1.0, le=1.0,
+        description="Added to the generator's 'frame' when sampling an image "
+                    "sequence (result clamped 0..1); layers can time-shift the "
+                    "same clip, and interpolation layers lerp it")
 
 
 class PaperGuide(BaseModel):

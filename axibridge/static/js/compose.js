@@ -523,6 +523,34 @@ export function renderLayerDetail() {
   };
   for (const id of ["tf-x", "tf-y", "tf-s", "tf-r"]) $(id).onchange = commitPlacement;
 
+  // -- frame offset (only for generators that expose a 'frame' axis — i.e. a
+  // layer driven by an image sequence). Time-shifts this layer's clip so
+  // duplicates trail and animations lerp the shift A→B.
+  const genMod = layer.source.generator
+    && S.state.modules.sources.find((m) => m.id === layer.source.generator);
+  const hasFrame = !!(genMod && genMod.schema && genMod.schema.properties
+    && "frame" in genMod.schema.properties);
+  if (hasFrame) {
+    const foff = document.createElement("div");
+    foff.innerHTML = `
+      <h3>Frame displacement</h3>
+      <div class="row">
+        <label>frame offset</label>
+        <input type="number" id="ld-frame-offset" step="0.01" min="-1" max="1"
+          value="${layer.frame_offset ?? 0}" style="width:5.5em"
+          title="time-shift this layer's clip (added to 'frame', clamped 0..1) — duplicates can trail, and animations lerp it A→B">
+      </div>`;
+    wrap.appendChild(foff);
+    foff.querySelector("#ld-frame-offset").onchange = async (e) => {
+      try {
+        await api.patch(`/api/layers/${layer.id}`, { frame_offset: +e.target.value });
+        await actions.refreshProject();
+        await actions.refreshResolved();
+        renderLayerDetail();
+      } catch (err) { actions.oops(err); }
+    };
+  }
+
   // -- pen + occlusion
   const occ = document.createElement("div");
   occ.innerHTML = `

@@ -272,6 +272,121 @@ def test_animate_non_sequence_layer_adds_no_frame_key():
     assert "frame" not in (b.source.params or {})
 
 
+# -- frame offset (per-layer time-shift of a clip) ---------------------------
+
+
+def _seq3():
+    """A 3-frame clip whose frames trace visibly different geometry."""
+    asset_store.put("clip#0000.png", _png_blob((2, 2, 12, 12)))    # blob top-left
+    asset_store.put("clip#0001.png", _png_blob((10, 10, 20, 20)))  # blob middle
+    asset_store.put("clip#0002.png", _png_blob((20, 20, 30, 30)))  # blob bottom-right
+
+
+def _pts(paths):
+    return [p.points for p in paths]
+
+
+def test_effective_gen_params_shifts_and_clamps():
+    from axibridge.session import Session
+
+    _seq3()
+    from axibridge.session import session
+
+    layer = session.add_generated_layer(
+        "image_threshold", {"image": "clip#", "frame": 0.8, "detail": 1.0})
+    stored = layer.source.params
+    layer.frame_offset = 0.5
+    eff = Session._effective_gen_params(layer)
+    assert eff["frame"] == 1.0            # 0.8 + 0.5 -> clamped to 1.0
+    assert eff is not stored              # a copy, never the stored dict
+    assert stored["frame"] == 0.8         # stored params untouched
+
+    layer.frame_offset = -0.5
+    assert Session._effective_gen_params(layer)["frame"] == pytest.approx(0.3)
+
+    # negative past the floor clamps to 0
+    layer.source.params = {"image": "clip#", "frame": 0.2, "detail": 1.0}
+    layer.frame_offset = -0.5
+    assert Session._effective_gen_params(layer)["frame"] == 0.0
+
+
+def test_effective_gen_params_leaves_non_frame_generators_alone():
+    from axibridge.session import Session, session
+
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    layer.frame_offset = 0.5
+    eff = Session._effective_gen_params(layer)
+    assert "frame" not in eff
+    assert eff == {"sides": 6, "radius": 15}
+
+
+def test_patch_frame_offset_resamples_clip_and_is_one_undo():
+    from axibridge.session import session
+
+    _seq3()
+    layer = session.add_generated_layer(
+        "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0})
+    at0 = _pts(session.resolved()[layer.id])
+
+    session._history.clear()
+    hist_before = len(session._history)
+    session.update_layer(layer.id, {"frame_offset": 1.0})  # jump to the last frame
+
+    assert len(session._history) == hist_before + 1        # exactly one undo step
+    shifted = _pts(session.resolved()[layer.id])
+    assert shifted != at0                                  # a different frame traced
+    # stored params keep the user's RAW frame — the offset applies at gen time
+    assert session.project.layer(layer.id).source.params["frame"] == 0.0
+    assert session.project.layer(layer.id).frame_offset == 1.0
+
+    assert session.undo()                                  # restores geometry AND field
+    assert _pts(session.resolved()[layer.id]) == at0
+    assert session.project.layer(layer.id).frame_offset == 0.0
+
+
+def test_patch_frame_offset_on_non_frame_generator_only_stores_field():
+    from axibridge.session import session
+
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    before = _pts(session.resolved()[layer.id])
+    session.update_layer(layer.id, {"frame_offset": 0.5})
+    assert session.project.layer(layer.id).frame_offset == 0.5
+    assert _pts(session.resolved()[layer.id]) == before   # geometry unchanged
+
+
+def test_tween_lerps_frame_offset_to_play_a_clip():
+    from axibridge.session import session
+
+    _seq3()
+    # identical generator params on both sides — ONLY the offsets differ
+    a = session.add_generated_layer(
+        "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0})
+    b = session.add_generated_layer(
+        "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0})
+    session.update_layer(b.id, {"frame_offset": 1.0})
+    tw = session.create_tween_layer(a.id, b.id)
+
+    session.set_tween_params(tw.id, {"t": 0.0})
+    at_t0 = _pts(session.resolved()[tw.id])
+    session.set_tween_params(tw.id, {"t": 1.0})
+    at_t1 = _pts(session.resolved()[tw.id])
+    assert at_t0 != at_t1                     # the clip plays purely via offsets
+
+    # endpoint fidelity: t=0 == layer A's own output (offset 0, frame 0)
+    session.set_tween_params(tw.id, {"t": 0.0})
+    r = session.resolved()
+    assert _pts(r[tw.id]) == _pts(r[a.id])
+
+
+def test_canvaslayer_without_frame_offset_defaults_zero():
+    from axibridge.compose import CanvasLayer
+
+    layer = CanvasLayer(**{
+        "name": "old", "source": {"type": "generator", "generator": "polygon",
+                                   "params": {"sides": 5}}})
+    assert layer.frame_offset == 0.0
+
+
 def test_asset_endpoint_serves_the_requested_frame(client):
     """The canvas ghost overlay must track the frame the generator samples —
     a prefix without ?frame= serves frame 0 (legacy), ?frame= picks like
@@ -293,3 +408,23 @@ def test_asset_endpoint_serves_the_requested_frame(client):
     name = plain.json()["name"]
     assert (client.get(f"/api/assets/{name}?frame=1").content
             == client.get(f"/api/assets/{name}").content)
+
+
+def test_frame_offset_patch_never_discards_a_bake():
+    """PATCHing frame_offset on a BAKED layer must not regenerate — the baked
+    geometry holds consolidated transform/effects that raw generator output
+    would silently discard. The offset is stored and applies on an explicit
+    regenerate (which un-bakes on purpose)."""
+    from axibridge.session import session
+
+    for i in range(3):
+        asset_store.put(f"bk#{i:04d}.png", _png_blob((2 + i, 2 + i, 12 + i, 12 + i)))
+    layer = session.add_generated_layer(
+        "image_threshold", {"image": "bk#", "frame": 0.0, "detail": 1.0})
+    session.update_layer(layer.id, {"transform": {
+        "a": 1, "b": 0, "c": 0, "d": 1, "e": 40, "f": 0}})
+    session.consolidate_effects(layer.id)
+    baked_geo = session.source_geometry[layer.id]
+    session.update_layer(layer.id, {"frame_offset": 1.0})
+    assert session.source_geometry[layer.id] is baked_geo  # untouched
+    assert session.project.layer(layer.id).frame_offset == 1.0  # stored

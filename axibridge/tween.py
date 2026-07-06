@@ -22,6 +22,9 @@ The contract that makes it sturdy:
 * **Transforms lerp decomposed** (translate / rotate / scale / shear, the
   rotation along the shortest arc) — naive matrix lerp collapses rotations
   through zero scale.
+* **frame_offset lerps** like the transform — a layer-level quantity folded
+  into the generator's ``frame`` axis, so an A/B pair sharing generator params
+  but differing in offset plays the referenced clip across the morph.
 * **Live references** — the tween reads A and B at resolve time, so editing
   either updates the morph. If a reference goes missing or incompatible the
   tween resolves to empty (never crashes a stored project); deleting a
@@ -165,6 +168,12 @@ def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
         src = get_source(la.source.generator)
         defaults = src.Params().model_dump()
         params = lerp_params(la.source.params or {}, lb.source.params or {}, t, defaults)
+        # frame_offset is a layer-level lerped quantity (like the transform):
+        # fold the interpolated offset into the generator's ``frame`` axis so an
+        # A/B pair with identical params but different offsets plays the clip.
+        off = la.frame_offset + (lb.frame_offset - la.frame_offset) * t
+        if (off or la.frame_offset or lb.frame_offset) and "frame" in src.Params.model_fields:
+            params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + off))
         doc = src.generate(src.Params(**params))
         return [p for lyr in doc.layers for p in lyr.paths]
     # structural mode: pointwise lerp (validated to match)

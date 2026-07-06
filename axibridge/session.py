@@ -81,6 +81,23 @@ class Session:
 
     # -- layer CRUD -----------------------------------------------------------
 
+    @staticmethod
+    def _effective_gen_params(layer: CanvasLayer) -> dict[str, Any]:
+        """The generator params to actually GENERATE with: the layer's stored
+        source params, but with a non-zero ``frame_offset`` folded into the
+        generator's ``frame`` axis (clamped 0..1) when the generator exposes
+        one. The stored params are NEVER mutated — this returns a copy — so
+        the user's raw ``frame`` and the undo/purity contract stay intact."""
+        params = dict(layer.source.params or {})
+        if layer.source.type not in ("generator", "baked") or not layer.source.generator:
+            return params
+        if not layer.frame_offset:
+            return params
+        if "frame" not in get_source(layer.source.generator).Params.model_fields:
+            return params
+        params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + layer.frame_offset))
+        return params
+
     def add_generated_layer(self, generator_id: str, params: dict[str, Any]) -> CanvasLayer:
         src = get_source(generator_id)
         doc = src.generate(src.Params(**params))
@@ -104,7 +121,7 @@ class Session:
             if params is not None:
                 layer.source.params = params
             src = get_source(layer.source.generator)
-            doc = src.generate(src.Params(**(layer.source.params or {})))
+            doc = src.generate(src.Params(**self._effective_gen_params(layer)))
             self.source_geometry[layer.id] = [p for lyr in doc.layers for p in lyr.paths]
             layer.source.type = "generator"  # a baked layer returns to live output
             layer.source.file = None  # snapshot is stale; rewritten on save
@@ -152,7 +169,8 @@ class Session:
 
     def update_layer(self, layer_id: str, patch: dict[str, Any]) -> CanvasLayer:
         allowed = {"name", "visible", "transform", "effects", "pen_id",
-                   "occluder", "receives_occlusion", "occlusion_margin_mm"}
+                   "occluder", "receives_occlusion", "occlusion_margin_mm",
+                   "frame_offset"}
         with self._lock:
             layer = self.project.layer(layer_id)
             self._checkpoint()
@@ -165,6 +183,23 @@ class Session:
             idx = self.project.layers.index(layer)
             self.project.layers[idx] = updated
             self._snapshot_pen(updated.pen_id)
+            # A frame_offset change on a frame-driven generator re-samples the
+            # clip: regenerate its source geometry with the offset folded into
+            # ``frame`` (stored params keep the user's raw value). Same lock,
+            # same single checkpoint; a generation failure propagates (identical
+            # failure semantics to regenerate_layer, which has already
+            # checkpointed). Non-generator sources just store the field.
+            # (live generators only: a baked layer's geometry holds consolidated
+            # transform/effects — regenerating here would silently discard them;
+            # an explicit "regenerate" un-bakes on purpose and picks up the offset)
+            if ("frame_offset" in patch and updated.frame_offset != layer.frame_offset
+                    and updated.source.type == "generator"
+                    and updated.source.generator
+                    and "frame" in get_source(updated.source.generator).Params.model_fields):
+                src = get_source(updated.source.generator)
+                doc = src.generate(src.Params(**self._effective_gen_params(updated)))
+                self.source_geometry[updated.id] = [p for lyr in doc.layers for p in lyr.paths]
+                self._shaped_cache.pop(updated.id, None)
             return updated
 
     def delete_layer(self, layer_id: str) -> list[str]:
