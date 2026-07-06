@@ -60,6 +60,10 @@ export function initSettingsTab() {
       <div class="hint">Re-executes the server process in place (picks up code changes).
         Unsaved project changes are lost — save first. Refused while plotting.
         The page reconnects by itself.</div>
+      <details id="server-log-details">
+        <summary>Server log <span class="hint">(last 500 lines — the app window has no terminal)</span></summary>
+        <pre id="server-log" class="server-log"></pre>
+      </details>
     </div>`;
 
   const restart = $("btn-restart");
@@ -81,6 +85,35 @@ export function initSettingsTab() {
       restart.disabled = true;
       // the SSE stream drops, auto-reconnects, and onReconnect re-hydrates
     } catch (e) { actions.oops(e); }
+  };
+
+  // server log: incremental poll (last-seen id cursor), only while the
+  // <details> is open — closed costs nothing.
+  const logDetails = $("server-log-details");
+  let logAfter = 0, logTimer = null;
+  const pollLog = async () => {
+    try {
+      const r = await api.get(`/api/logs?after=${logAfter}`);
+      if (r.entries.length) {
+        const pre = $("server-log");
+        for (const e of r.entries) {
+          logAfter = e.id;
+          const t = new Date(e.ts * 1000).toTimeString().slice(0, 8);
+          pre.textContent += `${t} ${e.level.padEnd(7)} ${e.msg}\n`;
+        }
+        const lines = pre.textContent.split("\n");
+        if (lines.length > 500) pre.textContent = lines.slice(-500).join("\n");
+        pre.scrollTop = pre.scrollHeight;
+      }
+    } catch { /* transient (restart, offline) — next poll retries */ }
+  };
+  logDetails.ontoggle = () => {
+    clearInterval(logTimer);
+    logTimer = null;
+    if (logDetails.open) {
+      pollLog();
+      logTimer = setInterval(pollLog, 2000);
+    }
   };
 
   $("btn-proj-new").onclick = async () => {

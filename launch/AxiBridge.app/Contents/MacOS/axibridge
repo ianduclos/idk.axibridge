@@ -1,0 +1,7 @@
+#!/bin/zsh
+# AxiBridge.app entry point — Finder runs this with no Terminal attached.
+# The bundle lives at [repo]/launch/AxiBridge.app, so the repo root is four
+# levels up from this script; everything else (venv pinning, server spawn,
+# window lifecycle) is launch/axibridge_app.py's job.
+REPO="$(cd "$(dirname "$0")/../../../.." && pwd)"
+exec "$REPO/.venv/bin/python" "$REPO/launch/axibridge_app.py"

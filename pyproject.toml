@@ -25,6 +25,8 @@ dependencies = [
     # (imageio-ffmpeg bundles a static ffmpeg — no system install needed)
     "imageio>=2.30",
     "imageio-ffmpeg>=0.4",
+    # app shell (launch/axibridge_app.py): native window, no Terminal
+    "pywebview>=5",
 ]
 
 [project.optional-dependencies]

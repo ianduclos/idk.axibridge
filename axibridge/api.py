@@ -25,7 +25,7 @@ from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import calibration, compose, project_io, svg_io
+from . import calibration, compose, logbuf, project_io, svg_io
 from .assets import SEQUENCE_FRAME_RE, asset_store, safe_asset_name
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
@@ -99,6 +99,14 @@ def restart_server() -> dict[str, str]:
 
     threading.Thread(target=_restart, name="axibridge-restart", daemon=True).start()
     return {"restarting": "now"}
+
+
+@router.get("/logs")
+def get_logs(after: int = Query(default=0, ge=0)) -> dict[str, Any]:
+    """Server log ring (last ~500 records) — the Settings tab's log panel;
+    the app-shell window has no terminal. ``after`` is the last-seen entry id
+    (cheap incremental polling)."""
+    return {"entries": logbuf.entries(after)}
 
 
 @router.get("/events")

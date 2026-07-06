@@ -11,6 +11,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from . import logbuf
 from .api import router
 from .events import bus
 from .machine import manager
@@ -47,6 +48,7 @@ class _RevalidatedStatic(StaticFiles):
 
 
 def create_app() -> FastAPI:
+    logbuf.install()  # ring the logs: the app-shell window has no terminal
     app = FastAPI(title="axibridge", lifespan=_lifespan)
     app.include_router(router)
     # html=True serves index.html at "/"; mounted last so /api wins.
