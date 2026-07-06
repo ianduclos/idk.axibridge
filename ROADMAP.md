@@ -97,8 +97,11 @@ Deferred, roughly in order of pull:
 - **Easing curves / >2 keyframes** — today t maps linearly A→B; a dope-sheet
   or even just ease-in/out presets on the tween would deepen it. The data
   model question (keyframe lists vs. layer pairs) is the real cost.
-- **Per-tween t-mapping** (offset/scale of master t) — staggered animation,
-  several tweens phased against one another.
+- ~~Per-tween t-mapping~~ — **shipped July 2026** as timeline windows
+  (`window_from`/`window_to` on TweenParams: hold A, animate, hold B).
+  Same round added cascade delete for animation groups, sequence-import
+  start/every controls, auto-frame on animate, and the static-in-between
+  button (a second non-following tween over the same A/B pair).
 - **Per-pen contact-sheet layers** — the bake currently flattens each frame
   to one default-pen layer; splitting per pen keeps multi-pen animations.
 - **GIF/PNG preview render** — the SVG zip + scrubbing cover iteration; a
