@@ -74,19 +74,37 @@ Cheapest-first:
   generators and effects worth porting or inventing — keep a shortlist
   with a sample image each before committing to any.
 
-## Pending brainstorm — animation
+## Animation — **SHIPPED July 2026** (v1: linear A→B over a master timeline)
 
-Wanted (June 2026), undesigned; capture the axes before designing:
+Everything rides on the tween machinery; the master timeline `t` is an
+ephemeral argument threaded through the single resolve path (never a second
+geometry path, never a checkpoint). What landed:
 
-- **Within one print**: sweep/morph sequences as motion trails — the tween
-  sweep already stamps K copies; what's missing is treating them as frames
-  (easing curves, per-frame fades via pen pressure/multipass density?).
-- **Across prints**: frame sequences for flipbooks / stop-motion — N plots
-  varying a parameter (or t) per sheet. Needs batch plotting UX (pause
-  between sheets, registration marks) and a "render frames" export.
-- **Inputs**: importing video frames as image assets in bulk (one layer or
-  one project-frame per video frame); interpolating any numeric param over
-  frames is the tween machinery generalised to a timeline.
+- **Frame sequences**: folder/video import (`POST /api/assets/sequence`,
+  imageio-ffmpeg) → assets named `clip#0000.jpg`; a normalized `frame` 0..1
+  param on every image consumer (image_threshold, the pixel generators,
+  depth_displace) — numeric, so the tween lerp scrubs video for free.
+- **Master timeline**: `TweenParams.follow_master` + Compose scrubber
+  (`/api/compose/resolved?t=`); one-click "⏱ Animate" (hidden A/B keyframes
+  + follow-master tween, one undo step).
+- **Outputs**: SVG zip (`/api/animation/export.zip`), plot-per-sheet stepper
+  (`plot/start` takes `master_t`; explicit press per frame, paper swap
+  between), contact-sheet bake (`/api/animation/contact_sheet` — shared
+  scale across cells, `explode_tween`-style baked layers).
+
+Deferred, roughly in order of pull:
+
+- **Easing curves / >2 keyframes** — today t maps linearly A→B; a dope-sheet
+  or even just ease-in/out presets on the tween would deepen it. The data
+  model question (keyframe lists vs. layer pairs) is the real cost.
+- **Per-tween t-mapping** (offset/scale of master t) — staggered animation,
+  several tweens phased against one another.
+- **Per-pen contact-sheet layers** — the bake currently flattens each frame
+  to one default-pen layer; splitting per pen keeps multi-pen animations.
+- **GIF/PNG preview render** — the SVG zip + scrubbing cover iteration; a
+  server-side GIF would be convenience only.
+- Per-frame fades via pen pressure / multipass density (motion trails);
+  registration marks for multi-sheet alignment.
 - Colour separation (above) intersects: per-frame AND per-pen matrices.
 
 ## Mid term — interpolation (the layer-variant idea) — **SHIPPED June 2026**

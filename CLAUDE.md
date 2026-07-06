@@ -29,9 +29,9 @@ before structural changes.
 | IPR (geometry⇄execution contract) | `axibridge/model.py` (`PathDocument`) |
 | Layer model + compositor (resolve, occlusion masks) | `axibridge/compose.py` |
 | One open project + the resolve pipeline + undo history | `axibridge/session.py` |
-| Image assets (depth maps), name → bytes/grayscale | `axibridge/assets.py` |
+| Image assets (depth maps, `clip#NNNN` frame sequences) | `axibridge/assets.py` |
 | Module registry (Source / Effect / Transform) | `axibridge/registry.py` |
-| Layer interpolation (tween layers, param/affine lerp) | `axibridge/tween.py` |
+| Layer interpolation (tween layers, param/affine lerp; the master timeline scrubs `follow_master` tweens via `session.resolved(master_t=…)`) | `axibridge/tween.py` |
 | Generators / effects / plot-pass ops | `axibridge/sources/` `effects/` `transforms/` |
 | Backends (native / simulator / saxi) + port arbitration | `axibridge/backends/`, `machine.py` |
 | Pen library & machine settings (global JSON stores) | `axibridge/stores.py` |
