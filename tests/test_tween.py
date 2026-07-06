@@ -115,12 +115,43 @@ def test_cascade_delete_keyframe_a_takes_tween_and_b():
     assert twr.name == original_name and twr.visible
 
 
-def test_cascade_delete_tween_takes_hidden_keyframes():
+def test_un_animate_deleting_tween_restores_keyframe_a():
+    """Directly deleting an animate-created tween un-animates: keyframe A is
+    RESTORED (un-hidden, un-suffixed, same id + geometry) rather than swept; B
+    goes. One undo brings the whole animation back."""
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    original_name = layer.name
+    a_id = layer.id
+    geo = session.source_geometry[a_id]  # the exact list object A owns
+    tw = session.animate_layer(layer.id)
+    b_id = tw.source.params["b"]
+    session._history.clear()
+
+    deleted = session.delete_layer(tw.id)  # DIRECT tween deletion -> un-animate
+
+    assert set(deleted) == {b_id, tw.id}      # A restored, not deleted
+    assert a_id not in deleted
+    survivors = [l.id for l in session.project.layers]
+    assert survivors == [a_id]                # exactly the original layer
+    a = session.project.layer(a_id)
+    assert a.visible and a.name == original_name          # un-hidden, un-suffixed
+    assert session.source_geometry[a_id] is geo           # same geometry object
+    assert b_id not in {l.id for l in session.project.layers}
+
+    assert session.undo()  # ONE undo restores tween + A + B
+    assert len(session.project.layers) == 3
+    assert not session.project.layer(a_id).visible
+    assert session.project.layer(a_id).name == f"{original_name} ▸ A"
+
+
+def test_un_animate_only_on_direct_tween_deletion():
+    """Deleting keyframe A directly still cascades the whole group (the
+    un-animate restore is only for a DIRECTLY targeted tween)."""
     layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
     a_id = layer.id
     tw = session.animate_layer(layer.id)
     b_id = tw.source.params["b"]
-    deleted = session.delete_layer(tw.id)
+    deleted = session.delete_layer(a_id)  # delete keyframe A directly
     assert set(deleted) == {a_id, b_id, tw.id}
     assert len(session.project.layers) == 0
 
@@ -411,3 +442,14 @@ def test_bake_contact_sheet_bounds_validation():
         session.bake_contact_sheet(cols=2, rows=2, frames=2, margin_mm=31.0)
     with pytest.raises(ValueError):
         session.bake_contact_sheet(cols=2, rows=2, frames=2, margin_mm=5.0, t_from=-0.1)
+
+
+def test_deleting_the_whole_group_explicitly_deletes_everything():
+    """Selecting tween + BOTH keyframes and deleting must honour the explicit
+    ask — no un-animate resurrection of a directly-targeted keyframe."""
+    a = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    tw = session.animate_layer(a.id)
+    b_id = tw.source.params["b"]
+    deleted = session.delete_layers([tw.id, a.id, b_id])
+    assert set(deleted) == {tw.id, a.id, b_id}
+    assert session.project.layers == []

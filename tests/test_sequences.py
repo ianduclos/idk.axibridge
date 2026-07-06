@@ -428,3 +428,114 @@ def test_frame_offset_patch_never_discards_a_bake():
     session.update_layer(layer.id, {"frame_offset": 1.0})
     assert session.source_geometry[layer.id] is baked_geo  # untouched
     assert session.project.layer(layer.id).frame_offset == 1.0  # stored
+
+
+# -- ladder scrub: the timeline moves a SWEPT (sweep > 1) tween ---------------
+
+
+def _identical_thirds(paths) -> bool:
+    """True iff ``paths`` splits into three byte-identical stamp blocks (i.e.
+    every stamp sampled the same frame/params — a fully saturated ladder)."""
+    k, r = divmod(len(paths), 3)
+    if r or k == 0:
+        return False
+    a, b, c = _pts(paths[:k]), _pts(paths[k:2 * k]), _pts(paths[2 * k:])
+    return a == b == c
+
+
+def _ladder():
+    """A 3-frame clip driven as a stamped, timeline-following morph: layer A at
+    frame 0, an offset-equivalent B (frame_offset 1.0 = last frame), and a
+    follow-master tween that stamps sweep=3 across the first half of the morph."""
+    from axibridge.session import session
+
+    _seq3()
+    a = session.add_generated_layer(
+        "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0})
+    b = session.duplicate_layer(a.id)
+    session.update_layer(b.id, {"frame_offset": 1.0})  # B plays the last frame
+    tw = session.create_tween_layer(a.id, b.id)
+    session.set_tween_params(tw.id, {
+        "sweep": 3, "sweep_from": 0.0, "sweep_to": 0.5, "follow_master": True})
+    return a, b, tw
+
+
+def test_ladder_scrub_advances_swept_stamps():
+    from axibridge.session import session
+
+    a, b, tw = _ladder()
+    g0 = session.resolved(master_t=0.0)[tw.id]
+    g5 = session.resolved(master_t=0.5)[tw.id]
+    g1 = session.resolved(master_t=1.0)[tw.id]
+
+    # at master_t=0 the stamps sit at their static positions and sample distinct
+    # frames — the ladder is NOT three identical blocks
+    assert not _identical_thirds(g0)
+    # scrubbing pushes every stamp forward along the morph: the geometry moves
+    assert _pts(g0) != _pts(g5)
+    assert _pts(g5) != _pts(g1)
+    # at master_t=1 every stamp saturates at the B end -> three identical blocks
+    assert _identical_thirds(g1)
+
+
+def test_ladder_scrub_regression_sweep_one_matches_own_t():
+    """A sweep==1 follow tween scrubbed to master_t=x must equal the same tween
+    resolving at its own t=x (no follow) — the pre-refactor single-tween path."""
+    from axibridge.session import session
+
+    _seq3()
+    a = session.add_generated_layer(
+        "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0})
+    b = session.duplicate_layer(a.id)
+    session.update_layer(b.id, {"frame_offset": 1.0})
+    tw = session.create_tween_layer(a.id, b.id)
+
+    for x in (0.0, 0.3, 0.7, 1.0):
+        session.set_tween_params(tw.id, {"t": x, "follow_master": True, "sweep": 1})
+        followed = _pts(session.resolved(master_t=x)[tw.id])
+        session.set_tween_params(tw.id, {"t": x, "follow_master": False, "sweep": 1})
+        own = _pts(session.resolved()[tw.id])
+        assert followed == own
+
+
+# -- import progress over SSE ------------------------------------------------
+
+
+def _capture_sink(monkeypatch):
+    calls: list[tuple[float, str]] = []
+
+    def fake_factory():
+        def sink(frac: float, msg: str = "") -> None:
+            calls.append((frac, msg))
+        return sink
+
+    monkeypatch.setattr("axibridge.api._gen_progress_sink", fake_factory)
+    return calls
+
+
+def test_import_progress_multi_image_monotonic(client, monkeypatch):
+    calls = _capture_sink(monkeypatch)
+    r = client.post("/api/assets/sequence", files=_imgfiles([0, 40, 80, 120, 160, 200]))
+    assert r.status_code == 200, r.text
+    fracs = [f for f, _ in calls]
+    assert fracs == sorted(fracs)          # monotonically nondecreasing
+    assert fracs[-1] == 1.0                # finishes at 1.0
+    assert len(calls) >= 6                 # at least one per imported frame
+
+
+def test_import_progress_video_reports_phases(client, monkeypatch):
+    try:
+        data = _tiny_mp4(8)
+    except Exception as e:
+        pytest.skip(f"ffmpeg/imageio unavailable: {e}")
+    calls = _capture_sink(monkeypatch)
+    r = client.post("/api/assets/sequence",
+                    files=[("files", ("clip.mp4", data, "video/mp4"))],
+                    data={"frames": "4"})
+    assert r.status_code == 200, r.text
+    msgs = [m for _, m in calls]
+    assert any("decoding" in m for m in msgs)   # decode phase reported
+    assert any("encoding" in m for m in msgs)   # encode phase reported
+    fracs = [f for f, _ in calls]
+    assert fracs == sorted(fracs)
+    assert fracs[-1] == 1.0

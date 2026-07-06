@@ -423,14 +423,22 @@ def _reencode_jpeg(img: Any) -> bytes:
 
 
 def _extract_video_frames(
-    data: bytes, suffix: str, frames: int | None, start: int, every: int | None
+    data: bytes, suffix: str, frames: int | None, start: int, every: int | None,
+    sink: Any = None,
 ) -> list[bytes]:
     """Decode the selected frames (see :func:`_select_indices`) to JPEG bytes,
     applying selection BEFORE re-encoding so dropped frames are never encoded.
     imageio + imageio-ffmpeg, imported lazily to keep server start fast; ffmpeg
-    reads from a real path, so the upload is spooled to a temp file first."""
+    reads from a real path, so the upload is spooled to a temp file first.
+
+    ``sink`` (the SSE progress sink) reports the decode as an asymptotic 0..0.5
+    (total frame count is unknown mid-stream) and the re-encode as 0.5..1.0."""
     import imageio.v3 as iio  # lazy: pulls in the bundled static ffmpeg
     from PIL import Image
+
+    def _report(frac: float, msg: str) -> None:
+        if sink is not None:
+            sink(frac, msg)
 
     with tempfile.NamedTemporaryFile(suffix=suffix or ".mp4", delete=False) as tf:
         tf.write(data)
@@ -438,11 +446,20 @@ def _extract_video_frames(
     try:
         # tiny clips: read every frame, then subsample. (Large videos would be
         # heavy here — acceptable for hand-authored sequence sources.)
-        decoded = list(iio.imiter(path, plugin="FFMPEG"))
+        decoded: list[Any] = []
+        for i, frame in enumerate(iio.imiter(path, plugin="FFMPEG")):
+            decoded.append(frame)
+            if i % 5 == 0:  # total unknown mid-stream: asymptotic fraction
+                _report(min(0.5, i / (i + 40.0)), f"decoding video · {i} frames")
         if not decoded:
             raise ValueError("no frames decoded from video")
         idxs = _select_indices(len(decoded), frames, start, every)
-        return [_reencode_jpeg(Image.fromarray(decoded[i])) for i in idxs]
+        n = len(idxs)
+        out: list[bytes] = []
+        for i, idx in enumerate(idxs):
+            out.append(_reencode_jpeg(Image.fromarray(decoded[idx])))
+            _report(0.5 + 0.5 * (i + 1) / n, f"encoding frame {i + 1}/{n}")
+        return out
     finally:
         os.unlink(path)
 
@@ -465,6 +482,7 @@ async def upload_sequence(
 
     if not files:
         raise HTTPException(status_code=400, detail="no files")
+    sink = _gen_progress_sink()  # import progress rides the same SSE feed
     first = files[0]
     ext = FsPath(first.filename or "clip").suffix.lower()
     # name the sequence from the first upload's stem, stripping a trailing frame
@@ -477,7 +495,7 @@ async def upload_sequence(
     if len(files) == 1 and ext in _VIDEO_EXTS:
         n = max(2, min(240, frames if frames else 24))
         try:
-            jpegs = _extract_video_frames(await first.read(), ext, n, start, every)
+            jpegs = _extract_video_frames(await first.read(), ext, n, start, every, sink)
         except HTTPException:
             raise  # a selection error (e.g. start leaves fewer than 2 frames)
         except Exception as e:
@@ -491,8 +509,12 @@ async def upload_sequence(
         n = min(240, frames) if frames else frames
         blobs = [blobs[i] for i in _select_indices(len(blobs), n, start, every)]
         try:
-            jpegs = [_reencode_jpeg(ImageOps.exif_transpose(Image.open(io.BytesIO(b))))
-                     for b in blobs]
+            jpegs = []
+            total = len(blobs)
+            for i, b in enumerate(blobs):
+                jpegs.append(
+                    _reencode_jpeg(ImageOps.exif_transpose(Image.open(io.BytesIO(b)))))
+                sink((i + 1) / total, f"frame {i + 1}/{total}")
         except Exception as e:
             raise _fail(e, 400)
 
@@ -509,6 +531,7 @@ async def upload_sequence(
     except Exception as e:
         asset_store.replace_all(kept)
         raise _fail(e, 400)
+    sink(1.0, "")  # done — clears the progress bar
     return {"name": prefix, "frames": len(jpegs), "assets": asset_store.info()}
 
 

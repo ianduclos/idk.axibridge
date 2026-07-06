@@ -29,6 +29,12 @@ The contract that makes it sturdy:
   either updates the morph. If a reference goes missing or incompatible the
   tween resolves to empty (never crashes a stored project); deleting a
   referenced layer is refused server-side unless the tween goes with it.
+* **Timeline drives stamps too** — a ``sweep > 1`` (stamped) tween ignores
+  ``t``, so a naive timeline scrub would do nothing to it. Under a master
+  scrub the timeline instead pushes every stamp FORWARD along the morph by the
+  same amount (its position, its lerped params and folded frame offset alike),
+  each stamp saturating at the B end — the whole ladder advances rather than a
+  single shape morphing.
 
 The tween layer is otherwise a normal layer: its own transform (drag it),
 its own effect stack, pen and occlusion flags all apply ON TOP of the
@@ -201,12 +207,23 @@ def _effects_at(la: CanvasLayer, lb: CanvasLayer, t: float):
 
 def materialize(
     layer: CanvasLayer, project: Project, source_geometry: dict[str, list[Path]],
+    override_t: float | None = None,
 ) -> list[Path]:
     """The tween layer's source geometry: the virtual in-between layer(s),
     fully shaped (lerped transform + lerped effects) in paper space. The
     tween's OWN transform/effects then apply through the normal pipeline.
     Any breakage (missing refs, incompatibility, generator error) resolves
-    to [] — a stored project must never fail to resolve."""
+    to [] — a stored project must never fail to resolve.
+
+    ``override_t`` (the master-timeline value, already mapped through the
+    tween's window by the caller) drives the morph position:
+
+    * ``sweep <= 1`` — a single tween at ``override_t`` if given, else ``p.t``.
+    * ``sweep > 1`` with an override — a STAMPED morph the timeline pushes
+      forward: every stamp shifts by ``override_t`` along the morph (positions,
+      lerped params and frame offsets alike), saturating at 1 (the B end).
+      Without an override the stamps sit at their static ``sweep_from``..
+      ``sweep_to`` positions, unchanged."""
     try:
         p = TweenParams(**(layer.source.params or {}))
         la = project.layer(p.a)
@@ -215,10 +232,15 @@ def materialize(
         geo_b = source_geometry.get(lb.id, [])
         if check_compatible(la, lb, geo_a, geo_b) is not None:
             return []
-        ts = [p.t] if p.sweep <= 1 else [
-            p.sweep_from + (p.sweep_to - p.sweep_from) * i / (p.sweep - 1)
-            for i in range(p.sweep)
-        ]
+        if p.sweep <= 1:
+            ts = [override_t if override_t is not None else p.t]
+        else:
+            ts = [
+                p.sweep_from + (p.sweep_to - p.sweep_from) * i / (p.sweep - 1)
+                for i in range(p.sweep)
+            ]
+            if override_t is not None:
+                ts = [min(1.0, max(0.0, t + override_t)) for t in ts]
         out: list[Path] = []
         for t in ts:
             paths = _source_paths_at(la, lb, geo_a, geo_b, t)

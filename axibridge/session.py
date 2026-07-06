@@ -223,11 +223,20 @@ class Session:
         tween, but a manual tween's VISIBLE sources are never swept). Returns
         the ordered (project z-order) list of deleted layer ids.
 
+        Un-animate: deleting a tween DIRECTLY (its id in ``layer_ids``, not
+        merely cascade-collected) does not sweep its A keyframe — it RESTORES
+        it (un-hides it and strips the ``" ▸ A"`` suffix), turning the
+        animation back into the plain layer it came from. The A keyframe is
+        restored only when hidden and unreferenced by any surviving tween; the
+        B keyframe still sweeps. Directly deleting a keyframe keeps the full
+        group cascade.
+
         ``cascade=False`` refuses the delete (human-readable RuntimeError) if a
         surviving tween still references a doomed layer — the strict mode."""
         with self._lock:
             layers = [self.project.layer(i) for i in layer_ids]  # all-or-nothing
-            doomed = {l.id for l in layers}
+            direct = {l.id for l in layers}  # caller's targets, pre-cascade
+            doomed = set(direct)
 
             if cascade:
                 while True:
@@ -259,7 +268,34 @@ class Session:
                             changed = True
                     if not changed:
                         break
+
+                # Un-animate: a DIRECTLY deleted tween restores its A keyframe
+                # instead of sweeping it. Decide here (part of the final doomed
+                # set) so the restored, re-shown A is never re-collected; the
+                # visible/name mutation happens after the checkpoint below.
+                restore: set[str] = set()
+                for tw in self._tweens():
+                    if tw.id not in direct:  # only DIRECT tween deletions
+                        continue
+                    a_ref, _ = self._tween_refs(tw)
+                    if a_ref in direct:
+                        continue  # the user deleted A itself too — honour that
+                    try:
+                        a_layer = self.project.layer(a_ref)
+                    except KeyError:
+                        continue
+                    if a_layer.visible:
+                        continue
+                    referenced_by_surviving = any(
+                        a_ref in self._tween_refs(t2)
+                        for t2 in self._tweens()
+                        if t2.id not in doomed
+                    )
+                    if not referenced_by_surviving:
+                        restore.add(a_ref)
+                doomed -= restore
             else:
+                restore = set()
                 for tw in self._tweens():
                     if tw.id in doomed:
                         continue
@@ -271,6 +307,13 @@ class Session:
                         )
 
             self._checkpoint()
+            # un-hide + un-suffix the restored A keyframes (already excluded
+            # from ``doomed``, so they survive the deletion below)
+            for rid in restore:
+                a_layer = self.project.layer(rid)
+                a_layer.visible = True
+                if a_layer.name.endswith(" ▸ A"):
+                    a_layer.name = a_layer.name[: -len(" ▸ A")]
             # delete in project z-order for a deterministic, reported result
             deleted = [l for l in list(self.project.layers) if l.id in doomed]
             for layer in deleted:
@@ -561,10 +604,11 @@ class Session:
     def resolved(self, master_t: float | None = None) -> dict[str, list[Path]]:
         """Resolve the project through the single geometry path. ``master_t``
         (0..1, or None to disable) is the ephemeral master-timeline value: it
-        drives the ``t`` of every tween whose ``follow_master`` is set, live,
-        WITHOUT mutating the project (no checkpoint, byte-identical stored
-        state). It overrides ``t`` only — a ``sweep > 1`` tween ignores ``t``
-        and keeps stamping its sweep regardless (animation use means sweep=1)."""
+        drives every tween whose ``follow_master`` is set, live, WITHOUT
+        mutating the project (no checkpoint, byte-identical stored state). A
+        single tween (``sweep <= 1``) moves its ``t``; a ``sweep > 1`` stamped
+        tween has its whole ladder pushed forward along the morph (see
+        ``tween.materialize``)."""
         with self._lock:
             self._materialize_tweens(master_t)
             return compose.resolve_project(
@@ -578,12 +622,13 @@ class Session:
         untouched tween costs one hash. Called under the lock, only from
         resolved() — the single resolve path stays single.
 
-        ``master_t`` (when not None) replaces ``t`` on tweens that opted in via
-        ``follow_master``, clamped to 0..1. The override is ephemeral: the
-        stored ``layer.source.params`` are never mutated — a deep copy carries
-        the patched ``t`` into materialisation, exactly as ``explode_tween``
-        does. The override is folded into the cache key so scrubbing
-        invalidates correctly."""
+        ``master_t`` (when not None) drives tweens that opted in via
+        ``follow_master``, clamped to 0..1 and mapped through the window. The
+        override is ephemeral: the stored ``layer.source.params`` are never
+        mutated — it is passed straight to ``materialize`` (which uses it as
+        ``t`` for a single tween, or shifts every stamp of a swept one). The
+        override is folded into the cache key so scrubbing invalidates
+        correctly."""
         import json
 
         for layer in self.project.layers:
@@ -620,11 +665,8 @@ class Session:
             hit = self._tween_cache.get(layer.id)
             if hit is not None and hit[0] == key:
                 continue
-            target = layer
-            if override_t is not None:
-                target = layer.model_copy(deep=True)  # never mutate stored params
-                target.source.params = {**params, "t": override_t}
-            paths = tween.materialize(target, self.project, self.source_geometry)
+            paths = tween.materialize(
+                layer, self.project, self.source_geometry, override_t)
             self._tween_cache[layer.id] = (key, paths)
             self.source_geometry[layer.id] = paths  # replaced wholesale, never mutated
 
