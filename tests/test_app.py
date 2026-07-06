@@ -111,6 +111,67 @@ def test_animate_layer_endpoint(client):
     assert client.post("/api/layers/nope/animate").status_code == 404
 
 
+def test_export_animation_frames_zip(client):
+    import zipfile
+    from io import BytesIO
+
+    layer = client.post("/api/layers/generate",
+                        json={"module": "polygon", "params": {"sides": 6, "radius": 15}}).json()
+    tw = client.post(f"/api/layers/{layer['id']}/animate").json()
+    b_id = tw["source"]["params"]["b"]
+    client.patch(f"/api/layers/{b_id}", json={
+        "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 40}})
+
+    r = client.get("/api/animation/export.zip?frames=4&t_from=0&t_to=1")
+    assert r.status_code == 200
+    assert r.headers["content-disposition"].endswith('_frames.zip"')
+    z = zipfile.ZipFile(BytesIO(r.content))
+    names = z.namelist()
+    assert names == [f"frame_{i:04d}.svg" for i in range(4)]
+    svgs = [z.read(n).decode() for n in names]
+    assert all("<svg" in s for s in svgs)  # each entry parses as an SVG document
+    assert svgs[0] != svgs[-1]  # t=0 vs t=1 differ (the follow_master tween moved)
+
+    # bounds: frames outside 2..240 is a 422 (FastAPI query validation)
+    assert client.get("/api/animation/export.zip?frames=1").status_code == 422
+    assert client.get("/api/animation/export.zip?frames=241").status_code == 422
+
+
+def test_export_animation_frames_empty_project_400(client):
+    assert client.get("/api/animation/export.zip?frames=3").status_code == 400
+
+
+def test_plot_start_with_master_t_scrubs_geometry(client):
+    layer = client.post("/api/layers/generate",
+                        json={"module": "polygon", "params": {"sides": 6, "radius": 15}}).json()
+    tw = client.post(f"/api/layers/{layer['id']}/animate").json()
+    b_id = tw["source"]["params"]["b"]
+    client.patch(f"/api/layers/{b_id}", json={
+        "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 40}})
+
+    from axibridge.session import session
+    doc0 = session.plot_document("all", master_t=0.0)
+    doc1 = session.plot_document("all", master_t=1.0)
+    pts0 = [[p.points for p in l.paths] for l in doc0.layers]
+    pts1 = [[p.points for p in l.paths] for l in doc1.layers]
+    assert pts0 != pts1  # scrubbing the master timeline moves the plotted geometry
+
+    client.put("/api/params/simulator", json={"time_scale": 1000})
+    assert client.post("/api/connect", json={}).status_code == 200
+    r = client.post("/api/plot/start", json={"target": "all", "master_t": 0.25})
+    assert r.status_code == 200
+    deadline = time.time() + 15
+    while time.time() < deadline:
+        if client.get("/api/state").json()["machine"]["job_state"] == "idle":
+            break
+        time.sleep(0.1)
+    else:
+        pytest.fail("simulator plot did not finish")
+
+    # out-of-range master_t rejected (422, bounded field)
+    assert client.post("/api/plot/start", json={"target": "all", "master_t": 1.5}).status_code == 422
+
+
 def test_plot_single_layer_on_simulator(client):
     r = client.post("/api/layers/generate",
                     json={"module": "polygon", "params": {"sides": 4, "radius": 20}})

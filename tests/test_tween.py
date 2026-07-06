@@ -251,3 +251,72 @@ def test_explode_tween_creates_layer_per_step():
     assert all(len(r[l.id]) == per_step for l in created)
     assert session.undo()  # one step undoes the whole explode
     assert created[0].id not in {l.id for l in session.project.layers}
+
+
+# -- Stage 4: contact-sheet bake ---------------------------------------------
+
+
+def _bbox(points):
+    xs = [x for x, _ in points]
+    ys = [y for _, y in points]
+    return min(xs), max(xs), min(ys), max(ys)
+
+
+def test_bake_contact_sheet_layer_count_and_within_bed():
+    from axibridge import compose
+
+    a, b, tw = _follow_pair()
+    created = session.bake_contact_sheet(cols=2, rows=2, frames=4, margin_mm=5.0)
+    assert len(created) == 4
+    assert all(l.source.type == "baked" for l in created)
+    assert all(l.visible for l in created)
+    # previously-visible layers (a, b, tw) are hidden — the bake replaces them
+    assert not session.project.layer(a.id).visible
+    assert not session.project.layer(b.id).visible
+    assert not session.project.layer(tw.id).visible
+    for l in created:
+        for p in session.source_geometry[l.id]:
+            for x, y in p.points:
+                assert 0.0 <= x <= compose.BED_WIDTH
+                assert 0.0 <= y <= compose.BED_HEIGHT
+
+
+def test_bake_contact_sheet_cells_disjoint_and_no_size_jitter():
+    a, b, tw = _follow_pair()
+    session.update_layer(b.id, {"transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 150, "f": 100}})
+    created = session.bake_contact_sheet(cols=3, rows=1, frames=3, margin_mm=5.0)
+    boxes = [_bbox([pt for p in session.source_geometry[l.id] for pt in p.points]) for l in created]
+    # adjacent cells' bounding boxes don't overlap on x (margin > 0 guarantees a gap)
+    for (x0a, x1a, _, _), (x0b, x1b, _, _) in zip(boxes, boxes[1:]):
+        assert x1a < x0b
+    # shared scale: every frame's baked bbox is the same size (no per-frame jitter)
+    sizes = [(round(x1 - x0, 6), round(y1 - y0, 6)) for x0, x1, y0, y1 in boxes]
+    assert len(set(sizes)) == 1
+
+
+def test_bake_contact_sheet_one_undo_restores_prior_state():
+    a, b, tw = _follow_pair()
+    layers_before = [l.id for l in session.project.layers]
+    session._history.clear()  # isolate the checkpoint count from the history maxlen cap
+    hist_before = len(session._history)
+    session.bake_contact_sheet(cols=2, rows=2, frames=3, margin_mm=5.0)
+    assert len(session._history) == hist_before + 1  # exactly one undo step
+    assert session.undo()
+    assert [l.id for l in session.project.layers] == layers_before
+    assert session.project.layer(tw.id).visible
+
+
+def test_bake_contact_sheet_bounds_validation():
+    a, b, tw = _follow_pair()
+    with pytest.raises(ValueError):
+        session.bake_contact_sheet(cols=0, rows=2, frames=2, margin_mm=5.0)
+    with pytest.raises(ValueError):
+        session.bake_contact_sheet(cols=13, rows=2, frames=2, margin_mm=5.0)
+    with pytest.raises(ValueError):
+        session.bake_contact_sheet(cols=2, rows=2, frames=1, margin_mm=5.0)  # < 2
+    with pytest.raises(ValueError):
+        session.bake_contact_sheet(cols=2, rows=2, frames=5, margin_mm=5.0)  # > cols*rows
+    with pytest.raises(ValueError):
+        session.bake_contact_sheet(cols=2, rows=2, frames=2, margin_mm=31.0)
+    with pytest.raises(ValueError):
+        session.bake_contact_sheet(cols=2, rows=2, frames=2, margin_mm=5.0, t_from=-0.1)

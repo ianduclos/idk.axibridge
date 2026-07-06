@@ -271,6 +271,91 @@ class Session:
             layer.visible = False
             return created
 
+    def bake_contact_sheet(
+        self, cols: int, rows: int, frames: int, margin_mm: float,
+        t_from: float = 0.0, t_to: float = 1.0,
+    ) -> list[CanvasLayer]:
+        """Bake ``frames`` samples of the master timeline into a cols×rows
+        contact sheet: one baked layer per frame. A single shared scale
+        (derived from the union bounding box across ALL frames) keeps every
+        frame the same size — no per-frame jitter — while each frame is
+        individually centred in its own grid cell (its own bbox centre, same
+        scale). Previously-visible layers are hidden, like ``explode_tween``
+        hides its source tween — the new baked layers become the sheet's
+        visible content. Geometry is the VISIBLE, resolved (post-occlusion)
+        paths, so what gets baked is exactly what the canvas/plotter show.
+        One undo step."""
+        if not (1 <= cols <= 12 and 1 <= rows <= 12):
+            raise ValueError("cols and rows must each be 1..12")
+        if not (2 <= frames <= cols * rows):
+            raise ValueError(f"frames must be 2..{cols * rows} for a {cols}x{rows} grid")
+        if not (0.0 <= margin_mm <= 30.0):
+            raise ValueError("margin_mm must be 0..30")
+        if not (0.0 <= t_from <= 1.0 and 0.0 <= t_to <= 1.0):
+            raise ValueError("t_from/t_to must be 0..1")
+
+        with self._lock:
+            self._checkpoint()
+            pre_existing = list(self.project.layers)
+
+            ts = [t_from] if frames <= 1 else [
+                t_from + (t_to - t_from) * i / (frames - 1) for i in range(frames)
+            ]
+            # per-frame VISIBLE, resolved (post-occlusion) geometry, flattened.
+            # resolved() re-materialises tweens as a side effect (same as
+            # explode_tween) — that's fine, it's the single resolve path.
+            frame_paths: list[list[Path]] = []
+            for t in ts:
+                resolved = self.resolved(master_t=t)
+                paths = [p for layer in self.project.layers if layer.visible
+                         for p in resolved.get(layer.id, [])]
+                frame_paths.append(paths)
+
+            all_xs = [x for paths in frame_paths for p in paths for x, _ in p.points]
+            all_ys = [y for paths in frame_paths for p in paths for _, y in p.points]
+            if not all_xs:
+                raise RuntimeError("nothing to bake (no visible geometry across the frame range)")
+            bw = max(max(all_xs) - min(all_xs), 1e-6)
+            bh = max(max(all_ys) - min(all_ys), 1e-6)
+
+            guide = self.project.guide
+            sheet_x = guide.x if guide else 0.0
+            sheet_y = guide.y if guide else 0.0
+            sheet_w = guide.width if guide else compose.BED_WIDTH
+            sheet_h = guide.height if guide else compose.BED_HEIGHT
+            cell_w = sheet_w / cols - 2 * margin_mm
+            cell_h = sheet_h / rows - 2 * margin_mm
+            if cell_w <= 0 or cell_h <= 0:
+                raise RuntimeError("margin too large for this grid on the current paper guide")
+
+            scale = min(cell_w / bw, cell_h / bh)  # shared: no per-frame size jitter
+
+            created: list[CanvasLayer] = []
+            for i, (t, paths) in enumerate(zip(ts, frame_paths)):
+                row, col = divmod(i, cols)  # row-major, left-to-right, top-to-bottom
+                cx = sheet_x + (col + 0.5) * (sheet_w / cols)
+                cy = sheet_y + (row + 0.5) * (sheet_h / rows)
+                xs = [x for p in paths for x, _ in p.points]
+                ys = [y for p in paths for _, y in p.points]
+                fcx = (min(xs) + max(xs)) / 2 if xs else 0.0
+                fcy = (min(ys) + max(ys)) / 2 if ys else 0.0
+                aff = Affine(a=scale, b=0.0, c=0.0, d=scale,
+                             e=cx - scale * fcx, f=cy - scale * fcy)
+                placed = compose.transform_paths(paths, aff)
+                layer = CanvasLayer(
+                    name=f"frame {i:02d} · t={t:.2f}",
+                    source=LayerSource(type="baked"),
+                    transform=Affine(),
+                )
+                self.project.layers.append(layer)  # appended = top of z-order
+                self.source_geometry[layer.id] = placed
+                created.append(layer)
+
+            for layer in pre_existing:
+                layer.visible = False
+
+            return created
+
     def duplicate_layer(self, layer_id: str) -> CanvasLayer:
         """Copy a layer (new id) directly above the original — same source,
         transform, effects, pen. Geometry list is shared by reference; it is

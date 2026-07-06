@@ -46,6 +46,38 @@ export function initPlotTab() {
     </div>
 
     <div class="panel">
+      <h2>Animation</h2>
+      <details id="anim-details">
+        <summary>Frame sequence — SVG export, plot stepper, contact-sheet bake</summary>
+        <div class="row">
+          <label>frames</label><input type="number" id="anim-frames" min="2" max="240" step="1" style="width:5em">
+          <label>t from</label><input type="number" id="anim-t-from" min="0" max="1" step="0.01" style="width:5.5em">
+          <label>t to</label><input type="number" id="anim-t-to" min="0" max="1" step="0.01" style="width:5.5em">
+        </div>
+        <div class="row">
+          <a id="anim-export-link" download><button type="button">Export SVG frames (zip)</button></a>
+        </div>
+
+        <h3>Frame stepper <span class="hint">(swap paper between frames — never auto-plots)</span></h3>
+        <div class="row"><span id="anim-frame-label"></span></div>
+        <div class="row">
+          <button id="anim-plot-frame" class="primary">Plot frame</button>
+          <button id="anim-skip">Skip →</button>
+          <button id="anim-reset">Reset</button>
+        </div>
+
+        <h3>Contact sheet <span class="hint">(bake the frame range into a grid on one sheet)</span></h3>
+        <div class="row">
+          <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1" style="width:4em">
+          <label>rows</label><input type="number" id="anim-rows" min="1" max="12" step="1" style="width:4em">
+          <label>margin</label><input type="number" id="anim-margin" min="0" max="30" step="0.5" style="width:5em">
+          <span class="hint">mm</span>
+        </div>
+        <div class="row"><button id="anim-bake" class="primary">Bake contact sheet</button></div>
+      </details>
+    </div>
+
+    <div class="panel">
       <h2>Motion parameters <span class="tag" id="motion-backend-tag"></span></h2>
       <div id="motion-form" class="form"></div>
     </div>
@@ -142,6 +174,69 @@ export function initPlotTab() {
   $("btn-pause").onclick = () => api.post("/api/plot/pause").catch(actions.oops);
   $("btn-resume").onclick = () => api.post("/api/plot/resume").catch(actions.oops);
   $("btn-stop").onclick = () => api.post("/api/plot/stop").catch(actions.oops);
+
+  // ---- animation: SVG export, plot-frame stepper, contact-sheet bake
+  $("anim-frames").value = anim.n;
+  $("anim-t-from").value = anim.tFrom;
+  $("anim-t-to").value = anim.tTo;
+  $("anim-cols").value = 4;
+  $("anim-rows").value = 2;
+  $("anim-margin").value = 5;
+
+  const pullAnimRange = () => {
+    anim.n = Math.max(2, Math.min(240, Math.round(Number($("anim-frames").value) || 2)));
+    anim.tFrom = Math.max(0, Math.min(1, Number($("anim-t-from").value)));
+    anim.tTo = Math.max(0, Math.min(1, Number($("anim-t-to").value)));
+    anim.i = Math.min(anim.i, anim.n - 1);
+  };
+  const updateExportLink = () => {
+    $("anim-export-link").href =
+      `/api/animation/export.zip?frames=${anim.n}&t_from=${anim.tFrom}&t_to=${anim.tTo}`;
+  };
+  const refreshAnimPanel = () => { pullAnimRange(); updateExportLink(); renderAnimStepper(); };
+
+  for (const id of ["anim-frames", "anim-t-from", "anim-t-to"]) $(id).onchange = refreshAnimPanel;
+
+  $("anim-reset").onclick = () => {
+    anim.i = 0; anim.plotting = false; anim.wasBusy = false;
+    renderAnimStepper();
+  };
+  $("anim-skip").onclick = () => {
+    anim.i = Math.min(anim.i + 1, anim.n - 1);
+    renderAnimStepper();
+  };
+  // explicit, one frame at a time — the UX guard against auto-plotting a
+  // whole sequence unattended while paper needs manual swapping between sheets.
+  $("anim-plot-frame").onclick = async () => {
+    pullAnimRange();
+    const t = animT(anim.i);
+    anim.plotting = true;
+    anim.wasBusy = false;
+    renderAnimStepper();
+    try {
+      await api.post("/api/plot/start", { target: S.plotTarget, master_t: t });
+      actions.log(`▶ plotting frame ${anim.i + 1}/${anim.n} (t=${t.toFixed(3)}, ${targetLabel()})`);
+    } catch (e) {
+      anim.plotting = false;
+      renderAnimStepper();
+      actions.oops(e);
+    }
+  };
+  $("anim-bake").onclick = async () => {
+    try {
+      pullAnimRange();
+      const cols = Math.max(1, Math.min(12, Math.round(Number($("anim-cols").value) || 1)));
+      const rows = Math.max(1, Math.min(12, Math.round(Number($("anim-rows").value) || 1)));
+      const margin_mm = Math.max(0, Math.min(30, Number($("anim-margin").value) || 0));
+      await api.post("/api/animation/contact_sheet", {
+        cols, rows, frames: anim.n, margin_mm, t_from: anim.tFrom, t_to: anim.tTo,
+      });
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      actions.log(`baked ${anim.n}-frame contact sheet (${cols}×${rows})`);
+    } catch (e) { actions.oops(e); }
+  };
+  refreshAnimPanel();
 
   // ---- jog / pen
   for (const b of document.querySelectorAll("[data-jog]")) {
@@ -241,6 +336,31 @@ export function initPlotTab() {
 
 let motionValues = {};
 const currentMotionValues = () => motionValues;
+
+// ---- Animation: frame stepper state ------------------------------------------
+// Module-level (survives initPlotTab's innerHTML rebuilds, e.g. on project
+// switch) so the SSE-driven completion check in applyCapabilities() can
+// advance it without needing its own wiring. Sequencing is entirely
+// browser-side — the server has no notion of "frame N of an animation".
+const anim = { n: 8, tFrom: 0, tTo: 1, i: 0, plotting: false, wasBusy: false };
+
+function animT(i) {
+  return anim.n <= 1 ? anim.tFrom : anim.tFrom + (anim.tTo - anim.tFrom) * i / (anim.n - 1);
+}
+
+function renderAnimStepper() {
+  if (!$("anim-frame-label")) return;
+  $("anim-frame-label").textContent =
+    `frame ${anim.i + 1} of ${anim.n} (t=${animT(anim.i).toFixed(3)})`;
+  const btn = $("anim-plot-frame");
+  if (btn) {
+    btn.textContent = anim.plotting ? `Plotting frame ${anim.i + 1}…` : `Plot frame ${anim.i + 1}`;
+    const basePlotDisabled = $("btn-plot") ? $("btn-plot").disabled : true;
+    btn.disabled = anim.plotting || basePlotDisabled;
+  }
+  const skip = $("anim-skip");
+  if (skip) skip.disabled = anim.plotting || anim.i >= anim.n - 1;
+}
 
 export function renderPlotTab() {
   if (!$("backend-list")) return;
@@ -408,6 +528,20 @@ export function applyCapabilities() {
     $("connect-info").textContent = "";
   }
   if (m.position) setPos(m.position);
+
+  // frame stepper: advance to "swap paper -> next frame" once THIS job (a
+  // frame plot we started via anim-plot-frame) reaches idle again. Never
+  // auto-plots the next frame — only unlocks the button for a fresh press.
+  if (anim.plotting) {
+    if (!idle) {
+      anim.wasBusy = true;
+    } else if (anim.wasBusy) {
+      anim.wasBusy = false;
+      anim.plotting = false;
+      anim.i = Math.min(anim.i + 1, anim.n - 1);
+    }
+  }
+  renderAnimStepper();
 }
 
 function setPos(pos) {
