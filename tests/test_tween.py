@@ -86,13 +86,104 @@ def test_tween_rejects_incompatible_layers():
         session.create_tween_layer(a.id, a.id)
 
 
-def test_tween_blocks_deleting_referenced_layer():
+def test_tween_cascade_false_blocks_deleting_referenced_layer():
     a, b = _pair()
     tw = session.create_tween_layer(a.id, b.id)
     with pytest.raises(RuntimeError, match="referenced"):
-        session.delete_layer(a.id)
-    session.delete_layers([a.id, tw.id])  # together is fine
+        session.delete_layers([a.id], cascade=False)
+    session.delete_layers([a.id, tw.id], cascade=False)  # together is fine
     assert a.id not in {l.id for l in session.project.layers}
+
+
+def test_cascade_delete_keyframe_a_takes_tween_and_b():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    original_name = layer.name
+    tw = session.animate_layer(layer.id)
+    b_id = tw.source.params["b"]
+    assert len(session.project.layers) == 3
+    session._history.clear()
+    deleted = session.delete_layer(layer.id)  # delete keyframe A (original id)
+    assert set(deleted) == {layer.id, b_id, tw.id}
+    assert len(session.project.layers) == 0
+    # ONE undo restores all three with names + visibility intact
+    assert session.undo()
+    assert len(session.project.layers) == 3
+    a, b, twr = (session.project.layer(layer.id), session.project.layer(b_id),
+                 session.project.layer(tw.id))
+    assert a.name == f"{original_name} ▸ A" and not a.visible
+    assert b.name == f"{original_name} ▸ B" and not b.visible
+    assert twr.name == original_name and twr.visible
+
+
+def test_cascade_delete_tween_takes_hidden_keyframes():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    a_id = layer.id
+    tw = session.animate_layer(layer.id)
+    b_id = tw.source.params["b"]
+    deleted = session.delete_layer(tw.id)
+    assert set(deleted) == {a_id, b_id, tw.id}
+    assert len(session.project.layers) == 0
+
+
+def test_cascade_delete_manual_tween_keeps_visible_sources():
+    a, b = _pair()  # both VISIBLE
+    tw = session.create_tween_layer(a.id, b.id)
+    deleted = session.delete_layer(tw.id)
+    assert deleted == [tw.id]  # visible sources are never swept
+    assert {a.id, b.id} <= {l.id for l in session.project.layers}
+
+
+def test_cascade_spares_hidden_keyframe_referenced_by_surviving_tween():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    tw1 = session.animate_layer(layer.id)
+    a_id, b_id = tw1.source.params["a"], tw1.source.params["b"]
+    tw2 = session.create_tween_layer(a_id, b_id)  # 2nd tween over the same pair
+    deleted = session.delete_layer(tw1.id)
+    assert deleted == [tw1.id]  # A/B still referenced by surviving tw2 -> spared
+    survivors = {l.id for l in session.project.layers}
+    assert {a_id, b_id, tw2.id} <= survivors
+
+
+def test_multiple_tweens_over_same_pair_coexist():
+    a, b = _pair()
+    tw1 = session.create_tween_layer(a.id, b.id)
+    tw2 = session.create_tween_layer(a.id, b.id)
+    session.set_tween_params(tw1.id, {"t": 0.25})
+    session.set_tween_params(tw2.id, {"t": 0.75})
+    r = session.resolved()
+    assert r[tw1.id] and r[tw2.id]
+    assert [p.points for p in r[tw1.id]] != [p.points for p in r[tw2.id]]
+
+
+# -- Stage A: timeline windows -----------------------------------------------
+
+
+def test_window_holds_a_before_and_b_after():
+    a, b, tw = _follow_pair()  # own t = 0.5, follow_master
+    session.set_tween_params(tw.id, {"window_from": 0.25, "window_to": 0.75})
+    for mt in (0.0, 0.25):  # before/at window start -> A exactly
+        _approx_equal(session.resolved(master_t=mt)[tw.id], session.resolved()[a.id])
+    for mt in (0.75, 1.0):  # at/after window end -> B exactly
+        _approx_equal(session.resolved(master_t=mt)[tw.id], session.resolved()[b.id])
+    # master_t 0.5 -> local (0.5-0.25)/0.5 = 0.5 == the tween's own t=0.5 output
+    _approx_equal(session.resolved(master_t=0.5)[tw.id], session.resolved()[tw.id])
+
+
+def test_window_degenerate_steps_a_to_b():
+    a, b, tw = _follow_pair()
+    session.set_tween_params(tw.id, {"window_from": 0.5, "window_to": 0.5})
+    _approx_equal(session.resolved(master_t=0.49)[tw.id], session.resolved()[a.id])
+    _approx_equal(session.resolved(master_t=0.5)[tw.id], session.resolved()[b.id])
+    _approx_equal(session.resolved(master_t=0.51)[tw.id], session.resolved()[b.id])
+
+
+def test_window_ignored_without_follow_master():
+    a, b = _pair()
+    tw = session.create_tween_layer(a.id, b.id)
+    session.set_tween_params(tw.id, {"t": 0.3, "window_from": 0.25, "window_to": 0.75})
+    base = session.resolved()[tw.id]
+    scrubbed = session.resolved(master_t=0.0)[tw.id]
+    assert [p.points for p in base] == [p.points for p in scrubbed]  # windows unused
 
 
 def test_tween_missing_ref_resolves_empty_not_crashing():

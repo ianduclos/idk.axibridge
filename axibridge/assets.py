@@ -86,6 +86,13 @@ class AssetStore:
         with self._lock:
             return sorted(self._data)
 
+    def is_sequence(self, name: str) -> bool:
+        """True if ``name`` is a known frame-sequence prefix (``clip#``) that
+        maps to concrete frames — i.e. a name with a per-frame ``frame`` axis.
+        Thread-safe; never raises."""
+        with self._lock:
+            return bool(self._seq.get(name))
+
     def resolve_frame(self, name: str, frame: float) -> str:
         """Map a sequence prefix + normalized position to a concrete frame name.
         ``frame`` is clamped to [0,1] and rounded to the nearest frame index

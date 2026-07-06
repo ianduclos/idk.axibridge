@@ -374,6 +374,28 @@ def _even_indices(total: int, n: int) -> list[int]:
     return [round(i * (total - 1) / (n - 1)) for i in range(n)]
 
 
+def _select_indices(
+    total: int, frames: int | None, start: int, every: int | None
+) -> list[int]:
+    """Which source indices survive the import controls (shared by the video
+    and multi-image paths). Drop the first ``start`` items; ``every`` picks
+    every Nth of the remainder (capped at ``frames`` when set), otherwise
+    ``frames`` are spread evenly across the remainder (``_even_indices`` offset
+    by ``start`` — exact ``start=0, every=None`` legacy behaviour).
+
+    ``total == 1`` (a single-image "sequence") passes through untouched; the
+    "fewer than 2" guard only fires when the controls drop a genuinely
+    multi-frame source below two frames."""
+    if total > 1 and total - start < 2:
+        raise HTTPException(status_code=400, detail="start leaves fewer than 2 frames")
+    start = min(start, max(total - 1, 0))  # a lone remaining frame still resolves
+    if every is not None:
+        idxs = list(range(start, total, every))
+        return idxs[:frames] if frames is not None else idxs
+    n = frames if frames is not None else total - start
+    return [start + i for i in _even_indices(total - start, n)]
+
+
 def _reencode_jpeg(img: Any) -> bytes:
     """Downscale a PIL image to <=1024 px on its long edge and re-encode as
     JPEG quality 85 (sequences hold many frames — keep each one light; depth /
@@ -392,8 +414,11 @@ def _reencode_jpeg(img: Any) -> bytes:
     return buf.getvalue()
 
 
-def _extract_video_frames(data: bytes, suffix: str, n: int) -> list[bytes]:
-    """Decode ``n`` evenly spaced frames (across the whole clip) to JPEG bytes.
+def _extract_video_frames(
+    data: bytes, suffix: str, frames: int | None, start: int, every: int | None
+) -> list[bytes]:
+    """Decode the selected frames (see :func:`_select_indices`) to JPEG bytes,
+    applying selection BEFORE re-encoding so dropped frames are never encoded.
     imageio + imageio-ffmpeg, imported lazily to keep server start fast; ffmpeg
     reads from a real path, so the upload is spooled to a temp file first."""
     import imageio.v3 as iio  # lazy: pulls in the bundled static ffmpeg
@@ -403,12 +428,13 @@ def _extract_video_frames(data: bytes, suffix: str, n: int) -> list[bytes]:
         tf.write(data)
         path = tf.name
     try:
-        # tiny clips: read every frame, then subsample evenly. (Large videos
-        # would be heavy here — acceptable for hand-authored sequence sources.)
-        frames = list(iio.imiter(path, plugin="FFMPEG"))
-        if not frames:
+        # tiny clips: read every frame, then subsample. (Large videos would be
+        # heavy here — acceptable for hand-authored sequence sources.)
+        decoded = list(iio.imiter(path, plugin="FFMPEG"))
+        if not decoded:
             raise ValueError("no frames decoded from video")
-        return [_reencode_jpeg(Image.fromarray(frames[i])) for i in _even_indices(len(frames), n)]
+        idxs = _select_indices(len(decoded), frames, start, every)
+        return [_reencode_jpeg(Image.fromarray(decoded[i])) for i in idxs]
     finally:
         os.unlink(path)
 
@@ -416,13 +442,17 @@ def _extract_video_frames(data: bytes, suffix: str, n: int) -> list[bytes]:
 @router.post("/assets/sequence")
 async def upload_sequence(
     files: list[UploadFile],
-    frames: int | None = Form(default=None),
+    frames: int | None = Form(default=None, ge=1, le=240),
+    start: int = Form(default=0, ge=0, le=100000),
+    every: int | None = Form(default=None, ge=1, le=1000),
 ) -> dict[str, Any]:
-    """Import a frame sequence: EITHER several image files (ordered by filename;
-    ``frames`` subsamples evenly to N) OR one video file (``frames`` frames
-    spread across its duration, default 24, bound 2..240). Frames are stored as
-    plain assets ``<stem>#0000.jpg`` …; image consumers pick one via a
-    normalized ``frame`` param. Returns the ``<stem>#`` prefix + frame count."""
+    """Import a frame sequence: EITHER several image files (ordered by filename)
+    OR one video file (``frames`` default 24, bound 2..240). ``start`` drops the
+    first N source frames; ``every`` takes every Nth of the remainder; otherwise
+    ``frames`` are spread evenly across the remainder (see ``_select_indices``).
+    Frames are stored as plain assets ``<stem>#0000.jpg`` …; image consumers
+    pick one via a normalized ``frame`` param. Returns the ``<stem>#`` prefix +
+    frame count."""
     from PIL import Image, ImageOps  # lazy, like the single-asset upload probe
 
     if not files:
@@ -439,7 +469,9 @@ async def upload_sequence(
     if len(files) == 1 and ext in _VIDEO_EXTS:
         n = max(2, min(240, frames if frames else 24))
         try:
-            jpegs = _extract_video_frames(await first.read(), ext, n)
+            jpegs = _extract_video_frames(await first.read(), ext, n, start, every)
+        except HTTPException:
+            raise  # a selection error (e.g. start leaves fewer than 2 frames)
         except Exception as e:
             raise _fail(e, 400)
     else:
@@ -447,8 +479,9 @@ async def upload_sequence(
                  if (b := await f.read())]
         if not blobs:
             raise HTTPException(status_code=400, detail="no image data")
-        if frames and 0 < frames < len(blobs):
-            blobs = [blobs[i] for i in _even_indices(len(blobs), frames)]
+        # bound the count exactly like the video path (2..240) before selecting
+        n = min(240, frames) if frames else frames
+        blobs = [blobs[i] for i in _select_indices(len(blobs), n, start, every)]
         try:
             jpegs = [_reencode_jpeg(ImageOps.exif_transpose(Image.open(io.BytesIO(b))))
                      for b in blobs]
@@ -512,26 +545,35 @@ def regenerate_layer(layer_id: str, body: RegenerateBody) -> dict[str, Any]:
 
 
 @router.delete("/layers/{layer_id}")
-def delete_layer(layer_id: str) -> dict[str, str]:
+def delete_layer(layer_id: str) -> dict[str, Any]:
+    """Cascade-delete a layer (default): a tween goes with its keyframes, and
+    animate-created keyframes go with their tween. ``deleted`` lists every id
+    that was actually removed (in z-order)."""
     try:
-        session.delete_layer(layer_id)
+        deleted = session.delete_layer(layer_id)
     except KeyError as e:
         raise _fail(e, 404)
-    return {"deleted": layer_id}
+    return {"deleted": deleted}
 
 
 class DeleteLayersBody(BaseModel):
     ids: list[str]
+    cascade: bool = True
 
 
 @router.post("/layers/delete")
 def delete_layers(body: DeleteLayersBody) -> dict[str, Any]:
-    """Bulk delete (one undo step) — what Backspace on a multi-selection sends."""
+    """Bulk delete (one undo step) — what Backspace on a multi-selection sends.
+    Cascades by default (see :func:`delete_layer`); ``cascade=false`` refuses if
+    a surviving tween still references a doomed layer. ``deleted`` lists every
+    removed id in z-order."""
     try:
-        session.delete_layers(body.ids)
+        deleted = session.delete_layers(body.ids, cascade=body.cascade)
     except KeyError as e:
         raise _fail(e, 404)
-    return {"deleted": body.ids}
+    except RuntimeError as e:
+        raise _fail(e, 409)
+    return {"deleted": deleted}
 
 
 class TweenBody(BaseModel):

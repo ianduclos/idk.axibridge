@@ -149,6 +149,49 @@ def test_sequence_downscaled_to_1024_long_edge(client):
     assert info["width"] == 1024 and info["height"] == 512
 
 
+# -- API: import selection controls (start / every) --------------------------
+
+
+def _mean_shade(name) -> int:
+    rows, w, h = asset_store.grayscale(name)
+    return round(sum(v for row in rows for v in row) / (w * h) * 255)
+
+
+def test_import_start_drops_leading_frames(client):
+    r = client.post("/api/assets/sequence",
+                    files=_imgfiles([i * 20 for i in range(12)]), data={"start": "4"})
+    assert r.status_code == 200, r.text
+    assert r.json()["frames"] == 8
+    assert len(asset_store.all()) == 8
+
+
+def test_import_start_and_every_select_source_frames(client):
+    # distinct shades so the stored frames identify their source indices
+    r = client.post("/api/assets/sequence",
+                    files=_imgfiles([i * 20 for i in range(12)]),
+                    data={"start": "2", "every": "3"})
+    assert r.status_code == 200, r.text
+    assert r.json()["frames"] == 4
+    means = [_mean_shade(k) for k in sorted(asset_store.all())]
+    # source indices 2, 5, 8, 11 -> shades 40, 100, 160, 220
+    assert means == pytest.approx([40, 100, 160, 220], abs=3)
+
+
+def test_import_every_capped_by_frames(client):
+    r = client.post("/api/assets/sequence",
+                    files=_imgfiles([i * 20 for i in range(12)]),
+                    data={"every": "2", "frames": "3"})
+    assert r.status_code == 200, r.text
+    assert r.json()["frames"] == 3  # [0,2,4,6,8,10][:3]
+
+
+def test_import_start_leaves_too_few_is_400(client):
+    r = client.post("/api/assets/sequence",
+                    files=_imgfiles([i * 20 for i in range(12)]), data={"start": "11"})
+    assert r.status_code == 400
+    assert "fewer than 2" in r.json()["detail"]
+
+
 def _tiny_mp4(n=8):
     import numpy as np
     import imageio.v3 as iio
@@ -173,6 +216,19 @@ def test_video_upload_extracts_frames(client):
     assert sorted(asset_store.all()) == [f"myclip#{i:04d}.jpg" for i in range(4)]
 
 
+def test_video_upload_with_start_and_frames(client):
+    try:
+        data = _tiny_mp4(8)
+    except Exception as e:
+        pytest.skip(f"ffmpeg/imageio unavailable: {e}")
+    r = client.post("/api/assets/sequence",
+                    files=[("files", ("clip.mp4", data, "video/mp4"))],
+                    data={"start": "2", "frames": "3"})  # even spread of 3 after dropping 2
+    assert r.status_code == 200, r.text
+    assert r.json()["frames"] == 3
+    assert sorted(asset_store.all()) == [f"clip#{i:04d}.jpg" for i in range(3)]
+
+
 # -- generators: frame selection changes geometry ----------------------------
 
 
@@ -188,3 +244,29 @@ def test_image_threshold_differs_across_frames():
     pts1 = [p.points for layer in at1.layers for p in layer.paths]
     assert pts0 and pts1
     assert pts0 != pts1  # a different frame traces different geometry
+
+
+# -- animate: auto-frame a sequence-driven layer -----------------------------
+
+
+def test_animate_sequence_layer_sets_frame_b_to_one():
+    from axibridge.session import session
+
+    for i in range(3):
+        asset_store.put(f"clip#{i:04d}.png", _png_blob((2 + i, 2 + i, 12 + i, 12 + i)))
+    layer = session.add_generated_layer(
+        "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0})
+    tw = session.animate_layer(layer.id)
+    a = session.project.layer(layer.id)
+    b = session.project.layer(tw.source.params["b"])
+    assert b.source.params["frame"] == 1.0     # B jumps to the last frame
+    assert a.source.params["frame"] == 0.0     # A holds what the user saw
+
+
+def test_animate_non_sequence_layer_adds_no_frame_key():
+    from axibridge.session import session
+
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    tw = session.animate_layer(layer.id)
+    b = session.project.layer(tw.source.params["b"])
+    assert "frame" not in (b.source.params or {})

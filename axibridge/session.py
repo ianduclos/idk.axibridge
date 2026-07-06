@@ -167,30 +167,83 @@ class Session:
             self._snapshot_pen(updated.pen_id)
             return updated
 
-    def delete_layer(self, layer_id: str) -> None:
-        self.delete_layers([layer_id])
+    def delete_layer(self, layer_id: str) -> list[str]:
+        return self.delete_layers([layer_id])
 
-    def delete_layers(self, layer_ids: list[str]) -> None:
+    def _tweens(self) -> list[CanvasLayer]:
+        return [l for l in self.project.layers if l.source.type == "tween"]
+
+    @staticmethod
+    def _tween_refs(layer: CanvasLayer) -> tuple[Any, Any]:
+        p = layer.source.params or {}
+        return p.get("a"), p.get("b")
+
+    def delete_layers(self, layer_ids: list[str], cascade: bool = True) -> list[str]:
         """Bulk delete = ONE history entry, so one undo restores the lot.
-        Refused if a surviving tween layer references a deleted one."""
+
+        ``cascade`` (the default) expands the doomed set to a fixpoint so a
+        delete never leaves a dangling tween: (a) any tween referencing a
+        doomed layer joins it; (b) any HIDDEN layer referenced only by doomed
+        tweens joins it (the animate-created keyframes travel with their
+        tween, but a manual tween's VISIBLE sources are never swept). Returns
+        the ordered (project z-order) list of deleted layer ids.
+
+        ``cascade=False`` refuses the delete (human-readable RuntimeError) if a
+        surviving tween still references a doomed layer — the strict mode."""
         with self._lock:
             layers = [self.project.layer(i) for i in layer_ids]  # all-or-nothing
-            doomed = set(layer_ids)
-            for other in self.project.layers:
-                if other.id in doomed or other.source.type != "tween":
-                    continue
-                p = other.source.params or {}
-                if p.get("a") in doomed or p.get("b") in doomed:
-                    raise RuntimeError(
-                        f"layer is referenced by interpolation layer {other.name!r} — "
-                        "delete that first (or together)"
-                    )
+            doomed = {l.id for l in layers}
+
+            if cascade:
+                while True:
+                    changed = False
+                    # (a) tweens that reference anything doomed
+                    for tw in self._tweens():
+                        if tw.id in doomed:
+                            continue
+                        a, b = self._tween_refs(tw)
+                        if a in doomed or b in doomed:
+                            doomed.add(tw.id)
+                            changed = True
+                    # (b) hidden layers referenced by a doomed tween and by no
+                    # surviving tween (collects animate keyframes; never takes a
+                    # manual tween's visible sources)
+                    for layer in self.project.layers:
+                        if layer.id in doomed or layer.visible:
+                            continue
+                        by_doomed = by_surviving = False
+                        for tw in self._tweens():
+                            a, b = self._tween_refs(tw)
+                            if layer.id in (a, b):
+                                if tw.id in doomed:
+                                    by_doomed = True
+                                else:
+                                    by_surviving = True
+                        if by_doomed and not by_surviving:
+                            doomed.add(layer.id)
+                            changed = True
+                    if not changed:
+                        break
+            else:
+                for tw in self._tweens():
+                    if tw.id in doomed:
+                        continue
+                    a, b = self._tween_refs(tw)
+                    if a in doomed or b in doomed:
+                        raise RuntimeError(
+                            f"layer is referenced by interpolation layer {tw.name!r} — "
+                            "delete that first (or together)"
+                        )
+
             self._checkpoint()
-            for layer in layers:
+            # delete in project z-order for a deterministic, reported result
+            deleted = [l for l in list(self.project.layers) if l.id in doomed]
+            for layer in deleted:
                 self.project.layers.remove(layer)
                 self.source_geometry.pop(layer.id, None)
                 self._shaped_cache.pop(layer.id, None)
                 self._tween_cache.pop(layer.id, None)
+            return [l.id for l in deleted]
 
     def reorder_layers(self, ordered_ids: list[str]) -> None:
         with self._lock:
@@ -405,6 +458,12 @@ class Session:
             self.project.layers.insert(idx + 1, b)
             self.source_geometry[b.id] = self.source_geometry.get(layer_id, [])
 
+            # Auto-frame: a generator driven by a frame sequence animates its
+            # ``frame`` axis by default — B jumps to the last frame while A holds
+            # the current one, so scrubbing plays the clip. Non-sequence layers
+            # are untouched (A == B, as before).
+            self._auto_frame_keyframe_b(layer, b)
+
             # -- A: rename + hide the original in place ----------------------
             layer.name = f"{original_name} ▸ A"
             layer.visible = False
@@ -423,6 +482,23 @@ class Session:
             self.project.layers.insert(idx_b + 1, tween_layer)
             self.source_geometry[tween_layer.id] = []  # materialised on next resolve
             return tween_layer
+
+    @staticmethod
+    def _auto_frame_keyframe_b(source_layer: CanvasLayer, b: CanvasLayer) -> None:
+        """If ``source_layer`` is a generator with a ``frame`` param bound to a
+        frame-sequence asset, set B's ``frame`` to the last frame (1.0). A keeps
+        its current value so t=0 reproduces exactly what the user saw."""
+        from .assets import asset_store
+
+        src = source_layer.source
+        if src.type != "generator" or not src.generator:
+            return
+        params = src.params or {}
+        if "frame" not in get_source(src.generator).Params.model_fields:
+            return
+        image = params.get("image")
+        if isinstance(image, str) and asset_store.is_sequence(image):
+            b.source.params = {**params, "frame": 1.0}
 
     def consolidate_effects(self, layer_id: str) -> CanvasLayer:
         """Bake transform + effect stack into the source geometry.
@@ -481,7 +557,17 @@ class Session:
             params = layer.source.params or {}
             override_t: float | None = None
             if master_t is not None and params.get("follow_master"):
-                override_t = min(1.0, max(0.0, master_t))
+                mt = min(1.0, max(0.0, master_t))
+                # map the master timeline into this tween's local t through the
+                # window: hold A before ``window_from``, animate inside, hold B
+                # after ``window_to``.
+                wf = params.get("window_from", 0.0)
+                wt = params.get("window_to", 1.0)
+                if wt > wf:
+                    local = min(1.0, max(0.0, (mt - wf) / (wt - wf)))
+                else:  # degenerate window: step A -> B at the collapsed point
+                    local = 0.0 if mt < wf else 1.0
+                override_t = local
             refs = []
             for rid in params.get("a"), params.get("b"):
                 try:

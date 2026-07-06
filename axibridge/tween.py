@@ -55,6 +55,14 @@ class TweenParams(BaseModel):
     follow_master: bool = Field(
         default=False, title="Follow timeline",
         description="Master timeline scrub / frame rendering drives this tween's t")
+    window_from: float = Field(
+        default=0.0, ge=0.0, le=1.0, title="Window from",
+        description="Maps the master timeline into this tween's local t: hold A "
+                    "for master_t before this point, animate inside the window.")
+    window_to: float = Field(
+        default=1.0, ge=0.0, le=1.0, title="Window to",
+        description="Maps the master timeline into this tween's local t: animate "
+                    "inside the window, hold B for master_t past this point.")
 
 
 # -- scalar / dict lerp -----------------------------------------------------
