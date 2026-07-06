@@ -61,6 +61,34 @@ def test_layer_lifecycle_and_resolved(client):
     assert len(client.get("/api/project").json()["layers"]) == 1
 
 
+def test_master_timeline_scrub_endpoint(client):
+    a = client.post("/api/layers/generate",
+                    json={"module": "polygon", "params": {"sides": 6, "radius": 15}}).json()
+    b = client.post("/api/layers/generate",
+                    json={"module": "polygon", "params": {"sides": 6, "radius": 30}}).json()
+    client.patch(f"/api/layers/{b['id']}",
+                 json={"transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 25}})
+    tw = client.post("/api/layers/tween", json={"a": a["id"], "b": b["id"]}).json()
+
+    # follow_master round-trips through the TweenParams model on PUT
+    client.put(f"/api/layers/{tw['id']}/tween", json={"follow_master": True})
+    proj = client.get("/api/project").json()
+    twl = next(l for l in proj["layers"] if l["id"] == tw["id"])
+    assert twl["source"]["params"]["follow_master"] is True
+
+    def tween_paths(resp):
+        assert resp.status_code == 200
+        return next(l for l in resp.json()["layers"] if l["id"] == tw["id"])["paths"]
+
+    p0 = tween_paths(client.get("/api/compose/resolved?t=0.0"))
+    p1 = tween_paths(client.get("/api/compose/resolved?t=1.0"))
+    assert p0 and p1 and p0 != p1  # scrubbing moves the geometry
+
+    # out-of-range t is rejected by the bounded query param
+    assert client.get("/api/compose/resolved?t=1.5").status_code == 422
+    assert client.get("/api/compose/resolved?t=-0.1").status_code == 422
+
+
 def test_plot_single_layer_on_simulator(client):
     r = client.post("/api/layers/generate",
                     json={"module": "polygon", "params": {"sides": 4, "radius": 20}})

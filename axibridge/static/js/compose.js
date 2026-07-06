@@ -93,6 +93,43 @@ function note(msg) {
   if (el) el.textContent = msg;
 }
 
+// ---- master timeline scrub ---------------------------------------------------
+//
+// One /compose/resolved?t= request in flight at a time; the latest slider value
+// always wins (coalesce, no timer) — same in-flight-guard shape as the live
+// preview above. Pure UI state: never PATCHes, never touches undo/history.
+
+const scrub = {
+  inflight: false, pending: false,
+  request(v) {
+    S.masterT = v;  // shared: every refreshResolved() now stays on this frame
+    this.pending = true;
+    if (!this.inflight) this._run();
+  },
+  async _run() {
+    if (!this.pending) return;
+    this.pending = false;
+    this.inflight = true;
+    try {
+      await actions.refreshResolved();
+    } catch (e) {
+      actions.oops(e);
+    } finally {
+      this.inflight = false;
+      if (this.pending) this._run();  // moved meanwhile: run once more
+    }
+  },
+};
+
+// Show the timeline panel only when some tween opted into the master timeline.
+export function renderTimeline() {
+  const panel = $("timeline-panel");
+  if (!panel) return;
+  const has = (S.state?.project?.layers || []).some(
+    (l) => l.source.type === "tween" && (l.source.params || {}).follow_master);
+  panel.hidden = !has;
+}
+
 const genPreviewReq = (key, module, params, transform = null) => ({
   key, url: "/api/generators/preview", body: { module, params }, transform,
 });
@@ -131,6 +168,14 @@ export function initComposeTab() {
       </label>
       <div id="gen-live-note" class="hint"></div>
       <div id="layer-list"></div>
+    </div>
+    <div class="panel" id="timeline-panel" hidden>
+      <h2>Timeline <span class="hint">(scrubs every tween set to "follow timeline")</span></h2>
+      <div class="row">
+        <input type="range" id="master-t" min="0" max="1" step="0.001" value="0" style="flex:1">
+        <span class="hint" id="master-t-val" style="min-width:5em">t = 0.000</span>
+      </div>
+      <div class="hint">Live scrub only — not saved to the project.</div>
     </div>
     <div class="panel" id="layer-detail-panel" hidden>
       <h2>Layer: <span id="detail-name"></span></h2>
@@ -200,6 +245,19 @@ export function initComposeTab() {
     } catch (e) { actions.oops(e); }
   };
   renderAssetList();
+
+  const mt = $("master-t");
+  if (mt) {
+    const cur = S.masterT ?? 0;
+    mt.value = String(cur);
+    $("master-t-val").textContent = `t = ${cur.toFixed(3)}`;
+    mt.oninput = () => {
+      const v = Number(mt.value);
+      $("master-t-val").textContent = `t = ${v.toFixed(3)}`;
+      scrub.request(v);
+    };
+  }
+  renderTimeline();
 }
 
 function renderAssetList() {
@@ -317,6 +375,7 @@ export function renderLayerList() {
     row.title = "click: select — shift-click: range — ⌘-click: toggle (select two layers to interpolate)";
     wrap.appendChild(row);
   });
+  renderTimeline();
   renderLayerDetail();
 }
 
@@ -543,10 +602,23 @@ export function renderLayerDetail() {
       effect params and position/rotation/scale (not a shape morph). Edits to A/B update live.
       Non-blendable differences (seeds, toggles, mismatched stacks) jump at t = 0.5.</div>
       <div class="form" id="tw-form"></div>
+      <label class="hint" style="cursor:pointer"
+        title="the master timeline scrubber (and later frame rendering) drives this tween's t">
+        <input type="checkbox" id="tw-follow"> Follow timeline
+      </label>
       <div class="row"><button id="tw-explode"
         title="bake each sweep step into its own layer (pen/occlusion editable per step); the tween stays, hidden">
         ÷ Split into layers</button></div>`;
     wrap.appendChild(tw);
+    const follow = tw.querySelector("#tw-follow");
+    follow.checked = !!p.follow_master;
+    follow.onchange = async () => {
+      try {
+        layer.source.params = { ...layer.source.params, follow_master: follow.checked };
+        await api.put(`/api/layers/${layer.id}/tween`, { follow_master: follow.checked });
+        renderTimeline(); // panel visibility follows the opt-in set
+      } catch (e) { actions.oops(e); }
+    };
     tw.querySelector("#tw-explode").onclick = async () => {
       try {
         await api.post(`/api/layers/${layer.id}/explode`);
@@ -557,6 +629,7 @@ export function renderLayerDetail() {
     const schema = JSON.parse(JSON.stringify(S.state.schemas.tween));
     delete schema.properties.a;
     delete schema.properties.b;
+    delete schema.properties.follow_master; // rendered as the checkbox below, not a form field
     const values = {
       t: p.t ?? 0.5, sweep: p.sweep ?? 1,
       sweep_from: p.sweep_from ?? 0, sweep_to: p.sweep_to ?? 1,

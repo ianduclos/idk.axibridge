@@ -311,26 +311,43 @@ class Session:
 
     # -- resolve pipeline (the single source of truth) -------------------------
 
-    def resolved(self) -> dict[str, list[Path]]:
+    def resolved(self, master_t: float | None = None) -> dict[str, list[Path]]:
+        """Resolve the project through the single geometry path. ``master_t``
+        (0..1, or None to disable) is the ephemeral master-timeline value: it
+        drives the ``t`` of every tween whose ``follow_master`` is set, live,
+        WITHOUT mutating the project (no checkpoint, byte-identical stored
+        state). It overrides ``t`` only — a ``sweep > 1`` tween ignores ``t``
+        and keeps stamping its sweep regardless (animation use means sweep=1)."""
         with self._lock:
-            self._materialize_tweens()
+            self._materialize_tweens(master_t)
             return compose.resolve_project(
                 self.project, self.source_geometry, self.pens(), self._shaped_cache
             )
 
-    def _materialize_tweens(self) -> None:
+    def _materialize_tweens(self, master_t: float | None = None) -> None:
         """Refresh every tween layer's source geometry from its referenced
         layers (they are live references). Cached on a content key of both
-        definitions + the tween params, so an untouched tween costs one hash.
-        Called under the lock, only from resolved() — the single resolve
-        path stays single."""
+        definitions + the tween params (+ the master-timeline override), so an
+        untouched tween costs one hash. Called under the lock, only from
+        resolved() — the single resolve path stays single.
+
+        ``master_t`` (when not None) replaces ``t`` on tweens that opted in via
+        ``follow_master``, clamped to 0..1. The override is ephemeral: the
+        stored ``layer.source.params`` are never mutated — a deep copy carries
+        the patched ``t`` into materialisation, exactly as ``explode_tween``
+        does. The override is folded into the cache key so scrubbing
+        invalidates correctly."""
         import json
 
         for layer in self.project.layers:
             if layer.source.type != "tween":
                 continue
+            params = layer.source.params or {}
+            override_t: float | None = None
+            if master_t is not None and params.get("follow_master"):
+                override_t = min(1.0, max(0.0, master_t))
             refs = []
-            for rid in (layer.source.params or {}).get("a"), (layer.source.params or {}).get("b"):
+            for rid in params.get("a"), params.get("b"):
                 try:
                     ref = self.project.layer(rid)
                     refs.append({
@@ -341,17 +358,25 @@ class Session:
                     })
                 except KeyError:
                     refs.append(None)
-            key = json.dumps({"refs": refs, "p": layer.source.params}, sort_keys=True)
+            key = json.dumps(
+                {"refs": refs, "p": params, "mt": override_t}, sort_keys=True)
             hit = self._tween_cache.get(layer.id)
             if hit is not None and hit[0] == key:
                 continue
-            paths = tween.materialize(layer, self.project, self.source_geometry)
+            target = layer
+            if override_t is not None:
+                target = layer.model_copy(deep=True)  # never mutate stored params
+                target.source.params = {**params, "t": override_t}
+            paths = tween.materialize(target, self.project, self.source_geometry)
             self._tween_cache[layer.id] = (key, paths)
             self.source_geometry[layer.id] = paths  # replaced wholesale, never mutated
 
-    def resolved_document(self, target: str = "all") -> PathDocument:
-        """Un-compensated resolved geometry — what the preview renders."""
-        return compose.flatten_to_document(self.project, self.resolved(), self.pens(), target)
+    def resolved_document(self, target: str = "all",
+                          master_t: float | None = None) -> PathDocument:
+        """Un-compensated resolved geometry — what the preview renders.
+        ``master_t`` scrubs the master timeline (see :meth:`resolved`)."""
+        return compose.flatten_to_document(
+            self.project, self.resolved(master_t), self.pens(), target)
 
     def _pen_offsets(self) -> dict[str, tuple[float, float]]:
         cal = settings_store.settings.holder_calibration
@@ -365,11 +390,13 @@ class Session:
                 out[layer.id] = cal.offset_for(pen.barrel_diameter_mm)
         return out
 
-    def plot_document(self, target: str = "all") -> PathDocument:
+    def plot_document(self, target: str = "all",
+                      master_t: float | None = None) -> PathDocument:
         """What actually gets plotted: resolved geometry, pen-offset
-        compensated, then plot-pass optimised."""
+        compensated, then plot-pass optimised. ``master_t`` scrubs the master
+        timeline (see :meth:`resolved`) — the hook for frame-by-frame render."""
         doc = compose.flatten_to_document(
-            self.project, self.resolved(), self.pens(), target, self._pen_offsets()
+            self.project, self.resolved(master_t), self.pens(), target, self._pen_offsets()
         )
         return self._optimize(doc)
 

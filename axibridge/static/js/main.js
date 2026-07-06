@@ -21,6 +21,7 @@ export const S = {
   selection: [],    // selected layer ids
   plotTarget: "all",
   plan: null,
+  masterT: null,    // master-timeline scrub (0..1); null = no scrub. UI-only.
 };
 
 function debounce(fn, ms) {
@@ -121,8 +122,14 @@ export const actions = {
     renderPlotTab(); // target list may have changed
   },
 
-  async refreshResolved() {
-    S.resolved = await api.get("/api/compose/resolved");
+  // master_t (0..1) is the ephemeral master-timeline scrub; null = no scrub.
+  // Same single resolve path — just forwards ?t= so tweens that follow the
+  // master reflect the scrubbed frame. Not persisted (UI state only).
+  // Defaults to the current scrub so ANY refresh (layer edits, drags) stays
+  // on the scrubbed frame instead of snapping back to the stored t.
+  async refreshResolved(master_t = S.masterT) {
+    const q = master_t == null ? "" : `?t=${encodeURIComponent(master_t)}`;
+    S.resolved = await api.get(`/api/compose/resolved${q}`);
     canvas.setData({ layers: S.resolved.layers, images: mapGhosts() });
     renderLayerList();
     renderSelReadout();

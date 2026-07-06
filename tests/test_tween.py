@@ -141,6 +141,64 @@ def test_perspective_preserves_closure_and_foreshortens():
     assert eff.apply([sq], eff.Params(tilt_x=0, tilt_y=0), EffectContext()) == [sq]
 
 
+def _follow_pair():
+    """A follow_master tween between two same-generator layers (radius differs
+    so t drives visibly different geometry)."""
+    a, b = _pair()
+    tw = session.create_tween_layer(a.id, b.id)
+    session.set_tween_params(tw.id, {"t": 0.5, "follow_master": True})
+    return a, b, tw
+
+
+def test_master_t_endpoints_match_the_tweens_own_t():
+    a, b, tw = _follow_pair()
+    # master_t=0 reproduces A exactly (== the tween at its own t=0); master_t=1, B
+    _approx_equal(session.resolved(master_t=0.0)[tw.id], session.resolved()[a.id])
+    _approx_equal(session.resolved(master_t=1.0)[tw.id], session.resolved()[b.id])
+    ends = [session.resolved(master_t=t)[tw.id] for t in (0.0, 1.0)]
+    assert [p.points for p in ends[0]] != [p.points for p in ends[1]]
+
+
+def test_master_t_clamped_out_of_range():
+    a, b, tw = _follow_pair()
+    _approx_equal(session.resolved(master_t=-2.0)[tw.id], session.resolved(master_t=0.0)[tw.id])
+    _approx_equal(session.resolved(master_t=5.0)[tw.id], session.resolved(master_t=1.0)[tw.id])
+
+
+def test_master_t_ignored_without_follow_master():
+    a, b = _pair()
+    tw = session.create_tween_layer(a.id, b.id)
+    session.set_tween_params(tw.id, {"t": 0.3})  # follow_master defaults False
+    base = session.resolved()[tw.id]
+    scrubbed = session.resolved(master_t=1.0)[tw.id]
+    assert [p.points for p in base] == [p.points for p in scrubbed]  # byte-identical
+
+
+def test_scrub_leaves_history_and_params_untouched():
+    a, b, tw = _follow_pair()
+    hist_before = len(session._history)
+    params_before = dict(session.project.layer(tw.id).source.params)
+    session.resolved(master_t=0.2)
+    session.resolved(master_t=0.8)
+    assert len(session._history) == hist_before        # no checkpoint on scrub
+    after = session.project.layer(tw.id).source.params
+    assert after == params_before                      # stored params byte-identical
+    assert after["t"] == 0.5                            # the tween's own t is untouched
+
+
+def test_master_t_cache_invalidates_then_hits():
+    a, b, tw = _follow_pair()
+    session.resolved(master_t=0.2)
+    g_low = session.source_geometry[tw.id]
+    session.resolved(master_t=0.8)
+    g_high = session.source_geometry[tw.id]
+    # a different master_t invalidates the tween cache -> new geometry
+    assert [p.points for p in g_low] != [p.points for p in g_high]
+    # resolving again at the same master_t hits the cache: same list object, no recompute
+    session.resolved(master_t=0.8)
+    assert session.source_geometry[tw.id] is g_high
+
+
 def test_explode_tween_creates_layer_per_step():
     a, b = _pair()
     tw = session.create_tween_layer(a.id, b.id)

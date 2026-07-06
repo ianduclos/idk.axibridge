@@ -20,7 +20,7 @@ import time
 from pathlib import Path as FsPath
 from typing import Any
 
-from fastapi import APIRouter, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -613,12 +613,19 @@ def reorder_layers(body: OrderBody) -> dict[str, Any]:
 
 
 @router.get("/compose/resolved")
-def get_resolved() -> dict[str, Any]:
+def get_resolved(
+    t: float | None = Query(default=None, ge=0.0, le=1.0),
+) -> dict[str, Any]:
     """Per-layer RESOLVED geometry (post transform+effects+occlusion) plus
     per-layer stats and time estimates. This is what the canvas renders —
-    identical to what plotting consumes."""
+    identical to what plotting consumes.
+
+    ``t`` (0..1) is the ephemeral master-timeline scrub: it drives every tween
+    with ``follow_master`` set, live, without touching the stored project.
+    Out-of-range values 422 (FastAPI bounds). Stats/estimates below reflect the
+    scrubbed geometry because they read from the same ``resolved`` map."""
     try:
-        resolved = session.resolved()
+        resolved = session.resolved(master_t=t)
     except Exception as e:
         raise _fail(e, 400)
     pens = session.pens()

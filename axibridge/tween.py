@@ -52,6 +52,9 @@ class TweenParams(BaseModel):
                        description="1 = single tween at t; more = stamped morph from/to")
     sweep_from: float = Field(default=0.0, ge=0.0, le=1.0, title="Sweep from")
     sweep_to: float = Field(default=1.0, ge=0.0, le=1.0, title="Sweep to")
+    follow_master: bool = Field(
+        default=False, title="Follow timeline",
+        description="Master timeline scrub / frame rendering drives this tween's t")
 
 
 # -- scalar / dict lerp -----------------------------------------------------
