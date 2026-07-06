@@ -46,6 +46,9 @@ class ImageBaseParams(BaseModel):
         description="Clockwise on paper — match the image to the view orientation")
     width: float = Field(default=150.0, ge=10, le=400, title="Width (mm)",
                          description="Height follows the image aspect ratio")
+    frame: float = Field(default=0.0, ge=0.0, le=1.0, title="Frame",
+                         description="Position in an image sequence (0=first, 1=last); "
+                                     "ignored for still images")
     show_map: bool = Field(default=False, title="Show image on canvas",
                            description="Preview-only ghost of the source image")
 
@@ -72,9 +75,10 @@ def working_dims(p: ImageBaseParams) -> tuple[int, int]:
     so error messages stay consistent."""
     if not p.image:
         raise ValueError("upload an image asset and pick it in 'Image'")
-    probe = asset_store.grayscale(p.image, rotate=p.rotate)
+    image = asset_store.resolve_frame(p.image, p.frame)  # sequence -> concrete frame
+    probe = asset_store.grayscale(image, rotate=p.rotate)
     if probe is None:
-        raise ValueError(f"no asset named {p.image!r}")
+        raise ValueError(f"no asset named {image!r}")
     _, iw, ih = probe
     w = WORK_W
     h = max(round(w * ih / iw), 2)
@@ -87,7 +91,8 @@ def working_dims(p: ImageBaseParams) -> tuple[int, int]:
 def luma_grid(p: ImageBaseParams, blur_px: float = 0.0) -> tuple[list[list[float]], int, int]:
     """Working-resolution luma rows in 0..255 (255 = white), no tone applied."""
     w, h = working_dims(p)
-    rows, w, h = asset_store.grayscale(p.image, blur_px, p.rotate, size=(w, h))
+    image = asset_store.resolve_frame(p.image, p.frame)  # sequence -> concrete frame
+    rows, w, h = asset_store.grayscale(image, blur_px, p.rotate, size=(w, h))
     return [[v * 255.0 for v in row] for row in rows], w, h
 
 
@@ -110,7 +115,8 @@ class ImageSampler:
 
     def __init__(self, p: PixelGenParams, blur_px: float = 0.0):
         w, h = working_dims(p)
-        rows, w, h = asset_store.grayscale(p.image, blur_px, p.rotate, size=(w, h))
+        image = asset_store.resolve_frame(p.image, p.frame)  # sequence -> concrete frame
+        rows, w, h = asset_store.grayscale(image, blur_px, p.rotate, size=(w, h))
         self.w, self.h = w, h
         lut = _tone_lut(p)
         self.grid = [[lut[int(v * 255 + 0.5)] for v in row] for row in rows]

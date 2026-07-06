@@ -11,19 +11,21 @@ the estimator times and the plotter draws.
 
 from __future__ import annotations
 
+import io
 import os
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path as FsPath
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, Form, HTTPException, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import calibration, compose, project_io, svg_io
-from .assets import asset_store
+from .assets import SEQUENCE_FRAME_RE, asset_store, safe_asset_name
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
 from .events import bus
@@ -352,6 +354,120 @@ async def upload_asset(file: UploadFile) -> dict[str, Any]:
         asset_store.replace_all({k: v for k, v in asset_store.all().items() if k != name})
         raise _fail(e, 400)
     return {"name": name, "assets": asset_store.info()}
+
+
+#: video containers the sequence importer decodes (single-file uploads);
+#: multiple files are always treated as an ordered image sequence.
+_VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".avi", ".m4v"}
+
+
+def _even_indices(total: int, n: int) -> list[int]:
+    """``n`` indices spread evenly across ``range(total)``, both ends inclusive.
+    Fewer than ``n`` available -> take them all; ``n<=1`` -> just the first."""
+    if total <= 0:
+        return []
+    if n >= total:
+        return list(range(total))
+    if n <= 1:
+        return [0]
+    return [round(i * (total - 1) / (n - 1)) for i in range(n)]
+
+
+def _reencode_jpeg(img: Any) -> bytes:
+    """Downscale a PIL image to <=1024 px on its long edge and re-encode as
+    JPEG quality 85 (sequences hold many frames — keep each one light; depth /
+    grayscale sampling doesn't miss the discarded alpha or chroma)."""
+    from PIL import Image
+
+    w, h = img.size
+    long_edge = max(w, h)
+    if long_edge > 1024:
+        s = 1024 / long_edge
+        img = img.resize((max(round(w * s), 1), max(round(h * s), 1)), Image.LANCZOS)
+    if img.mode not in ("RGB", "L"):
+        img = img.convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=85)
+    return buf.getvalue()
+
+
+def _extract_video_frames(data: bytes, suffix: str, n: int) -> list[bytes]:
+    """Decode ``n`` evenly spaced frames (across the whole clip) to JPEG bytes.
+    imageio + imageio-ffmpeg, imported lazily to keep server start fast; ffmpeg
+    reads from a real path, so the upload is spooled to a temp file first."""
+    import imageio.v3 as iio  # lazy: pulls in the bundled static ffmpeg
+    from PIL import Image
+
+    with tempfile.NamedTemporaryFile(suffix=suffix or ".mp4", delete=False) as tf:
+        tf.write(data)
+        path = tf.name
+    try:
+        # tiny clips: read every frame, then subsample evenly. (Large videos
+        # would be heavy here — acceptable for hand-authored sequence sources.)
+        frames = list(iio.imiter(path, plugin="FFMPEG"))
+        if not frames:
+            raise ValueError("no frames decoded from video")
+        return [_reencode_jpeg(Image.fromarray(frames[i])) for i in _even_indices(len(frames), n)]
+    finally:
+        os.unlink(path)
+
+
+@router.post("/assets/sequence")
+async def upload_sequence(
+    files: list[UploadFile],
+    frames: int | None = Form(default=None),
+) -> dict[str, Any]:
+    """Import a frame sequence: EITHER several image files (ordered by filename;
+    ``frames`` subsamples evenly to N) OR one video file (``frames`` frames
+    spread across its duration, default 24, bound 2..240). Frames are stored as
+    plain assets ``<stem>#0000.jpg`` …; image consumers pick one via a
+    normalized ``frame`` param. Returns the ``<stem>#`` prefix + frame count."""
+    from PIL import Image, ImageOps  # lazy, like the single-asset upload probe
+
+    if not files:
+        raise HTTPException(status_code=400, detail="no files")
+    first = files[0]
+    ext = FsPath(first.filename or "clip").suffix.lower()
+    # name the sequence from the first upload's stem, stripping a trailing frame
+    # number ("frame_0001" -> "frame") so the prefix reads cleanly; keep the
+    # whole stem if stripping would empty it (e.g. a purely numeric name).
+    raw_stem = FsPath(first.filename or "clip").stem
+    base = raw_stem.rstrip("0123456789").rstrip("-_. ") or raw_stem
+    stem = safe_asset_name(base) or "clip"
+
+    if len(files) == 1 and ext in _VIDEO_EXTS:
+        n = max(2, min(240, frames if frames else 24))
+        try:
+            jpegs = _extract_video_frames(await first.read(), ext, n)
+        except Exception as e:
+            raise _fail(e, 400)
+    else:
+        blobs = [b for f in sorted(files, key=lambda f: f.filename or "")
+                 if (b := await f.read())]
+        if not blobs:
+            raise HTTPException(status_code=400, detail="no image data")
+        if frames and 0 < frames < len(blobs):
+            blobs = [blobs[i] for i in _even_indices(len(blobs), frames)]
+        try:
+            jpegs = [_reencode_jpeg(ImageOps.exif_transpose(Image.open(io.BytesIO(b))))
+                     for b in blobs]
+        except Exception as e:
+            raise _fail(e, 400)
+
+    prefix = f"{stem}#"
+    # collision: a re-import replaces the sequence wholesale — drop the old
+    # frames of this prefix first so a shorter clip leaves no stale tail frames.
+    kept = {k: v for k, v in asset_store.all().items()
+            if not (k.startswith(prefix) and SEQUENCE_FRAME_RE.match(k))}
+    asset_store.replace_all(kept)
+    for i, jpg in enumerate(jpegs):
+        asset_store.put(f"{prefix}{i:04d}.jpg", jpg)
+    try:
+        asset_store.grayscale(f"{prefix}0000.jpg")  # decode now: fail here, not at resolve
+    except Exception as e:
+        asset_store.replace_all(kept)
+        raise _fail(e, 400)
+    return {"name": prefix, "frames": len(jpegs), "assets": asset_store.info()}
 
 
 @router.get("/assets")

@@ -17,8 +17,16 @@ import threading
 
 
 def safe_asset_name(filename: str) -> str:
-    cleaned = re.sub(r"[^A-Za-z0-9._-]+", "_", filename).strip("._") or "asset"
+    # '#' is allowed: it is the frame-sequence marker (``clip#0000.jpg``) — the
+    # store groups such assets into one named sequence (see SEQUENCE_FRAME_RE).
+    cleaned = re.sub(r"[^A-Za-z0-9._#-]+", "_", filename).strip("._") or "asset"
     return cleaned
+
+
+#: A sequence frame is a plain asset named ``<prefix>#<NNNN>.<ext>`` (4+ digit
+#: zero-padded index). Group 1 is the prefix INCLUDING the '#' — that prefix is
+#: what modules/UI reference; individual frames never surface on their own.
+SEQUENCE_FRAME_RE = re.compile(r"^(.+#)\d{4,}\.[^.]+$")
 
 
 def _open(data: bytes):
@@ -49,6 +57,21 @@ class AssetStore:
         ] = {}
         #: (name, rotate) -> alpha rows, or None for images without alpha
         self._alpha: dict[tuple[str, int], list[list[float]] | None] = {}
+        #: sequence prefix ("clip#") -> sorted concrete frame names; derived
+        #: from ``self._data`` keys by ``_reindex`` (held under the lock).
+        self._seq: dict[str, list[str]] = {}
+
+    def _reindex(self) -> None:
+        """Rebuild the sequence prefix index from the current keys. Cheap
+        (a scan + per-group sort of the key strings). Caller holds the lock."""
+        seq: dict[str, list[str]] = {}
+        for name in self._data:
+            m = SEQUENCE_FRAME_RE.match(name)
+            if m:
+                seq.setdefault(m.group(1), []).append(name)
+        for frames in seq.values():
+            frames.sort()  # zero-padded index -> lexical sort is frame order
+        self._seq = seq
 
     def put(self, name: str, data: bytes) -> str:
         name = safe_asset_name(name)
@@ -56,31 +79,67 @@ class AssetStore:
             self._data[name] = data
             self._gray = {k: v for k, v in self._gray.items() if k[0] != name}
             self._alpha = {k: v for k, v in self._alpha.items() if k[0] != name}
+            self._reindex()
         return name
 
     def names(self) -> list[str]:
         with self._lock:
             return sorted(self._data)
 
+    def resolve_frame(self, name: str, frame: float) -> str:
+        """Map a sequence prefix + normalized position to a concrete frame name.
+        ``frame`` is clamped to [0,1] and rounded to the nearest frame index
+        (0 -> first, 1 -> last). Plain names (and unknown names) pass through
+        unchanged — the caller's "no asset named X" error still fires. Thread-
+        safe; never raises."""
+        with self._lock:
+            frames = self._seq.get(name)
+            if not frames:
+                return name
+            f = min(max(frame, 0.0), 1.0)
+            return frames[round(f * (len(frames) - 1))]
+
     def info(self) -> list[dict]:
-        """[{name, width, height}] — dimensions let the canvas place overlays
-        and effects derive aspect ratios without decoding pixels."""
+        """[{name, width, height, frames}] — dimensions let the canvas place
+        overlays and effects derive aspect ratios without decoding pixels.
+        Frame sequences collapse to ONE entry (name = the ``clip#`` prefix,
+        ``frames`` = count, dimensions from the first frame); the individual
+        frames never appear on their own. Plain assets carry ``frames`` = 1."""
+        with self._lock:
+            seq = {k: list(v) for k, v in self._seq.items()}
+            plain = sorted(set(self._data) - {n for fr in seq.values() for n in fr})
+        entries = [("plain", n) for n in plain] + [("seq", p) for p in seq]
         out = []
-        for name in self.names():
-            g = self.grayscale(name)
+        for kind, name in sorted(entries, key=lambda e: e[1]):
+            rep = seq[name][0] if kind == "seq" else name
+            g = self.grayscale(rep)  # takes the lock itself — not held here
             if g is not None:
-                out.append({"name": name, "width": g[1], "height": g[2]})
+                out.append({
+                    "name": name,
+                    "width": g[1],
+                    "height": g[2],
+                    "frames": len(seq[name]) if kind == "seq" else 1,
+                })
         return out
 
     def get(self, name: str) -> bytes | None:
         with self._lock:
-            return self._data.get(name)
+            data = self._data.get(name)
+            if data is None:
+                # a sequence prefix has no bytes of its own: hand back the first
+                # frame so /api/assets/{prefix} serves a representative image
+                # (the canvas ghost/preview fetch) instead of 404ing.
+                frames = self._seq.get(name)
+                if frames:
+                    data = self._data.get(frames[0])
+            return data
 
     def replace_all(self, assets: dict[str, bytes]) -> None:
         with self._lock:
             self._data = dict(assets)
             self._gray.clear()
             self._alpha.clear()
+            self._reindex()
 
     def alpha(self, name: str, rotate: int = 0) -> list[list[float]] | None:
         """Alpha channel as rows in [0,1], or None if absent/opaque. Same

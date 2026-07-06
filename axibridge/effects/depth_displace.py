@@ -38,6 +38,9 @@ class DepthDisplaceParams(BaseModel):
                        json_schema_extra={"format": "asset"})
     show_map: bool = Field(default=False, title="Show map on canvas",
                            description="Preview-only ghost of the image at its placement")
+    frame: float = Field(default=0.0, ge=0.0, le=1.0, title="Frame",
+                         description="Position in an image sequence (0=first, 1=last); "
+                                     "ignored for still images")
     rotate: Literal[0, 90, 180, 270] = Field(
         default=0, title="Rotate map (°)",
         description="Clockwise on paper — match the image to the view orientation")
@@ -90,16 +93,17 @@ class DepthDisplace(EffectModule):
 
     def apply(self, paths: list[Path], params: DepthDisplaceParams, ctx: EffectContext) -> list[Path]:
         decoded = None
+        image = asset_store.resolve_frame(params.image, params.frame)  # sequence -> concrete frame
         if params.image:
             blur_px = 0.0
-            probe = asset_store.grayscale(params.image, rotate=params.rotate)
+            probe = asset_store.grayscale(image, rotate=params.rotate)
             if probe is not None and params.smoothing > 0:
                 blur_px = params.smoothing * probe[1] / params.width
-            decoded = asset_store.grayscale(params.image, blur_px, rotate=params.rotate)
+            decoded = asset_store.grayscale(image, blur_px, rotate=params.rotate)
         if decoded is None or (params.amplitude == 0 and params.crop == "off"):
             return list(paths)  # no map yet: pass through, don't error the resolve
         rows, iw, ih = decoded
-        alpha = asset_store.alpha(params.image, rotate=params.rotate)
+        alpha = asset_store.alpha(image, rotate=params.rotate)
         map_h = params.width * ih / iw
         sx = iw / params.width
         sy = ih / map_h

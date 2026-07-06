@@ -21,6 +21,10 @@ dependencies = [
     "svgelements>=1.9",
     # depth-map displacement effect: PNG decoding
     "pillow>=10",
+    # frame-sequence import: decode a video into evenly spaced frames
+    # (imageio-ffmpeg bundles a static ffmpeg — no system install needed)
+    "imageio>=2.30",
+    "imageio-ffmpeg>=0.4",
 ]
 
 [project.optional-dependencies]

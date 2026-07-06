@@ -177,7 +177,8 @@ function mapGhosts() {
     const w = p.width ?? 150;
     const rot = p.rotate || 0;
     const aspect = rot % 180 ? d.width / d.height : d.height / d.width;
-    return { href: `/api/assets/${p.image}`, x, y, width: w, height: w * aspect,
+    // encode: sequence prefixes contain '#', which a raw URL would truncate
+    return { href: `/api/assets/${encodeURIComponent(p.image)}`, x, y, width: w, height: w * aspect,
              rot, transform };
   };
   const out = [];

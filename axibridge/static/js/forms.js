@@ -45,11 +45,19 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
       const sel = document.createElement("select");
       const fill = (selected) => {
         sel.innerHTML = "";
-        const names = (S.state?.assets || []).map((a) => a.name ?? a);
-        for (const opt of ["", ...names]) {
+        const assets = S.state?.assets || [];
+        const names = assets.map((a) => a.name ?? a);
+        const none = document.createElement("option");
+        none.value = ""; none.textContent = "— none —";
+        if (selected === "" || selected == null) none.selected = true;
+        sel.appendChild(none);
+        for (const a of assets) {
+          const name = a.name ?? a;
           const o = document.createElement("option");
-          o.value = opt; o.textContent = opt || "— none —";
-          if (opt === selected) o.selected = true;
+          o.value = name;
+          // frame sequences arrive as one entry (name = "clip#", frames = N)
+          o.textContent = a.frames > 1 ? `${name} (${a.frames} frames)` : name;
+          if (name === selected) o.selected = true;
           sel.appendChild(o);
         }
         if (selected && !names.includes(selected)) { // asset went missing: show it, don't silently drop
@@ -61,18 +69,31 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
       fill(val);
       sel.onchange = () => set(sel.value);
       ctl.appendChild(sel);
-      // inline upload: new images land in the dropdown (and get picked) immediately
+      // inline upload: new assets land in the dropdown (and get picked)
+      // immediately. Multi-select or a single video imports a frame SEQUENCE
+      // (POST /api/assets/sequence); one image keeps the plain single path.
       const file = document.createElement("input");
-      file.type = "file"; file.accept = "image/png,image/jpeg"; file.hidden = true;
+      file.type = "file"; file.multiple = true;
+      file.accept = "image/png,image/jpeg,video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-msvideo";
+      file.hidden = true;
       const up = document.createElement("button");
-      up.textContent = "⤒"; up.title = "upload a new image asset";
+      up.textContent = "⤒"; up.title = "upload an image, several images, or a video (frame sequence)";
       up.onclick = (e) => { e.preventDefault(); file.click(); };
       file.onchange = async () => {
-        if (!file.files[0]) return;
-        const fd = new FormData();
-        fd.append("file", file.files[0]);
+        const fs = [...file.files];
+        if (!fs.length) return;
+        const isVideo = fs.length === 1 && /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(fs[0].name);
         try {
-          const r = await api.upload("/api/assets", fd);
+          let r;
+          if (fs.length > 1 || isVideo) {
+            const fd = new FormData();
+            for (const f of fs) fd.append("files", f);
+            r = await api.upload("/api/assets/sequence", fd);
+          } else {
+            const fd = new FormData();
+            fd.append("file", fs[0]);
+            r = await api.upload("/api/assets", fd);
+          }
           S.state.assets = r.assets;
           fill(r.name);
           set(r.name);

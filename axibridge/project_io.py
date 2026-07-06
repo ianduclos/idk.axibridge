@@ -32,7 +32,9 @@ from .svg_io import doc_from_svg
 
 
 def safe_name(name: str) -> str:
-    cleaned = re.sub(r"[^A-Za-z0-9._ -]+", "_", name).strip() or "untitled"
+    # '#' is preserved so frame-sequence asset filenames (``clip#0000.jpg``)
+    # survive the save/load round-trip intact (the store groups on that '#').
+    cleaned = re.sub(r"[^A-Za-z0-9._ #-]+", "_", name).strip() or "untitled"
     return cleaned
 
 

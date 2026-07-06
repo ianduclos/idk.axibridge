@@ -43,6 +43,9 @@ class ImageThresholdParams(BaseModel):
     smoothing: float = Field(default=1.0, ge=0.0, le=20.0, title="Smoothing (mm)",
                              description="Gaussian blur before tracing — rounds pixel "
                                          "staircases into curves")
+    frame: float = Field(default=0.0, ge=0.0, le=1.0, title="Frame",
+                         description="Position in an image sequence (0=first, 1=last); "
+                                     "ignored for still images")
     invert: bool = Field(default=False, title="Invert (trace the light areas)")
     detail: float = Field(default=0.5, ge=0.15, le=5.0, title="Detail (mm)",
                           description="Contour-tracing lattice pitch — smaller follows "
@@ -136,12 +139,13 @@ class ImageThreshold(SourceModule):
         p = params
         if not p.image:
             raise ValueError("upload an image asset (Compose tab) and pick it in 'Image'")
-        probe = asset_store.grayscale(p.image, rotate=p.rotate)
+        image = asset_store.resolve_frame(p.image, p.frame)  # sequence -> concrete frame
+        probe = asset_store.grayscale(image, rotate=p.rotate)
         if probe is None:
-            raise ValueError(f"no asset named {p.image!r}")
+            raise ValueError(f"no asset named {image!r}")
         blur_px = p.smoothing * probe[1] / p.width if p.smoothing > 0 else 0.0
-        rows, iw, ih = asset_store.grayscale(p.image, blur_px, rotate=p.rotate)
-        alpha = asset_store.alpha(p.image, rotate=p.rotate)
+        rows, iw, ih = asset_store.grayscale(image, blur_px, rotate=p.rotate)
+        alpha = asset_store.alpha(image, rotate=p.rotate)
         w_mm, h_mm = p.width, p.width * ih / iw
         sx, sy = iw / w_mm, ih / h_mm
         outside = p.threshold + 1.0  # any value safely above the threshold
