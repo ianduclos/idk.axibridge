@@ -121,13 +121,24 @@ const scrub = {
   },
 };
 
-// Show the timeline panel only when some tween opted into the master timeline.
+// Show the timeline panel when there's anything for it to drive: a tween
+// layer (whether or not it follows yet) or a frame-clip source (sequence
+// asset name ends "#"). Inside, a hint nudges the "follow timeline" opt-in
+// when the panel is showing but nothing actually follows the scrubber yet.
 export function renderTimeline() {
   const panel = $("timeline-panel");
   if (!panel) return;
-  const has = (S.state?.project?.layers || []).some(
+  const layers = S.state?.project?.layers || [];
+  const hasTween = layers.some((l) => l.source.type === "tween");
+  const hasFrameClip = layers.some((l) => {
+    const img = (l.source.params || {}).image;
+    return typeof img === "string" && img.endsWith("#");
+  });
+  panel.hidden = !(hasTween || hasFrameClip);
+  const hasFollow = layers.some(
     (l) => l.source.type === "tween" && (l.source.params || {}).follow_master);
-  panel.hidden = !has;
+  const hint = $("timeline-hint");
+  if (hint) hint.hidden = panel.hidden || hasFollow;
 }
 
 const genPreviewReq = (key, module, params, transform = null) => ({
@@ -156,8 +167,16 @@ export function initComposeTab() {
       </div>
       <div class="hint">An uploaded SVG contributes its layers as layers.</div>
       <div class="row" style="margin-top:10px">
-        <input type="file" id="asset-file" accept="image/png,image/jpeg" style="flex:1">
+        <input type="file" id="asset-file" multiple
+          accept="image/png,image/jpeg,video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-msvideo"
+          style="flex:1">
         <button id="btn-asset">Add image asset</button>
+      </div>
+      <div class="row">
+        <label>frames</label><input type="number" id="asset-frames" min="2" max="240" placeholder="24" style="width:4.5em">
+        <label>start</label><input type="number" id="asset-start" min="0" placeholder="0" style="width:4.5em">
+        <label>every</label><input type="number" id="asset-every" min="1" placeholder="—" style="width:4.5em">
+        <span class="hint">frames / start / every — a video or multiple files import as a frame sequence</span>
       </div>
       <div class="hint" id="asset-list"></div>
     </div>
@@ -176,6 +195,8 @@ export function initComposeTab() {
         <span class="hint" id="master-t-val" style="min-width:5em">t = 0.000</span>
       </div>
       <div class="hint">Live scrub only — not saved to the project.</div>
+      <div class="hint" id="timeline-hint" hidden>nothing follows the timeline yet — ⏱ Animate a layer,
+        or check "Follow timeline" on an interpolation layer</div>
     </div>
     <div class="panel" id="layer-detail-panel" hidden>
       <h2>Layer: <span id="detail-name"></span></h2>
@@ -233,12 +254,24 @@ export function initComposeTab() {
   };
 
   $("btn-asset").onclick = async () => {
-    const file = $("asset-file").files[0];
-    if (!file) return actions.oops(new Error("choose a PNG/JPEG first"));
-    const fd = new FormData();
-    fd.append("file", file);
+    const files = [...$("asset-file").files];
+    if (!files.length) return actions.oops(new Error("choose a PNG/JPEG (or a video, or several images) first"));
+    const isVideo = files.length === 1 && /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(files[0].name);
     try {
-      const r = await api.upload("/api/assets", fd);
+      let r;
+      if (files.length > 1 || isVideo) {
+        const fd = new FormData();
+        for (const f of files) fd.append("files", f);
+        const frames = $("asset-frames").value, start = $("asset-start").value, every = $("asset-every").value;
+        if (frames) fd.append("frames", frames);
+        if (start) fd.append("start", start);
+        if (every) fd.append("every", every);
+        r = await api.upload("/api/assets/sequence", fd);
+      } else {
+        const fd = new FormData();
+        fd.append("file", files[0]);
+        r = await api.upload("/api/assets", fd);
+      }
       S.state.assets = r.assets;
       renderAssetList();
       renderLayerDetail(); // asset selects in effect forms pick up the new name
@@ -348,9 +381,10 @@ export function renderLayerList() {
         return;
       }
       try {
-        await api.del(`/api/layers/${layer.id}`);
+        const r = await api.del(`/api/layers/${layer.id}`);
         await actions.refreshProject();
         await actions.refreshResolved();
+        logDeleted([layer.name], r.deleted || [layer.id]);
       } catch (e) { actions.oops(e); }
     });
 
@@ -381,6 +415,20 @@ export function renderLayerList() {
 
 function toggle(arr, id) {
   return arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id];
+}
+
+// Shared by every delete path: `names` describes what the user directly
+// asked to delete (one name, or "N layers"); `deletedIds` is the server's
+// full cascaded set. Extra ids beyond the direct ask were cascade-swept
+// (tween <-> keyframe pairs) — call that out so undo's scope is obvious.
+export function logDeleted(names, deletedIds) {
+  const extra = deletedIds.length - names.length;
+  const subject = names.length === 1 ? `"${names[0]}"` : `${names.length} layers`;
+  if (extra > 0) {
+    actions.log(`deleted ${subject} + ${extra} linked animation layer${extra === 1 ? "" : "s"} (undo restores)`);
+  } else {
+    actions.log(`deleted ${subject}`);
+  }
 }
 
 function btn(txt, title, fn) {
@@ -619,9 +667,18 @@ export function renderLayerDetail() {
         title="the master timeline scrubber (and later frame rendering) drives this tween's t">
         <input type="checkbox" id="tw-follow"> Follow timeline
       </label>
+      <div class="row" title="this tween holds A before 'from', animates inside the window, holds B after 'to' — overlap windows to overlap clips">
+        <label>window from</label>
+        <input type="number" id="tw-window-from" min="0" max="1" step="0.01" style="width:4.5em">
+        <label>to</label>
+        <input type="number" id="tw-window-to" min="0" max="1" step="0.01" style="width:4.5em">
+      </div>
       <div class="row">
         <button id="tw-edit-a" title="select keyframe A (${nameOf(p.a)})">edit A</button>
         <button id="tw-edit-b" title="select keyframe B (${nameOf(p.b)})">edit B</button>
+      </div>
+      <div class="row">
+        <button id="tw-static" title="a second interpolation over the same A/B: fixed-t in-between or sweep stamping, independent of the timeline">＋ Static in-between</button>
       </div>
       <div class="row"><button id="tw-explode"
         title="bake each sweep step into its own layer (pen/occlusion editable per step); the tween stays, hidden">
@@ -638,6 +695,28 @@ export function renderLayerDetail() {
         renderTimeline(); // panel visibility follows the opt-in set
       } catch (e) { actions.oops(e); }
     };
+    const winFrom = tw.querySelector("#tw-window-from");
+    const winTo = tw.querySelector("#tw-window-to");
+    winFrom.value = p.window_from ?? 0;
+    winTo.value = p.window_to ?? 1;
+    const commitWindow = async () => {
+      try {
+        const window_from = +winFrom.value, window_to = +winTo.value;
+        layer.source.params = { ...layer.source.params, window_from, window_to };
+        await api.put(`/api/layers/${layer.id}/tween`, { window_from, window_to });
+        await actions.refreshResolved();
+      } catch (e) { actions.oops(e); }
+    };
+    winFrom.onchange = commitWindow;
+    winTo.onchange = commitWindow;
+    tw.querySelector("#tw-static").onclick = async () => {
+      try {
+        const created = await api.post("/api/layers/tween", { a: p.a, b: p.b });
+        await actions.refreshProject();
+        await actions.refreshResolved();
+        actions.setSelection([created.id]);
+      } catch (e) { actions.oops(e); }
+    };
     tw.querySelector("#tw-explode").onclick = async () => {
       try {
         await api.post(`/api/layers/${layer.id}/explode`);
@@ -649,6 +728,8 @@ export function renderLayerDetail() {
     delete schema.properties.a;
     delete schema.properties.b;
     delete schema.properties.follow_master; // rendered as the checkbox below, not a form field
+    delete schema.properties.window_from;   // rendered as the number inputs below, not a form field
+    delete schema.properties.window_to;
     const values = {
       t: p.t ?? 0.5, sweep: p.sweep ?? 1,
       sweep_from: p.sweep_from ?? 0, sweep_to: p.sweep_to ?? 1,
@@ -661,6 +742,11 @@ export function renderLayerDetail() {
       } catch (e) { actions.oops(e); }
     }, 250);
     renderForm(tw.querySelector("#tw-form"), schema, values, commit);
+  } else {
+    const hint = document.createElement("div");
+    hint.className = "hint";
+    hint.textContent = "⌘-click a second layer in the list to create a static interpolation (⇄)";
+    wrap.appendChild(hint);
   }
 
   // -- generator params (regenerate; baked layers can return to live output)

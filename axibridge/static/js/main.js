@@ -8,7 +8,7 @@
 
 import { api, subscribe } from "./api.js";
 import { CanvasEditor, mul, objToMat, matToObj } from "./canvas.js";
-import { initComposeTab, renderLayerList, renderLayerDetail, setGenProgress } from "./compose.js";
+import { initComposeTab, renderLayerList, renderLayerDetail, setGenProgress, logDeleted } from "./compose.js";
 import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
 import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
@@ -396,10 +396,13 @@ document.addEventListener("keydown", async (e) => {
   if ((e.key === "Backspace" || e.key === "Delete") && S.selection.length) {
     e.preventDefault();
     try {
-      await api.post("/api/layers/delete", { ids: S.selection }); // one undo step
+      const names = S.selection.map((id) =>
+        S.state.project.layers.find((l) => l.id === id)?.name || id);
+      const r = await api.post("/api/layers/delete", { ids: S.selection }); // one undo step
       actions.setSelection([]);
       await actions.refreshProject();
       await actions.refreshResolved();
+      logDeleted(names, r.deleted || S.selection);
     } catch (err) { oops(err); }
   } else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
     e.preventDefault();
