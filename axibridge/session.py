@@ -288,6 +288,57 @@ class Session:
             self.source_geometry[copy.id] = self.source_geometry.get(layer_id, [])
             return copy
 
+    def animate_layer(self, layer_id: str) -> CanvasLayer:
+        """One-click "Animate this layer": turn a layer into a keyframed
+        animation without the manual duplicate + create-tween dance.
+
+        Splits the layer into keyframes A (the original, renamed/hidden) and
+        B (a fresh duplicate, hidden), then inserts a tween above them set to
+        follow the master timeline. A and B start identical, so the tween
+        looks exactly like the original the moment this returns — edit
+        either keyframe and scrub to animate.
+
+        Inlines ``duplicate_layer`` and ``create_tween_layer``'s logic rather
+        than calling them (each checkpoints itself) so the whole operation is
+        ONE undo step."""
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            if layer.source.type == "tween":
+                raise RuntimeError("layer is already an interpolation layer — "
+                                    "animate one of its keyframes instead")
+            self._checkpoint()
+            original_name = layer.name
+
+            # -- B: duplicate_layer's logic, inlined (no nested checkpoint) --
+            data = layer.model_dump()
+            del data["id"]  # CanvasLayer mints a fresh one
+            data["name"] = f"{original_name} ▸ B"
+            data["visible"] = False
+            b = CanvasLayer(**data)
+            b.source.file = None  # snapshot belongs to the original; rewritten on save
+            idx = self.project.layers.index(layer)
+            self.project.layers.insert(idx + 1, b)
+            self.source_geometry[b.id] = self.source_geometry.get(layer_id, [])
+
+            # -- A: rename + hide the original in place ----------------------
+            layer.name = f"{original_name} ▸ A"
+            layer.visible = False
+
+            # -- tween: create_tween_layer's logic, inlined ------------------
+            tween_layer = CanvasLayer(
+                name=original_name,
+                source=LayerSource(
+                    type="tween",
+                    params=tween.TweenParams(a=layer.id, b=b.id, follow_master=True).model_dump(),
+                ),
+                pen_id=layer.pen_id,
+                visible=True,
+            )
+            idx_b = self.project.layers.index(b)
+            self.project.layers.insert(idx_b + 1, tween_layer)
+            self.source_geometry[tween_layer.id] = []  # materialised on next resolve
+            return tween_layer
+
     def consolidate_effects(self, layer_id: str) -> CanvasLayer:
         """Bake transform + effect stack into the source geometry.
 

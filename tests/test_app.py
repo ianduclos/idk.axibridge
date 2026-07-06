@@ -89,6 +89,28 @@ def test_master_timeline_scrub_endpoint(client):
     assert client.get("/api/compose/resolved?t=-0.1").status_code == 422
 
 
+def test_animate_layer_endpoint(client):
+    layer = client.post("/api/layers/generate",
+                         json={"module": "polygon", "params": {"sides": 6, "radius": 15}}).json()
+
+    tw = client.post(f"/api/layers/{layer['id']}/animate").json()
+    assert tw["source"]["type"] == "tween"
+    assert tw["source"]["params"]["follow_master"] is True
+    assert tw["name"] == layer["name"]
+
+    proj = client.get("/api/project").json()
+    assert len(proj["layers"]) == 3
+    a = next(l for l in proj["layers"] if l["id"] == layer["id"])
+    assert not a["visible"] and a["name"].endswith("▸ A")
+
+    # refuses animating a tween (409, RuntimeError)
+    r = client.post(f"/api/layers/{tw['id']}/animate")
+    assert r.status_code == 409
+
+    # 404 on an unknown layer id
+    assert client.post("/api/layers/nope/animate").status_code == 404
+
+
 def test_plot_single_layer_on_simulator(client):
     r = client.post("/api/layers/generate",
                     json={"module": "polygon", "params": {"sides": 4, "radius": 20}})

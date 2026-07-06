@@ -512,6 +512,8 @@ export function renderLayerDetail() {
     <div class="row">
       <select id="fx-select"></select><button id="fx-add">＋ Add</button>
       <button id="fx-consolidate" title="Bake transform + effects into the source geometry (undoable; regenerate also reverts a generated layer)">⤓ Consolidate</button>
+      ${layer.source.type !== "tween" ? `<button id="fx-animate"
+        title="Turn this layer into a keyframed A/B animation that follows the master timeline">⏱ Animate</button>` : ""}
     </div>
     <div id="fx-steps"></div>`;
   wrap.appendChild(fx);
@@ -523,6 +525,17 @@ export function renderLayerDetail() {
       renderLayerDetail();
     } catch (e) { actions.oops(e); }
   };
+  const animateBtn = fx.querySelector("#fx-animate");
+  if (animateBtn) {
+    animateBtn.onclick = async () => {
+      try {
+        const tw = await api.post(`/api/layers/${layer.id}/animate`);
+        await actions.refreshProject();
+        await actions.refreshResolved();
+        actions.setSelection([tw.id]);
+      } catch (e) { actions.oops(e); }
+    };
+  }
   const fxSel = fx.querySelector("#fx-select");
   for (const m of S.state.modules.effects) {
     const o = document.createElement("option");
@@ -606,10 +619,16 @@ export function renderLayerDetail() {
         title="the master timeline scrubber (and later frame rendering) drives this tween's t">
         <input type="checkbox" id="tw-follow"> Follow timeline
       </label>
+      <div class="row">
+        <button id="tw-edit-a" title="select keyframe A (${nameOf(p.a)})">edit A</button>
+        <button id="tw-edit-b" title="select keyframe B (${nameOf(p.b)})">edit B</button>
+      </div>
       <div class="row"><button id="tw-explode"
         title="bake each sweep step into its own layer (pen/occlusion editable per step); the tween stays, hidden">
         ÷ Split into layers</button></div>`;
     wrap.appendChild(tw);
+    tw.querySelector("#tw-edit-a").onclick = () => actions.setSelection([p.a]);
+    tw.querySelector("#tw-edit-b").onclick = () => actions.setSelection([p.b]);
     const follow = tw.querySelector("#tw-follow");
     follow.checked = !!p.follow_master;
     follow.onchange = async () => {

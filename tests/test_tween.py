@@ -199,6 +199,45 @@ def test_master_t_cache_invalidates_then_hits():
     assert session.source_geometry[tw.id] is g_high
 
 
+def test_animate_layer_wires_up_a_b_tween():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    original_name = layer.name
+    pre_geo = session.resolved()[layer.id]  # captured while the layer is still visible
+    session._history.clear()  # isolate the checkpoint count from the history maxlen cap
+    hist_before = len(session._history)
+
+    tw = session.animate_layer(layer.id)
+
+    assert len(session._history) == hist_before + 1  # exactly one undo step
+    assert len(session.project.layers) == 3
+    a = session.project.layer(layer.id)  # original id, renamed + hidden
+    p = tw.source.params
+    b = session.project.layer(p["b"])
+
+    assert a.name == f"{original_name} ▸ A" and not a.visible
+    assert b.id != a.id and b.name == f"{original_name} ▸ B" and not b.visible
+    assert tw.source.type == "tween" and tw.visible
+    assert tw.name == original_name
+    assert p["a"] == a.id and p["b"] == b.id and p["follow_master"] is True
+
+    r = session.resolved()
+    assert r[tw.id]  # tween resolves non-empty
+    # endpoint fidelity: master_t=0 reproduces the pre-animate geometry exactly
+    _approx_equal(session.resolved(master_t=0.0)[tw.id], pre_geo)
+
+    assert session.undo()  # single undo restores the original single-layer state
+    assert len(session.project.layers) == 1
+    restored = session.project.layer(layer.id)
+    assert restored.name == original_name and restored.visible
+
+
+def test_animate_layer_refuses_a_tween():
+    a, b = _pair()
+    tw = session.create_tween_layer(a.id, b.id)
+    with pytest.raises(RuntimeError):
+        session.animate_layer(tw.id)
+
+
 def test_explode_tween_creates_layer_per_step():
     a, b = _pair()
     tw = session.create_tween_layer(a.id, b.id)

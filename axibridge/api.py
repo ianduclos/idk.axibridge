@@ -578,6 +578,17 @@ def duplicate_layer(layer_id: str) -> dict[str, Any]:
         raise _fail(e, 404)
 
 
+@router.post("/layers/{layer_id}/animate")
+def animate_layer(layer_id: str) -> dict[str, Any]:
+    """One-click: turn a layer into a keyframed (A/B) tween animation."""
+    try:
+        return session.animate_layer(layer_id).model_dump()
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e)
+
+
 @router.post("/layers/{layer_id}/consolidate")
 def consolidate_layer(layer_id: str) -> dict[str, Any]:
     """Bake the layer's transform + effect stack into its source geometry."""
