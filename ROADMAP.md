@@ -93,6 +93,17 @@ geometry path, never a checkpoint). What landed:
   (`plot/start` takes `master_t`; explicit press per frame, paper swap
   between), contact-sheet bake (`/api/animation/contact_sheet` — shared
   scale across cells, `explode_tween`-style baked layers).
+- **Grid sheets** — **shipped July 2026**: plot many timeline frames per
+  physical sheet (1/2/4/16 per page) without the destructive bake.
+  `session.sheet_document` is transient plot-time assembly — no project
+  mutation, one shared scale across ALL sheets (flipbook-consistent),
+  grouped BY PEN so each sheet plots as one pass per pen (nib offset applied
+  after placement). API: `SheetSpec` on `plot/start`, `?sheet=<json>` on
+  `/plan`, `cols/rows/margin_mm` on `export.zip` (one `sheet_NN.svg` per
+  page), and `GET /animation/sheet_info` (pass list per page). UI: a
+  "per sheet" select drives a two-axis stepper (sheets × pen passes). This
+  closes the old "2 A5 halves per page" ask (per-sheet = 2 → (2,1)) AND the
+  per-pen deferral below.
 
 **The frame-ladder recipe** (the canonical animation workflow, per Ian's
 drawing — v1.4 semantics: positions never move with time, only clip content
@@ -118,8 +129,10 @@ Deferred, roughly in order of pull:
   Same round added cascade delete for animation groups, sequence-import
   start/every controls, auto-frame on animate, and the static-in-between
   button (a second non-following tween over the same A/B pair).
-- **Per-pen contact-sheet layers** — the bake currently flattens each frame
-  to one default-pen layer; splitting per pen keeps multi-pen animations.
+- ~~Per-pen contact-sheet layers~~ — **shipped July 2026** for the transient
+  grid sheets (`sheet_document` groups by pen; each sheet = one pass per pen).
+  The destructive `bake_contact_sheet` still flattens to one layer per frame
+  by design (it's the editable variant); per-pen baking there is unclaimed.
 - **GIF/PNG preview render** — the SVG zip + scrubbing cover iteration; a
   server-side GIF would be convenience only.
 - Per-frame fades via pen pressure / multipass density (motion trails);

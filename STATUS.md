@@ -3,15 +3,34 @@ project: idk.axibridge
 state: active
 updated: 2026-07-07
 machine: mac+pi
-summary: Animation v1.0–v1.4 shipped and e2e-verified; save diagnosed and fixed (stale-file pruning + zombie-asset resurrection, saved-feedback UX, ⌘S); user favicon wired in.
+summary: Grid sheets shipped and e2e-verified — plot 1/2/4/16 timeline frames per physical sheet (transient, per-pen passes, shared scale) with a two-axis stepper; suite 190 green on branch feat/grid-sheets.
 next:
-  - Restart the live server/app — it ran OLD code against NEW static files all session (version skew explains most reported weirdness); confirm save behaves after restart
+  - Merge feat/grid-sheets to main (2 commits + docs; suite 190 green, live-verified on :29942)
   - Canvas zoom & pan (wheel zoom + drag pan in canvas.js, display-only)
   - Easing / >2 keyframes if linear A→B starts to feel limiting (ROADMAP)
 handoff_for: null
 ---
 
 # idk.axibridge — status
+
+**Grid sheets (2026-07-07, branch `feat/grid-sheets`, 2 commits
+`3d32382..fd99d65`, suite 190).** Plot many timeline frames onto one physical
+sheet (1/2/4/16 per page) without the destructive contact-sheet bake.
+`session.sheet_document` is transient plot-time assembly (no project mutation,
+flows through `resolved()` only): one shared scale across ALL sheets
+(flipbook-consistent), grouped BY PEN so each sheet plots as one pass per pen,
+nib offset applied after placement. Extracted `_grid_place` as the shared
+placement core (`bake_contact_sheet` refactored onto it, behavior unchanged).
+API: `SheetSpec` on `plot/start`, `?sheet=<json>` on `/plan`,
+`cols/rows/margin_mm` on `export.zip` (one `sheet_NN.svg`/page), and
+`GET /animation/sheet_info`. UI: a "per sheet" select drives a sheets × pen-
+passes stepper (`static/js/plot.js`); the plan overlay previews the current
+page while the panel is open. Tests: `tests/test_sheets.py`. Closes the old
+"2 A5 per page" ask and the per-pen deferral (see `ROADMAP.md`). Known
+limitation: `doc_to_svg` colours sheet SVG layers from vpype's palette, not
+the exact pen colour (pre-existing, shared with `/doc/svg`).
+
+## Prior arc
 
 July 2026 animation arc, five use-driven rounds in one long session (18
 commits `5367bcc..d02f93e`, suite 177 passing): frame-sequence assets with
