@@ -103,6 +103,22 @@ def save_project(
             (project_dir / "assets" / safe_name(name)).write_bytes(data)
     (project_dir / "project.json").write_text(project.model_dump_json(indent=2))
 
+    # Prune: the folder must mirror CURRENT state. ``load_project`` reads every
+    # file in assets/ and trusts sources/ references, so stale files would
+    # resurrect deleted assets (e.g. a re-imported, shorter frame sequence's
+    # old tail frames) or pile up dead gen-* snapshots forever.
+    keep_sources = {l.source.file for l in project.layers if l.source.file} | set(svg_files)
+    for f in (project_dir / "sources").glob("gen-*.svg"):
+        if f"sources/{f.name}" not in keep_sources:
+            f.unlink()
+    if assets is not None:
+        assets_dir = project_dir / "assets"
+        if assets_dir.is_dir():
+            keep_assets = {safe_name(n) for n in assets}
+            for f in assets_dir.iterdir():
+                if f.is_file() and not f.name.startswith(".") and f.name not in keep_assets:
+                    f.unlink()
+
 
 def load_project(
     project_dir: FsPath,

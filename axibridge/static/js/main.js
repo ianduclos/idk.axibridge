@@ -293,13 +293,19 @@ $("project-name").onchange = async () => {
     S.state.project.name = $("project-name").value;
   } catch (e) { oops(e); }
 };
-$("btn-save").onclick = async () => {
+async function saveProject() {
+  const btn = $("btn-save");
   try {
     const r = await api.post("/api/project/save", {});
     log(`saved: ${r.saved}`);
     renderSettingsTab();
+    // visible confirmation where the click happened — the job log lives on
+    // the Plot tab, so from Compose a bare save looks like it did nothing
+    btn.textContent = "saved ✓";
+    setTimeout(() => { btn.textContent = "Save"; }, 1500);
   } catch (e) { oops(e); }
-};
+}
+$("btn-save").onclick = saveProject;
 
 // ---- canvas toolbar ----------------------------------------------------------------
 
@@ -450,6 +456,9 @@ document.addEventListener("keydown", async (e) => {
     } catch (err) {
       if (!/nothing to undo/.test(err.message || "")) oops(err);
     }
+  } else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "s") {
+    e.preventDefault(); // the browser's save-page dialog is never what's wanted here
+    await saveProject();
   }
 });
 
