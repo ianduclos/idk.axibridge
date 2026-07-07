@@ -54,6 +54,7 @@ export function initPlotTab() {
           <label>t from</label><input type="number" id="anim-t-from" min="0" max="1" step="0.01" style="width:5.5em">
           <label>t to</label><input type="number" id="anim-t-to" min="0" max="1" step="0.01" style="width:5.5em">
         </div>
+        <div class="hint">for one clip-frame per rendered frame, set frames = the clip's length</div>
         <div class="row">
           <a id="anim-export-link" download><button type="button">Export SVG frames (zip)</button></a>
         </div>

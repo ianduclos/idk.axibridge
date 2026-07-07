@@ -146,7 +146,8 @@ export function renderTimeline() {
   });
   panel.hidden = !(hasTween || hasFrameClip);
   const hasFollow = layers.some(
-    (l) => l.source.type === "tween" && (l.source.params || {}).follow_master);
+    (l) => (l.source.type === "tween" && (l.source.params || {}).follow_master)
+        || l.frame_follow);
   const hint = $("timeline-hint");
   if (hint) hint.hidden = panel.hidden || hasFollow;
 }
@@ -205,8 +206,9 @@ export function initComposeTab() {
         <span class="hint" id="master-t-val" style="min-width:5em">t = 0.000</span>
       </div>
       <div class="hint">Live scrub only — not saved to the project.</div>
-      <div class="hint" id="timeline-hint" hidden>nothing follows the timeline yet — ⏱ Animate a layer,
-        or check "Follow timeline" on an interpolation layer</div>
+      <div class="hint" id="timeline-hint" hidden>nothing follows the timeline yet — check
+        "clip follows timeline" on a clip layer, ⏱ Animate a layer, or check "Follow
+        timeline" on an interpolation layer</div>
     </div>
     <div class="panel" id="layer-detail-panel" hidden>
       <h2>Layer: <span id="detail-name"></span></h2>
@@ -566,7 +568,11 @@ export function renderLayerDetail() {
         <label>${label}</label>
         <input type="number" id="ld-frame-offset" step="${step}" min="${min}" max="${max}"
           value="${shown}" style="width:5.5em" title="${title}">
-      </div>`;
+      </div>
+      ${frames ? `<label class="hint" style="cursor:pointer"
+        title="the master scrubber / frame rendering advances this layer's clip one-for-one; positions never move">
+        <input type="checkbox" id="ld-frame-follow" ${layer.frame_follow ? "checked" : ""}>
+        clip follows timeline</label>` : ""}`;
     wrap.appendChild(foff);
     foff.querySelector("#ld-frame-offset").onchange = async (e) => {
       let v = Number(e.target.value);
@@ -578,6 +584,17 @@ export function renderLayerDetail() {
         renderLayerDetail();
       } catch (err) { actions.oops(err); }
     };
+    const followBox = foff.querySelector("#ld-frame-follow");
+    if (followBox) {
+      followBox.onchange = async () => {
+        try {
+          await api.patch(`/api/layers/${layer.id}`, { frame_follow: followBox.checked });
+          await actions.refreshProject();
+          await actions.refreshResolved();
+          renderTimeline(); // the panel counts following clips as scrub-able
+        } catch (err) { actions.oops(err); }
+      };
+    }
   }
 
   // -- pen + occlusion
@@ -722,23 +739,18 @@ export function renderLayerDetail() {
       <div class="form" id="tw-form"></div>
       <details id="tw-stamping" class="form-group" ${p.sweep > 1 ? "open" : ""}>
         <summary>Stamping (sweep)</summary>
-        <div class="hint">stamp N copies of the morph from/to — a motion trail; with "follow
-          timeline", the whole ladder advances as you scrub</div>
+        <div class="hint">N in-between copies of the morph, evenly spaced BETWEEN A and B —
+          the endpoints stay their own layers. For a frame ladder, check "clip follows
+          timeline" on A and B.</div>
         <div class="row">
-          <label>sweep</label>
+          <label>copies</label>
           <input type="number" id="tw-sweep" min="1" max="60" step="1" style="width:4.5em">
-        </div>
-        <div class="row">
-          <label>sweep from</label>
-          <input type="number" id="tw-sweep-from" min="0" max="1" step="0.01" style="width:4.5em">
-          <label>to</label>
-          <input type="number" id="tw-sweep-to" min="0" max="1" step="0.01" style="width:4.5em">
         </div>
       </details>
       <details id="tw-timeline" class="form-group" ${p.follow_master ? "open" : ""}>
         <summary>Timeline</summary>
-        <div class="hint">scrubbing morphs A→B inside this window; with stamping on, it pushes
-          every stamp forward instead</div>
+        <div class="hint">scrubbing morphs A→B inside this window (single tween). Frame
+          ladders advance via "clip follows timeline" on the layers instead.</div>
         <label class="hint" style="cursor:pointer"
           title="the master timeline scrubber (and later frame rendering) drives this tween's t">
           <input type="checkbox" id="tw-follow"> Follow timeline
@@ -753,7 +765,6 @@ export function renderLayerDetail() {
       <div class="row">
         <button id="tw-edit-a" title="select keyframe A (${nameOf(p.a)})">edit A</button>
         <button id="tw-edit-b" title="select keyframe B (${nameOf(p.b)})">edit B</button>
-        <button id="tw-static" title="a second interpolation over the same A/B: fixed-t in-between or sweep stamping, independent of the timeline">＋ Static in-between</button>
         <button id="tw-explode"
           title="bake each sweep step into its own layer (pen/occlusion editable per step); the tween stays, hidden">÷ Split into layers</button>
       </div>`;
@@ -770,12 +781,7 @@ export function renderLayerDetail() {
     delete schema.properties.window_from;   // rendered under "Timeline", not a form field
     delete schema.properties.window_to;
     delete schema.properties.sweep;         // rendered under "Stamping (sweep)", not a form field
-    delete schema.properties.sweep_from;
-    delete schema.properties.sweep_to;
-    const values = {
-      t: p.t ?? 0.5, sweep: p.sweep ?? 1,
-      sweep_from: p.sweep_from ?? 0, sweep_to: p.sweep_to ?? 1,
-    };
+    const values = { t: p.t ?? 0.5, sweep: p.sweep ?? 1 };
     const commit = actions.debounce(async () => {
       try {
         layer.source.params = { ...p, ...values }; // optimistic
@@ -799,8 +805,6 @@ export function renderLayerDetail() {
       };
     };
     bindNum("#tw-sweep", "sweep", 1, 60);
-    bindNum("#tw-sweep-from", "sweep_from", 0, 1);
-    bindNum("#tw-sweep-to", "sweep_to", 0, 1);
 
     // -- timeline: follow-master checkbox + window (window only matters, and
     // only shows, once the layer actually follows the scrubber)
@@ -831,14 +835,6 @@ export function renderLayerDetail() {
     winFrom.onchange = commitWindow;
     winTo.onchange = commitWindow;
 
-    tw.querySelector("#tw-static").onclick = async () => {
-      try {
-        const created = await api.post("/api/layers/tween", { a: p.a, b: p.b });
-        await actions.refreshProject();
-        await actions.refreshResolved();
-        actions.setSelection([created.id]);
-      } catch (e) { actions.oops(e); }
-    };
     tw.querySelector("#tw-explode").onclick = async () => {
       try {
         await api.post(`/api/layers/${layer.id}/explode`);
