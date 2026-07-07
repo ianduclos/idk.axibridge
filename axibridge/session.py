@@ -42,6 +42,12 @@ class Session:
         self._history: deque[tuple[Project, dict[str, list[Path]], dict[str, str]]] = deque(maxlen=8)
         #: tween layer id -> (content key, materialised paths)
         self._tween_cache: dict[str, tuple[str, list[Path]]] = {}
+        #: frame-follow generator layer id -> (content key, clip-advanced paths).
+        #: An EPHEMERAL scrub overlay: computed only when resolving with a
+        #: master_t, never written into ``source_geometry`` (the user's stored
+        #: geometry stays byte-identical under a scrub). Keyed on content, so a
+        #: cache hit hands back the SAME list object and the shaped cache re-hits.
+        self._clip_cache: dict[str, tuple[str, list[Path]]] = {}
 
     # -- undo -----------------------------------------------------------------
 
@@ -82,20 +88,30 @@ class Session:
     # -- layer CRUD -----------------------------------------------------------
 
     @staticmethod
-    def _effective_gen_params(layer: CanvasLayer) -> dict[str, Any]:
+    def _effective_gen_params(
+        layer: CanvasLayer, master_t: float | None = None
+    ) -> dict[str, Any]:
         """The generator params to actually GENERATE with: the layer's stored
-        source params, but with a non-zero ``frame_offset`` folded into the
+        source params, but with the layer's frame shift folded into the
         generator's ``frame`` axis (clamped 0..1) when the generator exposes
         one. The stored params are NEVER mutated — this returns a copy — so
-        the user's raw ``frame`` and the undo/purity contract stay intact."""
+        the user's raw ``frame`` and the undo/purity contract stay intact.
+
+        The frame shift is ``frame_offset``, PLUS ``master_t`` when the layer
+        opted into ``frame_follow`` and a ``master_t`` is supplied (the single
+        place that folds a clip-follow scrub — the effective frame for the
+        preview, estimate and plotter alike is computed here)."""
         params = dict(layer.source.params or {})
         if layer.source.type not in ("generator", "baked") or not layer.source.generator:
             return params
-        if not layer.frame_offset:
+        shift = layer.frame_offset
+        if master_t is not None and layer.frame_follow:
+            shift += master_t
+        if not shift:
             return params
         if "frame" not in get_source(layer.source.generator).Params.model_fields:
             return params
-        params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + layer.frame_offset))
+        params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + shift))
         return params
 
     def add_generated_layer(self, generator_id: str, params: dict[str, Any]) -> CanvasLayer:
@@ -170,7 +186,7 @@ class Session:
     def update_layer(self, layer_id: str, patch: dict[str, Any]) -> CanvasLayer:
         allowed = {"name", "visible", "transform", "effects", "pen_id",
                    "occluder", "receives_occlusion", "occlusion_margin_mm",
-                   "frame_offset"}
+                   "frame_offset", "frame_follow"}
         with self._lock:
             layer = self.project.layer(layer_id)
             self._checkpoint()
@@ -321,6 +337,7 @@ class Session:
                 self.source_geometry.pop(layer.id, None)
                 self._shaped_cache.pop(layer.id, None)
                 self._tween_cache.pop(layer.id, None)
+                self._clip_cache.pop(layer.id, None)
             return [l.id for l in deleted]
 
     def reorder_layers(self, ordered_ids: list[str]) -> None:
@@ -378,8 +395,7 @@ class Session:
             p = tween.TweenParams(**(layer.source.params or {}))
             self._checkpoint()
             ts = [p.t] if p.sweep <= 1 else [
-                p.sweep_from + (p.sweep_to - p.sweep_from) * i / (p.sweep - 1)
-                for i in range(p.sweep)
+                i / (p.sweep + 1) for i in range(1, p.sweep + 1)
             ]
             created: list[CanvasLayer] = []
             idx = self.project.layers.index(layer)
@@ -603,41 +619,116 @@ class Session:
 
     def resolved(self, master_t: float | None = None) -> dict[str, list[Path]]:
         """Resolve the project through the single geometry path. ``master_t``
-        (0..1, or None to disable) is the ephemeral master-timeline value: it
-        drives every tween whose ``follow_master`` is set, live, WITHOUT
-        mutating the project (no checkpoint, byte-identical stored state). A
-        single tween (``sweep <= 1``) moves its ``t``; a ``sweep > 1`` stamped
-        tween has its whole ladder pushed forward along the morph (see
-        ``tween.materialize``)."""
+        (0..1, or None to disable) is the ephemeral master-timeline value.
+
+        It drives two things, live and WITHOUT mutating stored state (no
+        checkpoint, ``source_geometry`` for user layers byte-identical):
+
+        * **Clip-follow** — every visible ``frame_follow`` generator backed by
+          a frame sequence has its clip advanced (frame += master_t). Its
+          advanced geometry is an EPHEMERAL overlay layered over
+          ``source_geometry`` in a throwaway ``geo`` dict; the stored list stays
+          untouched.
+        * **Tween morph** — a tween whose ``follow_master`` is set moves its
+          ``t`` (single) through its window; a swept tween's stamp positions are
+          time-invariant, but the master value still advances each stamp's clip
+          content via its endpoints' ``frame_follow``.
+
+        ``master_t=None`` is byte-identical to no scrub at all."""
         with self._lock:
-            self._materialize_tweens(master_t)
+            overrides = self._clip_overrides(master_t)
+            # ephemeral overlay: the follow generators' advanced geometry rides
+            # over the stored source geometry for THIS resolve only. Tweens read
+            # their endpoints from it and write their own results back into it
+            # (below), so resolve_project sees a single consistent geometry map.
+            geo = {**self.source_geometry, **overrides}
+            self._materialize_tweens(master_t, geo)
             return compose.resolve_project(
-                self.project, self.source_geometry, self.pens(), self._shaped_cache
+                self.project, geo, self.pens(), self._shaped_cache
             )
 
-    def _materialize_tweens(self, master_t: float | None = None) -> None:
+    def _clip_overrides(self, master_t: float | None) -> dict[str, list[Path]]:
+        """Ephemeral clip-follow overlay: ``{layer_id: advanced paths}`` for
+        every VISIBLE ``frame_follow`` generator whose ``image`` param is a
+        frame sequence, with its clip advanced by ``master_t``. Empty when
+        ``master_t is None`` (byte-identical to no scrub).
+
+        The advanced geometry NEVER touches ``source_geometry`` — it lives only
+        in the returned dict, so a scrub leaves the user's stored geometry (and
+        the undo history) intact. Cached on content (params + offset + master_t)
+        so a cache hit returns the SAME list object, letting compose's
+        ``id(src)``-keyed shaped cache re-hit. A generation failure inside an
+        override is swallowed — the layer falls back to its base geometry so a
+        stored project always resolves."""
+        if master_t is None:
+            return {}
+        import json
+
+        from .assets import asset_store
+
+        overrides: dict[str, list[Path]] = {}
+        for layer in self.project.layers:
+            if not layer.visible or not layer.frame_follow:
+                continue
+            src = layer.source
+            if src.type != "generator" or not src.generator:
+                continue
+            gen = get_source(src.generator)
+            if "frame" not in gen.Params.model_fields:
+                continue
+            image = (src.params or {}).get("image")
+            if not (isinstance(image, str) and asset_store.is_sequence(image)):
+                continue
+            key = json.dumps(
+                {"p": src.params, "off": layer.frame_offset, "mt": master_t},
+                sort_keys=True)
+            hit = self._clip_cache.get(layer.id)
+            if hit is not None and hit[0] == key:
+                overrides[layer.id] = hit[1]  # same object -> shaped cache re-hits
+                continue
+            try:
+                doc = gen.generate(gen.Params(**self._effective_gen_params(layer, master_t)))
+                paths = [p for lyr in doc.layers for p in lyr.paths]
+            except Exception:
+                continue  # fall back to stored base geometry for this layer
+            self._clip_cache[layer.id] = (key, paths)
+            overrides[layer.id] = paths
+        return overrides
+
+    def _materialize_tweens(
+        self, master_t: float | None = None,
+        geo: dict[str, list[Path]] | None = None,
+    ) -> None:
         """Refresh every tween layer's source geometry from its referenced
         layers (they are live references). Cached on a content key of both
-        definitions + the tween params (+ the master-timeline override), so an
+        definitions + the tween params (+ the master-timeline values), so an
         untouched tween costs one hash. Called under the lock, only from
         resolved() — the single resolve path stays single.
 
-        ``master_t`` (when not None) drives tweens that opted in via
-        ``follow_master``, clamped to 0..1 and mapped through the window. The
-        override is ephemeral: the stored ``layer.source.params`` are never
-        mutated — it is passed straight to ``materialize`` (which uses it as
-        ``t`` for a single tween, or shifts every stamp of a swept one). The
-        override is folded into the cache key so scrubbing invalidates
-        correctly."""
+        ``geo`` (when given) is the ephemeral overlay dict resolved() reads
+        from: endpoints are read out of it (so a tween over follow generators
+        lerps their advanced geometry), and each tween's materialised result is
+        written back into it AS WELL as into ``source_geometry`` (tween geometry
+        is derived state — writing it under a scrub is fine; the user's source
+        layers are the ones that must stay byte-identical).
+
+        ``master_t`` (when not None) drives tweens two ways, both ephemeral (the
+        stored ``layer.source.params`` are never mutated): a ``follow_master``
+        tween's local ``t`` is mapped through its window into ``override_t``;
+        and the RAW clamped master value goes to ``materialize`` unconditionally
+        so any endpoint's ``frame_follow`` advances the clip. Both are folded
+        into the cache key so scrubbing invalidates correctly."""
         import json
 
+        read_geo = geo if geo is not None else self.source_geometry
+        clamped_master = None if master_t is None else min(1.0, max(0.0, master_t))
         for layer in self.project.layers:
             if layer.source.type != "tween":
                 continue
             params = layer.source.params or {}
             override_t: float | None = None
             if master_t is not None and params.get("follow_master"):
-                mt = min(1.0, max(0.0, master_t))
+                mt = clamped_master
                 # map the master timeline into this tween's local t through the
                 # window: hold A before ``window_from``, animate inside, hold B
                 # after ``window_to``.
@@ -656,19 +747,26 @@ class Session:
                         "src": ref.source.model_dump(),
                         "tf": ref.transform.model_dump(),
                         "fx": [s.model_dump() for s in ref.effects],
-                        "geo": id(self.source_geometry.get(ref.id)),
+                        "geo": id(read_geo.get(ref.id)),
+                        "fo": ref.frame_offset,
+                        "ff": ref.frame_follow,
                     })
                 except KeyError:
                     refs.append(None)
             key = json.dumps(
-                {"refs": refs, "p": params, "mt": override_t}, sort_keys=True)
+                {"refs": refs, "p": params, "mt": override_t, "master": clamped_master},
+                sort_keys=True)
             hit = self._tween_cache.get(layer.id)
             if hit is not None and hit[0] == key:
+                if geo is not None:
+                    geo[layer.id] = hit[1]
                 continue
             paths = tween.materialize(
-                layer, self.project, self.source_geometry, override_t)
+                layer, self.project, read_geo, override_t, clamped_master)
             self._tween_cache[layer.id] = (key, paths)
             self.source_geometry[layer.id] = paths  # replaced wholesale, never mutated
+            if geo is not None:
+                geo[layer.id] = paths
 
     def resolved_document(self, target: str = "all",
                           master_t: float | None = None) -> PathDocument:

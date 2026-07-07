@@ -129,6 +129,11 @@ class CanvasLayer(BaseModel):
         description="Added to the generator's 'frame' when sampling an image "
                     "sequence (result clamped 0..1); layers can time-shift the "
                     "same clip, and interpolation layers lerp it")
+    frame_follow: bool = Field(
+        default=False,
+        description="Clip advances with the master timeline: effective frame = "
+                    "frame + frame_offset + master t (clamped 0..1); positions "
+                    "never move")
 
 
 class PaperGuide(BaseModel):

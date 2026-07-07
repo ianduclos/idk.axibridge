@@ -29,12 +29,14 @@ The contract that makes it sturdy:
   either updates the morph. If a reference goes missing or incompatible the
   tween resolves to empty (never crashes a stored project); deleting a
   referenced layer is refused server-side unless the tween goes with it.
-* **Timeline drives stamps too** — a ``sweep > 1`` (stamped) tween ignores
-  ``t``, so a naive timeline scrub would do nothing to it. Under a master
-  scrub the timeline instead pushes every stamp FORWARD along the morph by the
-  same amount (its position, its lerped params and folded frame offset alike),
-  each stamp saturating at the B end — the whole ladder advances rather than a
-  single shape morphing.
+* **Stamp positions are time-invariant** — a ``sweep > 1`` (stamped) tween
+  places its copies at fixed positions strictly BETWEEN A and B
+  (``i/(sweep+1)`` for ``i`` in ``1..sweep``, never coincident with either
+  endpoint), and a master scrub never moves them. What advances under the
+  timeline is the *clip content*: an endpoint carrying ``frame_follow`` has the
+  raw (clamped) master value folded into its frame axis (``master_t`` in
+  ``_source_paths_at``), so the whole ladder samples later frames while every
+  stamp stays put — positions never move with time, only clip content does.
 
 The tween layer is otherwise a normal layer: its own transform (drag it),
 its own effect stack, pen and occlusion flags all apply ON TOP of the
@@ -58,9 +60,8 @@ class TweenParams(BaseModel):
     b: str = Field(title="Layer B")
     t: float = Field(default=0.5, ge=0.0, le=1.0, title="t (A → B)")
     sweep: int = Field(default=1, ge=1, le=60, title="Sweep copies",
-                       description="1 = single tween at t; more = stamped morph from/to")
-    sweep_from: float = Field(default=0.0, ge=0.0, le=1.0, title="Sweep from")
-    sweep_to: float = Field(default=1.0, ge=0.0, le=1.0, title="Sweep to")
+                       description="1 = single tween at t; more = in-betweens "
+                                   "stamped strictly between A and B (exclusive)")
     follow_master: bool = Field(
         default=False, title="Follow timeline",
         description="Master timeline scrub / frame rendering drives this tween's t")
@@ -165,7 +166,8 @@ def check_compatible(
 
 
 def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
-                     geo_a: list[Path], geo_b: list[Path], t: float) -> list[Path]:
+                     geo_a: list[Path], geo_b: list[Path], t: float,
+                     master_t: float | None = None) -> list[Path]:
     same_gen = (
         la.source.type == "generator" and lb.source.type == "generator"
         and la.source.generator and la.source.generator == lb.source.generator
@@ -177,8 +179,15 @@ def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
         # frame_offset is a layer-level lerped quantity (like the transform):
         # fold the interpolated offset into the generator's ``frame`` axis so an
         # A/B pair with identical params but different offsets plays the clip.
-        off = la.frame_offset + (lb.frame_offset - la.frame_offset) * t
-        if (off or la.frame_offset or lb.frame_offset) and "frame" in src.Params.model_fields:
+        # Clip-follow: each endpoint's FULL effective offset also carries the raw
+        # (clamped) master value when that endpoint opted into ``frame_follow`` —
+        # so scrubbing the master timeline advances the clip content the ladder
+        # samples, without moving any stamp. The per-endpoint offsets lerp like
+        # the layer-level ones.
+        off_a = la.frame_offset + (master_t if (la.frame_follow and master_t is not None) else 0.0)
+        off_b = lb.frame_offset + (master_t if (lb.frame_follow and master_t is not None) else 0.0)
+        off = off_a + (off_b - off_a) * t
+        if (off or off_a or off_b) and "frame" in src.Params.model_fields:
             params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + off))
         doc = src.generate(src.Params(**params))
         return [p for lyr in doc.layers for p in lyr.paths]
@@ -207,7 +216,7 @@ def _effects_at(la: CanvasLayer, lb: CanvasLayer, t: float):
 
 def materialize(
     layer: CanvasLayer, project: Project, source_geometry: dict[str, list[Path]],
-    override_t: float | None = None,
+    override_t: float | None = None, master_t: float | None = None,
 ) -> list[Path]:
     """The tween layer's source geometry: the virtual in-between layer(s),
     fully shaped (lerped transform + lerped effects) in paper space. The
@@ -216,14 +225,17 @@ def materialize(
     to [] — a stored project must never fail to resolve.
 
     ``override_t`` (the master-timeline value, already mapped through the
-    tween's window by the caller) drives the morph position:
+    tween's window by the caller) drives the morph POSITION for a single tween:
 
     * ``sweep <= 1`` — a single tween at ``override_t`` if given, else ``p.t``.
-    * ``sweep > 1`` with an override — a STAMPED morph the timeline pushes
-      forward: every stamp shifts by ``override_t`` along the morph (positions,
-      lerped params and frame offsets alike), saturating at 1 (the B end).
-      Without an override the stamps sit at their static ``sweep_from``..
-      ``sweep_to`` positions, unchanged."""
+    * ``sweep > 1`` — in-betweens stamped at fixed, time-invariant positions
+      strictly BETWEEN A and B (``i/(sweep+1)`` for ``i`` in ``1..sweep``);
+      ``override_t`` does NOT move them (positions never move with time).
+
+    ``master_t`` is the RAW clamped master-timeline value (distinct from the
+    window-mapped ``override_t``): passed straight through to
+    ``_source_paths_at``, it advances the CLIP CONTENT of any endpoint that
+    opted into ``frame_follow`` — the ladder samples later frames in place."""
     try:
         p = TweenParams(**(layer.source.params or {}))
         la = project.layer(p.a)
@@ -235,15 +247,11 @@ def materialize(
         if p.sweep <= 1:
             ts = [override_t if override_t is not None else p.t]
         else:
-            ts = [
-                p.sweep_from + (p.sweep_to - p.sweep_from) * i / (p.sweep - 1)
-                for i in range(p.sweep)
-            ]
-            if override_t is not None:
-                ts = [min(1.0, max(0.0, t + override_t)) for t in ts]
+            # exclusive in-betweens: evenly spaced strictly between the endpoints
+            ts = [i / (p.sweep + 1) for i in range(1, p.sweep + 1)]
         out: list[Path] = []
         for t in ts:
-            paths = _source_paths_at(la, lb, geo_a, geo_b, t)
+            paths = _source_paths_at(la, lb, geo_a, geo_b, t, master_t)
             placed = transform_paths(paths, lerp_affine(la.transform, lb.transform, t))
             ctx = EffectContext(
                 layer_id=layer.id,

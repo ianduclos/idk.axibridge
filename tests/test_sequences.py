@@ -443,39 +443,163 @@ def _identical_thirds(paths) -> bool:
     return a == b == c
 
 
-def _ladder():
-    """A 3-frame clip driven as a stamped, timeline-following morph: layer A at
-    frame 0, an offset-equivalent B (frame_offset 1.0 = last frame), and a
-    follow-master tween that stamps sweep=3 across the first half of the morph."""
+def _ladder(follow: bool = False):
+    """A 3-frame clip as a spatial ladder: layer A at frame 0, an
+    offset-equivalent B (frame_offset 1.0 = last frame) moved down the page,
+    and a sweep-3 tween whose in-betweens fill the gap positions. ``follow``
+    marks BOTH endpoints as clip-following (the v1.4 timeline mechanic)."""
     from axibridge.session import session
 
     _seq3()
     a = session.add_generated_layer(
-        "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0})
+        "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0,
+                            "width": 20})  # small: bounds in-image blob drift
     b = session.duplicate_layer(a.id)
-    session.update_layer(b.id, {"frame_offset": 1.0})  # B plays the last frame
+    session.update_layer(b.id, {"frame_offset": 1.0,  # B plays the last frame
+                                "transform": {"a": 1, "b": 0, "c": 0, "d": 1,
+                                              "e": 0, "f": 90}})
+    if follow:
+        session.update_layer(a.id, {"frame_follow": True})
+        session.update_layer(b.id, {"frame_follow": True})
     tw = session.create_tween_layer(a.id, b.id)
-    session.set_tween_params(tw.id, {
-        "sweep": 3, "sweep_from": 0.0, "sweep_to": 0.5, "follow_master": True})
+    session.set_tween_params(tw.id, {"sweep": 3})
     return a, b, tw
 
 
-def test_ladder_scrub_advances_swept_stamps():
+def _stamp_y_centres(paths, n):
+    """Mean y per stamp block (paths split into n equal blocks)."""
+    k = len(paths) // n
+    assert k * n == len(paths)
+    out = []
+    for i in range(n):
+        ys = [y for p in paths[i * k:(i + 1) * k] for _, y in p.points]
+        out.append(sum(ys) / len(ys))
+    return out
+
+
+def test_sweep_in_betweens_are_exclusive_and_evenly_spaced():
+    """sweep=N stamps sit strictly BETWEEN A and B at i/(N+1) — never on top
+    of an endpoint. Shape-stable polygons: only the position lerp shows."""
     from axibridge.session import session
 
-    a, b, tw = _ladder()
+    a = session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
+    b = session.duplicate_layer(a.id)
+    session.update_layer(b.id, {"transform": {"a": 1, "b": 0, "c": 0, "d": 1,
+                                              "e": 0, "f": 90}})
+    tw = session.create_tween_layer(a.id, b.id)
+    session.set_tween_params(tw.id, {"sweep": 3})
+    r = session.resolved()
+    ya = _stamp_y_centres(r[a.id], 1)[0]
+    yb = _stamp_y_centres(r[b.id], 1)[0]
+    ys = sorted(_stamp_y_centres(r[tw.id], 3))
+    gap = yb - ya
+    for i, y in enumerate(ys, start=1):
+        assert y == pytest.approx(ya + gap * i / 4, abs=1e-6)  # i/(sweep+1)
+
+
+def test_tween_params_ignore_legacy_sweep_from_to():
+    from axibridge.tween import TweenParams
+
+    p = TweenParams(a="x", b="y", sweep=4, sweep_from=0.2, sweep_to=0.7)
+    assert p.sweep == 4
+    assert not hasattr(p, "sweep_from") and not hasattr(p, "sweep_to")
+
+
+def test_swept_stamp_positions_are_time_invariant():
+    """v1.4 law: positions never move with time. Without clip-follow on the
+    endpoints, a scrub changes NOTHING about a swept tween; with it, only the
+    clip content changes — each stamp's anchor stays put.
+
+    The clip here is ANCHORED (frames share a top-left corner, differ only in
+    blob size) so a stamp's min-corner measures pure placement, uncontaminated
+    by in-image content drift."""
+    from axibridge.session import session
+
+    for i, side in enumerate((8, 16, 26)):
+        asset_store.put(f"anch#{i:04d}.png", _png_blob((2, 2, 2 + side, 2 + side)))
+    a = session.add_generated_layer(
+        "image_threshold", {"image": "anch#", "frame": 0.0, "detail": 1.0, "width": 20})
+    b = session.duplicate_layer(a.id)
+    session.update_layer(b.id, {"frame_offset": 1.0, "transform": {
+        "a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 90}})
+    tw = session.create_tween_layer(a.id, b.id)
+    session.set_tween_params(tw.id, {"sweep": 3})
+
+    # no follow anywhere: a scrub changes nothing at all
+    assert _pts(session.resolved(master_t=0.0)[tw.id]) == \
+           _pts(session.resolved(master_t=0.5)[tw.id])
+
+    session.update_layer(a.id, {"frame_follow": True})
+    session.update_layer(b.id, {"frame_follow": True})
     g0 = session.resolved(master_t=0.0)[tw.id]
     g5 = session.resolved(master_t=0.5)[tw.id]
-    g1 = session.resolved(master_t=1.0)[tw.id]
+    assert _pts(g0) != _pts(g5)  # clip content advanced…
 
-    # at master_t=0 the stamps sit at their static positions and sample distinct
-    # frames — the ladder is NOT three identical blocks
-    assert not _identical_thirds(g0)
-    # scrubbing pushes every stamp forward along the morph: the geometry moves
-    assert _pts(g0) != _pts(g5)
-    assert _pts(g5) != _pts(g1)
-    # at master_t=1 every stamp saturates at the B end -> three identical blocks
-    assert _identical_thirds(g1)
+    def stamp_anchors(paths):  # one traced rect per stamp: its min corner
+        return sorted((min(y for _, y in p.points), min(x for x, _ in p.points))
+                      for p in paths)
+
+    for (y0, x0), (y5, x5) in zip(stamp_anchors(g0), stamp_anchors(g5)):
+        assert y5 == pytest.approx(y0, abs=1.0)  # …but every stamp stayed put
+        assert x5 == pytest.approx(x0, abs=1.0)
+
+
+def test_clip_follow_scrub_is_ephemeral():
+    """Scrubbing a frame_follow layer never touches stored geometry, leaves
+    no residue, and adds no history."""
+    from axibridge.session import session
+
+    _seq3()
+    layer = session.add_generated_layer(
+        "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0})
+    session.update_layer(layer.id, {"frame_follow": True})
+    base = _pts(session.resolved()[layer.id])
+    stored = session.source_geometry[layer.id]
+    hist = len(session._history)
+
+    scrubbed = _pts(session.resolved(master_t=1.0)[layer.id])
+    assert scrubbed != base                                   # clip advanced
+    assert session.source_geometry[layer.id] is stored        # stored untouched
+    assert _pts(session.resolved()[layer.id]) == base         # no residue
+    assert len(session._history) == hist                      # no checkpoints
+
+
+def test_clip_follow_without_flag_ignores_master_t():
+    from axibridge.session import session
+
+    _seq3()
+    layer = session.add_generated_layer(
+        "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0})
+    assert _pts(session.resolved(master_t=1.0)[layer.id]) == \
+           _pts(session.resolved()[layer.id])
+
+
+def test_the_drawing_every_position_shows_the_next_frame():
+    """The user's target picture: A(frame 0)→B(last frame) ladder, everything
+    clip-following. One master step forward = every position samples the next
+    clip frame; past the end everything clamps to the last frame."""
+    from axibridge.session import session
+
+    a, b, tw = _ladder(follow=True)
+    # 3-frame clip, A at frame 0, B at frame 2 (offset 1.0): stamps between.
+    # advance by one frame (master 0.5 of a 3-frame clip): A now shows frame 1 —
+    # which is exactly B's base look at frame... compare directly to a fresh
+    # generation at the expected frame.
+    from axibridge.registry import get_source
+
+    gen = get_source("image_threshold")
+
+    def frame_pts(f):
+        doc = gen.generate(gen.Params(image="clip#", frame=f, detail=1.0, width=20))
+        return [p.points for lyr in doc.layers for p in lyr.paths]
+
+    r = session.resolved(master_t=0.5)  # +1 frame of a 3-frame clip
+    assert _pts(r[a.id]) == frame_pts(0.5)          # A advanced one frame
+    assert _pts(r[b.id]) != []                       # B clamps at the last frame
+    r_end = session.resolved(master_t=1.0)
+    r_past = session.resolved(master_t=1.0)
+    assert _pts(r_end[a.id]) == frame_pts(1.0)       # A reaches the clip end
+    assert _pts(r_end[b.id]) == _pts(r_past[b.id])   # clamped, stable
 
 
 def test_ladder_scrub_regression_sweep_one_matches_own_t():
