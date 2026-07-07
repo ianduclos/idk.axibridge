@@ -56,10 +56,21 @@ export function initPlotTab() {
         </div>
         <div class="hint">for one clip-frame per rendered frame, set frames = the clip's length</div>
         <div class="row">
+          <label>per sheet</label>
+          <select id="anim-per-sheet" style="width:4.5em">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="4">4</option>
+            <option value="16">16</option>
+          </select>
+          <label>margin</label><input type="number" id="anim-sheet-margin" min="0" max="30" step="0.5" style="width:5em">
+          <span class="hint">mm · 2 = two A5 halves; frames tile many-up on one page</span>
+        </div>
+        <div class="row">
           <a id="anim-export-link" download><button type="button">Export SVG frames (zip)</button></a>
         </div>
 
-        <h3>Frame stepper <span class="hint">(swap paper between frames — never auto-plots)</span></h3>
+        <h3>Frame stepper <span class="hint">(swap paper/pen between passes — never auto-plots)</span></h3>
         <div class="row"><span id="anim-frame-label"></span></div>
         <div class="row">
           <button id="anim-plot-frame" class="primary">Plot frame</button>
@@ -180,6 +191,8 @@ export function initPlotTab() {
   $("anim-frames").value = anim.n;
   $("anim-t-from").value = anim.tFrom;
   $("anim-t-to").value = anim.tTo;
+  $("anim-per-sheet").value = String(anim.perSheet);
+  $("anim-sheet-margin").value = anim.margin;
   $("anim-cols").value = 4;
   $("anim-rows").value = 2;
   $("anim-margin").value = 5;
@@ -188,35 +201,72 @@ export function initPlotTab() {
     anim.n = Math.max(2, Math.min(240, Math.round(Number($("anim-frames").value) || 2)));
     anim.tFrom = Math.max(0, Math.min(1, Number($("anim-t-from").value)));
     anim.tTo = Math.max(0, Math.min(1, Number($("anim-t-to").value)));
+    anim.margin = Math.max(0, Math.min(30, Number($("anim-sheet-margin").value) || 0));
     anim.i = Math.min(anim.i, anim.n - 1);
+    anim.nPages = sheetPages();
+    anim.sheet = Math.min(anim.sheet, anim.nPages - 1);
   };
   const updateExportLink = () => {
-    $("anim-export-link").href =
-      `/api/animation/export.zip?frames=${anim.n}&t_from=${anim.tFrom}&t_to=${anim.tTo}`;
+    let href = `/api/animation/export.zip?frames=${anim.n}&t_from=${anim.tFrom}&t_to=${anim.tTo}`;
+    if (anim.perSheet > 1) {
+      const [cols, rows] = gridDims();
+      href += `&cols=${cols}&rows=${rows}&margin_mm=${anim.margin}`;
+    }
+    $("anim-export-link").href = href;
+    const btn = $("anim-export-link").querySelector("button");
+    if (btn) btn.textContent = anim.perSheet > 1 ? "Export sheets (zip)" : "Export SVG frames (zip)";
   };
-  const refreshAnimPanel = () => { pullAnimRange(); updateExportLink(); renderAnimStepper(); };
+  // Panel refresh: pull inputs, refresh the export link, re-fetch the sheet's
+  // pen passes, and sync the plan overlay to the current page (one plan path).
+  const refreshAnimPanel = async () => {
+    pullAnimRange();
+    updateExportLink();
+    await refreshSheetInfo();
+    syncSheetPlan();
+  };
 
-  for (const id of ["anim-frames", "anim-t-from", "anim-t-to"]) $(id).onchange = refreshAnimPanel;
+  for (const id of ["anim-frames", "anim-t-from", "anim-t-to", "anim-sheet-margin"])
+    $(id).onchange = refreshAnimPanel;
+  $("anim-per-sheet").onchange = async () => {
+    anim.perSheet = Number($("anim-per-sheet").value) || 1;
+    anim.sheet = 0; anim.pass = 0;  // grid changed → restart the two-axis stepper
+    await refreshAnimPanel();
+  };
+  // the plan overlay previews the page only while the panel is open (B3)
+  $("anim-details").ontoggle = syncSheetPlan;
 
   $("anim-reset").onclick = () => {
-    anim.i = 0; anim.plotting = false; anim.wasBusy = false;
+    anim.i = 0; anim.sheet = 0; anim.pass = 0;
+    anim.plotting = false; anim.wasBusy = false;
     renderAnimStepper();
+    if (anim.perSheet > 1) syncSheetPlan();  // back to page 0
   };
   $("anim-skip").onclick = () => {
-    anim.i = Math.min(anim.i + 1, anim.n - 1);
-    renderAnimStepper();
+    if (anim.perSheet <= 1) {
+      anim.i = Math.min(anim.i + 1, anim.n - 1);
+      renderAnimStepper();
+    } else {
+      stepSheetPass();  // advance a pen pass, wrapping to the next sheet
+    }
   };
-  // explicit, one frame at a time — the UX guard against auto-plotting a
-  // whole sequence unattended while paper needs manual swapping between sheets.
+  // explicit, one pass at a time — the UX guard against auto-plotting a whole
+  // sequence unattended while paper (and pens) need manual swapping.
   $("anim-plot-frame").onclick = async () => {
     pullAnimRange();
-    const t = animT(anim.i);
     anim.plotting = true;
     anim.wasBusy = false;
     renderAnimStepper();
     try {
-      await api.post("/api/plot/start", { target: S.plotTarget, master_t: t });
-      actions.log(`▶ plotting frame ${anim.i + 1}/${anim.n} (t=${t.toFixed(3)}, ${targetLabel()})`);
+      if (anim.perSheet <= 1) {
+        const t = animT(anim.i);
+        await api.post("/api/plot/start", { target: S.plotTarget, master_t: t });
+        actions.log(`▶ plotting frame ${anim.i + 1}/${anim.n} (t=${t.toFixed(3)}, ${targetLabel()})`);
+      } else {
+        const p = anim.passes[anim.pass];
+        const spec = currentSheetSpec({ pen_id: p ? p.pen_id : "" });
+        await api.post("/api/plot/start", { sheet: spec });
+        actions.log(`▶ plotting sheet ${anim.sheet + 1}/${anim.nPages} · pass ${anim.pass + 1} (${p ? p.name : "?"})`);
+      }
     } catch (e) {
       anim.plotting = false;
       renderAnimStepper();
@@ -343,24 +393,110 @@ const currentMotionValues = () => motionValues;
 // switch) so the SSE-driven completion check in applyCapabilities() can
 // advance it without needing its own wiring. Sequencing is entirely
 // browser-side — the server has no notion of "frame N of an animation".
-const anim = { n: 8, tFrom: 0, tTo: 1, i: 0, plotting: false, wasBusy: false };
+// perSheet == 1: the classic one-frame-per-sheet stepper (i = frame index).
+// perSheet > 1: the two-axis grid stepper — `sheet` (physical page) × `pass`
+// (pen pass on that page, from sheet_info); `passes` holds the current page's
+// [{pen_id, name, color}]. All sequencing is browser-side.
+const anim = {
+  n: 8, tFrom: 0, tTo: 1, margin: 5, perSheet: 1,
+  i: 0, sheet: 0, pass: 0, passes: [], nPages: 1,
+  plotting: false, wasBusy: false,
+};
+
+// per-sheet count → (cols, rows). 2 splits the landscape A4 into two portrait
+// A5-ish halves; 4 = quads; 16 = a 4×4 flipbook strip page.
+const GRID = { 1: [1, 1], 2: [2, 1], 4: [2, 2], 16: [4, 4] };
+function gridDims() { return GRID[anim.perSheet] || [1, 1]; }
+function sheetPages() {
+  const [c, r] = gridDims();
+  return Math.max(1, Math.ceil(anim.n / (c * r)));
+}
+function currentSheetSpec(extra = {}) {
+  const [cols, rows] = gridDims();
+  return { cols, rows, frames: anim.n, t_from: anim.tFrom, t_to: anim.tTo,
+           margin_mm: anim.margin, page: anim.sheet, ...extra };
+}
+
+// The plan overlay/estimate previews the CURRENT page only while the Animation
+// panel is open and per-sheet > 1; otherwise the plain target (one plan path).
+function syncSheetPlan() {
+  const open = $("anim-details") && $("anim-details").open;
+  S.sheetPlan = open && anim.perSheet > 1 ? currentSheetSpec() : null;
+  actions.refreshPlan();
+}
+
+// Re-fetch the current sheet's ordered pen passes (they differ per page).
+async function refreshSheetInfo() {
+  if (anim.perSheet <= 1) { anim.passes = []; anim.nPages = 1; renderAnimStepper(); return; }
+  const [cols, rows] = gridDims();
+  anim.nPages = sheetPages();
+  anim.sheet = Math.min(anim.sheet, anim.nPages - 1);
+  try {
+    const q = `frames=${anim.n}&cols=${cols}&rows=${rows}` +
+      `&t_from=${anim.tFrom}&t_to=${anim.tTo}&margin_mm=${anim.margin}&page=${anim.sheet}`;
+    const info = await api.get(`/api/animation/sheet_info?${q}`);
+    anim.nPages = info.sheets;
+    anim.passes = info.passes || [];
+    anim.pass = Math.min(anim.pass, Math.max(0, anim.passes.length - 1));
+  } catch (e) {
+    anim.passes = [];
+  }
+  renderAnimStepper();
+}
+
+// Advance one pen pass; at the last pass of a sheet, roll to the next sheet
+// (refetching its passes) — never past the final pass of the final sheet.
+async function stepSheetPass() {
+  if (anim.pass < anim.passes.length - 1) {
+    anim.pass += 1;
+    renderAnimStepper();
+  } else if (anim.sheet < anim.nPages - 1) {
+    anim.sheet += 1;
+    anim.pass = 0;
+    await refreshSheetInfo();
+    syncSheetPlan();  // plan overlay follows the new page
+  } else {
+    renderAnimStepper();
+  }
+}
 
 function animT(i) {
   return anim.n <= 1 ? anim.tFrom : anim.tFrom + (anim.tTo - anim.tFrom) * i / (anim.n - 1);
 }
 
 function renderAnimStepper() {
-  if (!$("anim-frame-label")) return;
-  $("anim-frame-label").textContent =
-    `frame ${anim.i + 1} of ${anim.n} (t=${animT(anim.i).toFixed(3)})`;
+  const label = $("anim-frame-label");
+  if (!label) return;
   const btn = $("anim-plot-frame");
-  if (btn) {
-    btn.textContent = anim.plotting ? `Plotting frame ${anim.i + 1}…` : `Plot frame ${anim.i + 1}`;
-    const basePlotDisabled = $("btn-plot") ? $("btn-plot").disabled : true;
-    btn.disabled = anim.plotting || basePlotDisabled;
-  }
   const skip = $("anim-skip");
-  if (skip) skip.disabled = anim.plotting || anim.i >= anim.n - 1;
+  const basePlotDisabled = $("btn-plot") ? $("btn-plot").disabled : true;
+
+  if (anim.perSheet <= 1) {
+    label.textContent = `frame ${anim.i + 1} of ${anim.n} (t=${animT(anim.i).toFixed(3)})`;
+    if (btn) {
+      btn.textContent = anim.plotting ? `Plotting frame ${anim.i + 1}…` : `Plot frame ${anim.i + 1}`;
+      btn.disabled = anim.plotting || basePlotDisabled;
+    }
+    if (skip) { skip.textContent = "Skip →"; skip.disabled = anim.plotting || anim.i >= anim.n - 1; }
+    return;
+  }
+
+  const nPasses = anim.passes.length;
+  const p = anim.passes[anim.pass];
+  const penName = p ? p.name : "…";
+  label.textContent =
+    `sheet ${anim.sheet + 1}/${anim.nPages} · pass ${anim.pass + 1}/${nPasses || 1} (${penName})`;
+  if (btn) {
+    btn.textContent = anim.plotting
+      ? `Plotting sheet ${anim.sheet + 1} · pass ${anim.pass + 1}…`
+      : `Plot pass ${anim.pass + 1} (${penName})`;
+    btn.disabled = anim.plotting || basePlotDisabled || !nPasses;
+  }
+  if (skip) {
+    const atEnd = anim.pass >= nPasses - 1 && anim.sheet >= anim.nPages - 1;
+    skip.textContent = "Skip pass →";
+    skip.disabled = anim.plotting || !nPasses || atEnd;
+  }
 }
 
 export function renderPlotTab() {
@@ -531,16 +667,20 @@ export function applyCapabilities() {
   }
   if (m.position) setPos(m.position);
 
-  // frame stepper: advance to "swap paper -> next frame" once THIS job (a
-  // frame plot we started via anim-plot-frame) reaches idle again. Never
-  // auto-plots the next frame — only unlocks the button for a fresh press.
+  // stepper: advance once THIS job (started via anim-plot-frame) reaches idle
+  // again. Never auto-plots the next step — only unlocks the button for a fresh
+  // press (swap paper → next frame/sheet, or swap pen → next pass).
   if (anim.plotting) {
     if (!idle) {
       anim.wasBusy = true;
     } else if (anim.wasBusy) {
       anim.wasBusy = false;
       anim.plotting = false;
-      anim.i = Math.min(anim.i + 1, anim.n - 1);
+      if (anim.perSheet <= 1) {
+        anim.i = Math.min(anim.i + 1, anim.n - 1);
+      } else {
+        stepSheetPass();  // next pen pass, rolling to the next sheet at the end
+      }
     }
   }
   renderAnimStepper();

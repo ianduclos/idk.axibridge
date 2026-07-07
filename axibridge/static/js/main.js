@@ -22,6 +22,9 @@ export const S = {
   plotTarget: "all",
   plan: null,
   masterT: null,    // master-timeline scrub (0..1); null = no scrub. UI-only.
+  sheetPlan: null,  // grid-sheet spec for the CURRENT page, or null. When set,
+                    // refreshPlan estimates/overlays that page instead of the
+                    // plain target. Owned by the Plot tab's Animation panel.
 };
 
 // The active crop rectangle, mirroring Session._crop_rect client-side (mode ->
@@ -169,7 +172,8 @@ export const actions = {
 
   refreshPlan: debounce(async () => {
     try {
-      const r = await api.get(`/api/plan?target=${encodeURIComponent(S.plotTarget)}`);
+      const sheet = S.sheetPlan ? `&sheet=${encodeURIComponent(JSON.stringify(S.sheetPlan))}` : "";
+      const r = await api.get(`/api/plan?target=${encodeURIComponent(S.plotTarget)}${sheet}`);
       S.plan = r.job;
       canvas.setPlan(r.job);
       $("estimate").textContent =
