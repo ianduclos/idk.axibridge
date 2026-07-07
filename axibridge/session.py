@@ -20,7 +20,7 @@ from typing import Any
 from . import compose, tween
 from .compose import Affine, CanvasLayer, EffectStep, LayerSource, PlotOptions, Project
 from .machine import manager
-from .model import Path, PathDocument
+from .model import Layer, Path, PathDocument
 from .registry import get_source
 from .stores import Pen, pen_library, settings_store
 from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
@@ -418,6 +418,73 @@ class Session:
             layer.visible = False
             return created
 
+    def _grid_place(
+        self, ts: list[float], cols: int, rows: int, margin_mm: float,
+        master_scale_ts: list[float] | None = None,
+    ) -> list[dict[str, list[Path]]]:
+        """Lay each master-timeline sample ``ts[i]`` into cell i of a cols×rows
+        grid on the paper guide, keeping PER-LAYER geometry (not flattened) so
+        callers can group by pen. Placement math is the contact-sheet's: one
+        SHARED scale across every frame — derived from the union bounding box
+        over ``master_scale_ts`` (defaults to ``ts``); the sheet callers pass
+        the FULL animation's ts so frame k is the same size on every page — and
+        each frame centred in its own cell by its combined (all-visible-layers)
+        bbox. Cells are row-major (left-to-right, top-to-bottom). Geometry is
+        the VISIBLE, resolved (post-occlusion) paths, so a cell is exactly what
+        the canvas/plotter show at that t.
+
+        Returns one ``{layer_id: placed_paths}`` dict per ``ts`` sample, in
+        project z-order, holding only visible layers with non-empty geometry.
+        Read-only: no checkpoint, no user source_geometry writes — everything
+        flows through :meth:`resolved` (which does refresh derived tween
+        geometry, as every resolve does). Call under ``self._lock``."""
+        def visible_geo(t: float) -> dict[str, list[Path]]:
+            # resolved() re-materialises tweens as a side effect (the single
+            # resolve path); z-order preserved so flattening callers match.
+            resolved = self.resolved(master_t=t)
+            return {layer.id: resolved[layer.id]
+                    for layer in self.project.layers
+                    if layer.visible and resolved.get(layer.id)}
+
+        place_frames = [visible_geo(t) for t in ts]
+        scale_frames = (place_frames if master_scale_ts is None
+                        else [visible_geo(t) for t in master_scale_ts])
+
+        all_xs = [x for f in scale_frames for paths in f.values() for p in paths for x, _ in p.points]
+        all_ys = [y for f in scale_frames for paths in f.values() for p in paths for _, y in p.points]
+        if not all_xs:
+            raise RuntimeError("nothing to place (no visible geometry across the frame range)")
+        bw = max(max(all_xs) - min(all_xs), 1e-6)
+        bh = max(max(all_ys) - min(all_ys), 1e-6)
+
+        guide = self.project.guide
+        sheet_x = guide.x if guide else 0.0
+        sheet_y = guide.y if guide else 0.0
+        sheet_w = guide.width if guide else compose.BED_WIDTH
+        sheet_h = guide.height if guide else compose.BED_HEIGHT
+        cell_w = sheet_w / cols - 2 * margin_mm
+        cell_h = sheet_h / rows - 2 * margin_mm
+        if cell_w <= 0 or cell_h <= 0:
+            raise RuntimeError("margin too large for this grid on the current paper guide")
+
+        scale = min(cell_w / bw, cell_h / bh)  # shared: no per-frame size jitter
+
+        placed_frames: list[dict[str, list[Path]]] = []
+        for i, frame in enumerate(place_frames):
+            row, col = divmod(i, cols)  # row-major, left-to-right, top-to-bottom
+            cx = sheet_x + (col + 0.5) * (sheet_w / cols)
+            cy = sheet_y + (row + 0.5) * (sheet_h / rows)
+            xs = [x for paths in frame.values() for p in paths for x, _ in p.points]
+            ys = [y for paths in frame.values() for p in paths for _, y in p.points]
+            fcx = (min(xs) + max(xs)) / 2 if xs else 0.0
+            fcy = (min(ys) + max(ys)) / 2 if ys else 0.0
+            aff = Affine(a=scale, b=0.0, c=0.0, d=scale,
+                         e=cx - scale * fcx, f=cy - scale * fcy)
+            placed_frames.append(
+                {lid: compose.transform_paths(paths, aff) for lid, paths in frame.items()}
+            )
+        return placed_frames
+
     def bake_contact_sheet(
         self, cols: int, rows: int, frames: int, margin_mm: float,
         t_from: float = 0.0, t_to: float = 1.0,
@@ -431,7 +498,11 @@ class Session:
         hides its source tween — the new baked layers become the sheet's
         visible content. Geometry is the VISIBLE, resolved (post-occlusion)
         paths, so what gets baked is exactly what the canvas/plotter show.
-        One undo step."""
+        One undo step.
+
+        The DESTRUCTIVE/editable variant: it mutates the project. Its transient
+        cousin is :meth:`sheet_document` (plot-time assembly, no mutation); both
+        share :meth:`_grid_place`."""
         if not (1 <= cols <= 12 and 1 <= rows <= 12):
             raise ValueError("cols and rows must each be 1..12")
         if not (2 <= frames <= cols * rows):
@@ -448,60 +519,139 @@ class Session:
             ts = [t_from] if frames <= 1 else [
                 t_from + (t_to - t_from) * i / (frames - 1) for i in range(frames)
             ]
-            # per-frame VISIBLE, resolved (post-occlusion) geometry, flattened.
-            # resolved() re-materialises tweens as a side effect (same as
-            # explode_tween) — that's fine, it's the single resolve path.
-            frame_paths: list[list[Path]] = []
-            for t in ts:
-                resolved = self.resolved(master_t=t)
-                paths = [p for layer in self.project.layers if layer.visible
-                         for p in resolved.get(layer.id, [])]
-                frame_paths.append(paths)
-
-            all_xs = [x for paths in frame_paths for p in paths for x, _ in p.points]
-            all_ys = [y for paths in frame_paths for p in paths for _, y in p.points]
-            if not all_xs:
-                raise RuntimeError("nothing to bake (no visible geometry across the frame range)")
-            bw = max(max(all_xs) - min(all_xs), 1e-6)
-            bh = max(max(all_ys) - min(all_ys), 1e-6)
-
-            guide = self.project.guide
-            sheet_x = guide.x if guide else 0.0
-            sheet_y = guide.y if guide else 0.0
-            sheet_w = guide.width if guide else compose.BED_WIDTH
-            sheet_h = guide.height if guide else compose.BED_HEIGHT
-            cell_w = sheet_w / cols - 2 * margin_mm
-            cell_h = sheet_h / rows - 2 * margin_mm
-            if cell_w <= 0 or cell_h <= 0:
-                raise RuntimeError("margin too large for this grid on the current paper guide")
-
-            scale = min(cell_w / bw, cell_h / bh)  # shared: no per-frame size jitter
+            placed = self._grid_place(ts, cols, rows, margin_mm)
 
             created: list[CanvasLayer] = []
-            for i, (t, paths) in enumerate(zip(ts, frame_paths)):
-                row, col = divmod(i, cols)  # row-major, left-to-right, top-to-bottom
-                cx = sheet_x + (col + 0.5) * (sheet_w / cols)
-                cy = sheet_y + (row + 0.5) * (sheet_h / rows)
-                xs = [x for p in paths for x, _ in p.points]
-                ys = [y for p in paths for _, y in p.points]
-                fcx = (min(xs) + max(xs)) / 2 if xs else 0.0
-                fcy = (min(ys) + max(ys)) / 2 if ys else 0.0
-                aff = Affine(a=scale, b=0.0, c=0.0, d=scale,
-                             e=cx - scale * fcx, f=cy - scale * fcy)
-                placed = compose.transform_paths(paths, aff)
+            for i, (t, frame) in enumerate(zip(ts, placed)):
+                flat = [p for paths in frame.values() for p in paths]  # z-order
                 layer = CanvasLayer(
                     name=f"frame {i:02d} · t={t:.2f}",
                     source=LayerSource(type="baked"),
                     transform=Affine(),
                 )
                 self.project.layers.append(layer)  # appended = top of z-order
-                self.source_geometry[layer.id] = placed
+                self.source_geometry[layer.id] = flat
                 created.append(layer)
 
             for layer in pre_existing:
                 layer.visible = False
 
             return created
+
+    def sheet_document(
+        self, cols: int, rows: int, frames: int,
+        t_from: float, t_to: float, margin_mm: float, page: int,
+        pen_id: str | None = None,
+    ) -> PathDocument:
+        """One physical sheet of the flip-book, assembled at plot time — NO
+        project mutation, no checkpoint (contrast :meth:`bake_contact_sheet`).
+
+        ``frames`` timeline samples over [t_from, t_to] are laid into a
+        cols×rows grid, chunked ``cols*rows`` cells per page; ``page`` (0-based)
+        selects the chunk, the last of which may be partial. The scale is shared
+        across ALL frames (every page) so frame k is the same size wherever it
+        lands — flipbook-consistent.
+
+        The document is grouped BY PEN: one doc layer per pen worn by a
+        contributing layer, plus a ``""`` "no pen" group, each carrying every
+        cell's geometry for layers wearing that pen, in project z-order. The
+        physical pen-nib offset (:meth:`_pen_offsets`) is applied AFTER
+        placement so registration compensation is not scaled by the cell
+        factor. ``pen_id`` restricts the document to one pen group — a single
+        plot pass (``""`` selects the no-pen group); ``None`` returns every
+        group (export / plan). Call the result through :meth:`_optimize` when
+        plotting (crop applies to sheets too — that is correct)."""
+        if not (1 <= cols <= 12 and 1 <= rows <= 12):
+            raise ValueError("cols and rows must each be 1..12")
+        if not (2 <= frames <= 240):
+            raise ValueError("frames must be 2..240")
+        if not (0.0 <= margin_mm <= 30.0):
+            raise ValueError("margin_mm must be 0..30")
+        if not (0.0 <= t_from <= 1.0 and 0.0 <= t_to <= 1.0):
+            raise ValueError("t_from/t_to must be 0..1")
+
+        with self._lock:
+            groups, n_pages = self._sheet_groups(
+                cols, rows, frames, t_from, t_to, margin_mm, page, pen_id)
+            pens = self.pens()
+            out_layers = [
+                Layer(
+                    id=j + 1,
+                    name=(pens[pid].name if pid and pid in pens else "no pen"),
+                    color=(pens[pid].color if pid and pid in pens else compose.INK),
+                    paths=paths,
+                )
+                for j, (pid, paths) in enumerate(groups)
+            ]
+            return PathDocument(
+                layers=out_layers, width=compose.BED_WIDTH, height=compose.BED_HEIGHT,
+                source=f"{self.project.name} [sheet {page + 1}/{n_pages}]",
+            )
+
+    def _sheet_groups(
+        self, cols: int, rows: int, frames: int,
+        t_from: float, t_to: float, margin_mm: float, page: int,
+        pen_id: str | None,
+    ) -> tuple[list[tuple[str, list[Path]]], int]:
+        """The by-pen assembly behind :meth:`sheet_document` and
+        :meth:`sheet_passes`: places the page's frames, groups their geometry by
+        pen (``""`` = no pen), applies the physical nib offset AFTER placement,
+        and orders the groups by project z-order of each pen's first layer.
+        Returns ``([(pen_id, paths), …], n_pages)`` with empty groups dropped.
+        ``pen_id`` (not None) filters to that single group. Call under the lock."""
+        per_page = cols * rows
+        n_pages = (frames + per_page - 1) // per_page
+        if not (0 <= page < n_pages):
+            raise IndexError(f"page {page} out of range (0..{n_pages - 1})")
+
+        all_ts = [t_from] if frames <= 1 else [
+            t_from + (t_to - t_from) * i / (frames - 1) for i in range(frames)
+        ]
+        chunk = all_ts[page * per_page: (page + 1) * per_page]
+        placed = self._grid_place(chunk, cols, rows, margin_mm, master_scale_ts=all_ts)
+
+        pen_offsets = self._pen_offsets()
+        layer_pen = {l.id: (l.pen_id or "") for l in self.project.layers}
+        # pens in project z-order of first appearance (stable pass order across
+        # pages) — "" (no pen) ranks wherever its first layer sits.
+        rank: dict[str, int] = {}
+        for i, l in enumerate(self.project.layers):
+            rank.setdefault(l.pen_id or "", i)
+
+        groups: dict[str, list[Path]] = {}
+        for frame in placed:
+            for lid, paths in frame.items():
+                pid = layer_pen.get(lid, "")
+                if pen_id is not None and pid != pen_id:
+                    continue
+                ox, oy = pen_offsets.get(lid, (0.0, 0.0))
+                if ox or oy:  # physical registration, applied post-placement
+                    paths = [Path(points=[(x - ox, y - oy) for x, y in p.points],
+                                  filled=p.filled) for p in paths]
+                groups.setdefault(pid, []).extend(paths)
+
+        ordered = [
+            (pid, groups[pid])
+            for pid in sorted(groups, key=lambda p: rank.get(p, 1 << 30))
+            if groups[pid]
+        ]
+        return ordered, n_pages
+
+    def sheet_passes(
+        self, cols: int, rows: int, frames: int,
+        t_from: float = 0.0, t_to: float = 1.0, margin_mm: float = 5.0, page: int = 0,
+    ) -> list[str]:
+        """Ordered pen-ids (``""`` = no pen) that plot as passes on ``page`` —
+        one entry per plot pass, in pass order. For the stepper's page summary."""
+        with self._lock:
+            groups, _ = self._sheet_groups(
+                cols, rows, frames, t_from, t_to, margin_mm, page, None)
+            return [pid for pid, _ in groups]
+
+    def sheet_pages(self, frames: int, cols: int, rows: int) -> int:
+        """Number of physical sheets ``frames`` cells fill at cols×rows."""
+        per_page = max(cols * rows, 1)
+        return (frames + per_page - 1) // per_page
 
     def duplicate_layer(self, layer_id: str) -> CanvasLayer:
         """Copy a layer (new id) directly above the original — same source,
@@ -879,24 +1029,35 @@ class Session:
         settings_store.update({"backend_params": machine})
         return dumped
 
-    def effective_params(self, backend_id: str, target: str = "all"):
-        """Backend params with the pen's height overrides applied when a
-        single layer (the manual multi-pen unit of work) is being plotted."""
+    @staticmethod
+    def _apply_pen_overrides(params, pen: Pen | None):
+        """Fold a pen's height overrides (pen_pos_down/up, when set) into the
+        backend params. Pure — returns ``params`` unchanged when there is no
+        pen or nothing to override."""
+        if not pen:
+            return params
+        overrides = {}
+        if pen.pen_pos_down is not None and "pen_pos_down" in type(params).model_fields:
+            overrides["pen_pos_down"] = pen.pen_pos_down
+        if pen.pen_pos_up is not None and "pen_pos_up" in type(params).model_fields:
+            overrides["pen_pos_up"] = pen.pen_pos_up
+        return params.model_copy(update=overrides) if overrides else params
+
+    def effective_params(self, backend_id: str, target: str = "all",
+                         pen: Pen | None = None):
+        """Backend params with a pen's height overrides applied. An explicit
+        ``pen`` wins (the sheet plot pass hands its pass pen directly);
+        otherwise, when a single layer is targeted (the manual multi-pen unit
+        of work) its pen's overrides apply."""
         params = self.params_for(backend_id)
+        if pen is not None:
+            return self._apply_pen_overrides(params, pen)
         if target != "all":
             try:
                 layer = self.project.layer(target)
             except KeyError:
                 return params
-            pen = self.pens().get(layer.pen_id or "")
-            if pen:
-                overrides = {}
-                if pen.pen_pos_down is not None and "pen_pos_down" in type(params).model_fields:
-                    overrides["pen_pos_down"] = pen.pen_pos_down
-                if pen.pen_pos_up is not None and "pen_pos_up" in type(params).model_fields:
-                    overrides["pen_pos_up"] = pen.pen_pos_up
-                if overrides:
-                    params = params.model_copy(update=overrides)
+            return self._apply_pen_overrides(params, self.pens().get(layer.pen_id or ""))
         return params
 
 

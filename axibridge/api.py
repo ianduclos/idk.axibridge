@@ -756,12 +756,17 @@ def get_resolved(
 
 
 @router.get("/plan")
-def get_plan(target: str = "all") -> dict[str, Any]:
+def get_plan(target: str = "all", sheet: str | None = Query(default=None)) -> dict[str, Any]:
     """Planned job for a plot pass — explicit travel moves + timing, computed
     on the SAME plot document the backend will receive (pen compensation and
-    plot-pass optimisation included)."""
+    plot-pass optimisation included). ``sheet`` (a JSON-encoded SheetSpec) plans
+    the grid-sheet document for one page instead, so the canvas plan overlay
+    previews the real page layout and the estimate reflects the shrunk cells."""
     try:
-        doc = session.plot_document(target)
+        if sheet is not None:
+            doc = session._optimize(_sheet_document(SheetSpec.model_validate_json(sheet)))
+        else:
+            doc = session.plot_document(target)
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:
@@ -797,28 +802,83 @@ def export_animation_frames(
     frames: int = Query(ge=2, le=240),
     t_from: float = Query(default=0.0, ge=0.0, le=1.0),
     t_to: float = Query(default=1.0, ge=0.0, le=1.0),
+    cols: int | None = Query(default=None, ge=1, le=12),
+    rows: int | None = Query(default=None, ge=1, le=12),
+    margin_mm: float = Query(default=5.0, ge=0.0, le=30.0),
 ) -> Response:
     """SVG-sequence export: samples the master timeline ``frames`` times over
-    [t_from, t_to] through the SAME resolve path the canvas and plotter use,
-    and zips one ``frame_NNNN.svg`` per sample. 400 if every sample resolves
-    to empty geometry (nothing worth exporting)."""
+    [t_from, t_to] through the SAME resolve path the canvas and plotter use.
+
+    Default (no cols/rows): one ``frame_NNNN.svg`` per sample. When BOTH
+    ``cols`` and ``rows`` are given: grid-sheet mode instead — one
+    ``sheet_NN.svg`` per physical sheet, every pen group a colored SVG layer
+    (shared scale across sheets). 400 if the export resolves to no geometry."""
     buf = io.BytesIO()
     any_geometry = False
+    grid = cols is not None and rows is not None
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        for i in range(frames):
-            t_i = t_from + (t_to - t_from) * i / (frames - 1) if frames > 1 else t_from
-            doc = session.cropped(session.resolved_document(master_t=t_i))
-            if any(layer.paths for layer in doc.layers):
-                any_geometry = True
-            zf.writestr(f"frame_{i:04d}.svg", svg_io.doc_to_svg(doc))
+        if grid:
+            n_pages = session.sheet_pages(frames, cols, rows)
+            for page in range(n_pages):
+                try:
+                    doc = session.sheet_document(
+                        cols, rows, frames, t_from, t_to, margin_mm, page, pen_id=None)
+                except (ValueError, IndexError, RuntimeError) as e:
+                    raise HTTPException(status_code=400, detail=str(e))
+                if any(layer.paths for layer in doc.layers):
+                    any_geometry = True
+                zf.writestr(f"sheet_{page:02d}.svg", svg_io.doc_to_svg(doc))
+        else:
+            for i in range(frames):
+                t_i = t_from + (t_to - t_from) * i / (frames - 1) if frames > 1 else t_from
+                doc = session.cropped(session.resolved_document(master_t=t_i))
+                if any(layer.paths for layer in doc.layers):
+                    any_geometry = True
+                zf.writestr(f"frame_{i:04d}.svg", svg_io.doc_to_svg(doc))
     if not any_geometry:
         raise HTTPException(status_code=400, detail="project resolves to no geometry — nothing to export")
     name = project_io.safe_name(session.project.name)
+    suffix = "sheets" if grid else "frames"
     return Response(
         content=buf.getvalue(),
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="{name}_frames.zip"'},
+        headers={"Content-Disposition": f'attachment; filename="{name}_{suffix}.zip"'},
     )
+
+
+@router.get("/animation/sheet_info")
+def sheet_info(
+    frames: int = Query(ge=2, le=240),
+    cols: int = Query(ge=1, le=12),
+    rows: int = Query(ge=1, le=12),
+    t_from: float = Query(default=0.0, ge=0.0, le=1.0),
+    t_to: float = Query(default=1.0, ge=0.0, le=1.0),
+    margin_mm: float = Query(default=5.0, ge=0.0, le=30.0),
+    page: int = Query(default=0, ge=0, le=239),
+) -> dict[str, Any]:
+    """Grid-sheet layout summary for the stepper: total ``sheets``, ``cells``
+    on the requested page, and the ordered pen ``passes`` for that page (each
+    ``{pen_id, name, color}`` — one plot pass; ``pen_id=""`` is the no-pen
+    group). Lets the two-dimensional stepper label sheets/passes without
+    recomputing the assembly client-side."""
+    per_page = cols * rows
+    n_pages = session.sheet_pages(frames, cols, rows)
+    page = min(page, n_pages - 1)
+    cells = min(per_page, frames - page * per_page)
+    pens = session.pens()
+    try:
+        pids = session.sheet_passes(cols, rows, frames, t_from, t_to, margin_mm, page)
+    except (ValueError, IndexError, RuntimeError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    passes = [
+        {
+            "pen_id": pid,
+            "name": (pens[pid].name if pid and pid in pens else "no pen"),
+            "color": (pens[pid].color if pid and pid in pens else compose.INK),
+        }
+        for pid in pids
+    ]
+    return {"sheets": n_pages, "page": page, "cells": cells, "passes": passes}
 
 
 class ContactSheetBody(BaseModel):
@@ -849,22 +909,54 @@ def bake_contact_sheet(body: ContactSheetBody) -> dict[str, Any]:
 # -- plot control -------------------------------------------------------------------
 
 
+class SheetSpec(BaseModel):
+    """Grid-sheet assembly: ``frames`` timeline samples over [t_from, t_to]
+    laid cols×rows per page, one shared scale across all sheets. ``page`` picks
+    the physical sheet; ``pen_id`` picks a single pen pass (``""`` = the no-pen
+    group, None = every group). Reused by plot/start, /plan and sheet_info."""
+    cols: int = Field(ge=1, le=12)
+    rows: int = Field(ge=1, le=12)
+    frames: int = Field(ge=2, le=240)
+    t_from: float = Field(default=0.0, ge=0.0, le=1.0)
+    t_to: float = Field(default=1.0, ge=0.0, le=1.0)
+    margin_mm: float = Field(default=5.0, ge=0.0, le=30.0)
+    page: int = Field(default=0, ge=0, le=239)
+    pen_id: str | None = None
+
+
+def _sheet_document(spec: SheetSpec) -> Any:
+    return session.sheet_document(
+        spec.cols, spec.rows, spec.frames, spec.t_from, spec.t_to,
+        spec.margin_mm, spec.page, spec.pen_id,
+    )
+
+
 class PlotStartBody(BaseModel):
     target: str = "all"  # "all" or a layer id — the manual multi-pen selector
     #: ephemeral master-timeline scrub (see Session.resolved) — the hook for
     #: the frame-by-frame animation stepper. None = no scrub (unchanged).
     master_t: float | None = Field(default=None, ge=0.0, le=1.0)
+    #: grid-sheet plot pass — when set, plots one pen group of one sheet
+    #: (transient assembly; ``target``/``master_t`` are ignored).
+    sheet: SheetSpec | None = None
 
 
 @router.post("/plot/start")
 def plot_start(body: PlotStartBody) -> dict[str, Any]:
     try:
-        doc = session.plot_document(body.target, master_t=body.master_t)
+        if body.sheet is not None:
+            doc = session._optimize(_sheet_document(body.sheet))
+            pen = session.pens().get(body.sheet.pen_id) if body.sheet.pen_id else None
+            params = session.effective_params(manager.active_id, pen=pen)
+        else:
+            doc = session.plot_document(body.target, master_t=body.master_t)
+            params = session.effective_params(manager.active_id, body.target)
         if not any(layer.paths for layer in doc.layers):
             raise RuntimeError("nothing to plot (no resolved geometry in target)")
-        params = session.effective_params(manager.active_id, body.target)
         manager.start_plot(doc, params)
-    except (KeyError, RuntimeError) as e:
+    except (KeyError, ValueError, IndexError) as e:
+        raise _fail(e, 400)
+    except RuntimeError as e:
         raise _fail(e)
     return manager.status()
 
