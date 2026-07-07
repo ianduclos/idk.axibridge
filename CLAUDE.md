@@ -88,3 +88,21 @@ before structural changes.
   short `axicli -m manual` calls. Carriage must start at the home corner.
   Motors need the barrel-jack PSU; without it axicli "plots" silently with
   nothing moving — useful for dry runs, confusing if unexpected.
+
+## Current handoff (July 2026)
+
+- Animation contact/grid sheets work and now have two preview modes:
+  a live SVG scrubber and a raster popup. The raster popup uses
+  `/api/animation/preview.png`, which still resolves through
+  `session.resolved(master_t=...)` and then draws a cached PNG for playback.
+  It supersamples before downsampling and rotates to match `project.view`.
+- `launch/AxiBridge.app` is the normal user restart path. Do not spin up
+  random long-lived servers unless a test explicitly needs a temporary port.
+  The app bundle should use `Contents/Resources/AxiBridge.icns`, generated
+  from `axibridge/static/favicon.png`; Finder may cache icons, but the plist
+  should point at `AxiBridge.icns` explicitly.
+- Next likely animation experiments are recorded in `ROADMAP.md`: a cosine
+  ping-pong interpolation mode that shapes tween params/transform/effects
+  while clip frames stay linear, and a multidimensional video/sheet-variant
+  workflow that should start manual/staged before adding automatic 2D
+  timeline sampling.

@@ -211,7 +211,31 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .log .err { color: var(--rust); }
 
 .progress { height: 7px; background: var(--paper-deep); border-radius: 999px; overflow: hidden; margin: 8px 0; border: 1px solid var(--line); }
-#progress-bar, #gen-progress-bar { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+#progress-bar, #gen-progress-bar, #anim-preview-progress { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: center;
+  padding: 24px; background: rgba(10, 9, 8, .78);
+}
+.modal-backdrop[hidden] { display: none; }
+.preview-modal {
+  width: min(1180px, 96vw); max-height: 94vh; display: flex; flex-direction: column;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--paper);
+  box-shadow: 0 16px 48px rgba(0,0,0,.55); padding: 10px 12px;
+}
+.preview-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.preview-head h2 {
+  margin: 0; flex: 1; font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--ink-soft);
+}
+.preview-stage {
+  min-height: 260px; flex: 1; display: grid; place-items: center; overflow: hidden;
+  border: 1px solid var(--line); border-radius: 5px; background: var(--paper-deep);
+}
+.preview-stage img {
+  display: block; max-width: 100%; max-height: min(68vh, 760px);
+  background: var(--sheet); object-fit: contain;
+}
 
 /* live generator preview: dashed transient ghost, never interactive */
 .gen-preview { pointer-events: none; }

@@ -69,6 +69,7 @@ def terminate(proc: subprocess.Popen, grace: float = 5.0) -> None:
         proc.wait(grace)
     except subprocess.TimeoutExpired:
         proc.kill()
+        proc.wait()
 
 
 def plot_running() -> bool:

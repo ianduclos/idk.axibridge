@@ -56,6 +56,14 @@ export function initPlotTab() {
         </div>
         <div class="hint">for one clip-frame per rendered frame, set frames = the clip's length</div>
         <div class="row">
+          <button id="anim-preview-render" class="primary">Render popup</button>
+          <button id="anim-preview-toggle">Live play</button>
+          <button id="anim-preview-step">Frame →</button>
+          <label>fps</label><input type="number" id="anim-preview-fps" min="1" max="24" step="1" style="width:4em">
+          <label class="hint" style="cursor:pointer"><input type="checkbox" id="anim-preview-loop"> loop</label>
+        </div>
+        <div class="row"><span id="anim-preview-label"></span></div>
+        <div class="row">
           <label>per sheet</label>
           <select id="anim-per-sheet" style="width:4.5em">
             <option value="1">1</option>
@@ -87,6 +95,26 @@ export function initPlotTab() {
         </div>
         <div class="row"><button id="anim-bake" class="primary">Bake contact sheet</button></div>
       </details>
+    </div>
+
+    <div id="anim-preview-modal" class="modal-backdrop" hidden>
+      <div class="preview-modal">
+        <div class="preview-head">
+          <h2>Animation preview</h2>
+          <button id="anim-preview-close">Close</button>
+        </div>
+        <div class="preview-stage">
+          <img id="anim-preview-img" alt="">
+          <div id="anim-preview-empty" class="hint">rendering…</div>
+        </div>
+        <div class="row">
+          <button id="anim-preview-popup-toggle" class="primary">Play</button>
+          <button id="anim-preview-popup-prev">← Frame</button>
+          <button id="anim-preview-popup-next">Frame →</button>
+          <span id="anim-preview-popup-label" class="hint"></span>
+        </div>
+        <div class="progress"><div id="anim-preview-progress"></div></div>
+      </div>
     </div>
 
     <div class="panel">
@@ -193,6 +221,8 @@ export function initPlotTab() {
   $("anim-t-to").value = anim.tTo;
   $("anim-per-sheet").value = String(anim.perSheet);
   $("anim-sheet-margin").value = anim.margin;
+  $("anim-preview-fps").value = anim.fps;
+  $("anim-preview-loop").checked = anim.loop;
   $("anim-cols").value = 4;
   $("anim-rows").value = 2;
   $("anim-margin").value = 5;
@@ -205,6 +235,7 @@ export function initPlotTab() {
     anim.i = Math.min(anim.i, anim.n - 1);
     anim.nPages = sheetPages();
     anim.sheet = Math.min(anim.sheet, anim.nPages - 1);
+    renderAnimPreview();
   };
   const updateExportLink = () => {
     let href = `/api/animation/export.zip?frames=${anim.n}&t_from=${anim.tFrom}&t_to=${anim.tTo}`;
@@ -227,6 +258,24 @@ export function initPlotTab() {
 
   for (const id of ["anim-frames", "anim-t-from", "anim-t-to", "anim-sheet-margin"])
     $(id).onchange = refreshAnimPanel;
+  $("anim-preview-fps").onchange = () => {
+    anim.fps = Math.max(1, Math.min(24, Math.round(Number($("anim-preview-fps").value) || 8)));
+    $("anim-preview-fps").value = anim.fps;
+  };
+  $("anim-preview-loop").onchange = () => {
+    anim.loop = $("anim-preview-loop").checked;
+  };
+  $("anim-preview-render").onclick = () => renderRasterPreview();
+  $("anim-preview-toggle").onclick = () => {
+    pullAnimRange();
+    anim.previewing ? stopPreview() : startPreview();
+  };
+  $("anim-preview-step").onclick = () => {
+    pullAnimRange();
+    stopPreview();
+    anim.i = nextFrameIndex();
+    previewScrub.request(anim.i);
+  };
   $("anim-per-sheet").onchange = async () => {
     anim.perSheet = Number($("anim-per-sheet").value) || 1;
     anim.sheet = 0; anim.pass = 0;  // grid changed → restart the two-axis stepper
@@ -236,15 +285,19 @@ export function initPlotTab() {
   $("anim-details").ontoggle = syncSheetPlan;
 
   $("anim-reset").onclick = () => {
+    stopPreview();
     anim.i = 0; anim.sheet = 0; anim.pass = 0;
     anim.plotting = false; anim.wasBusy = false;
     renderAnimStepper();
+    previewScrub.request(anim.i);
     if (anim.perSheet > 1) syncSheetPlan();  // back to page 0
   };
   $("anim-skip").onclick = () => {
+    stopPreview();
     if (anim.perSheet <= 1) {
       anim.i = Math.min(anim.i + 1, anim.n - 1);
       renderAnimStepper();
+      previewScrub.request(anim.i);
     } else {
       stepSheetPass();  // advance a pen pass, wrapping to the next sheet
     }
@@ -252,6 +305,7 @@ export function initPlotTab() {
   // explicit, one pass at a time — the UX guard against auto-plotting a whole
   // sequence unattended while paper (and pens) need manual swapping.
   $("anim-plot-frame").onclick = async () => {
+    stopPreview();
     pullAnimRange();
     anim.plotting = true;
     anim.wasBusy = false;
@@ -286,6 +340,18 @@ export function initPlotTab() {
       await actions.refreshResolved();
       actions.log(`baked ${anim.n}-frame contact sheet (${cols}×${rows})`);
     } catch (e) { actions.oops(e); }
+  };
+  $("anim-preview-close").onclick = closeRasterPreview;
+  $("anim-preview-popup-toggle").onclick = () => {
+    anim.popupPlaying ? stopRasterPlayback() : startRasterPlayback();
+  };
+  $("anim-preview-popup-prev").onclick = () => {
+    stopRasterPlayback();
+    showRasterFrame(anim.popupI <= 0 ? anim.previewFrames.length - 1 : anim.popupI - 1);
+  };
+  $("anim-preview-popup-next").onclick = () => {
+    stopRasterPlayback();
+    showRasterFrame((anim.popupI + 1) % Math.max(anim.previewFrames.length, 1));
   };
   refreshAnimPanel();
 
@@ -400,7 +466,10 @@ const currentMotionValues = () => motionValues;
 const anim = {
   n: 8, tFrom: 0, tTo: 1, margin: 5, perSheet: 1,
   i: 0, sheet: 0, pass: 0, passes: [], nPages: 1,
-  plotting: false, wasBusy: false,
+  fps: 8, loop: true,
+  previewFrames: [], previewAbort: null, renderingPreview: false,
+  popupI: 0, popupPlaying: false, popupTimer: null,
+  previewing: false, plotting: false, wasBusy: false,
 };
 
 // per-sheet count → (cols, rows). 2 splits the landscape A4 into two portrait
@@ -464,6 +533,231 @@ function animT(i) {
   return anim.n <= 1 ? anim.tFrom : anim.tFrom + (anim.tTo - anim.tFrom) * i / (anim.n - 1);
 }
 
+function pullAnimControls() {
+  if (!$("anim-frames")) return;
+  anim.n = Math.max(2, Math.min(240, Math.round(Number($("anim-frames").value) || 2)));
+  anim.tFrom = Math.max(0, Math.min(1, Number($("anim-t-from").value)));
+  anim.tTo = Math.max(0, Math.min(1, Number($("anim-t-to").value)));
+  anim.margin = Math.max(0, Math.min(30, Number($("anim-sheet-margin").value) || 0));
+  anim.fps = Math.max(1, Math.min(24, Math.round(Number($("anim-preview-fps")?.value) || anim.fps || 8)));
+  anim.loop = Boolean($("anim-preview-loop")?.checked);
+  anim.i = Math.min(anim.i, anim.n - 1);
+  anim.nPages = sheetPages();
+  anim.sheet = Math.min(anim.sheet, anim.nPages - 1);
+}
+
+function nextFrameIndex() {
+  const next = anim.i + 1;
+  return next < anim.n ? next : 0;
+}
+
+function startPreview() {
+  anim.previewing = true;
+  renderAnimPreview();
+  previewScrub.request(anim.i);
+}
+
+function stopPreview() {
+  anim.previewing = false;
+  previewScrub.clearTimer();
+  renderAnimPreview();
+}
+
+function schedulePreviewNext() {
+  previewScrub.clearTimer();
+  if (!anim.previewing) return;
+  previewScrub.timer = setTimeout(() => {
+    const next = anim.i + 1;
+    if (next >= anim.n && !anim.loop) {
+      stopPreview();
+      return;
+    }
+    previewScrub.request(next < anim.n ? next : 0);
+  }, 1000 / anim.fps);
+}
+
+// One /compose/resolved?t= request in flight at a time. Playback waits for a
+// frame to render before scheduling the next tick, so expensive frames slow the
+// preview down instead of queuing stale geometry.
+const previewScrub = {
+  inflight: false, pending: false, timer: null,
+  clearTimer() {
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+  },
+  request(i) {
+    this.clearTimer();
+    anim.i = Math.max(0, Math.min(anim.n - 1, Math.round(i)));
+    S.masterT = animT(anim.i);
+    renderAnimStepper();
+    renderAnimPreview();
+    this.pending = true;
+    if (!this.inflight) this._run();
+  },
+  async _run() {
+    if (!this.pending) return;
+    this.pending = false;
+    this.inflight = true;
+    const t = animT(anim.i);
+    S.masterT = t;
+    try {
+      await actions.refreshResolved(t, { plan: false });
+    } catch (e) {
+      stopPreview();
+      actions.oops(e);
+    } finally {
+      this.inflight = false;
+      if (this.pending) this._run();
+      else schedulePreviewNext();
+    }
+  },
+};
+
+function renderAnimPreview() {
+  const label = $("anim-preview-label");
+  if (!label) return;
+  const play = $("anim-preview-toggle");
+  const step = $("anim-preview-step");
+  const render = $("anim-preview-render");
+  label.textContent = `preview frame ${anim.i + 1}/${anim.n} · t=${animT(anim.i).toFixed(3)}`;
+  if (play) play.textContent = anim.previewing ? "Pause live" : "Live play";
+  if (step) step.disabled = anim.previewing;
+  if (render) {
+    render.textContent = anim.renderingPreview ? "Rendering…" : "Render popup";
+    render.disabled = anim.renderingPreview;
+  }
+}
+
+function clearRasterFrames() {
+  for (const frame of anim.previewFrames) URL.revokeObjectURL(frame.url);
+  anim.previewFrames = [];
+  anim.popupI = 0;
+}
+
+function setRasterProgress(done, total) {
+  const bar = $("anim-preview-progress");
+  if (bar) bar.style.width = total ? `${Math.round(100 * done / total)}%` : "0%";
+}
+
+function renderRasterControls(message = "") {
+  const modal = $("anim-preview-modal");
+  if (!modal || modal.hidden) return;
+  const hasFrames = anim.previewFrames.length > 0;
+  const img = $("anim-preview-img");
+  const empty = $("anim-preview-empty");
+  const play = $("anim-preview-popup-toggle");
+  const prev = $("anim-preview-popup-prev");
+  const next = $("anim-preview-popup-next");
+  const label = $("anim-preview-popup-label");
+  if (img) img.hidden = !hasFrames;
+  if (empty) {
+    empty.hidden = hasFrames && !message;
+    empty.textContent = message || "";
+  }
+  if (play) {
+    play.textContent = anim.popupPlaying ? "Pause" : "Play";
+    play.disabled = anim.renderingPreview || !hasFrames;
+  }
+  if (prev) prev.disabled = anim.renderingPreview || !hasFrames;
+  if (next) next.disabled = anim.renderingPreview || !hasFrames;
+  if (label) {
+    label.textContent = hasFrames
+      ? `frame ${anim.popupI + 1}/${anim.previewFrames.length} · t=${anim.previewFrames[anim.popupI].t.toFixed(3)}`
+      : message;
+  }
+  renderAnimPreview();
+}
+
+function showRasterFrame(i) {
+  if (!anim.previewFrames.length) {
+    renderRasterControls();
+    return;
+  }
+  anim.popupI = Math.max(0, Math.min(anim.previewFrames.length - 1, i));
+  const img = $("anim-preview-img");
+  if (img) img.src = anim.previewFrames[anim.popupI].url;
+  renderRasterControls();
+}
+
+function stopRasterPlayback() {
+  anim.popupPlaying = false;
+  if (anim.popupTimer) clearTimeout(anim.popupTimer);
+  anim.popupTimer = null;
+  renderRasterControls();
+}
+
+function startRasterPlayback() {
+  if (!anim.previewFrames.length) return;
+  anim.popupPlaying = true;
+  renderRasterControls();
+  const tick = () => {
+    if (!anim.popupPlaying) return;
+    const next = anim.popupI + 1;
+    if (next >= anim.previewFrames.length && !anim.loop) {
+      stopRasterPlayback();
+      return;
+    }
+    showRasterFrame(next < anim.previewFrames.length ? next : 0);
+    anim.popupTimer = setTimeout(tick, 1000 / anim.fps);
+  };
+  anim.popupTimer = setTimeout(tick, 1000 / anim.fps);
+}
+
+function closeRasterPreview() {
+  anim.previewAbort?.abort();
+  anim.previewAbort = null;
+  anim.renderingPreview = false;
+  stopRasterPlayback();
+  clearRasterFrames();
+  const modal = $("anim-preview-modal");
+  if (modal) modal.hidden = true;
+  setRasterProgress(0, 0);
+  renderAnimPreview();
+}
+
+async function renderRasterPreview() {
+  pullAnimControls();
+  stopPreview();
+  stopRasterPlayback();
+  anim.previewAbort?.abort();
+  const controller = new AbortController();
+  anim.previewAbort = controller;
+  anim.renderingPreview = true;
+  clearRasterFrames();
+  const modal = $("anim-preview-modal");
+  if (modal) modal.hidden = false;
+  setRasterProgress(0, anim.n);
+  renderRasterControls(`rendering frame 0/${anim.n}`);
+
+  try {
+    for (let i = 0; i < anim.n; i++) {
+      if (controller.signal.aborted) return;
+      const t = animT(i);
+      renderRasterControls(`rendering frame ${i + 1}/${anim.n}`);
+      const url = `/api/animation/preview.png?t=${encodeURIComponent(t)}&width_px=1200`;
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) throw new Error(await res.text());
+      const blob = await res.blob();
+      anim.previewFrames.push({ url: URL.createObjectURL(blob), t });
+      setRasterProgress(i + 1, anim.n);
+      if (i === 0) showRasterFrame(0);
+    }
+    anim.renderingPreview = false;
+    anim.previewAbort = null;
+    showRasterFrame(0);
+    startRasterPlayback();
+  } catch (e) {
+    if (e.name !== "AbortError") actions.oops(e);
+  } finally {
+    if (anim.previewAbort === controller) {
+      anim.previewAbort = null;
+      anim.renderingPreview = false;
+      renderRasterControls();
+      renderAnimPreview();
+    }
+  }
+}
+
 function renderAnimStepper() {
   const label = $("anim-frame-label");
   if (!label) return;
@@ -508,6 +802,7 @@ export function renderPlotTab() {
   renderLimits();
   renderCalibration();
   applyCapabilities();
+  renderAnimPreview();
 }
 
 function renderBackends() {

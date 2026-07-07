@@ -93,6 +93,11 @@ geometry path, never a checkpoint). What landed:
   (`plot/start` takes `master_t`; explicit press per frame, paper swap
   between), contact-sheet bake (`/api/animation/contact_sheet` — shared
   scale across cells, `explode_tween`-style baked layers).
+- **Animation preview**: live SVG scrubber for quick timeline checking plus
+  a raster popup (`/api/animation/preview.png`) for smoother playback of
+  path-heavy frames. The PNG renderer still uses the single resolve path,
+  then supersamples/downsamples and rotates to match the displayed page
+  orientation.
 - **Grid sheets** — **shipped July 2026**: plot many timeline frames per
   physical sheet (1/2/4/16 per page) without the destructive bake.
   `session.sheet_document` is transient plot-time assembly — no project
@@ -121,9 +126,39 @@ advances; tween in-betweens are exclusive of A/B):
 
 Deferred, roughly in order of pull:
 
-- **Easing curves / >2 keyframes** — today t maps linearly A→B; a dope-sheet
-  or even just ease-in/out presets on the tween would deepen it. The data
-  model question (keyframe lists vs. layer pairs) is the real cost.
+- **Tween interpolation modes: linear vs cosine ping-pong** — today the
+  master timeline maps linearly into a tween's local A→B `t`. Ian wants to
+  experiment with a "back and forth cosine" option where params/transform/
+  effects ease from A to B and back to A over the same 0..1 frame range,
+  while imported video/frame-sequence playback remains normal and linear.
+  Implementation sketch: add a bounded enum on `TweenParams`, e.g.
+  `time_curve = "linear" | "cosine_pingpong"`; keep the raw clamped
+  `master_t` flowing into clip `frame_follow`; derive a separate shaped
+  `morph_t = 0.5 - 0.5*cos(2*pi*local)` for param lerp, affine lerp,
+  structural geometry lerp, and effect-param lerp. Be explicit in the UI
+  that ping-pong ends at A, not B. If we later want ordinary smooth A→B,
+  add a separate `cosine_ease` (`0.5 - 0.5*cos(pi*t)`) rather than overloading
+  the ping-pong behavior.
+- **Multidimensional video / sheet variants** — user idea July 2026: bake a
+  16-frame animation into a contact/grid sheet, then vary another parameter
+  on a second axis so there are parallel sheets/rows/pages that the "video"
+  can traverse in different directions. Think of timeline `u` as frame/clip
+  time and variant `v` as a second parameter dimension. Do not jump straight
+  to a second global master timeline: start with a manual staging workflow
+  that lets Ian set a secondary parameter, "add current grid sheet to batch",
+  change the parameter, add another sheet, then export/plot the batch. That
+  preserves the existing single resolve path and teaches the physical
+  workflow before the data model grows. If/when automating it, model it as
+  an ephemeral 2D sampling pass over the existing resolver: for each variant
+  sample, apply temporary parameter/tween overrides, then call the same
+  `session.resolved(master_t=u)` / `sheet_document` machinery. Watch-outs:
+  undo history must not record per-sample mutation; pen grouping still needs
+  to be by physical pass; preview/export/estimate must agree; naming should
+  make "pages vs rows vs variants" clear.
+- **Easing curves beyond ping-pong / >2 keyframes** — a dope-sheet or
+  keyframe list would deepen animation further. The data model question
+  (keyframe lists vs. layer pairs vs. named channels) is the real cost, so
+  keep it behind the smaller interpolation-mode experiment.
 - ~~Per-tween t-mapping~~ — **shipped July 2026** as timeline windows
   (`window_from`/`window_to` on TweenParams: hold A, animate, hold B).
   Same round added cascade delete for animation groups, sequence-import
@@ -133,8 +168,8 @@ Deferred, roughly in order of pull:
   grid sheets (`sheet_document` groups by pen; each sheet = one pass per pen).
   The destructive `bake_contact_sheet` still flattens to one layer per frame
   by design (it's the editable variant); per-pen baking there is unclaimed.
-- **GIF/PNG preview render** — the SVG zip + scrubbing cover iteration; a
-  server-side GIF would be convenience only.
+- ~~GIF/PNG preview render~~ — **shipped July 2026** as the raster popup PNG
+  frame cache. A server-side GIF/video export would be convenience only.
 - Per-frame fades via pen pressure / multipass density (motion trails);
   registration marks for multi-sheet alignment.
 - Colour separation (above) intersects: per-frame AND per-pen matrices.

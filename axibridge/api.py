@@ -881,6 +881,60 @@ def sheet_info(
     return {"sheets": n_pages, "page": page, "cells": cells, "passes": passes}
 
 
+@router.get("/animation/preview.png")
+def animation_preview_png(
+    t: float = Query(default=0.0, ge=0.0, le=1.0),
+    width_px: int = Query(default=1200, ge=240, le=2400),
+) -> Response:
+    """Raster preview frame for popup playback. Geometry still comes from the
+    single resolved path; this endpoint only draws that resolved geometry into
+    a cached-friendly bitmap so playback can swap images instead of re-solving
+    and re-DOMing vectors every frame."""
+    from PIL import Image, ImageColor, ImageDraw
+
+    aa = 2
+    scale = width_px / compose.BED_WIDTH
+    height_px = max(1, int(round(compose.BED_HEIGHT * scale)))
+    draw_scale = scale * aa
+    img = Image.new("RGB", (width_px * aa, height_px * aa), "#faf7ef")
+    draw = ImageDraw.Draw(img, "RGBA")
+
+    def rgba(color: str, opacity: float) -> tuple[int, int, int, int]:
+        try:
+            r, g, b = ImageColor.getrgb(color)
+        except Exception:
+            r, g, b = ImageColor.getrgb(compose.INK)
+        return (r, g, b, int(max(0.0, min(1.0, opacity)) * 255))
+
+    try:
+        resolved = session.resolved(master_t=t)
+    except Exception as e:
+        raise _fail(e, 400)
+    pens = session.pens()
+    for layer in session.project.layers:
+        if not layer.visible:
+            continue
+        paths = resolved.get(layer.id, [])
+        if not paths:
+            continue
+        pen = pens.get(layer.pen_id or "")
+        color = rgba(pen.color if pen else compose.INK, pen.opacity if pen else 1.0)
+        width = max(1, int(round((pen.line_diameter_mm if pen else compose.DEFAULT_LINE_DIAMETER_MM) * draw_scale)))
+        for path in paths:
+            if len(path.points) < 2:
+                continue
+            pts = [(x * draw_scale, y * draw_scale) for x, y in path.points]
+            draw.line(pts, fill=color, width=width, joint="curve")
+
+    img = img.resize((width_px, height_px), Image.Resampling.LANCZOS)
+    if session.project.view == "portrait":
+        img = img.transpose(Image.Transpose.ROTATE_270)
+
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    return Response(content=buf.getvalue(), media_type="image/png")
+
+
 class ContactSheetBody(BaseModel):
     cols: int = Field(ge=1, le=12)
     rows: int = Field(ge=1, le=12)

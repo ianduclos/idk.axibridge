@@ -141,6 +141,30 @@ def test_export_animation_frames_empty_project_400(client):
     assert client.get("/api/animation/export.zip?frames=3").status_code == 400
 
 
+def test_animation_preview_png(client):
+    from io import BytesIO
+
+    from PIL import Image
+
+    client.post("/api/layers/generate",
+                json={"module": "polygon", "params": {"sides": 6, "radius": 15}})
+
+    r = client.get("/api/animation/preview.png?t=0.25&width_px=300")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/png"
+    img = Image.open(BytesIO(r.content))
+    assert img.size == (218, 300)
+
+    assert client.put("/api/project", json={"view": "landscape"}).status_code == 200
+    r = client.get("/api/animation/preview.png?t=0.25&width_px=300")
+    assert r.status_code == 200
+    img = Image.open(BytesIO(r.content))
+    assert img.size == (300, 218)
+
+    assert client.get("/api/animation/preview.png?t=1.5").status_code == 422
+    assert client.get("/api/animation/preview.png?width_px=100").status_code == 422
+
+
 def test_plot_start_with_master_t_scrubs_geometry(client):
     layer = client.post("/api/layers/generate",
                         json={"module": "polygon", "params": {"sides": 6, "radius": 15}}).json()

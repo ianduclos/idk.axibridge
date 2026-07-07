@@ -161,13 +161,14 @@ export const actions = {
   // master reflect the scrubbed frame. Not persisted (UI state only).
   // Defaults to the current scrub so ANY refresh (layer edits, drags) stays
   // on the scrubbed frame instead of snapping back to the stored t.
-  async refreshResolved(master_t = S.masterT) {
+  async refreshResolved(master_t = S.masterT, opts = {}) {
+    S.masterT = master_t;
     const q = master_t == null ? "" : `?t=${encodeURIComponent(master_t)}`;
     S.resolved = await api.get(`/api/compose/resolved${q}`);
     canvas.setData({ layers: S.resolved.layers, images: mapGhosts() });
     renderLayerList();
     renderSelReadout();
-    await actions.refreshPlan();
+    if (opts.plan !== false) await actions.refreshPlan();
   },
 
   refreshPlan: debounce(async () => {
@@ -213,6 +214,14 @@ export const actions = {
 // (so it rides the layer transform).
 function mapGhosts() {
   const dims = Object.fromEntries((S.state.assets || []).map((a) => [a.name, a]));
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+  const generatorGhostParams = (p, layer) => {
+    if (p.frame == null) return p;
+    let shift = layer.frame_offset || 0;
+    if (S.masterT != null && layer.frame_follow) shift += S.masterT;
+    if (!shift) return p;
+    return { ...p, frame: clamp01((p.frame || 0) + shift) };
+  };
   // aspect of the placed (possibly rotated) image: 90/270 swap the sides
   const ghost = (p, x, y, transform) => {
     const d = dims[p.image];
@@ -243,7 +252,7 @@ function mapGhosts() {
     // in the layer's local frame, so it rides the layer transform
     const sp = layer.source?.params || {};
     if (layer.source?.generator && sp.show_map && sp.image && dims[sp.image]) {
-      out.push(ghost(sp, 0, 0, objToMat(layer.transform)));
+      out.push(ghost(generatorGhostParams(sp, layer), 0, 0, objToMat(layer.transform)));
     }
   }
   return out;

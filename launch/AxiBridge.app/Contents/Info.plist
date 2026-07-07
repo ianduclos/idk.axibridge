@@ -10,6 +10,10 @@
 	<string>local.axibridge.app</string>
 	<key>CFBundleExecutable</key>
 	<string>axibridge</string>
+	<key>CFBundleIconFile</key>
+	<string>AxiBridge.icns</string>
+	<key>CFBundleIconName</key>
+	<string>AxiBridge</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
