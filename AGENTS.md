@@ -1,0 +1,90 @@
+# AGENTS.md — operational context for working in this repo
+
+axibridge: full-stack layer-compositing control surface for an AxiDraw V3
+pen plotter. FastAPI + Pydantic v2 server owns the serial port; zero-build
+vanilla-ES-module frontend; SSE for one-way progress. Design rationale lives
+in `ARCHITECTURE.md`; module authoring in `docs/MODULES.md` — read those
+before structural changes.
+
+## Run / test
+
+```bash
+.venv/bin/python -m axibridge          # serves on 0.0.0.0:2942
+.venv/bin/python -m pytest -q          # hardware-free suite (simulator)
+```
+
+- The venv at `.venv/` is the pinned interpreter — it has `pyaxidraw`
+  installed (NOT on PyPI; see `launch/axibridge.command` for the install URL).
+  Never "fix" an import error by switching interpreters.
+- Frontend has no build step: edit `axibridge/static/**`, reload the browser.
+- Tests isolate machine-level stores via `AXIBRIDGE_CONFIG_DIR`
+  (set in `tests/conftest.py` before any axibridge import — keep it first).
+- UI smoke-testing with Playwright: use `wait_until="domcontentloaded"`;
+  the SSE stream keeps connections open so `networkidle` never fires.
+
+## Where things live
+
+| Concern | File |
+|---|---|
+| IPR (geometry⇄execution contract) | `axibridge/model.py` (`PathDocument`) |
+| Layer model + compositor (resolve, occlusion masks) | `axibridge/compose.py` |
+| One open project + the resolve pipeline + undo history | `axibridge/session.py` |
+| Image assets (depth maps, `clip#NNNN` frame sequences) | `axibridge/assets.py` |
+| Module registry (Source / Effect / Transform) | `axibridge/registry.py` |
+| Layer interpolation (tween layers, param/affine lerp; the master timeline scrubs `follow_master` tweens via `session.resolved(master_t=…)`) | `axibridge/tween.py` |
+| Generators / effects / plot-pass ops | `axibridge/sources/` `effects/` `transforms/` |
+| Backends (native / simulator / saxi) + port arbitration | `axibridge/backends/`, `machine.py` |
+| Pen library & machine settings (global JSON stores) | `axibridge/stores.py` |
+| Roadmap / future direction | `ROADMAP.md` |
+| Project folder save/load/zip | `axibridge/project_io.py` |
+| HTTP API | `axibridge/api.py` |
+| Canvas editor / tabs | `axibridge/static/js/canvas.js`, `compose.js`, `plot.js`, … |
+
+## Conventions & invariants (break these and the tool lies)
+
+- **Single resolve path**: preview, estimates, and plotting all flow through
+  `session.resolved*()` → `compose.resolve_project()`. Never add a second
+  geometry path to the plotter.
+- Resolve order is `occlusion(effects(transform(source)))` — effects run in
+  paper space (mm params stay mm at any layer scale). Don't reorder.
+- Coordinates: millimetres, machine frame (x right ≤300, y down ≤218),
+  origin at carriage home. View rotation is display-only (`canvas.js`).
+- Effects/transforms must be pure (never mutate input paths) and preserve
+  `Path.filled` + closure (first==last) — occlusion masks depend on both.
+- New module kinds register via decorator + drop-in file; params are Pydantic
+  models whose JSON Schema auto-renders UI controls (`static/js/forms.js`).
+  Bound every numeric field — unbounded values reach an open-loop machine.
+- Backend `deactivate()` MUST release the serial port / kill subprocesses;
+  `MachineManager.select_backend` is the only switching point.
+- **pyaxidraw options are ints.** `NativeAxidrawBackend._apply` casts every
+  numeric option with `int(round())` — a float reaches EBB command strings
+  verbatim (`SP,1,253.0,1`), firmware rejects it, and the stray reply
+  desynchronises plotink's serial bookkeeping ("USB lost" on a healthy
+  link). Never remove the cast or set `ad.options.*` anywhere else.
+- **Undo discipline**: every `Session` method that mutates the project MUST
+  call `self._checkpoint()` once, under `self._lock`, before mutating —
+  and rely on module purity (geometry lists are shared by reference, never
+  mutated in place; they are only ever replaced wholesale).
+- Image assets live in the `assets.asset_store` singleton (name → bytes,
+  cached grayscale/alpha); they travel in the project folder's `assets/`.
+  Effects/generators reference them by name via a string param with
+  `json_schema_extra={"format": "asset"}` (renders as dropdown + upload).
+- `estimate.py` is an estimator, never a motion planner.
+- In the svgelements-based reader, mm conversion uses svgelements' own
+  constant (`_SE_PX_PER_MM` ≠ 96/25.4) — required for exact save/load
+  reproducibility. vpype conversions keep 96/25.4.
+
+## Hardware notes
+
+- Real AxiDraw on `/dev/cu.usbmodem*` (macOS), firmware 2.7.0. Keep the test
+  suite hardware-free; hardware checks are run manually (connect, firmware
+  string, pen cycle, small jogs). Raw EBB commands bypass soft limits and
+  desync dead reckoning by design.
+- **Mac → Pi workflow**: the AxiDraw can hang off a Raspberry Pi (`ssh idkpi`
+  over Tailscale; EBB on `/dev/ttyACM0`; AxiDraw API venv at
+  `~/axibridge/.venv`, NOT a full axibridge install — its old systemd unit is
+  stopped/disabled on purpose). Use the **"AxiDraw via Pi (ssh)"** backend
+  (`backends/pi_ssh.py`): plot = resolved SVG → scp → `axicli`; pen/jog are
+  short `axicli -m manual` calls. Carriage must start at the home corner.
+  Motors need the barrel-jack PSU; without it axicli "plots" silently with
+  nothing moving — useful for dry runs, confusing if unexpected.
