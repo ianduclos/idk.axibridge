@@ -94,6 +94,20 @@ geometry path, never a checkpoint). What landed:
   between), contact-sheet bake (`/api/animation/contact_sheet` — shared
   scale across cells, `explode_tween`-style baked layers).
 
+**The frame-ladder recipe** (the canonical animation workflow, per Ian's
+drawing — v1.4 semantics: positions never move with time, only clip content
+advances; tween in-betweens are exclusive of A/B):
+
+1. Import a clip (video or frame folder) → add a clip layer, tick **"clip
+   follows timeline"** (layer panel, next to the frame offset).
+2. Duplicate it, move the copy, set its **frame offset** (in frames, e.g.
+   +3), tick its follow box too.
+3. ⌘-select both → **⇄ interpolation**, set **copies** (in-betweens land
+   strictly between A and B, sampling the in-between frames automatically).
+4. Scrub the Timeline, or plot with the frame stepper (frames = clip length
+   → one clip-frame per sheet). Each step: every position shows the next
+   frame, conveyor-style; nothing moves on paper.
+
 Deferred, roughly in order of pull:
 
 - **Easing curves / >2 keyframes** — today t maps linearly A→B; a dope-sheet
