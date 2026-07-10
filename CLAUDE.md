@@ -91,18 +91,20 @@ before structural changes.
 
 ## Current handoff (July 2026)
 
-- Animation contact/grid sheets work and now have two preview modes:
-  a live SVG scrubber and a raster popup. The raster popup uses
-  `/api/animation/preview.png`, which still resolves through
-  `session.resolved(master_t=...)` and then draws a cached PNG for playback.
-  It supersamples before downsampling and rotates to match `project.view`.
+- Read `STATUS.md` (state) and `HANDOFF.md` (mid-flight work) first — the
+  wrapup skill keeps them current; this section only holds durable
+  operating notes.
+- The repo lives on GitHub (`github.com/ianduclos/idk.axibridge`, private);
+  `main` is the shared trunk with a full dev clone on idkpi
+  (`~/idk.axibridge`). The `.claude/skills/pi` skill is the runbook for
+  Pi work and scheduled unattended Claude runs; keep Mac and Pi in
+  lockstep after merges.
+- The generator/effect direction (uncanny, Cohen, Oehlen regime collision)
+  is documented in `docs/IDEAS-generators.md` + `docs/IDEAS-oehlen-pass.md`
+  with shipped/pending ledgers; the ROADMAP's "Oehlen pass" section is the
+  build order. Region layers changed the resolve order — see
+  ARCHITECTURE.md "Resolve order" before touching compose.py.
 - `launch/AxiBridge.app` is the normal user restart path. Do not spin up
   random long-lived servers unless a test explicitly needs a temporary port.
   The app bundle should use `Contents/Resources/AxiBridge.icns`, generated
-  from `axibridge/static/favicon.png`; Finder may cache icons, but the plist
-  should point at `AxiBridge.icns` explicitly.
-- Next likely animation experiments are recorded in `ROADMAP.md`: a cosine
-  ping-pong interpolation mode that shapes tween params/transform/effects
-  while clip frames stay linear, and a multidimensional video/sheet-variant
-  workflow that should start manual/staged before adding automatic 2D
-  timeline sampling.
+  from `axibridge/static/favicon.png`.
