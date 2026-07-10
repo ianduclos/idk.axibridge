@@ -24,6 +24,10 @@ Cheapest-first:
 - **Drag-to-reorder layers** in the list (replaces ↑/↓ spam).
 - **Keyboard**: arrows nudge selection 1 mm (shift = 10), ⌘D duplicate,
   numbers 1–4 switch tabs. The keydown plumbing exists (main.js).
+- **🎲 seed reroll in the main forms** (IDEAS pass-1 UI principle 3): one
+  generic forms.js addition — a dice button beside any `seed` field — pays
+  off across every stochastic module. The workbench has its own recipe-wide
+  reroll; this brings the affordance to Compose layer/effect forms.
 - **More simple effects** — each a drop-in pure file, ~an afternoon each:
   - *Perspective / 3D plane rotation*: treat the layer as a textured plane,
     tilt around x/y, perspective-project. Pure point map; bound the tilt so
@@ -51,7 +55,10 @@ Cheapest-first:
   strictly serialized, responses decimated past 60k points):
   - *Presets & favourites*: named param sets per generator in a global JSON
     store (pattern: `stores.py` pen library), plus starred generators
-    pinned at the top of the picker.
+    pinned at the top of the picker. This is also where the pass-1 **style
+    genome / "hand" presets** land ("nervous", "tired" freehand hands;
+    two_hands agent genomes — its params are already grouped for it):
+    presets over parameters, per IDEAS pass-1 UI principle 2.
   - *CMYK / greyscale separation* (re-affirmed June 2026 — high conviction):
     image-driven generators (anything with a
     `format:"asset"` param — the picker already detects this) get a
@@ -108,12 +115,31 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    Neural v2 only if this feels shallow.
 4. **Glyph grammar source** — Hershey strokes through destruction rules,
    `abstraction` dial from "almost reads" to pure scaffold.
+5. **Perception pass — line weight = certainty** (the ideas doc calls this
+   the strongest AI-age principle; promoted 2026-07-10): run several cheap
+   perception passes over one asset (threshold edges, Depth Pro
+   discontinuities, a segmentation boundary) and let *agreement* set the
+   mark — fat beam where all agree, hairline wander where one thinks so,
+   dither-density where ambiguous. Honors the far-section constraint: any
+   model runs as an *asset producer*, the generator itself reads
+   deterministic maps. Sibling: **perception scaffolding** (segmentation
+   polygons, ill-fitting bounding boxes, annotation ticks as first-class
+   marks — our era's pattern fill).
+6. **Mouse preset for freehand** — the "bad hand": grid-quantized output,
+   polling-rate resampling, sudden angular corrections. Cheap (params or a
+   preset on the existing effect).
 
 Also: **revise the pass-1 ideas** (`docs/IDEAS-generators.md` — rehearsal,
 blind contour, phase transition) into roadmap items as conviction firms;
 §1 shipped as `freehand`, and the July 2026 Pi run shipped §3
 (`sources/misremembered.py`), §4 (`sources/grammar.py`) and §5
-(`sources/two_hands.py`) — see `docs/plans/pi-generators-RESULTS.md`.
+(`sources/two_hands.py`). **Tuning follow-ups from that run** are actionable
+and live in `docs/plans/pi-generators-RESULTS.md`: a lattice grammar +
+subtree-propagating violations, misremembered on a real photograph (widen
+the searching-mark band if mid-confidence stays rare), two_hands genome
+presets, a continue-strokes "seam pen" split. The *indifferent lines over
+structured ground* recipe stays in the ideas doc — it's a composition
+practice, not a module.
 
 ## Sheets workflow v2 (from the 2026-07-10 code review)
 
@@ -243,8 +269,10 @@ Deferred, roughly in order of pull:
   by design (it's the editable variant); per-pen baking there is unclaimed.
 - ~~GIF/PNG preview render~~ — **shipped July 2026** as the raster popup PNG
   frame cache. A server-side GIF/video export would be convenience only.
-- Per-frame fades via pen pressure / multipass density (motion trails);
-  registration marks for multi-sheet alignment.
+- Per-frame fades via pen pressure / multipass density (motion trails).
+  ~~Registration marks for multi-sheet alignment~~ — shipped 2026-07-10 for
+  grid sheets (crosshairs on the sheet spec); still open for plain
+  multi-pass single-frame plots if ever wanted.
 - Colour separation (above) intersects: per-frame AND per-pen matrices.
 
 ## Mid term — interpolation (the layer-variant idea) — **SHIPPED June 2026**
@@ -320,3 +348,11 @@ deliberately:
 - Pen-plotter-specific test gap: nothing exercises the native backend
   against recorded EBB traffic; a replay harness would catch the next
   protocol drift without hardware.
+- **Unsaved-work guard** (added 2026-07-10, after an in-memory project was
+  lost to an in-place server restart): the open project lives only in RAM
+  until an explicit save, `POST /api/project/save` 422s on a bare body, and
+  `/server/restart` drops everything with only a browser-side warning.
+  Wanted: a periodic autosave to a recovery slot (NOT the project folder —
+  don't clobber deliberate saves), and the restart endpoint refusing when
+  unsaved changes exist unless `force=true`. Cheap insurance for a
+  single-operator instrument.
