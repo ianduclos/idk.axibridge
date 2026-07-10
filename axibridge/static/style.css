@@ -328,6 +328,10 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .wb-stage svg { width: 100%; height: 100%; }
 .wb-sheet { fill: var(--sheet); stroke: var(--line); stroke-width: 0.4; }
 .wb-line { fill: none; stroke: #16161d; stroke-width: 0.35; stroke-linecap: round; stroke-linejoin: round; }
+.wb-drawbar { display: flex; gap: 6px; align-items: center; }
+.wb-drawbar button.active { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.wb-stage.wb-drawing svg { cursor: crosshair; }
+.wb-draw-live { stroke: var(--accent); }
 .wb-actions { display: flex; gap: 6px; align-items: center; }
 .wb-actions #wb-status { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wb-actions input { width: 11em; }
