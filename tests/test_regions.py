@@ -48,16 +48,21 @@ def test_region_splits_and_effects_inside_only():
     assert resolved[rgn.id] == []  # regions are never drawn
     pieces = resolved[line.id]
     assert len(pieces) > 2  # outside-left, outside-right, bitmapped inside
-    inside = [p for p in pieces if p.filled]      # bitmap emits filled blocks
-    outside = [p for p in pieces if not p.filled]
+    # bitmap (lines style) keeps strokes as strokes; the inside piece is the
+    # one living entirely within the region (one cell of slack for snapping)
+    inside = [p for p in pieces
+              if all(80.0 - 4.0 <= x <= 120.0 + 4.0 for x, _ in p.points)]
+    outside = [p for p in pieces if p not in inside]
     assert inside, "the segment inside the region was bitmapped"
     for p in outside:  # untouched halves stay exactly on the original line
         assert all(abs(y - 50.0) < 1e-6 for _, y in p.points)
         for x, _ in p.points:
             assert x <= 80.0 + 1e-6 or x >= 120.0 - 1e-6
-    for p in inside:   # bitmap output stays within the region (one cell of slack)
+    for p in inside:   # quantized to the region-anchored grid, still a stroke
+        assert not p.filled
         for x, y in p.points:
-            assert 80.0 - 4.0 <= x <= 120.0 + 4.0 and 30.0 - 4.0 <= y <= 70.0 + 4.0
+            assert abs((x - 80.0) / 4.0 - round((x - 80.0) / 4.0)) < 1e-6
+            assert abs((y - 30.0) / 4.0 - round((y - 30.0) / 4.0)) < 1e-6
 
 
 def test_region_with_no_effects_preserves_geometry():
