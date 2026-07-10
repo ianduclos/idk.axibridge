@@ -115,6 +115,45 @@ blind contour, phase transition) into roadmap items as conviction firms;
 (`sources/misremembered.py`), §4 (`sources/grammar.py`) and §5
 (`sources/two_hands.py`) — see `docs/plans/pi-generators-RESULTS.md`.
 
+## Sheets workflow v2 (from the 2026-07-10 code review)
+
+Findings and fixes for the grid-sheet/interp workflow; the analysis lives in
+the 2026-07-10 session (summary here so it survives).
+
+- ~~Fixed framing~~ — **shipped 2026-07-10**: `_grid_place(framing=)` —
+  `"center"` re-centres each frame by its own bbox (parameter sweeps; pure
+  translation animations cancel!), `"fixed"` uses one shared window so
+  motion stays motion. UI defaults to fixed.
+- ~~Crosshair marks~~ — **shipped 2026-07-10**: `marks=` on the sheet spec —
+  ＋ registration crosses at every grid intersection, prepended to the FIRST
+  pen pass (plot once per page), clamped to the bed.
+- ~~Frame caches~~ — **shipped 2026-07-10**: `_frame_lru` (geometry, page-
+  sized) + `_frame_bbox` (bounds for the shared-scale scan), keyed
+  (t, pens-sig, assets-sig), cleared on any checkpoint/undo/history event
+  and swapped in `_documents_with_temp_state`. Stepping pages/passes of an
+  unchanged project now resolves each frame exactly once (was
+  O(frames × pages × passes)).
+- ~~One layout block in the UI~~ — **shipped 2026-07-10**: cols/rows +
+  presets (1/2/4/16) + margin + framing + crosshairs feed the preview,
+  stepper, "Capture to tray" AND the export link; the separate contact-sheet
+  block is gone; a summary line says what the layout means physically.
+  Capture-first is the stated primary path (tray sheets interp A ⇄ B).
+  (Also fixed: module-level `captureStaged` called a closure-scoped helper —
+  every staging-capture button was a ReferenceError.)
+
+Still open, priority order (details in the session analysis):
+- **`_documents_with_temp_state` → explicit args**: thread project/geo
+  through `_documents_for_format` instead of swapping `self.*` under the
+  lock; enables parallel interp batches.
+- **Interp fidelity**: layers only in capture B append at the END of
+  z-order in every in-between (needs a positional merge); batch steps are
+  hard-linear — accept the tween `time_curve` enum.
+- **Plot-cursor persistence**: the stepper's page/pass lives in browser JS
+  and dies on reload; persist alongside staging (non-undoable) so a
+  multi-hour flipbook survives a restart.
+- **Staging browser ergonomics**: batches make the tray list long — a grid
+  browser with thumbnails (scrap-strip pattern from the workbench).
+
 ## Animation — **SHIPPED July 2026** (v1: linear A→B over a master timeline)
 
 Everything rides on the tween machinery; the master timeline `t` is an

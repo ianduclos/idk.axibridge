@@ -46,15 +46,37 @@ export function initPlotTab() {
     </div>
 
     <div class="panel">
-      <h2>Animation</h2>
+      <h2>Animation & grid sheets</h2>
       <details id="anim-details">
-        <summary>Frame sequence — SVG export, plot stepper, staged-sheet capture</summary>
+        <summary>Frames on paper — preview, capture to tray, stepper, export</summary>
         <div class="row">
           <label>frames</label><input type="number" id="anim-frames" min="2" max="240" step="1" style="width:5em">
           <label>t from</label><input type="number" id="anim-t-from" min="0" max="1" step="0.01" style="width:5.5em">
           <label>t to</label><input type="number" id="anim-t-to" min="0" max="1" step="0.01" style="width:5.5em">
         </div>
         <div class="hint">for one clip-frame per rendered frame, set frames = the clip's length</div>
+        <div class="row">
+          <label>layout</label>
+          <span id="anim-presets" class="anim-presets">
+            <button type="button" data-grid="1,1" title="one frame per sheet">1</button>
+            <button type="button" data-grid="2,1" title="two A5-ish halves">2</button>
+            <button type="button" data-grid="2,2" title="quads">4</button>
+            <button type="button" data-grid="4,4" title="4×4 flipbook page">16</button>
+          </span>
+          <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1" style="width:4em">
+          <label>rows</label><input type="number" id="anim-rows" min="1" max="12" step="1" style="width:4em">
+          <label>margin</label><input type="number" id="anim-sheet-margin" min="0" max="30" step="0.5" style="width:5em">
+        </div>
+        <div class="row">
+          <label>framing</label>
+          <select id="anim-framing" title="fixed = one shared window, motion stays motion; center = each frame centred by its own bounds (parameter sweeps)">
+            <option value="fixed">fixed window (flipbook)</option>
+            <option value="center">centre each frame (sweep)</option>
+          </select>
+          <label class="hint" style="cursor:pointer" title="small ＋ marks at the grid intersections, plotted with the first pass">
+            <input type="checkbox" id="anim-marks"> crosshairs</label>
+        </div>
+        <div class="row"><span id="anim-layout-summary" class="hint"></span></div>
         <div class="row">
           <button id="anim-preview-render" class="primary">Render popup</button>
           <button id="anim-preview-toggle">Live play</button>
@@ -64,36 +86,19 @@ export function initPlotTab() {
         </div>
         <div class="row"><span id="anim-preview-label"></span></div>
         <div class="row">
-          <label>per sheet</label>
-          <select id="anim-per-sheet" style="width:4.5em">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="4">4</option>
-            <option value="16">16</option>
-          </select>
-          <label>margin</label><input type="number" id="anim-sheet-margin" min="0" max="30" step="0.5" style="width:5em">
-          <span class="hint">mm · 2 = two A5 halves; frames tile many-up on one page</span>
-        </div>
-        <div class="row">
+          <button id="anim-capture" class="primary"
+            title="Freeze this layout into the staging tray: per-pass geometry + a source snapshot. Tray sheets preview, plot, export, and interpolate (A ⇄ B) — the durable path.">
+            Capture to tray</button>
           <a id="anim-export-link" download><button type="button">Export SVG frames (zip)</button></a>
         </div>
 
-        <h3>Frame stepper <span class="hint">(swap paper/pen between passes — never auto-plots)</span></h3>
+        <h3>Plot stepper <span class="hint">(transient — plots the layout above, one pass at a time; never auto-plots)</span></h3>
         <div class="row"><span id="anim-frame-label"></span></div>
         <div class="row">
           <button id="anim-plot-frame" class="primary">Plot frame</button>
           <button id="anim-skip">Skip →</button>
           <button id="anim-reset">Reset</button>
         </div>
-
-        <h3>Contact sheet <span class="hint">(capture the frame range into staging)</span></h3>
-        <div class="row">
-          <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1" style="width:4em">
-          <label>rows</label><input type="number" id="anim-rows" min="1" max="12" step="1" style="width:4em">
-          <label>margin</label><input type="number" id="anim-margin" min="0" max="30" step="0.5" style="width:5em">
-          <span class="hint">mm</span>
-        </div>
-        <div class="row"><button id="anim-bake" class="primary">Capture to staging</button></div>
       </details>
     </div>
 
@@ -102,9 +107,9 @@ export function initPlotTab() {
       <div class="row">
         <button id="stage-capture-plot">Capture plot</button>
         <button id="stage-capture-frame">Capture frame</button>
-        <button id="stage-capture-sheet">Capture grid</button>
         <a id="stage-export-link" href="/api/staging/export.zip" download><button type="button">Export tray</button></a>
       </div>
+      <div class="hint">grid layouts are captured from the Animation panel above (“Capture to tray”)</div>
       <div class="row">
         <label>A</label><select id="stage-a" style="flex:1"></select>
         <label>B</label><select id="stage-b" style="flex:1"></select>
@@ -234,23 +239,27 @@ export function initPlotTab() {
   $("btn-resume").onclick = () => api.post("/api/plot/resume").catch(actions.oops);
   $("btn-stop").onclick = () => api.post("/api/plot/stop").catch(actions.oops);
 
-  // ---- animation: SVG export, plot-frame stepper, contact-sheet bake
+  // ---- animation: one layout block feeds preview, capture, stepper, export
   $("anim-frames").value = anim.n;
   $("anim-t-from").value = anim.tFrom;
   $("anim-t-to").value = anim.tTo;
-  $("anim-per-sheet").value = String(anim.perSheet);
+  $("anim-cols").value = anim.cols;
+  $("anim-rows").value = anim.rows;
   $("anim-sheet-margin").value = anim.margin;
+  $("anim-framing").value = anim.framing;
+  $("anim-marks").checked = anim.marks;
   $("anim-preview-fps").value = anim.fps;
   $("anim-preview-loop").checked = anim.loop;
-  $("anim-cols").value = 4;
-  $("anim-rows").value = 2;
-  $("anim-margin").value = 5;
 
   const pullAnimRange = () => {
     anim.n = Math.max(2, Math.min(240, Math.round(Number($("anim-frames").value) || 2)));
     anim.tFrom = Math.max(0, Math.min(1, Number($("anim-t-from").value)));
     anim.tTo = Math.max(0, Math.min(1, Number($("anim-t-to").value)));
+    anim.cols = Math.max(1, Math.min(12, Math.round(Number($("anim-cols").value) || 1)));
+    anim.rows = Math.max(1, Math.min(12, Math.round(Number($("anim-rows").value) || 1)));
     anim.margin = Math.max(0, Math.min(30, Number($("anim-sheet-margin").value) || 0));
+    anim.framing = $("anim-framing").value === "center" ? "center" : "fixed";
+    anim.marks = $("anim-marks").checked;
     anim.i = Math.min(anim.i, anim.n - 1);
     anim.nPages = sheetPages();
     anim.sheet = Math.min(anim.sheet, anim.nPages - 1);
@@ -258,13 +267,13 @@ export function initPlotTab() {
   };
   const updateExportLink = () => {
     let href = `/api/animation/export.zip?frames=${anim.n}&t_from=${anim.tFrom}&t_to=${anim.tTo}`;
-    if (anim.perSheet > 1) {
-      const [cols, rows] = gridDims();
-      href += `&cols=${cols}&rows=${rows}&margin_mm=${anim.margin}`;
+    if (gridCells() > 1) {
+      href += `&cols=${anim.cols}&rows=${anim.rows}&margin_mm=${anim.margin}` +
+              `&framing=${anim.framing}&marks=${anim.marks}`;
     }
     $("anim-export-link").href = href;
     const btn = $("anim-export-link").querySelector("button");
-    if (btn) btn.textContent = anim.perSheet > 1 ? "Export sheets (zip)" : "Export SVG frames (zip)";
+    if (btn) btn.textContent = gridCells() > 1 ? "Export sheets (zip)" : "Export SVG frames (zip)";
   };
   // Panel refresh: pull inputs, refresh the export link, re-fetch the sheet's
   // pen passes, and sync the plan overlay to the current page (one plan path).
@@ -275,8 +284,23 @@ export function initPlotTab() {
     syncSheetPlan();
   };
 
-  for (const id of ["anim-frames", "anim-t-from", "anim-t-to", "anim-sheet-margin"])
+  const gridChanged = async () => {
+    anim.sheet = 0; anim.pass = 0;  // layout changed → restart the two-axis stepper
+    await refreshAnimPanel();
+  };
+  for (const id of ["anim-frames", "anim-t-from", "anim-t-to", "anim-sheet-margin",
+                    "anim-framing", "anim-marks"])
     $(id).onchange = refreshAnimPanel;
+  for (const id of ["anim-cols", "anim-rows"])
+    $(id).onchange = gridChanged;
+  for (const b of document.querySelectorAll("#anim-presets [data-grid]")) {
+    b.onclick = async () => {
+      const [c, r] = b.dataset.grid.split(",").map(Number);
+      $("anim-cols").value = c;
+      $("anim-rows").value = r;
+      await gridChanged();
+    };
+  }
   $("anim-preview-fps").onchange = () => {
     anim.fps = Math.max(1, Math.min(24, Math.round(Number($("anim-preview-fps").value) || 8)));
     $("anim-preview-fps").value = anim.fps;
@@ -295,11 +319,6 @@ export function initPlotTab() {
     anim.i = nextFrameIndex();
     previewScrub.request(anim.i);
   };
-  $("anim-per-sheet").onchange = async () => {
-    anim.perSheet = Number($("anim-per-sheet").value) || 1;
-    anim.sheet = 0; anim.pass = 0;  // grid changed → restart the two-axis stepper
-    await refreshAnimPanel();
-  };
   // the plan overlay previews the page only while the panel is open (B3)
   $("anim-details").ontoggle = syncSheetPlan;
 
@@ -309,11 +328,11 @@ export function initPlotTab() {
     anim.plotting = false; anim.wasBusy = false;
     renderAnimStepper();
     previewScrub.request(anim.i);
-    if (anim.perSheet > 1) syncSheetPlan();  // back to page 0
+    if (gridCells() > 1) syncSheetPlan();  // back to page 0
   };
   $("anim-skip").onclick = () => {
     stopPreview();
-    if (anim.perSheet <= 1) {
+    if (gridCells() <= 1) {
       anim.i = Math.min(anim.i + 1, anim.n - 1);
       renderAnimStepper();
       previewScrub.request(anim.i);
@@ -330,7 +349,7 @@ export function initPlotTab() {
     anim.wasBusy = false;
     renderAnimStepper();
     try {
-      if (anim.perSheet <= 1) {
+      if (gridCells() <= 1) {
         const t = animT(anim.i);
         await api.post("/api/plot/start", { target: S.plotTarget, master_t: t });
         actions.log(`▶ plotting frame ${anim.i + 1}/${anim.n} (t=${t.toFixed(3)}, ${targetLabel()})`);
@@ -346,9 +365,7 @@ export function initPlotTab() {
       actions.oops(e);
     }
   };
-  $("anim-bake").onclick = async () => {
-    captureStaged("sheet");
-  };
+  $("anim-capture").onclick = () => captureStaged("sheet");
   $("anim-preview-close").onclick = closeRasterPreview;
   $("anim-preview-popup-toggle").onclick = () => {
     anim.popupPlaying ? stopRasterPlayback() : startRasterPlayback();
@@ -363,7 +380,6 @@ export function initPlotTab() {
   };
   $("stage-capture-plot").onclick = () => captureStaged("plot");
   $("stage-capture-frame").onclick = () => captureStaged("frame");
-  $("stage-capture-sheet").onclick = () => captureStaged("sheet");
   $("stage-interp").onclick = () => interpolateStaged();
   refreshAnimPanel();
   renderStaging();
@@ -472,12 +488,15 @@ const currentMotionValues = () => motionValues;
 // switch) so the SSE-driven completion check in applyCapabilities() can
 // advance it without needing its own wiring. Sequencing is entirely
 // browser-side — the server has no notion of "frame N of an animation".
-// perSheet == 1: the classic one-frame-per-sheet stepper (i = frame index).
-// perSheet > 1: the two-axis grid stepper — `sheet` (physical page) × `pass`
+// cols*rows == 1: the classic one-frame-per-sheet stepper (i = frame index).
+// cols*rows > 1: the two-axis grid stepper — `sheet` (physical page) × `pass`
 // (pen pass on that page, from sheet_info); `passes` holds the current page's
-// [{pen_id, name, color}]. All sequencing is browser-side.
+// [{pen_id, name, color}]. One layout (cols/rows/margin/framing/marks) feeds
+// the preview, the stepper, "Capture to tray" AND the export link — a single
+// source of truth. All sequencing is browser-side.
 const anim = {
-  n: 8, tFrom: 0, tTo: 1, margin: 5, perSheet: 1,
+  n: 8, tFrom: 0, tTo: 1, margin: 5, cols: 1, rows: 1,
+  framing: "fixed", marks: false,
   i: 0, sheet: 0, pass: 0, passes: [], nPages: 1,
   fps: 8, loop: true,
   previewFrames: [], previewAbort: null, renderingPreview: false,
@@ -489,25 +508,23 @@ const stage = {
   selectedSheet: null,
 };
 
-// per-sheet count → (cols, rows). 2 splits the landscape A4 into two portrait
-// A5-ish halves; 4 = quads; 16 = a 4×4 flipbook strip page.
-const GRID = { 1: [1, 1], 2: [2, 1], 4: [2, 2], 16: [4, 4] };
-function gridDims() { return GRID[anim.perSheet] || [1, 1]; }
+function gridDims() { return [anim.cols, anim.rows]; }
+function gridCells() { return anim.cols * anim.rows; }
 function sheetPages() {
-  const [c, r] = gridDims();
-  return Math.max(1, Math.ceil(anim.n / (c * r)));
+  return Math.max(1, Math.ceil(anim.n / gridCells()));
 }
 function currentSheetSpec(extra = {}) {
-  const [cols, rows] = gridDims();
-  return { cols, rows, frames: anim.n, t_from: anim.tFrom, t_to: anim.tTo,
-           margin_mm: anim.margin, page: anim.sheet, ...extra };
+  return { cols: anim.cols, rows: anim.rows, frames: anim.n,
+           t_from: anim.tFrom, t_to: anim.tTo, margin_mm: anim.margin,
+           framing: anim.framing, marks: anim.marks,
+           page: anim.sheet, ...extra };
 }
 
 // The plan overlay/estimate previews the CURRENT page only while the Animation
 // panel is open and per-sheet > 1; otherwise the plain target (one plan path).
 function syncSheetPlan() {
   const open = $("anim-details") && $("anim-details").open;
-  S.sheetPlan = open && anim.perSheet > 1 ? currentSheetSpec() : null;
+  S.sheetPlan = open && gridCells() > 1 ? currentSheetSpec() : null;
   if (S.sheetPlan) S.stagedPlan = null;
   actions.refreshPlan();
 }
@@ -525,7 +542,7 @@ function groupLabel(g) {
 
 async function captureStaged(kind) {
   try {
-    pullAnimRange();
+    pullAnimControls();  // module scope — pullAnimRange is initPlotTab's closure
     const body = {
       kind,
       target: S.plotTarget,
@@ -534,12 +551,15 @@ async function captureStaged(kind) {
     };
     if (kind === "frame") body.master_t = animT(anim.i);
     if (kind === "sheet") {
-      body.cols = Math.max(1, Math.min(12, Math.round(Number($("anim-cols").value) || 1)));
-      body.rows = Math.max(1, Math.min(12, Math.round(Number($("anim-rows").value) || 1)));
+      body.cols = anim.cols;
+      body.rows = anim.rows;
       body.frames = anim.n;
       body.t_from = anim.tFrom;
       body.t_to = anim.tTo;
-      body.margin_mm = Math.max(0, Math.min(30, Number($("anim-margin").value) || 0));
+      body.margin_mm = anim.margin;
+      body.framing = anim.framing;
+      body.marks = anim.marks;
+      body.name = `${anim.n}f · ${anim.cols}×${anim.rows} · ${anim.framing}`;
     }
     const r = await api.post("/api/staging/capture", body);
     await actions.refreshProject();
@@ -702,7 +722,12 @@ function renderStaging() {
 
 // Re-fetch the current sheet's ordered pen passes (they differ per page).
 async function refreshSheetInfo() {
-  if (anim.perSheet <= 1) { anim.passes = []; anim.nPages = 1; renderAnimStepper(); return; }
+  if (gridCells() <= 1) {
+    anim.passes = []; anim.nPages = 1;
+    renderLayoutSummary(null);
+    renderAnimStepper();
+    return;
+  }
   const [cols, rows] = gridDims();
   anim.nPages = sheetPages();
   anim.sheet = Math.min(anim.sheet, anim.nPages - 1);
@@ -713,10 +738,28 @@ async function refreshSheetInfo() {
     anim.nPages = info.sheets;
     anim.passes = info.passes || [];
     anim.pass = Math.min(anim.pass, Math.max(0, anim.passes.length - 1));
+    renderLayoutSummary(info);
   } catch (e) {
     anim.passes = [];
+    renderLayoutSummary(null);
   }
   renderAnimStepper();
+}
+
+// One line that says what the layout MEANS physically, before anything plots.
+function renderLayoutSummary(info) {
+  const el = $("anim-layout-summary");
+  if (!el) return;
+  if (gridCells() <= 1) {
+    el.textContent = `${anim.n} frames → ${anim.n} single-frame plots (stepper below)`;
+    return;
+  }
+  const pages = info ? info.sheets : sheetPages();
+  const passes = info && info.passes ? info.passes.map((p) => p.name).join(", ") : "…";
+  el.textContent =
+    `${anim.n} frames → ${pages} sheet${pages === 1 ? "" : "s"} of ${anim.cols}×${anim.rows}` +
+    ` · page ${Math.min(anim.sheet, pages - 1) + 1}: ${passes}` +
+    (anim.marks ? " · ✚ crosshairs on first pass" : "");
 }
 
 // Advance one pen pass; at the last pass of a sheet, roll to the next sheet
@@ -744,7 +787,11 @@ function pullAnimControls() {
   anim.n = Math.max(2, Math.min(240, Math.round(Number($("anim-frames").value) || 2)));
   anim.tFrom = Math.max(0, Math.min(1, Number($("anim-t-from").value)));
   anim.tTo = Math.max(0, Math.min(1, Number($("anim-t-to").value)));
+  anim.cols = Math.max(1, Math.min(12, Math.round(Number($("anim-cols").value) || 1)));
+  anim.rows = Math.max(1, Math.min(12, Math.round(Number($("anim-rows").value) || 1)));
   anim.margin = Math.max(0, Math.min(30, Number($("anim-sheet-margin").value) || 0));
+  anim.framing = $("anim-framing")?.value === "center" ? "center" : "fixed";
+  anim.marks = Boolean($("anim-marks")?.checked);
   anim.fps = Math.max(1, Math.min(24, Math.round(Number($("anim-preview-fps")?.value) || anim.fps || 8)));
   anim.loop = Boolean($("anim-preview-loop")?.checked);
   anim.i = Math.min(anim.i, anim.n - 1);
@@ -971,7 +1018,7 @@ function renderAnimStepper() {
   const skip = $("anim-skip");
   const basePlotDisabled = $("btn-plot") ? $("btn-plot").disabled : true;
 
-  if (anim.perSheet <= 1) {
+  if (gridCells() <= 1) {
     label.textContent = `frame ${anim.i + 1} of ${anim.n} (t=${animT(anim.i).toFixed(3)})`;
     if (btn) {
       btn.textContent = anim.plotting ? `Plotting frame ${anim.i + 1}…` : `Plot frame ${anim.i + 1}`;
@@ -1178,7 +1225,7 @@ export function applyCapabilities() {
     } else if (anim.wasBusy) {
       anim.wasBusy = false;
       anim.plotting = false;
-      if (anim.perSheet <= 1) {
+      if (gridCells() <= 1) {
         anim.i = Math.min(anim.i + 1, anim.n - 1);
       } else {
         stepSheetPass();  // next pen pass, rolling to the next sheet at the end

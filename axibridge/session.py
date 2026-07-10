@@ -14,7 +14,7 @@ times is what the pen draws.
 from __future__ import annotations
 
 import threading
-from collections import deque
+from collections import OrderedDict, deque
 from typing import Any
 
 from . import compose, tween
@@ -89,6 +89,16 @@ class Session:
         #: geometry stays byte-identical under a scrub). Keyed on content, so a
         #: cache hit hands back the SAME list object and the shaped cache re-hits.
         self._clip_cache: dict[str, tuple[str, list[Path]]] = {}
+        #: grid-sheet frame caches, valid between project mutations only
+        #: (cleared on every checkpoint/undo/history event). Keyed by
+        #: (t, pens-signature, assets-signature) — pens and assets can change
+        #: without a checkpoint, so they ride in the key rather than the
+        #: clearing. ``_frame_lru`` holds resolved per-layer geometry for the
+        #: last few frames (a page's worth); ``_frame_bbox`` holds only the
+        #: combined bbox per frame, cheap enough to keep for a whole animation,
+        #: so the shared-scale scan stops re-resolving every frame per page.
+        self._frame_lru: "OrderedDict[tuple, dict[str, list[Path]]]" = OrderedDict()
+        self._frame_bbox: dict[tuple, tuple[float, float, float, float] | None] = {}
 
     # -- undo -----------------------------------------------------------------
 
@@ -101,11 +111,16 @@ class Session:
                 {name: doc.model_copy(deep=True) for name, doc in self.staging_documents.items()},
             )
         )
+        # a checkpoint precedes a mutation — cached frames are about to go stale
+        self._frame_lru.clear()
+        self._frame_bbox.clear()
 
     def clear_history(self) -> None:
         """Project switch: snapshots of another project must not restore here."""
         with self._lock:
             self._history.clear()
+            self._frame_lru.clear()
+            self._frame_bbox.clear()
 
     def undo(self) -> bool:
         with self._lock:
@@ -115,6 +130,8 @@ class Session:
             self._shaped_cache.clear()
             self._tween_cache.clear()
             self._clip_cache.clear()
+            self._frame_lru.clear()
+            self._frame_bbox.clear()
             return True
 
     def history_for_save(
@@ -521,50 +538,95 @@ class Session:
             layer.visible = False
             return created
 
+    def _sheet_rect(self) -> tuple[float, float, float, float]:
+        """The paper-guide rectangle grid sheets are laid on (bed if no guide)."""
+        guide = self.project.guide
+        if guide is None:
+            return 0.0, 0.0, compose.BED_WIDTH, compose.BED_HEIGHT
+        return guide.x, guide.y, guide.width, guide.height
+
+    def _frame_sig(self) -> tuple[int, int]:
+        """Cache-key component for state that can change WITHOUT a checkpoint:
+        pen line diameters (occlusion masks) and the asset store (frame-follow
+        clips re-sample it during resolve)."""
+        from .assets import asset_store
+
+        pens_sig = hash(tuple(sorted(
+            (pid, p.line_diameter_mm) for pid, p in self.pens().items())))
+        assets_sig = hash(tuple(sorted(
+            (name, len(data)) for name, data in asset_store.all().items())))
+        return pens_sig, assets_sig
+
     def _grid_place(
         self, ts: list[float], cols: int, rows: int, margin_mm: float,
         master_scale_ts: list[float] | None = None,
+        framing: str = "center",
     ) -> list[dict[str, list[Path]]]:
         """Lay each master-timeline sample ``ts[i]`` into cell i of a cols×rows
         grid on the paper guide, keeping PER-LAYER geometry (not flattened) so
-        callers can group by pen. Placement math is the contact-sheet's: one
-        SHARED scale across every frame — derived from the union bounding box
-        over ``master_scale_ts`` (defaults to ``ts``); the sheet callers pass
-        the FULL animation's ts so frame k is the same size on every page — and
-        each frame centred in its own cell by its combined (all-visible-layers)
-        bbox. Cells are row-major (left-to-right, top-to-bottom). Geometry is
-        the VISIBLE, resolved (post-occlusion) paths, so a cell is exactly what
-        the canvas/plotter show at that t.
+        callers can group by pen. One SHARED scale across every frame — derived
+        from the union bounding box over ``master_scale_ts`` (defaults to
+        ``ts``); the sheet callers pass the FULL animation's ts so frame k is
+        the same size on every page. Cells are row-major. Geometry is the
+        VISIBLE, resolved (post-occlusion) paths, so a cell is exactly what the
+        canvas/plotter show at that t.
 
-        Returns one ``{layer_id: placed_paths}`` dict per ``ts`` sample, in
-        project z-order, holding only visible layers with non-empty geometry.
-        Read-only: no checkpoint, no user source_geometry writes — everything
-        flows through :meth:`resolved` (which does refresh derived tween
-        geometry, as every resolve does). Call under ``self._lock``."""
+        ``framing``:
+        * ``"center"`` — each frame centred in its cell by its OWN bbox. Right
+          for parameter sweeps; but pure translation animations largely cancel
+          (each cell re-centres the moving subject).
+        * ``"fixed"`` — every frame shares ONE window (the union bbox), like a
+          locked-off camera: motion stays motion across the flipbook.
+
+        Resolves go through the per-frame caches (``_frame_lru`` geometry,
+        ``_frame_bbox`` bounds), cleared on any project mutation — so stepping
+        pages/passes of an unchanged project stops re-resolving the whole
+        animation. Read-only: no checkpoint, no user source_geometry writes.
+        Call under ``self._lock``."""
+        sig = self._frame_sig()
+
+        def frame_key(t: float) -> tuple:
+            return (round(t, 9), *sig)
+
         def visible_geo(t: float) -> dict[str, list[Path]]:
+            key = frame_key(t)
+            hit = self._frame_lru.get(key)
+            if hit is not None:
+                self._frame_lru.move_to_end(key)
+                return hit
             # resolved() re-materialises tweens as a side effect (the single
             # resolve path); z-order preserved so flattening callers match.
             resolved = self.resolved(master_t=t)
-            return {layer.id: resolved[layer.id]
-                    for layer in self.project.layers
-                    if layer.visible and resolved.get(layer.id)}
+            frame = {layer.id: resolved[layer.id]
+                     for layer in self.project.layers
+                     if layer.visible and resolved.get(layer.id)}
+            self._frame_lru[key] = frame
+            while len(self._frame_lru) > 144:  # a 12×12 page's worth
+                self._frame_lru.popitem(last=False)
+            xs = [x for paths in frame.values() for p in paths for x, _ in p.points]
+            ys = [y for paths in frame.values() for p in paths for _, y in p.points]
+            self._frame_bbox[key] = (
+                (min(xs), min(ys), max(xs), max(ys)) if xs else None)
+            return frame
 
-        place_frames = [visible_geo(t) for t in ts]
-        scale_frames = (place_frames if master_scale_ts is None
-                        else [visible_geo(t) for t in master_scale_ts])
+        def frame_bbox(t: float) -> tuple[float, float, float, float] | None:
+            key = frame_key(t)
+            if key not in self._frame_bbox:
+                visible_geo(t)
+            return self._frame_bbox[key]
 
-        all_xs = [x for f in scale_frames for paths in f.values() for p in paths for x, _ in p.points]
-        all_ys = [y for f in scale_frames for paths in f.values() for p in paths for _, y in p.points]
-        if not all_xs:
+        # shared scale from bboxes only — cached across pages/passes
+        boxes = [b for t in (master_scale_ts or ts) if (b := frame_bbox(t)) is not None]
+        if not boxes:
             raise RuntimeError("nothing to place (no visible geometry across the frame range)")
-        bw = max(max(all_xs) - min(all_xs), 1e-6)
-        bh = max(max(all_ys) - min(all_ys), 1e-6)
+        uminx = min(b[0] for b in boxes)
+        uminy = min(b[1] for b in boxes)
+        umaxx = max(b[2] for b in boxes)
+        umaxy = max(b[3] for b in boxes)
+        bw = max(umaxx - uminx, 1e-6)
+        bh = max(umaxy - uminy, 1e-6)
 
-        guide = self.project.guide
-        sheet_x = guide.x if guide else 0.0
-        sheet_y = guide.y if guide else 0.0
-        sheet_w = guide.width if guide else compose.BED_WIDTH
-        sheet_h = guide.height if guide else compose.BED_HEIGHT
+        sheet_x, sheet_y, sheet_w, sheet_h = self._sheet_rect()
         cell_w = sheet_w / cols - 2 * margin_mm
         cell_h = sheet_h / rows - 2 * margin_mm
         if cell_w <= 0 or cell_h <= 0:
@@ -573,20 +635,40 @@ class Session:
         scale = min(cell_w / bw, cell_h / bh)  # shared: no per-frame size jitter
 
         placed_frames: list[dict[str, list[Path]]] = []
-        for i, frame in enumerate(place_frames):
+        for i, t in enumerate(ts):
+            frame = visible_geo(t)
             row, col = divmod(i, cols)  # row-major, left-to-right, top-to-bottom
             cx = sheet_x + (col + 0.5) * (sheet_w / cols)
             cy = sheet_y + (row + 0.5) * (sheet_h / rows)
-            xs = [x for paths in frame.values() for p in paths for x, _ in p.points]
-            ys = [y for paths in frame.values() for p in paths for _, y in p.points]
-            fcx = (min(xs) + max(xs)) / 2 if xs else 0.0
-            fcy = (min(ys) + max(ys)) / 2 if ys else 0.0
+            if framing == "fixed":
+                fcx, fcy = (uminx + umaxx) / 2, (uminy + umaxy) / 2
+            else:
+                box = frame_bbox(t)
+                fcx = (box[0] + box[2]) / 2 if box else 0.0
+                fcy = (box[1] + box[3]) / 2 if box else 0.0
             aff = Affine(a=scale, b=0.0, c=0.0, d=scale,
                          e=cx - scale * fcx, f=cy - scale * fcy)
             placed_frames.append(
                 {lid: compose.transform_paths(paths, aff) for lid, paths in frame.items()}
             )
         return placed_frames
+
+    def _sheet_marks(self, cols: int, rows: int, arm_mm: float = 2.0) -> list[Path]:
+        """Registration crosshairs at every grid intersection of the sheet —
+        (cols+1)×(rows+1) small ＋ marks separating the frames. Clamped to the
+        bed (the machine frame has no negatives)."""
+        x0, y0, w, h = self._sheet_rect()
+        out: list[Path] = []
+        for i in range(cols + 1):
+            for j in range(rows + 1):
+                cx, cy = x0 + i * w / cols, y0 + j * h / rows
+                out.append(Path(points=[
+                    (max(cx - arm_mm, 0.0), cy),
+                    (min(cx + arm_mm, compose.BED_WIDTH), cy)], filled=False))
+                out.append(Path(points=[
+                    (cx, max(cy - arm_mm, 0.0)),
+                    (cx, min(cy + arm_mm, compose.BED_HEIGHT))], filled=False))
+        return out
 
     def bake_contact_sheet(
         self, cols: int, rows: int, frames: int, margin_mm: float,
@@ -645,6 +727,7 @@ class Session:
         self, cols: int, rows: int, frames: int,
         t_from: float, t_to: float, margin_mm: float, page: int,
         pen_id: str | None = None,
+        framing: str = "center", marks: bool = False,
     ) -> PathDocument:
         """One physical sheet of the flip-book, assembled at plot time — NO
         project mutation, no checkpoint (contrast :meth:`bake_contact_sheet`).
@@ -675,7 +758,8 @@ class Session:
 
         with self._lock:
             groups, n_pages = self._sheet_groups(
-                cols, rows, frames, t_from, t_to, margin_mm, page, pen_id)
+                cols, rows, frames, t_from, t_to, margin_mm, page, pen_id,
+                framing=framing, marks=marks)
             pens = self.pens()
             out_layers = [
                 Layer(
@@ -695,13 +779,18 @@ class Session:
         self, cols: int, rows: int, frames: int,
         t_from: float, t_to: float, margin_mm: float, page: int,
         pen_id: str | None,
+        framing: str = "center", marks: bool = False,
     ) -> tuple[list[tuple[str, list[Path]]], int]:
         """The by-pen assembly behind :meth:`sheet_document` and
         :meth:`sheet_passes`: places the page's frames, groups their geometry by
         pen (``""`` = no pen), applies the physical nib offset AFTER placement,
         and orders the groups by project z-order of each pen's first layer.
-        Returns ``([(pen_id, paths), …], n_pages)`` with empty groups dropped.
-        ``pen_id`` (not None) filters to that single group. Call under the lock."""
+        ``marks`` prepends the crosshair grid to the FIRST pass (they plot once
+        per page, whatever pen that pass wears). Returns
+        ``([(pen_id, paths), …], n_pages)`` with empty groups dropped.
+        ``pen_id`` (not None) filters to that single group — after ordering and
+        marks, so the filtered pass is identical to its slice of the full set.
+        Call under the lock."""
         per_page = cols * rows
         n_pages = (frames + per_page - 1) // per_page
         if not (0 <= page < n_pages):
@@ -711,7 +800,8 @@ class Session:
             t_from + (t_to - t_from) * i / (frames - 1) for i in range(frames)
         ]
         chunk = all_ts[page * per_page: (page + 1) * per_page]
-        placed = self._grid_place(chunk, cols, rows, margin_mm, master_scale_ts=all_ts)
+        placed = self._grid_place(chunk, cols, rows, margin_mm,
+                                  master_scale_ts=all_ts, framing=framing)
 
         pen_offsets = self._pen_offsets()
         layer_pen = {l.id: (l.pen_id or "") for l in self.project.layers}
@@ -725,8 +815,6 @@ class Session:
         for frame in placed:
             for lid, paths in frame.items():
                 pid = layer_pen.get(lid, "")
-                if pen_id is not None and pid != pen_id:
-                    continue
                 ox, oy = pen_offsets.get(lid, (0.0, 0.0))
                 if ox or oy:  # physical registration, applied post-placement
                     paths = [Path(points=[(x - ox, y - oy) for x, y in p.points],
@@ -738,6 +826,11 @@ class Session:
             for pid in sorted(groups, key=lambda p: rank.get(p, 1 << 30))
             if groups[pid]
         ]
+        if marks and ordered:
+            first_pid, first_paths = ordered[0]
+            ordered[0] = (first_pid, self._sheet_marks(cols, rows) + first_paths)
+        if pen_id is not None:
+            ordered = [(pid, paths) for pid, paths in ordered if pid == pen_id]
         return ordered, n_pages
 
     def sheet_passes(
@@ -859,6 +952,8 @@ class Session:
                     float(fmt.get("margin_mm", 5.0)),
                     page,
                     pen_id=None,
+                    framing=str(fmt.get("framing", "center")),
+                    marks=bool(fmt.get("marks", False)),
                 )
                 for page in range(pages)
             ]
@@ -945,6 +1040,8 @@ class Session:
         t_from: float = 0.0,
         t_to: float = 1.0,
         margin_mm: float = 5.0,
+        framing: str = "center",
+        marks: bool = False,
     ) -> CaptureGroup:
         with self._lock:
             if kind == "sheet":
@@ -956,11 +1053,14 @@ class Session:
                     raise ValueError("margin_mm must be 0..30")
                 if not (0.0 <= t_from <= 1.0 and 0.0 <= t_to <= 1.0):
                     raise ValueError("t_from/t_to must be 0..1")
+                if framing not in ("center", "fixed"):
+                    raise ValueError("framing must be center or fixed")
                 fmt = {
                     "kind": "sheet", "target": "all",
                     "cols": cols, "rows": rows, "frames": frames,
                     "pages": self.sheet_pages(frames, cols, rows),
                     "t_from": t_from, "t_to": t_to, "margin_mm": margin_mm,
+                    "framing": framing, "marks": marks,
                 }
             elif kind == "frame":
                 mt = 0.0 if master_t is None else master_t
@@ -1227,6 +1327,7 @@ class Session:
     ) -> tuple[list[PathDocument], list[list[str]]]:
         old_project, old_geo, old_svg = self.project, self.source_geometry, self.svg_files
         old_shaped, old_tween, old_clip = self._shaped_cache, self._tween_cache, self._clip_cache
+        old_frames, old_bbox = self._frame_lru, self._frame_bbox
         try:
             self.project = project
             self.source_geometry = geo
@@ -1234,6 +1335,8 @@ class Session:
             self._shaped_cache = {}
             self._tween_cache = {}
             self._clip_cache = {}
+            self._frame_lru = OrderedDict()
+            self._frame_bbox = {}
             return self._documents_for_format(fmt), self._pass_ids_for_format(fmt)
         finally:
             self.project = old_project
@@ -1242,6 +1345,8 @@ class Session:
             self._shaped_cache = old_shaped
             self._tween_cache = old_tween
             self._clip_cache = old_clip
+            self._frame_lru = old_frames
+            self._frame_bbox = old_bbox
 
     def interpolate_captures(
         self, a_id: str, b_id: str, steps: int, name: str | None = None

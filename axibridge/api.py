@@ -19,7 +19,7 @@ import threading
 import time
 import zipfile
 from pathlib import Path as FsPath
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
@@ -867,6 +867,8 @@ def export_animation_frames(
     cols: int | None = Query(default=None, ge=1, le=12),
     rows: int | None = Query(default=None, ge=1, le=12),
     margin_mm: float = Query(default=5.0, ge=0.0, le=30.0),
+    framing: Literal["center", "fixed"] = Query(default="center"),
+    marks: bool = Query(default=False),
 ) -> Response:
     """SVG-sequence export: samples the master timeline ``frames`` times over
     [t_from, t_to] through the SAME resolve path the canvas and plotter use.
@@ -884,7 +886,8 @@ def export_animation_frames(
             for page in range(n_pages):
                 try:
                     doc = session.sheet_document(
-                        cols, rows, frames, t_from, t_to, margin_mm, page, pen_id=None)
+                        cols, rows, frames, t_from, t_to, margin_mm, page,
+                        pen_id=None, framing=framing, marks=marks)
                 except (ValueError, IndexError, RuntimeError) as e:
                     raise HTTPException(status_code=400, detail=str(e))
                 if any(layer.paths for layer in doc.layers):
@@ -1041,6 +1044,8 @@ class StagingCaptureBody(BaseModel):
     t_from: float = Field(default=0.0, ge=0.0, le=1.0)
     t_to: float = Field(default=1.0, ge=0.0, le=1.0)
     margin_mm: float = Field(default=5.0, ge=0.0, le=30.0)
+    framing: Literal["center", "fixed"] = "center"
+    marks: bool = False
 
 
 @router.post("/staging/capture")
@@ -1057,6 +1062,8 @@ def capture_to_staging(body: StagingCaptureBody) -> dict[str, Any]:
             t_from=body.t_from,
             t_to=body.t_to,
             margin_mm=body.margin_mm,
+            framing=body.framing,
+            marks=body.marks,
         )
     except (KeyError, ValueError) as e:
         raise _fail(e, 400)
@@ -1291,12 +1298,18 @@ class SheetSpec(BaseModel):
     margin_mm: float = Field(default=5.0, ge=0.0, le=30.0)
     page: int = Field(default=0, ge=0, le=239)
     pen_id: str | None = None
+    #: "center" = each frame centred by its own bbox (parameter sweeps);
+    #: "fixed" = one shared window, so translation reads as motion (flipbooks)
+    framing: Literal["center", "fixed"] = "center"
+    #: registration crosshairs at the grid intersections, on the first pass
+    marks: bool = False
 
 
 def _sheet_document(spec: SheetSpec) -> Any:
     return session.sheet_document(
         spec.cols, spec.rows, spec.frames, spec.t_from, spec.t_to,
         spec.margin_mm, spec.page, spec.pen_id,
+        framing=spec.framing, marks=spec.marks,
     )
 
 

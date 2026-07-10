@@ -341,3 +341,7 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .wb-scrap span { font-size: 10.5px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wb-scrap-row { display: flex; gap: 4px; }
 .wb-scrap-row button { flex: 1; font-size: 10.5px; padding: 2px 3px; }
+
+/* grid-sheet layout presets (plot.js animation panel) */
+.anim-presets { display: inline-flex; gap: 3px; }
+.anim-presets button { padding: 2px 9px; font-size: 11.5px; }
