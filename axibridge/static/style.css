@@ -345,3 +345,8 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 /* grid-sheet layout presets (plot.js animation panel) */
 .anim-presets { display: inline-flex; gap: 3px; }
 .anim-presets button { padding: 2px 9px; font-size: 11.5px; }
+
+/* A/B capture-series toolbar segment + workbench stage message */
+#ab-capture input { width: 3.4em; }
+#ab-capture button.on { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+.wb-msg { font-size: 8px; fill: #a0522d; text-anchor: middle; }

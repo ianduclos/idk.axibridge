@@ -95,6 +95,7 @@ export function initWorkbench() {
 
 function open() {
   fillPickers();
+  drawSheet();  // blank paper immediately — the stage is never a dark void
   if (!wb.module) {
     // default to a self-contained generator — image-driven ones 400 without an asset
     const standalone = S.state.modules.sources.find(
@@ -102,9 +103,35 @@ function open() {
     selectModule((standalone || S.state.modules.sources[0])?.id);
   } else renderParamForm();
   renderFx();
+  updateActions();
   $("workbench-modal").hidden = false;
   refreshScraps();
   schedule(0);
+}
+
+// blank sheet at bed proportions; optional message rendered ON the paper
+function drawSheet(message) {
+  const svg = $("wb-svg");
+  svg.innerHTML = "";
+  const w = 300, h = 218;
+  svg.setAttribute("viewBox", `-5 -5 ${w + 10} ${h + 10}`);
+  const sheet = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  sheet.setAttribute("x", 0); sheet.setAttribute("y", 0);
+  sheet.setAttribute("width", w); sheet.setAttribute("height", h);
+  sheet.setAttribute("class", "wb-sheet");
+  svg.appendChild(sheet);
+  if (message) {
+    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.setAttribute("x", w / 2); t.setAttribute("y", h / 2);
+    t.setAttribute("class", "wb-msg");
+    t.textContent = message;
+    svg.appendChild(t);
+  }
+}
+
+function updateActions() {
+  $("wb-save").disabled = !wb.ok;
+  $("wb-import").disabled = !wb.ok;
 }
 
 function close() { $("workbench-modal").hidden = true; }
@@ -226,8 +253,10 @@ async function run() {
       `${p.points} pts${p.decimated ? " (preview decimated)" : ""}`;
   } catch (e) {
     wb.ok = false;
+    drawSheet(e.message);  // failure stays legible on the paper itself
     $("wb-status").textContent = e.message;
   } finally {
+    updateActions();
     wb.busy = false;
     if (wb.queued) { wb.queued = false; schedule(0); }
   }

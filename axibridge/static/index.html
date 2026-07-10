@@ -36,6 +36,12 @@
       <label><input type="checkbox" id="show-guide" checked> paper guide</label>
       <button id="btn-animate" title="Replay the planned job at speed">▶ Animate</button>
       <label>×<input type="number" id="anim-speed" value="20" min="1" max="500" step="1"></label>
+      <div class="seg" id="ab-capture" title="Capture the current output as A, change anything, capture B, then ⇄ generates a staged series interpolating A → B (find it under Plot › Staging)">
+        <button id="cap-a">A</button>
+        <button id="cap-b">B</button>
+        <input type="number" id="ab-steps" value="5" min="2" max="60" step="1" title="interpolation steps">
+        <button id="ab-series" disabled>⇄ series</button>
+      </div>
     </div>
     <div id="canvas-wrap"><svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg></div>
     <div id="canvas-status">

@@ -113,8 +113,11 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    quantized turning angles + step-length pool, temperature 0→1 from
    most-typical to full empirical spread; closed paths pass through.
    Neural v2 only if this feels shallow.
-4. **Glyph grammar source** — Hershey strokes through destruction rules,
-   `abstraction` dial from "almost reads" to pure scaffold.
+4. ~~Glyph grammar source~~ — **shipped 2026-07-10** as
+   `sources/glyphgram.py`: vpype Hershey fonts (futural → gothiceng, greek,
+   japanese, astrology, music…) through fragment/drop/displace/recombine/
+   mirror-echo rules, one `abstraction` master dial (0 = almost reads,
+   1 = pure scaffold); empty text = asemic glyph soup.
 5. **Perception pass — line weight = certainty** (the ideas doc calls this
    the strongest AI-age principle; promoted 2026-07-10): run several cheap
    perception passes over one asset (threshold edges, Depth Pro
@@ -179,6 +182,16 @@ Still open, priority order (details in the session analysis):
   multi-hour flipbook survives a restart.
 - **Staging browser ergonomics**: batches make the tray list long — a grid
   browser with thumbnails (scrap-strip pattern from the workbench).
+- ~~A/B capture series ergonomics~~ — **shipped 2026-07-10**: A · B · ⇄
+  buttons in the canvas toolbar — capture the whole current output as A,
+  change anything, capture B, generate an n-step interpolated staged series
+  (wraps staging capture+interpolate; re-pressing a letter replaces that
+  capture). The layer-by-layer tween dance is no longer the only path.
+- **Pi round 2 (scheduled 2026-07-10, +5h)** — `docs/plans/pi-round2.md`:
+  bitmap redesign (quantize lines to hard-cornered grids; blocks become a
+  style option), contract/expand offset effect, region boundary continuity
+  (`continuous` stitches lines through the region instead of cutting), and
+  workbench mouse drawing with modes (smooth + patterned).
 
 ## Animation — **SHIPPED July 2026** (v1: linear A→B over a master timeline)
 
