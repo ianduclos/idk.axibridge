@@ -31,7 +31,14 @@ well enough to reimplement), Stiny's shape grammars for §4.
   as an *effect* it retrofits uncanniness onto the entire existing source
   library before any new source is written.
 
-## 1. The intentional line (Cohen kernel) — as an effect
+## 1. The intentional line (Cohen kernel) — as an effect — **shipped July 2026**
+
+Shipped as `effects/freehand.py` (`id: freehand`): eye-leads-hand pursuit with
+a clamped semi-implicit spring-damper, steering-space tremor, per-stroke
+fatigue, and drawn-then-snapped closure. Params match the sketch below
+(`confidence`/`correction`/`impulsiveness`/`tremor`/`fatigue`, with
+step + seed under a collapsed "Fine tuning" group per UI principle 1).
+Original sketch kept for the rationale:
 
 Pen as an under-damped steering agent: knows where it wants to go, corrects
 with finite gain, overshoots, accumulates fatigue (error grows with path
@@ -171,7 +178,12 @@ Principles for these modules, cheapest first — all keep the zero-build setup:
    precedent rather than adding tabs: a modal per module that shows the
    process (step through negotiation rounds, toggle rehearsal ghosts) while
    the layer panel stays a compact summary. Tabs are global navigation;
-   these are per-layer inspections.
+   these are per-layer inspections. User direction (July 2026): this popup
+   should grow toward a *generator workbench* — generate, reroll, and **save
+   the results as project assets**, eventually with light editing of those
+   generated assets. That makes expensive/stochastic generators feel like a
+   darkroom (contact sheet → pick → keep) instead of a slider panel, and it
+   composes with the existing staging tray rather than replacing it.
 5. **Don't build editors.** No grammar editor (§4), no genome curve editor.
    Built-in enums/presets first; an editor is only worth it once a preset
    list demonstrably can't hold the interesting space.

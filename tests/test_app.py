@@ -18,7 +18,7 @@ def test_state_shape(client):
     st = client.get("/api/state").json()
     assert {b["id"] for b in st["backends"]} == {"native", "simulator", "saxi", "pi_ssh"}
     assert [m["id"] for m in st["modules"]["effects"]] == [
-        "coherent_jitter", "depth_displace", "hatch_fill", "multipass", "perspective",
+        "coherent_jitter", "depth_displace", "freehand", "hatch_fill", "multipass", "perspective",
     ]
     assert {m["id"] for m in st["modules"]["sources"]} >= {"grid", "flowfield", "lissajous", "polygon"}
     assert st["bed"] == {"width": 300.0, "height": 218.0}
