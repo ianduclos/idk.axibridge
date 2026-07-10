@@ -10,8 +10,12 @@ import { mul, translate, rotate, scale, matToObj, objToMat } from "./canvas.js";
 const $ = (id) => document.getElementById(id);
 let genParams = {};
 const expandedSteps = new Set(); // "layerId:index" — effect steps open in the UI
+const collapsedTweens = new Set(JSON.parse(localStorage.getItem("axb-collapsed-tweens") || "[]"));
 let selAnchor = null;            // last plain/cmd-clicked layer id, for shift-range
 let busyBtn = null;              // Generate/Regenerate button awaiting the server
+let depthProStatus = null;
+let depthProSource = "";
+const depthProFrames = {};
 
 // SSE "gen" events land here (main.js dispatches) while a generate request
 // is in flight; the request itself completing is what ends the busy state.
@@ -184,12 +188,12 @@ export function initComposeTab() {
         <button id="btn-asset">Add image asset</button>
       </div>
       <div class="row">
-        <label>frames</label><input type="number" id="asset-frames" min="2" max="240" placeholder="24" style="width:4.5em">
+        <label>max frames</label><input type="number" id="asset-frames" min="1" max="240" placeholder="all" style="width:4.5em">
         <label>start</label><input type="number" id="asset-start" min="0" placeholder="0" style="width:4.5em">
         <label>every</label><input type="number" id="asset-every" min="1" placeholder="—" style="width:4.5em">
-        <span class="hint">frames / start / every — a video or multiple files import as a frame sequence</span>
+        <span class="hint">optional max / start / every — video or multiple files import as a frame sequence</span>
       </div>
-      <div class="hint" id="asset-list"></div>
+      <div id="asset-list"></div>
     </div>
     <div class="panel">
       <h2>Layers <span class="hint">(top of list = drawn on top / occludes below)</span></h2>
@@ -294,6 +298,7 @@ export function initComposeTab() {
     finally { if (isSequence) genBusy(false, btn); }
   };
   renderAssetList();
+  refreshDepthProStatus();
 
   const mt = $("master-t");
   if (mt) {
@@ -312,10 +317,111 @@ export function initComposeTab() {
 function renderAssetList() {
   const el = $("asset-list");
   if (!el) return;
-  const names = (S.state.assets || []).map((a) => a.name ?? a);
-  el.textContent = names.length
-    ? `image assets: ${names.join(", ")} — feed the 📷 generators and the depth-displace effect`
-    : "Image assets feed the 📷 image-driven generators and the depth-displace effect.";
+  const assets = S.state.assets || [];
+  const names = assets.map((a) => a.name ?? a);
+  el.innerHTML = "";
+
+  const summary = document.createElement("div");
+  summary.className = "hint";
+  summary.textContent = names.length
+    ? `image assets: ${names.join(", ")} — feed the image-driven generators and depth effects`
+    : "Image assets feed the image-driven generators and depth effects.";
+  el.appendChild(summary);
+  if (!assets.length) return;
+
+  if (!depthProSource || !assets.some((a) => (a.name ?? a) === depthProSource)) {
+    depthProSource = names[0] || "";
+  }
+  const selected = assets.find((a) => (a.name ?? a) === depthProSource) || assets[0];
+  const selectedName = selected?.name ?? selected ?? "";
+  const frames = Math.max(Number(selected?.frames || 1), 1);
+  const maxFrame = Math.max(frames - 1, 0);
+  const frameValue = Math.min(Math.max(Number(depthProFrames[selectedName] || 0), 0), maxFrame);
+
+  const tool = document.createElement("div");
+  tool.className = "asset-tool";
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const label = document.createElement("label");
+  label.textContent = "Depth Pro";
+  const select = document.createElement("select");
+  select.id = "depth-pro-source";
+  for (const asset of assets) {
+    const name = asset.name ?? asset;
+    const o = document.createElement("option");
+    o.value = name;
+    o.textContent = asset.frames > 1 ? `${name} (${asset.frames} frames)` : name;
+    select.appendChild(o);
+  }
+  select.value = selectedName;
+  select.onchange = () => {
+    depthProSource = select.value;
+    renderAssetList();
+  };
+
+  const frameLabel = document.createElement("label");
+  frameLabel.textContent = "frame";
+  const frame = document.createElement("input");
+  frame.type = "number";
+  frame.min = "0";
+  frame.max = String(maxFrame);
+  frame.step = "1";
+  frame.value = String(frameValue);
+  frame.disabled = frames <= 1;
+  frame.onchange = () => {
+    depthProFrames[selectedName] = Math.min(Math.max(Number(frame.value) || 0, 0), maxFrame);
+  };
+
+  const nearLabel = document.createElement("label");
+  nearLabel.title = "Foreground / nearer surfaces become white in the generated map";
+  const near = document.createElement("input");
+  near.type = "checkbox";
+  near.checked = localStorage.getItem("axb-depth-pro-near-white") !== "0";
+  near.onchange = () => localStorage.setItem("axb-depth-pro-near-white", near.checked ? "1" : "0");
+  nearLabel.append(near, " near = white");
+
+  const btn = document.createElement("button");
+  btn.id = "btn-depth-pro";
+  btn.textContent = "Create depth map";
+  btn.disabled = !depthProStatus?.available;
+  btn.title = depthProStatus?.detail || "Checking Depth Pro";
+  btn.onclick = async () => {
+    const frameIndex = Math.min(Math.max(Number(frame.value) || 0, 0), maxFrame);
+    const t = frames > 1 ? frameIndex / maxFrame : 0;
+    genBusy(true, btn);
+    try {
+      const r = await api.post("/api/assets/depth-pro", {
+        image: selectedName,
+        frame: t,
+        near_white: near.checked,
+      });
+      S.state.assets = r.assets;
+      renderAssetList();
+      renderLayerDetail();
+      actions.log(`created depth map: ${r.name}`);
+    } catch (e) { actions.oops(e); }
+    finally {
+      genBusy(false, btn);
+      refreshDepthProStatus();
+    }
+  };
+
+  row.append(label, select, frameLabel, frame, nearLabel, btn);
+  const status = document.createElement("div");
+  status.className = "hint";
+  status.textContent = depthProStatus?.detail || "Checking Depth Pro...";
+  tool.append(row, status);
+  el.appendChild(tool);
+}
+
+async function refreshDepthProStatus() {
+  try {
+    depthProStatus = await api.get("/api/assets/depth-pro/status");
+  } catch (e) {
+    depthProStatus = { available: false, detail: e.message || "Depth Pro status unavailable" };
+  }
+  renderAssetList();
 }
 
 function renderGenForm() {
@@ -339,11 +445,52 @@ export function renderLayerList() {
   wrap.innerHTML = "";
   const layers = S.state.project.layers;
   const resolvedById = Object.fromEntries((S.resolved?.layers || []).map((l) => [l.id, l]));
+  const keyframeOwner = new Map();
+  const childrenByTween = new Map();
+  const animateTweens = new Set();
+  for (const l of layers) {
+    if (l.source.type !== "tween") continue;
+    const p = l.source.params || {};
+    const kids = [p.a, p.b].filter(Boolean);
+    childrenByTween.set(l.id, kids);
+    const isAnimateGroup = kids.length === 2 && kids.every((id) => {
+      const kid = layers.find((candidate) => candidate.id === id);
+      return kid && !kid.visible && /▸\s*[AB]$/.test(kid.name || "");
+    });
+    if (isAnimateGroup) {
+      animateTweens.add(l.id);
+      for (const kid of kids) keyframeOwner.set(kid, l.id);
+    }
+  }
   // top layer first in the list
   [...layers].reverse().forEach((layer) => {
     const r = resolvedById[layer.id];
+    const owner = keyframeOwner.get(layer.id);
+    if (owner && collapsedTweens.has(owner) && !S.selection.includes(layer.id)) return;
     const row = document.createElement("div");
-    row.className = "layer-row" + (S.selection.includes(layer.id) ? " selected" : "");
+    const isTween = layer.source.type === "tween";
+    const childIds = childrenByTween.get(layer.id) || [];
+    const isAnimateTween = animateTweens.has(layer.id);
+    const isAnimateKeyframe = keyframeOwner.has(layer.id)
+      && (!layer.visible || /▸\s*[AB]$/.test(layer.name || ""));
+    row.className = [
+      "layer-row",
+      isTween ? "tween-row" : "",
+      isAnimateKeyframe ? "keyframe-row" : "",
+      S.selection.includes(layer.id) ? "selected" : "",
+    ].filter(Boolean).join(" ");
+
+    const fold = isAnimateTween && childIds.length
+      ? btn(collapsedTweens.has(layer.id) ? "▸" : "▾",
+          collapsedTweens.has(layer.id) ? "show animation keyframes" : "collapse animation keyframes",
+          () => {
+            if (collapsedTweens.has(layer.id)) collapsedTweens.delete(layer.id);
+            else collapsedTweens.add(layer.id);
+            localStorage.setItem("axb-collapsed-tweens", JSON.stringify([...collapsedTweens]));
+            renderLayerList();
+          })
+      : document.createElement("span");
+    fold.className = "fold";
 
     const eye = btn(layer.visible ? "👁" : "—", "visible", () =>
       actions.patchLayer(layer.id, { visible: !layer.visible }));
@@ -384,10 +531,17 @@ export function renderLayerList() {
     });
     // two-click delete — native confirm() dialogs are blockable/suppressible
     // by the browser, which reads as "the button does nothing"
-    const del = btn("✕", "delete layer (click twice)", async () => {
+    const deleteTitle = isAnimateKeyframe
+      ? "delete keyframe (click twice) — removes the whole animation group"
+      : isAnimateTween
+        ? "un-animate (click twice) — restores keyframe A as the original layer"
+        : isTween
+          ? "delete interpolation layer (click twice)"
+        : "delete layer (click twice)";
+    const del = btn("✕", deleteTitle, async () => {
       if (!del.dataset.armed) {
         del.dataset.armed = "1";
-        del.textContent = "sure?";
+        del.textContent = isAnimateTween ? "restore?" : "sure?";
         del.style.color = "var(--rust)";
         setTimeout(() => {
           delete del.dataset.armed;
@@ -398,13 +552,15 @@ export function renderLayerList() {
       }
       try {
         const r = await api.del(`/api/layers/${layer.id}`);
+        for (const id of r.deleted || []) collapsedTweens.delete(id);
+        localStorage.setItem("axb-collapsed-tweens", JSON.stringify([...collapsedTweens]));
         await actions.refreshProject();
         await actions.refreshResolved();
         logDeleted([layer.name], r.deleted || [layer.id]);
       } catch (e) { actions.oops(e); }
     });
 
-    row.append(eye, swatch, name, est, occ, up, down, dup, del);
+    row.append(fold, eye, swatch, name, est, occ, up, down, dup, del);
     row.onclick = (e) => {
       if (e.target.tagName === "BUTTON") return;
       const displayed = [...S.state.project.layers].reverse().map((l) => l.id);
@@ -606,6 +762,7 @@ export function renderLayerDetail() {
       <select id="ld-pen"><option value="">— none —</option></select>
     </div>
     <div class="row">
+      <label><input type="checkbox" id="ld-draw" ${layer.draw !== false ? "checked" : ""}> draw strokes</label>
       <label><input type="checkbox" id="ld-occluder" ${layer.occluder ? "checked" : ""}> occluder (masks below)</label>
       <label><input type="checkbox" id="ld-receives" ${layer.receives_occlusion ? "checked" : ""}> receives occlusion</label>
     </div>
@@ -624,6 +781,7 @@ export function renderLayerDetail() {
     penSel.appendChild(o);
   }
   penSel.onchange = () => actions.patchLayer(layer.id, { pen_id: penSel.value || null });
+  occ.querySelector("#ld-draw").onchange = (e) => actions.patchLayer(layer.id, { draw: e.target.checked });
   occ.querySelector("#ld-occluder").onchange = (e) => actions.patchLayer(layer.id, { occluder: e.target.checked });
   occ.querySelector("#ld-receives").onchange = (e) => actions.patchLayer(layer.id, { receives_occlusion: e.target.checked });
   occ.querySelector("#ld-margin").onchange = (e) => actions.patchLayer(layer.id, { occlusion_margin_mm: +e.target.value });
@@ -755,6 +913,13 @@ export function renderLayerDetail() {
           title="the master timeline scrubber (and later frame rendering) drives this tween's t">
           <input type="checkbox" id="tw-follow"> Follow timeline
         </label>
+        <div class="row" id="tw-curve-row">
+          <label>curve</label>
+          <select id="tw-time-curve" style="flex:1">
+            <option value="linear">linear A→B</option>
+            <option value="cosine_pingpong">cosine A→B→A</option>
+          </select>
+        </div>
         <div class="row" id="tw-window-row" title="this tween holds A before 'active from', animates inside the window, holds B after 'active to' — overlap windows to overlap clips">
           <label>active from</label>
           <input type="number" id="tw-window-from" min="0" max="1" step="0.01" style="width:4.5em">
@@ -778,6 +943,7 @@ export function renderLayerDetail() {
     delete schema.properties.a;
     delete schema.properties.b;
     delete schema.properties.follow_master; // rendered under "Timeline", not a form field
+    delete schema.properties.time_curve;    // rendered under "Timeline", not a form field
     delete schema.properties.window_from;   // rendered under "Timeline", not a form field
     delete schema.properties.window_to;
     delete schema.properties.sweep;         // rendered under "Stamping (sweep)", not a form field
@@ -810,9 +976,12 @@ export function renderLayerDetail() {
     // only shows, once the layer actually follows the scrubber)
     const follow = tw.querySelector("#tw-follow");
     follow.checked = !!p.follow_master;
+    const curveRow = tw.querySelector("#tw-curve-row");
     const winRow = tw.querySelector("#tw-window-row");
+    curveRow.hidden = !follow.checked;
     winRow.hidden = !follow.checked;
     follow.onchange = async () => {
+      curveRow.hidden = !follow.checked;
       winRow.hidden = !follow.checked;
       try {
         layer.source.params = { ...layer.source.params, follow_master: follow.checked };
@@ -822,6 +991,16 @@ export function renderLayerDetail() {
     };
     const winFrom = tw.querySelector("#tw-window-from");
     const winTo = tw.querySelector("#tw-window-to");
+    const timeCurve = tw.querySelector("#tw-time-curve");
+    timeCurve.value = p.time_curve || "linear";
+    timeCurve.onchange = async () => {
+      try {
+        const time_curve = timeCurve.value;
+        layer.source.params = { ...layer.source.params, time_curve };
+        await api.put(`/api/layers/${layer.id}/tween`, { time_curve });
+        await actions.refreshResolved();
+      } catch (e) { actions.oops(e); }
+    };
     winFrom.value = p.window_from ?? 0;
     winTo.value = p.window_to ?? 1;
     const commitWindow = async () => {

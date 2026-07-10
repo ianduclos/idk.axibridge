@@ -190,8 +190,8 @@ function applyPreset() {
   const h = rotate ? Math.min(preset.width, preset.height) : preset.height;
   $("guide-w").value = w;
   $("guide-h").value = h;
-  $("guide-x").value = Math.max(Math.round((bed.width - w) / 2), 0);
-  $("guide-y").value = Math.max(Math.round((bed.height - h) / 2), 0);
+  $("guide-x").value = 0;
+  $("guide-y").value = 0;
   $("guide-x").onchange();
 }
 

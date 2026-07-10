@@ -159,6 +159,9 @@ main {
 .row { display: flex; align-items: center; gap: 8px; margin: 5px 0; flex-wrap: wrap; }
 .hint { color: var(--ink-soft); font-size: 11.5px; margin-top: 4px; overflow-wrap: anywhere; }
 .hint.warn { color: var(--ochre); }
+.asset-tool { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.asset-tool select { max-width: 18em; }
+.asset-tool input[type="number"] { width: 4.8em; }
 
 button {
   background: var(--paper-deep); color: var(--ink); border: 1px solid var(--line);
@@ -236,6 +239,21 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
   display: block; max-width: 100%; max-height: min(68vh, 760px);
   background: var(--sheet); object-fit: contain;
 }
+.stage-list { display: grid; gap: 8px; margin-top: 8px; }
+.stage-group {
+  border: 1px solid var(--line); border-radius: 5px; padding: 7px;
+  background: color-mix(in srgb, var(--paper) 82%, var(--paper-deep));
+}
+.stage-head, .stage-sheet {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+}
+.stage-head { margin-bottom: 6px; }
+.stage-head strong { margin-right: auto; }
+.stage-sheet {
+  padding: 5px 0; border-top: 1px solid var(--line);
+}
+.stage-sheet.on { background: var(--paper-deep); }
+.stage-sheet button { font-size: 11px; padding: 3px 6px; }
 
 /* live generator preview: dashed transient ghost, never interactive */
 .gen-preview { pointer-events: none; }
@@ -257,6 +275,11 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
   padding: 4px 7px; margin: 4px 0; cursor: pointer; font-size: 12px;
   user-select: none; /* shift/cmd-click selects layers, not label text */
 }
+.layer-row.keyframe-row {
+  margin-left: 16px;
+  background: var(--paper-deep);
+  box-shadow: inset 2px 0 0 var(--line);
+}
 .layer-row.selected { border-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent); }
 .layer-row .swatch {
   width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line);
@@ -265,6 +288,7 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .layer-row .lname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .layer-row .est { color: var(--ink-soft); font-size: 10.5px; }
 .layer-row button { padding: 0 6px; font-size: 11px; }
+.layer-row .fold { width: 18px; flex: none; text-align: center; }
 .layer-row .eye.off, .layer-row .occ.off { opacity: .3; }
 .layer-row .occ.on { color: var(--ochre); border-color: var(--ochre); }
 

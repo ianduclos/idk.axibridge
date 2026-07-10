@@ -12,9 +12,10 @@ any source resolution — and the result is scaled to ``width`` mm on output
 ``ImageSampler`` replicates plotterfun's ``pixelProcessor`` tone pipeline:
 brightness, contrast (the 259-curve), optional invert, min/max clamps,
 flattened to a *darkness* value in 0..255 (255 = draw hardest); sampling
-outside the image returns 0. The tone fields carry
-``json_schema_extra={"group": "Tone"}`` — forms.js renders grouped fields
-in a collapsed <details>, keeping ten near-identical forms uncrammed.
+outside the image returns 0. The shared image-processing fields carry
+``json_schema_extra={"group": "Image processing"}`` — forms.js renders
+grouped fields in a collapsed <details>, keeping ten near-identical forms
+uncrammed.
 """
 
 from __future__ import annotations
@@ -25,6 +26,11 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from ..assets import asset_store
+from ..image_processing import (
+    IMAGE_PROCESSING_GROUP,
+    apply_image_processing_value,
+    image_processing_kwargs,
+)
 from ..model import Layer, Path, PathDocument
 
 #: plotterfun's canvas width: its slider ranges are calibrated against this.
@@ -32,7 +38,7 @@ WORK_W = 800
 #: very tall images cap here instead (working width shrinks to keep aspect).
 MAX_H = 1600
 
-_TONE = {"group": "Tone"}
+_IMAGE_PROCESSING = IMAGE_PROCESSING_GROUP
 
 
 class ImageBaseParams(BaseModel):
@@ -54,19 +60,25 @@ class ImageBaseParams(BaseModel):
 
 
 class PixelGenParams(ImageBaseParams):
-    """Adds plotterfun's shared tone controls (rendered as a collapsed group)."""
+    """Adds shared image-processing controls (rendered as a collapsed group)."""
 
     invert: bool = Field(default=False, title="Invert",
                          description="Draw the light areas instead",
-                         json_schema_extra=_TONE)
+                         json_schema_extra=_IMAGE_PROCESSING)
     brightness: float = Field(default=0, ge=-100, le=100, title="Brightness",
-                              json_schema_extra=_TONE)
+                              json_schema_extra=_IMAGE_PROCESSING)
     contrast: float = Field(default=0, ge=-100, le=100, title="Contrast",
-                            json_schema_extra=_TONE)
+                            json_schema_extra=_IMAGE_PROCESSING)
+    gamma: float = Field(default=1.0, ge=0.1, le=5.0, title="Gamma",
+                         json_schema_extra=_IMAGE_PROCESSING)
+    black_point: float = Field(default=0.0, ge=0.0, le=1.0, title="Black point",
+                               json_schema_extra=_IMAGE_PROCESSING)
+    white_point: float = Field(default=1.0, ge=0.0, le=1.0, title="White point",
+                               json_schema_extra=_IMAGE_PROCESSING)
     min_brightness: float = Field(default=0, ge=0, le=255, title="Min brightness",
-                                  json_schema_extra=_TONE)
+                                  json_schema_extra=_IMAGE_PROCESSING)
     max_brightness: float = Field(default=255, ge=0, le=255, title="Max brightness",
-                                  json_schema_extra=_TONE)
+                                  json_schema_extra=_IMAGE_PROCESSING)
 
 
 def working_dims(p: ImageBaseParams) -> tuple[int, int]:
@@ -97,11 +109,11 @@ def luma_grid(p: ImageBaseParams, blur_px: float = 0.0) -> tuple[list[list[float
 
 
 def _tone_lut(p: PixelGenParams) -> list[float]:
-    """Byte luma -> darkness 0..255; the exact pixelProcessor arithmetic."""
-    cf = (259 * (p.contrast + 255)) / (255 * (259 - p.contrast))
+    """Byte luma -> darkness 0..255; plotterfun tone plus gamma/levels."""
+    tone = image_processing_kwargs(p)
     out = []
     for v in range(256):
-        b = (cf * (v - 128) + 128 + p.brightness) if p.contrast != 0 else v + p.brightness
+        b = apply_image_processing_value(v / 255.0, **tone) * 255.0
         if p.invert:
             b = min(255 - p.min_brightness, 255 - b)
         else:

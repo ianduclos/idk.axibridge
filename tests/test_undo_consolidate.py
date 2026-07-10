@@ -91,6 +91,18 @@ def test_depth_displace_moves_by_brightness():
     assert all(y == pytest.approx(40.0) for _, y in unmoved.points)
 
 
+def test_depth_displace_image_processing_changes_depth():
+    asset_store.replace_all({})
+    name = asset_store.put("ramp.png", _png_gradient())
+    eff = get_effect("depth_displace")
+    line = Path(points=[(0.0, 40.0), (80.0, 40.0)])
+    base = dict(image=name, x=0, y=0, width=80, amplitude=10,
+                angle_deg=90, step=2, smoothing=0)
+    [darkened] = eff.apply([line], eff.Params(**base, brightness=-80), EffectContext())
+    [brightened] = eff.apply([line], eff.Params(**base, brightness=80), EffectContext())
+    assert max(y for _, y in brightened.points) > max(y for _, y in darkened.points) + 2.0
+
+
 def test_depth_displace_without_image_passes_through():
     eff = get_effect("depth_displace")
     line = Path(points=[(0.0, 0.0), (10.0, 0.0)])
@@ -140,6 +152,20 @@ def test_image_threshold_traces_closed_filled_outlines():
     xs = [x for x, _ in p.points]
     assert max(xs) < 45  # the 0.5-brightness boundary sits near x = 80*(127/255/0.18)... mid-left
     assert min(xs) >= -1.5  # closes just outside the left edge (padding ring)
+
+
+def test_image_threshold_image_processing_changes_boundary():
+    from axibridge.registry import get_source
+
+    asset_store.replace_all({})
+    name = asset_store.put("ramp.png", _png_gradient())
+    src = get_source("image_threshold")
+    params = dict(image=name, width=80, threshold=0.5, smoothing=0, detail=1.0, min_area=4)
+    base = src.generate(src.Params(**params))
+    darkened = src.generate(src.Params(**params, brightness=-80))
+    base_max = max(x for p in base.layers[0].paths for x, _ in p.points)
+    dark_max = max(x for p in darkened.layers[0].paths for x, _ in p.points)
+    assert dark_max > base_max + 10.0
 
 
 def test_image_threshold_respects_alpha():

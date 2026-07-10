@@ -38,6 +38,7 @@ function el(tag, attrs = {}) {
   return e;
 }
 
+const PAD = 8;
 const HANDLE = 2.6; // handle half-size in bed mm (visual)
 
 export class CanvasEditor {
@@ -64,9 +65,17 @@ export class CanvasEditor {
     this.machinePenDown = false;
     this.anim = null;
     this._drag = null;
+    this._viewBox = null;
+    this._viewKey = "";
+    this._gesture = null;
     svg.addEventListener("pointerdown", (e) => this._onDown(e));
     svg.addEventListener("pointermove", (e) => this._onMove(e));
     svg.addEventListener("pointerup", (e) => this._onUp(e));
+    svg.addEventListener("pointercancel", (e) => this._onUp(e));
+    svg.addEventListener("wheel", (e) => this._onWheel(e), { passive: false });
+    svg.addEventListener("gesturestart", (e) => this._onGestureStart(e));
+    svg.addEventListener("gesturechange", (e) => this._onGestureChange(e));
+    svg.addEventListener("gestureend", (e) => this._onGestureEnd(e));
     svg.addEventListener("dblclick", (e) => this._onDbl(e));
   }
 
@@ -94,17 +103,83 @@ export class CanvasEditor {
     return { x: p.x, y: p.y };
   }
 
+  _svgPoint(e) {
+    const pt = this.svg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    const ctm = this.svg.getScreenCTM();
+    const p = ctm ? pt.matrixTransform(ctm.inverse()) : pt;
+    return { x: p.x, y: p.y };
+  }
+
+  _baseViewBox() {
+    const { width: W, height: H } = this.bed;
+    return this.view === "portrait"
+      ? { x: -PAD, y: -PAD, w: H + 2 * PAD, h: W + 2 * PAD }
+      : { x: -PAD, y: -PAD, w: W + 2 * PAD, h: H + 2 * PAD };
+  }
+
+  _ensureViewBox() {
+    const key = `${this.view}:${this.bed.width}:${this.bed.height}`;
+    if (!this._viewBox || this._viewKey !== key) {
+      this._viewBox = this._baseViewBox();
+      this._viewKey = key;
+    }
+  }
+
+  _applyViewBox() {
+    const v = this._viewBox || this._baseViewBox();
+    this.svg.setAttribute("viewBox", `${v.x} ${v.y} ${v.w} ${v.h}`);
+  }
+
+  _clampViewBox(vb) {
+    const base = this._baseViewBox();
+    const aspect = base.h / base.w;
+    const minW = base.w / 24;
+    const maxW = base.w * 6;
+    const w = Math.max(minW, Math.min(maxW, vb.w));
+    const h = w * aspect;
+    let { x, y } = vb;
+    const mx = base.w * 2;
+    const my = base.h * 2;
+    const minX = base.x - mx, maxX = base.x + base.w + mx - w;
+    const minY = base.y - my, maxY = base.y + base.h + my - h;
+    x = minX <= maxX ? Math.max(minX, Math.min(maxX, x)) : base.x + (base.w - w) / 2;
+    y = minY <= maxY ? Math.max(minY, Math.min(maxY, y)) : base.y + (base.h - h) / 2;
+    return { x, y, w, h };
+  }
+
+  _setViewBox(vb) {
+    this._viewBox = this._clampViewBox(vb);
+    this._applyViewBox();
+  }
+
+  resetView() {
+    this._viewBox = this._baseViewBox();
+    this._applyViewBox();
+  }
+
+  _zoomAt(anchor, factor, origin = this._viewBox) {
+    if (!origin) return;
+    const raw = { ...origin, w: origin.w * factor, h: origin.h * factor };
+    const clamped = this._clampViewBox(raw);
+    const rx = clamped.w / origin.w;
+    const ry = clamped.h / origin.h;
+    this._setViewBox({
+      x: anchor.x - (anchor.x - origin.x) * rx,
+      y: anchor.y - (anchor.y - origin.y) * ry,
+      w: clamped.w,
+      h: clamped.h,
+    });
+  }
+
   // -- render ------------------------------------------------------------------
 
   render() {
     const { width: W, height: H } = this.bed;
-    const pad = 8;
     const portrait = this.view === "portrait";
     this.svg.innerHTML = "";
-    this.svg.setAttribute(
-      "viewBox",
-      portrait ? `${-pad} ${-pad} ${H + 2 * pad} ${W + 2 * pad}` : `${-pad} ${-pad} ${W + 2 * pad} ${H + 2 * pad}`
-    );
+    this._ensureViewBox();
+    this._applyViewBox();
     // display-only rotation: machine (0,0) sits top-right in portrait view
     this.world = el("g", portrait ? { transform: `translate(${H} 0) rotate(90)` } : {});
     this.svg.appendChild(this.world);
@@ -304,6 +379,59 @@ export class CanvasEditor {
 
   // -- interaction --------------------------------------------------------------
 
+  _wheelUnit(e) {
+    if (e.deltaMode === 1) return 16; // lines
+    if (e.deltaMode === 2) return Math.max(this.svg.clientHeight, 1); // pages
+    return 1; // pixels
+  }
+
+  _onWheel(e) {
+    this._ensureViewBox();
+    if (!this._viewBox) return;
+    e.preventDefault();
+    const unit = this._wheelUnit(e);
+    if (e.ctrlKey || e.metaKey || e.altKey) {
+      const delta = e.deltaY * unit;
+      const factor = Math.exp(delta * 0.0015);
+      this._zoomAt(this._svgPoint(e), factor);
+      return;
+    }
+    const w = Math.max(this.svg.clientWidth, 1);
+    const h = Math.max(this.svg.clientHeight, 1);
+    let dx = e.deltaX * unit;
+    let dy = e.deltaY * unit;
+    if (e.shiftKey && !dx) {
+      dx = dy;
+      dy = 0;
+    }
+    this._setViewBox({
+      ...this._viewBox,
+      x: this._viewBox.x + dx * this._viewBox.w / w,
+      y: this._viewBox.y + dy * this._viewBox.h / h,
+    });
+  }
+
+  _onGestureStart(e) {
+    this._ensureViewBox();
+    e.preventDefault();
+    this._gesture = {
+      viewBox: { ...this._viewBox },
+      anchor: this._svgPoint(e),
+    };
+  }
+
+  _onGestureChange(e) {
+    if (!this._gesture) return;
+    e.preventDefault();
+    const scale = e.scale || 1;
+    this._zoomAt(this._gesture.anchor, 1 / scale, this._gesture.viewBox);
+  }
+
+  _onGestureEnd(e) {
+    e.preventDefault();
+    this._gesture = null;
+  }
+
   _onDown(e) {
     if (this.anim) return; // playback owns the canvas
     const p = this.toBed(e);
@@ -444,6 +572,7 @@ export class CanvasEditor {
   _onDbl(e) {
     const layerId = e.target.getAttribute?.("data-id");
     if (layerId) this.cb.onDoubleClick(layerId);
+    else this.resetView();
   }
 
   // -- playback: replay the planned job on its estimated clock --------------------

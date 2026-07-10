@@ -18,12 +18,49 @@ from collections import deque
 from typing import Any
 
 from . import compose, tween
-from .compose import Affine, CanvasLayer, EffectStep, LayerSource, PlotOptions, Project
+from .compose import (
+    Affine,
+    CanvasLayer,
+    CaptureGroup,
+    CaptureSnapshot,
+    EffectStep,
+    LayerSource,
+    PaperGuide,
+    PlotOptions,
+    Project,
+    StagedPass,
+    StagedSheet,
+)
 from .machine import manager
 from .model import Layer, Path, PathDocument
-from .registry import get_source
+from .registry import get_effect, get_source
 from .stores import Pen, pen_library, settings_store
 from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
+
+
+def _mul_affine(left: Affine, right: Affine) -> Affine:
+    return Affine(
+        a=left.a * right.a + left.c * right.b,
+        b=left.b * right.a + left.d * right.b,
+        c=left.a * right.c + left.c * right.d,
+        d=left.b * right.c + left.d * right.d,
+        e=left.a * right.e + left.c * right.f + left.e,
+        f=left.b * right.e + left.d * right.f + left.f,
+    )
+
+
+def _invert_affine(m: Affine) -> Affine:
+    det = m.a * m.d - m.b * m.c
+    if abs(det) < 1e-12:
+        raise ValueError("cannot transform animation group through a singular matrix")
+    return Affine(
+        a=m.d / det,
+        b=-m.b / det,
+        c=-m.c / det,
+        d=m.a / det,
+        e=(m.c * m.f - m.d * m.e) / det,
+        f=(m.b * m.e - m.a * m.f) / det,
+    )
 
 
 class Session:
@@ -35,11 +72,15 @@ class Session:
         self.source_geometry: dict[str, list[Path]] = {}
         #: uploaded-SVG raw text by project-relative filename (written on save)
         self.svg_files: dict[str, str] = {}
+        #: project-relative staging/<id>.svg -> frozen staged document.
+        self.staging_documents: dict[str, PathDocument] = {}
         self._shaped_cache: dict[str, tuple[str, list[Path]]] = {}
         #: undo snapshots, newest last. Paths/lists are never mutated in place
         #: (module purity contract), so sharing references is safe — only the
         #: project model needs a deep copy.
-        self._history: deque[tuple[Project, dict[str, list[Path]], dict[str, str]]] = deque(maxlen=8)
+        self._history: deque[
+            tuple[Project, dict[str, list[Path]], dict[str, str], dict[str, PathDocument]]
+        ] = deque(maxlen=8)
         #: tween layer id -> (content key, materialised paths)
         self._tween_cache: dict[str, tuple[str, list[Path]]] = {}
         #: frame-follow generator layer id -> (content key, clip-advanced paths).
@@ -53,7 +94,12 @@ class Session:
 
     def _checkpoint(self) -> None:
         self._history.append(
-            (self.project.model_copy(deep=True), dict(self.source_geometry), dict(self.svg_files))
+            (
+                self.project.model_copy(deep=True),
+                dict(self.source_geometry),
+                dict(self.svg_files),
+                {name: doc.model_copy(deep=True) for name, doc in self.staging_documents.items()},
+            )
         )
 
     def clear_history(self) -> None:
@@ -65,9 +111,27 @@ class Session:
         with self._lock:
             if not self._history:
                 return False
-            self.project, self.source_geometry, self.svg_files = self._history.pop()
+            self.project, self.source_geometry, self.svg_files, self.staging_documents = self._history.pop()
             self._shaped_cache.clear()
+            self._tween_cache.clear()
+            self._clip_cache.clear()
             return True
+
+    def history_for_save(
+        self,
+    ) -> list[tuple[Project, dict[str, list[Path]], dict[str, str], dict[str, PathDocument]]]:
+        """Newest-last history snapshots, trimmed by project_io to its persisted cap."""
+        with self._lock:
+            return list(self._history)
+
+    def restore_history(
+        self,
+        history: list[tuple[Project, dict[str, list[Path]], dict[str, str], dict[str, PathDocument]]],
+    ) -> None:
+        with self._lock:
+            self._history.clear()
+            for item in history[-self._history.maxlen:]:
+                self._history.append(item)
 
     # -- pens ---------------------------------------------------------------
 
@@ -184,14 +248,27 @@ class Session:
         return created
 
     def update_layer(self, layer_id: str, patch: dict[str, Any]) -> CanvasLayer:
-        allowed = {"name", "visible", "transform", "effects", "pen_id",
+        allowed = {"name", "visible", "draw", "transform", "effects", "pen_id",
                    "occluder", "receives_occlusion", "occlusion_margin_mm",
                    "frame_offset", "frame_follow"}
         with self._lock:
             layer = self.project.layer(layer_id)
             self._checkpoint()
+            effective_patch = dict(patch)
+            if "transform" in effective_patch and layer.source.type == "tween":
+                keyframes = self._animation_keyframes_for(layer)
+                if keyframes:
+                    requested = Affine(**effective_patch["transform"])
+                    delta = _mul_affine(requested, _invert_affine(layer.transform))
+                    for keyframe in keyframes:
+                        keyframe.transform = _mul_affine(delta, keyframe.transform)
+                        self._shaped_cache.pop(keyframe.id, None)
+                    self._tween_cache.pop(layer.id, None)
+                    # The visible tween parent is the UI handle for the group;
+                    # the actual placement lives on the A/B keyframes.
+                    effective_patch["transform"] = layer.transform.model_dump()
             data = layer.model_dump()
-            for k, v in patch.items():
+            for k, v in effective_patch.items():
                 if k not in allowed:
                     raise KeyError(f"field not patchable: {k}")
                 data[k] = v
@@ -228,6 +305,22 @@ class Session:
     def _tween_refs(layer: CanvasLayer) -> tuple[Any, Any]:
         p = layer.source.params or {}
         return p.get("a"), p.get("b")
+
+    def _animation_keyframes_for(self, tween_layer: CanvasLayer) -> list[CanvasLayer]:
+        """Hidden A/B layers created by Animate, not visible manual tween refs."""
+        if tween_layer.source.type != "tween":
+            return []
+        refs: list[CanvasLayer] = []
+        for ref_id in self._tween_refs(tween_layer):
+            try:
+                refs.append(self.project.layer(ref_id))
+            except KeyError:
+                return []
+        if len(refs) != 2:
+            return []
+        if all((not l.visible) and (" ▸ A" in l.name or " ▸ B" in l.name) for l in refs):
+            return refs
+        return []
 
     def delete_layers(self, layer_ids: list[str], cascade: bool = True) -> list[str]:
         """Bulk delete = ONE history entry, so one undo restores the lot.
@@ -368,8 +461,11 @@ class Session:
                 ),
                 pen_id=la.pen_id,
             )
+            # Project order is bottom->top, while the layer list displays the
+            # reverse. Insert just below the selected top layer so the new
+            # interpolation appears directly under it in the UI.
             idx = max(self.project.layers.index(la), self.project.layers.index(lb))
-            self.project.layers.insert(idx + 1, layer)
+            self.project.layers.insert(idx, layer)
             self.source_geometry[layer.id] = []  # materialised on next resolve
             return layer
 
@@ -653,6 +749,530 @@ class Session:
         per_page = max(cols * rows, 1)
         return (frames + per_page - 1) // per_page
 
+    # -- staging tray ---------------------------------------------------------
+
+    def _capture_snapshot(self) -> CaptureSnapshot:
+        return CaptureSnapshot(
+            name=self.project.name,
+            layers=[l.model_copy(deep=True) for l in self.project.layers],
+            guide=self.project.guide.model_copy(deep=True),
+            view=self.project.view,
+            pens_used={k: v.model_copy(deep=True) for k, v in self.project.pens_used.items()},
+            backend_params={k: dict(v) for k, v in self.project.backend_params.items()},
+            plot_options=self.project.plot_options.model_copy(deep=True),
+            source_geometry={
+                lid: [p.model_copy(deep=True) for p in paths]
+                for lid, paths in self.source_geometry.items()
+            },
+            svg_files=dict(self.svg_files),
+        )
+
+    @staticmethod
+    def _doc_has_geometry(doc: PathDocument) -> bool:
+        return any(layer.paths for layer in doc.layers)
+
+    @staticmethod
+    def _pass_stats(doc: PathDocument, pen_ids: list[str] | None = None) -> list[StagedPass]:
+        out: list[StagedPass] = []
+        for i, layer in enumerate(doc.layers):
+            paths = layer.paths
+            pid = pen_ids[i] if pen_ids and i < len(pen_ids) else ""
+            out.append(StagedPass(
+                pen_id=pid,
+                name=layer.name or "no pen",
+                color=layer.color,
+                paths=len(paths),
+                points=sum(len(p.points) for p in paths),
+                pen_down_distance=sum(p.length() for p in paths),
+            ))
+        return out
+
+    def _grouped_document(self, target: str = "all", master_t: float | None = None) -> PathDocument:
+        """Resolved, pen-compensated output grouped by physical pen pass.
+
+        Unlike ``plot_document`` this intentionally does not optimise/sort:
+        staged sheets store frozen geometry, and plotting/planning applies the
+        current plot-pass optimiser at use time just like grid sheets do."""
+        resolved = self.resolved(master_t)
+        pens = self.pens()
+        offsets = self._pen_offsets()
+        rank: dict[str, int] = {}
+        groups: dict[str, list[Path]] = {}
+        names: dict[str, str] = {}
+        colors: dict[str, str] = {}
+        for i, layer in enumerate(self.project.layers):
+            if target != "all" and layer.id != target:
+                continue
+            if not layer.visible:
+                continue
+            paths = resolved.get(layer.id, [])
+            if not paths:
+                continue
+            pid = layer.pen_id or ""
+            rank.setdefault(pid, i)
+            pen = pens.get(pid)
+            names[pid] = pen.name if pen else "no pen"
+            colors[pid] = pen.color if pen else compose.INK
+            ox, oy = offsets.get(layer.id, (0.0, 0.0))
+            if ox or oy:
+                paths = [Path(points=[(x - ox, y - oy) for x, y in p.points],
+                              filled=p.filled) for p in paths]
+            groups.setdefault(pid, []).extend(paths)
+        layers = [
+            Layer(id=j + 1, name=names[pid], color=colors[pid], paths=groups[pid])
+            for j, pid in enumerate(sorted(groups, key=lambda p: rank.get(p, 1 << 30)))
+        ]
+        return PathDocument(
+            layers=layers, width=compose.BED_WIDTH, height=compose.BED_HEIGHT,
+            source=f"{self.project.name} [{target}]",
+        )
+
+    def _grouped_pass_ids(self, target: str = "all", master_t: float | None = None) -> list[str]:
+        resolved = self.resolved(master_t)
+        rank: dict[str, int] = {}
+        for i, layer in enumerate(self.project.layers):
+            if target != "all" and layer.id != target:
+                continue
+            if layer.visible and resolved.get(layer.id):
+                rank.setdefault(layer.pen_id or "", i)
+        return sorted(rank, key=lambda p: rank.get(p, 1 << 30))
+
+    def _documents_for_format(self, fmt: dict[str, Any]) -> list[PathDocument]:
+        kind = fmt.get("kind")
+        if kind == "sheet":
+            frames = int(fmt["frames"])
+            cols = int(fmt["cols"])
+            rows = int(fmt["rows"])
+            pages = self.sheet_pages(frames, cols, rows)
+            return [
+                self.sheet_document(
+                    cols, rows, frames,
+                    float(fmt.get("t_from", 0.0)),
+                    float(fmt.get("t_to", 1.0)),
+                    float(fmt.get("margin_mm", 5.0)),
+                    page,
+                    pen_id=None,
+                )
+                for page in range(pages)
+            ]
+        if kind == "frame":
+            return [self._grouped_document(
+                str(fmt.get("target", "all")),
+                float(fmt.get("master_t", 0.0)),
+            )]
+        if kind == "plot":
+            return [self._grouped_document(str(fmt.get("target", "all")), None)]
+        raise ValueError(f"unknown capture format kind: {kind!r}")
+
+    def _pass_ids_for_format(self, fmt: dict[str, Any]) -> list[list[str]]:
+        kind = fmt.get("kind")
+        if kind == "sheet":
+            frames = int(fmt["frames"])
+            cols = int(fmt["cols"])
+            rows = int(fmt["rows"])
+            pages = self.sheet_pages(frames, cols, rows)
+            return [
+                self.sheet_passes(
+                    cols, rows, frames,
+                    float(fmt.get("t_from", 0.0)),
+                    float(fmt.get("t_to", 1.0)),
+                    float(fmt.get("margin_mm", 5.0)),
+                    page,
+                )
+                for page in range(pages)
+            ]
+        if kind == "frame":
+            return [self._grouped_pass_ids(
+                str(fmt.get("target", "all")),
+                float(fmt.get("master_t", 0.0)),
+            )]
+        if kind == "plot":
+            return [self._grouped_pass_ids(str(fmt.get("target", "all")), None)]
+        return [[]]
+
+    def _store_capture_group(
+        self,
+        *,
+        name: str,
+        kind: str,
+        fmt: dict[str, Any],
+        docs: list[PathDocument],
+        snapshot: CaptureSnapshot | None,
+        pass_ids: list[list[str]] | None = None,
+        source_capture_ids: list[str] | None = None,
+        warnings: list[str] | None = None,
+    ) -> CaptureGroup:
+        group = CaptureGroup(
+            name=name,
+            kind=kind,
+            format=fmt,
+            snapshot=snapshot,
+            source_capture_ids=source_capture_ids or [],
+            warnings=warnings or [],
+        )
+        for i, doc in enumerate(docs):
+            ids_for_sheet = pass_ids[i] if pass_ids and i < len(pass_ids) else None
+            sheet = StagedSheet(
+                name=f"sheet {i + 1}",
+                passes=self._pass_stats(doc, ids_for_sheet),
+            )
+            relname = f"staging/{group.id}-{sheet.id}.svg"
+            sheet.file = relname
+            for pinfo, layer in zip(sheet.passes, doc.layers):
+                pinfo.name = layer.name or pinfo.name
+            group.sheets.append(sheet)
+            self.staging_documents[relname] = doc.model_copy(deep=True)
+        self.project.staging.append(group)
+        return group
+
+    def capture_to_staging(
+        self,
+        *,
+        kind: str,
+        name: str | None = None,
+        target: str = "all",
+        master_t: float | None = None,
+        cols: int = 1,
+        rows: int = 1,
+        frames: int = 2,
+        t_from: float = 0.0,
+        t_to: float = 1.0,
+        margin_mm: float = 5.0,
+    ) -> CaptureGroup:
+        with self._lock:
+            if kind == "sheet":
+                if not (1 <= cols <= 12 and 1 <= rows <= 12):
+                    raise ValueError("cols and rows must each be 1..12")
+                if not (2 <= frames <= 240):
+                    raise ValueError("frames must be 2..240")
+                if not (0.0 <= margin_mm <= 30.0):
+                    raise ValueError("margin_mm must be 0..30")
+                if not (0.0 <= t_from <= 1.0 and 0.0 <= t_to <= 1.0):
+                    raise ValueError("t_from/t_to must be 0..1")
+                fmt = {
+                    "kind": "sheet", "target": "all",
+                    "cols": cols, "rows": rows, "frames": frames,
+                    "pages": self.sheet_pages(frames, cols, rows),
+                    "t_from": t_from, "t_to": t_to, "margin_mm": margin_mm,
+                }
+            elif kind == "frame":
+                mt = 0.0 if master_t is None else master_t
+                if not (0.0 <= mt <= 1.0):
+                    raise ValueError("master_t must be 0..1")
+                fmt = {"kind": "frame", "target": target, "master_t": mt}
+            elif kind == "plot":
+                fmt = {"kind": "plot", "target": target}
+            else:
+                raise ValueError("kind must be plot, frame, or sheet")
+
+            docs = self._documents_for_format(fmt)
+            pass_ids = self._pass_ids_for_format(fmt)
+            if not any(self._doc_has_geometry(doc) for doc in docs):
+                raise RuntimeError("nothing to capture (no staged geometry)")
+            snapshot = self._capture_snapshot()
+            self._checkpoint()
+            return self._store_capture_group(
+                name=name or f"{kind} capture",
+                kind=kind,
+                fmt=fmt,
+                docs=docs,
+                snapshot=snapshot,
+                pass_ids=pass_ids,
+            )
+
+    def _find_capture(self, group_id: str) -> CaptureGroup:
+        for group in self.project.staging:
+            if group.id == group_id:
+                return group
+        raise KeyError(f"unknown capture group: {group_id!r}")
+
+    @staticmethod
+    def _find_sheet(group: CaptureGroup, sheet_id: str | None = None) -> StagedSheet:
+        if sheet_id is None:
+            if not group.sheets:
+                raise KeyError("capture has no sheets")
+            return group.sheets[0]
+        for sheet in group.sheets:
+            if sheet.id == sheet_id:
+                return sheet
+        raise KeyError(f"unknown staged sheet: {sheet_id!r}")
+
+    def staged_document(
+        self, group_id: str, sheet_id: str | None = None, pen_id: str | None = None
+    ) -> PathDocument:
+        with self._lock:
+            group = self._find_capture(group_id)
+            sheet = self._find_sheet(group, sheet_id)
+            if not sheet.file or sheet.file not in self.staging_documents:
+                raise KeyError("staged sheet geometry is missing")
+            doc = self.staging_documents[sheet.file].model_copy(deep=True)
+            if pen_id is None:
+                return doc
+            layers: list[Layer] = []
+            for layer, pinfo in zip(doc.layers, sheet.passes):
+                if pinfo.pen_id == pen_id:
+                    layers.append(layer)
+            return PathDocument(
+                layers=layers, width=doc.width, height=doc.height,
+                source=f"{doc.source} [{pen_id or 'no pen'}]",
+            )
+
+    def rename_capture_group(self, group_id: str, name: str) -> CaptureGroup:
+        with self._lock:
+            group = self._find_capture(group_id)
+            self._checkpoint()
+            group.name = name.strip() or group.name
+            return group
+
+    def delete_capture_group(self, group_id: str) -> list[str]:
+        with self._lock:
+            group = self._find_capture(group_id)
+            self._checkpoint()
+            self.project.staging = [g for g in self.project.staging if g.id != group_id]
+            removed = []
+            for sheet in group.sheets:
+                if sheet.file:
+                    removed.append(sheet.file)
+                    self.staging_documents.pop(sheet.file, None)
+            return removed
+
+    def reorder_capture_groups(self, ids: list[str]) -> list[CaptureGroup]:
+        with self._lock:
+            current = {g.id: g for g in self.project.staging}
+            if set(ids) != set(current):
+                raise ValueError("ids must match existing capture groups exactly")
+            self._checkpoint()
+            self.project.staging = [current[i] for i in ids]
+            return self.project.staging
+
+    def duplicate_capture_group(self, group_id: str) -> CaptureGroup:
+        with self._lock:
+            group = self._find_capture(group_id)
+            docs = [
+                self.staging_documents[sheet.file].model_copy(deep=True)
+                for sheet in group.sheets
+                if sheet.file and sheet.file in self.staging_documents
+            ]
+            pass_ids = [
+                [p.pen_id for p in sheet.passes]
+                for sheet in group.sheets
+                if sheet.file and sheet.file in self.staging_documents
+            ]
+            self._checkpoint()
+            return self._store_capture_group(
+                name=f"{group.name} copy",
+                kind=group.kind,
+                fmt=dict(group.format),
+                docs=docs,
+                snapshot=group.snapshot.model_copy(deep=True) if group.snapshot else None,
+                pass_ids=pass_ids,
+                source_capture_ids=list(group.source_capture_ids),
+                warnings=list(group.warnings),
+            )
+
+    def insert_staged_sheet(self, group_id: str, sheet_id: str | None = None) -> list[CanvasLayer]:
+        """Destructive/editable escape hatch for staged output.
+
+        Appends one baked layer per staged pen pass and hides the prior visible
+        layers, matching the old contact-sheet bake's "replace the canvas view"
+        behaviour. One undo step."""
+        with self._lock:
+            group = self._find_capture(group_id)
+            sheet = self._find_sheet(group, sheet_id)
+            doc = self.staged_document(group_id, sheet.id)
+            self._checkpoint()
+            pre_existing = list(self.project.layers)
+            created: list[CanvasLayer] = []
+            for i, layer_doc in enumerate(doc.layers):
+                pinfo = sheet.passes[i] if i < len(sheet.passes) else StagedPass()
+                layer = CanvasLayer(
+                    name=f"{group.name} · {sheet.name} · {layer_doc.name or pinfo.name}",
+                    source=LayerSource(type="baked"),
+                    transform=Affine(),
+                    pen_id=pinfo.pen_id or None,
+                )
+                self.project.layers.append(layer)
+                self.source_geometry[layer.id] = [p.model_copy(deep=True) for p in layer_doc.paths]
+                self._snapshot_pen(layer.pen_id)
+                created.append(layer)
+            for layer in pre_existing:
+                layer.visible = False
+            return created
+
+    @staticmethod
+    def _lerp_num(a: float, b: float, t: float) -> float:
+        return a + (b - a) * t
+
+    @staticmethod
+    def _structures_match(a: list[Path], b: list[Path]) -> bool:
+        return len(a) == len(b) and all(len(pa.points) == len(pb.points) for pa, pb in zip(a, b))
+
+    def _interpolate_layer(
+        self,
+        la: CanvasLayer | None,
+        lb: CanvasLayer | None,
+        ga: list[Path],
+        gb: list[Path],
+        t: float,
+        warnings: list[str],
+    ) -> tuple[CanvasLayer, list[Path]]:
+        if la is None or lb is None:
+            chosen = lb if (t >= 0.5 and lb is not None) else la
+            geo = gb if chosen is lb else ga
+            warnings.append(f"{chosen.name if chosen else 'layer'} only exists on one side; stepped at midpoint")
+            return chosen.model_copy(deep=True), [p.model_copy(deep=True) for p in geo]
+        if la.source.type != lb.source.type:
+            chosen = lb if t >= 0.5 else la
+            geo = gb if t >= 0.5 else ga
+            warnings.append(f"{la.name}: source type changed; stepped at midpoint")
+            return chosen.model_copy(deep=True), [p.model_copy(deep=True) for p in geo]
+
+        data = la.model_dump()
+        data["transform"] = tween.lerp_affine(la.transform, lb.transform, t).model_dump()
+        data["frame_offset"] = self._lerp_num(la.frame_offset, lb.frame_offset, t)
+        data["occlusion_margin_mm"] = self._lerp_num(la.occlusion_margin_mm, lb.occlusion_margin_mm, t)
+        for key in ("visible", "pen_id", "occluder", "receives_occlusion", "frame_follow", "name"):
+            data[key] = getattr(la, key) if t < 0.5 else getattr(lb, key)
+
+        if [s.effect for s in la.effects] == [s.effect for s in lb.effects]:
+            effects = []
+            for ea, eb in zip(la.effects, lb.effects):
+                defaults = get_effect(ea.effect).Params().model_dump()
+                effects.append(EffectStep(
+                    effect=ea.effect,
+                    enabled=ea.enabled if t < 0.5 else eb.enabled,
+                    params=tween.lerp_params(ea.params, eb.params, t, defaults),
+                ))
+            data["effects"] = [e.model_dump() for e in effects]
+        else:
+            data["effects"] = [s.model_dump() for s in (la.effects if t < 0.5 else lb.effects)]
+            if la.effects or lb.effects:
+                warnings.append(f"{la.name}: effect stack changed; stepped at midpoint")
+
+        out_layer = CanvasLayer(**data)
+        if (la.source.type == "generator" and la.source.generator
+                and la.source.generator == lb.source.generator):
+            src = get_source(la.source.generator)
+            defaults = src.Params().model_dump()
+            params = tween.lerp_params(la.source.params or {}, lb.source.params or {}, t, defaults)
+            out_layer.source.params = params
+            out_layer.source.file = None
+            try:
+                doc = src.generate(src.Params(**self._effective_gen_params(out_layer)))
+                return out_layer, [p for lyr in doc.layers for p in lyr.paths]
+            except Exception as e:
+                warnings.append(f"{la.name}: generator interpolation failed ({e}); stepped at midpoint")
+        if self._structures_match(ga, gb):
+            paths = []
+            for pa, pb in zip(ga, gb):
+                pts = [
+                    (self._lerp_num(ax, bx, t), self._lerp_num(ay, by, t))
+                    for (ax, ay), (bx, by) in zip(pa.points, pb.points)
+                ]
+                paths.append(Path(points=pts, filled=pa.filled if t < 0.5 else pb.filled))
+            return out_layer, paths
+        chosen_geo = gb if t >= 0.5 else ga
+        warnings.append(f"{la.name}: geometry structure changed; stepped at midpoint")
+        return out_layer, [p.model_copy(deep=True) for p in chosen_geo]
+
+    def _interpolate_snapshots(
+        self, a: CaptureSnapshot, b: CaptureSnapshot, t: float
+    ) -> tuple[Project, dict[str, list[Path]], dict[str, str], list[str]]:
+        warnings: list[str] = []
+        by_b = {l.id: l for l in b.layers}
+        seen: set[str] = set()
+        out_layers: list[CanvasLayer] = []
+        out_geo: dict[str, list[Path]] = {}
+        for la in a.layers:
+            lb = by_b.get(la.id)
+            seen.add(la.id)
+            layer, geo = self._interpolate_layer(
+                la, lb, a.source_geometry.get(la.id, []),
+                b.source_geometry.get(la.id, []) if lb else [], t, warnings)
+            out_layers.append(layer)
+            out_geo[layer.id] = geo
+        for lb in b.layers:
+            if lb.id in seen:
+                continue
+            layer, geo = self._interpolate_layer(
+                None, lb, [], b.source_geometry.get(lb.id, []), t, warnings)
+            out_layers.append(layer)
+            out_geo[layer.id] = geo
+        project = Project(
+            name=a.name if t < 0.5 else b.name,
+            layers=out_layers,
+            guide=PaperGuide(
+                x=self._lerp_num(a.guide.x, b.guide.x, t),
+                y=self._lerp_num(a.guide.y, b.guide.y, t),
+                width=self._lerp_num(a.guide.width, b.guide.width, t),
+                height=self._lerp_num(a.guide.height, b.guide.height, t),
+            ),
+            view=a.view if t < 0.5 else b.view,
+            pens_used={**a.pens_used, **b.pens_used},
+            backend_params=a.backend_params if t < 0.5 else b.backend_params,
+            plot_options=a.plot_options if t < 0.5 else b.plot_options,
+        )
+        return project, out_geo, dict(a.svg_files if t < 0.5 else b.svg_files), warnings
+
+    def _documents_with_temp_state(
+        self, project: Project, geo: dict[str, list[Path]], svg_files: dict[str, str],
+        fmt: dict[str, Any],
+    ) -> tuple[list[PathDocument], list[list[str]]]:
+        old_project, old_geo, old_svg = self.project, self.source_geometry, self.svg_files
+        old_shaped, old_tween, old_clip = self._shaped_cache, self._tween_cache, self._clip_cache
+        try:
+            self.project = project
+            self.source_geometry = geo
+            self.svg_files = svg_files
+            self._shaped_cache = {}
+            self._tween_cache = {}
+            self._clip_cache = {}
+            return self._documents_for_format(fmt), self._pass_ids_for_format(fmt)
+        finally:
+            self.project = old_project
+            self.source_geometry = old_geo
+            self.svg_files = old_svg
+            self._shaped_cache = old_shaped
+            self._tween_cache = old_tween
+            self._clip_cache = old_clip
+
+    def interpolate_captures(
+        self, a_id: str, b_id: str, steps: int, name: str | None = None
+    ) -> CaptureGroup:
+        if not (2 <= steps <= 60):
+            raise ValueError("steps must be 2..60")
+        with self._lock:
+            a = self._find_capture(a_id)
+            b = self._find_capture(b_id)
+            if a.format != b.format:
+                raise ValueError("capture formats do not match")
+            if a.snapshot is None or b.snapshot is None:
+                raise ValueError("both captures need source snapshots")
+            docs: list[PathDocument] = []
+            pass_ids: list[list[str]] = []
+            warnings: list[str] = []
+            for i in range(steps):
+                t = i / (steps - 1)
+                project, geo, svg_files, ww = self._interpolate_snapshots(a.snapshot, b.snapshot, t)
+                warnings.extend(ww)
+                step_docs, step_pass_ids = self._documents_with_temp_state(project, geo, svg_files, a.format)
+                for j, doc in enumerate(step_docs):
+                    doc.source = f"{name or 'interpolated batch'} step {i + 1}/{steps} sheet {j + 1}"
+                    docs.append(doc)
+                    pass_ids.append(step_pass_ids[j] if j < len(step_pass_ids) else [])
+            self._checkpoint()
+            fmt = {**a.format, "kind": "batch", "source_kind": a.format.get("kind"), "variants": steps}
+            return self._store_capture_group(
+                name=name or f"{a.name} ⇄ {b.name}",
+                kind="batch",
+                fmt=fmt,
+                docs=docs,
+                snapshot=None,
+                pass_ids=pass_ids,
+                source_capture_ids=[a.id, b.id],
+                warnings=sorted(set(warnings)),
+            )
+
     def duplicate_layer(self, layer_id: str) -> CanvasLayer:
         """Copy a layer (new id) directly above the original — same source,
         transform, effects, pen. Geometry list is shared by reference; it is
@@ -676,9 +1296,9 @@ class Session:
 
         Splits the layer into keyframes A (the original, renamed/hidden) and
         B (a fresh duplicate, hidden), then inserts a tween above them set to
-        follow the master timeline. A and B start identical, so the tween
-        looks exactly like the original the moment this returns — edit
-        either keyframe and scrub to animate.
+        follow the master timeline. The displayed stack reads tween → A → B;
+        A and B start identical, so the tween looks exactly like the original
+        the moment this returns — edit either keyframe and scrub to animate.
 
         Inlines ``duplicate_layer`` and ``create_tween_layer``'s logic rather
         than calling them (each checkpoints itself) so the whole operation is
@@ -699,7 +1319,7 @@ class Session:
             b = CanvasLayer(**data)
             b.source.file = None  # snapshot belongs to the original; rewritten on save
             idx = self.project.layers.index(layer)
-            self.project.layers.insert(idx + 1, b)
+            self.project.layers.insert(idx, b)
             self.source_geometry[b.id] = self.source_geometry.get(layer_id, [])
 
             # Auto-frame: a generator driven by a frame sequence animates its
@@ -722,8 +1342,8 @@ class Session:
                 pen_id=layer.pen_id,
                 visible=True,
             )
-            idx_b = self.project.layers.index(b)
-            self.project.layers.insert(idx_b + 1, tween_layer)
+            idx_a = self.project.layers.index(layer)
+            self.project.layers.insert(idx_a + 1, tween_layer)
             self.source_geometry[tween_layer.id] = []  # materialised on next resolve
             return tween_layer
 
@@ -864,10 +1484,10 @@ class Session:
 
         ``master_t`` (when not None) drives tweens two ways, both ephemeral (the
         stored ``layer.source.params`` are never mutated): a ``follow_master``
-        tween's local ``t`` is mapped through its window into ``override_t``;
-        and the RAW clamped master value goes to ``materialize`` unconditionally
-        so any endpoint's ``frame_follow`` advances the clip. Both are folded
-        into the cache key so scrubbing invalidates correctly."""
+        tween's local ``t`` is mapped through its window and time curve into
+        ``override_t``; and the RAW clamped master value goes to ``materialize``
+        unconditionally so any endpoint's ``frame_follow`` advances the clip.
+        Both are folded into the cache key so scrubbing invalidates correctly."""
         import json
 
         read_geo = geo if geo is not None else self.source_geometry
@@ -888,7 +1508,7 @@ class Session:
                     local = min(1.0, max(0.0, (mt - wf) / (wt - wf)))
                 else:  # degenerate window: step A -> B at the collapsed point
                     local = 0.0 if mt < wf else 1.0
-                override_t = local
+                override_t = tween.map_time_curve(local, params.get("time_curve", "linear"))
             refs = []
             for rid in params.get("a"), params.get("b"):
                 try:

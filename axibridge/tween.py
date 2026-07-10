@@ -46,7 +46,7 @@ materialised geometry via the ordinary shape pipeline.
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -65,6 +65,10 @@ class TweenParams(BaseModel):
     follow_master: bool = Field(
         default=False, title="Follow timeline",
         description="Master timeline scrub / frame rendering drives this tween's t")
+    time_curve: Literal["linear", "cosine_pingpong"] = Field(
+        default="linear", title="Timeline curve",
+        description="linear: A→B. cosine_pingpong: A→B→A over the same timeline; "
+                    "clip/frame-follow playback stays linear.")
     window_from: float = Field(
         default=0.0, ge=0.0, le=1.0, title="Window from",
         description="Maps the master timeline into this tween's local t: hold A "
@@ -138,6 +142,14 @@ def lerp_affine(ma: Affine, mb: Affine, t: float) -> Affine:
 
 
 # -- compatibility + materialisation -----------------------------------------
+
+
+def map_time_curve(local_t: float, curve: str = "linear") -> float:
+    """Map a window-normalized timeline value into morph t."""
+    t = min(1.0, max(0.0, local_t))
+    if curve == "cosine_pingpong":
+        return 0.5 - 0.5 * math.cos(2 * math.pi * t)
+    return t
 
 
 def _structures_match(ga: list[Path], gb: list[Path]) -> bool:

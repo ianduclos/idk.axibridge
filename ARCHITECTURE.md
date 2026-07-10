@@ -83,10 +83,13 @@ Per layer, two independent flags: **occluder** (masks layers below) and
 layer can be both. Masks are built from the occluder's *shaped* geometry:
 filled closed paths become polygons (`Path.filled` is set from the actual
 SVG fill at ingestion, or by generators); stroke-only paths become a swept
-band at the pen's line width. Each occluder's signed **margin** buffers its
-mask: positive opens a negative-space gap, negative deliberately bleeds
-lower layers into it. Masks come from *pre-clip* geometry — like physical
-opaque sheets, a partially-hidden occluder still masks fully.
+band at the pen's line width. Nested filled paths use even-odd parity, so
+threshold holes cut out of the mask instead of occluding as islands. Each
+occluder's signed **margin** buffers its mask: positive opens a negative-space
+gap, negative deliberately bleeds lower layers into it. Masks come from
+*pre-clip* geometry — like physical opaque sheets, a partially-hidden occluder
+still masks fully. A layer can also turn **draw strokes** off while remaining
+visible/occluding, making it a mask-only construction layer.
 
 **Pen-invariance:** occlusion is computed once, in the design frame. The
 per-pen nib offset is applied later, as a plot-time toolpath compensation
@@ -151,7 +154,9 @@ only, computed client-side in `main.js mapGhosts()`, which currently
 special-cases the module ids that have placements (a known wart: a new
 image-driven module wanting a ghost must add a case there). Brightness
 sampling is bilinear over a Gaussian-blurred copy (the `smoothing` param, in
-paper mm) — pixel steps and 8-bit banding never reach the geometry.
+paper mm), then non-destructive brightness/contrast/gamma/levels from the
+shared "Image processing" group are applied to grayscale samples only; alpha
+masks and depth background values stay separate.
 
 ## Persistence
 

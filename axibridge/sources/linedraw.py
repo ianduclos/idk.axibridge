@@ -1,6 +1,7 @@
 """Linedraw (plotterfun, after lingdong's linedraw.py): sketch-style portrait
 — Sobel edge contours plus multi-density hatching, roughened with perlin
-noise. No tone group: the algorithm autocontrasts the image itself.
+noise. The algorithm autocontrasts first, then applies the shared image-
+processing controls so brightness/contrast still visibly steer the drawing.
 
 The heaviest generator in the set (full-image Sobel + contour linking); it
 reports progress per stage, which is what the generate load bar is for.
@@ -13,11 +14,18 @@ import random
 
 from pydantic import Field
 
+from ..image_processing import (
+    IMAGE_PROCESSING_GROUP,
+    apply_image_processing_byte,
+    image_processing_kwargs,
+)
 from ..model import PathDocument
 from ..registry import SourceModule, register_source, report_progress
 from ._pixelgen import ImageBaseParams, luma_grid, pixel_doc
 
 Pt = tuple[float, float]
+
+_IMAGE_PROCESSING = IMAGE_PROCESSING_GROUP
 
 
 class LinedrawParams(ImageBaseParams):
@@ -29,6 +37,19 @@ class LinedrawParams(ImageBaseParams):
     noise_scale: float = Field(default=1, ge=0, le=2, title="Noise scale",
                                description="Hand-drawn wobble on every stroke")
     seed: int = Field(default=0, ge=0, le=9999, title="Seed")
+    invert: bool = Field(default=False, title="Invert",
+                         description="Draw the light areas instead",
+                         json_schema_extra=_IMAGE_PROCESSING)
+    brightness: float = Field(default=0.0, ge=-100.0, le=100.0, title="Brightness",
+                              json_schema_extra=_IMAGE_PROCESSING)
+    contrast: float = Field(default=0.0, ge=-100.0, le=100.0, title="Contrast",
+                            json_schema_extra=_IMAGE_PROCESSING)
+    gamma: float = Field(default=1.0, ge=0.1, le=5.0, title="Gamma",
+                         json_schema_extra=_IMAGE_PROCESSING)
+    black_point: float = Field(default=0.0, ge=0.0, le=1.0, title="Black point",
+                               json_schema_extra=_IMAGE_PROCESSING)
+    white_point: float = Field(default=1.0, ge=0.0, le=1.0, title="White point",
+                               json_schema_extra=_IMAGE_PROCESSING)
 
 
 class _Perlin:
@@ -212,6 +233,10 @@ class Linedraw(SourceModule):
         rows, w, h = luma_grid(p)
         report_progress(0.02, "Autocontrast")
         cols = _autocontrast(rows, w, h, 0.1)
+        tone = image_processing_kwargs(p)
+        cols = [[apply_image_processing_byte(v, **tone) for v in col] for col in cols]
+        if p.invert:
+            cols = [[255.0 - v for v in col] for col in cols]
         noise = _Perlin(random.Random(p.seed))
 
         def add_noise(lines: list[list[Pt]], sc: float) -> list[list[Pt]]:

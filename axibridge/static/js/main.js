@@ -25,6 +25,7 @@ export const S = {
   sheetPlan: null,  // grid-sheet spec for the CURRENT page, or null. When set,
                     // refreshPlan estimates/overlays that page instead of the
                     // plain target. Owned by the Plot tab's Animation panel.
+  stagedPlan: null, // staged-sheet spec for the tray preview, or null.
 };
 
 // The active crop rectangle, mirroring Session._crop_rect client-side (mode ->
@@ -95,6 +96,7 @@ const canvas = new CanvasEditor($("canvas"), {
         layer.transform = next; // optimistic, server confirms via refresh
         await api.patch(`/api/layers/${id}`, { transform: next });
       }
+      await actions.refreshProject();
       await actions.refreshResolved();
       renderLayerDetail(); // placement numerics track the drag
     } catch (e) { oops(e); }
@@ -153,6 +155,16 @@ export const actions = {
 
   async refreshProject() {
     S.state.project = await api.get("/api/project");
+    if (S.stagedPlan) {
+      const group = (S.state.project.staging || []).find((g) => g.id === S.stagedPlan.group_id);
+      const sheet = group?.sheets?.find((s) => !S.stagedPlan.sheet_id || s.id === S.stagedPlan.sheet_id);
+      if (!group || !sheet) S.stagedPlan = null;
+    }
+    canvas.setData({
+      guide: S.state.project.guide,
+      crop: cropRectFor(S.state.project),
+      view: S.state.project.view,
+    });
     renderPlotTab(); // target list may have changed
   },
 
@@ -174,7 +186,8 @@ export const actions = {
   refreshPlan: debounce(async () => {
     try {
       const sheet = S.sheetPlan ? `&sheet=${encodeURIComponent(JSON.stringify(S.sheetPlan))}` : "";
-      const r = await api.get(`/api/plan?target=${encodeURIComponent(S.plotTarget)}${sheet}`);
+      const staged = S.stagedPlan ? `&staged=${encodeURIComponent(JSON.stringify(S.stagedPlan))}` : "";
+      const r = await api.get(`/api/plan?target=${encodeURIComponent(S.plotTarget)}${sheet}${staged}`);
       S.plan = r.job;
       canvas.setPlan(r.job);
       $("estimate").textContent =
@@ -339,6 +352,7 @@ for (const btn of document.querySelectorAll("#mode-toggle button")) {
 $("show-travel").onchange = () => { canvas.showTravel = $("show-travel").checked; canvas.render(); };
 $("show-order").onchange = () => { canvas.showOrder = $("show-order").checked; canvas.render(); };
 $("show-guide").onchange = () => { canvas.showGuide = $("show-guide").checked; canvas.render(); };
+$("zoom-fit").onclick = () => canvas.resetView();
 $("btn-animate").onclick = () => {
   if (canvas.animating) {
     canvas.stopAnimation();

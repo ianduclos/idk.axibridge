@@ -27,9 +27,17 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from ..assets import asset_store
+from ..image_processing import (
+    IMAGE_PROCESSING_GROUP,
+    apply_image_processing_value,
+    image_processing_kwargs,
+)
 from ..model import Path
 from ..registry import EffectContext, EffectModule, register_effect
 from .coherent_jitter import _resample
+
+
+_IMAGE_PROCESSING = IMAGE_PROCESSING_GROUP
 
 
 class DepthDisplaceParams(BaseModel):
@@ -79,7 +87,18 @@ class DepthDisplaceParams(BaseModel):
     smoothing: float = Field(default=1.0, ge=0.0, le=20.0, title="Smoothing (mm)",
                              description="Gaussian blur of the map, in paper mm — kills "
                                          "pixel steps and 8-bit banding")
-    invert: bool = Field(default=False, title="Invert (black pushes)")
+    invert: bool = Field(default=False, title="Invert (black pushes)",
+                         json_schema_extra=_IMAGE_PROCESSING)
+    brightness: float = Field(default=0.0, ge=-100.0, le=100.0, title="Brightness",
+                              json_schema_extra=_IMAGE_PROCESSING)
+    contrast: float = Field(default=0.0, ge=-100.0, le=100.0, title="Contrast",
+                            json_schema_extra=_IMAGE_PROCESSING)
+    gamma: float = Field(default=1.0, ge=0.1, le=5.0, title="Gamma",
+                         json_schema_extra=_IMAGE_PROCESSING)
+    black_point: float = Field(default=0.0, ge=0.0, le=1.0, title="Black point",
+                               json_schema_extra=_IMAGE_PROCESSING)
+    white_point: float = Field(default=1.0, ge=0.0, le=1.0, title="White point",
+                               json_schema_extra=_IMAGE_PROCESSING)
     step: float = Field(default=1.0, ge=0.1, le=20.0, title="Resample step (mm)",
                         description="Paths are resampled at this interval before displacement")
 
@@ -117,6 +136,7 @@ class DepthDisplace(EffectModule):
         crop_outside = params.crop in ("outside map", "outside + transparent")
         crop_alpha = alpha is not None and params.crop in ("transparent", "outside + transparent")
         bg_depth = (params.background - params.bias) * params.amplitude
+        tone = image_processing_kwargs(params)
 
         def lattice(px: float, py: float):
             """Paper point -> (x0,y0,x1,y1,tx,ty) bilinear weights, or None off-map."""
@@ -141,7 +161,7 @@ class DepthDisplace(EffectModule):
                 return bg_depth, not crop_outside
             if alpha is not None and bilinear(alpha, lat) < 0.5:
                 return bg_depth, not crop_alpha
-            v = bilinear(rows, lat)
+            v = apply_image_processing_value(bilinear(rows, lat), **tone)
             if params.invert:  # inside the map only — background has its own knob
                 v = 1.0 - v
             return (v - params.bias) * params.amplitude, True

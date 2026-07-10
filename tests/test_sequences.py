@@ -216,6 +216,28 @@ def test_video_upload_extracts_frames(client):
     assert sorted(asset_store.all()) == [f"myclip#{i:04d}.jpg" for i in range(4)]
 
 
+def test_video_upload_without_frame_limit_imports_every_frame(client):
+    try:
+        data = _tiny_mp4(8)
+    except Exception as e:
+        pytest.skip(f"ffmpeg/imageio unavailable: {e}")
+    r = client.post("/api/assets/sequence",
+                    files=[("files", ("myclip.mp4", data, "video/mp4"))])
+    assert r.status_code == 200, r.text
+    assert r.json()["frames"] == 8
+    assert sorted(asset_store.all()) == [f"myclip#{i:04d}.jpg" for i in range(8)]
+
+
+def test_sequence_upload_without_frame_limit_caps_large_sources(client, monkeypatch):
+    import axibridge.api as api_mod
+
+    monkeypatch.setattr(api_mod, "_MAX_SEQUENCE_FRAMES", 5)
+    r = client.post("/api/assets/sequence", files=_imgfiles([i * 10 for i in range(12)]))
+    assert r.status_code == 200, r.text
+    assert r.json()["frames"] == 5
+    assert len(asset_store.all()) == 5
+
+
 def test_video_upload_with_start_and_frames(client):
     try:
         data = _tiny_mp4(8)
@@ -270,6 +292,18 @@ def test_animate_non_sequence_layer_adds_no_frame_key():
     tw = session.animate_layer(layer.id)
     b = session.project.layer(tw.source.params["b"])
     assert "frame" not in (b.source.params or {})
+    # Project order is bottom->top; UI displays the reverse as tween, A, B.
+    assert [l.id for l in session.project.layers] == [b.id, layer.id, tw.id]
+
+
+def test_create_tween_inserts_below_selected_top_layer():
+    from axibridge.session import session
+
+    bottom = session.add_generated_layer("polygon", {"sides": 3, "radius": 10})
+    middle = session.add_generated_layer("polygon", {"sides": 4, "radius": 10})
+    top = session.add_generated_layer("polygon", {"sides": 5, "radius": 10})
+    tw = session.create_tween_layer(bottom.id, top.id)
+    assert [l.id for l in session.project.layers] == [bottom.id, middle.id, tw.id, top.id]
 
 
 # -- frame offset (per-layer time-shift of a clip) ---------------------------

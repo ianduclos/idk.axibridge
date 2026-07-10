@@ -75,6 +75,18 @@ def test_linescan_draws_the_dark_side():
     assert max(inv_xs) < 150.0 * 0.65
 
 
+def test_image_processing_group_and_gamma_affect_pixel_generators():
+    src = get_source("linescan")
+    props = src.Params.model_json_schema()["properties"]
+    assert props["brightness"]["group"] == "Image processing"
+    assert props["gamma"]["group"] == "Image processing"
+    base = _gen("linescan", width=100, threshold=128)
+    gamma = _gen("linescan", width=100, threshold=128, gamma=3)
+    base_xs = [x for p in base.layers[0].paths for x, _ in p.points]
+    gamma_xs = [x for p in gamma.layers[0].paths for x, _ in p.points]
+    assert min(gamma_xs) < min(base_xs) - 10.0
+
+
 def test_dots_seeded_and_denser_when_dark():
     a = _gen("dots", seed=7)
     b = _gen("dots", seed=7)
@@ -107,6 +119,18 @@ def test_linedraw_deterministic_per_seed():
     a = _gen("linedraw", seed=3)
     b = _gen("linedraw", seed=3)
     assert [p.points for p in a.layers[0].paths] == [p.points for p in b.layers[0].paths]
+
+
+def test_linedraw_image_processing_invert_flips_hatching():
+    normal = _gen("linedraw", width=100, contours=False, hatching=True,
+                  hatch_scale=6, noise_scale=0, seed=3)
+    inverted = _gen("linedraw", width=100, contours=False, hatching=True,
+                    hatch_scale=6, noise_scale=0, seed=3, invert=True)
+    avg = lambda doc: sum(x for p in doc.layers[0].paths for x, _ in p.points) / sum(
+        len(p.points) for p in doc.layers[0].paths
+    )
+    assert avg(normal) > 55.0
+    assert avg(inverted) < 45.0
 
 
 def test_progress_reported():

@@ -25,7 +25,7 @@ from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import calibration, compose, logbuf, project_io, svg_io
+from . import calibration, compose, depth_pro, logbuf, project_io, svg_io
 from .assets import SEQUENCE_FRAME_RE, asset_store, safe_asset_name
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
@@ -41,6 +41,10 @@ router = APIRouter(prefix="/api")
 
 def _fail(exc: Exception, code: int = 409) -> HTTPException:
     return HTTPException(status_code=code, detail=str(exc))
+
+
+def _project_payload() -> dict[str, Any]:
+    return session.project.model_dump(exclude={"staging": {"__all__": {"snapshot"}}})
 
 
 def _consts() -> EstimatorConstants:
@@ -62,7 +66,7 @@ def get_state() -> dict[str, Any]:
         "machine": manager.status(),
         "backends": manager.describe_backends(),
         "modules": describe_modules(),
-        "project": session.project.model_dump(),
+        "project": _project_payload(),
         "pens": [p.model_dump() for p in pen_library.all()],
         "settings": settings_store.settings.model_dump(),
         "project_dir": session.project_dir,
@@ -365,9 +369,47 @@ async def upload_asset(file: UploadFile) -> dict[str, Any]:
     return {"name": name, "assets": asset_store.info()}
 
 
+class DepthProAssetBody(BaseModel):
+    image: str = Field(..., min_length=1)
+    frame: float = Field(default=0.0, ge=0.0, le=1.0)
+    near_white: bool = True
+
+
+@router.get("/assets/depth-pro/status")
+def depth_pro_asset_status() -> dict[str, Any]:
+    return depth_pro.status()
+
+
+@router.post("/assets/depth-pro")
+def create_depth_pro_asset(body: DepthProAssetBody) -> dict[str, Any]:
+    source = asset_store.resolve_frame(body.image, body.frame)
+    data = asset_store.get(source)
+    if data is None:
+        raise HTTPException(status_code=404, detail=f"no asset named {body.image!r}")
+    name = depth_pro.depth_asset_name(body.image, body.frame)
+    stored = name
+    before = asset_store.all()
+    try:
+        png = depth_pro.depth_png_from_image(data, source, near_white=body.near_white)
+        stored = asset_store.put(name, png)
+        asset_store.grayscale(stored)  # validate bytes before handing it to generators
+    except depth_pro.DepthProUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    except Exception as e:
+        asset_store.replace_all(before)
+        raise _fail(e, 400)
+    return {
+        "name": stored,
+        "source": body.image,
+        "frame": body.frame,
+        "assets": asset_store.info(),
+    }
+
+
 #: video containers the sequence importer decodes (single-file uploads);
 #: multiple files are always treated as an ordered image sequence.
 _VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".avi", ".m4v"}
+_MAX_SEQUENCE_FRAMES = 240
 
 
 def _even_indices(total: int, n: int) -> list[int]:
@@ -383,13 +425,14 @@ def _even_indices(total: int, n: int) -> list[int]:
 
 
 def _select_indices(
-    total: int, frames: int | None, start: int, every: int | None
+    total: int, frames: int | None, start: int, every: int | None,
+    max_frames: int | None = None,
 ) -> list[int]:
     """Which source indices survive the import controls (shared by the video
     and multi-image paths). Drop the first ``start`` items; ``every`` picks
     every Nth of the remainder (capped at ``frames`` when set), otherwise
-    ``frames`` are spread evenly across the remainder (``_even_indices`` offset
-    by ``start`` — exact ``start=0, every=None`` legacy behaviour).
+    ``frames`` are spread evenly across the remainder. If ``frames`` is omitted,
+    every source frame is kept up to the global sequence cap.
 
     ``total == 1`` (a single-image "sequence") passes through untouched; the
     "fewer than 2" guard only fires when the controls drop a genuinely
@@ -399,9 +442,14 @@ def _select_indices(
     start = min(start, max(total - 1, 0))  # a lone remaining frame still resolves
     if every is not None:
         idxs = list(range(start, total, every))
-        return idxs[:frames] if frames is not None else idxs
-    n = frames if frames is not None else total - start
-    return [start + i for i in _even_indices(total - start, n)]
+        idxs = idxs[:frames] if frames is not None else idxs
+    else:
+        n = frames if frames is not None else total - start
+        idxs = [start + i for i in _even_indices(total - start, n)]
+    cap = _MAX_SEQUENCE_FRAMES if max_frames is None else max_frames
+    if frames is None and cap is not None and len(idxs) > cap:
+        idxs = [idxs[i] for i in _even_indices(len(idxs), cap)]
+    return idxs
 
 
 def _reencode_jpeg(img: Any) -> bytes:
@@ -467,17 +515,17 @@ def _extract_video_frames(
 @router.post("/assets/sequence")
 async def upload_sequence(
     files: list[UploadFile],
-    frames: int | None = Form(default=None, ge=1, le=240),
+    frames: int | None = Form(default=None, ge=1, le=_MAX_SEQUENCE_FRAMES),
     start: int = Form(default=0, ge=0, le=100000),
     every: int | None = Form(default=None, ge=1, le=1000),
 ) -> dict[str, Any]:
     """Import a frame sequence: EITHER several image files (ordered by filename)
-    OR one video file (``frames`` default 24, bound 2..240). ``start`` drops the
-    first N source frames; ``every`` takes every Nth of the remainder; otherwise
-    ``frames`` are spread evenly across the remainder (see ``_select_indices``).
-    Frames are stored as plain assets ``<stem>#0000.jpg`` …; image consumers
-    pick one via a normalized ``frame`` param. Returns the ``<stem>#`` prefix +
-    frame count."""
+    OR one video file. ``frames`` is an optional max frame count (bound 1..240);
+    when omitted, every source frame is imported up to the sequence cap.
+    ``start`` drops the first N source frames; ``every`` takes every Nth of the
+    remainder. Frames are stored as plain assets ``<stem>#0000.jpg`` …; image
+    consumers pick one via a normalized ``frame`` param. Returns the ``<stem>#``
+    prefix + frame count."""
     from PIL import Image, ImageOps  # lazy, like the single-asset upload probe
 
     if not files:
@@ -493,9 +541,8 @@ async def upload_sequence(
     stem = safe_asset_name(base) or "clip"
 
     if len(files) == 1 and ext in _VIDEO_EXTS:
-        n = max(2, min(240, frames if frames else 24))
         try:
-            jpegs = _extract_video_frames(await first.read(), ext, n, start, every, sink)
+            jpegs = _extract_video_frames(await first.read(), ext, frames, start, every, sink)
         except HTTPException:
             raise  # a selection error (e.g. start leaves fewer than 2 frames)
         except Exception as e:
@@ -505,8 +552,8 @@ async def upload_sequence(
                  if (b := await f.read())]
         if not blobs:
             raise HTTPException(status_code=400, detail="no image data")
-        # bound the count exactly like the video path (2..240) before selecting
-        n = min(240, frames) if frames else frames
+        # bound the count exactly like the video path (1..240) before selecting
+        n = min(_MAX_SEQUENCE_FRAMES, frames) if frames else frames
         blobs = [blobs[i] for i in _select_indices(len(blobs), n, start, every)]
         try:
             jpegs = []
@@ -685,7 +732,7 @@ def consolidate_layer(layer_id: str) -> dict[str, Any]:
 def undo() -> dict[str, Any]:
     if not session.undo():
         raise HTTPException(status_code=409, detail="nothing to undo")
-    return session.project.model_dump()
+    return _project_payload()
 
 
 class OrderBody(BaseModel):
@@ -756,14 +803,20 @@ def get_resolved(
 
 
 @router.get("/plan")
-def get_plan(target: str = "all", sheet: str | None = Query(default=None)) -> dict[str, Any]:
+def get_plan(
+    target: str = "all",
+    sheet: str | None = Query(default=None),
+    staged: str | None = Query(default=None),
+) -> dict[str, Any]:
     """Planned job for a plot pass — explicit travel moves + timing, computed
     on the SAME plot document the backend will receive (pen compensation and
     plot-pass optimisation included). ``sheet`` (a JSON-encoded SheetSpec) plans
     the grid-sheet document for one page instead, so the canvas plan overlay
     previews the real page layout and the estimate reflects the shrunk cells."""
     try:
-        if sheet is not None:
+        if staged is not None:
+            doc = session._optimize(_staged_document(StagedSpec.model_validate_json(staged)))
+        elif sheet is not None:
             doc = session._optimize(_sheet_document(SheetSpec.model_validate_json(sheet)))
         else:
             doc = session.plot_document(target)
@@ -960,6 +1013,159 @@ def bake_contact_sheet(body: ContactSheetBody) -> dict[str, Any]:
     return {"layers": [l.model_dump() for l in layers]}
 
 
+# -- staging tray ---------------------------------------------------------------
+
+
+@router.get("/staging")
+def get_staging() -> dict[str, Any]:
+    return {"groups": [g.model_dump(exclude={"snapshot"}) for g in session.project.staging]}
+
+
+class StagingCaptureBody(BaseModel):
+    kind: str = Field(pattern="^(plot|frame|sheet)$")
+    name: str | None = None
+    target: str = "all"
+    master_t: float | None = Field(default=None, ge=0.0, le=1.0)
+    cols: int = Field(default=1, ge=1, le=12)
+    rows: int = Field(default=1, ge=1, le=12)
+    frames: int = Field(default=2, ge=2, le=240)
+    t_from: float = Field(default=0.0, ge=0.0, le=1.0)
+    t_to: float = Field(default=1.0, ge=0.0, le=1.0)
+    margin_mm: float = Field(default=5.0, ge=0.0, le=30.0)
+
+
+@router.post("/staging/capture")
+def capture_to_staging(body: StagingCaptureBody) -> dict[str, Any]:
+    try:
+        group = session.capture_to_staging(
+            kind=body.kind,
+            name=body.name,
+            target=body.target,
+            master_t=body.master_t,
+            cols=body.cols,
+            rows=body.rows,
+            frames=body.frames,
+            t_from=body.t_from,
+            t_to=body.t_to,
+            margin_mm=body.margin_mm,
+        )
+    except (KeyError, ValueError) as e:
+        raise _fail(e, 400)
+    except RuntimeError as e:
+        raise _fail(e, 400)
+    except Exception as e:
+        raise _fail(e)
+    return {"group": group.model_dump(exclude={"snapshot"})}
+
+
+class RenameCaptureBody(BaseModel):
+    name: str
+
+
+@router.patch("/staging/groups/{group_id}")
+def rename_capture_group(group_id: str, body: RenameCaptureBody) -> dict[str, Any]:
+    try:
+        group = session.rename_capture_group(group_id, body.name)
+    except KeyError as e:
+        raise _fail(e, 404)
+    return {"group": group.model_dump(exclude={"snapshot"})}
+
+
+class ReorderCapturesBody(BaseModel):
+    ids: list[str]
+
+
+@router.post("/staging/reorder")
+def reorder_capture_groups(body: ReorderCapturesBody) -> dict[str, Any]:
+    try:
+        groups = session.reorder_capture_groups(body.ids)
+    except ValueError as e:
+        raise _fail(e, 422)
+    return {"groups": [g.model_dump(exclude={"snapshot"}) for g in groups]}
+
+
+@router.post("/staging/groups/{group_id}/duplicate")
+def duplicate_capture_group(group_id: str) -> dict[str, Any]:
+    try:
+        group = session.duplicate_capture_group(group_id)
+    except KeyError as e:
+        raise _fail(e, 404)
+    return {"group": group.model_dump(exclude={"snapshot"})}
+
+
+@router.delete("/staging/groups/{group_id}")
+def delete_capture_group(group_id: str) -> dict[str, Any]:
+    try:
+        removed = session.delete_capture_group(group_id)
+    except KeyError as e:
+        raise _fail(e, 404)
+    return {"removed": removed}
+
+
+@router.post("/staging/groups/{group_id}/sheets/{sheet_id}/insert")
+def insert_staged_sheet(group_id: str, sheet_id: str) -> dict[str, Any]:
+    try:
+        layers = session.insert_staged_sheet(group_id, sheet_id)
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+    return {"layers": [l.model_dump() for l in layers]}
+
+
+class InterpolateCapturesBody(BaseModel):
+    a: str
+    b: str
+    steps: int = Field(default=5, ge=2, le=60)
+    name: str | None = None
+
+
+@router.post("/staging/interpolate")
+def interpolate_captures(body: InterpolateCapturesBody) -> dict[str, Any]:
+    try:
+        group = session.interpolate_captures(body.a, body.b, body.steps, body.name)
+    except KeyError as e:
+        raise _fail(e, 404)
+    except ValueError as e:
+        raise _fail(e, 400)
+    except Exception as e:
+        raise _fail(e)
+    return {"group": group.model_dump(exclude={"snapshot"})}
+
+
+@router.get("/staging/export.zip")
+def export_staged_zip(group_id: str | None = None) -> Response:
+    buf = io.BytesIO()
+    groups = session.project.staging
+    if group_id is not None:
+        try:
+            groups = [session._find_capture(group_id)]
+        except KeyError as e:
+            raise _fail(e, 404)
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        any_geometry = False
+        for group in groups:
+            for i, sheet in enumerate(group.sheets):
+                try:
+                    doc = session._optimize(session.staged_document(group.id, sheet.id))
+                except KeyError:
+                    continue
+                if any(layer.paths for layer in doc.layers):
+                    any_geometry = True
+                zf.writestr(
+                    f"{project_io.safe_name(group.name)}_sheet_{i:02d}.svg",
+                    svg_io.doc_to_svg(doc),
+                )
+    if not any_geometry:
+        raise HTTPException(status_code=400, detail="no staged geometry to export")
+    name = project_io.safe_name(session.project.name)
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{name}_staging.zip"'},
+    )
+
+
 # -- plot control -------------------------------------------------------------------
 
 
@@ -985,6 +1191,16 @@ def _sheet_document(spec: SheetSpec) -> Any:
     )
 
 
+class StagedSpec(BaseModel):
+    group_id: str
+    sheet_id: str | None = None
+    pen_id: str | None = None
+
+
+def _staged_document(spec: StagedSpec) -> Any:
+    return session.staged_document(spec.group_id, spec.sheet_id, spec.pen_id)
+
+
 class PlotStartBody(BaseModel):
     target: str = "all"  # "all" or a layer id — the manual multi-pen selector
     #: ephemeral master-timeline scrub (see Session.resolved) — the hook for
@@ -993,12 +1209,17 @@ class PlotStartBody(BaseModel):
     #: grid-sheet plot pass — when set, plots one pen group of one sheet
     #: (transient assembly; ``target``/``master_t`` are ignored).
     sheet: SheetSpec | None = None
+    staged: StagedSpec | None = None
 
 
 @router.post("/plot/start")
 def plot_start(body: PlotStartBody) -> dict[str, Any]:
     try:
-        if body.sheet is not None:
+        if body.staged is not None:
+            doc = session._optimize(_staged_document(body.staged))
+            pen = session.pens().get(body.staged.pen_id) if body.staged.pen_id else None
+            params = session.effective_params(manager.active_id, pen=pen)
+        elif body.sheet is not None:
             doc = session._optimize(_sheet_document(body.sheet))
             pen = session.pens().get(body.sheet.pen_id) if body.sheet.pen_id else None
             params = session.effective_params(manager.active_id, pen=pen)
@@ -1150,8 +1371,8 @@ def plot_test_stroke(body: TestStrokeBody) -> dict[str, Any]:
 
 
 @router.get("/project")
-def get_project() -> Project:
-    return session.project
+def get_project() -> dict[str, Any]:
+    return _project_payload()
 
 
 class ProjectPatch(BaseModel):
@@ -1162,7 +1383,7 @@ class ProjectPatch(BaseModel):
 
 
 @router.put("/project")
-def patch_project(body: ProjectPatch) -> Project:
+def patch_project(body: ProjectPatch) -> dict[str, Any]:
     p = session.project
     if body.name is not None:
         p.name = body.name
@@ -1172,19 +1393,22 @@ def patch_project(body: ProjectPatch) -> Project:
         p.view = body.view
     if body.plot_options is not None:
         p.plot_options = body.plot_options
-    return p
+    return _project_payload()
 
 
 @router.post("/project/new")
-def new_project() -> Project:
+def new_project() -> dict[str, Any]:
     session.project = Project()
     session.project_dir = None
     session.source_geometry.clear()
     session.svg_files.clear()
+    session.staging_documents.clear()
     session._shaped_cache.clear()
+    session._tween_cache.clear()
+    session._clip_cache.clear()
     session.clear_history()
     asset_store.replace_all({})
-    return session.project
+    return _project_payload()
 
 
 @router.get("/projects")
@@ -1209,6 +1433,8 @@ def save_project(body: SaveBody) -> dict[str, str]:
         project_io.save_project(
             session.project, session.source_geometry, session.svg_files, target,
             assets=asset_store.all(),
+            staging_documents=session.staging_documents,
+            history=session.history_for_save(),
         )
     except OSError as e:
         raise _fail(e, 400)
@@ -1221,10 +1447,10 @@ class LoadBody(BaseModel):
 
 
 @router.post("/project/load")
-def load_project(body: LoadBody) -> Project:
+def load_project(body: LoadBody) -> dict[str, Any]:
     target = settings_store.settings.projects_dir() / project_io.safe_name(body.name)
     try:
-        project, geometry, svg_files, assets = project_io.load_project(target)
+        project, geometry, svg_files, assets, staging_documents, history = project_io.load_project(target)
     except FileNotFoundError as e:
         raise _fail(e, 404)
     except Exception as e:
@@ -1232,11 +1458,14 @@ def load_project(body: LoadBody) -> Project:
     session.project = project
     session.source_geometry = geometry
     session.svg_files = svg_files
+    session.staging_documents = staging_documents
     session.project_dir = str(target)
     session._shaped_cache.clear()
-    session.clear_history()
+    session._tween_cache.clear()
+    session._clip_cache.clear()
+    session.restore_history(history)
     asset_store.replace_all(assets)
-    return project
+    return _project_payload()
 
 
 @router.get("/project/export.zip")
@@ -1246,6 +1475,8 @@ def export_project() -> Response:
     project_io.save_project(
         session.project, session.source_geometry, session.svg_files, target,
         assets=asset_store.all(),
+        staging_documents=session.staging_documents,
+        history=session.history_for_save(),
     )
     session.project_dir = str(target)
     data = project_io.export_zip(target)
@@ -1257,19 +1488,22 @@ def export_project() -> Response:
 
 
 @router.post("/project/import")
-async def import_project(file: UploadFile) -> Project:
+async def import_project(file: UploadFile) -> dict[str, Any]:
     data = await file.read()
     name = FsPath(file.filename or "imported").stem
     try:
         target = project_io.import_zip(data, settings_store.settings.projects_dir(), name)
-        project, geometry, svg_files, assets = project_io.load_project(target)
+        project, geometry, svg_files, assets, staging_documents, history = project_io.load_project(target)
     except (ValueError, FileExistsError) as e:
         raise _fail(e, 400)
     session.project = project
     session.source_geometry = geometry
     session.svg_files = svg_files
+    session.staging_documents = staging_documents
     session.project_dir = str(target)
     session._shaped_cache.clear()
-    session.clear_history()
+    session._tween_cache.clear()
+    session._clip_cache.clear()
+    session.restore_history(history)
     asset_store.replace_all(assets)
-    return project
+    return _project_payload()

@@ -23,8 +23,16 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from ..assets import asset_store
+from ..image_processing import (
+    IMAGE_PROCESSING_GROUP,
+    apply_image_processing_value,
+    image_processing_kwargs,
+)
 from ..model import Layer, Path, PathDocument
 from ..registry import SourceModule, register_source
+
+
+_IMAGE_PROCESSING = IMAGE_PROCESSING_GROUP
 
 
 class ImageThresholdParams(BaseModel):
@@ -46,7 +54,18 @@ class ImageThresholdParams(BaseModel):
     frame: float = Field(default=0.0, ge=0.0, le=1.0, title="Frame",
                          description="Position in an image sequence (0=first, 1=last); "
                                      "ignored for still images")
-    invert: bool = Field(default=False, title="Invert (trace the light areas)")
+    invert: bool = Field(default=False, title="Invert (trace the light areas)",
+                         json_schema_extra=_IMAGE_PROCESSING)
+    brightness: float = Field(default=0.0, ge=-100.0, le=100.0, title="Brightness",
+                              json_schema_extra=_IMAGE_PROCESSING)
+    contrast: float = Field(default=0.0, ge=-100.0, le=100.0, title="Contrast",
+                            json_schema_extra=_IMAGE_PROCESSING)
+    gamma: float = Field(default=1.0, ge=0.1, le=5.0, title="Gamma",
+                         json_schema_extra=_IMAGE_PROCESSING)
+    black_point: float = Field(default=0.0, ge=0.0, le=1.0, title="Black point",
+                               json_schema_extra=_IMAGE_PROCESSING)
+    white_point: float = Field(default=1.0, ge=0.0, le=1.0, title="White point",
+                               json_schema_extra=_IMAGE_PROCESSING)
     detail: float = Field(default=0.5, ge=0.15, le=5.0, title="Detail (mm)",
                           description="Contour-tracing lattice pitch — smaller follows "
                                       "edges tighter and costs more points")
@@ -149,6 +168,7 @@ class ImageThreshold(SourceModule):
         w_mm, h_mm = p.width, p.width * ih / iw
         sx, sy = iw / w_mm, ih / h_mm
         outside = p.threshold + 1.0  # any value safely above the threshold
+        tone = image_processing_kwargs(p)
 
         def bilinear(grid, px, py) -> float:
             fx = min(max(px * sx - 0.5, 0.0), iw - 1.0)
@@ -171,7 +191,7 @@ class ImageThreshold(SourceModule):
                 px = min(i * p.detail, w_mm)
                 if alpha is not None and bilinear(alpha, px, py) < 0.5:
                     continue  # transparent: stays "outside"
-                v = bilinear(rows, px, py)
+                v = apply_image_processing_value(bilinear(rows, px, py), **tone)
                 frow[i + 1] = 1.0 - v if p.invert else v
 
         loops = _trace_contours(field, p.threshold, p.detail)

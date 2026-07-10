@@ -52,7 +52,7 @@ Three more `json_schema_extra` tags with frontend meaning:
 - `{"viewAxis": True}` on a paper-space x/y pair: in portrait view the label
   letter swaps and the displayed value negates, so the fader moves things
   the way the rotated bed *looks*. Only use on fields with symmetric bounds.
-- `{"group": "Tone"}` (any name) collapses those fields into a closed
+- `{"group": "Image processing"}` (any name) collapses those fields into a closed
   `<details>` at the bottom of the form — use for shared boilerplate params
   so a long form stays scannable.
 - `show_map: bool` params ghost the module's image asset on the canvas.
@@ -68,9 +68,11 @@ Generators with a `format:"asset"` param are listed under the
 Image-driven modules read pixels through `assets.asset_store`:
 `grayscale(name, blur_px)` (cached per blur radius — derive `blur_px` from a
 `smoothing` mm param × image px / placed mm width) and `alpha(name)`
-(unblurred crop mask, `None` when absent). If the named asset is missing,
-**pass through / return empty, don't raise** in effects (a stored project
-must still resolve); generators may raise a helpful `ValueError`.
+(unblurred crop mask, `None` when absent). Shared brightness/contrast/gamma/
+levels behavior lives in `image_processing.py`; apply it to grayscale samples,
+not alpha masks. If the named asset is missing, **pass through / return empty,
+don't raise** in effects (a stored project must still resolve); generators
+may raise a helpful `ValueError`.
 
 ## Writing a Source (generator)
 
@@ -92,9 +94,9 @@ Contract:
   no-op outside a request. Call it freely; the API layer throttles.
 - **Pixel-space image generators** (the plotterfun family): subclass
   `sources/_pixelgen.PixelGenParams` (image/rotate/width/show_map + the
-  collapsed Tone group), sample darkness 0–255 through `ImageSampler`, and
-  return via `pixel_doc(...)` — it scales the fixed 800-px working canvas
-  to the `width` mm placement. Copy `sources/subline.py`.
+  collapsed Image processing group), sample darkness 0–255 through
+  `ImageSampler`, and return via `pixel_doc(...)` — it scales the fixed
+  800-px working canvas to the `width` mm placement. Copy `sources/subline.py`.
 
 ## Writing an Effect — the v2 per-layer stack
 

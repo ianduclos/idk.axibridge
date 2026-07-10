@@ -48,7 +48,7 @@ export function initPlotTab() {
     <div class="panel">
       <h2>Animation</h2>
       <details id="anim-details">
-        <summary>Frame sequence — SVG export, plot stepper, contact-sheet bake</summary>
+        <summary>Frame sequence — SVG export, plot stepper, staged-sheet capture</summary>
         <div class="row">
           <label>frames</label><input type="number" id="anim-frames" min="2" max="240" step="1" style="width:5em">
           <label>t from</label><input type="number" id="anim-t-from" min="0" max="1" step="0.01" style="width:5.5em">
@@ -86,15 +86,34 @@ export function initPlotTab() {
           <button id="anim-reset">Reset</button>
         </div>
 
-        <h3>Contact sheet <span class="hint">(bake the frame range into a grid on one sheet)</span></h3>
+        <h3>Contact sheet <span class="hint">(capture the frame range into staging)</span></h3>
         <div class="row">
           <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1" style="width:4em">
           <label>rows</label><input type="number" id="anim-rows" min="1" max="12" step="1" style="width:4em">
           <label>margin</label><input type="number" id="anim-margin" min="0" max="30" step="0.5" style="width:5em">
           <span class="hint">mm</span>
         </div>
-        <div class="row"><button id="anim-bake" class="primary">Bake contact sheet</button></div>
+        <div class="row"><button id="anim-bake" class="primary">Capture to staging</button></div>
       </details>
+    </div>
+
+    <div class="panel">
+      <h2>Staging</h2>
+      <div class="row">
+        <button id="stage-capture-plot">Capture plot</button>
+        <button id="stage-capture-frame">Capture frame</button>
+        <button id="stage-capture-sheet">Capture grid</button>
+        <a id="stage-export-link" href="/api/staging/export.zip" download><button type="button">Export tray</button></a>
+      </div>
+      <div class="row">
+        <label>A</label><select id="stage-a" style="flex:1"></select>
+        <label>B</label><select id="stage-b" style="flex:1"></select>
+      </div>
+      <div class="row">
+        <label>steps</label><input type="number" id="stage-steps" min="2" max="60" step="1" value="5" style="width:4.5em">
+        <button id="stage-interp" class="primary">Generate batch</button>
+      </div>
+      <div id="stage-list" class="stage-list"></div>
     </div>
 
     <div id="anim-preview-modal" class="modal-backdrop" hidden>
@@ -328,18 +347,7 @@ export function initPlotTab() {
     }
   };
   $("anim-bake").onclick = async () => {
-    try {
-      pullAnimRange();
-      const cols = Math.max(1, Math.min(12, Math.round(Number($("anim-cols").value) || 1)));
-      const rows = Math.max(1, Math.min(12, Math.round(Number($("anim-rows").value) || 1)));
-      const margin_mm = Math.max(0, Math.min(30, Number($("anim-margin").value) || 0));
-      await api.post("/api/animation/contact_sheet", {
-        cols, rows, frames: anim.n, margin_mm, t_from: anim.tFrom, t_to: anim.tTo,
-      });
-      await actions.refreshProject();
-      await actions.refreshResolved();
-      actions.log(`baked ${anim.n}-frame contact sheet (${cols}×${rows})`);
-    } catch (e) { actions.oops(e); }
+    captureStaged("sheet");
   };
   $("anim-preview-close").onclick = closeRasterPreview;
   $("anim-preview-popup-toggle").onclick = () => {
@@ -353,7 +361,12 @@ export function initPlotTab() {
     stopRasterPlayback();
     showRasterFrame((anim.popupI + 1) % Math.max(anim.previewFrames.length, 1));
   };
+  $("stage-capture-plot").onclick = () => captureStaged("plot");
+  $("stage-capture-frame").onclick = () => captureStaged("frame");
+  $("stage-capture-sheet").onclick = () => captureStaged("sheet");
+  $("stage-interp").onclick = () => interpolateStaged();
   refreshAnimPanel();
+  renderStaging();
 
   // ---- jog / pen
   for (const b of document.querySelectorAll("[data-jog]")) {
@@ -471,6 +484,10 @@ const anim = {
   popupI: 0, popupPlaying: false, popupTimer: null,
   previewing: false, plotting: false, wasBusy: false,
 };
+const stage = {
+  selectedGroup: null,
+  selectedSheet: null,
+};
 
 // per-sheet count → (cols, rows). 2 splits the landscape A4 into two portrait
 // A5-ish halves; 4 = quads; 16 = a 4×4 flipbook strip page.
@@ -491,7 +508,196 @@ function currentSheetSpec(extra = {}) {
 function syncSheetPlan() {
   const open = $("anim-details") && $("anim-details").open;
   S.sheetPlan = open && anim.perSheet > 1 ? currentSheetSpec() : null;
+  if (S.sheetPlan) S.stagedPlan = null;
   actions.refreshPlan();
+}
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+}[c]));
+
+function groupLabel(g) {
+  const sheets = g.sheets?.length || 0;
+  const fmt = g.format || {};
+  const detail = fmt.source_kind || fmt.kind || g.kind;
+  return `${g.name} · ${detail} · ${sheets} sheet${sheets === 1 ? "" : "s"}`;
+}
+
+async function captureStaged(kind) {
+  try {
+    pullAnimRange();
+    const body = {
+      kind,
+      target: S.plotTarget,
+      name: kind === "frame" ? `frame ${anim.i + 1}` :
+        kind === "sheet" ? `${anim.n}-frame grid` : `plot ${targetLabel()}`,
+    };
+    if (kind === "frame") body.master_t = animT(anim.i);
+    if (kind === "sheet") {
+      body.cols = Math.max(1, Math.min(12, Math.round(Number($("anim-cols").value) || 1)));
+      body.rows = Math.max(1, Math.min(12, Math.round(Number($("anim-rows").value) || 1)));
+      body.frames = anim.n;
+      body.t_from = anim.tFrom;
+      body.t_to = anim.tTo;
+      body.margin_mm = Math.max(0, Math.min(30, Number($("anim-margin").value) || 0));
+    }
+    const r = await api.post("/api/staging/capture", body);
+    await actions.refreshProject();
+    renderStaging();
+    actions.log(`captured ${r.group.name} to staging`);
+  } catch (e) { actions.oops(e); }
+}
+
+async function interpolateStaged() {
+  const a = $("stage-a")?.value;
+  const b = $("stage-b")?.value;
+  if (!a || !b || a === b) {
+    actions.oops(new Error("pick two different compatible captures"));
+    return;
+  }
+  const steps = Math.max(2, Math.min(60, Math.round(Number($("stage-steps").value) || 5)));
+  try {
+    const r = await api.post("/api/staging/interpolate", { a, b, steps });
+    await actions.refreshProject();
+    renderStaging();
+    actions.log(`generated staged batch ${r.group.name}`);
+  } catch (e) { actions.oops(e); }
+}
+
+async function previewStaged(groupId, sheetId) {
+  S.sheetPlan = null;
+  S.stagedPlan = { group_id: groupId, sheet_id: sheetId };
+  stage.selectedGroup = groupId;
+  stage.selectedSheet = sheetId;
+  renderStaging();
+  await actions.refreshPlan();
+}
+
+async function plotStaged(groupId, sheetId, penId) {
+  try {
+    await api.post("/api/plot/start", { staged: { group_id: groupId, sheet_id: sheetId, pen_id: penId } });
+    actions.log(`▶ plotting staged sheet pass (${penId || "no pen"})`);
+  } catch (e) { actions.oops(e); }
+}
+
+async function insertStaged(groupId, sheetId) {
+  try {
+    await api.post(`/api/staging/groups/${encodeURIComponent(groupId)}/sheets/${encodeURIComponent(sheetId)}/insert`, {});
+    await actions.refreshProject();
+    await actions.refreshResolved();
+    renderStaging();
+    actions.log("inserted staged sheet as editable layers");
+  } catch (e) { actions.oops(e); }
+}
+
+async function deleteStaged(groupId) {
+  try {
+    await api.del(`/api/staging/groups/${encodeURIComponent(groupId)}`);
+    if (stage.selectedGroup === groupId) {
+      stage.selectedGroup = null;
+      stage.selectedSheet = null;
+      S.stagedPlan = null;
+    }
+    await actions.refreshProject();
+    renderStaging();
+    await actions.refreshPlan();
+  } catch (e) { actions.oops(e); }
+}
+
+async function duplicateStaged(groupId) {
+  try {
+    await api.post(`/api/staging/groups/${encodeURIComponent(groupId)}/duplicate`, {});
+    await actions.refreshProject();
+    renderStaging();
+  } catch (e) { actions.oops(e); }
+}
+
+async function renameStaged(groupId) {
+  const group = (S.state.project.staging || []).find((g) => g.id === groupId);
+  const name = window.prompt("Capture name", group?.name || "");
+  if (!name) return;
+  try {
+    await api.patch(`/api/staging/groups/${encodeURIComponent(groupId)}`, { name });
+    await actions.refreshProject();
+    renderStaging();
+  } catch (e) { actions.oops(e); }
+}
+
+async function moveStaged(groupId, dir) {
+  const groups = S.state.project.staging || [];
+  const ids = groups.map((g) => g.id);
+  const i = ids.indexOf(groupId);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  try {
+    await api.post("/api/staging/reorder", { ids });
+    await actions.refreshProject();
+    renderStaging();
+  } catch (e) { actions.oops(e); }
+}
+
+function renderStaging() {
+  const list = $("stage-list");
+  if (!list || !S.state?.project) return;
+  const groups = S.state.project.staging || [];
+  for (const id of ["stage-a", "stage-b"]) {
+    const sel = $(id);
+    if (!sel) continue;
+    const prior = sel.value;
+    sel.innerHTML = `<option value="">—</option>` + groups.map((g) =>
+      `<option value="${esc(g.id)}">${esc(groupLabel(g))}</option>`).join("");
+    sel.value = groups.some((g) => g.id === prior) ? prior : "";
+  }
+  $("stage-export-link").href = "/api/staging/export.zip";
+  if (!groups.length) {
+    list.innerHTML = `<div class="hint">No staged captures yet.</div>`;
+    return;
+  }
+  list.innerHTML = groups.map((g) => `
+    <div class="stage-group">
+      <div class="stage-head">
+        <strong>${esc(g.name)}</strong>
+        <span class="hint">${esc(g.kind)} · ${(g.sheets || []).length} sheet${(g.sheets || []).length === 1 ? "" : "s"}</span>
+        <button data-stage-rename="${esc(g.id)}">Rename</button>
+        <button data-stage-up="${esc(g.id)}">↑</button>
+        <button data-stage-down="${esc(g.id)}">↓</button>
+        <button data-stage-copy="${esc(g.id)}">Duplicate</button>
+        <button data-stage-export="${esc(g.id)}">Export</button>
+        <button class="danger" data-stage-delete="${esc(g.id)}">Delete</button>
+      </div>
+      ${(g.warnings || []).length ? `<div class="hint warn">${esc(g.warnings.join("; "))}</div>` : ""}
+      ${(g.sheets || []).map((s) => `
+        <div class="stage-sheet ${stage.selectedGroup === g.id && stage.selectedSheet === s.id ? "on" : ""}">
+          <button data-stage-preview="${esc(g.id)}:${esc(s.id)}">Preview ${esc(s.name)}</button>
+          <button data-stage-insert="${esc(g.id)}:${esc(s.id)}">Insert as layers</button>
+          ${(s.passes || []).map((p) =>
+            `<button data-stage-plot="${esc(g.id)}:${esc(s.id)}:${esc(p.pen_id)}">${esc(p.name)} · ${p.paths} paths</button>`
+          ).join("")}
+        </div>
+      `).join("")}
+    </div>
+  `).join("");
+  list.querySelectorAll("[data-stage-preview]").forEach((b) => b.onclick = () => {
+    const [g, s] = b.dataset.stagePreview.split(":");
+    previewStaged(g, s);
+  });
+  list.querySelectorAll("[data-stage-plot]").forEach((b) => b.onclick = () => {
+    const [g, s, p] = b.dataset.stagePlot.split(":");
+    plotStaged(g, s, p || "");
+  });
+  list.querySelectorAll("[data-stage-insert]").forEach((b) => b.onclick = () => {
+    const [g, s] = b.dataset.stageInsert.split(":");
+    insertStaged(g, s);
+  });
+  list.querySelectorAll("[data-stage-delete]").forEach((b) => b.onclick = () => deleteStaged(b.dataset.stageDelete));
+  list.querySelectorAll("[data-stage-copy]").forEach((b) => b.onclick = () => duplicateStaged(b.dataset.stageCopy));
+  list.querySelectorAll("[data-stage-rename]").forEach((b) => b.onclick = () => renameStaged(b.dataset.stageRename));
+  list.querySelectorAll("[data-stage-up]").forEach((b) => b.onclick = () => moveStaged(b.dataset.stageUp, -1));
+  list.querySelectorAll("[data-stage-down]").forEach((b) => b.onclick = () => moveStaged(b.dataset.stageDown, 1));
+  list.querySelectorAll("[data-stage-export]").forEach((b) => b.onclick = () => {
+    window.location.href = `/api/staging/export.zip?group_id=${encodeURIComponent(b.dataset.stageExport)}`;
+  });
 }
 
 // Re-fetch the current sheet's ordered pen passes (they differ per page).
@@ -803,6 +1009,7 @@ export function renderPlotTab() {
   renderCalibration();
   applyCapabilities();
   renderAnimPreview();
+  renderStaging();
 }
 
 function renderBackends() {

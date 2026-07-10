@@ -24,7 +24,11 @@ def fresh_session(tmp_path):
     session.project_dir = None
     session.source_geometry.clear()
     session.svg_files.clear()
+    session.staging_documents.clear()
     session._shaped_cache.clear()
+    session._tween_cache.clear()
+    session._clip_cache.clear()
+    session.clear_history()
     settings_store.update({
         "projects_root": str(tmp_path / "projects"),
         "holder_calibration": {"dx_per_mm": 0.0, "dy_per_mm": 0.0},

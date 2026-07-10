@@ -116,6 +116,7 @@ class CanvasLayer(BaseModel):
     id: str = Field(default_factory=lambda: uuid.uuid4().hex[:8])
     name: str = "layer"
     visible: bool = True
+    draw: bool = True
     source: LayerSource
     transform: Affine = Field(default_factory=Affine)
     effects: list[EffectStep] = Field(default_factory=list)
@@ -138,11 +139,11 @@ class CanvasLayer(BaseModel):
 
 class PaperGuide(BaseModel):
     """Movable registration rectangle (where to tape the paper), machine frame.
-    Default: A4 centred on the bed — physically landscape, because A4's long
-    edge only fits the machine's X axis."""
+    Default: A4 registered at the machine origin — physically landscape,
+    because A4's long edge only fits the machine's X axis."""
 
-    x: float = 1.5
-    y: float = 4.0
+    x: float = 0.0
+    y: float = 0.0
     width: float = 297.0
     height: float = 210.0
 
@@ -173,6 +174,52 @@ class PlotOptions(BaseModel):
     crop_h: float = Field(default=210.0, ge=1, le=218, title="Custom crop height (mm)")
 
 
+class CaptureSnapshot(BaseModel):
+    """Project/source state at capture time, excluding staging itself.
+
+    Frozen staged sheets are the output tray. This snapshot is the optional
+    recipe/source layer used later when two compatible captures generate an
+    interpolated batch.
+    """
+
+    name: str = "untitled"
+    layers: list[CanvasLayer] = Field(default_factory=list)
+    guide: PaperGuide = Field(default_factory=PaperGuide)
+    view: Literal["portrait", "landscape"] = "portrait"
+    pens_used: dict[str, Pen] = Field(default_factory=dict)
+    backend_params: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    plot_options: PlotOptions = Field(default_factory=PlotOptions)
+    source_geometry: dict[str, list[Path]] = Field(default_factory=dict)
+    svg_files: dict[str, str] = Field(default_factory=dict)
+
+
+class StagedPass(BaseModel):
+    pen_id: str = ""
+    name: str = "no pen"
+    color: str = INK
+    paths: int = 0
+    points: int = 0
+    pen_down_distance: float = 0.0
+
+
+class StagedSheet(BaseModel):
+    id: str = Field(default_factory=lambda: uuid.uuid4().hex[:8])
+    name: str = "sheet"
+    file: str | None = None  # project-relative: staging/<id>.svg
+    passes: list[StagedPass] = Field(default_factory=list)
+
+
+class CaptureGroup(BaseModel):
+    id: str = Field(default_factory=lambda: uuid.uuid4().hex[:8])
+    name: str = "capture"
+    kind: Literal["plot", "frame", "sheet", "batch"] = "sheet"
+    format: dict[str, Any] = Field(default_factory=dict)
+    sheets: list[StagedSheet] = Field(default_factory=list)
+    snapshot: CaptureSnapshot | None = None
+    source_capture_ids: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
 class Project(BaseModel):
     version: int = 2
     name: str = "untitled"
@@ -182,6 +229,7 @@ class Project(BaseModel):
     pens_used: dict[str, Pen] = Field(default_factory=dict)
     backend_params: dict[str, dict[str, Any]] = Field(default_factory=dict)
     plot_options: PlotOptions = Field(default_factory=PlotOptions)
+    staging: list[CaptureGroup] = Field(default_factory=list)
 
     def layer(self, layer_id: str) -> CanvasLayer:
         for lyr in self.layers:
@@ -227,8 +275,10 @@ def build_mask(
 ) -> BaseGeometry | None:
     """An occluder layer's mask: filled closed paths as polygons, everything
     else as a swept band at the pen's line width, buffered by the signed
-    margin."""
-    geoms: list[BaseGeometry] = []
+    margin. Nested filled paths use even-odd parity, so an inner threshold
+    contour becomes a hole instead of occluding as a solid island."""
+    fill_polys: list[BaseGeometry] = []
+    stroke_geoms: list[BaseGeometry] = []
     half = max(line_diameter_mm, 0.01) / 2.0
     for p in shaped:
         pts = p.points
@@ -237,11 +287,25 @@ def build_mask(
             if not poly.is_valid:
                 poly = poly.buffer(0)
             if not poly.is_empty:
-                geoms.append(poly)
+                fill_polys.append(poly)
         elif len(pts) >= 2:
-            geoms.append(LineString(pts).buffer(half))
+            stroke_geoms.append(LineString(pts).buffer(half))
         elif pts:
-            geoms.append(ShPoint(pts[0]).buffer(half))
+            stroke_geoms.append(ShPoint(pts[0]).buffer(half))
+    geoms: list[BaseGeometry] = []
+    if fill_polys:
+        fill_mask: BaseGeometry | None = None
+        sorted_polys = sorted(fill_polys, key=lambda g: g.area, reverse=True)
+        for i, poly in enumerate(sorted_polys):
+            pt = poly.representative_point()
+            depth = sum(1 for parent in sorted_polys[:i] if parent.covers(pt))
+            if depth % 2 == 0:
+                fill_mask = poly if fill_mask is None else fill_mask.union(poly)
+            elif fill_mask is not None:
+                fill_mask = fill_mask.difference(poly)
+        if fill_mask is not None and not fill_mask.is_empty:
+            geoms.append(fill_mask)
+    geoms.extend(stroke_geoms)
     if not geoms:
         return None
     mask = unary_union(geoms)
@@ -330,9 +394,10 @@ def resolve_project(
             continue
         s = shaped[layer.id]
         if layer.receives_occlusion and cum_mask is not None:
-            resolved[layer.id] = clip_paths(s, cum_mask)
+            clipped = clip_paths(s, cum_mask)
         else:
-            resolved[layer.id] = s
+            clipped = s
+        resolved[layer.id] = clipped if layer.draw else []
         if layer.occluder:
             m = build_mask(s, line_diameter_for(layer, pens), layer.occlusion_margin_mm)
             if m is not None:

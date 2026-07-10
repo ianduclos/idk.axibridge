@@ -8,7 +8,7 @@ from axibridge.compose import Affine
 from axibridge.model import Path
 from axibridge.registry import EffectContext, get_effect
 from axibridge.session import session
-from axibridge.tween import compose_affine, decompose_affine, lerp_affine, lerp_params
+from axibridge.tween import compose_affine, decompose_affine, lerp_affine, lerp_params, map_time_curve
 
 
 def _pair(radius_b=30, move_b=(60.0, 25.0)):
@@ -217,6 +217,26 @@ def test_window_ignored_without_follow_master():
     assert [p.points for p in base] == [p.points for p in scrubbed]  # windows unused
 
 
+def test_cosine_pingpong_curve_goes_a_to_b_to_a():
+    a, b, tw = _follow_pair()
+    session.set_tween_params(tw.id, {"time_curve": "cosine_pingpong"})
+
+    _approx_equal(session.resolved(master_t=0.0)[tw.id], session.resolved()[a.id])
+    _approx_equal(session.resolved(master_t=0.5)[tw.id], session.resolved()[b.id])
+    _approx_equal(session.resolved(master_t=1.0)[tw.id], session.resolved()[a.id])
+    # quarter timeline maps to morph t=0.5, matching the tween's own t.
+    _approx_equal(session.resolved(master_t=0.25)[tw.id], session.resolved()[tw.id])
+
+
+def test_time_curve_mapping():
+    assert map_time_curve(0.0, "linear") == pytest.approx(0.0)
+    assert map_time_curve(1.0, "linear") == pytest.approx(1.0)
+    assert map_time_curve(0.0, "cosine_pingpong") == pytest.approx(0.0)
+    assert map_time_curve(0.5, "cosine_pingpong") == pytest.approx(1.0)
+    assert map_time_curve(1.0, "cosine_pingpong") == pytest.approx(0.0)
+    assert map_time_curve(0.5, "future_curve") == pytest.approx(0.5)
+
+
 def test_tween_missing_ref_resolves_empty_not_crashing():
     a, b = _pair()
     tw = session.create_tween_layer(a.id, b.id)
@@ -351,6 +371,27 @@ def test_animate_layer_wires_up_a_b_tween():
     assert len(session.project.layers) == 1
     restored = session.project.layer(layer.id)
     assert restored.name == original_name and restored.visible
+
+
+def test_animate_parent_transform_moves_hidden_keyframes():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    tw = session.animate_layer(layer.id)
+    p = tw.source.params
+    a = session.project.layer(p["a"])
+    b = session.project.layer(p["b"])
+    before = session.resolved()[tw.id]
+
+    session.update_layer(tw.id, {"transform": Affine(e=20, f=5).model_dump()})
+
+    tw_after = session.project.layer(tw.id)
+    a_after = session.project.layer(a.id)
+    b_after = session.project.layer(b.id)
+    assert tw_after.transform == Affine()
+    assert (a_after.transform.e, a_after.transform.f) == pytest.approx((20, 5))
+    assert (b_after.transform.e, b_after.transform.f) == pytest.approx((20, 5))
+    after = session.resolved()[tw.id]
+    assert after[0].points[0][0] == pytest.approx(before[0].points[0][0] + 20)
+    assert after[0].points[0][1] == pytest.approx(before[0].points[0][1] + 5)
 
 
 def test_animate_layer_refuses_a_tween():
