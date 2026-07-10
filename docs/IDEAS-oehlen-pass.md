@@ -64,7 +64,9 @@ module+params without touching the session, project, or undo history;
 plotting only ever happens after import, so the single-resolve invariant
 keeps its meaning.
 
-### 1. Bitmap + fat tube effects (quick, load-bearing)
+### 1. Bitmap + fat tube effects (quick, load-bearing) — **shipped July 2026**
+
+Shipped as `effects/bitmap.py` + `effects/fat_tube.py`. Original sketch:
 
 The regime vocabulary the region system will speak — build these first.
 

@@ -89,9 +89,12 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    library (`scraps.py`, `~/.axibridge/scraps/`, frozen SVG + recipe
    metadata), import live (generator layer + effects) or baked (scrap SVG →
    layers, library name kept). Later: mouse drawing, scrap editing.
-1. **Bitmap + fat tube effects** — quick, independent, and the vocabulary
-   the region system will apply. Staircase-block quantizer; constant-width
-   filled pipes that interlock via existing occlusion.
+1. ~~Bitmap + fat tube effects~~ — **shipped July 2026** as
+   `effects/bitmap.py` (merged staircase blocks, grid anchored to layer
+   translation, `solid` interior fill) and `effects/fat_tube.py`
+   (round-capped filled pipes, per-path buffers so occlusion/draw order
+   survive; loops self-merge with paper holes). Both stack with
+   `hatch_fill`/`freehand`.
 2. **Region layers ("affects below")** — adjustment-layer model, not nodes:
    a layer's silhouette becomes a mask and its effect stack applies to the
    layers below, clipped to the region. One careful design session on the

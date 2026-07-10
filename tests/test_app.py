@@ -17,8 +17,11 @@ def client():
 def test_state_shape(client):
     st = client.get("/api/state").json()
     assert {b["id"] for b in st["backends"]} == {"native", "simulator", "saxi", "pi_ssh"}
-    assert [m["id"] for m in st["modules"]["effects"]] == [
-        "coherent_jitter", "depth_displace", "freehand", "hatch_fill", "multipass", "perspective",
+    # sorted: registration order follows first-import order, which can differ
+    # between machines (Mac/Pi share this suite) — the roster is the contract
+    assert sorted(m["id"] for m in st["modules"]["effects"]) == [
+        "bitmap", "coherent_jitter", "depth_displace", "fat_tube", "freehand",
+        "hatch_fill", "multipass", "perspective",
     ]
     assert {m["id"] for m in st["modules"]["sources"]} >= {"grid", "flowfield", "lissajous", "polygon"}
     assert st["bed"] == {"width": 300.0, "height": 218.0}
