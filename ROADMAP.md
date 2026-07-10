@@ -82,11 +82,13 @@ Cheapest-first:
 From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
 *why* lives there). Ordered by dependency, not just conviction:
 
-0. **Generation workbench popup** — build before the rest: pick a generator
-   (+ effect stack), same auto-forms, reroll seeds darkroom-style, preview,
-   then save as SVG for later or import into the current project. Stateless
-   preview endpoint (never touches session/undo); plotting only after
-   import. Later: mouse drawing, scrap editing.
+0. ~~Generation workbench popup~~ — **shipped July 2026**: ⚗ Bench button →
+   popup with generator + effect stack (same auto-forms), 🎲 reroll of every
+   seed in the recipe, live SVG preview via stateless
+   `POST /api/workbench/preview` (no session/undo contact), global scrap
+   library (`scraps.py`, `~/.axibridge/scraps/`, frozen SVG + recipe
+   metadata), import live (generator layer + effects) or baked (scrap SVG →
+   layers, library name kept). Later: mouse drawing, scrap editing.
 1. **Bitmap + fat tube effects** — quick, independent, and the vocabulary
    the region system will apply. Staircase-block quantizer; constant-width
    filled pipes that interlock via existing occlusion.

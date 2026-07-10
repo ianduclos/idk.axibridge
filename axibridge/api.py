@@ -31,7 +31,9 @@ from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
 from .events import bus
 from .machine import SoftLimits, manager
-from .registry import describe_modules, get_source, progress_scope
+from .model import Layer as DocLayer, PathDocument
+from .registry import EffectContext, describe_modules, get_effect, get_source, progress_scope
+from .scraps import scrap_library
 from .session import session
 from .stores import Pen, pen_library, settings_store
 from .tween import TweenParams
@@ -1164,6 +1166,106 @@ def export_staged_zip(group_id: str | None = None) -> Response:
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{name}_staging.zip"'},
     )
+
+
+# -- generation workbench (stateless playground + global scrap library) --------------
+
+
+class WorkbenchBody(BaseModel):
+    """A workbench recipe: one generator plus a candidate effect stack."""
+    module: str
+    params: dict[str, Any] = Field(default_factory=dict)
+    effects: list[dict[str, Any]] = Field(default_factory=list)
+    name: str = ""
+
+
+def _workbench_result(body: WorkbenchBody) -> tuple[Any, list[Any]]:
+    """Run the recipe touching NOTHING: no session, no undo, no lock.
+    Geometry stays at the canvas origin (identity placement), so effects run
+    in paper space exactly as they would on a real layer. Nothing plots from
+    here — geometry reaches the machine only after import, through the
+    normal single resolve path."""
+    src = get_source(body.module)
+    doc = src.generate(src.Params(**body.params))
+    paths = [p for layer in doc.layers for p in layer.paths]
+    for step_dict in body.effects:
+        step = compose.EffectStep(**step_dict)
+        if not step.enabled:
+            continue
+        eff = get_effect(step.effect)
+        paths = eff.apply(paths, eff.Params(**step.params), EffectContext())
+    return doc, paths
+
+
+@router.post("/workbench/preview")
+def workbench_preview(body: WorkbenchBody) -> dict[str, Any]:
+    try:
+        with progress_scope(_gen_progress_sink()):
+            doc, paths = _workbench_result(body)
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+    return {**_preview_payload(paths), "width": doc.width, "height": doc.height}
+
+
+@router.get("/scraps")
+def list_scraps() -> dict[str, Any]:
+    return {"scraps": [s.model_dump() for s in scrap_library.all()]}
+
+
+@router.post("/scraps")
+def save_scrap(body: WorkbenchBody) -> dict[str, Any]:
+    """Regenerate server-side and freeze to SVG — a scrap stores what the
+    recipe produces, not what the client happened to render."""
+    try:
+        doc, paths = _workbench_result(body)
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+    if not any(p.points for p in paths):
+        raise HTTPException(status_code=400, detail="nothing to save")
+    frozen = PathDocument(
+        layers=[DocLayer(id=1, name=body.name or body.module, paths=paths)],
+        width=doc.width, height=doc.height, source=f"workbench:{body.module}",
+    )
+    scrap = scrap_library.save(
+        name=body.name, module=body.module, params=body.params,
+        effects=body.effects, svg=svg_io.doc_to_svg(frozen),
+        points=sum(len(p.points) for p in paths),
+    )
+    return scrap.model_dump()
+
+
+@router.get("/scraps/{scrap_id}.svg")
+def scrap_svg(scrap_id: str) -> Response:
+    svg = scrap_library.svg(scrap_id)
+    if svg is None:
+        raise HTTPException(status_code=404, detail="unknown scrap")
+    return Response(content=svg, media_type="image/svg+xml")
+
+
+@router.delete("/scraps/{scrap_id}")
+def delete_scrap(scrap_id: str) -> dict[str, Any]:
+    scrap_library.delete(scrap_id)
+    return {"ok": True}
+
+
+@router.post("/scraps/{scrap_id}/import")
+def import_scrap(scrap_id: str) -> dict[str, Any]:
+    """Insert a scrap's frozen SVG into the current project as baked layers —
+    exactly what was saved, however module code evolved since."""
+    scrap = scrap_library.get(scrap_id)
+    svg = scrap_library.svg(scrap_id)
+    if scrap is None or svg is None:
+        raise HTTPException(status_code=404, detail="unknown scrap")
+    try:
+        created = session.add_svg_layers(
+            svg, f"{project_io.safe_name(scrap.name)}.svg", 0.1, rename=scrap.name)
+    except Exception as e:
+        raise _fail(e, 400)
+    return {"layers": [layer.model_dump() for layer in created]}
 
 
 # -- plot control -------------------------------------------------------------------

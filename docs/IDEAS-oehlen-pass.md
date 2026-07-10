@@ -48,7 +48,10 @@ machine epistemics instead of taste.
 
 ## The commitments (ordered — see ROADMAP)
 
-### 0. Generation workbench popup (build first)
+### 0. Generation workbench popup (build first) — **shipped July 2026**
+
+Shipped as `static/js/workbench.js` + `scraps.py` + `/api/workbench/preview`
+and `/api/scraps*`. Original sketch:
 
 User direction: before the modules below, a popup screen for *messing with
 generation* outside the project — pick a generator (+ effect stack), tweak

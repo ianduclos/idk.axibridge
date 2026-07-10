@@ -12,6 +12,7 @@ import { initComposeTab, renderLayerList, renderLayerDetail, setGenProgress, set
 import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
 import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
+import { initWorkbench } from "./workbench.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -381,6 +382,7 @@ function initTabs() {
   initPlotTab();
   initPensTab();
   initSettingsTab();
+  initWorkbench(); // no-op after first call; the modal survives re-inits
   renderLayerList();
   applyPanelCollapse();
 }

@@ -223,9 +223,12 @@ class Session:
         return compose.shape_layer(candidate, src)
 
     def add_svg_layers(
-        self, svg_text: str, filename: str, quantization_mm: float
+        self, svg_text: str, filename: str, quantization_mm: float,
+        rename: str | None = None,
     ) -> list[CanvasLayer]:
-        """An uploaded SVG contributes its layers as compositor layers."""
+        """An uploaded SVG contributes its layers as compositor layers.
+        ``rename`` overrides the SVG-derived layer names (scrap import: the
+        library name beats whatever ids the SVG round-trip produced)."""
         doc = doc_from_svg(svg_text, quantization_mm, source=filename)
         if not doc.layers:
             raise RuntimeError("no plottable geometry found in the SVG")
@@ -234,9 +237,13 @@ class Session:
         with self._lock:
             self._checkpoint()
             self.svg_files[relname] = svg_text
-            for svg_layer in doc.layers:
+            for i, svg_layer in enumerate(doc.layers):
+                if rename:
+                    name = rename if len(doc.layers) == 1 else f"{rename} {i + 1}"
+                else:
+                    name = svg_layer.name
                 layer = CanvasLayer(
-                    name=svg_layer.name,
+                    name=name,
                     source=LayerSource(
                         type="svg", file=relname, svg_layer=svg_layer.id,
                         quantization_mm=quantization_mm,
