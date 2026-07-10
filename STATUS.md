@@ -3,13 +3,13 @@ project: idk.axibridge
 state: active
 updated: 2026-07-10
 machine: mac+pi
-summary: Uncanny-generator push shipped — freehand/bitmap/fat-tube effects, region layers, workbench popup + scrap library; repo now on GitHub (private) with a Pi dev clone and a scheduled unattended Fable-5 run building four more generators.
+summary: Uncanny push complete — the Pi's unattended run shipped all four generators (merged d53580d, suite 275 green both machines); live server restarted on current code after a version-skew report.
 next:
-  - Review the Pi run's branch feat/pi-generators (fired 08:33 WEST 2026-07-10; log ~/pi-generators-run.log on idkpi) and merge deliberately
-  - Try the new vocabulary on paper — region-bitmapped compositions, tube interlocks, freehand over grids (recipes in docs/IDEAS-oehlen-pass.md)
-  - Continue the Oehlen roadmap section (items 3-4 land via the Pi; then mouse preset, perception scaffolding)
+  - Try the new vocabulary on paper — misremembered/two-hands/grammar sources, region-bitmapped compositions, tube interlocks (recipes in docs/IDEAS-oehlen-pass.md)
+  - Sheets workflow v2 per the 2026-07-10 analysis (see conversation/ROADMAP): staged captures as the interp substrate, stepper ergonomics
+  - Glyph grammar (Oehlen item 4) + tuning notes in docs/plans/pi-generators-RESULTS.md (lattice grammar, subtree-propagating violations, misremembered on a real photo)
   - Workbench v2 when felt — mouse drawing, scrap editing (docs/IDEAS-oehlen-pass.md §0)
-handoff_for: claude-mac
+handoff_for: null
 ---
 
 # idk.axibridge — status
