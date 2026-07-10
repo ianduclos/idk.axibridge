@@ -77,6 +77,34 @@ Cheapest-first:
   generators and effects worth porting or inventing — keep a shortlist
   with a sample image each before committing to any.
 
+## Near term — Oehlen pass: regime collision (July 2026)
+
+From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
+*why* lives there). Ordered by dependency, not just conviction:
+
+0. **Generation workbench popup** — build before the rest: pick a generator
+   (+ effect stack), same auto-forms, reroll seeds darkroom-style, preview,
+   then save as SVG for later or import into the current project. Stateless
+   preview endpoint (never touches session/undo); plotting only after
+   import. Later: mouse drawing, scrap editing.
+1. **Bitmap + fat tube effects** — quick, independent, and the vocabulary
+   the region system will apply. Staircase-block quantizer; constant-width
+   filled pipes that interlock via existing occlusion.
+2. **Region layers ("affects below")** — adjustment-layer model, not nodes:
+   a layer's silhouette becomes a mask and its effect stack applies to the
+   layers below, clipped to the region. One careful design session on the
+   compose.py seam (regions post-effect/pre-occlusion of lower layers);
+   regions are layers, so they tween and animate for free.
+3. **Continue-strokes v1** — statistical autocomplete-as-intrusion effect
+   (curvature n-grams from the layer's own strokes; extend past endpoints,
+   visible seam). Neural v2 only if this feels shallow.
+4. **Glyph grammar source** — Hershey strokes through destruction rules,
+   `abstraction` dial from "almost reads" to pure scaffold.
+
+Also: **revise the pass-1 ideas** (`docs/IDEAS-generators.md` — rehearsal,
+misremembered image, negotiating hands, blind contour, phase transition)
+into roadmap items as conviction firms; §1 already shipped as `freehand`.
+
 ## Animation — **SHIPPED July 2026** (v1: linear A→B over a master timeline)
 
 Everything rides on the tween machinery; the master timeline `t` is an

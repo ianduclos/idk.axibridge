@@ -2,6 +2,7 @@
 
 Loose brainstorm, July 2026. Not commitments — read ROADMAP.md for conviction
 ordering. Kept because the *framing* matters as much as the entries.
+Pass 2 (Oehlen / regime collision) lives in `docs/IDEAS-oehlen-pass.md`.
 
 ## The framing
 
