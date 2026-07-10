@@ -1376,9 +1376,15 @@ def plot_resume() -> dict[str, Any]:
     return manager.status()
 
 
+class PlotStopBody(BaseModel):
+    #: after the job winds down, drive the carriage back to (0,0) — pen is
+    #: already up (backend exit contract); skipped on normal finish or crash
+    return_home: bool = False
+
+
 @router.post("/plot/stop")
-def plot_stop() -> dict[str, Any]:
-    manager.stop()
+def plot_stop(body: PlotStopBody | None = None) -> dict[str, Any]:
+    manager.stop(return_home=bool(body and body.return_home))
     return manager.status()
 
 

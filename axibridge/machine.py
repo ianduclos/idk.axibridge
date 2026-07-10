@@ -74,6 +74,7 @@ class MachineManager:
         self._job_thread: threading.Thread | None = None
         self._control: JobControl | None = None
         self._job_state = "idle"  # idle | plotting | paused
+        self._return_home = False  # stop(return_home=True) pending
         self._last_connect_info: dict[str, Any] = {}
 
     # -- introspection ---------------------------------------------------
@@ -244,8 +245,19 @@ class MachineManager:
                     bus.emit({"type": "job", "kind": "error", "message": str(exc)})
                 finally:
                     with self._lock:
+                        # walk home only for a user STOP that asked for it —
+                        # never after a normal finish or a crash
+                        go_home = self._return_home and control.stopped
+                        self._return_home = False
                         self._job_state = "idle"
                         self._control = None
+                    if go_home:
+                        try:  # backend is idle again; goto re-checks limits
+                            self.goto(0.0, 0.0, params)
+                            emit({"kind": "message", "message": "stopped — carriage returned home"})
+                        except Exception as exc:
+                            emit({"kind": "message",
+                                  "message": f"stopped, but return-home failed: {exc}"})
                     self._emit_status()
 
             self._job_thread = threading.Thread(target=run, name="axibridge-plot", daemon=True)
@@ -270,12 +282,14 @@ class MachineManager:
             self._job_state = "plotting"
             self._emit_status()
 
-    def stop(self) -> None:
+    def stop(self, return_home: bool = False) -> None:
         with self._lock:
             if self._control is None:
                 return
+            self._return_home = return_home
             self._control.stop()
-        # state flips to idle when the worker exits
+        # state flips to idle when the worker exits (which then walks home
+        # if return_home was requested — see start_plot's finally)
 
     def auto_connect(self) -> bool:
         """If an AxiDraw is plugged in and nothing is connected, select the

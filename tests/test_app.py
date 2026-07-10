@@ -263,3 +263,43 @@ def test_project_save_load_api(client):
 def test_raw_refused_on_simulator(client):
     client.post("/api/connect", json={})
     assert client.post("/api/machine/raw", json={"command": "QM"}).status_code == 409
+
+
+def test_stop_with_return_home(client):
+    """Stop ⌂: a stopped job walks the carriage back to (0,0); the flag is
+    one-shot and never fires on a normal finish."""
+    import time as _t
+
+    r = client.post("/api/layers/generate",
+                    json={"module": "polygon", "params": {"sides": 64, "radius": 60}})
+    layer_id = r.json()["id"]
+    client.put("/api/params/simulator", json={"time_scale": 1})  # slow: stoppable
+    assert client.post("/api/connect", json={}).status_code == 200
+    assert client.post("/api/plot/start", json={"target": layer_id}).status_code == 200
+    deadline = _t.time() + 10
+    while _t.time() < deadline:  # wait until the pen is measurably away from home
+        st = client.get("/api/state").json()["machine"]
+        if st["job_state"] != "idle" and st["position"] != [0, 0]:
+            break
+        _t.sleep(0.05)
+    assert client.post("/api/plot/stop", json={"return_home": True}).status_code == 200
+    deadline = _t.time() + 10
+    while _t.time() < deadline:
+        st = client.get("/api/state").json()["machine"]
+        if st["job_state"] == "idle" and st["position"] == [0, 0]:
+            break
+        _t.sleep(0.05)
+    else:
+        pytest.fail(f"carriage did not return home: {st}")
+
+    # normal finish must NOT walk home (one-shot flag consumed above)
+    client.put("/api/params/simulator", json={"time_scale": 1000})
+    client.post("/api/machine/goto", json={"x": 30, "y": 30})
+    assert client.post("/api/plot/start", json={"target": layer_id}).status_code == 200
+    deadline = _t.time() + 15
+    while _t.time() < deadline:
+        if client.get("/api/state").json()["machine"]["job_state"] == "idle":
+            break
+        _t.sleep(0.05)
+    st = client.get("/api/state").json()["machine"]
+    assert st["position"] != [0, 0], "normal finish should stay where the plot ended"

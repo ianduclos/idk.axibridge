@@ -37,7 +37,7 @@ export function initPlotTab() {
         <button id="btn-plot" class="primary big">Plot</button>
         <button id="btn-pause">Pause</button>
         <button id="btn-resume">Resume</button>
-        <button id="btn-stop" class="danger">Stop</button>
+        <button id="btn-stop" class="danger" title="Stop the job, then return the carriage to home (0,0)">Stop ⌂</button>
       </div>
       <div class="progress"><div id="progress-bar"></div></div>
       <div id="job-log" class="log"></div>
@@ -237,7 +237,7 @@ export function initPlotTab() {
       .catch(actions.oops);
   $("btn-pause").onclick = () => api.post("/api/plot/pause").catch(actions.oops);
   $("btn-resume").onclick = () => api.post("/api/plot/resume").catch(actions.oops);
-  $("btn-stop").onclick = () => api.post("/api/plot/stop").catch(actions.oops);
+  $("btn-stop").onclick = () => api.post("/api/plot/stop", { return_home: true }).catch(actions.oops);
 
   // ---- animation: one layout block feeds preview, capture, stepper, export
   $("anim-frames").value = anim.n;

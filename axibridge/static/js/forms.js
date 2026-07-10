@@ -135,26 +135,41 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
       num.value = show(val);
       if (min !== undefined) num.min = flip ? -max : min;
       if (max !== undefined) num.max = flip ? -min : max;
-      num.step = s.type === "integer" ? 1 : stepFor(min, max);
+      const step = s.type === "integer" ? 1 : stepFor(min, max);
+      num.step = step;
       let range = null;
       if (min !== undefined && max !== undefined) {
         range = document.createElement("input");
         range.type = "range";
-        range.min = num.min; range.max = num.max; range.value = show(val);
-        range.step = num.step;
+        // step="any": a discrete step grid is anchored at `min`, so any
+        // stored value off that grid (or off by float error) snaps the THUMB
+        // while the number box keeps the true value — the worst case being a
+        // 0.35 on a 0..1 field parking visually at 0. Instead the slider is
+        // continuous and WE quantize drag output to the step's decimals.
+        range.min = num.min; range.max = num.max;
+        range.step = "any";
+        range.value = show(val);
+        const quant = (v) => (step === 1 ? Math.round(v)
+          : Number(v.toFixed(step === 0.01 ? 2 : 1)));
         // live number readout while dragging; commit ONCE on release — a
         // mid-drag commit re-renders the panel and kills the drag. Forms
         // may pass opts.onLive(key, value) to observe mid-drag values (live
         // preview); it updates `values` but never fires the commit callback.
         range.oninput = () => {
-          num.value = range.value;
+          const q = quant(Number(range.value));
+          num.value = q;
           if (opts.onLive) {
-            const v = show(Number(range.value));
+            const v = show(q);
             values[key] = v;
             opts.onLive(key, v);
           }
         };
-        range.onchange = () => { num.value = range.value; set(show(Number(range.value))); };
+        range.onchange = () => {
+          const q = quant(Number(range.value));
+          num.value = q;
+          range.value = q;
+          set(show(q));
+        };
         ctl.appendChild(range);
       }
       num.onchange = () => {
