@@ -77,7 +77,11 @@ The regime vocabulary the region system will speak — build these first.
   round caps, `filled=True` — tubes then cross over/under each other
   through the existing occlusion masks for free (image 5's interlock).
 
-### 2. Region layers — "affects below" (the real project)
+### 2. Region layers — "affects below" (the real project) — **shipped July 2026**
+
+Shipped as `CanvasLayer.region` + the region pass in
+`compose.resolve_project` (see ARCHITECTURE.md "Resolve order"). Original
+sketch:
 
 Regional effects via the **adjustment-layer model, not nodes** (the ROADMAP
 node question stays parked). Precedent already in the codebase: the

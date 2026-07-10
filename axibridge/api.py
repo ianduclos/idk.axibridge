@@ -783,6 +783,12 @@ def get_resolved(
                 session.project, {layer.id: paths}, pens, target=layer.id
             )
             est = plan_job(doc, params, consts=consts).total_duration
+        # region layers resolve to nothing (never plotted) but the canvas
+        # still needs their silhouette to select/drag — display-only paths
+        display = paths
+        if layer.region and layer.visible:
+            display = compose.transform_paths(
+                session.source_geometry.get(layer.id, []), layer.transform)
         layers_out.append({
             "id": layer.id,
             "name": layer.name,
@@ -793,7 +799,8 @@ def get_resolved(
             "opacity": pen.opacity if pen else 1.0,
             "occluder": layer.occluder,
             "receives_occlusion": layer.receives_occlusion,
-            "paths": [{"points": p.points, "filled": p.filled} for p in paths],
+            "region": layer.region,
+            "paths": [{"points": p.points, "filled": p.filled} for p in display],
             "stats": {
                 "paths": len(paths),
                 "points": sum(len(p.points) for p in paths),

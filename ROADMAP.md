@@ -95,11 +95,12 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    (round-capped filled pipes, per-path buffers so occlusion/draw order
    survive; loops self-merge with paper holes). Both stack with
    `hatch_fill`/`freehand`.
-2. **Region layers ("affects below")** — adjustment-layer model, not nodes:
-   a layer's silhouette becomes a mask and its effect stack applies to the
-   layers below, clipped to the region. One careful design session on the
-   compose.py seam (regions post-effect/pre-occlusion of lower layers);
-   regions are layers, so they tween and animate for free.
+2. ~~Region layers ("affects below")~~ — **shipped July 2026** as
+   `CanvasLayer.region`: placed silhouette masks, effect stack applies to
+   layers below (inside clipped + effected, outside untouched), bottom→top
+   stacking, post-effect/pre-occlusion so region output still occludes.
+   Canvas shows the silhouette dashed; regions never plot. See
+   ARCHITECTURE.md "Resolve order". Regions tween/animate for free.
 3. **Continue-strokes v1** — statistical autocomplete-as-intrusion effect
    (curvature n-grams from the layer's own strokes; extend past endpoints,
    visible seam). Neural v2 only if this feels shallow.

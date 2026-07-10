@@ -123,6 +123,12 @@ class CanvasLayer(BaseModel):
     pen_id: str | None = None
     occluder: bool = False
     receives_occlusion: bool = True
+    region: bool = Field(
+        default=False,
+        description="Affects below: this layer's placed silhouette becomes a "
+                    "mask and its effect stack shapes the layers underneath, "
+                    "clipped to the region — the layer itself is never drawn. "
+                    "(Adjustment-layer model; see docs/IDEAS-oehlen-pass.md §2)")
     occlusion_margin_mm: float = Field(default=0.0, ge=-20, le=20,
                                        description="Signed: + opens a gap, − bleeds under")
     frame_offset: float = Field(
@@ -251,23 +257,30 @@ def transform_paths(paths: list[Path], t: Affine) -> list[Path]:
     return [Path(points=[t.apply(x, y) for x, y in p.points], filled=p.filled) for p in paths]
 
 
-def shape_layer(layer: CanvasLayer, source_paths: list[Path]) -> list[Path]:
-    """transform → effect stack. Pure; caller caches."""
-    placed = transform_paths(source_paths, layer.transform)
-    ctx = EffectContext(
+def _layer_ctx(layer: CanvasLayer) -> EffectContext:
+    return EffectContext(
         layer_id=layer.id,
         translation=layer.transform.translation,
         seed=_layer_seed(layer.id),
     )
-    for step in layer.effects:
+
+
+def _apply_effect_stack(paths: list[Path], steps: list[EffectStep], ctx: EffectContext) -> list[Path]:
+    for step in steps:
         if not step.enabled:
             continue
         eff = get_effect(step.effect)
         ok, reason = eff.available()
         if not ok:
             raise RuntimeError(f"effect {step.effect!r} unavailable: {reason}")
-        placed = eff.apply(placed, eff.Params(**step.params), ctx)
-    return placed
+        paths = eff.apply(paths, eff.Params(**step.params), ctx)
+    return paths
+
+
+def shape_layer(layer: CanvasLayer, source_paths: list[Path]) -> list[Path]:
+    """transform → effect stack. Pure; caller caches."""
+    placed = transform_paths(source_paths, layer.transform)
+    return _apply_effect_stack(placed, layer.effects, _layer_ctx(layer))
 
 
 def build_mask(
@@ -349,6 +362,31 @@ def clip_paths(shaped: list[Path], mask: BaseGeometry) -> list[Path]:
     return out
 
 
+def clip_paths_inside(shaped: list[Path], mask: BaseGeometry) -> list[Path]:
+    """Intersection twin of ``clip_paths``: keep only the pieces INSIDE the
+    mask. Same ``filled`` rule — a fragment keeps the flag only if it
+    survived intact and closed."""
+    out: list[Path] = []
+    for p in shaped:
+        if len(p.points) == 1:
+            if mask.covers(ShPoint(p.points[0])):
+                out.append(p)
+            continue
+        hit = LineString(p.points).intersection(mask)
+        if hit.is_empty:
+            continue
+        pieces = getattr(hit, "geoms", [hit])
+        for g in pieces:
+            if g.geom_type != "LineString" or len(g.coords) < 2:
+                continue
+            pts = _dedupe([(float(x), float(y)) for x, y in g.coords])
+            if len(pts) < 2:
+                continue
+            survived_closed = len(pts) > 2 and pts[0] == pts[-1]
+            out.append(Path(points=pts, filled=p.filled and survived_closed))
+    return out
+
+
 def line_diameter_for(layer: CanvasLayer, pens: dict[str, Pen]) -> float:
     pen = pens.get(layer.pen_id or "")
     return pen.line_diameter_mm if pen else DEFAULT_LINE_DIAMETER_MM
@@ -369,10 +407,11 @@ def resolve_project(
     transform+effects stage per layer, keyed by a content hash, so dragging
     one layer doesn't re-run every other layer's effect stack.
     """
-    # 1. shape every visible layer (cached)
+    # 1. shape every visible layer (cached). Region layers are skipped: their
+    # effect stack is a payload for the layers below, never for themselves.
     shaped: dict[str, list[Path]] = {}
     for layer in project.layers:
-        if not layer.visible:
+        if not layer.visible or layer.region:
             continue
         src = source_geometry.get(layer.id, [])
         if shaped_cache is not None:
@@ -386,11 +425,37 @@ def resolve_project(
         else:
             shaped[layer.id] = shape_layer(layer, src)
 
+    # 1.5 region layers ("affects below"), bottom -> top so an upper region
+    # sees the output of a lower one (adjustment-layer stacking). The region's
+    # placed silhouette clips every layer beneath it; the inside pieces run
+    # the region's effect stack. This happens post-effect / pre-occlusion, so
+    # region output (pixellated blocks, tubes…) still occludes normally.
+    # Reassignment only — cached shaped lists are never mutated in place.
+    for r_idx, region in enumerate(project.layers):
+        if not (region.visible and region.region):
+            continue
+        placed = transform_paths(source_geometry.get(region.id, []), region.transform)
+        mask = build_mask(placed, line_diameter_for(region, pens), 0.0)
+        if mask is None:
+            continue
+        ctx = _layer_ctx(region)
+        for below in project.layers[:r_idx]:
+            if below.id not in shaped:
+                continue  # hidden, or itself a region
+            inside = clip_paths_inside(shaped[below.id], mask)
+            if not inside:
+                continue
+            outside = clip_paths(shaped[below.id], mask)
+            shaped[below.id] = outside + _apply_effect_stack(inside, region.effects, ctx)
+
     # 2. occlusion, top -> bottom, accumulating the mask union
     resolved: dict[str, list[Path]] = {}
     cum_mask: BaseGeometry | None = None
     for layer in reversed(project.layers):
         if not layer.visible:
+            continue
+        if layer.region:
+            resolved[layer.id] = []  # a region is never drawn and never occludes
             continue
         s = shaped[layer.id]
         if layer.receives_occlusion and cum_mask is not None:

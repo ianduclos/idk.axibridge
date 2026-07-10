@@ -239,7 +239,12 @@ export class CanvasEditor {
           stroke: layer.color,
           "stroke-linecap": "round", "stroke-linejoin": "round",
         });
-        if (this.mode === "ink") {
+        if (layer.region) {
+          // region silhouette: display-only mask outline, never plotted
+          path.setAttribute("stroke-dasharray", "2.2 1.6");
+          path.setAttribute("stroke-opacity", 0.55);
+          path.setAttribute("stroke-width", 0.35);
+        } else if (this.mode === "ink") {
           path.setAttribute("stroke-width", layer.line_diameter_mm);
           path.setAttribute("stroke-opacity", layer.opacity);
         } else {

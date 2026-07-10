@@ -68,13 +68,25 @@ feedback, then commits and re-fetches the authoritative resolve.)
 
 ### Resolve order (deliberate, user-confirmed)
 
-`resolved = occlusion(effects(transform(source)))` — transform **first**, so
-effects operate in paper space: 0.5 mm of jitter is 0.5 mm on the sheet no
-matter how the layer is scaled. Noise effects sample their field at
-`point − layer translation` (layer-anchored), so dragging a layer doesn't
-reshuffle its wobble. The canvas handles edit the same six matrix numbers the
-server bakes (`<g transform="matrix(…)">` ⇄ `Affine`) — no impedance
-mismatch by construction.
+`resolved = occlusion(regions(effects(transform(source))))` — transform
+**first**, so effects operate in paper space: 0.5 mm of jitter is 0.5 mm on
+the sheet no matter how the layer is scaled. Noise effects sample their
+field at `point − layer translation` (layer-anchored), so dragging a layer
+doesn't reshuffle its wobble. The canvas handles edit the same six matrix
+numbers the server bakes (`<g transform="matrix(…)">` ⇄ `Affine`) — no
+impedance mismatch by construction.
+
+**Region layers** (`layer.region`, July 2026) are the adjustment-layer model:
+the layer's *placed* silhouette (transform only — its effect stack is the
+payload, never applied to itself) becomes a mask, and that stack shapes the
+layers *below it in z-order*, clipped to the region (inside pieces run the
+stack with the region's own EffectContext; outside passes through
+untouched). Regions apply bottom→top so an upper region sees a lower one's
+output, after per-layer effects and before occlusion — so region output
+(bitmap blocks, tubes) still occludes normally. A region layer itself never
+draws, plots, or occludes; the canvas shows its silhouette dashed
+(display-only paths in the resolved payload). Since regions are ordinary
+layers, they transform, tween, and follow the master timeline for free.
 
 ### Occlusion (shapely, not occult)
 

@@ -257,7 +257,7 @@ class Session:
     def update_layer(self, layer_id: str, patch: dict[str, Any]) -> CanvasLayer:
         allowed = {"name", "visible", "draw", "transform", "effects", "pen_id",
                    "occluder", "receives_occlusion", "occlusion_margin_mm",
-                   "frame_offset", "frame_follow"}
+                   "region", "frame_offset", "frame_follow"}
         with self._lock:
             layer = self.project.layer(layer_id)
             self._checkpoint()

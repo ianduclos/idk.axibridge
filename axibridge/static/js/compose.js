@@ -767,6 +767,10 @@ export function renderLayerDetail() {
       <label><input type="checkbox" id="ld-receives" ${layer.receives_occlusion ? "checked" : ""}> receives occlusion</label>
     </div>
     <div class="row">
+      <label title="Adjustment-layer mode: this layer's silhouette becomes a mask and its EFFECT STACK is applied to the layers below it, clipped to the region. The layer itself is never drawn or plotted (dashed on canvas).">
+        <input type="checkbox" id="ld-region" ${layer.region ? "checked" : ""}> region — effects apply to layers below</label>
+    </div>
+    <div class="row">
       <label>margin</label>
       <input type="number" id="ld-margin" value="${layer.occlusion_margin_mm}" step="0.25" min="-20" max="20" style="width:5.5em">
       <span class="hint">mm — + opens a gap, − bleeds under</span>
@@ -784,11 +788,14 @@ export function renderLayerDetail() {
   occ.querySelector("#ld-draw").onchange = (e) => actions.patchLayer(layer.id, { draw: e.target.checked });
   occ.querySelector("#ld-occluder").onchange = (e) => actions.patchLayer(layer.id, { occluder: e.target.checked });
   occ.querySelector("#ld-receives").onchange = (e) => actions.patchLayer(layer.id, { receives_occlusion: e.target.checked });
+  occ.querySelector("#ld-region").onchange = (e) => actions.patchLayer(layer.id, { region: e.target.checked });
   occ.querySelector("#ld-margin").onchange = (e) => actions.patchLayer(layer.id, { occlusion_margin_mm: +e.target.value });
 
   // -- effect stack
   const fx = document.createElement("div");
-  fx.innerHTML = `<h3>Effects <span class="hint">(paper-space, non-destructive)</span></h3>
+  fx.innerHTML = `<h3>Effects <span class="hint">${layer.region
+      ? "(region: applied to the layers below, inside this silhouette)"
+      : "(paper-space, non-destructive)"}</span></h3>
     <div class="row">
       <select id="fx-select"></select><button id="fx-add">＋ Add</button>
       <button id="fx-consolidate" title="Bake transform + effects into the source geometry (undoable; regenerate also reverts a generated layer)">⤓ Consolidate</button>
