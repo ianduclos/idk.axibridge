@@ -105,6 +105,60 @@ def test_region_output_still_occludes():
             assert not (50.0 + 1e-6 < x < 90.0 - 1e-6 and 50.0 + 1e-6 < y < 90.0 - 1e-6)
 
 
+def test_region_continuous_path_count_identity_and_seams():
+    # a line OFF the region's grid, so bitmap-lines visibly moves it
+    line = CanvasLayer(name="line", source=LayerSource(type="svg", file="x"))
+    line_src = [Path(points=[(10.0, 51.0), (190.0, 51.0)], filled=False)]
+    rgn, rgn_src = _region_layer(effects=[EffectStep(effect="bitmap", params={"cell": 4.0})])
+    rgn.region_boundary = "continuous"
+    resolved, _ = _resolve([(line, line_src), (rgn, rgn_src)])
+
+    pieces = resolved[line.id]
+    assert len(pieces) == 1  # one path in, one path out — no pen lift
+    [p] = pieces
+    assert not p.filled
+    # ends verbatim, quantized middle: the path still spans the full line
+    assert p.points[0] == (10.0, 51.0) and p.points[-1] == (190.0, 51.0)
+    # travel order preserved: verbatim outside sections first and last, the
+    # effected (grid-snapped, off-line) section spliced between them — every
+    # off-line point stays within the region plus one cell of snap slack
+    off_line = [i for i, (_, y) in enumerate(p.points) if abs(y - 51.0) > 1e-6]
+    assert off_line, "the inside section was effected"
+    assert 0 < min(off_line) and max(off_line) < len(p.points) - 1
+    for i in off_line:
+        x, y = p.points[i]
+        assert 80.0 - 4.0 <= x <= 120.0 + 4.0 and 30.0 - 4.0 <= y <= 70.0 + 4.0
+
+
+def test_region_continuous_effected_multi_path_output_concatenates():
+    # fat_tube turns the inside piece into a closed outline: still one path
+    line, line_src = _line_layer()
+    rgn, rgn_src = _region_layer(effects=[EffectStep(effect="fat_tube", params={"width": 6.0})])
+    rgn.region_boundary = "continuous"
+    resolved, _ = _resolve([(line, line_src), (rgn, rgn_src)])
+    assert len(resolved[line.id]) == 1
+
+
+def test_region_continuous_entirely_outside_passes_verbatim():
+    line, line_src = _line_layer()
+    rgn, rgn_src = _region_layer(x0=200.0, y0=150.0,
+                                 effects=[EffectStep(effect="bitmap", params={"cell": 4.0})])
+    rgn.region_boundary = "continuous"
+    resolved, _ = _resolve([(line, line_src), (rgn, rgn_src)])
+    assert [p.points for p in resolved[line.id]] == [line_src[0].points]
+
+
+def test_region_cut_mode_unchanged_by_the_new_field():
+    # byte-identical: an explicit "cut" resolves exactly like the default
+    line, line_src = _line_layer()
+    rgn, rgn_src = _region_layer(effects=[EffectStep(effect="bitmap", params={"cell": 4.0})])
+    default, _ = _resolve([(line, line_src), (rgn, rgn_src)])
+    rgn2, rgn2_src = _region_layer(effects=[EffectStep(effect="bitmap", params={"cell": 4.0})])
+    rgn2.region_boundary = "cut"
+    explicit, _ = _resolve([(line, line_src), (rgn2, rgn2_src)])
+    assert [p.points for p in default[line.id]] == [p.points for p in explicit[line.id]]
+
+
 def test_region_via_api_undo_and_display(client):
     line = client.post("/api/layers/generate",
                        json={"module": "polygon", "params": {"sides": 4, "radius": 40}}).json()

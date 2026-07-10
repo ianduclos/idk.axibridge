@@ -769,6 +769,8 @@ export function renderLayerDetail() {
     <div class="row">
       <label title="Adjustment-layer mode: this layer's silhouette becomes a mask and its EFFECT STACK is applied to the layers below it, clipped to the region. The layer itself is never drawn or plotted (dashed on canvas).">
         <input type="checkbox" id="ld-region" ${layer.region ? "checked" : ""}> region — effects apply to layers below</label>
+      ${layer.region ? `<label title="Instead of lifting the pen at the region edge, each path below is stitched back into one continuous path — outside sections verbatim, effected sections spliced in, the seam a drawn connection.">
+        <input type="checkbox" id="ld-region-cont" ${layer.region_boundary === "continuous" ? "checked" : ""}> continuous lines</label>` : ""}
     </div>
     <div class="row">
       <label>margin</label>
@@ -789,6 +791,9 @@ export function renderLayerDetail() {
   occ.querySelector("#ld-occluder").onchange = (e) => actions.patchLayer(layer.id, { occluder: e.target.checked });
   occ.querySelector("#ld-receives").onchange = (e) => actions.patchLayer(layer.id, { receives_occlusion: e.target.checked });
   occ.querySelector("#ld-region").onchange = (e) => actions.patchLayer(layer.id, { region: e.target.checked });
+  const cont = occ.querySelector("#ld-region-cont");
+  if (cont) cont.onchange = (e) => actions.patchLayer(layer.id, {
+    region_boundary: e.target.checked ? "continuous" : "cut" });
   occ.querySelector("#ld-margin").onchange = (e) => actions.patchLayer(layer.id, { occlusion_margin_mm: +e.target.value });
 
   // -- effect stack
