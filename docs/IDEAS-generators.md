@@ -72,7 +72,14 @@ a committed final stroke, like construction lines under a figure drawing.
 - **UI load:** medium — per-pass configuration wants a small list UI, not a
   flat param panel (see UI section).
 
-## 3. Misremembered image
+## 3. Misremembered image — **shipped July 2026**
+
+Shipped as `sources/misremembered.py` (`id: misremembered`, Pi run): blob
+phase on the dark masses first (amoebas probed from a pooled-darkness
+field), then greedy streamline strokes along the gradient field, recall
+threshold relaxing as strong structure runs out; confidence → firm drifting
+polyline vs. short broken searching fragments. `budget` is the dial and is
+tweenable. Original sketch:
 
 Not thresholding/hatching (already have those) but lossy *recall*: sample the
 image sparsely, fit a small budget of primitives (long arcs, straight
@@ -90,7 +97,14 @@ details confabulated.
 - **UI load:** low-medium — one asset dropdown, budget slider, a few
   confidence-shaping params.
 
-## 4. Grammar with a transgression budget
+## 4. Grammar with a transgression budget — **shipped July 2026**
+
+Shipped as `sources/grammar.py` (`id: grammar`, Pi run): three built-in
+grammars (branching / band frieze / radial rosette) authored in cubic
+bézier space, flattened only at output; violations are rule-aware affines
+on placed motifs (rotate off-true, scale off-module, vocabulary swap),
+spent at salient sites with a size discount so each one stays perceptible.
+No rule editor, per UI principle 5. Original sketch:
 
 A shape grammar (Stiny-style rewrite rules) that obeys itself almost
 everywhere — but carries a budget of deliberate violations, spent at
@@ -106,7 +120,14 @@ are rule-aware (the generator knows what it breaks), not noise-driven.
   handful of built-in grammars behind an enum; a rule *editor* is a separate
   project and probably a trap (see UI section).
 
-## 5. Two hands negotiating
+## 5. Two hands negotiating — **shipped July 2026**
+
+Shipped as `sources/two_hands.py` (`id: two_hands`, Pi run): perceive →
+respond (echo / complete / contradict per `agreeableness`, focus per
+`attention`) → mark in a bounded per-agent genome (grouped `Agent A`/`B`
+params — UI principle 1, not the preset store yet). The `draw` enum is a
+pure filter over one deterministic conversation, so two layers + two pens
+give the physical negotiation. Original sketch:
 
 Two line-agents with different style genomes take turns marking the page,
 each responding to the other's last stroke — completing, echoing,

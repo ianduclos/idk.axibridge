@@ -101,15 +101,19 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    stacking, post-effect/pre-occlusion so region output still occludes.
    Canvas shows the silhouette dashed; regions never plot. See
    ARCHITECTURE.md "Resolve order". Regions tween/animate for free.
-3. **Continue-strokes v1** — statistical autocomplete-as-intrusion effect
-   (curvature n-grams from the layer's own strokes; extend past endpoints,
-   visible seam). Neural v2 only if this feels shallow.
+3. ~~Continue-strokes v1~~ — **shipped July 2026** (Pi run) as
+   `effects/continue_strokes.py`: order-N Markov over layer-adaptive
+   quantized turning angles + step-length pool, temperature 0→1 from
+   most-typical to full empirical spread; closed paths pass through.
+   Neural v2 only if this feels shallow.
 4. **Glyph grammar source** — Hershey strokes through destruction rules,
    `abstraction` dial from "almost reads" to pure scaffold.
 
 Also: **revise the pass-1 ideas** (`docs/IDEAS-generators.md` — rehearsal,
-misremembered image, negotiating hands, blind contour, phase transition)
-into roadmap items as conviction firms; §1 already shipped as `freehand`.
+blind contour, phase transition) into roadmap items as conviction firms;
+§1 shipped as `freehand`, and the July 2026 Pi run shipped §3
+(`sources/misremembered.py`), §4 (`sources/grammar.py`) and §5
+(`sources/two_hands.py`) — see `docs/plans/pi-generators-RESULTS.md`.
 
 ## Animation — **SHIPPED July 2026** (v1: linear A→B over a master timeline)
 

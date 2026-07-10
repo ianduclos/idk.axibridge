@@ -110,7 +110,13 @@ same layer list, effect stacks, transform gizmo, undo.
   One seam in `compose.py`, not a rewrite; the single-resolve invariant
   survives.
 
-### 3. Continue-strokes v1 — autocomplete as intrusion (no model needed)
+### 3. Continue-strokes v1 — autocomplete as intrusion (no model needed) — **shipped July 2026**
+
+Shipped as `effects/continue_strokes.py` (`id: continue_strokes`, Pi run):
+order-N Markov chain over turning angles quantized on a grid adapted to the
+layer's own spread, plus a step-length pool; `temperature` spans
+most-typical → full empirical spread; closed paths pass through unchanged.
+Original sketch:
 
 An effect: for each path in the layer, learn local stroke statistics
 (turning-angle + step-length distributions, n-gram/Markov over curvature)
