@@ -146,6 +146,29 @@ presets, a continue-strokes "seam pen" split. The *indifferent lines over
 structured ground* recipe stays in the ideas doc — it's a composition
 practice, not a module.
 
+## Near term — AARON pass (July 2026, pass 3)
+
+From `docs/IDEAS-aaron-pass.md` (grounded in Cohen's AAAI-1988 paper — the
+mechanisms are quoted there). Pull order:
+
+1. **Core-figure generator** — skeleton (plant morphology variables /
+   armature with a balance constraint) → embodied closed outline walked
+   around it with carefulness varying along the body (freehand controller
+   as the hand) → several placed foreground-first under AARON's
+   never-overlap rule via the existing masks. The missing thing-ness that
+   two_hands lacks.
+2. **Sheet-snapshot asset** — one endpoint/button rasterizing the current
+   resolved output into an asset; every image-driven generator becomes
+   context-aware (negative-space filler, two_hands v2 perceiving the sheet,
+   respond/annotate generators). Zero architecture change.
+3. **Felt-tip color kit** (with 4 — they share multi-layer-per-pen
+   plumbing): overprint zones with pairwise intersections drawn in both
+   pens; value-rule pen assignment with free hue (Cohen's color logic);
+   duotone density mixing; repetition-as-pressure.
+4. **linedraw v2** — staged pipeline (edge extraction / stroke tracing /
+   flow-aligned streamline hatching), multi-layer output by tonal band,
+   each band its own texture + pen.
+
 ## Sheets workflow v2 (from the 2026-07-10 code review)
 
 Findings and fixes for the grid-sheet/interp workflow; the analysis lives in
