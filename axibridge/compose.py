@@ -129,6 +129,13 @@ class CanvasLayer(BaseModel):
                     "mask and its effect stack shapes the layers underneath, "
                     "clipped to the region — the layer itself is never drawn. "
                     "(Adjustment-layer model; see docs/IDEAS-oehlen-pass.md §2)")
+    region_boundary: Literal["cut", "continuous"] = Field(
+        default="cut",
+        description="Region seam handling: 'cut' lifts the pen at every "
+                    "boundary crossing; 'continuous' stitches each path below "
+                    "back into ONE path — outside sections verbatim, inside "
+                    "sections replaced by their effected geometry, the seam a "
+                    "drawn connection wherever the effect moved the ends")
     occlusion_margin_mm: float = Field(default=0.0, ge=-20, le=20,
                                        description="Signed: + opens a gap, − bleeds under")
     frame_offset: float = Field(
@@ -387,6 +394,68 @@ def clip_paths_inside(shaped: list[Path], mask: BaseGeometry) -> list[Path]:
     return out
 
 
+def region_stitch_paths(
+    shaped: list[Path], mask: BaseGeometry,
+    steps: list["EffectStep"], ctx: EffectContext,
+) -> list[Path]:
+    """The 'continuous' region boundary: one input path → one output path.
+
+    Each path is walked in its original order; sections outside the mask pass
+    through verbatim, sections inside are replaced by their effected geometry,
+    and everything is concatenated with no pen lift — the seam is a drawn
+    connection, wherever the effect moved the piece's ends.
+
+    Contract limitation, stated honestly: stitching needs the inside pieces to
+    stay identifiable, so the effect stack runs once PER PIECE (unlike cut
+    mode's one run over the whole inside set — seeded effects will differ).
+    An effect that returns several paths for one piece (bitmap blocks,
+    fat_tube rings) has them concatenated in output order into the stitch:
+    connected is the promise, not pretty. ``filled`` follows the existing
+    survived-closed rule on the stitched result.
+    """
+    def effected_points(pts: list[tuple[float, float]], filled: bool) -> list[tuple[float, float]]:
+        piece = Path(points=pts, filled=filled and len(pts) > 2 and pts[0] == pts[-1])
+        return [pt for f in _apply_effect_stack([piece], steps, ctx) for pt in f.points]
+
+    out: list[Path] = []
+    for p in shaped:
+        if len(p.points) == 1:
+            if not mask.covers(ShPoint(p.points[0])):
+                out.append(p)
+                continue
+            pts = effected_points(p.points, p.filled)
+            if pts:
+                out.append(Path(points=_dedupe(pts), filled=False))
+            continue
+        line = LineString(p.points)
+        inside_geom = line.intersection(mask)
+        if inside_geom.is_empty:
+            out.append(p)
+            continue
+        # collect every piece (both sides) with its position along the path,
+        # so the stitch preserves the original travel order
+        pieces: list[tuple[float, bool, list[tuple[float, float]]]] = []
+        for geom, is_inside in ((line.difference(mask), False), (inside_geom, True)):
+            for g in getattr(geom, "geoms", [geom]):
+                if g.geom_type != "LineString" or len(g.coords) < 2:
+                    continue
+                pts = _dedupe([(float(x), float(y)) for x, y in g.coords])
+                if len(pts) < 2:
+                    continue
+                pos = line.project(g.interpolate(0.5, normalized=True))
+                pieces.append((pos, is_inside, pts))
+        pieces.sort(key=lambda t: t[0])
+        stitched: list[tuple[float, float]] = []
+        for _, is_inside, pts in pieces:
+            stitched.extend(effected_points(pts, p.filled) if is_inside else pts)
+        if not stitched:
+            continue
+        stitched = _dedupe(stitched)
+        survived_closed = len(stitched) > 2 and stitched[0] == stitched[-1]
+        out.append(Path(points=stitched, filled=p.filled and survived_closed))
+    return out
+
+
 def line_diameter_for(layer: CanvasLayer, pens: dict[str, Pen]) -> float:
     pen = pens.get(layer.pen_id or "")
     return pen.line_diameter_mm if pen else DEFAULT_LINE_DIAMETER_MM
@@ -442,6 +511,10 @@ def resolve_project(
         for below in project.layers[:r_idx]:
             if below.id not in shaped:
                 continue  # hidden, or itself a region
+            if region.region_boundary == "continuous":
+                shaped[below.id] = region_stitch_paths(
+                    shaped[below.id], mask, region.effects, ctx)
+                continue
             inside = clip_paths_inside(shaped[below.id], mask)
             if not inside:
                 continue

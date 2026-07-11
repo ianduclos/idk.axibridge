@@ -7,6 +7,11 @@
 // layer (re-runnable, tweenable), saved scraps as baked SVG layers (exactly
 // what you saw, however module code evolves). Server side is /api/workbench/
 // preview, which touches no session/undo state; nothing plots from here.
+//
+// ✏ Draw mode: pointer strokes on the stage (mm via the viewBox) become the
+// recipe's base instead of a generator — shaped by a drawing mode (smooth,
+// steps, zigzag, stitch), run through the same effect stack, saved/imported
+// through the same scrap machinery (module "drawing", geometry frozen).
 
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
@@ -20,7 +25,10 @@ const wb = {
   effects: [],        // [{effect, enabled, params}] — same shape as layer stacks
   ok: false,          // last preview succeeded (guards save/import)
   busy: false, queued: false, timer: null,
+  draw: { on: false, mode: "smooth", strokes: [], drag: null }, // raw strokes, mm
 };
+
+const BED = { w: 300, h: 218 };
 
 export function initWorkbench() {
   if ($("workbench-modal")) return; // refreshAll re-inits tabs; build once
@@ -60,6 +68,19 @@ export function initWorkbench() {
           <div id="wb-fx-list"></div>
         </div>
         <div class="wb-right">
+          <div class="wb-drawbar">
+            <button id="wb-draw" title="Draw on the sheet with the pointer">✏ Draw</button>
+            <select id="wb-draw-mode" title="Drawing mode — re-shapes every stroke, not just new ones">
+              <option value="raw">raw</option>
+              <option value="smooth" selected>smooth</option>
+              <option value="steps">steps</option>
+              <option value="zigzag">zigzag</option>
+              <option value="stitch">stitch</option>
+            </select>
+            <button id="wb-draw-undo" title="Undo last stroke">↩</button>
+            <button id="wb-draw-clear" title="Clear the drawing — back to the generator">✕</button>
+            <span id="wb-draw-hint" class="hint"></span>
+          </div>
           <div class="preview-stage wb-stage"><svg id="wb-svg"></svg></div>
           <div class="wb-actions">
             <span id="wb-status" class="hint"></span>
@@ -91,6 +112,183 @@ export function initWorkbench() {
   };
   $("wb-save").onclick = saveScrap;
   $("wb-import").onclick = importLive;
+
+  $("wb-draw").onclick = () => { wb.draw.on = !wb.draw.on; updateDrawUI(); };
+  $("wb-draw-mode").onchange = () => {
+    wb.draw.mode = $("wb-draw-mode").value;
+    updateDrawUI();
+    if (wb.draw.strokes.length) schedule(0);  // re-shape existing strokes too
+  };
+  $("wb-draw-undo").onclick = () => {
+    wb.draw.strokes.pop();
+    updateDrawUI();
+    schedule(0);
+  };
+  $("wb-draw-clear").onclick = () => {
+    wb.draw.strokes = [];
+    updateDrawUI();
+    schedule(0);
+  };
+  initDrawInput($("wb-svg"));
+}
+
+// ---- mouse drawing: pointer input on the stage (mm via the viewBox) ----------------
+
+function mmPoint(svg, evt) {
+  const p = new DOMPoint(evt.clientX, evt.clientY).matrixTransform(svg.getScreenCTM().inverse());
+  return [Math.min(BED.w, Math.max(0, p.x)), Math.min(BED.h, Math.max(0, p.y))];
+}
+
+function initDrawInput(svg) {
+  let live = null; // in-progress overlay polyline (survives until preview redraw)
+  svg.addEventListener("pointerdown", (e) => {
+    if (!wb.draw.on || e.button !== 0) return;
+    e.preventDefault();
+    svg.setPointerCapture(e.pointerId);
+    wb.draw.drag = [mmPoint(svg, e)];
+    live = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    live.setAttribute("class", "wb-line wb-draw-live");
+    svg.appendChild(live);
+  });
+  svg.addEventListener("pointermove", (e) => {
+    if (!wb.draw.drag) return;
+    const p = mmPoint(svg, e);
+    const last = wb.draw.drag[wb.draw.drag.length - 1];
+    if (Math.hypot(p[0] - last[0], p[1] - last[1]) < 1.0) return; // ~1 mm spacing
+    wb.draw.drag.push(p);
+    if (live) live.setAttribute("points", wb.draw.drag.map(([x, y]) => `${x},${y}`).join(" "));
+  });
+  const finish = () => {
+    if (!wb.draw.drag) return;
+    wb.draw.strokes.push(wb.draw.drag);
+    wb.draw.drag = null;
+    live = null;
+    updateDrawUI();
+    schedule(0);  // the server preview redraws everything, shaped
+  };
+  svg.addEventListener("pointerup", finish);
+  svg.addEventListener("pointercancel", finish);
+}
+
+function updateDrawUI() {
+  $("wb-draw").classList.toggle("active", wb.draw.on);
+  $("wb-svg").closest(".wb-stage").classList.toggle("wb-drawing", wb.draw.on);
+  const n = wb.draw.strokes.length;
+  $("wb-draw-undo").disabled = !n;
+  $("wb-draw-clear").disabled = !n;
+  $("wb-draw-hint").textContent =
+    n ? `${n} stroke${n > 1 ? "s" : ""} · ${wb.draw.mode} — drawing replaces the generator`
+      : (wb.draw.on ? "drag on the sheet to draw" : "");
+}
+
+// ---- drawing modes: shape raw strokes into the machine vocabulary ------------------
+// One raw stroke → one or more shaped paths; shaping is functional (raw strokes
+// are kept), so a mode change re-shapes the whole drawing.
+
+function chaikin(pts) {
+  if (pts.length < 3) return pts;
+  const out = [pts[0]];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+    out.push([x0 * 0.75 + x1 * 0.25, y0 * 0.75 + y1 * 0.25]);
+    out.push([x0 * 0.25 + x1 * 0.75, y0 * 0.25 + y1 * 0.75]);
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+
+// even resampling along arc length — zigzag/stitch need constant rhythm
+function resample(pts, step) {
+  if (pts.length < 2) return pts;
+  const out = [pts[0]];
+  let acc = 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    let [x0, y0] = pts[i];
+    const [x1, y1] = pts[i + 1];
+    let seg = Math.hypot(x1 - x0, y1 - y0);
+    while (acc + seg >= step) {
+      const t = (step - acc) / seg;
+      const nx = x0 + (x1 - x0) * t, ny = y0 + (y1 - y0) * t;
+      out.push([nx, ny]);
+      x0 = nx; y0 = ny;
+      seg = Math.hypot(x1 - x0, y1 - y0);
+      acc = 0;
+    }
+    acc += seg;
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+
+// Manhattan quantize — the client-side twin of the bitmap effect's lines math
+function manhattan(pts, cellMm) {
+  const snap = (v) => Math.round(v / cellMm) * cellMm;
+  const out = [[snap(pts[0][0]), snap(pts[0][1])]];
+  const push = (p) => {
+    const l = out[out.length - 1];
+    if (l[0] !== p[0] || l[1] !== p[1]) out.push(p);
+  };
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, ay] = pts[i], [bx, by] = pts[i + 1];
+    const xFirst = Math.abs(bx - ax) >= Math.abs(by - ay);
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / (cellMm / 3)));
+    for (let k = 1; k <= n; k++) {
+      const t = k / n;
+      const qx = snap(ax + (bx - ax) * t), qy = snap(ay + (by - ay) * t);
+      const [px, py] = out[out.length - 1];
+      if (qx === px && qy === py) continue;
+      if (qx !== px && qy !== py) push(xFirst ? [qx, py] : [px, qy]);
+      push([qx, qy]);
+    }
+  }
+  return out;
+}
+
+function zigzag(pts, step, amp) {
+  const rs = resample(pts, step);
+  if (rs.length < 3) return rs;
+  return rs.map((p, i) => {
+    if (i === 0 || i === rs.length - 1) return p;
+    const [ax, ay] = rs[i - 1], [bx, by] = rs[i + 1];
+    const len = Math.hypot(bx - ax, by - ay) || 1;
+    const s = (i % 2 ? 1 : -1) * amp;
+    return [p[0] + (-(by - ay) / len) * s, p[1] + ((bx - ax) / len) * s];
+  });
+}
+
+function stitch(pts, dash, gap) {
+  const rs = resample(pts, 0.5);
+  const paths = [];
+  let cur = [];
+  let s = 0;
+  for (let i = 0; i < rs.length; i++) {
+    if (i) s += Math.hypot(rs[i][0] - rs[i - 1][0], rs[i][1] - rs[i - 1][1]);
+    if (s % (dash + gap) < dash) cur.push(rs[i]);
+    else if (cur.length > 1) { paths.push(cur); cur = []; }
+    else cur = [];
+  }
+  if (cur.length > 1) paths.push(cur);
+  return paths.length ? paths : [rs];
+}
+
+const DRAW_MODES = {
+  raw:    (pts) => [pts],
+  smooth: (pts) => [chaikin(chaikin(chaikin(pts)))],
+  steps:  (pts) => [manhattan(pts, 3.0)],
+  zigzag: (pts) => [zigzag(pts, 3.0, 2.0)],
+  stitch: (pts) => stitch(pts, 3.0, 2.0),
+};
+
+function shapedPaths() {
+  const clamp = ([x, y]) => [
+    Math.round(Math.min(BED.w, Math.max(0, x)) * 100) / 100,
+    Math.round(Math.min(BED.h, Math.max(0, y)) * 100) / 100,
+  ];
+  const out = [];
+  for (const stroke of wb.draw.strokes) {
+    for (const path of DRAW_MODES[wb.draw.mode](stroke)) out.push(path.map(clamp));
+  }
+  return out;
 }
 
 function open() {
@@ -104,6 +302,7 @@ function open() {
   } else renderParamForm();
   renderFx();
   updateActions();
+  updateDrawUI();
   $("workbench-modal").hidden = false;
   refreshScraps();
   schedule(0);
@@ -232,6 +431,10 @@ function rerollSeeds() {
 }
 
 function recipe() {
+  if (wb.draw.strokes.length) {
+    // a drawing replaces the generator as the base; the effect stack still applies
+    return { module: "drawing", params: {}, effects: wb.effects, paths: shapedPaths() };
+  }
   return { module: wb.module, params: wb.params, effects: wb.effects };
 }
 
@@ -242,6 +445,7 @@ function schedule(delay = 150) {
 }
 
 async function run() {
+  if (wb.draw.drag) return; // mid-stroke: pointerup reschedules, keep the overlay
   if (wb.busy) { wb.queued = true; return; }
   wb.busy = true;
   $("wb-status").textContent = "generating…";
@@ -298,6 +502,18 @@ async function saveScrap() {
 async function importLive() {
   if (!wb.ok) return;
   try {
+    if (wb.draw.strokes.length) {
+      // drawings have no generator to re-run: freeze to a scrap, then reuse
+      // the scrap-import path — arrives as a baked SVG layer
+      const scrap = await api.post("/api/scraps",
+        { ...recipe(), name: $("wb-name").value || "drawing" });
+      await api.post(`/api/scraps/${scrap.id}/import`);
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      await refreshScraps();
+      $("wb-status").textContent = `imported drawing “${scrap.name}” (baked layer; kept as scrap)`;
+      return;
+    }
     const layer = await api.post("/api/layers/generate",
       { module: wb.module, params: wb.params });
     if (wb.effects.length) {
@@ -341,9 +557,15 @@ async function refreshScraps() {
     load.textContent = "Recipe";
     load.title = "Load this scrap's generator + effects back into the workbench";
     load.onclick = () => {
+      wb.effects = s.effects.map((e) => ({ enabled: true, ...e, params: { ...e.params } }));
+      if (s.module === "drawing") {
+        // a drawing's geometry is frozen in the SVG — only its stack reloads
+        renderFx();
+        $("wb-status").textContent = "drawing scrap — effects loaded; geometry stays frozen (use Import)";
+        return;
+      }
       wb.module = s.module;
       wb.params = { ...s.params };
-      wb.effects = s.effects.map((e) => ({ enabled: true, ...e, params: { ...e.params } }));
       fillPickers();
       renderParamForm();
       renderFx();

@@ -31,7 +31,7 @@ from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
 from .events import bus
 from .machine import SoftLimits, manager
-from .model import Layer as DocLayer, PathDocument
+from .model import Layer as DocLayer, Path as DocPath, PathDocument
 from .registry import EffectContext, describe_modules, get_effect, get_source, progress_scope
 from .scraps import scrap_library
 from .session import session
@@ -1186,11 +1186,31 @@ def export_staged_zip(group_id: str | None = None) -> Response:
 
 
 class WorkbenchBody(BaseModel):
-    """A workbench recipe: one generator plus a candidate effect stack."""
+    """A workbench recipe: one generator plus a candidate effect stack — or,
+    with ``paths``, a mouse drawing (mm, already placed on the bed) used
+    verbatim as the base instead of running a generator."""
     module: str
     params: dict[str, Any] = Field(default_factory=dict)
     effects: list[dict[str, Any]] = Field(default_factory=list)
     name: str = ""
+    paths: list[list[tuple[float, float]]] | None = None
+
+
+# drawings are geometry-as-params: the bounded-params rule applies, so cap
+# the point budget and keep every point on the bed before touching shapely
+_MAX_DRAWING_POINTS = 50_000
+
+
+def _drawing_paths(body: WorkbenchBody) -> list[DocPath]:
+    total = sum(len(p) for p in body.paths)
+    if total > _MAX_DRAWING_POINTS:
+        raise ValueError(f"drawing too dense: {total} points (max {_MAX_DRAWING_POINTS})")
+    for stroke in body.paths:
+        for x, y in stroke:
+            if not (0 <= x <= compose.BED_WIDTH and 0 <= y <= compose.BED_HEIGHT):
+                raise ValueError(f"drawing point ({x:.1f}, {y:.1f}) is off the bed")
+    return [DocPath(points=[tuple(pt) for pt in stroke], filled=False)
+            for stroke in body.paths if stroke]
 
 
 def _workbench_result(body: WorkbenchBody) -> tuple[Any, list[Any]]:
@@ -1199,9 +1219,15 @@ def _workbench_result(body: WorkbenchBody) -> tuple[Any, list[Any]]:
     in paper space exactly as they would on a real layer. Nothing plots from
     here — geometry reaches the machine only after import, through the
     normal single resolve path."""
-    src = get_source(body.module)
-    doc = src.generate(src.Params(**body.params))
-    paths = [p for layer in doc.layers for p in layer.paths]
+    if body.paths is not None:
+        paths = _drawing_paths(body)
+        doc = PathDocument(layers=[DocLayer(id=1, name=body.name or "drawing", paths=paths)],
+                           width=compose.BED_WIDTH, height=compose.BED_HEIGHT,
+                           source="workbench:drawing")
+    else:
+        src = get_source(body.module)
+        doc = src.generate(src.Params(**body.params))
+        paths = [p for layer in doc.layers for p in layer.paths]
     for step_dict in body.effects:
         step = compose.EffectStep(**step_dict)
         if not step.enabled:

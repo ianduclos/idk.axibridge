@@ -11,13 +11,49 @@ def _square(side=20.0, x0=40.0, y0=40.0, filled=True):
     return Path(points=pts, filled=filled)
 
 
-# ---- bitmap -------------------------------------------------------------------------
+# ---- bitmap (lines — the default) ---------------------------------------------------
 
 
-def test_bitmap_snaps_to_translated_grid():
+def test_bitmap_lines_grid_and_axis_alignment():
     eff = get_effect("bitmap")
     diag = Path(points=[(10.3, 10.7), (52.1, 47.9)], filled=False)
-    out = eff.apply([diag], eff.Params(cell=4.0), EffectContext(translation=(1.5, 0.0)))
+    [out] = eff.apply([diag], eff.Params(cell=4.0), EffectContext(translation=(1.5, 0.0)))
+    assert not out.filled
+    for x, y in out.points:
+        # every vertex lies on the grid anchored at the layer translation
+        assert abs((x - 1.5) / 4.0 - round((x - 1.5) / 4.0)) < 1e-6
+        assert abs(y / 4.0 - round(y / 4.0)) < 1e-6
+    for (x0, y0), (x1, y1) in zip(out.points, out.points[1:]):
+        # every segment is axis-aligned: exactly one coordinate moves
+        assert (x0 == x1) != (y0 == y1)
+    # a diagonal actually staircases — both axes are visited
+    assert len({x for x, _ in out.points}) > 2 and len({y for _, y in out.points}) > 2
+
+
+def test_bitmap_lines_identity_and_closure():
+    eff = get_effect("bitmap")
+    n = 24
+    circle = Path(points=[(60 + 20 * math.cos(2 * math.pi * i / n),
+                           60 + 20 * math.sin(2 * math.pi * i / n))
+                          for i in range(n + 1)], filled=True)
+    stroke = Path(points=[(10.0, 10.0), (30.0, 12.0)], filled=False)
+    out = eff.apply([circle, stroke], eff.Params(cell=3.0), EffectContext())
+    assert len(out) == 2  # one path in, one path out
+    assert out[0].filled and out[0].points[0] == out[0].points[-1]
+    assert not out[1].filled
+    # repeated points collapsed
+    for p in out:
+        assert all(a != b for a, b in zip(p.points, p.points[1:]))
+
+
+# ---- bitmap (blocks — the original raster treatment) --------------------------------
+
+
+def test_bitmap_blocks_snaps_to_translated_grid():
+    eff = get_effect("bitmap")
+    diag = Path(points=[(10.3, 10.7), (52.1, 47.9)], filled=False)
+    out = eff.apply([diag], eff.Params(style="blocks", cell=4.0),
+                    EffectContext(translation=(1.5, 0.0)))
     assert out
     for p in out:
         assert p.filled and p.points[0] == p.points[-1]
@@ -27,7 +63,7 @@ def test_bitmap_snaps_to_translated_grid():
             assert abs(y / 4.0 - round(y / 4.0)) < 1e-6
 
 
-def test_bitmap_solid_fills_interior():
+def test_bitmap_blocks_solid_fills_interior():
     eff = get_effect("bitmap")
     ctx = EffectContext()
     sq = _square(side=20.0)
@@ -39,8 +75,8 @@ def test_bitmap_solid_fills_interior():
             total += s / 2.0
         return abs(total)
 
-    solid = eff.apply([sq], eff.Params(cell=2.0, solid=True), ctx)
-    hollow = eff.apply([sq], eff.Params(cell=2.0, solid=False), ctx)
+    solid = eff.apply([sq], eff.Params(style="blocks", cell=2.0, solid=True), ctx)
+    hollow = eff.apply([sq], eff.Params(style="blocks", cell=2.0, solid=False), ctx)
     assert area(solid) > area(hollow) * 1.5  # interior actually lit
     # a hollow bitmapped ring has a hole: exterior + interior rings
     assert len(hollow) >= 2
@@ -50,11 +86,12 @@ def test_bitmap_pure_deterministic_and_empty():
     eff = get_effect("bitmap")
     src = _square()
     before = [tuple(p) for p in src.points]
-    a = eff.apply([src], eff.Params(), EffectContext())
-    b = eff.apply([src], eff.Params(), EffectContext())
-    assert [tuple(p) for p in src.points] == before
-    assert [p.points for p in a] == [p.points for p in b]
-    assert eff.apply([], eff.Params(), EffectContext()) == []
+    for params in (eff.Params(), eff.Params(style="blocks")):
+        a = eff.apply([src], params, EffectContext())
+        b = eff.apply([src], params, EffectContext())
+        assert [tuple(p) for p in src.points] == before
+        assert [p.points for p in a] == [p.points for p in b]
+        assert eff.apply([], params, EffectContext()) == []
 
 
 # ---- fat tube -----------------------------------------------------------------------

@@ -88,6 +88,17 @@ draws, plots, or occludes; the canvas shows its silhouette dashed
 (display-only paths in the resolved payload). Since regions are ordinary
 layers, they transform, tween, and follow the master timeline for free.
 
+`region_boundary` (July 2026) picks the seam behavior: `cut` (default)
+splits paths at the boundary — a pen lift at every crossing; `continuous`
+stitches each path below back into ONE path, outside sections verbatim and
+inside sections replaced in travel order by their effected geometry, the
+seam a drawn connection wherever the effect moved the ends. The honest
+limitation: continuous mode runs the region's stack once *per clipped
+piece* (pieces must stay identifiable to be stitched), so seeded effects
+sample differently than cut mode's single whole-inside run, and an effect
+that emits several paths for one piece (fat_tube, bitmap blocks) is
+concatenated into the stitch — connected is the promise, not pretty.
+
 ### Occlusion (shapely, not occult)
 
 Per layer, two independent flags: **occluder** (masks layers below) and

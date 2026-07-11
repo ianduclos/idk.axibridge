@@ -66,7 +66,11 @@ keeps its meaning.
 
 ### 1. Bitmap + fat tube effects (quick, load-bearing) — **shipped July 2026**
 
-Shipped as `effects/bitmap.py` + `effects/fat_tube.py`. Original sketch:
+Shipped as `effects/bitmap.py` + `effects/fat_tube.py`. Redesigned July
+2026 (Pi round 2): bitmap's default is now `style="lines"` — each path
+keeps its identity, vertices snap to the grid and segments become hard 90°
+staircases (the drawing forced onto graph paper); the original merged
+filled treatment lives on as `style="blocks"`. Original sketch:
 
 The regime vocabulary the region system will speak — build these first.
 

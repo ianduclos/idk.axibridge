@@ -78,3 +78,50 @@ def test_scrap_roundtrip(client):
 
 def test_scrap_save_validates(client):
     assert client.post("/api/scraps", json={"module": "nope"}).status_code == 404
+
+
+DRAWING = {"module": "drawing", "params": {},
+           "paths": [[[50.0, 50.0], [80.0, 52.0], [110.0, 48.0]],
+                     [[60.0, 90.0], [100.0, 90.0]]]}
+
+
+def test_drawing_preview_uses_paths_verbatim(client):
+    body = client.post("/api/workbench/preview", json=DRAWING).json()
+    assert body["lines"] == [p for p in DRAWING["paths"]]
+    assert body["width"] == 300.0 and body["height"] == 218.0
+    # the effect stack still applies on top of a drawing base
+    shaped = client.post("/api/workbench/preview", json={
+        **DRAWING, "effects": [{"effect": "freehand", "params": {"tremor": 1.5}}],
+    }).json()
+    assert shaped["lines"] != body["lines"]
+
+
+def test_drawing_bounds_and_budget_enforced(client):
+    off_bed = {**DRAWING, "paths": [[[301.0, 10.0], [305.0, 10.0]]]}
+    assert client.post("/api/workbench/preview", json=off_bed).status_code == 400
+    dense = {**DRAWING, "paths": [[[float(i % 290), 10.0] for i in range(50_001)]]}
+    assert client.post("/api/workbench/preview", json=dense).status_code == 400
+    # module "drawing" without paths is not a generator
+    assert client.post("/api/workbench/preview",
+                       json={"module": "drawing"}).status_code == 404
+
+
+def test_drawing_scrap_freezes_given_geometry(client):
+    saved = client.post("/api/scraps", json={**DRAWING, "name": "doodle"}).json()
+    assert saved["module"] == "drawing" and saved["params"] == {}
+    assert client.get(f"/api/scraps/{saved['id']}.svg").status_code == 200
+    r = client.post(f"/api/scraps/{saved['id']}/import")
+    assert r.status_code == 200
+    layers = client.get("/api/project").json()["layers"]
+    assert len(layers) == 1 and layers[0]["source"]["type"] == "svg"
+    assert layers[0]["name"] == "doodle"
+    # the frozen geometry round-trips: resolved layer ≈ the drawn mm points
+    res = client.get("/api/compose/resolved").json()
+    [layer] = res["layers"]
+    got = sorted((p["points"] for p in layer["paths"]), key=len, reverse=True)
+    want = sorted(DRAWING["paths"], key=len, reverse=True)
+    assert len(got) == len(want)
+    for gp, wp in zip(got, want):
+        assert len(gp) == len(wp)
+        for (gx, gy), (wx, wy) in zip(gp, wp):
+            assert abs(gx - wx) < 0.05 and abs(gy - wy) < 0.05

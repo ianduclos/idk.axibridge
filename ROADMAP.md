@@ -35,8 +35,10 @@ Cheapest-first:
   - *Polar wrap*: x→angle, y→radius about a centre — straight hatching
     becomes rings/spirals; grids become spider webs.
   - *Mirror / kaleidoscope*: reflect/rotate-stamp about a paper-space axis.
-  - *Offset rings*: shapely `buffer` at k spacings — bold "thick stroke"
-    rendering for a single pen, and topo-map insets from filled shapes.
+  - *Offset rings*: ~~shapely `buffer` at k spacings~~ — **mostly covered
+    2026-07-11** by `contract_expand` (Pi round 2): stack k copies with
+    growing offsets for insets/onion rings. A single-effect "k rings at one
+    spacing" convenience is still open if the stacking dance gets old.
   - *Dash / stitch*: cut paths into dashes (gap, phase) for texture.
   - *Lens / attractor warp*: radial push/pull with falloff about a point —
     the hand-placed complement to the depth map.
@@ -187,11 +189,14 @@ Still open, priority order (details in the session analysis):
   change anything, capture B, generate an n-step interpolated staged series
   (wraps staging capture+interpolate; re-pressing a letter replaces that
   capture). The layer-by-layer tween dance is no longer the only path.
-- **Pi round 2 (scheduled 2026-07-10, +5h)** — `docs/plans/pi-round2.md`:
-  bitmap redesign (quantize lines to hard-cornered grids; blocks become a
-  style option), contract/expand offset effect, region boundary continuity
-  (`continuous` stitches lines through the region instead of cutting), and
-  workbench mouse drawing with modes (smooth + patterned).
+- ~~Pi round 2~~ — **shipped 2026-07-11** (`docs/plans/pi-round2-RESULTS.md`):
+  bitmap redesign (default `style="lines"` quantizes paths to hard-cornered
+  grids, identity preserved; the old merged treatment is `style="blocks"`),
+  `contract_expand` signed-offset effect, region boundary continuity
+  (`region_boundary: cut|continuous` — continuous stitches each path below
+  back into one path through the seam), and workbench mouse drawing
+  (✏ pointer strokes with raw/smooth/steps/zigzag/stitch modes, riding the
+  scrap save/import machinery via `WorkbenchBody.paths`).
 
 ## Animation — **SHIPPED July 2026** (v1: linear A→B over a master timeline)
 
