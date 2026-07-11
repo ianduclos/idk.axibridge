@@ -1,67 +1,64 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-07-10
+updated: 2026-07-11
 machine: mac+pi
-summary: Uncanny push complete — the Pi's unattended run shipped all four generators (merged d53580d, suite 275 green both machines); live server restarted on current code after a version-skew report.
+summary: Pi round 2 merged (bitmap-lines, contract/expand, region continuity, workbench mouse drawing) on top of sheets v2, glyphgram, and A/B capture series; suite 301 green both machines; AARON pass 3 documented and queued.
 next:
-  - Try the new vocabulary on paper — misremembered/two-hands/grammar sources, region-bitmapped compositions, tube interlocks (recipes in docs/IDEAS-oehlen-pass.md)
-  - Sheets workflow v2 per the 2026-07-10 analysis (see conversation/ROADMAP): staged captures as the interp substrate, stepper ergonomics
-  - Glyph grammar (Oehlen item 4) + tuning notes in docs/plans/pi-generators-RESULTS.md (lattice grammar, subtree-propagating violations, misremembered on a real photo)
-  - Workbench v2 when felt — mouse drawing, scrap editing (docs/IDEAS-oehlen-pass.md §0)
+  - "Restart the live server AFTER saving the open untitled project (4 unsaved layers) — it predates glyphgram/contract_expand/bitmap-lines/draw-mode; hard-reload the browser tab too"
+  - Try the new vocabulary on paper — bitmap-lines regions (continuous boundary), A/B interpolated series, glyphgram over freehand, drawn strokes through effect stacks
+  - AARON pass item 1, the core-figure generator (docs/IDEAS-aaron-pass.md — the mechanisms are quoted from Cohen's 1988 paper)
+  - Round-2 tuning notes in docs/plans/pi-round2-RESULTS.md; roadmap audit items (seed reroll, unsaved-work guard, perception pass)
 handoff_for: null
 ---
 
 # idk.axibridge — status
 
-**Session 2026-07-10 — the uncanny-generator push (9 commits on `main`,
-suite 241 green Mac / 242 Pi).** Two idea passes are now repo docs:
-`docs/IDEAS-generators.md` (Cohen/intentional-line direction) and
-`docs/IDEAS-oehlen-pass.md` (Oehlen regime collision, with a shipped/pending
-ledger). Shipped from them:
+**Session 2026-07-10 → 11 (12 commits on `main`, suite 301 green Mac /
+302 Pi).** The second unattended Pi run shipped all four round-2 tasks,
+reviewed and merged `66ca43f`:
 
-- `effects/freehand.py` — the Cohen kernel: eye-leads-hand spring-damper,
-  steering-space tremor, per-stroke fatigue, drawn-then-snapped closure.
-- `effects/bitmap.py` + `effects/fat_tube.py` — the regime vocabulary
-  (staircase quantizer anchored to layer translation; round-capped filled
-  pipes that occlude/interlock via existing masks).
-- **Region layers** (`CanvasLayer.region`): a layer's placed silhouette
-  masks, and its effect stack applies to the layers below (inside clipped +
-  effected, outside untouched). Resolve order is now
-  `occlusion(regions(effects(transform(source))))` — ARCHITECTURE.md
-  "Resolve order". Regions render dashed, never plot, and tween for free.
-- **Generation workbench** (⚗ Bench button): stateless playground popup
-  (`POST /api/workbench/preview` touches no session/undo/lock), global
-  scrap library (`scraps.py`, `~/.axibridge/scraps/` — frozen SVG + recipe),
-  import live (generator layer + effects) or baked (frozen SVG, named).
+- **bitmap redesigned** — default `style="lines"`: paths keep their
+  identity, vertices snap to the layer-anchored grid, segments become hard
+  90° staircases; the old merged-raster lives on as `style="blocks"`.
+- **contract_expand** — signed mm offset (buffer for filled, offset_curve
+  for strokes); stacking gives onion rings.
+- **region_boundary: cut | continuous** — continuous stitches each path
+  below back into ONE pen-down line through the region (travel order via
+  midpoint projection; cut pinned byte-identical).
+- **workbench mouse drawing** — ✏ mode with raw/smooth/steps/zigzag/stitch
+  modes; drawings ride the whole pipeline via `WorkbenchBody.paths`
+  (scraps as `module="drawing"`, import live).
 
-**Infrastructure:** repo is on GitHub — `github.com/ianduclos/idk.axibridge`
-(private); `main` is the shared trunk (old `feat/grid-sheets` absorbed by
-fast-forward). idkpi has a full dev clone at `~/idk.axibridge` (write deploy
-key, green venv — needs `httpx2` there, newer starlette) and a systemd user
-timer that fired **08:33 WEST 2026-07-10** running Fable 5 unattended
-against `docs/plans/pi-generators.md` (continue-strokes, misremembered
-image, bézier shape grammar with transgression budget, two hands
-negotiating) — results push to `feat/pi-generators`, never main. The
-`.claude/skills/pi` skill documents the whole Pi workflow durably.
+Also this arc: **sheets v2** (fixed framing so motion survives flipbooks,
+crosshair registration marks, per-frame caches killing the
+O(frames×pages×passes) resolve blow-up, one-layout UI), **glyphgram**
+(asemic Hershey destruction, abstraction dial), **A/B capture series**
+(canvas-toolbar A · B · ⇄ → n-step interpolated staged batch), slider
+thumb/number desync fixed (range step="any" + our quantization), **Stop ⌂**
+(stop returns carriage home, user-stop only), workbench stage polish.
+Idea **pass 3 (AARON)** is in `docs/IDEAS-aaron-pass.md` with Cohen's 1988
+mechanisms quoted and a ROADMAP section (core figures → sheet-snapshot
+context asset → felt-tip color kit → linedraw v2).
+
+Housekeeping: merged mission branches deleted local/remote/Pi; both Pi
+mission logs + RESULTS docs in `docs/plans/`; `.claude/skills/pi` is the
+scheduled-run runbook. **The live server on :2942 still runs pre-glyphgram
+code and holds an unsaved 4-layer untitled project — save before
+restarting** (see the unsaved-work-guard roadmap item, born of a real loss
+on 2026-07-10).
 
 ## Prior arc
 
-**Grid sheets (2026-07-07, merged into main 2026-07-10).** Plot many
-timeline frames onto one physical sheet (1/2/4/16 per page) without the
-destructive contact-sheet bake; `session.sheet_document` is transient
-plot-time assembly through `resolved()` only, one shared scale, grouped by
-pen. Tests: `tests/test_sheets.py`. Known limitation: `doc_to_svg` colours
-sheet SVG layers from vpype's palette, not the exact pen colour.
-
-July 2026 animation arc (18 commits, suite 177 at the time): frame-sequence
-assets with video import; master timeline scrubbing through the single
-resolve path; one-click animate; clip-follow; plot-time crop; pywebview app
-shell (`launch/AxiBridge.app`). Frame-ladder recipe in `ROADMAP.md`.
+2026-07-10 uncanny push: freehand/bitmap/fat_tube effects, region layers
+(resolve order `occlusion(regions(effects(transform(source))))`), ⚗
+workbench + global scrap library, repo to private GitHub with idkpi dev
+clone, Pi round 1 (continue_strokes, misremembered, grammar, two_hands).
+Grid sheets + animation arcs: see ROADMAP's shipped sections and
+`tests/test_sheets.py` / `tests/test_sheet_framing.py`.
 
 Architecture and module contracts: `ARCHITECTURE.md`, `docs/MODULES.md` —
 non-negotiable invariants (single resolve path; scrubbing never mutates
 stored state). Deployment note: two AxiDraw modes contend for the serial
-port — Mac-driven pi_ssh (default, live-verified) vs Pi-served
-`axibridge.service` at `idkpi:2942` (disabled by default). See
-`../../02_Areas/__claude/SYSTEM.md` arms table.
+port — Mac-driven pi_ssh (default) vs Pi-served `axibridge.service` at
+`idkpi:2942` (disabled by default).
