@@ -522,11 +522,31 @@ function currentSheetSpec(extra = {}) {
 
 // The plan overlay/estimate previews the CURRENT page only while the Animation
 // panel is open and per-sheet > 1; otherwise the plain target (one plan path).
+// When active it ALSO swaps the centre canvas to the page's real geometry (the
+// plan overlay alone only draws travel); closing the panel or dropping to a
+// 1×1 grid exits that preview — but a live staged-sheet preview is left alone.
 function syncSheetPlan() {
   const open = $("anim-details") && $("anim-details").open;
-  S.sheetPlan = open && gridCells() > 1 ? currentSheetSpec() : null;
-  if (S.sheetPlan) S.stagedPlan = null;
+  const active = open && gridCells() > 1;
+  S.sheetPlan = active ? currentSheetSpec() : null;
+  if (S.sheetPlan) {
+    S.stagedPlan = null;
+    actions.showDocPreview(sheetPreviewLabel(),
+      `sheet=${encodeURIComponent(JSON.stringify(S.sheetPlan))}`);
+  } else if (S.docPreview && !S.stagedPlan) {
+    actions.exitDocPreview();
+  }
   actions.refreshPlan();
+}
+
+// Short human labels for the preview banner.
+function sheetPreviewLabel() {
+  return `${anim.n}f · ${anim.cols}×${anim.rows} · sheet ${anim.sheet + 1}/${anim.nPages}`;
+}
+function stagedPreviewLabel(groupId, sheetId) {
+  const group = (S.state?.project?.staging || []).find((g) => g.id === groupId);
+  const sheet = group?.sheets?.find((s) => !sheetId || s.id === sheetId);
+  return `${group?.name || "staged"} · ${sheet?.name || "sheet"}`;
 }
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
@@ -590,6 +610,10 @@ async function previewStaged(groupId, sheetId) {
   stage.selectedGroup = groupId;
   stage.selectedSheet = sheetId;
   renderStaging();
+  // swap the centre canvas to the staged sheet's actual geometry (the plan
+  // overlay only draws travel); estimate/travel still ride S.stagedPlan below.
+  await actions.showDocPreview(stagedPreviewLabel(groupId, sheetId),
+    `staged=${encodeURIComponent(JSON.stringify(S.stagedPlan))}`);
   await actions.refreshPlan();
 }
 
@@ -617,6 +641,7 @@ async function deleteStaged(groupId) {
       stage.selectedGroup = null;
       stage.selectedSheet = null;
       S.stagedPlan = null;
+      actions.exitDocPreview();  // the previewed sheet is gone — back to project
     }
     await actions.refreshProject();
     renderStaging();

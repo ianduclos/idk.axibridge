@@ -155,6 +155,34 @@ def client():
         yield c
 
 
+def test_preview_staged_returns_sheet_geometry(client):
+    client.post("/api/layers/generate",
+                json={"module": "polygon", "params": {"sides": 6, "radius": 15}})
+    group = client.post("/api/staging/capture",
+                        json={"kind": "plot", "name": "api plot"}).json()["group"]
+    sheet = group["sheets"][0]
+
+    r = client.get("/api/preview/sheet", params={
+        "staged": json.dumps({"group_id": group["id"], "sheet_id": sheet["id"]})})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["layers"] and body["layers"][0]["paths"]
+    lay = body["layers"][0]
+    assert lay["visible"] is True and "stats" not in lay
+    # same geometry the staged document (and plotter) would use
+    doc_sig = _doc_signature(session.staged_document(group["id"], sheet["id"]))
+    preview_sig = [
+        [[(round(x, 4), round(y, 4)) for x, y in p["points"]] for p in layer["paths"]]
+        for layer in body["layers"]
+    ]
+    assert preview_sig == doc_sig
+
+    # unknown group → 400
+    bad = client.get("/api/preview/sheet", params={
+        "staged": json.dumps({"group_id": "nope", "sheet_id": "nope"})})
+    assert bad.status_code == 400
+
+
 def test_staging_api_plan_export_and_plot(client):
     client.post("/api/layers/generate",
                 json={"module": "polygon", "params": {"sides": 6, "radius": 15}})

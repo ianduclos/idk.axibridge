@@ -842,6 +842,65 @@ def get_plan(
     }
 
 
+def _doc_preview_layers(doc: Any, pen_ids: list[str]) -> dict[str, Any]:
+    """Per-layer payload for a transient sheet/staged document, shaped like
+    :func:`get_resolved` so the canvas can render it through the same
+    ``setData({layers})`` path. ``pen_ids`` is parallel to ``doc.layers`` (each
+    a pen id, ``""`` for the no-pen group) — the layer's colour comes off the
+    document (set at assembly time), the ink-sim ``line_diameter_mm``/``opacity``
+    off the pen. Display-only — no stats, no occlusion flags."""
+    pens = session.pens()
+    layers_out = []
+    for i, layer in enumerate(doc.layers):
+        pen = pens.get(pen_ids[i] if i < len(pen_ids) else "")
+        layers_out.append({
+            "id": layer.id,
+            "name": layer.name,
+            "visible": True,  # canvas skips !visible layers — sheets always show
+            "color": layer.color or (pen.color if pen else compose.INK),
+            "line_diameter_mm": pen.line_diameter_mm if pen else compose.DEFAULT_LINE_DIAMETER_MM,
+            "opacity": pen.opacity if pen else 1.0,
+            "paths": [{"points": p.points, "filled": p.filled} for p in layer.paths],
+        })
+    return {"layers": layers_out, "width": doc.width, "height": doc.height}
+
+
+@router.get("/preview/sheet")
+def preview_sheet_doc(
+    sheet: str | None = Query(default=None),
+    staged: str | None = Query(default=None),
+) -> dict[str, Any]:
+    """Display-only geometry for a transient grid-sheet or staged document, in
+    the same per-layer shape as ``/compose/resolved``. The centre canvas swaps
+    to this to show the ACTUAL page layout — the plan overlay only draws travel,
+    so on its own it leaves the canvas blank.
+
+    Exactly one of ``sheet`` (a JSON-encoded :class:`SheetSpec`) or ``staged``
+    (a JSON-encoded :class:`StagedSpec`) selects the source; both resolve
+    through the session's existing sheet/staged builders — NO second geometry
+    path. The pen ids feeding the ink sim come from the same ordered sources the
+    plotter uses (``sheet_passes`` for grids, the staged sheet's passes). 400 on
+    an unknown group/sheet, an invalid spec, or if not exactly one source given."""
+    if (sheet is None) == (staged is None):
+        raise _fail(ValueError("provide exactly one of sheet or staged"), 400)
+    try:
+        if staged is not None:
+            spec = StagedSpec.model_validate_json(staged)
+            doc = _staged_document(spec)
+            sh = session._find_sheet(session._find_capture(spec.group_id), spec.sheet_id)
+            pen_ids = [p.pen_id for p in sh.passes
+                       if spec.pen_id is None or p.pen_id == spec.pen_id]
+        else:
+            spec = SheetSpec.model_validate_json(sheet)
+            doc = _sheet_document(spec)
+            pen_ids = session.sheet_passes(
+                spec.cols, spec.rows, spec.frames,
+                spec.t_from, spec.t_to, spec.margin_mm, spec.page)
+    except (KeyError, ValueError, IndexError) as e:
+        raise _fail(e, 400)
+    return _doc_preview_layers(doc, pen_ids)
+
+
 @router.get("/doc/{target}/svg")
 def download_svg(target: str) -> Response:
     try:
