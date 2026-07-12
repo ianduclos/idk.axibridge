@@ -670,59 +670,6 @@ class Session:
                     (cx, min(cy + arm_mm, compose.BED_HEIGHT))], filled=False))
         return out
 
-    def bake_contact_sheet(
-        self, cols: int, rows: int, frames: int, margin_mm: float,
-        t_from: float = 0.0, t_to: float = 1.0,
-    ) -> list[CanvasLayer]:
-        """Bake ``frames`` samples of the master timeline into a cols×rows
-        contact sheet: one baked layer per frame. A single shared scale
-        (derived from the union bounding box across ALL frames) keeps every
-        frame the same size — no per-frame jitter — while each frame is
-        individually centred in its own grid cell (its own bbox centre, same
-        scale). Previously-visible layers are hidden, like ``explode_tween``
-        hides its source tween — the new baked layers become the sheet's
-        visible content. Geometry is the VISIBLE, resolved (post-occlusion)
-        paths, so what gets baked is exactly what the canvas/plotter show.
-        One undo step.
-
-        The DESTRUCTIVE/editable variant: it mutates the project. Its transient
-        cousin is :meth:`sheet_document` (plot-time assembly, no mutation); both
-        share :meth:`_grid_place`."""
-        if not (1 <= cols <= 12 and 1 <= rows <= 12):
-            raise ValueError("cols and rows must each be 1..12")
-        if not (2 <= frames <= cols * rows):
-            raise ValueError(f"frames must be 2..{cols * rows} for a {cols}x{rows} grid")
-        if not (0.0 <= margin_mm <= 30.0):
-            raise ValueError("margin_mm must be 0..30")
-        if not (0.0 <= t_from <= 1.0 and 0.0 <= t_to <= 1.0):
-            raise ValueError("t_from/t_to must be 0..1")
-
-        with self._lock:
-            self._checkpoint()
-            pre_existing = list(self.project.layers)
-
-            ts = [t_from] if frames <= 1 else [
-                t_from + (t_to - t_from) * i / (frames - 1) for i in range(frames)
-            ]
-            placed = self._grid_place(ts, cols, rows, margin_mm)
-
-            created: list[CanvasLayer] = []
-            for i, (t, frame) in enumerate(zip(ts, placed)):
-                flat = [p for paths in frame.values() for p in paths]  # z-order
-                layer = CanvasLayer(
-                    name=f"frame {i:02d} · t={t:.2f}",
-                    source=LayerSource(type="baked"),
-                    transform=Affine(),
-                )
-                self.project.layers.append(layer)  # appended = top of z-order
-                self.source_geometry[layer.id] = flat
-                created.append(layer)
-
-            for layer in pre_existing:
-                layer.visible = False
-
-            return created
-
     def sheet_document(
         self, cols: int, rows: int, frames: int,
         t_from: float, t_to: float, margin_mm: float, page: int,
@@ -730,7 +677,8 @@ class Session:
         framing: str = "center", marks: bool = False,
     ) -> PathDocument:
         """One physical sheet of the flip-book, assembled at plot time — NO
-        project mutation, no checkpoint (contrast :meth:`bake_contact_sheet`).
+        project mutation, no checkpoint (it is pure assembly; the tray capture
+        path is how a sheet becomes editable layers, via ``insert``).
 
         ``frames`` timeline samples over [t_from, t_to] are laid into a
         cols×rows grid, chunked ``cols*rows`` cells per page; ``page`` (0-based)
@@ -1178,11 +1126,11 @@ class Session:
             )
 
     def insert_staged_sheet(self, group_id: str, sheet_id: str | None = None) -> list[CanvasLayer]:
-        """Destructive/editable escape hatch for staged output.
+        """Destructive/editable escape hatch for staged output — the single
+        path from a rendered sheet back to editable project layers.
 
         Appends one baked layer per staged pen pass and hides the prior visible
-        layers, matching the old contact-sheet bake's "replace the canvas view"
-        behaviour. One undo step."""
+        layers ("replace the canvas view"). One undo step."""
         with self._lock:
             group = self._find_capture(group_id)
             sheet = self._find_sheet(group, sheet_id)

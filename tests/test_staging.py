@@ -208,6 +208,32 @@ def test_insert_staged_sheet_as_layers_and_undo():
     assert _doc_signature(session.staged_document(group.id, sheet.id)) == frozen
 
 
+def test_capture_grid_sheet_then_insert_reproduces_contact_sheet():
+    """The frames→grid→editable-layers path that replaced the old contact-sheet
+    bake: capture an animated layer as a grid sheet, insert it, and the baked
+    cells are laid out within the bed (one baked layer per pen pass, prior
+    layers hidden)."""
+    from axibridge import compose
+
+    layer = session.add_generated_layer("polygon", {"sides": 5, "radius": 15})
+    session.animate_layer(layer.id)  # a follow-master tween drives the timeline
+    group = session.capture_to_staging(
+        kind="sheet", cols=2, rows=2, frames=4, margin_mm=5.0, name="4f grid")
+    sheet = group.sheets[0]
+
+    created = session.insert_staged_sheet(group.id, sheet.id)
+
+    assert created
+    assert all(l.source.type == "baked" for l in created)
+    # prior layers hidden — the inserted sheet replaces the canvas view
+    assert not session.project.layer(layer.id).visible
+    for l in created:
+        for p in session.source_geometry[l.id]:
+            for x, y in p.points:
+                assert 0.0 <= x <= compose.BED_WIDTH
+                assert 0.0 <= y <= compose.BED_HEIGHT
+
+
 def test_staging_edits_and_persisted_undo_survive_save_load(tmp_path):
     session.add_generated_layer("polygon", {"sides": 6, "radius": 12})
     group = session.capture_to_staging(kind="plot", name="original")

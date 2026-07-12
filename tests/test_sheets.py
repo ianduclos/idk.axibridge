@@ -1,7 +1,8 @@
 """Grid sheets — transient plot-time assembly of many timeline frames per
-physical sheet (1/2/4/16 per page). The destructive cousin, contact-sheet
-baking, is covered in test_tween.py; here we exercise the non-mutating
-``sheet_document`` / ``_grid_place`` path and its API surface."""
+physical sheet (1/2/4/16 per page). The editable escape hatch (capture a sheet
+to the tray, then insert as layers) is covered in test_staging.py; here we
+exercise the non-mutating ``sheet_document`` / ``_grid_place`` path and its API
+surface."""
 
 import time
 

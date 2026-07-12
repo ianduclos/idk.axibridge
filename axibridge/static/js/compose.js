@@ -919,25 +919,28 @@ export function renderLayerDetail() {
       </details>
       <details id="tw-timeline" class="form-group" ${p.follow_master ? "open" : ""}>
         <summary>Timeline</summary>
-        <div class="hint">scrubbing morphs A→B inside this window (single tween). Frame
-          ladders advance via "clip follows timeline" on the layers instead.</div>
+        <div class="hint">scrubbing morphs A→B (single tween). Frame ladders advance
+          via "clip follows timeline" on the layers instead.</div>
         <label class="hint" style="cursor:pointer"
           title="the master timeline scrubber (and later frame rendering) drives this tween's t">
           <input type="checkbox" id="tw-follow"> Follow timeline
         </label>
-        <div class="row" id="tw-curve-row">
-          <label>curve</label>
-          <select id="tw-time-curve" style="flex:1">
-            <option value="linear">linear A→B</option>
-            <option value="cosine_pingpong">cosine A→B→A</option>
-          </select>
-        </div>
-        <div class="row" id="tw-window-row" title="this tween holds A before 'active from', animates inside the window, holds B after 'active to' — overlap windows to overlap clips">
-          <label>active from</label>
-          <input type="number" id="tw-window-from" min="0" max="1" step="0.01" style="width:4.5em">
-          <label>to</label>
-          <input type="number" id="tw-window-to" min="0" max="1" step="0.01" style="width:4.5em">
-        </div>
+        <details id="tw-advanced" class="form-group">
+          <summary>advanced timing</summary>
+          <div class="row" id="tw-curve-row">
+            <label>curve</label>
+            <select id="tw-time-curve" style="flex:1">
+              <option value="linear">linear A→B</option>
+              <option value="cosine_pingpong">cosine A→B→A</option>
+            </select>
+          </div>
+          <div class="row" id="tw-window-row" title="this tween holds A before 'active from', animates inside the window, holds B after 'active to' — overlap windows to overlap clips">
+            <label>active from</label>
+            <input type="number" id="tw-window-from" min="0" max="1" step="0.01" style="width:4.5em">
+            <label>to</label>
+            <input type="number" id="tw-window-to" min="0" max="1" step="0.01" style="width:4.5em">
+          </div>
+        </details>
       </details>
       <div class="row">
         <button id="tw-edit-a" title="select keyframe A (${nameOf(p.a)})">edit A</button>
@@ -984,17 +987,18 @@ export function renderLayerDetail() {
     };
     bindNum("#tw-sweep", "sweep", 1, 60);
 
-    // -- timeline: follow-master checkbox + window (window only matters, and
-    // only shows, once the layer actually follows the scrubber)
+    // -- timeline: follow-master checkbox + an "advanced timing" fold (curve +
+    // window) that only matters, and only shows, once the layer follows the
+    // scrubber. The fold opens itself when either field is off its default, so
+    // stored projects that set them stay visible.
     const follow = tw.querySelector("#tw-follow");
     follow.checked = !!p.follow_master;
-    const curveRow = tw.querySelector("#tw-curve-row");
-    const winRow = tw.querySelector("#tw-window-row");
-    curveRow.hidden = !follow.checked;
-    winRow.hidden = !follow.checked;
+    const advanced = tw.querySelector("#tw-advanced");
+    advanced.hidden = !follow.checked;
+    advanced.open = (p.time_curve && p.time_curve !== "linear")
+      || (p.window_from ?? 0) !== 0 || (p.window_to ?? 1) !== 1;
     follow.onchange = async () => {
-      curveRow.hidden = !follow.checked;
-      winRow.hidden = !follow.checked;
+      advanced.hidden = !follow.checked;
       try {
         layer.source.params = { ...layer.source.params, follow_master: follow.checked };
         await api.put(`/api/layers/${layer.id}/tween`, { follow_master: follow.checked });

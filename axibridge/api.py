@@ -1059,31 +1059,6 @@ def animation_preview_png(
     return Response(content=buf.getvalue(), media_type="image/png")
 
 
-class ContactSheetBody(BaseModel):
-    cols: int = Field(ge=1, le=12)
-    rows: int = Field(ge=1, le=12)
-    frames: int = Field(ge=2, le=144)  # further bounded to cols*rows in session
-    margin_mm: float = Field(default=5.0, ge=0.0, le=30.0)
-    t_from: float = Field(default=0.0, ge=0.0, le=1.0)
-    t_to: float = Field(default=1.0, ge=0.0, le=1.0)
-
-
-@router.post("/animation/contact_sheet")
-def bake_contact_sheet(body: ContactSheetBody) -> dict[str, Any]:
-    """Bake N frames of the master timeline into a cols×rows grid on one
-    sheet — one baked layer per frame, uniformly scaled and centred in its
-    cell. One undo step (see Session.bake_contact_sheet)."""
-    try:
-        layers = session.bake_contact_sheet(
-            body.cols, body.rows, body.frames, body.margin_mm, body.t_from, body.t_to
-        )
-    except ValueError as e:
-        raise _fail(e, 400)
-    except Exception as e:
-        raise _fail(e)
-    return {"layers": [l.model_dump() for l in layers]}
-
-
 # -- staging tray ---------------------------------------------------------------
 
 

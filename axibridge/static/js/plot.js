@@ -784,7 +784,8 @@ function renderStaging() {
       ${(g.sheets || []).map((s) => `
         <div class="stage-sheet ${stage.selectedGroup === g.id && stage.selectedSheet === s.id ? "on" : ""}">
           <button data-stage-preview="${esc(g.id)}:${esc(s.id)}">Preview ${esc(s.name)}</button>
-          <button data-stage-insert="${esc(g.id)}:${esc(s.id)}">Insert as layers</button>
+          <button data-stage-insert="${esc(g.id)}:${esc(s.id)}"
+            title="bake this sheet into editable project layers (one per pen pass), hiding the current layers — the way to hand-edit a rendered grid">Insert as layers</button>
           ${(s.passes || []).map((p) =>
             `<button data-stage-plot="${esc(g.id)}:${esc(s.id)}:${esc(p.pen_id)}">${esc(p.name)} · ${p.paths} paths</button>`
           ).join("")}
