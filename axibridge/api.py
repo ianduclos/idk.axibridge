@@ -1188,6 +1188,34 @@ def insert_staged_sheet(group_id: str, sheet_id: str) -> dict[str, Any]:
     return {"layers": [l.model_dump() for l in layers]}
 
 
+class RelayoutCaptureBody(BaseModel):
+    cols: int = Field(ge=1, le=12)
+    rows: int = Field(ge=1, le=12)
+    margin_mm: float | None = Field(default=None, ge=0.0, le=30.0)
+    framing: Literal["center", "fixed"] | None = None
+    marks: bool | None = None
+
+
+@router.post("/staging/groups/{group_id}/relayout")
+def relayout_capture_group(group_id: str, body: RelayoutCaptureBody) -> dict[str, Any]:
+    """Re-render a captured animation at a new grid as a NEW tray group (the
+    original stays). Sheet captures re-render from their snapshot; batches
+    re-run the A⇄B interpolation from their source captures. 400 for non-grid
+    kinds or when a batch's sources are gone."""
+    try:
+        group = session.relayout_capture(
+            group_id, body.cols, body.rows,
+            margin_mm=body.margin_mm, framing=body.framing, marks=body.marks,
+        )
+    except KeyError as e:
+        raise _fail(e, 404)
+    except (ValueError, RuntimeError) as e:
+        raise _fail(e, 400)
+    except Exception as e:
+        raise _fail(e)
+    return {"group": group.model_dump(exclude={"snapshot"})}
+
+
 class InterpolateCapturesBody(BaseModel):
     a: str
     b: str

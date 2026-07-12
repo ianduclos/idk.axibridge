@@ -90,8 +90,102 @@ def test_incompatible_capture_formats_are_rejected():
     plot = session.capture_to_staging(kind="plot", name="plot")
     frame = session.capture_to_staging(kind="frame", name="frame", master_t=0.0)
 
-    with pytest.raises(ValueError, match="formats do not match"):
+    with pytest.raises(ValueError, match=r"kinds do not match \(plot vs frame\)"):
         session.interpolate_captures(plot.id, frame.id, steps=3)
+
+
+def test_interpolate_allows_presentation_only_format_differences():
+    """margin_mm / framing / marks are presentation, not shape — a pair that
+    differs only there interpolates, and the batch inherits A's values."""
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
+    a = session.capture_to_staging(kind="sheet", name="A", cols=2, rows=2, frames=6,
+                                   margin_mm=5.0, framing="fixed")
+    session.regenerate_layer(layer.id, {"sides": 6, "radius": 30})
+    b = session.capture_to_staging(kind="sheet", name="B", cols=2, rows=2, frames=6,
+                                   margin_mm=12.0, framing="center", marks=True)
+
+    batch = session.interpolate_captures(a.id, b.id, steps=3)
+
+    assert batch.name == "A ⇄ B · 3 steps"  # default name carries the step count
+    assert batch.format["margin_mm"] == 5.0
+    assert batch.format["framing"] == "fixed"
+    assert len(batch.sheets) == 6  # 3 steps × 2 pages (6 frames at 2×2)
+
+
+def test_interpolate_refuses_differing_sheet_shape():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
+    a = session.capture_to_staging(kind="sheet", name="A", cols=2, rows=2, frames=6)
+    session.regenerate_layer(layer.id, {"sides": 6, "radius": 30})
+    c = session.capture_to_staging(kind="sheet", name="C", cols=2, rows=2, frames=8)
+
+    with pytest.raises(ValueError, match=r"frames differs \(6 vs 8\)"):
+        session.interpolate_captures(a.id, c.id, steps=3)
+
+
+def test_relayout_sheet_capture_new_grid_original_untouched():
+    session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    g = session.capture_to_staging(kind="sheet", name="grid", cols=2, rows=2, frames=6)
+    assert len(g.sheets) == 2  # 6 frames at 2×2 → 2 pages
+    orig_sig = _doc_signature(session.staged_document(g.id, g.sheets[0].id))
+
+    new = session.relayout_capture(g.id, 1, 1, margin_mm=2.0)
+
+    assert new.id != g.id
+    assert new.name == "grid · re-laid 1×1"
+    assert new.kind == "sheet" and new.snapshot is not None
+    assert new.format["cols"] == 1 and new.format["rows"] == 1
+    assert new.format["pages"] == 6 and len(new.sheets) == 6  # one frame per page
+    assert new.format["margin_mm"] == 2.0
+    for sheet in new.sheets:
+        assert session.staged_document(new.id, sheet.id).stats().paths > 0
+    # original group intact — same sheets, same frozen geometry
+    assert len(session._find_capture(g.id).sheets) == 2
+    assert _doc_signature(session.staged_document(g.id, g.sheets[0].id)) == orig_sig
+
+
+def test_relayout_batch_reruns_from_sources():
+    # two layers, the second translated between A and B — relative arrangement
+    # survives the sheet cells' shared-scale fitting, so the A→B stepping stays
+    # visible in the re-laid geometry (a lone shape would be normalised away).
+    session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
+    mover = session.add_generated_layer("polygon", {"sides": 3, "radius": 8})
+    a = session.capture_to_staging(kind="sheet", name="A", cols=2, rows=2, frames=6)
+    session.update_layer(mover.id, {"transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 0}})
+    b = session.capture_to_staging(kind="sheet", name="B", cols=2, rows=2, frames=6)
+    batch = session.interpolate_captures(a.id, b.id, steps=3)
+    assert len(batch.sheets) == 6
+
+    re = session.relayout_capture(batch.id, 1, 1)
+
+    assert re.kind == "batch" and re.snapshot is None
+    assert re.format["variants"] == 3 and re.format["cols"] == 1
+    assert re.source_capture_ids == [a.id, b.id]
+    assert len(re.sheets) == 18  # 3 steps × 6 pages
+    for sheet in re.sheets:
+        assert session.staged_document(re.id, sheet.id).stats().paths > 0
+    # still steps A→B: step 1's first page differs from step 3's
+    assert (_doc_signature(session.staged_document(re.id, re.sheets[0].id))
+            != _doc_signature(session.staged_document(re.id, re.sheets[12].id)))
+
+
+def test_relayout_batch_with_deleted_source_refused():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
+    a = session.capture_to_staging(kind="sheet", name="A", cols=2, rows=2, frames=6)
+    session.regenerate_layer(layer.id, {"sides": 6, "radius": 30})
+    b = session.capture_to_staging(kind="sheet", name="B", cols=2, rows=2, frames=6)
+    batch = session.interpolate_captures(a.id, b.id, steps=3)
+    session.delete_capture_group(a.id)
+
+    with pytest.raises(RuntimeError, match="source captures no longer available"):
+        session.relayout_capture(batch.id, 1, 1)
+
+
+def test_relayout_refuses_non_grid_kinds():
+    session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    plot = session.capture_to_staging(kind="plot", name="plot")
+
+    with pytest.raises(ValueError, match="grid-sheet captures only"):
+        session.relayout_capture(plot.id, 2, 2)
 
 
 def test_insert_staged_sheet_as_layers_and_undo():
@@ -181,6 +275,26 @@ def test_preview_staged_returns_sheet_geometry(client):
     bad = client.get("/api/preview/sheet", params={
         "staged": json.dumps({"group_id": "nope", "sheet_id": "nope"})})
     assert bad.status_code == 400
+
+
+def test_relayout_api_endpoint(client):
+    client.post("/api/layers/generate",
+                json={"module": "polygon", "params": {"sides": 6, "radius": 15}})
+    cap = client.post("/api/staging/capture",
+                      json={"kind": "sheet", "name": "grid",
+                            "cols": 2, "rows": 2, "frames": 6}).json()["group"]
+
+    r = client.post(f"/api/staging/groups/{cap['id']}/relayout",
+                    json={"cols": 1, "rows": 1})
+    assert r.status_code == 200, r.text
+    g = r.json()["group"]
+    assert g["format"]["pages"] == 6 and len(g["sheets"]) == 6
+    assert "snapshot" not in g  # heavy source state never rides the wire
+
+    assert client.post("/api/staging/groups/nope/relayout",
+                       json={"cols": 1, "rows": 1}).status_code == 404
+    assert client.post(f"/api/staging/groups/{cap['id']}/relayout",
+                       json={"cols": 0, "rows": 1}).status_code == 422  # pydantic bounds
 
 
 def test_staging_api_plan_export_and_plot(client):

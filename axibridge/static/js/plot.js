@@ -118,6 +118,7 @@ export function initPlotTab() {
         <label>steps</label><input type="number" id="stage-steps" min="2" max="60" step="1" value="5" style="width:4.5em">
         <button id="stage-interp" class="primary">Generate batch</button>
       </div>
+      <div class="hint">each step = one sheet; frames run across the sheet, steps run A→B between the two captures</div>
       <div id="stage-list" class="stage-list"></div>
     </div>
 
@@ -560,6 +561,42 @@ function groupLabel(g) {
   return `${g.name} · ${detail} · ${sheets} sheet${sheets === 1 ? "" : "s"}`;
 }
 
+// A/B picker label: kind + shape first, so compatible pairs are scannable.
+function pickerLabel(g) {
+  const f = g.format || {};
+  if (g.kind === "sheet") return `${f.frames}f · ${f.cols}×${f.rows} sheet · ${g.name}`;
+  return `${g.kind} · ${g.name}`;  // frame · …, plot · …, batch · …
+}
+
+// Client mirror of session._captures_compatible (plus the snapshot rule):
+// returns the reason A/B can't interpolate, or null when they can. Pure —
+// drives the ⇄ button's disabled state/title, the server re-validates.
+function interpolateBlocker(ga, gb) {
+  if (!ga || !gb) return "pick two captures";
+  if (ga.id === gb.id) return "pick two different captures";
+  if (ga.kind === "batch" || gb.kind === "batch") return "batch captures carry no source snapshot";
+  if (ga.kind !== gb.kind) return `capture kinds differ (${ga.kind} vs ${gb.kind})`;
+  if (ga.kind === "sheet") {
+    for (const k of ["cols", "rows", "frames", "t_from", "t_to"]) {
+      if ((ga.format || {})[k] !== (gb.format || {})[k]) {
+        return `sheet layouts differ: ${k} (${ga.format?.[k]} vs ${gb.format?.[k]})`;
+      }
+    }
+  }
+  return null;
+}
+
+function updateInterpButton() {
+  const btn = $("stage-interp");
+  if (!btn) return;
+  const groups = S.state?.project?.staging || [];
+  const ga = groups.find((g) => g.id === $("stage-a")?.value);
+  const gb = groups.find((g) => g.id === $("stage-b")?.value);
+  const why = interpolateBlocker(ga, gb);
+  btn.disabled = !!why;
+  btn.title = why || "n sheets stepping A→B between the two captures";
+}
+
 async function captureStaged(kind) {
   try {
     pullAnimControls();  // module scope — pullAnimRange is initPlotTab's closure
@@ -583,8 +620,9 @@ async function captureStaged(kind) {
     }
     const r = await api.post("/api/staging/capture", body);
     await actions.refreshProject();
-    renderStaging();
     actions.log(`captured ${r.group.name} to staging`);
+    // immediately visible: select + canvas-preview the new group's first sheet
+    await previewStaged(r.group.id, r.group.sheets[0]?.id);
   } catch (e) { actions.oops(e); }
 }
 
@@ -599,8 +637,9 @@ async function interpolateStaged() {
   try {
     const r = await api.post("/api/staging/interpolate", { a, b, steps });
     await actions.refreshProject();
-    renderStaging();
     actions.log(`generated staged batch ${r.group.name}`);
+    // immediately visible: select + canvas-preview the batch's first sheet
+    await previewStaged(r.group.id, r.group.sheets[0]?.id);
   } catch (e) { actions.oops(e); }
 }
 
@@ -682,6 +721,33 @@ async function moveStaged(groupId, dir) {
   } catch (e) { actions.oops(e); }
 }
 
+// Re-layout row for the SELECTED tray group, grid captures only (sheet, or a
+// batch whose source was a sheet). Renders nothing otherwise — frame/plot
+// captures have no cols/rows to change (the server refuses them too).
+function relayoutRow(g) {
+  const isGrid = g.kind === "sheet" || (g.kind === "batch" && g.format?.source_kind === "sheet");
+  if (!isGrid || stage.selectedGroup !== g.id) return "";
+  const f = g.format || {};
+  return `
+    <div class="row stage-relayout">
+      <label>re-layout</label>
+      <input type="number" data-rl-cols min="1" max="12" step="1" value="${Number(f.cols) || 1}" style="width:3.5em">
+      <span>×</span>
+      <input type="number" data-rl-rows min="1" max="12" step="1" value="${Number(f.rows) || 1}" style="width:3.5em">
+      <button data-stage-relayout="${esc(g.id)}" title="re-render this capture at a new grid (new tray group)">apply</button>
+    </div>`;
+}
+
+async function relayoutStaged(groupId, cols, rows) {
+  try {
+    const r = await api.post(
+      `/api/staging/groups/${encodeURIComponent(groupId)}/relayout`, { cols, rows });
+    await actions.refreshProject();
+    actions.log(`re-laid ${r.group.name}`);
+    await previewStaged(r.group.id, r.group.sheets[0]?.id);  // 2b machinery
+  } catch (e) { actions.oops(e); }
+}
+
 function renderStaging() {
   const list = $("stage-list");
   if (!list || !S.state?.project) return;
@@ -691,9 +757,11 @@ function renderStaging() {
     if (!sel) continue;
     const prior = sel.value;
     sel.innerHTML = `<option value="">—</option>` + groups.map((g) =>
-      `<option value="${esc(g.id)}">${esc(groupLabel(g))}</option>`).join("");
+      `<option value="${esc(g.id)}">${esc(pickerLabel(g))}</option>`).join("");
     sel.value = groups.some((g) => g.id === prior) ? prior : "";
+    sel.onchange = updateInterpButton;
   }
+  updateInterpButton();
   $("stage-export-link").href = "/api/staging/export.zip";
   if (!groups.length) {
     list.innerHTML = `<div class="hint">No staged captures yet.</div>`;
@@ -712,6 +780,7 @@ function renderStaging() {
         <button class="danger" data-stage-delete="${esc(g.id)}">Delete</button>
       </div>
       ${(g.warnings || []).length ? `<div class="hint warn">${esc(g.warnings.join("; "))}</div>` : ""}
+      ${relayoutRow(g)}
       ${(g.sheets || []).map((s) => `
         <div class="stage-sheet ${stage.selectedGroup === g.id && stage.selectedSheet === s.id ? "on" : ""}">
           <button data-stage-preview="${esc(g.id)}:${esc(s.id)}">Preview ${esc(s.name)}</button>
@@ -734,6 +803,12 @@ function renderStaging() {
   list.querySelectorAll("[data-stage-insert]").forEach((b) => b.onclick = () => {
     const [g, s] = b.dataset.stageInsert.split(":");
     insertStaged(g, s);
+  });
+  list.querySelectorAll("[data-stage-relayout]").forEach((b) => b.onclick = () => {
+    const row = b.closest(".stage-relayout");
+    const cols = Math.max(1, Math.min(12, Math.round(Number(row.querySelector("[data-rl-cols]").value) || 1)));
+    const rows = Math.max(1, Math.min(12, Math.round(Number(row.querySelector("[data-rl-rows]").value) || 1)));
+    relayoutStaged(b.dataset.stageRelayout, cols, rows);
   });
   list.querySelectorAll("[data-stage-delete]").forEach((b) => b.onclick = () => deleteStaged(b.dataset.stageDelete));
   list.querySelectorAll("[data-stage-copy]").forEach((b) => b.onclick = () => duplicateStaged(b.dataset.stageCopy));
