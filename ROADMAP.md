@@ -165,9 +165,13 @@ mechanisms are quoted there). Pull order:
    plumbing): overprint zones with pairwise intersections drawn in both
    pens; value-rule pen assignment with free hue (Cohen's color logic);
    duotone density mixing; repetition-as-pressure.
-4. **linedraw v2** — staged pipeline (edge extraction / stroke tracing /
-   flow-aligned streamline hatching), multi-layer output by tonal band,
-   each band its own texture + pen.
+4. ~~**linedraw v2**~~ — **shipped 2026-07-13**: staged pipeline (edge
+   extraction / stroke tracing / flow-aligned streamline hatching),
+   multi-layer output by tonal band, each band its own texture + pen.
+   Family: `sources/lineart_edges.py` (XDoG/Sobel + trace + hand) +
+   `sources/lineart_hatch.py` (flow-field streamlines + hand), engine in
+   `sources/_lineart.py`; one-click `session.add_lineart_stack` (faithful
+   4-layer / artistic 3-layer presets) + `POST /api/layers/lineart_stack`.
 
 ## Sheets workflow v2 (from the 2026-07-10 code review)
 

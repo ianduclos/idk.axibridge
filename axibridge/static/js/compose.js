@@ -169,6 +169,13 @@ export function initComposeTab() {
         <button id="btn-generate" class="primary">Convert to layer</button>
       </div>
       <div id="gen-form" class="form"></div>
+      <div class="row" id="lineart-stack-row" hidden>
+        <select id="lineart-stack-flavor">
+          <option value="faithful">faithful</option>
+          <option value="artistic">artistic</option>
+        </select>
+        <button id="btn-lineart-stack">★ Create stack</button>
+      </div>
       <div id="gen-progress" class="progress" hidden><div id="gen-progress-bar"></div></div>
       <div id="gen-progress-msg" class="hint" hidden></div>
       <div class="row" style="margin-top:10px">
@@ -255,6 +262,25 @@ export function initComposeTab() {
       await actions.refreshResolved();
     } catch (e) { actions.oops(e); }
     finally { genBusy(false); }
+  };
+
+  $("btn-lineart-stack").onclick = async () => {
+    const btn = $("btn-lineart-stack");
+    const flavor = $("lineart-stack-flavor").value;
+    genBusy(true, btn);
+    try {
+      const r = await api.post("/api/layers/lineart_stack", {
+        image: genParams.image,
+        flavor,
+        rotate: genParams.rotate ?? 0,
+        width: genParams.width ?? 150,
+      });
+      preview.clear(); // the real layers replace the dashed ghost
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      actions.log(`created lineart stack (${flavor}, ${r.layers.length} layers)`);
+    } catch (e) { actions.oops(e); }
+    finally { genBusy(false, btn); }
   };
 
   $("btn-upload").onclick = async () => {
@@ -424,6 +450,24 @@ async function refreshDepthProStatus() {
   renderAssetList();
 }
 
+// The lineart v2 generators (lineart_edges / lineart_hatch) get a one-click
+// "Create stack" row: runs session.add_lineart_stack instead of a single
+// "Convert to layer", building the whole tonal-band + edges family at once.
+const LINEART_STACK_IDS = new Set(["lineart_edges", "lineart_hatch"]);
+
+function updateLineartStackRow(m) {
+  const row = $("lineart-stack-row");
+  if (!row) return;
+  row.hidden = !LINEART_STACK_IDS.has(m.id);
+  if (row.hidden) return;
+  const btn = $("btn-lineart-stack");
+  const hasImage = !!genParams.image;
+  btn.disabled = !hasImage;
+  btn.title = hasImage
+    ? "Generate the full lineart layer stack (tonal bands + edges) from this image"
+    : "choose an image first";
+}
+
 function renderGenForm() {
   const m = S.state.modules.sources.find((x) => x.id === $("gen-select").value);
   if (!m) return;
@@ -432,9 +476,10 @@ function renderGenForm() {
   // sideways at rotate=0 — pre-rotate 270 ("CW on paper") to read upright
   if ("rotate" in genParams && S.state?.project?.view === "portrait") genParams.rotate = 270;
   preview.clear();
-  const sched = () => preview.schedule(genPreviewReq("new", m.id, { ...genParams }));
+  const sched = () => { preview.schedule(genPreviewReq("new", m.id, { ...genParams })); updateLineartStackRow(m); };
   renderForm($("gen-form"), m.schema, genParams, sched, { onLive: sched });
   sched();
+  updateLineartStackRow(m);
 }
 
 // ---- layer list ------------------------------------------------------------

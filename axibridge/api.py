@@ -345,6 +345,29 @@ def add_generated_layer(body: GenerateBody) -> dict[str, Any]:
     return layer.model_dump()
 
 
+class LineartStackBody(BaseModel):
+    image: str = Field(..., min_length=1)
+    flavor: Literal["faithful", "artistic"]
+    rotate: Literal[0, 90, 180, 270] = 0
+    width: float = Field(default=150.0, ge=10, le=400)
+
+
+@router.post("/layers/lineart_stack")
+def add_lineart_stack(body: LineartStackBody) -> dict[str, Any]:
+    """One-click lineart v2 stack (session.add_lineart_stack): same
+    progress-scope + error-mapping shape as add_generated_layer above, since
+    it's the same "run a generator, add a layer" primitive repeated per
+    preset in the chosen flavor."""
+    try:
+        with progress_scope(_gen_progress_sink()):
+            layers = session.add_lineart_stack(body.image, body.flavor, body.rotate, body.width)
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+    return {"layers": [layer.model_dump() for layer in layers]}
+
+
 @router.post("/layers/upload")
 async def upload_svg_layers(file: UploadFile, quantization_mm: float = 0.1) -> dict[str, Any]:
     text = (await file.read()).decode("utf-8", errors="replace")

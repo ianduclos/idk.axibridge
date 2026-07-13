@@ -63,6 +63,43 @@ def _invert_affine(m: Affine) -> Affine:
     )
 
 
+#: Lineart v2 one-click stack presets (AARON-pass §D, docs/IDEAS-aaron-pass.md):
+#: bottom-to-top layer order per flavor. Each entry's ``params`` overrides the
+#: generator's own defaults; ``image``/``rotate``/``width`` come from the call
+#: and are never listed here. Starting points, tuned by eye afterwards — one
+#: dict literal, so a tuning pass is one obvious edit.
+LINEART_STACK_PRESETS: dict[str, list[dict[str, Any]]] = {
+    "faithful": [
+        # lights start at 0.2 with wider spacing: below that the streamlines
+        # fragment into pen-lift confetti on near-white gradients
+        {"name": "lineart · lights", "generator": "lineart_hatch",
+         "params": {"band_from": 0.2, "band_to": 0.45, "spacing": 12, "wobble": 0.6,
+                    "direction": "flow"}},
+        {"name": "lineart · mids", "generator": "lineart_hatch",
+         "params": {"band_from": 0.45, "band_to": 0.75, "spacing": 7, "direction": "flow"}},
+        {"name": "lineart · darks", "generator": "lineart_hatch",
+         "params": {"band_from": 0.75, "band_to": 1.0, "spacing": 5, "cross_hatch": True,
+                    "direction": "flow"}},
+        {"name": "lineart · edges", "generator": "lineart_edges",
+         "params": {"edge_mode": "xdog", "edge_threshold": 0.4,
+                    "carefulness_tight": 0.15, "carefulness_loose": 0.8}},
+    ],
+    "artistic": [
+        # wobble stays ≤1.1 on the mids: above that the hand noise erases the
+        # flow direction and the band reads as scribble, not form
+        {"name": "lineart · mids", "generator": "lineart_hatch",
+         "params": {"band_from": 0.35, "band_to": 0.7, "spacing": 9, "dash": 0.25,
+                    "wobble": 1.1}},
+        {"name": "lineart · darks", "generator": "lineart_hatch",
+         "params": {"band_from": 0.7, "band_to": 1.0, "spacing": 7, "cross_hatch": True,
+                    "dash": 0.15}},
+        {"name": "lineart · edges", "generator": "lineart_edges",
+         "params": {"edge_mode": "xdog", "sharpness": 35, "edge_threshold": 0.6,
+                    "wobble": 1.5, "carefulness_loose": 3.0}},
+    ],
+}
+
+
 class Session:
     def __init__(self) -> None:
         self._lock = threading.RLock()
@@ -1401,6 +1438,41 @@ class Session:
             self.project.layers.insert(idx + 1, copy)
             self.source_geometry[copy.id] = self.source_geometry.get(layer_id, [])
             return copy
+
+    def add_lineart_stack(
+        self, image: str, flavor: str, rotate: int = 0, width: float = 150.0
+    ) -> list[CanvasLayer]:
+        """One-click "Lineart stack": run ``LINEART_STACK_PRESETS[flavor]``
+        top to bottom, creating one ordinary generator layer per preset
+        entry — "faithful" (4 tonal-band hatch layers + edges) or "artistic"
+        (3 layers, looser/dashed). Inlines ``add_generated_layer``'s logic
+        per layer so the whole stack is ONE undo step; every layer carries
+        real ``source=LayerSource(type="generator", ...)`` provenance, so
+        regenerate/tween/effects all work on it exactly like a hand-built
+        layer."""
+        if flavor not in LINEART_STACK_PRESETS:
+            raise ValueError(f"unknown lineart stack flavor: {flavor!r}")
+        # generate everything BEFORE mutating (add_generated_layer's semantics —
+        # it too generates outside the lock): a failure mid-stack must not
+        # leave a partial stack in the project
+        generated: list[tuple[dict[str, Any], dict[str, Any], list[Path]]] = []
+        for spec in LINEART_STACK_PRESETS[flavor]:
+            params = {"image": image, "rotate": rotate, "width": width, **spec["params"]}
+            src = get_source(spec["generator"])
+            doc = src.generate(src.Params(**params))
+            generated.append((spec, params, [p for lyr in doc.layers for p in lyr.paths]))
+        with self._lock:
+            self._checkpoint()
+            created: list[CanvasLayer] = []
+            for spec, params, paths in generated:
+                layer = CanvasLayer(
+                    name=spec["name"],
+                    source=LayerSource(type="generator", generator=spec["generator"], params=params),
+                )
+                self.project.layers.append(layer)
+                self.source_geometry[layer.id] = paths
+                created.append(layer)
+            return created
 
     def animate_layer(self, layer_id: str) -> CanvasLayer:
         """One-click "Animate this layer": turn a layer into a keyframed

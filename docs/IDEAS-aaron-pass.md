@@ -82,7 +82,16 @@ state of the drawing," axibridge-native, zero architecture change.
   `weight` from any map = tonal drawing with one pen (pairs with the
   motion-trails roadmap item).
 
-### D. linedraw v2 (flexible, sophisticated)
+### D. linedraw v2 (flexible, sophisticated) — **shipped 2026-07-13**
+
+Shipped as `sources/_lineart.py` (numpy/scipy engine: flow_field, xdog,
+sobel_edges, trace, streamlines, hand) plus two generators —
+`sources/lineart_edges.py` (edge extraction + tracing + hand wobble) and
+`sources/lineart_hatch.py` (flow-aligned tonal streamline hatching, one band
+per layer) — and a one-click stack, `session.add_lineart_stack` /
+`POST /api/layers/lineart_stack`, with faithful (4-layer: lights/mids/darks
+hatch + xdog edges) and artistic (3-layer, looser/dashed) presets in
+`session.LINEART_STACK_PRESETS`. Original sketch:
 
 Decompose the pipeline into swappable stages: edge extraction
 (Sobel/XDoG/coherence), stroke *tracing* (orientation-aware chaining,
