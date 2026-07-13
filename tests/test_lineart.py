@@ -450,8 +450,14 @@ def test_edges_xdog_vs_sobel_differ(step_asset):
 
 
 def test_edges_higher_threshold_fewer_points(step_asset):
-    lo = _gen_step("lineart_edges", width=100, edge_mode="xdog", edge_threshold=0.1)
-    hi = _gen_step("lineart_edges", width=100, edge_mode="xdog", edge_threshold=0.9)
+    # post-skeletonization both thresholds collapse the step's single strong
+    # edge to the same centreline, so traced-point counts stop discriminating;
+    # ink_fill renders the pre-thinning ink WIDTH, which is what strictness
+    # actually shrinks (the mask-level monotonicity test lives engine-side)
+    lo = _gen_step("lineart_edges", width=100, edge_mode="xdog", edge_threshold=0.1,
+                   ink_fill=True, fill_spacing=2.0)
+    hi = _gen_step("lineart_edges", width=100, edge_mode="xdog", edge_threshold=0.9,
+                   ink_fill=True, fill_spacing=2.0)
     total = lambda d: sum(len(p.points) for p in d.layers[0].paths)
     assert total(hi) < total(lo)
 
@@ -503,3 +509,85 @@ def test_lineart_stack_api(client):
     missing = client.post("/api/layers/lineart_stack",
                           json={"image": "no-such-asset.png", "flavor": "faithful"})
     assert missing.status_code == 400
+
+
+# -- edges detail round: thinning, resolution, ink mass/fill -------------------
+
+
+def test_thin_mask_reduces_thick_bar_to_skeleton():
+    mask = np.zeros((30, 60), dtype=bool)
+    mask[12:19, 5:55] = True  # 7 px thick bar
+    skel = L.thin_mask(mask)
+    assert skel.sum() < mask.sum() / 3  # genuinely thinned, not nibbled
+    # spans the bar horizontally (Zhang-Suen rounds the ends by a few px)
+    cols = np.where(skel.any(axis=0))[0]
+    assert cols.min() <= 10 and cols.max() >= 48
+    # rows collapse to (near) a single centreline
+    assert skel.any(axis=1).sum() <= 3
+
+
+def test_thin_mask_empty_and_thin_inputs_stable():
+    empty = np.zeros((10, 10), dtype=bool)
+    assert not L.thin_mask(empty).any()
+    line = np.zeros((10, 20), dtype=bool)
+    line[5, 2:18] = True  # already 1 px: survives (endpoints may erode a px)
+    out = L.thin_mask(line)
+    assert out.sum() >= line.sum() - 2
+
+
+def _total_points(doc):
+    return sum(len(p.points) for layer in doc.layers for p in layer.paths)
+
+
+def test_edges_resolution_increases_detail(step_asset):
+    lo = _gen_step("lineart_edges", resolution=1.0)
+    hi = _gen_step("lineart_edges", resolution=2.0)
+    assert _total_points(hi) > _total_points(lo)
+    # mm output size is resolution-independent
+    assert abs(lo.width - hi.width) < 1e-6
+
+
+def test_edges_ink_fill_adds_mass(step_asset):
+    outline = _gen_step("lineart_edges", mass=1.0, edge_threshold=0.3)
+    filled = _gen_step("lineart_edges", mass=1.0, edge_threshold=0.3,
+                       ink_fill=True, fill_spacing=2.0)
+    assert _total_points(filled) > _total_points(outline)
+
+
+def test_edges_mass_grows_ink(step_asset):
+    lean = _gen_step("lineart_edges", mass=0.0, edge_threshold=0.3,
+                     ink_fill=True, fill_spacing=2.0)
+    massy = _gen_step("lineart_edges", mass=1.0, edge_threshold=0.3,
+                      ink_fill=True, fill_spacing=2.0)
+    assert _total_points(massy) > _total_points(lean)
+
+
+# -- clip-backed layers follow the timeline by default --------------------------
+
+
+@pytest.fixture()
+def clip_asset():
+    """Three-frame gradient sequence under the ``seq#`` prefix."""
+    from PIL import Image
+
+    before = asset_store.all()
+    for i in range(3):
+        img = Image.new("L", (64, 48))
+        img.putdata([255 - int(255 * ((x % 64) / 64)) for x in range(64 * 48)])
+        buf = io.BytesIO()
+        img.save(buf, "PNG")
+        asset_store.put(f"seq#{i:04d}.png", buf.getvalue())
+    yield
+    asset_store.replace_all(before)
+
+
+def test_sequence_layer_follows_timeline_by_default(clip_asset):
+    layer = session.add_generated_layer("lineart_hatch", {"image": "seq#"})
+    assert layer.frame_follow is True
+    still = session.add_generated_layer("lineart_hatch", {"image": "grad.png"})
+    assert still.frame_follow is False
+
+
+def test_stack_on_sequence_follows_timeline(clip_asset):
+    layers = session.add_lineart_stack("seq#", "artistic")
+    assert layers and all(l.frame_follow for l in layers)

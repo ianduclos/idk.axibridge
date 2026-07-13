@@ -172,6 +172,12 @@ mechanisms are quoted there). Pull order:
    `sources/lineart_hatch.py` (flow-field streamlines + hand), engine in
    `sources/_lineart.py`; one-click `session.add_lineart_stack` (faithful
    4-layer / artistic 3-layer presets) + `POST /api/layers/lineart_stack`.
+   Detail round (same day, from first real prints): edge maps are Zhang–Suen
+   skeletonized before tracing (branches survive), `resolution` ×1..2
+   working-canvas multiplier, `mass` (luminance-threshold solid ink) +
+   `ink_fill` (flow-following fill of ink mass) let a maxed edges layer
+   hold as a complete drawing; clip-backed generator layers now default
+   `frame_follow=True` (a video layer plays under the timeline on creation).
 
 ## Sheets workflow v2 (from the 2026-07-10 code review)
 

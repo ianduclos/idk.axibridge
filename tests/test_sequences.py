@@ -559,6 +559,10 @@ def test_swept_stamp_positions_are_time_invariant():
     tw = session.create_tween_layer(a.id, b.id)
     session.set_tween_params(tw.id, {"sweep": 3})
 
+    # sequence-backed layers default frame_follow ON (2026-07-13) — this test
+    # exercises the opted-OUT semantics first, so untick explicitly
+    session.update_layer(a.id, {"frame_follow": False})
+    session.update_layer(b.id, {"frame_follow": False})
     # no follow anywhere: a scrub changes nothing at all
     assert _pts(session.resolved(master_t=0.0)[tw.id]) == \
            _pts(session.resolved(master_t=0.5)[tw.id])
@@ -604,6 +608,9 @@ def test_clip_follow_without_flag_ignores_master_t():
     _seq3()
     layer = session.add_generated_layer(
         "image_threshold", {"image": "clip#", "frame": 0.0, "detail": 1.0})
+    # creation defaults the flag ON for sequences (2026-07-13); this test is
+    # about the opted-OUT path, so untick it
+    session.update_layer(layer.id, {"frame_follow": False})
     assert _pts(session.resolved(master_t=1.0)[layer.id]) == \
            _pts(session.resolved()[layer.id])
 
@@ -647,6 +654,10 @@ def test_ladder_scrub_regression_sweep_one_matches_own_t():
     b = session.duplicate_layer(a.id)
     session.update_layer(b.id, {"frame_offset": 1.0})
     tw = session.create_tween_layer(a.id, b.id)
+    # this regression compares the tween's OWN-t path against a master scrub —
+    # the endpoints must not clip-advance, so untick the new-by-default flag
+    session.update_layer(a.id, {"frame_follow": False})
+    session.update_layer(b.id, {"frame_follow": False})
 
     for x in (0.0, 0.3, 0.7, 1.0):
         session.set_tween_params(tw.id, {"t": x, "follow_master": True, "sweep": 1})

@@ -145,6 +145,57 @@ def sobel_edges(luma: np.ndarray, threshold: float = 0.5) -> np.ndarray:
     return mag > float(threshold) * peak
 
 
+def dark_mass(luma: np.ndarray, cut: float, soften_px: float = 1.5) -> np.ndarray:
+    """Solid-ink mask for dark REGIONS: softened luma below ``cut`` (0..255).
+    Pure difference-of-Gaussians responds only to edges — a flat dark area is
+    invisible to it — so "ink mass" is a luminance threshold unioned with the
+    edge ink by the caller (Winnemoeller's XDoG likewise thresholds sharpened
+    luminance, not the bare DoG). The soften blur keeps the region boundary
+    from tracing pixel staircases."""
+    if luma.size == 0:
+        return np.zeros(luma.shape, dtype=bool)
+    return gaussian_filter(luma.astype(np.float64, copy=False), soften_px) < float(cut)
+
+
+def thin_mask(mask: np.ndarray) -> np.ndarray:
+    """Zhang–Suen thinning: reduce an ink mask to its 1-px skeleton.
+
+    The run-midpoint tracer below assumes thin strokes — feeding it a thick
+    XDoG ink region collapses branches and fine features into blobby
+    centreline estimates. Skeletonizing first preserves every stroke and
+    junction, which is where most of the perceived "detail" of an edge
+    drawing lives. Fully vectorized: each iteration evaluates the classic
+    two-subpass deletion conditions (2..6 neighbours, exactly one 0→1
+    transition around the ring, and the subpass's corner products) on the
+    whole padded array at once; iteration count is bounded by half the
+    thickest stroke, so a few px of XDoG ink converges in a handful of
+    passes."""
+    img = mask.astype(bool).copy()
+    if img.size == 0 or not img.any():
+        return img
+    while True:
+        changed = False
+        for step in (0, 1):
+            p = np.pad(img, 1, constant_values=False)
+            # ring neighbours, Zhang–Suen numbering (P2 = north, clockwise)
+            P2 = p[:-2, 1:-1]; P3 = p[:-2, 2:]; P4 = p[1:-1, 2:]; P5 = p[2:, 2:]
+            P6 = p[2:, 1:-1]; P7 = p[2:, :-2]; P8 = p[1:-1, :-2]; P9 = p[:-2, :-2]
+            ring = (P2, P3, P4, P5, P6, P7, P8, P9)
+            B = sum(n.astype(np.uint8) for n in ring)
+            A = sum(((~ring[i]) & ring[(i + 1) % 8]).astype(np.uint8)
+                    for i in range(8))
+            if step == 0:
+                corners = ~(P2 & P4 & P6) & ~(P4 & P6 & P8)
+            else:
+                corners = ~(P2 & P4 & P8) & ~(P2 & P6 & P8)
+            doomed = img & (B >= 2) & (B <= 6) & (A == 1) & corners
+            if doomed.any():
+                img[doomed] = False
+                changed = True
+        if not changed:
+            return img
+
+
 # -- 3. trace: bool edge map -> polylines -----------------------------------
 
 

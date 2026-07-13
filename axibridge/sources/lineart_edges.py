@@ -22,6 +22,7 @@ from ..model import PathDocument
 from ..registry import SourceModule, register_source, report_progress
 from . import _lineart as L
 from ._pixelgen import ImageBaseParams, luma_grid, pixel_doc
+from ._pixelgen import working_dims as _pixelgen_working_dims
 
 Pt = tuple[float, float]
 
@@ -57,6 +58,21 @@ class LineartEdgesParams(ImageBaseParams):
     edge_threshold: float = Field(default=0.5, ge=0.0, le=1.0, title="Strictness",
                                   description="Higher = fewer, cleaner lines",
                                   json_schema_extra=_EDGE)
+    mass: float = Field(default=0.0, ge=0.0, le=1.0, title="Ink mass",
+                        description="Adds solid ink where the image is dark (1 = below "
+                                    "mid-grey) — with 'Fill ink' the layer holds as a "
+                                    "full drawing",
+                        json_schema_extra=_EDGE)
+    resolution: float = Field(default=1.0, ge=1.0, le=2.0, title="Resolution ×",
+                              description="Working-canvas multiplier — finer detail, slower",
+                              json_schema_extra=_EDGE)
+
+    ink_fill: bool = Field(default=False, title="Fill ink",
+                           description="Fill solid ink regions with tight flow-following "
+                                       "strokes instead of outlining them",
+                           json_schema_extra=_EDGE)
+    fill_spacing: float = Field(default=2.5, ge=1.0, le=10.0, title="Fill spacing (px)",
+                                json_schema_extra=_EDGE)
 
     join_angle_deg: float = Field(default=50.0, ge=0.0, le=90.0, title="Join angle (deg)",
                                   description="Max tangent disagreement to chain two strokes",
@@ -113,7 +129,12 @@ class LineartEdges(SourceModule):
 
     def generate(self, params: LineartEdgesParams) -> PathDocument:
         p = params
-        rows, w, h = luma_grid(p)
+        # px-space params keep their working-canvas meaning at any resolution:
+        # everything calibrated in px is multiplied by the same factor the
+        # canvas grew by (luma_grid caps the actual size, so derive k from it)
+        rows, w, h = luma_grid(p, scale=p.resolution)
+        base_w, _ = _pixelgen_working_dims(p)
+        k = w / base_w
         report_progress(0.05, "Tone")
         luma = np.asarray(rows, dtype=float)  # row-major (h, w), matches _lineart's convention
         lut = _tone_lut(p)
@@ -124,20 +145,41 @@ class LineartEdges(SourceModule):
 
         report_progress(0.15, "Edge extraction")
         if p.edge_mode == "xdog":
-            edge_map = L.xdog(toned, sigma=p.sigma, sharpness=p.sharpness,
-                              threshold=p.edge_threshold)
+            edge_map = L.xdog(toned, sigma=p.sigma * k,
+                              sharpness=p.sharpness, threshold=p.edge_threshold)
         else:
             edge_map = L.sobel_edges(toned, threshold=p.edge_threshold)
+        if p.mass > 0.0:
+            # union in solid ink for dark regions (DoG alone can't see flat
+            # darkness): mass=1 inks everything below mid-grey
+            edge_map = edge_map | L.dark_mass(toned, cut=153.0 * p.mass,
+                                              soften_px=1.5 * k)
 
-        report_progress(0.35, "Tracing")
-        lines = L.trace(edge_map, join_angle_deg=p.join_angle_deg,
-                        min_len_px=p.min_length, smooth=p.smoothing)
+        # thick ink collapses badly through the run-midpoint tracer (branches
+        # and fine features merge into blobby centrelines) — skeletonize
+        # first so every stroke and junction survives as its own line
+        report_progress(0.3, "Thinning")
+        skeleton = L.thin_mask(edge_map)
+
+        report_progress(0.45, "Tracing")
+        lines = L.trace(skeleton, join_angle_deg=p.join_angle_deg,
+                        min_len_px=p.min_length * k, smooth=p.smoothing)
         lines = [_subsample_keep_ends(line, p.detail) for line in lines]
         lines = [line for line in lines if len(line) >= 2]
 
-        report_progress(0.75, "Hand wobble")
-        lines = L.hand(lines, edge_map, p.carefulness_tight, p.carefulness_loose,
-                       p.wobble, p.seed)
+        if p.ink_fill:
+            # render the ink MASS as tight flow-following strokes over the
+            # pre-thinning map — this is what lets a maxed edges layer hold
+            # as a complete drawing instead of an outline sketch
+            report_progress(0.6, "Filling ink")
+            field = L.flow_field(toned, smooth_px=6.0 * k)
+            fill = L.streamlines(edge_map.astype(float) * 255.0, field, (0.5, 1.0),
+                                 p.fill_spacing * k, 200.0 * k, p.seed)
+            lines += fill
+
+        report_progress(0.8, "Hand wobble")
+        lines = L.hand(lines, edge_map, p.carefulness_tight * k,
+                       p.carefulness_loose * k, p.wobble, p.seed)
 
         report_progress(0.95, "Building paths")
         return pixel_doc(p, w, h, lines, "lineart_edges", f"lineart_edges {p.image}")

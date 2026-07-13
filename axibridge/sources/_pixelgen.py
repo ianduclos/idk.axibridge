@@ -100,9 +100,18 @@ def working_dims(p: ImageBaseParams) -> tuple[int, int]:
     return w, h
 
 
-def luma_grid(p: ImageBaseParams, blur_px: float = 0.0) -> tuple[list[list[float]], int, int]:
-    """Working-resolution luma rows in 0..255 (255 = white), no tone applied."""
+def luma_grid(p: ImageBaseParams, blur_px: float = 0.0,
+              scale: float = 1.0) -> tuple[list[list[float]], int, int]:
+    """Working-resolution luma rows in 0..255 (255 = white), no tone applied.
+
+    ``scale`` multiplies the working canvas (capped at 2× the usual bounds)
+    for generators that want finer structure than WORK_W allows — px-space
+    params must be scaled by the caller to keep their meaning."""
     w, h = working_dims(p)
+    if scale != 1.0:
+        s = max(1.0, min(float(scale), 2.0))
+        w = min(int(round(w * s)), 2 * WORK_W)
+        h = min(int(round(h * s)), 2 * MAX_H)
     image = asset_store.resolve_frame(p.image, p.frame)  # sequence -> concrete frame
     rows, w, h = asset_store.grayscale(image, blur_px, p.rotate, size=(w, h))
     return [[v * 255.0 for v in row] for row in rows], w, h

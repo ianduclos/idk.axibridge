@@ -232,6 +232,21 @@ class Session:
         params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + shift))
         return params
 
+    @staticmethod
+    def _sequence_driven(generator_id: str, params: dict[str, Any]) -> bool:
+        """True when this generator+params pair is clip-backed: the generator
+        has a ``frame`` axis and its ``image`` param names a frame sequence —
+        exactly the eligibility test ``_clip_overrides`` applies at scrub
+        time. Used to default ``frame_follow`` ON at creation: a layer built
+        from a video should play under the timeline without hunting for the
+        opt-in checkbox (untick it for a deliberately frozen frame)."""
+        from .assets import asset_store
+
+        if "frame" not in get_source(generator_id).Params.model_fields:
+            return False
+        image = params.get("image")
+        return isinstance(image, str) and asset_store.is_sequence(image)
+
     def add_generated_layer(self, generator_id: str, params: dict[str, Any]) -> CanvasLayer:
         src = get_source(generator_id)
         doc = src.generate(src.Params(**params))
@@ -239,6 +254,7 @@ class Session:
         layer = CanvasLayer(
             name=src.label,
             source=LayerSource(type="generator", generator=generator_id, params=params),
+            frame_follow=self._sequence_driven(generator_id, params),
         )
         with self._lock:
             self._checkpoint()
@@ -1468,6 +1484,7 @@ class Session:
                 layer = CanvasLayer(
                     name=spec["name"],
                     source=LayerSource(type="generator", generator=spec["generator"], params=params),
+                    frame_follow=self._sequence_driven(spec["generator"], params),
                 )
                 self.project.layers.append(layer)
                 self.source_geometry[layer.id] = paths
