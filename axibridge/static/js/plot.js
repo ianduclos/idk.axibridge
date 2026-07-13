@@ -128,7 +128,7 @@ export function initPlotTab() {
           <h2>Animation preview</h2>
           <button id="anim-preview-close">Close</button>
         </div>
-        <div class="preview-stage">
+        <div id="anim-preview-stage" class="preview-stage" style="position:relative">
           <img id="anim-preview-img" alt="">
           <div id="anim-preview-empty" class="hint">rendering…</div>
         </div>
@@ -988,6 +988,16 @@ function clearRasterFrames() {
   anim.popupI = 0;
 }
 
+// Swap the live frame set for a freshly-rendered one, revoking the old
+// object URLs only now that their replacements are in hand. Frame count can
+// change between renders, so popupI is reclamped to the new set.
+function swapRasterFrames(newFrames) {
+  const old = anim.previewFrames;
+  anim.previewFrames = newFrames;
+  anim.popupI = newFrames.length ? Math.min(anim.popupI, newFrames.length - 1) : 0;
+  for (const frame of old) URL.revokeObjectURL(frame.url);
+}
+
 function setRasterProgress(done, total) {
   const bar = $("anim-preview-progress");
   if (bar) bar.style.width = total ? `${Math.round(100 * done / total)}%` : "0%";
@@ -1005,8 +1015,26 @@ function renderRasterControls(message = "") {
   const label = $("anim-preview-popup-label");
   if (img) img.hidden = !hasFrames;
   if (empty) {
+    // With frames already on screen, a re-render's progress message is a small
+    // overlay badge — it must never blank the image the user is looking at.
+    // With no frames yet (first-ever render), it's the full centered hint.
     empty.hidden = hasFrames && !message;
     empty.textContent = message || "";
+    empty.classList.toggle("preview-overlay-badge", hasFrames && Boolean(message));
+    if (hasFrames && message) {
+      empty.style.position = "absolute";
+      empty.style.left = "8px";
+      empty.style.bottom = "8px";
+      empty.style.right = "8px";
+      empty.style.margin = "0";
+      empty.style.padding = "3px 7px";
+      empty.style.background = "color-mix(in srgb, var(--paper-deep) 88%, transparent)";
+      empty.style.border = "1px solid var(--line)";
+      empty.style.borderRadius = "4px";
+      empty.style.pointerEvents = "none";
+    } else {
+      empty.style.cssText = "";
+    }
   }
   if (play) {
     play.textContent = anim.popupPlaying ? "Pause" : "Play";
@@ -1077,12 +1105,16 @@ async function renderRasterPreview() {
   const controller = new AbortController();
   anim.previewAbort = controller;
   anim.renderingPreview = true;
-  clearRasterFrames();
+  // Deliberately do NOT clear anim.previewFrames here: the last render stays
+  // on screen (img + playback controls) while the new one renders into a
+  // scratch buffer. It's only swapped in on success — see swapRasterFrames.
   const modal = $("anim-preview-modal");
   if (modal) modal.hidden = false;
   setRasterProgress(0, anim.n);
   renderRasterControls(`rendering frame 0/${anim.n}`);
 
+  const newFrames = [];
+  let swapped = false;
   try {
     for (let i = 0; i < anim.n; i++) {
       if (controller.signal.aborted) return;
@@ -1092,10 +1124,19 @@ async function renderRasterPreview() {
       const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
-      anim.previewFrames.push({ url: URL.createObjectURL(blob), t });
+      newFrames.push({ url: URL.createObjectURL(blob), t });
       setRasterProgress(i + 1, anim.n);
-      if (i === 0) showRasterFrame(0);
+      if (!anim.previewFrames.length && newFrames.length === 1) {
+        // first-ever render (no old set to keep showing): alias the scratch
+        // buffer as the live set so frame 0 shows the moment it lands and the
+        // remaining progress renders as the badge overlay, not a blank stage
+        anim.previewFrames = newFrames;
+        anim.popupI = 0;
+        showRasterFrame(0);
+      }
     }
+    if (anim.previewFrames !== newFrames) swapRasterFrames(newFrames);
+    swapped = true;
     anim.renderingPreview = false;
     anim.previewAbort = null;
     showRasterFrame(0);
@@ -1103,6 +1144,14 @@ async function renderRasterPreview() {
   } catch (e) {
     if (e.name !== "AbortError") actions.oops(e);
   } finally {
+    // Render aborted, failed, or exited early partway through: drop whatever
+    // scratch frames we'd fetched so far (revoke their URLs) and leave the
+    // old, still-valid frame set exactly as it was — nothing new to show,
+    // nothing to leak. On success the scratch buffer is already emptied by
+    // swapRasterFrames, so this is a no-op. When a first-ever render aliased
+    // the scratch buffer as the live set, its frames are on screen — keep them.
+    if (!swapped && anim.previewFrames !== newFrames)
+      for (const frame of newFrames) URL.revokeObjectURL(frame.url);
     if (anim.previewAbort === controller) {
       anim.previewAbort = null;
       anim.renderingPreview = false;
