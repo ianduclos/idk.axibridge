@@ -4,15 +4,16 @@ updated: 2026-07-13
 entries: 1
 ---
 
-### Merge the two feature branches — opened 2026-07-13, owner: ian
-- done: `feat/animation-previews` (4 commits, suite 308) and
-  `feat/lineart-v2` (3 commits, suite 351) both complete, reviewed,
-  committed, green; neither pushed nor merged.
-- next: Ian picks merge order (they're independent; lineart branched from
-  main, not from the animation branch) and says push. After push: append a
-  CHANGES.md feed entry for the removed `POST /api/animation/contact_sheet`
-  (Pi clone + any script calling it must switch to capture→insert), and
-  `git pull` the idkpi clone to keep Mac/Pi in lockstep.
-- blockers: none — waiting on Ian's call (house rule: never push unasked).
-- context: STATUS.md body lists both branches' contents; ROADMAP.md top has
-  the URGENT fix list that should drive the next working session.
+### Bench eye-check of the URGENT round — opened 2026-07-13, owner: ian
+- done: all 11 URGENT items merged to main (`16fc350`), suite 382,
+  12/12 automated live checks passed.
+- next: Ian verifies at the bench the four behavior changes machines can't
+  judge: (1) image output now centers on the bed — does it feel right with
+  stacks/regenerate? (2) image_threshold band select on a real photo,
+  (3) portrait "Width (mm)" now means on-paper visual width, (4) the
+  viewAxis fader fix — one fader's drag direction deliberately flipped in
+  portrait (correct per the rotation math; revert candidate if it feels
+  wrong: see the feat(view) commit).
+- blockers: none.
+- context: ROADMAP.md URGENT section (struck through, with notes);
+  `tests/test_view_coherence.py` locks resolve view-independence.

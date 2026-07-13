@@ -3,53 +3,54 @@ project: idk.axibridge
 state: active
 updated: 2026-07-13
 machine: mac+pi
-summary: Two green unmerged branches await Ian's merge call — animation-preview fixes (canvas preview mode, tray A⇄B sharpened, contact-sheet bake removed) and lineart v2 (flow-hatch/XDoG family + one-click stack + detail round); an 11-item URGENT fix list from first real use leads the ROADMAP.
+summary: Both feature branches and the full 11-item URGENT round are merged and pushed (main 16fc350, suite 382, 12/12 live checks); what remains is Ian's bench eye-check of the behavior changes.
 next:
-  - "Merge feat/animation-previews and feat/lineart-v2 into main (Ian decides order/push); on push, announce the removed /api/animation/contact_sheet in the CHANGES feed and pull the Pi clone"
-  - Work the ROADMAP "URGENT fixes" list top-down (tray PNG popup preview, orientation coherence, image centering, effects-boxes collapse, …)
-  - Install apple/ml-depth-pro + checkpoint into .venv (diagnosed missing, not a bug — ROADMAP urgent item 6)
+  - "Bench eye-check the urgent round: centering feel, threshold band on a real photo, portrait width remap, viewAxis fader direction (one fader deliberately flipped)"
   - Real-photo print test of a maxed lineart_edges layer (mass + ink_fill) — eye checks were on a synthetic subject
-  - AARON pass items still queued — core-figure generator, sheet-snapshot asset, felt-tip color kit (linedraw v2 itself shipped)
+  - AARON pass items still queued — core-figure generator, sheet-snapshot asset, felt-tip color kit
 handoff_for: ian
 ---
 
 # idk.axibridge — status
 
-**Session 2026-07-12 → 13, two branches, suite green on both (main baseline
-301 → 308 with animation work → 351 with lineart).** Neither branch is
-pushed or merged — never push without asking.
+**Session 2026-07-13 (evening): URGENT round shipped 11/11.** Sonnet agent
+waves orchestrated from a Fable session; plan in
+`~/.claude/plans/generic-squishing-flask.md` (session-local), outcomes in
+the ROADMAP's struck-through URGENT list and the `fix/urgent-round1` merge
+(`16fc350`). Suite 359 → 382; a live Playwright/API pass verified all 12
+checks including "portrait rotate reads 0, stores 270" and
+resolve-bit-identical across view toggles.
 
-**`feat/animation-previews`** (4 commits) — the "previews do nothing" fix:
-- `/api/preview/sheet` + canvas preview mode: the centre canvas swaps to a
-  grid page or tray sheet's REAL geometry with a banner + exit (before:
-  only the invisible travel overlay changed).
-- Tray A⇄B sharpened: same-kind/same-shape compat with named-field errors,
-  auto-preview after capture/interpolate, legible A/B pickers, ⇄ disabled
-  with a reason, `POST /staging/groups/{gid}/relayout` re-paginates a
-  capture (or re-runs a batch from sources) at a new grid.
-- Windows + time-curve demoted to an "advanced timing" fold; the
-  **contact-sheet bake endpoint is REMOVED** (capture-sheet → insert-as-
-  layers replaces it) — announce as a boundary change when this merges.
+Highlights:
+- **Orientation coherence** (the big one): params stay machine-frame mm
+  forever; the display layer maps once via schema tags
+  (viewRotate/viewAngle/viewSize/viewOrient) in `static/js/viewmap.js` +
+  `forms.js`. The portrait rotate=270 band-aids are gone. Includes a
+  deliberate behavior fix: only the original-y viewAxis fader negates in
+  portrait now (the x fader's drag direction changed).
+- **image_threshold** is now a band select (`threshold_min`/`threshold_max`;
+  legacy `threshold` loads byte-identical).
+- **DELETE /api/assets** (+ "Clear unused assets" button) — unreferenced
+  by default, `?force=true` for all, clips kept whole.
+- Image generator output centers on the bed at add time (stacks stay
+  band-aligned; clip-backed layers keep identity).
+- Anim preview popup keeps the last frame during re-renders; menu bar
+  (File/View) in the header; workbench picker split; linedraw
+  `resolution` ×1..2; forms `<details>` groups persist open-state.
+- **Depth Pro installed** on the Mac venv (checkpoint gitignored at
+  `checkpoints/depth_pro.pt`, 1.8 GB; numpy moved to 1.26.4, suite green).
+  The Pi venv does NOT have it.
 
-**`feat/lineart-v2`** (3 commits) — AARON §D shipped:
-- Engine `sources/_lineart.py` (numpy/scipy first): ETF flow field, XDoG,
-  Zhang–Suen thinning, angle-aware tracing, Jobard–Lefer streamlines with
-  band windows/cross-hatch/dash, carefulness wobble via distance transform.
-- `lineart_edges` + `lineart_hatch` generators (bands stack as layers, one
-  pen each), `session.add_lineart_stack` one-click faithful/artistic
-  presets (tuned on renders), ★ Create stack button.
-- Detail round from Ian's first prints: skeletonized tracing, `resolution`
-  ×1..2, `mass` + `ink_fill` (maxed edges layer holds as a full drawing);
-  clip-backed generator layers now default `frame_follow=True`.
-
-**URGENT list**: 11 items at the top of `ROADMAP.md`, dictated by Ian from
-real use 2026-07-13 — includes a confirmed diagnosis for the Depth Pro
-complaint (package genuinely absent from `.venv`, install task).
+Earlier the same day: `feat/animation-previews` + `feat/lineart-v2` merged
+and pushed (see previous entry's contents in git history); the removed
+`POST /api/animation/contact_sheet` and the threshold param rename are both
+announced in the CHANGES feed. Pi clone pulled to `16fc350` — Mac and Pi in
+lockstep.
 
 ## Prior arc
 
-Pi round 2 (bitmap-lines, contract_expand, region continuity, workbench
-drawing), sheets v2, glyphgram, A/B capture series — see ROADMAP shipped
+Lineart v2 (flow-hatch/XDoG family, one-click stack), animation previews,
+Pi round 2, sheets v2, glyphgram, A/B capture series — see ROADMAP shipped
 sections. Architecture invariants: `ARCHITECTURE.md`, `docs/MODULES.md`
 (single resolve path; scrubbing never mutates stored state). Two AxiDraw
 modes contend for the serial port — Mac-driven pi_ssh (default) vs the
