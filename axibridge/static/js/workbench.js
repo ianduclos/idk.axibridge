@@ -383,7 +383,7 @@ function selectModule(id) {
 
 function renderParamForm() {
   const m = sourceModule();
-  if (m) renderForm($("wb-form"), m.schema, wb.params, () => schedule(), { onLive: () => schedule() });
+  if (m) renderForm($("wb-form"), m.schema, wb.params, () => schedule(), { onLive: () => schedule(), stateKey: `wb:${m.id}` });
 }
 
 function renderFx() {
@@ -413,7 +413,7 @@ function renderFx() {
       for (const [k, spec] of Object.entries(mod.schema.properties || {})) {
         if (step.params[k] === undefined && spec.default !== undefined) step.params[k] = spec.default;
       }
-      renderForm(form, mod.schema, step.params, () => schedule(), { onLive: () => schedule() });
+      renderForm(form, mod.schema, step.params, () => schedule(), { onLive: () => schedule(), stateKey: `wbfx:${i}:${mod.id}` });
     }
     list.appendChild(box);
   });

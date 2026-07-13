@@ -10,6 +10,13 @@
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
 
+// Advanced-field <details> groups collapse on every re-render by default
+// (fresh DOM, no `open` attribute). Persist open/closed state across
+// re-renders per the house pattern (see compose.js `expandedSteps`): callers
+// pass a stable opts.stateKey to namespace groups as `${stateKey}:${group}`.
+// Without a stateKey, groups fall back to the old behavior (always closed).
+const openGroups = new Set();
+
 export function renderForm(container, schema, values, onChange, opts = {}) {
   container.innerHTML = "";
   // fields tagged json_schema_extra={"group": "..."} collapse into a <details>
@@ -196,6 +203,14 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
         const sum = document.createElement("summary");
         sum.textContent = spec.group;
         det.appendChild(sum);
+        if (opts.stateKey) {
+          const gkey = `${opts.stateKey}:${spec.group}`;
+          det.open = openGroups.has(gkey);
+          det.addEventListener("toggle", () => {
+            if (det.open) openGroups.add(gkey);
+            else openGroups.delete(gkey);
+          });
+        }
         groups.set(spec.group, det);
       }
       groups.get(spec.group).appendChild(field);

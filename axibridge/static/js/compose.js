@@ -477,7 +477,7 @@ function renderGenForm() {
   if ("rotate" in genParams && S.state?.project?.view === "portrait") genParams.rotate = 270;
   preview.clear();
   const sched = () => { preview.schedule(genPreviewReq("new", m.id, { ...genParams })); updateLineartStackRow(m); };
-  renderForm($("gen-form"), m.schema, genParams, sched, { onLive: sched });
+  renderForm($("gen-form"), m.schema, genParams, sched, { onLive: sched, stateKey: `gen:${m.id}` });
   sched();
   updateLineartStackRow(m);
 }
@@ -936,7 +936,7 @@ export function renderLayerDetail() {
       renderForm(form, mod.schema, values, () => {
         preview.clear();
         commitEffects(layer, i, { params: values });
-      }, { onLive: sched });
+      }, { onLive: sched, stateKey: `fx:${layer.id}:${i}` });
       div.appendChild(form);
     }
     steps.appendChild(div);
@@ -1015,7 +1015,7 @@ export function renderLayerDetail() {
         await actions.refreshResolved();
       } catch (e) { actions.oops(e); }
     }, 250);
-    renderForm(tw.querySelector("#tw-form"), schema, values, commit);
+    renderForm(tw.querySelector("#tw-form"), schema, values, commit, { stateKey: `tw:${layer.id}` });
 
     // -- stamping (sweep): plain inputs, bound into the same `values` +
     // debounced commit the t-slider uses (one PUT code path, not two)
@@ -1104,7 +1104,7 @@ export function renderLayerDetail() {
       // Regenerate commits it (one undo checkpoint, not one per slider move)
       const sched = () => preview.schedule(
         genPreviewReq(layer.id, layer.source.generator, { ...values }, objToMat(layer.transform)));
-      renderForm(gen.querySelector("#regen-form"), mod.schema, values, sched, { onLive: sched });
+      renderForm(gen.querySelector("#regen-form"), mod.schema, values, sched, { onLive: sched, stateKey: `gen:${layer.id}` });
       const regenBtn = gen.querySelector("#btn-regen");
       regenBtn.onclick = async () => {
         genBusy(true, regenBtn);
