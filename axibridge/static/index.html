@@ -43,7 +43,15 @@
         <button id="ab-series" disabled>⇄ series</button>
       </div>
     </div>
-    <div id="canvas-wrap"><svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div id="canvas-wrap">
+      <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+      <!-- shown while the canvas holds a transient sheet/staged doc, not the
+           live project (see actions.showDocPreview) -->
+      <div id="doc-preview-banner" hidden>
+        <span>previewing: <span id="doc-preview-label"></span></span>
+        <button id="doc-preview-exit" title="back to the live project">✕ back to project</button>
+      </div>
+    </div>
     <div id="canvas-status">
       <span id="sel-readout">nothing selected</span>
       <span id="plan-warnings" class="warn"></span>

@@ -27,6 +27,9 @@ export const S = {
                     // refreshPlan estimates/overlays that page instead of the
                     // plain target. Owned by the Plot tab's Animation panel.
   stagedPlan: null, // staged-sheet spec for the tray preview, or null.
+  docPreview: null, // { label, query } while the centre canvas is showing a
+                    // transient sheet/staged document instead of the live
+                    // project. Any live refresh supersedes it (see below).
 };
 
 // The active crop rectangle, mirroring Session._crop_rect client-side (mode ->
@@ -48,6 +51,14 @@ function cropRectFor(project) {
   x += m; y += m; w -= 2 * m; h -= 2 * m;
   if (w <= 0 || h <= 0) return null;
   return { x, y, width: w, height: h };
+}
+
+// Tear down the doc-preview banner + state (the canvas itself is repainted by
+// whatever live refresh triggered this).
+function clearDocPreviewState() {
+  S.docPreview = null;
+  const banner = $("doc-preview-banner");
+  if (banner) banner.hidden = true;
 }
 
 function debounce(fn, ms) {
@@ -159,7 +170,10 @@ export const actions = {
     if (S.stagedPlan) {
       const group = (S.state.project.staging || []).find((g) => g.id === S.stagedPlan.group_id);
       const sheet = group?.sheets?.find((s) => !S.stagedPlan.sheet_id || s.id === S.stagedPlan.sheet_id);
-      if (!group || !sheet) S.stagedPlan = null;
+      if (!group || !sheet) {
+        S.stagedPlan = null;
+        actions.exitDocPreview();  // its staged preview (if up) can't stand
+      }
     }
     canvas.setData({
       guide: S.state.project.guide,
@@ -175,6 +189,9 @@ export const actions = {
   // Defaults to the current scrub so ANY refresh (layer edits, drags) stays
   // on the scrubbed frame instead of snapping back to the stored t.
   async refreshResolved(master_t = S.masterT, opts = {}) {
+    // A live refresh (edits, SSE re-hydrate) supersedes any transient sheet
+    // preview — drop it and its banner rather than fight over the canvas.
+    if (S.docPreview) clearDocPreviewState();
     S.masterT = master_t;
     const q = master_t == null ? "" : `?t=${encodeURIComponent(master_t)}`;
     S.resolved = await api.get(`/api/compose/resolved${q}`);
@@ -182,6 +199,27 @@ export const actions = {
     renderLayerList();
     renderSelReadout();
     if (opts.plan !== false) await actions.refreshPlan();
+  },
+
+  // Swap the centre canvas to a transient sheet/staged document (grid-sheet
+  // page or staged tray sheet). ``query`` is the /api/preview/sheet query string
+  // (already-encoded ``sheet=`` or ``staged=``). The plan overlay/estimate keep
+  // running off S.sheetPlan/S.stagedPlan — this only fills the canvas geometry
+  // the travel overlay draws on top of.
+  async showDocPreview(label, query) {
+    try {
+      const data = await api.get(`/api/preview/sheet?${query}`);
+      S.docPreview = { label, query };
+      canvas.setData({ layers: data.layers, images: [] });
+      const banner = $("doc-preview-banner");
+      if (banner) { $("doc-preview-label").textContent = label; banner.hidden = false; }
+    } catch (e) { oops(e); }
+  },
+
+  // Leave preview mode and restore the live project view. refreshResolved does
+  // the actual banner/state teardown, so this is the single exit path.
+  exitDocPreview() {
+    if (S.docPreview) actions.refreshResolved();
   },
 
   refreshPlan: debounce(async () => {
@@ -354,6 +392,7 @@ $("show-travel").onchange = () => { canvas.showTravel = $("show-travel").checked
 $("show-order").onchange = () => { canvas.showOrder = $("show-order").checked; canvas.render(); };
 $("show-guide").onchange = () => { canvas.showGuide = $("show-guide").checked; canvas.render(); };
 $("zoom-fit").onclick = () => canvas.resetView();
+$("doc-preview-exit").onclick = () => actions.exitDocPreview();
 $("btn-animate").onclick = () => {
   if (canvas.animating) {
     canvas.stopAnimation();

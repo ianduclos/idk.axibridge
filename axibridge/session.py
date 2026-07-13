@@ -670,59 +670,6 @@ class Session:
                     (cx, min(cy + arm_mm, compose.BED_HEIGHT))], filled=False))
         return out
 
-    def bake_contact_sheet(
-        self, cols: int, rows: int, frames: int, margin_mm: float,
-        t_from: float = 0.0, t_to: float = 1.0,
-    ) -> list[CanvasLayer]:
-        """Bake ``frames`` samples of the master timeline into a cols×rows
-        contact sheet: one baked layer per frame. A single shared scale
-        (derived from the union bounding box across ALL frames) keeps every
-        frame the same size — no per-frame jitter — while each frame is
-        individually centred in its own grid cell (its own bbox centre, same
-        scale). Previously-visible layers are hidden, like ``explode_tween``
-        hides its source tween — the new baked layers become the sheet's
-        visible content. Geometry is the VISIBLE, resolved (post-occlusion)
-        paths, so what gets baked is exactly what the canvas/plotter show.
-        One undo step.
-
-        The DESTRUCTIVE/editable variant: it mutates the project. Its transient
-        cousin is :meth:`sheet_document` (plot-time assembly, no mutation); both
-        share :meth:`_grid_place`."""
-        if not (1 <= cols <= 12 and 1 <= rows <= 12):
-            raise ValueError("cols and rows must each be 1..12")
-        if not (2 <= frames <= cols * rows):
-            raise ValueError(f"frames must be 2..{cols * rows} for a {cols}x{rows} grid")
-        if not (0.0 <= margin_mm <= 30.0):
-            raise ValueError("margin_mm must be 0..30")
-        if not (0.0 <= t_from <= 1.0 and 0.0 <= t_to <= 1.0):
-            raise ValueError("t_from/t_to must be 0..1")
-
-        with self._lock:
-            self._checkpoint()
-            pre_existing = list(self.project.layers)
-
-            ts = [t_from] if frames <= 1 else [
-                t_from + (t_to - t_from) * i / (frames - 1) for i in range(frames)
-            ]
-            placed = self._grid_place(ts, cols, rows, margin_mm)
-
-            created: list[CanvasLayer] = []
-            for i, (t, frame) in enumerate(zip(ts, placed)):
-                flat = [p for paths in frame.values() for p in paths]  # z-order
-                layer = CanvasLayer(
-                    name=f"frame {i:02d} · t={t:.2f}",
-                    source=LayerSource(type="baked"),
-                    transform=Affine(),
-                )
-                self.project.layers.append(layer)  # appended = top of z-order
-                self.source_geometry[layer.id] = flat
-                created.append(layer)
-
-            for layer in pre_existing:
-                layer.visible = False
-
-            return created
-
     def sheet_document(
         self, cols: int, rows: int, frames: int,
         t_from: float, t_to: float, margin_mm: float, page: int,
@@ -730,7 +677,8 @@ class Session:
         framing: str = "center", marks: bool = False,
     ) -> PathDocument:
         """One physical sheet of the flip-book, assembled at plot time — NO
-        project mutation, no checkpoint (contrast :meth:`bake_contact_sheet`).
+        project mutation, no checkpoint (it is pure assembly; the tray capture
+        path is how a sheet becomes editable layers, via ``insert``).
 
         ``frames`` timeline samples over [t_from, t_to] are laid into a
         cols×rows grid, chunked ``cols*rows`` cells per page; ``page`` (0-based)
@@ -1178,11 +1126,11 @@ class Session:
             )
 
     def insert_staged_sheet(self, group_id: str, sheet_id: str | None = None) -> list[CanvasLayer]:
-        """Destructive/editable escape hatch for staged output.
+        """Destructive/editable escape hatch for staged output — the single
+        path from a rendered sheet back to editable project layers.
 
         Appends one baked layer per staged pen pass and hides the prior visible
-        layers, matching the old contact-sheet bake's "replace the canvas view"
-        behaviour. One undo step."""
+        layers ("replace the canvas view"). One undo step."""
         with self._lock:
             group = self._find_capture(group_id)
             sheet = self._find_sheet(group, sheet_id)
@@ -1348,6 +1296,44 @@ class Session:
             self._frame_lru = old_frames
             self._frame_bbox = old_bbox
 
+    @staticmethod
+    def _captures_compatible(a: CaptureGroup, b: CaptureGroup) -> None:
+        """Raise ValueError unless A and B can interpolate: same kind, and for
+        sheet captures the same essential shape (cols/rows/frames/t range).
+        Presentation-only format fields — margin_mm, framing, marks — may
+        differ; the batch inherits A's values with the rest of ``a.format``."""
+        if a.kind != b.kind:
+            raise ValueError(f"capture kinds do not match ({a.kind} vs {b.kind})")
+        if a.kind == "sheet":
+            for key in ("cols", "rows", "frames", "t_from", "t_to"):
+                if a.format.get(key) != b.format.get(key):
+                    raise ValueError(
+                        f"sheet layouts do not match: {key} differs "
+                        f"({a.format.get(key)} vs {b.format.get(key)})")
+
+    def _interpolate_batch_docs(
+        self, a: CaptureGroup, b: CaptureGroup, steps: int, fmt: dict[str, Any],
+        name: str,
+    ) -> tuple[list[PathDocument], list[list[str]], list[str]]:
+        """The step loop behind :meth:`interpolate_captures` (and batch
+        re-layout): render ``steps`` snapshot blends A→B through ``fmt``.
+        Call under the lock; both captures must carry snapshots."""
+        if a.snapshot is None or b.snapshot is None:
+            raise ValueError("both captures need source snapshots")
+        docs: list[PathDocument] = []
+        pass_ids: list[list[str]] = []
+        warnings: list[str] = []
+        for i in range(steps):
+            t = i / (steps - 1)
+            project, geo, svg_files, ww = self._interpolate_snapshots(a.snapshot, b.snapshot, t)
+            warnings.extend(ww)
+            step_docs, step_pass_ids = self._documents_with_temp_state(project, geo, svg_files, fmt)
+            for j, doc in enumerate(step_docs):
+                doc.source = f"{name} step {i + 1}/{steps} sheet {j + 1}"
+                docs.append(doc)
+                pass_ids.append(step_pass_ids[j] if j < len(step_pass_ids) else [])
+        return docs, pass_ids, warnings
+
     def interpolate_captures(
         self, a_id: str, b_id: str, steps: int, name: str | None = None
     ) -> CaptureGroup:
@@ -1356,26 +1342,14 @@ class Session:
         with self._lock:
             a = self._find_capture(a_id)
             b = self._find_capture(b_id)
-            if a.format != b.format:
-                raise ValueError("capture formats do not match")
-            if a.snapshot is None or b.snapshot is None:
-                raise ValueError("both captures need source snapshots")
-            docs: list[PathDocument] = []
-            pass_ids: list[list[str]] = []
-            warnings: list[str] = []
-            for i in range(steps):
-                t = i / (steps - 1)
-                project, geo, svg_files, ww = self._interpolate_snapshots(a.snapshot, b.snapshot, t)
-                warnings.extend(ww)
-                step_docs, step_pass_ids = self._documents_with_temp_state(project, geo, svg_files, a.format)
-                for j, doc in enumerate(step_docs):
-                    doc.source = f"{name or 'interpolated batch'} step {i + 1}/{steps} sheet {j + 1}"
-                    docs.append(doc)
-                    pass_ids.append(step_pass_ids[j] if j < len(step_pass_ids) else [])
+            self._captures_compatible(a, b)
+            label = name or f"{a.name} ⇄ {b.name} · {steps} steps"
+            docs, pass_ids, warnings = self._interpolate_batch_docs(
+                a, b, steps, a.format, name or "interpolated batch")
             self._checkpoint()
             fmt = {**a.format, "kind": "batch", "source_kind": a.format.get("kind"), "variants": steps}
             return self._store_capture_group(
-                name=name or f"{a.name} ⇄ {b.name}",
+                name=label,
                 kind="batch",
                 fmt=fmt,
                 docs=docs,
@@ -1383,6 +1357,101 @@ class Session:
                 pass_ids=pass_ids,
                 source_capture_ids=[a.id, b.id],
                 warnings=sorted(set(warnings)),
+            )
+
+    def _snapshot_state(
+        self, snap: CaptureSnapshot
+    ) -> tuple[Project, dict[str, list[Path]], dict[str, str]]:
+        """Mirror :meth:`_capture_snapshot` back into a transient
+        project/geometry/svg triple for :meth:`_documents_with_temp_state` —
+        the single-snapshot analogue of :meth:`_interpolate_snapshots`."""
+        project = Project(
+            name=snap.name,
+            layers=[l.model_copy(deep=True) for l in snap.layers],
+            guide=snap.guide.model_copy(deep=True),
+            view=snap.view,
+            pens_used={k: v.model_copy(deep=True) for k, v in snap.pens_used.items()},
+            backend_params={k: dict(v) for k, v in snap.backend_params.items()},
+            plot_options=snap.plot_options.model_copy(deep=True),
+        )
+        geo = {
+            lid: [p.model_copy(deep=True) for p in paths]
+            for lid, paths in snap.source_geometry.items()
+        }
+        return project, geo, dict(snap.svg_files)
+
+    def relayout_capture(
+        self, group_id: str, cols: int, rows: int,
+        margin_mm: float | None = None, framing: str | None = None,
+        marks: bool | None = None,
+    ) -> CaptureGroup:
+        """Re-render a captured animation at a new grid — a NEW group; the
+        original is untouched. Snapshot-bearing sheet captures re-render from
+        their stored state; batches re-run the interpolation from their source
+        captures (which must still exist with snapshots). Grids only: frame and
+        plot captures have no cols/rows to change."""
+        if not (1 <= cols <= 12 and 1 <= rows <= 12):
+            raise ValueError("cols and rows must each be 1..12")
+        if margin_mm is not None and not (0.0 <= margin_mm <= 30.0):
+            raise ValueError("margin_mm must be 0..30")
+        if framing is not None and framing not in ("center", "fixed"):
+            raise ValueError("framing must be center or fixed")
+        with self._lock:
+            group = self._find_capture(group_id)
+            source_kind = group.format.get("source_kind") if group.kind == "batch" else group.kind
+            if source_kind != "sheet":
+                raise ValueError(
+                    f"re-layout applies to grid-sheet captures only, not {group.kind!r}")
+            # new sheet-format: keep the timeline shape, swap the grid
+            fmt = {k: v for k, v in group.format.items()
+                   if k not in ("kind", "source_kind", "variants")}
+            fmt["kind"] = "sheet"
+            fmt["cols"], fmt["rows"] = cols, rows
+            if margin_mm is not None:
+                fmt["margin_mm"] = margin_mm
+            if framing is not None:
+                fmt["framing"] = framing
+            if marks is not None:
+                fmt["marks"] = marks
+            fmt["pages"] = self.sheet_pages(int(fmt["frames"]), cols, rows)
+
+            if group.kind == "batch":
+                sources = [
+                    next((g for g in self.project.staging if g.id == sid), None)
+                    for sid in group.source_capture_ids
+                ]
+                if len(sources) != 2 or any(s is None or s.snapshot is None for s in sources):
+                    raise RuntimeError("source captures no longer available")
+                a, b = sources
+                steps = int(group.format.get("variants", 2))
+                name = f"{group.name} · re-laid {cols}×{rows}"
+                docs, pass_ids, warnings = self._interpolate_batch_docs(a, b, steps, fmt, name)
+                self._checkpoint()
+                return self._store_capture_group(
+                    name=name,
+                    kind="batch",
+                    fmt={**fmt, "kind": "batch", "source_kind": "sheet", "variants": steps},
+                    docs=docs,
+                    snapshot=None,
+                    pass_ids=pass_ids,
+                    source_capture_ids=list(group.source_capture_ids),
+                    warnings=sorted(set(warnings)),
+                )
+
+            if group.snapshot is None:
+                raise RuntimeError("capture has no source snapshot to re-render from")
+            project, geo, svg_files = self._snapshot_state(group.snapshot)
+            docs, pass_ids = self._documents_with_temp_state(project, geo, svg_files, fmt)
+            if not any(self._doc_has_geometry(doc) for doc in docs):
+                raise RuntimeError("nothing to re-layout (no geometry at the new grid)")
+            self._checkpoint()
+            return self._store_capture_group(
+                name=f"{group.name} · re-laid {cols}×{rows}",
+                kind="sheet",
+                fmt=fmt,
+                docs=docs,
+                snapshot=group.snapshot.model_copy(deep=True),
+                pass_ids=pass_ids,
             )
 
     def duplicate_layer(self, layer_id: str) -> CanvasLayer:

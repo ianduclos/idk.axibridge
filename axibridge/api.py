@@ -842,6 +842,65 @@ def get_plan(
     }
 
 
+def _doc_preview_layers(doc: Any, pen_ids: list[str]) -> dict[str, Any]:
+    """Per-layer payload for a transient sheet/staged document, shaped like
+    :func:`get_resolved` so the canvas can render it through the same
+    ``setData({layers})`` path. ``pen_ids`` is parallel to ``doc.layers`` (each
+    a pen id, ``""`` for the no-pen group) — the layer's colour comes off the
+    document (set at assembly time), the ink-sim ``line_diameter_mm``/``opacity``
+    off the pen. Display-only — no stats, no occlusion flags."""
+    pens = session.pens()
+    layers_out = []
+    for i, layer in enumerate(doc.layers):
+        pen = pens.get(pen_ids[i] if i < len(pen_ids) else "")
+        layers_out.append({
+            "id": layer.id,
+            "name": layer.name,
+            "visible": True,  # canvas skips !visible layers — sheets always show
+            "color": layer.color or (pen.color if pen else compose.INK),
+            "line_diameter_mm": pen.line_diameter_mm if pen else compose.DEFAULT_LINE_DIAMETER_MM,
+            "opacity": pen.opacity if pen else 1.0,
+            "paths": [{"points": p.points, "filled": p.filled} for p in layer.paths],
+        })
+    return {"layers": layers_out, "width": doc.width, "height": doc.height}
+
+
+@router.get("/preview/sheet")
+def preview_sheet_doc(
+    sheet: str | None = Query(default=None),
+    staged: str | None = Query(default=None),
+) -> dict[str, Any]:
+    """Display-only geometry for a transient grid-sheet or staged document, in
+    the same per-layer shape as ``/compose/resolved``. The centre canvas swaps
+    to this to show the ACTUAL page layout — the plan overlay only draws travel,
+    so on its own it leaves the canvas blank.
+
+    Exactly one of ``sheet`` (a JSON-encoded :class:`SheetSpec`) or ``staged``
+    (a JSON-encoded :class:`StagedSpec`) selects the source; both resolve
+    through the session's existing sheet/staged builders — NO second geometry
+    path. The pen ids feeding the ink sim come from the same ordered sources the
+    plotter uses (``sheet_passes`` for grids, the staged sheet's passes). 400 on
+    an unknown group/sheet, an invalid spec, or if not exactly one source given."""
+    if (sheet is None) == (staged is None):
+        raise _fail(ValueError("provide exactly one of sheet or staged"), 400)
+    try:
+        if staged is not None:
+            spec = StagedSpec.model_validate_json(staged)
+            doc = _staged_document(spec)
+            sh = session._find_sheet(session._find_capture(spec.group_id), spec.sheet_id)
+            pen_ids = [p.pen_id for p in sh.passes
+                       if spec.pen_id is None or p.pen_id == spec.pen_id]
+        else:
+            spec = SheetSpec.model_validate_json(sheet)
+            doc = _sheet_document(spec)
+            pen_ids = session.sheet_passes(
+                spec.cols, spec.rows, spec.frames,
+                spec.t_from, spec.t_to, spec.margin_mm, spec.page)
+    except (KeyError, ValueError, IndexError) as e:
+        raise _fail(e, 400)
+    return _doc_preview_layers(doc, pen_ids)
+
+
 @router.get("/doc/{target}/svg")
 def download_svg(target: str) -> Response:
     try:
@@ -1000,31 +1059,6 @@ def animation_preview_png(
     return Response(content=buf.getvalue(), media_type="image/png")
 
 
-class ContactSheetBody(BaseModel):
-    cols: int = Field(ge=1, le=12)
-    rows: int = Field(ge=1, le=12)
-    frames: int = Field(ge=2, le=144)  # further bounded to cols*rows in session
-    margin_mm: float = Field(default=5.0, ge=0.0, le=30.0)
-    t_from: float = Field(default=0.0, ge=0.0, le=1.0)
-    t_to: float = Field(default=1.0, ge=0.0, le=1.0)
-
-
-@router.post("/animation/contact_sheet")
-def bake_contact_sheet(body: ContactSheetBody) -> dict[str, Any]:
-    """Bake N frames of the master timeline into a cols×rows grid on one
-    sheet — one baked layer per frame, uniformly scaled and centred in its
-    cell. One undo step (see Session.bake_contact_sheet)."""
-    try:
-        layers = session.bake_contact_sheet(
-            body.cols, body.rows, body.frames, body.margin_mm, body.t_from, body.t_to
-        )
-    except ValueError as e:
-        raise _fail(e, 400)
-    except Exception as e:
-        raise _fail(e)
-    return {"layers": [l.model_dump() for l in layers]}
-
-
 # -- staging tray ---------------------------------------------------------------
 
 
@@ -1127,6 +1161,34 @@ def insert_staged_sheet(group_id: str, sheet_id: str) -> dict[str, Any]:
     except Exception as e:
         raise _fail(e, 400)
     return {"layers": [l.model_dump() for l in layers]}
+
+
+class RelayoutCaptureBody(BaseModel):
+    cols: int = Field(ge=1, le=12)
+    rows: int = Field(ge=1, le=12)
+    margin_mm: float | None = Field(default=None, ge=0.0, le=30.0)
+    framing: Literal["center", "fixed"] | None = None
+    marks: bool | None = None
+
+
+@router.post("/staging/groups/{group_id}/relayout")
+def relayout_capture_group(group_id: str, body: RelayoutCaptureBody) -> dict[str, Any]:
+    """Re-render a captured animation at a new grid as a NEW tray group (the
+    original stays). Sheet captures re-render from their snapshot; batches
+    re-run the A⇄B interpolation from their source captures. 400 for non-grid
+    kinds or when a batch's sources are gone."""
+    try:
+        group = session.relayout_capture(
+            group_id, body.cols, body.rows,
+            margin_mm=body.margin_mm, framing=body.framing, marks=body.marks,
+        )
+    except KeyError as e:
+        raise _fail(e, 404)
+    except (ValueError, RuntimeError) as e:
+        raise _fail(e, 400)
+    except Exception as e:
+        raise _fail(e)
+    return {"group": group.model_dump(exclude={"snapshot"})}
 
 
 class InterpolateCapturesBody(BaseModel):

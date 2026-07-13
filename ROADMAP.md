@@ -237,8 +237,9 @@ geometry path, never a checkpoint). What landed:
 - **Outputs**: SVG zip (`/api/animation/export.zip`), plot-per-sheet stepper
   (`plot/start` takes `master_t`; explicit press per frame, paper swap
   between), and capture-to-staging as the primary contact/grid-sheet output.
-  The old destructive contact-sheet bake still exists as an explicit
-  editable-layer escape hatch.
+  Capturing a grid sheet and then "insert as layers" is the editable-layer
+  escape hatch (the standalone `bake_contact_sheet` endpoint was removed
+  2026-07-12 — capture + insert covers it and stays undoable in one step).
 - **Animation preview**: live SVG scrubber for quick timeline checking plus
   a raster popup (`/api/animation/preview.png`) for smoother playback of
   path-heavy frames. The PNG renderer still uses the single resolve path,
@@ -306,8 +307,9 @@ Deferred, roughly in order of pull:
   button (a second non-following tween over the same A/B pair).
 - ~~Per-pen contact-sheet layers~~ — **shipped July 2026** for the transient
   grid sheets (`sheet_document` groups by pen; each sheet = one pass per pen).
-  The destructive `bake_contact_sheet` still flattens to one layer per frame
-  by design (it's the editable variant); per-pen baking there is unclaimed.
+  The editable escape hatch is capture-a-sheet + "insert as layers", which
+  bakes one layer per pen pass (the standalone `bake_contact_sheet`, which
+  flattened one layer per frame, was removed 2026-07-12).
 - ~~GIF/PNG preview render~~ — **shipped July 2026** as the raster popup PNG
   frame cache. A server-side GIF/video export would be convenience only.
 - Per-frame fades via pen pressure / multipass density (motion trails).

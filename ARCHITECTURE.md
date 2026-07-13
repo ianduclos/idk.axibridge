@@ -164,6 +164,40 @@ bit-identical; the layer's `source.type` becomes `"baked"` but keeps
 generator provenance, so *regenerate* explicitly reverts the bake).
 **Duplicate** copies a layer sharing the same source-geometry list.
 
+### Animation: two interpolation axes, one resolve path
+
+Motion has two independent instruments, and neither adds a second geometry
+path — both flow through `session.resolved(master_t=…)`.
+
+**Canvas tween (per-layer, live)** — a `tween` layer (`tween.py`) morphs one
+sibling pair A→B: generator params, effect params, and decomposed transform
+lerp continuously; non-blendable fields (seeds, bools, mismatched stacks) step
+at t=0.5 to keep the endpoints exact. `follow_master` binds its `t` to the
+master timeline (`?t=` on `/compose/resolved`); `sweep > 1` stamps fixed
+in-betweens; `frame_follow` on a clip layer advances a frame-sequence asset as
+the timeline scrubs. Windows and the pingpong curve are advanced sub-knobs
+(folded away in the UI), not separate systems.
+
+**Tray A⇄B (whole-project, the variant axis)** — the staging tray
+(`session.py`, `CaptureGroup`/`StagedSheet`) freezes a rendered output — a
+grid sheet, a frame, a plot — as per-pass SVG geometry plus a *source
+snapshot* (the whole project state). `interpolate_captures` blends two
+same-kind captures' snapshots across N steps → one staged sheet per step. So
+a grid capture already runs the animation's own timeline *across* each sheet
+(frames in cells), and interpolating two of them adds a second, orthogonal
+axis: the same A→B morph re-rendered as it drifts from variant A to variant B
+— the XY instrument. `relayout_capture` re-paginates a capture (or re-runs a
+batch from its sources) at a new grid without recapturing.
+
+Neither instrument mutates stored geometry under a scrub: `master_t` drives an
+*ephemeral* overlay dict layered over `source_geometry` for one resolve, so
+the undo history and saved bytes stay identical. The **preview** for a
+transient sheet/staged doc (`/api/preview/sheet`) returns the same per-layer
+payload shape as `/compose/resolved`, so the centre canvas renders it through
+the ordinary path with a banner — the durable frames→editable-layers hatch is
+capturing a sheet and "insert as layers" (one undo step; the old
+`bake_contact_sheet` was removed for it).
+
 ### Image assets (depth maps, threshold sources)
 
 `assets.py` holds a module-level store (name → bytes, with cached

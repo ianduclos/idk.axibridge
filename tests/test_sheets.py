@@ -1,7 +1,8 @@
 """Grid sheets — transient plot-time assembly of many timeline frames per
-physical sheet (1/2/4/16 per page). The destructive cousin, contact-sheet
-baking, is covered in test_tween.py; here we exercise the non-mutating
-``sheet_document`` / ``_grid_place`` path and its API surface."""
+physical sheet (1/2/4/16 per page). The editable escape hatch (capture a sheet
+to the tray, then insert as layers) is covered in test_staging.py; here we
+exercise the non-mutating ``sheet_document`` / ``_grid_place`` path and its API
+surface."""
 
 import time
 
@@ -168,6 +169,50 @@ def test_plan_with_sheet_shrinks_cells_below_native(client):
     assert sheet.status_code == 200
     page = sheet.json()["job"]["pen_down_distance"]
     assert 0 < page < 6 * native  # every cell scaled below native size
+
+
+def test_preview_sheet_returns_page_geometry(client):
+    import json
+
+    client.post("/api/layers/generate",
+                json={"module": "polygon", "params": {"sides": 6, "radius": 20}})
+    pa = client.post("/api/pens", json={"name": "pen A", "color": "#ff0000",
+                                        "line_diameter_mm": 0.7, "opacity": 0.5}).json()
+    layers = client.get("/api/project").json()["layers"]
+    client.patch(f"/api/layers/{layers[0]['id']}", json={"pen_id": pa["id"]})
+
+    r = client.get("/api/preview/sheet", params={"sheet": json.dumps(_sheet_spec())})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["layers"], "sheet preview should carry the page's geometry"
+    lay = body["layers"][0]
+    # display-only shape the canvas reads: visible + ink-sim fields, no stats
+    assert lay["visible"] is True
+    assert lay["color"] == "#ff0000"
+    assert lay["line_diameter_mm"] == 0.7 and lay["opacity"] == 0.5
+    assert "stats" not in lay
+    assert lay["paths"] and lay["paths"][0]["points"]
+    # geometry lands inside the bed (grid cells, not native placement)
+    for p in lay["paths"]:
+        for x, y in p["points"]:
+            assert 0 <= x <= body["width"] and 0 <= y <= body["height"]
+
+
+def test_preview_sheet_requires_exactly_one_source(client):
+    import json
+
+    client.post("/api/layers/generate",
+                json={"module": "polygon", "params": {"sides": 6, "radius": 20}})
+    # neither → 400
+    assert client.get("/api/preview/sheet").status_code == 400
+    # both → 400
+    both = client.get("/api/preview/sheet", params={
+        "sheet": json.dumps(_sheet_spec()),
+        "staged": json.dumps({"group_id": "x", "sheet_id": "y"})})
+    assert both.status_code == 400
+    # out-of-range page → 400
+    bad = client.get("/api/preview/sheet", params={"sheet": json.dumps(_sheet_spec(page=9))})
+    assert bad.status_code == 400
 
 
 def test_plot_start_with_sheet_completes_on_simulator(client):
