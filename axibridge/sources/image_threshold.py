@@ -18,9 +18,9 @@ filled paths, so holes read as solid to layers below.
 from __future__ import annotations
 
 import math
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from ..assets import asset_store
 from ..image_processing import (
@@ -46,8 +46,13 @@ class ImageThresholdParams(BaseModel):
         description="Clockwise on paper — match the image to the view orientation")
     width: float = Field(default=150.0, ge=10, le=400, title="Width (mm)",
                          description="Height follows the image aspect ratio")
-    threshold: float = Field(default=0.5, ge=0.0, le=1.0, title="Threshold",
-                             description="Brightness below this is inside a shape")
+    threshold_min: float = Field(default=0.0, ge=0.0, le=1.0, title="Threshold min",
+                                 description="Band lower bound — brightness between min and "
+                                             "max is inside a shape; 0 (the default) means "
+                                             "no lower bound")
+    threshold_max: float = Field(default=0.5, ge=0.0, le=1.0, title="Threshold max",
+                                 description="Band upper bound — brightness between min and "
+                                             "max is inside a shape")
     smoothing: float = Field(default=1.0, ge=0.0, le=20.0, title="Smoothing (mm)",
                              description="Gaussian blur before tracing — rounds pixel "
                                          "staircases into curves")
@@ -71,6 +76,27 @@ class ImageThresholdParams(BaseModel):
                                       "edges tighter and costs more points")
     min_area: float = Field(default=2.0, ge=0.0, le=500.0, title="Min area (mm²)",
                             description="Drop specks smaller than this")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _legacy_threshold(cls, data: Any) -> Any:
+        """Saved projects (pre-band) store a single ``threshold: t`` whose
+        inside was {v < t} — exactly the band [0, t). Map it to
+        threshold_min=0.0 (no lower bound, the field default) and
+        threshold_max=t, which reproduces the old output byte-for-byte:
+        the min-trace at 0.0 yields no loops ({v < 0} is empty), leaving
+        the single trace at t, same as before."""
+        if isinstance(data, dict) and "threshold" in data:
+            data = dict(data)
+            legacy = data.pop("threshold")
+            data.setdefault("threshold_max", legacy)
+        return data
+
+    @model_validator(mode="after")
+    def _order_band(self) -> "ImageThresholdParams":
+        if self.threshold_min > self.threshold_max:
+            self.threshold_min, self.threshold_max = self.threshold_max, self.threshold_min
+        return self
 
 
 def _trace_contours(field: list[list[float]], t: float, cell: float) -> list[list[tuple[float, float]]]:
@@ -167,7 +193,10 @@ class ImageThreshold(SourceModule):
         alpha = asset_store.alpha(image, rotate=p.rotate)
         w_mm, h_mm = p.width, p.width * ih / iw
         sx, sy = iw / w_mm, ih / h_mm
-        outside = p.threshold + 1.0  # any value safely above the threshold
+        # Field values (post tone-mapping) always land in [0, 1], so 2.0 is
+        # safely outside the band at both ends regardless of min/max —
+        # padding never reads as "inside" for either trace below.
+        outside = 2.0
         tone = image_processing_kwargs(p)
 
         def bilinear(grid, px, py) -> float:
@@ -194,7 +223,21 @@ class ImageThreshold(SourceModule):
                 v = apply_image_processing_value(bilinear(rows, px, py), **tone)
                 frow[i + 1] = 1.0 - v if p.invert else v
 
-        loops = _trace_contours(field, p.threshold, p.detail)
+        # True band select: inside = {threshold_min <= v <= threshold_max},
+        # always. Contours of the band = contours at the min level XOR-ed
+        # against contours at the max level (concatenated loops; the
+        # compositor's even-odd parity — see compose.build_mask / hatch_fill —
+        # turns the nested pair into the band ring, exactly like a threshold
+        # hole already works). Both edges keep the same rule at their extreme:
+        # * min == 0.0 traces {v < 0} = empty (values are clamped >= 0), so no
+        #   lower-edge loops — the legacy one-sided cutoff, byte-identical.
+        # * max >= 1.0 traces just ABOVE the value range so pure white
+        #   (v == 1.0) counts as inside; against the 2.0 padding that yields
+        #   the image-boundary rectangle — the honest "everything from min
+        #   up" selection, continuous with max = 0.999.
+        t_max = p.threshold_max if p.threshold_max < 1.0 else 1.0 + 1e-6
+        loops = _trace_contours(field, p.threshold_min, p.detail)
+        loops += _trace_contours(field, t_max, p.detail)
         paths = [
             Path(points=[(x - p.detail, y - p.detail) for x, y in loop], filled=True)
             for loop in loops

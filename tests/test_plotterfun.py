@@ -215,3 +215,94 @@ def test_exif_orientation_respected():
     asset_store.put("exif.jpg", buf.getvalue())
     _, w, h = asset_store.grayscale("exif.jpg")
     assert (w, h) == (20, 40)  # upright: portrait, not the raw landscape buffer
+
+
+# -- image_threshold: min/max band ------------------------------------------
+
+
+def _gen_threshold(**params):
+    src = get_source("image_threshold")
+    return src.generate(src.Params(image="grad.png", width=80, smoothing=0,
+                                   detail=1.0, min_area=1, **params))
+
+
+def test_image_threshold_legacy_param_matches_new_defaults():
+    """A saved project's ``{"threshold": 0.5}`` dict must load and generate
+    byte-identically to the NEW defaults (threshold_min=0.0,
+    threshold_max=0.5): old inside was {v < t} = the band [0, t), and the
+    min-trace at 0.0 yields no loops — old projects can't silently change
+    on open."""
+    src = get_source("image_threshold")
+    legacy = src.generate(src.Params(image="grad.png", width=80, threshold=0.5,
+                                     smoothing=0, detail=1.0, min_area=1))
+    defaults = _gen_threshold()  # threshold_min=0.0, threshold_max=0.5
+    explicit = _gen_threshold(threshold_min=0.0, threshold_max=0.5)
+    legacy_pts = [p.points for p in legacy.layers[0].paths]
+    assert legacy_pts == [p.points for p in defaults.layers[0].paths]
+    assert legacy_pts == [p.points for p in explicit.layers[0].paths]
+    assert [p.filled for p in legacy.layers[0].paths] == \
+           [p.filled for p in defaults.layers[0].paths]
+
+
+def test_image_threshold_legacy_param_populates_max_field():
+    """The before-validator maps legacy ``threshold: t`` to the band [0, t]:
+    threshold_max=t, threshold_min left at its 0.0 default (not just leaving
+    the legacy key silently dropped by pydantic's extra="ignore" default)."""
+    src = get_source("image_threshold")
+    p = src.Params(image="grad.png", threshold=0.7)
+    assert p.threshold_min == 0.0
+    assert p.threshold_max == 0.7
+
+
+def test_image_threshold_band_is_true_band_select():
+    """inside = {min <= v <= max}, always: a mid band traces BOTH its edges —
+    genuinely different geometry from the one-sided cutoff, and the dark
+    region below min reads as a hole via even-odd parity."""
+    cutoff = _gen_threshold(threshold_min=0.0, threshold_max=0.3)  # legacy-style {v < 0.3}
+    band = _gen_threshold(threshold_min=0.3, threshold_max=0.7)
+    cutoff_pts = [p.points for p in cutoff.layers[0].paths]
+    band_pts = [p.points for p in band.layers[0].paths]
+    assert band_pts != cutoff_pts
+    # the band is bounded on both sides: two closed loops (min edge + max
+    # edge), vs. the single one-sided cutoff's one loop
+    assert len(band.layers[0].paths) == 2
+    assert len(cutoff.layers[0].paths) == 1
+
+
+def test_image_threshold_max_at_one_is_continuous_not_inverted():
+    """max=1.0 must NOT flip back to the legacy dark-inside selection: it is
+    the honest "everything from min up" band, continuous with max=0.999.
+    (min, 1.0) = the min-edge loop PLUS the image-boundary rectangle (pure
+    white counts as inside against the padding)."""
+    cutoff = _gen_threshold(threshold_min=0.0, threshold_max=0.3)  # {v < 0.3}
+    top = _gen_threshold(threshold_min=0.3, threshold_max=1.0)     # {0.3 <= v <= 1}
+    near = _gen_threshold(threshold_min=0.3, threshold_max=0.999)
+    # NOT the inverted legacy selection
+    assert [p.points for p in top.layers[0].paths] != [p.points for p in cutoff.layers[0].paths]
+    # same loop structure as just below the top: min edge + upper boundary
+    assert len(top.layers[0].paths) == len(near.layers[0].paths) == 2
+    # and the second loop is the image-boundary rectangle: spans ~full width
+    spans = [max(x for x, _ in p.points) - min(x for x, _ in p.points)
+             for p in top.layers[0].paths]
+    assert max(spans) > 75.0  # ~the whole 80 mm image, not an interior contour
+
+
+def test_image_threshold_band_paths_closed_and_filled():
+    band = _gen_threshold(threshold_min=0.3, threshold_max=0.7)
+    paths = band.layers[0].paths
+    assert paths
+    for p in paths:
+        assert p.filled
+        assert p.points[0] == p.points[-1]  # closed loop, unchanged semantics
+
+
+def test_image_threshold_min_max_swaps_instead_of_crashing():
+    """An inverted band (min > max, e.g. from a UI drag) must not raise —
+    it swaps so old projects (and slider fat-fingers) never 500."""
+    src = get_source("image_threshold")
+    p = src.Params(image="grad.png", threshold_min=0.8, threshold_max=0.2)
+    assert p.threshold_min == 0.2
+    assert p.threshold_max == 0.8
+    # and it still generates without error
+    src.generate(p.model_copy(update={"image": "grad.png", "width": 80,
+                                      "smoothing": 0, "detail": 1.0, "min_area": 1}))
