@@ -247,6 +247,31 @@ class Session:
         image = params.get("image")
         return isinstance(image, str) and asset_store.is_sequence(image)
 
+    def _centering_transform(
+        self, generator_id: str, params: dict[str, Any], doc: PathDocument
+    ) -> Affine:
+        """Image-based generators (params expose an ``image`` asset field)
+        return a PathDocument anchored at (0,0) with known ``width``/
+        ``height`` (mm) — the image's own placement, not a deliberate
+        composition choice — so centre it on the bed instead of leaving it
+        pinned at the machine origin. Procedural/geometric generators
+        (rectangle, polygon, lissajous, grid, …) place themselves via their
+        own size/margin params and are left at identity: their ``width``/
+        ``height`` is just as often set, but re-centering would fight their
+        own layout math and the tests/tools built on it. Clip-backed layers
+        (``_sequence_driven``) are ALSO left at identity: their whole point
+        is spatial-ladder positioning (duplicate + explicit transform per
+        rung, see the timeline docs) where the base frame's placement is a
+        deliberate anchor other rungs are measured from, not a stray origin
+        pin to correct."""
+        if doc.width is None or doc.height is None:
+            return Affine()
+        if "image" not in get_source(generator_id).Params.model_fields:
+            return Affine()
+        if self._sequence_driven(generator_id, params):
+            return Affine()
+        return Affine(e=(compose.BED_WIDTH - doc.width) / 2, f=(compose.BED_HEIGHT - doc.height) / 2)
+
     def add_generated_layer(self, generator_id: str, params: dict[str, Any]) -> CanvasLayer:
         src = get_source(generator_id)
         doc = src.generate(src.Params(**params))
@@ -254,6 +279,7 @@ class Session:
         layer = CanvasLayer(
             name=src.label,
             source=LayerSource(type="generator", generator=generator_id, params=params),
+            transform=self._centering_transform(generator_id, params, doc),
             frame_follow=self._sequence_driven(generator_id, params),
         )
         with self._lock:
@@ -1540,19 +1566,23 @@ class Session:
         # generate everything BEFORE mutating (add_generated_layer's semantics —
         # it too generates outside the lock): a failure mid-stack must not
         # leave a partial stack in the project
-        generated: list[tuple[dict[str, Any], dict[str, Any], list[Path]]] = []
+        generated: list[tuple[dict[str, Any], dict[str, Any], list[Path], Affine]] = []
         for spec in LINEART_STACK_PRESETS[flavor]:
             params = {"image": image, "rotate": rotate, "width": width, **spec["params"]}
             src = get_source(spec["generator"])
             doc = src.generate(src.Params(**params))
-            generated.append((spec, params, [p for lyr in doc.layers for p in lyr.paths]))
+            generated.append((
+                spec, params, [p for lyr in doc.layers for p in lyr.paths],
+                self._centering_transform(spec["generator"], params, doc),
+            ))
         with self._lock:
             self._checkpoint()
             created: list[CanvasLayer] = []
-            for spec, params, paths in generated:
+            for spec, params, paths, band_transform in generated:
                 layer = CanvasLayer(
                     name=spec["name"],
                     source=LayerSource(type="generator", generator=spec["generator"], params=params),
+                    transform=band_transform,
                     frame_follow=self._sequence_driven(spec["generator"], params),
                 )
                 self.project.layers.append(layer)
