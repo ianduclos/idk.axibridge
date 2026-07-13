@@ -16,7 +16,8 @@ from ._pixelgen import ImageSampler, PixelGenParams, pixel_doc
 class DotsParams(PixelGenParams):
     resolution: int = Field(default=2, ge=1, le=20, title="Resolution (px)",
                             description="Grid pitch — also the stroke length")
-    line_direction: float = Field(default=0, ge=0, le=180, title="Line direction (°)")
+    line_direction: float = Field(default=0, ge=0, le=180, title="Line direction (°)",
+                                  json_schema_extra={"viewAngle": 180})
     random_direction: bool = Field(default=False, title="Random direction")
     seed: int = Field(default=50, ge=0, le=9999, title="Seed")
 

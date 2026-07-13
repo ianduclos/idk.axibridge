@@ -6,6 +6,7 @@ import { api } from "./api.js";
 import { renderForm } from "./forms.js";
 import { S, actions } from "./main.js";
 import { mul, translate, rotate, scale, matToObj, objToMat } from "./canvas.js";
+import { applyViewDefaults } from "./viewmap.js";
 
 const $ = (id) => document.getElementById(id);
 let genParams = {};
@@ -488,18 +489,39 @@ function updateLineartStackRow(m) {
     : "choose an image first";
 }
 
+// Renders the gen-form DOM against whatever `genParams` currently holds
+// (machine-frame, unchanged) — the shared tail of renderGenForm (new
+// generator picked) and rerenderForView (view toggled, params untouched).
+function bindGenForm(m) {
+  const sched = () => { preview.schedule(genPreviewReq("new", m.id, { ...genParams })); updateLineartStackRow(m); };
+  renderForm($("gen-form"), m.schema, genParams, sched, { onLive: sched, stateKey: `gen:${m.id}` });
+  return sched;
+}
+
 function renderGenForm() {
   const m = S.state.modules.sources.find((x) => x.id === $("gen-select").value);
   if (!m) return;
   genParams = { ...m.defaults };
-  // portrait view draws the bed rotated 90° CW, so a y-down image reads
-  // sideways at rotate=0 — pre-rotate 270 ("CW on paper") to read upright
-  if ("rotate" in genParams && S.state?.project?.view === "portrait") genParams.rotate = 270;
+  // portrait view: viewRotate/viewAngle-tagged defaults get remapped so what
+  // reads "0" (or whatever the schema default is) to the user is the same
+  // physical result regardless of view — see static/js/viewmap.js.
+  applyViewDefaults(m.schema, genParams, S.state?.project?.view === "portrait");
   preview.clear();
-  const sched = () => { preview.schedule(genPreviewReq("new", m.id, { ...genParams })); updateLineartStackRow(m); };
-  renderForm($("gen-form"), m.schema, genParams, sched, { onLive: sched, stateKey: `gen:${m.id}` });
+  const sched = bindGenForm(m);
   sched();
   updateLineartStackRow(m);
+}
+
+// Called after the view toggles (main.js): re-renders any open forms so
+// viewRotate/viewAngle/viewSize-tagged fields re-map for display — params
+// themselves are untouched (still machine-frame), so nothing is reset.
+export function rerenderForView() {
+  const sel = $("gen-select");
+  if (sel) {
+    const m = S.state.modules.sources.find((x) => x.id === sel.value);
+    if (m) bindGenForm(m);
+  }
+  renderLayerDetail(); // re-derives placement + any open effect-step forms
 }
 
 // ---- layer list ------------------------------------------------------------
@@ -905,11 +927,9 @@ export function renderLayerDetail() {
     if (!mod) return;
     expandedSteps.add(`${layer.id}:${layer.effects.length}`); // open the new step
     const params = { ...mod.defaults };
-    // portrait view draws the bed rotated 90° CW: image-driven effects (depth
-    // maps) default to rotate 270 so the map reads upright, like generators
-    if ("rotate" in params && "image" in params && S.state?.project?.view === "portrait") {
-      params.rotate = 270;
-    }
+    // portrait view: same viewRotate/viewAngle default remap as generators —
+    // image-driven effects (depth maps) default to what reads upright.
+    applyViewDefaults(mod.schema, params, S.state?.project?.view === "portrait");
     const effects = [...layer.effects, { effect: mod.id, enabled: true, params }];
     actions.patchLayer(layer.id, { effects });
   };

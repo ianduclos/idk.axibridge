@@ -63,7 +63,7 @@ class LineartHatchParams(ImageBaseParams):
                                                 json_schema_extra=_FLOW)
     angle_deg: float = Field(default=45.0, ge=0.0, le=180.0, title="Angle (deg)",
                              description="Used when direction=fixed",
-                             json_schema_extra=_FLOW)
+                             json_schema_extra={**_FLOW, "viewAngle": 180})
     field_smooth: float = Field(default=8.0, ge=1.0, le=32.0, title="Field smoothing (px)",
                                 description="Used when direction=flow",
                                 json_schema_extra=_FLOW)

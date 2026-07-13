@@ -29,7 +29,8 @@ from ..registry import EffectContext, EffectModule, register_effect
 
 class HatchFillParams(BaseModel):
     spacing: float = Field(default=2.0, ge=0.2, le=20.0, title="Spacing (mm)")
-    angle_deg: float = Field(default=45.0, ge=0.0, le=180.0, title="Angle (degrees)")
+    angle_deg: float = Field(default=45.0, ge=0.0, le=180.0, title="Angle (degrees)",
+                             json_schema_extra={"viewAngle": 180})
     cross: bool = Field(default=False, title="Crosshatch",
                         description="Second pass at 90° to the first")
     inset: float = Field(default=0.3, ge=0.0, le=10.0, title="Inset (mm)",

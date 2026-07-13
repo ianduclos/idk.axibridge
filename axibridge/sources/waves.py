@@ -14,7 +14,8 @@ from ._pixelgen import ImageSampler, PixelGenParams, pixel_doc
 
 
 class WavesParams(PixelGenParams):
-    angle: float = Field(default=0, ge=0, le=360, title="Angle (°)")
+    angle: float = Field(default=0, ge=0, le=360, title="Angle (°)",
+                         json_schema_extra={"viewAngle": 360})
     step_size: float = Field(default=5, ge=1, le=20, title="Step size (px)",
                              description="Base gap between neighbouring lines")
 

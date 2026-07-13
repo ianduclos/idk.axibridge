@@ -22,7 +22,8 @@ class LinescanParams(PixelGenParams):
     alternate: bool = Field(default=False, title="Alternate direction",
                             description="Reverse every other row (less pen travel)")
     direction: Literal["horizontal", "vertical", "both"] = Field(
-        default="horizontal", title="Direction")
+        default="horizontal", title="Direction",
+        json_schema_extra={"viewOrient": True})
 
 
 @register_source

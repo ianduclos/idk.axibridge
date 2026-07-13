@@ -24,7 +24,8 @@ class LongwaveParams(PixelGenParams):
     depth: int = Field(default=1, ge=1, le=8, title="Depth",
                        description="Threshold bands cycled across lines")
     direction: Literal["vertical", "horizontal", "both"] = Field(
-        default="vertical", title="Direction")
+        default="vertical", title="Direction",
+        json_schema_extra={"viewOrient": True})
 
 
 @register_source

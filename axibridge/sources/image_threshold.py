@@ -43,9 +43,11 @@ class ImageThresholdParams(BaseModel):
                            description="Preview-only ghost of the source image")
     rotate: Literal[0, 90, 180, 270] = Field(
         default=0, title="Rotate image (°)",
-        description="Clockwise on paper — match the image to the view orientation")
+        description="Image rotation as seen in the current view",
+        json_schema_extra={"viewRotate": True})
     width: float = Field(default=150.0, ge=10, le=400, title="Width (mm)",
-                         description="Height follows the image aspect ratio")
+                         description="Height follows the image aspect ratio",
+                         json_schema_extra={"viewSize": True})
     threshold_min: float = Field(default=0.0, ge=0.0, le=1.0, title="Threshold min",
                                  description="Band lower bound — brightness between min and "
                                              "max is inside a shape; 0 (the default) means "

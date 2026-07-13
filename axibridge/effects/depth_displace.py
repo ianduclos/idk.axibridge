@@ -51,7 +51,8 @@ class DepthDisplaceParams(BaseModel):
                                      "ignored for still images")
     rotate: Literal[0, 90, 180, 270] = Field(
         default=0, title="Rotate map (°)",
-        description="Clockwise on paper — match the image to the view orientation")
+        description="Image rotation as seen in the current view",
+        json_schema_extra={"viewRotate": True})
     anchor: Literal["layer", "paper"] = Field(
         default="layer", title="Anchor",
         description="layer: the map rides along when you drag the layer — "
@@ -64,7 +65,8 @@ class DepthDisplaceParams(BaseModel):
     y: float = Field(default=0.0, ge=-400, le=400, title="Map y (mm)",
                      json_schema_extra={"viewAxis": True})
     width: float = Field(default=150.0, ge=5, le=600, title="Map width (mm)",
-                         description="Height follows the image aspect ratio")
+                         description="Height follows the image aspect ratio",
+                         json_schema_extra={"viewSize": True})
     amplitude: float = Field(default=6.0, ge=0.0, le=60.0, title="Displacement depth (mm)",
                              description="Displacement at pure white")
     bias: float = Field(default=0.0, ge=0.0, le=1.0, title="Bias",
@@ -83,7 +85,8 @@ class DepthDisplaceParams(BaseModel):
         description="Fixed angle is invisible on lines parallel to it; "
                     "path normal shows relief on every orientation")
     angle_deg: float = Field(default=90.0, ge=0.0, le=360.0, title="Angle (degrees)",
-                             description="Fixed-angle mode only; 90 = down the page")
+                             description="Fixed-angle mode only; 90 = down the page",
+                             json_schema_extra={"viewAngle": 360})
     smoothing: float = Field(default=1.0, ge=0.0, le=20.0, title="Smoothing (mm)",
                              description="Gaussian blur of the map, in paper mm — kills "
                                          "pixel steps and 8-bit banding")
