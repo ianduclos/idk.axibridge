@@ -22,6 +22,7 @@ from ..image_processing import (
 from ..model import PathDocument
 from ..registry import SourceModule, register_source, report_progress
 from ._pixelgen import ImageBaseParams, luma_grid, pixel_doc
+from ._pixelgen import working_dims as _pixelgen_working_dims
 
 Pt = tuple[float, float]
 
@@ -37,6 +38,8 @@ class LinedrawParams(ImageBaseParams):
     noise_scale: float = Field(default=1, ge=0, le=2, title="Noise scale",
                                description="Hand-drawn wobble on every stroke")
     seed: int = Field(default=0, ge=0, le=9999, title="Seed")
+    resolution: float = Field(default=1.0, ge=1.0, le=2.0, title="Resolution ×",
+                              description="Working-canvas multiplier — finer detail, slower")
     invert: bool = Field(default=False, title="Invert",
                          description="Draw the light areas instead",
                          json_schema_extra=_IMAGE_PROCESSING)
@@ -230,7 +233,12 @@ class Linedraw(SourceModule):
         p = params
         if not p.contours and not p.hatching:
             raise ValueError("enable contours, hatching, or both")
-        rows, w, h = luma_grid(p)
+        # px-space params keep their working-canvas meaning at any resolution:
+        # everything calibrated in px is multiplied by the same factor the
+        # canvas grew by (luma_grid caps the actual size, so derive k from it)
+        rows, w, h = luma_grid(p, scale=p.resolution)
+        base_w, _ = _pixelgen_working_dims(p)
+        k = w / base_w
         report_progress(0.02, "Autocontrast")
         cols = _autocontrast(rows, w, h, 0.1)
         tone = image_processing_kwargs(p)
@@ -252,7 +260,7 @@ class Linedraw(SourceModule):
             contours = _connect_dots(_get_dots(edges, w, h, False), False)
             contours += _connect_dots(_get_dots(edges, w, h, True), True)
             report_progress(0.5, "Linking strokes")
-            sc = p.contour_detail
+            sc = max(1, round(p.contour_detail * k))
             for i in range(len(contours)):          # join ends closer than the stroke scale
                 if not contours[i]:
                     continue
@@ -265,10 +273,11 @@ class Linedraw(SourceModule):
                         contours[i] = contours[i] + contours[j]
                         contours[j] = []
             simplified = [c[::sc] for c in contours if c]
-            output += add_noise([c for c in simplified if c], 10)
+            output += add_noise([c for c in simplified if c], 10 * k)
         if p.hatching:
             report_progress(0.7, "Hatching")
-            output += add_noise(_hatch(cols, w, h, p.hatch_scale), p.hatch_scale)
+            hatch_sc = max(1, round(p.hatch_scale * k))
+            output += add_noise(_hatch(cols, w, h, hatch_sc), hatch_sc)
 
         report_progress(0.95, "Building paths")
         return pixel_doc(p, w, h, output, "linedraw", f"linedraw {p.image}")
