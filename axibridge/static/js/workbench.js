@@ -338,10 +338,20 @@ function close() { $("workbench-modal").hidden = true; }
 function fillPickers() {
   const src = $("wb-source");
   src.innerHTML = "";
+  // image-driven generators (any param with format:"asset") group separately —
+  // independent ones first since they work without an upload
+  const usesImage = (m) => Object.values(m.schema.properties || {}).some(
+    (p) => (p.format || ((p.anyOf || []).find((a) => a.format) || {}).format) === "asset");
+  const groupIndependent = document.createElement("optgroup");
+  groupIndependent.label = "independent";
+  const groupImageBased = document.createElement("optgroup");
+  groupImageBased.label = "image-based";
+  src.appendChild(groupIndependent);
+  src.appendChild(groupImageBased);
   for (const m of S.state.modules.sources) {
     const o = document.createElement("option");
     o.value = m.id; o.textContent = m.label;
-    src.appendChild(o);
+    (usesImage(m) ? groupImageBased : groupIndependent).appendChild(o);
   }
   if (wb.module) src.value = wb.module;
   const fx = $("wb-fx-add");
