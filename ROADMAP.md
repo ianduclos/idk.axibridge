@@ -11,7 +11,11 @@ involved ones should meet the UI) live in `docs/IDEAS-generators.md`.
 ## URGENT fixes (Ian, 2026-07-13, from real use — do these first)
 
 **Round worked 2026-07-13 on `fix/urgent-round1` (Sonnet agent waves,
-Fable orchestrating). 10/11 shipped; item 4 in flight.**
+Fable orchestrating). 11/11 shipped; suite 359 → 382; 12/12 live
+Playwright/API checks. Bench eye-check still pending on: centering feel,
+band select on a real photo, portrait width remap, viewAxis fader
+direction (one fader's drag direction deliberately flipped — see the
+feat(view) commit).**
 
 1. ~~**Animation popup: show the last rendered frame**~~ — shipped: new
    frames render into a scratch buffer and swap in atomically; progress is
@@ -25,16 +29,13 @@ Fable orchestrating). 10/11 shipped; item 4 in flight.**
    centering Affine at `add_generated_layer`/`add_lineart_stack` for
    generators with an image param; procedural + clip-backed layers keep
    identity; stacks stay band-aligned.
-4. **Orientation coherence pass**: treat the CURRENT view (portrait or
-   landscape) as the artwork's final orientation even though the machine
-   frame stays landscape. What reads "rotate 270" in portrait should read
-   as rotate 0 (same physical result); "width (mm)" on an image generator
-   in portrait should mean the on-paper visual width; audit every param
-   whose meaning silently assumes landscape. (See the portrait-view notes
-   in canvas.js and the memory of view-axis fader swaps — same family.)
-   *In flight: display-layer mapping via viewRotate/viewAngle/viewSize/
-   viewOrient schema tags, params stay machine-frame; design in the
-   2026-07-13 session plan.*
+4. ~~**Orientation coherence pass**~~ — shipped: params stay machine-frame
+   forever; the display layer maps once via schema tags (viewRotate /
+   viewAngle 360|180 / viewSize / viewOrient) in `static/js/viewmap.js` +
+   forms.js; the portrait rotate=270 band-aids are gone (defaults remap
+   generically); resolve is bit-identical across views (locked by
+   `tests/test_view_coherence.py`). Includes the viewAxis sign fix — only
+   the original-y fader negates in portrait now.
 5. ~~**"Clear image assets" button**~~ — shipped: `DELETE /api/assets`
    (unreferenced-only by default, `?force=true` for all; referenced clips
    kept whole) + "Clear unused assets" button.
