@@ -8,6 +8,46 @@ must keep the zero-build ES-module setup; every numeric param stays bounded.
 Loose generator brainstorms (uncanny/Cohen-line direction, plus how the
 involved ones should meet the UI) live in `docs/IDEAS-generators.md`.
 
+## URGENT fixes (Ian, 2026-07-13, from real use — do these first)
+
+1. **Animation popup: show the last rendered frame** while rendering,
+   not a blank "rendering…" stage.
+2. **Tray "Preview sheet" → PNG popup** like the animation preview. On
+   `main` the button feeds only the (invisible) travel overlay — note the
+   unmerged `feat/animation-previews` branch already gives it a canvas
+   preview mode; Ian wants a raster POPUP as well/instead. Reconcile when
+   merging that branch.
+3. **Center image-based generator output in the bed** (currently lands at
+   the machine origin, top-left).
+4. **Orientation coherence pass**: treat the CURRENT view (portrait or
+   landscape) as the artwork's final orientation even though the machine
+   frame stays landscape. What reads "rotate 270" in portrait should read
+   as rotate 0 (same physical result); "width (mm)" on an image generator
+   in portrait should mean the on-paper visual width; audit every param
+   whose meaning silently assumes landscape. (See the portrait-view notes
+   in canvas.js and the memory of view-axis fader swaps — same family.)
+5. **"Clear image assets" button** (asset store grows unboundedly in a
+   long session).
+6. **Depth Pro install** — diagnosed 2026-07-13: NOT a code bug; the
+   `depth_pro` package is missing from `.venv` (`import depth_pro` →
+   ModuleNotFoundError) and `checkpoints/` doesn't exist. Fix = install
+   `apple/ml-depth-pro` into the venv + download its checkpoint
+   (~2 GB; see depth_pro.py `_checkpoint_path` for the expected location,
+   `AXIBRIDGE_DEPTH_PRO_CHECKPOINT` overrides).
+7. **image_threshold: min/max threshold range** instead of the single
+   threshold value.
+8. **Effect-step boxes must not collapse on regenerate** — forms.js group
+   `<details>` open-state is lost when the panel re-renders; preserve it
+   across refreshResolved/regenerate re-renders.
+9. **Workbench: separate image-based generators from independent
+   generators** in the picker.
+10. **linedraw v1: higher resolution** — reuse lineart v2's approach
+    (`luma_grid(p, scale=…)` already exists; add a bounded `resolution`
+    param and scale px-calibrated params by the same factor).
+11. **Menu-bar dropdowns** (File/View/…-style) — feasibility confirmed,
+    see "Near term" below; plain `<details>`/CSS or a small vanilla
+    listener, no build step needed.
+
 ## Near term — make what exists comfortable
 
 The UI is functionally complete but cluttered and navigation is weak.
