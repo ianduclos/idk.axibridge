@@ -11,9 +11,23 @@
 <body>
 <header>
   <h1>axi<span>bridge</span></h1>
+  <nav class="menubar" id="menubar">
+    <div class="menu" data-menu="file">
+      <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">File</button>
+      <div class="menu-panel" role="menu">
+        <button id="btn-save" class="menu-item" title="Save project folder">Save</button>
+        <a id="btn-svg" class="menu-item" href="/api/doc/all/svg" download title="Download the resolved geometry (what the pen draws) as SVG">Download SVG</a>
+      </div>
+    </div>
+    <div class="menu" data-menu="view">
+      <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">View</button>
+      <div class="menu-panel" role="menu">
+        <button class="menu-item" type="button" data-view-proxy="portrait" title="Display rotation only — geometry never changes"><span class="menu-check">✓</span>Portrait</button>
+        <button class="menu-item" type="button" data-view-proxy="landscape" title="Display rotation only — geometry never changes"><span class="menu-check">✓</span>Landscape</button>
+      </div>
+    </div>
+  </nav>
   <input id="project-name" class="project-name" value="untitled" spellcheck="false">
-  <button id="btn-save" title="Save project folder">Save</button>
-  <a id="btn-svg" href="/api/doc/all/svg" download><button title="Download the resolved geometry (what the pen draws) as SVG">SVG</button></a>
   <div id="status-pill" class="pill">connecting…</div>
   <div id="estimate" class="estimate"></div>
 </header>

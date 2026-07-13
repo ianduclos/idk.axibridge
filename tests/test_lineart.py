@@ -351,6 +351,32 @@ def step_asset():
     asset_store.replace_all(before)
 
 
+@pytest.fixture()
+def textured_asset():
+    """A multi-frequency ripple (not a single hard edge): unlike step_asset,
+    a lone straight edge's contour/hatch point count is roughly scale-
+    invariant (px-space params are deliberately scaled to preserve meaning
+    at any resolution) — this pattern has genuine sub-pixel curvature that
+    only shows up as extra contour/hatch points at finer resolution, needed
+    for the linedraw resolution test below."""
+    import math
+
+    from PIL import Image
+
+    img = Image.new("L", (64, 48))
+    px = img.load()
+    for y in range(48):
+        for x in range(64):
+            v = 127 + 127 * math.sin(x * 0.5) * math.cos(y * 0.3)
+            px[x, y] = max(0, min(255, int(v)))
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    before = asset_store.all()
+    asset_store.put("tex.png", buf.getvalue())
+    yield
+    asset_store.replace_all(before)
+
+
 def _gen(module_id, **params):
     src = get_source(module_id)
     return src.generate(src.Params(image="grad.png", **params))
@@ -359,6 +385,11 @@ def _gen(module_id, **params):
 def _gen_step(module_id, **params):
     src = get_source(module_id)
     return src.generate(src.Params(image="step.png", **params))
+
+
+def _gen_tex(module_id, **params):
+    src = get_source(module_id)
+    return src.generate(src.Params(image="tex.png", **params))
 
 
 # -- both generators: bounds, ValueError, determinism, width -----------------
@@ -479,6 +510,19 @@ def test_stack_faithful_four_layers():
     assert len(session.project.layers) == 0  # one undo removes all 4
 
 
+def test_stack_layers_share_identical_centering_transform():
+    """add_lineart_stack builds each band from the same image/rotate/width,
+    so every band's PathDocument has identical dims and must land with the
+    IDENTICAL centering transform — otherwise the bands drift apart on the
+    bed even though they're meant to overlay."""
+    layers = session.add_lineart_stack("grad.png", "faithful")
+    assert len(layers) == 4
+    transforms = {(round(l.transform.e, 9), round(l.transform.f, 9)) for l in layers}
+    assert len(transforms) == 1, f"stack bands got mismatched transforms: {transforms}"
+    (e, f) = next(iter(transforms))
+    assert not (e == 0.0 and f == 0.0)  # actually centred, not left at origin
+
+
 def test_stack_artistic_three_layers():
     layers = session.add_lineart_stack("grad.png", "artistic")
     assert len(layers) == 3
@@ -560,6 +604,18 @@ def test_edges_mass_grows_ink(step_asset):
     massy = _gen_step("lineart_edges", mass=1.0, edge_threshold=0.3,
                       ink_fill=True, fill_spacing=2.0)
     assert _total_points(massy) > _total_points(lean)
+
+
+def test_linedraw_resolution_increases_detail(textured_asset):
+    """linedraw v1 gets the same resolution knob as lineart v2 (edges): a
+    working-canvas multiplier, with px-calibrated params scaled by the same
+    factor so mm output stays put — mirrors
+    test_edges_resolution_increases_detail above."""
+    lo = _gen_tex("linedraw", resolution=1.0)
+    hi = _gen_tex("linedraw", resolution=2.0)
+    assert _total_points(hi) > _total_points(lo)
+    # mm output size is resolution-independent
+    assert abs(lo.width - hi.width) < 1e-6
 
 
 # -- clip-backed layers follow the timeline by default --------------------------

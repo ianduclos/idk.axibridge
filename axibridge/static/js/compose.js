@@ -6,6 +6,7 @@ import { api } from "./api.js";
 import { renderForm } from "./forms.js";
 import { S, actions } from "./main.js";
 import { mul, translate, rotate, scale, matToObj, objToMat } from "./canvas.js";
+import { applyViewDefaults } from "./viewmap.js";
 
 const $ = (id) => document.getElementById(id);
 let genParams = {};
@@ -200,6 +201,9 @@ export function initComposeTab() {
         <label>every</label><input type="number" id="asset-every" min="1" placeholder="—" style="width:4.5em">
         <span class="hint">optional max / start / every — video or multiple files import as a frame sequence</span>
       </div>
+      <div class="row">
+        <button id="btn-clear-assets" title="Remove image assets no layer currently uses (referenced assets are kept)">Clear unused assets</button>
+      </div>
       <div id="asset-list"></div>
     </div>
     <div class="panel">
@@ -322,6 +326,23 @@ export function initComposeTab() {
       renderLayerDetail(); // asset selects in effect forms pick up the new name
     } catch (e) { actions.oops(e); }
     finally { if (isSequence) genBusy(false, btn); }
+  };
+
+  $("btn-clear-assets").onclick = async () => {
+    if (!confirm("Remove image assets not referenced by any layer's source or effects? "
+      + "Assets still in use are kept; this cannot be undone.")) return;
+    const btn = $("btn-clear-assets");
+    btn.disabled = true;
+    try {
+      const r = await api.del("/api/assets");
+      S.state.assets = (await api.get("/api/assets")).assets;
+      renderAssetList();
+      renderLayerDetail(); // asset selects in effect forms drop any removed name
+      actions.log(r.removed.length
+        ? `cleared ${r.removed.length} unused asset(s)`
+        : "no unused assets to clear");
+    } catch (e) { actions.oops(e); }
+    finally { btn.disabled = false; }
   };
   renderAssetList();
   refreshDepthProStatus();
@@ -468,18 +489,39 @@ function updateLineartStackRow(m) {
     : "choose an image first";
 }
 
+// Renders the gen-form DOM against whatever `genParams` currently holds
+// (machine-frame, unchanged) — the shared tail of renderGenForm (new
+// generator picked) and rerenderForView (view toggled, params untouched).
+function bindGenForm(m) {
+  const sched = () => { preview.schedule(genPreviewReq("new", m.id, { ...genParams })); updateLineartStackRow(m); };
+  renderForm($("gen-form"), m.schema, genParams, sched, { onLive: sched, stateKey: `gen:${m.id}` });
+  return sched;
+}
+
 function renderGenForm() {
   const m = S.state.modules.sources.find((x) => x.id === $("gen-select").value);
   if (!m) return;
   genParams = { ...m.defaults };
-  // portrait view draws the bed rotated 90° CW, so a y-down image reads
-  // sideways at rotate=0 — pre-rotate 270 ("CW on paper") to read upright
-  if ("rotate" in genParams && S.state?.project?.view === "portrait") genParams.rotate = 270;
+  // portrait view: viewRotate/viewAngle-tagged defaults get remapped so what
+  // reads "0" (or whatever the schema default is) to the user is the same
+  // physical result regardless of view — see static/js/viewmap.js.
+  applyViewDefaults(m.schema, genParams, S.state?.project?.view === "portrait");
   preview.clear();
-  const sched = () => { preview.schedule(genPreviewReq("new", m.id, { ...genParams })); updateLineartStackRow(m); };
-  renderForm($("gen-form"), m.schema, genParams, sched, { onLive: sched });
+  const sched = bindGenForm(m);
   sched();
   updateLineartStackRow(m);
+}
+
+// Called after the view toggles (main.js): re-renders any open forms so
+// viewRotate/viewAngle/viewSize-tagged fields re-map for display — params
+// themselves are untouched (still machine-frame), so nothing is reset.
+export function rerenderForView() {
+  const sel = $("gen-select");
+  if (sel) {
+    const m = S.state.modules.sources.find((x) => x.id === sel.value);
+    if (m) bindGenForm(m);
+  }
+  renderLayerDetail(); // re-derives placement + any open effect-step forms
 }
 
 // ---- layer list ------------------------------------------------------------
@@ -885,11 +927,9 @@ export function renderLayerDetail() {
     if (!mod) return;
     expandedSteps.add(`${layer.id}:${layer.effects.length}`); // open the new step
     const params = { ...mod.defaults };
-    // portrait view draws the bed rotated 90° CW: image-driven effects (depth
-    // maps) default to rotate 270 so the map reads upright, like generators
-    if ("rotate" in params && "image" in params && S.state?.project?.view === "portrait") {
-      params.rotate = 270;
-    }
+    // portrait view: same viewRotate/viewAngle default remap as generators —
+    // image-driven effects (depth maps) default to what reads upright.
+    applyViewDefaults(mod.schema, params, S.state?.project?.view === "portrait");
     const effects = [...layer.effects, { effect: mod.id, enabled: true, params }];
     actions.patchLayer(layer.id, { effects });
   };
@@ -936,7 +976,7 @@ export function renderLayerDetail() {
       renderForm(form, mod.schema, values, () => {
         preview.clear();
         commitEffects(layer, i, { params: values });
-      }, { onLive: sched });
+      }, { onLive: sched, stateKey: `fx:${layer.id}:${i}` });
       div.appendChild(form);
     }
     steps.appendChild(div);
@@ -1015,7 +1055,7 @@ export function renderLayerDetail() {
         await actions.refreshResolved();
       } catch (e) { actions.oops(e); }
     }, 250);
-    renderForm(tw.querySelector("#tw-form"), schema, values, commit);
+    renderForm(tw.querySelector("#tw-form"), schema, values, commit, { stateKey: `tw:${layer.id}` });
 
     // -- stamping (sweep): plain inputs, bound into the same `values` +
     // debounced commit the t-slider uses (one PUT code path, not two)
@@ -1104,7 +1144,7 @@ export function renderLayerDetail() {
       // Regenerate commits it (one undo checkpoint, not one per slider move)
       const sched = () => preview.schedule(
         genPreviewReq(layer.id, layer.source.generator, { ...values }, objToMat(layer.transform)));
-      renderForm(gen.querySelector("#regen-form"), mod.schema, values, sched, { onLive: sched });
+      renderForm(gen.querySelector("#regen-form"), mod.schema, values, sched, { onLive: sched, stateKey: `gen:${layer.id}` });
       const regenBtn = gen.querySelector("#btn-regen");
       regenBtn.onclick = async () => {
         genBusy(true, regenBtn);

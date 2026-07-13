@@ -9,13 +9,71 @@
 
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
+import { rotToDisplay, rotToStored, sizeFactor } from "./viewmap.js";
+
+// Advanced-field <details> groups collapse on every re-render by default
+// (fresh DOM, no `open` attribute). Persist open/closed state across
+// re-renders per the house pattern (see compose.js `expandedSteps`): callers
+// pass a stable opts.stateKey to namespace groups as `${stateKey}:${group}`.
+// Without a stateKey, groups fall back to the old behavior (always closed).
+const openGroups = new Set();
+
+// Orientation coherence: every viewAxis/viewAngle/viewSize-tagged field gets
+// a {show(v), store(v), mapBounds(min,max), mapTitle(t), step} transform
+// derived from its tag, portrait-gated on the project's CURRENT view (the
+// mechanism this generalizes — S.state.project.view — is the same one the
+// old ad-hoc viewAxis code read). null in landscape or for untagged fields.
+function fieldViewTransform(key, spec, values, schema) {
+  if (spec.viewAxis) {
+    // vector rule: machine (dx,dy) -> screen (-dy,dx); canvas y is down, so
+    // only the field whose ORIGINAL axis letter is y negates for display —
+    // the paired x field keeps its stored sign (label swap only, below).
+    const isY = /\b(y)\b/.test(spec.title || key);
+    return {
+      mapTitle: (t) => t.replace(/\b([xy])\b/, (m) => (m === "x" ? "y" : "x")),
+      show: isY ? (v) => -v : null,
+      store: isY ? (v) => -v : null,
+      mapBounds: isY
+        ? (min, max) => [min === undefined ? min : -max, max === undefined ? max : -min]
+        : null,
+    };
+  }
+  if (spec.viewAngle) {
+    const period = spec.viewAngle;
+    return {
+      show: (v) => rotToDisplay(v, period, true),
+      store: (v) => rotToStored(v, period, true),
+    };
+  }
+  if (spec.viewSize) {
+    const f = sizeFactor(values, schema, S.state?.assets || []);
+    if (f == null) {
+      // aspect unknown (no image chosen / asset missing): show the raw
+      // stored value, but relabel the title so it stays honest.
+      return { mapTitle: (t) => t.replace(/\bWidth\b/, "Height") };
+    }
+    return {
+      show: (v) => Math.round(v * f * 10) / 10, // quantize DISPLAYED to 0.1mm
+      store: (v) => v / f,                       // store keeps full precision
+      mapBounds: (min, max) => [min === undefined ? min : min * f, max === undefined ? max : max * f],
+      step: 0.1,
+    };
+  }
+  return null;
+}
 
 export function renderForm(container, schema, values, onChange, opts = {}) {
   container.innerHTML = "";
+  const portrait = S.state?.project?.view === "portrait";
   // fields tagged json_schema_extra={"group": "..."} collapse into a <details>
   // appended after the plain fields (keeps ten near-identical forms uncrammed)
   const groups = new Map();
   const props = schema.properties || {};
+  // a viewSize field's display factor depends on the schema's image/rotate
+  // fields — when either changes, the form is re-rendered so the width
+  // control re-derives its aspect mapping (values is live, so state survives).
+  const hasViewSize = Object.values(props).some((p) => p.viewSize);
+  const rerenderSelf = () => renderForm(container, schema, values, onChange, opts);
   for (const [key, spec] of Object.entries(props)) {
     if (spec.hidden) continue; // declared but not user-facing (e.g. hardware identity)
     // pydantic emits {anyOf:[...]} for optionals; take the first concrete type
@@ -23,15 +81,12 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
     const field = document.createElement("div");
     field.className = "field";
     if (spec.description) field.title = spec.description;
+    const vt = portrait ? fieldViewTransform(key, spec, values, schema) : null;
 
     const label = document.createElement("label");
     const name = document.createElement("span");
     let title = spec.title || key;
-    // axis-tagged fields (paper-space x/y): swap the letter so the label
-    // matches what the user SEES — the portrait view rotates the bed 90°
-    if (spec.viewAxis && S.state?.project?.view === "portrait") {
-      title = title.replace(/\b([xy])\b/, (m) => (m === "x" ? "y" : "x"));
-    }
+    if (vt?.mapTitle) title = vt.mapTitle(title);
     name.textContent = title;
     label.appendChild(name);
     field.appendChild(label);
@@ -67,7 +122,10 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
         }
       };
       fill(val);
-      sel.onchange = () => set(sel.value);
+      sel.onchange = () => {
+        set(sel.value);
+        if (hasViewSize) rerenderSelf(); // a viewSize field's aspect factor tracks this
+      };
       ctl.appendChild(sel);
       // inline upload: new assets land in the dropdown (and get picked)
       // immediately. Multi-select or a single video imports a frame SEQUENCE
@@ -100,6 +158,8 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
           S.state.assets = r.assets;
           fill(r.name);
           set(r.name);
+          file.value = "";
+          if (hasViewSize) { rerenderSelf(); return; } // container's DOM (incl. `file`) is now stale
         } catch (err) { actions.oops(err); }
         finally { if (isSequence) actions.setSeqProgress(false); }
         file.value = "";
@@ -108,13 +168,27 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
       ctl.appendChild(file);
     } else if (s.enum) {
       const sel = document.createElement("select");
-      for (const opt of s.enum) {
+      const rotateDisplayOrder = portrait && spec.viewRotate ? s.enum : null;
+      for (const opt of (rotateDisplayOrder || s.enum)) {
         const o = document.createElement("option");
-        o.value = opt; o.textContent = opt;
-        if (opt === val) o.selected = true;
+        if (rotateDisplayOrder) {
+          // `opt` IS the displayed value (enum already lists 0/90/180/270);
+          // option.value is the stored equivalent it maps back to on select.
+          const stored = rotToStored(opt, 360, true);
+          o.value = stored;
+          o.textContent = opt;
+          if (stored === val) o.selected = true;
+        } else {
+          o.value = opt;
+          o.textContent = (portrait && spec.viewOrient) ? swapOrient(String(opt)) : opt;
+          if (opt === val) o.selected = true;
+        }
         sel.appendChild(o);
       }
-      sel.onchange = () => set(s.type === "integer" || s.type === "number" ? Number(sel.value) : sel.value);
+      sel.onchange = () => {
+        set(s.type === "integer" || s.type === "number" ? Number(sel.value) : sel.value);
+        if (hasViewSize && spec.viewRotate) rerenderSelf(); // width's aspect factor tracks rotate
+      };
       ctl.appendChild(sel);
     } else if (s.type === "boolean") {
       const cb = document.createElement("input");
@@ -125,20 +199,22 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
     } else if (s.type === "number" || s.type === "integer") {
       const min = s.minimum ?? s.exclusiveMinimum;
       const max = s.maximum ?? s.exclusiveMaximum;
-      // axis-tagged fields in portrait are negated for display, so the fader
-      // moves things the way the rotated bed looks (raising "y" = up-screen).
-      // The bounds are symmetric on these fields, so negation stays in range.
-      const flip = spec.viewAxis && S.state?.project?.view === "portrait";
-      const show = (v) => (flip ? -v : v);
+      // viewAxis/viewAngle/viewSize-tagged fields route through the field's
+      // transform: show() for machine-frame -> displayed, store() back.
+      // Untagged (and landscape) fields get the identity — same as before.
+      const show = vt?.show || ((v) => v);
+      const store = vt?.store || ((v) => v);
+      let dmin = min, dmax = max;
+      if (vt?.mapBounds) [dmin, dmax] = vt.mapBounds(min, max);
       const num = document.createElement("input");
       num.type = "number";
       num.value = show(val);
-      if (min !== undefined) num.min = flip ? -max : min;
-      if (max !== undefined) num.max = flip ? -min : max;
-      const step = s.type === "integer" ? 1 : stepFor(min, max);
+      if (dmin !== undefined) num.min = dmin;
+      if (dmax !== undefined) num.max = dmax;
+      const step = vt?.step ?? (s.type === "integer" ? 1 : stepFor(min, max));
       num.step = step;
       let range = null;
-      if (min !== undefined && max !== undefined) {
+      if (dmin !== undefined && dmax !== undefined) {
         range = document.createElement("input");
         range.type = "range";
         // step="any": a discrete step grid is anchored at `min`, so any
@@ -159,7 +235,7 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
           const q = quant(Number(range.value));
           num.value = q;
           if (opts.onLive) {
-            const v = show(q);
+            const v = store(q);
             values[key] = v;
             opts.onLive(key, v);
           }
@@ -168,7 +244,7 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
           const q = quant(Number(range.value));
           num.value = q;
           range.value = q;
-          set(show(q));
+          set(store(q));
         };
         ctl.appendChild(range);
       }
@@ -178,7 +254,7 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
         if (num.max !== "") v = Math.min(v, Number(num.max));
         num.value = v;
         if (range) range.value = v;
-        set(show(v));
+        set(store(v));
       };
       ctl.appendChild(num);
     } else { // string and anything else
@@ -196,6 +272,14 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
         const sum = document.createElement("summary");
         sum.textContent = spec.group;
         det.appendChild(sum);
+        if (opts.stateKey) {
+          const gkey = `${opts.stateKey}:${spec.group}`;
+          det.open = openGroups.has(gkey);
+          det.addEventListener("toggle", () => {
+            if (det.open) openGroups.add(gkey);
+            else openGroups.delete(gkey);
+          });
+        }
         groups.set(spec.group, det);
       }
       groups.get(spec.group).appendChild(field);
@@ -212,4 +296,12 @@ function stepFor(min, max) {
   if (span <= 2) return 0.01;
   if (span <= 20) return 0.1;
   return 1;
+}
+
+// viewOrient: swap the two words in an option's visible label only — the
+// stored enum value (option.value) never changes. "both" passes through.
+function swapOrient(s) {
+  if (s === "horizontal") return "vertical";
+  if (s === "vertical") return "horizontal";
+  return s;
 }

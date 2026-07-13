@@ -93,6 +93,15 @@ class AssetStore:
         with self._lock:
             return bool(self._seq.get(name))
 
+    def sequence_frames(self, name: str) -> list[str]:
+        """Concrete frame names for a known sequence prefix, in frame order —
+        empty list if ``name`` isn't a sequence. Lets callers (e.g. the "clear
+        unused assets" endpoint) treat a referenced clip as the whole set of
+        stored frame keys, since the prefix itself is never a real ``_data``
+        key. Thread-safe; never raises."""
+        with self._lock:
+            return list(self._seq.get(name, ()))
+
     def resolve_frame(self, name: str, frame: float) -> str:
         """Map a sequence prefix + normalized position to a concrete frame name.
         ``frame`` is clamped to [0,1] and rounded to the nearest frame index

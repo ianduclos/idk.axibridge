@@ -10,43 +10,51 @@ involved ones should meet the UI) live in `docs/IDEAS-generators.md`.
 
 ## URGENT fixes (Ian, 2026-07-13, from real use — do these first)
 
-1. **Animation popup: show the last rendered frame** while rendering,
-   not a blank "rendering…" stage.
-2. **Tray "Preview sheet" → PNG popup** like the animation preview. On
-   `main` the button feeds only the (invisible) travel overlay — note the
-   unmerged `feat/animation-previews` branch already gives it a canvas
-   preview mode; Ian wants a raster POPUP as well/instead. Reconcile when
-   merging that branch.
-3. **Center image-based generator output in the bed** (currently lands at
-   the machine origin, top-left).
-4. **Orientation coherence pass**: treat the CURRENT view (portrait or
-   landscape) as the artwork's final orientation even though the machine
-   frame stays landscape. What reads "rotate 270" in portrait should read
-   as rotate 0 (same physical result); "width (mm)" on an image generator
-   in portrait should mean the on-paper visual width; audit every param
-   whose meaning silently assumes landscape. (See the portrait-view notes
-   in canvas.js and the memory of view-axis fader swaps — same family.)
-5. **"Clear image assets" button** (asset store grows unboundedly in a
-   long session).
-6. **Depth Pro install** — diagnosed 2026-07-13: NOT a code bug; the
-   `depth_pro` package is missing from `.venv` (`import depth_pro` →
-   ModuleNotFoundError) and `checkpoints/` doesn't exist. Fix = install
-   `apple/ml-depth-pro` into the venv + download its checkpoint
-   (~2 GB; see depth_pro.py `_checkpoint_path` for the expected location,
-   `AXIBRIDGE_DEPTH_PRO_CHECKPOINT` overrides).
-7. **image_threshold: min/max threshold range** instead of the single
-   threshold value.
-8. **Effect-step boxes must not collapse on regenerate** — forms.js group
-   `<details>` open-state is lost when the panel re-renders; preserve it
-   across refreshResolved/regenerate re-renders.
-9. **Workbench: separate image-based generators from independent
-   generators** in the picker.
-10. **linedraw v1: higher resolution** — reuse lineart v2's approach
-    (`luma_grid(p, scale=…)` already exists; add a bounded `resolution`
-    param and scale px-calibrated params by the same factor).
-11. **Menu-bar dropdowns** (File/View/…-style) — feasibility confirmed,
-    see "Near term" below; plain `<details>`/CSS or a small vanilla
-    listener, no build step needed.
+**Round worked 2026-07-13 on `fix/urgent-round1` (Sonnet agent waves,
+Fable orchestrating). 11/11 shipped; suite 359 → 382; 12/12 live
+Playwright/API checks. Bench eye-check still pending on: centering feel,
+band select on a real photo, portrait width remap, viewAxis fader
+direction (one fader's drag direction deliberately flipped — see the
+feat(view) commit).**
+
+1. ~~**Animation popup: show the last rendered frame**~~ — shipped: new
+   frames render into a scratch buffer and swap in atomically; progress is
+   an overlay badge; first-ever render still shows frame 0 immediately.
+2. ~~**Tray "Preview sheet" → PNG popup**~~ — resolved by the merged
+   `feat/animation-previews` canvas preview mode (banner + exit),
+   Playwright-verified; Ian had proposed PNG because preview did nothing.
+   No raster popup built — reopen only if the canvas mode still reads as
+   nothing at the bench.
+3. ~~**Center image-based generator output in the bed**~~ — shipped:
+   centering Affine at `add_generated_layer`/`add_lineart_stack` for
+   generators with an image param; procedural + clip-backed layers keep
+   identity; stacks stay band-aligned.
+4. ~~**Orientation coherence pass**~~ — shipped: params stay machine-frame
+   forever; the display layer maps once via schema tags (viewRotate /
+   viewAngle 360|180 / viewSize / viewOrient) in `static/js/viewmap.js` +
+   forms.js; the portrait rotate=270 band-aids are gone (defaults remap
+   generically); resolve is bit-identical across views (locked by
+   `tests/test_view_coherence.py`). Includes the viewAxis sign fix — only
+   the original-y fader negates in portrait now.
+5. ~~**"Clear image assets" button**~~ — shipped: `DELETE /api/assets`
+   (unreferenced-only by default, `?force=true` for all; referenced clips
+   kept whole) + "Clear unused assets" button.
+6. ~~**Depth Pro install**~~ — done: `apple/ml-depth-pro` in `.venv`,
+   checkpoint at `checkpoints/depth_pro.pt` (1.8 GB, torch-load
+   verified; dir gitignored). numpy moved to 1.26.4 — suite green.
+7. ~~**image_threshold: min/max threshold range**~~ — shipped: true band
+   select (inside = min ≤ v ≤ max, continuous at both extremes); legacy
+   `threshold: t` loads as (0, t) byte-identical.
+8. ~~**Effect-step boxes must not collapse on regenerate**~~ — shipped:
+   `<details>` open-state persists across re-renders (openGroups Set +
+   stateKey at all six renderForm call sites).
+9. ~~**Workbench: separate image-based generators**~~ — shipped: picker
+   optgroups (independent / image-based).
+10. ~~**linedraw v1: higher resolution**~~ — shipped: `resolution` ×1..2,
+    lineart-v2 pattern, px params scale with the canvas.
+11. ~~**Menu-bar dropdowns**~~ — shipped: File (Save, Download SVG) +
+    View (portrait/landscape proxies) in `static/js/menu.js`, no build
+    step; existing control ids preserved.
 
 ## Near term — make what exists comfortable
 

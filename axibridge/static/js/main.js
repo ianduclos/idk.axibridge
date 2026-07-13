@@ -8,11 +8,12 @@
 
 import { api, subscribe } from "./api.js";
 import { CanvasEditor, mul, objToMat, matToObj } from "./canvas.js";
-import { initComposeTab, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, logDeleted } from "./compose.js";
+import { initComposeTab, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, logDeleted, rerenderForView } from "./compose.js";
 import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
 import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
 import { initWorkbench } from "./workbench.js";
+import { initMenu } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -378,7 +379,11 @@ for (const btn of document.querySelectorAll("#view-toggle button")) {
   btn.onclick = async () => {
     document.querySelectorAll("#view-toggle button").forEach((b) => b.classList.toggle("on", b === btn));
     canvas.setData({ view: btn.dataset.view });
-    try { await api.put("/api/project", { view: btn.dataset.view }); } catch (e) { oops(e); }
+    try {
+      await api.put("/api/project", { view: btn.dataset.view });
+      S.state.project.view = btn.dataset.view; // params stay machine-frame; only display re-maps
+      rerenderForView();
+    } catch (e) { oops(e); }
   };
 }
 for (const btn of document.querySelectorAll("#mode-toggle button")) {
@@ -455,6 +460,7 @@ function initTabs() {
   initPensTab();
   initSettingsTab();
   initWorkbench(); // no-op after first call; the modal survives re-inits
+  initMenu(); // no-op after first call; the menu bar is static across project switches
   renderLayerList();
   applyPanelCollapse();
 }

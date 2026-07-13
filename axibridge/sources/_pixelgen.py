@@ -49,9 +49,11 @@ class ImageBaseParams(BaseModel):
                        json_schema_extra={"format": "asset"})
     rotate: Literal[0, 90, 180, 270] = Field(
         default=0, title="Rotate image (°)",
-        description="Clockwise on paper — match the image to the view orientation")
+        description="Image rotation as seen in the current view",
+        json_schema_extra={"viewRotate": True})
     width: float = Field(default=150.0, ge=10, le=400, title="Width (mm)",
-                         description="Height follows the image aspect ratio")
+                         description="Height follows the image aspect ratio",
+                         json_schema_extra={"viewSize": True})
     frame: float = Field(default=0.0, ge=0.0, le=1.0, title="Frame",
                          description="Position in an image sequence (0=first, 1=last); "
                                      "ignored for still images")
