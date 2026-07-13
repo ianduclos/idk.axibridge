@@ -1,64 +1,56 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-07-11
+updated: 2026-07-13
 machine: mac+pi
-summary: Pi round 2 merged (bitmap-lines, contract/expand, region continuity, workbench mouse drawing) on top of sheets v2, glyphgram, and A/B capture series; suite 301 green both machines; AARON pass 3 documented and queued.
+summary: Two green unmerged branches await Ian's merge call — animation-preview fixes (canvas preview mode, tray A⇄B sharpened, contact-sheet bake removed) and lineart v2 (flow-hatch/XDoG family + one-click stack + detail round); an 11-item URGENT fix list from first real use leads the ROADMAP.
 next:
-  - "Restart the live server AFTER saving the open untitled project (4 unsaved layers) — it predates glyphgram/contract_expand/bitmap-lines/draw-mode; hard-reload the browser tab too"
-  - Try the new vocabulary on paper — bitmap-lines regions (continuous boundary), A/B interpolated series, glyphgram over freehand, drawn strokes through effect stacks
-  - AARON pass item 1, the core-figure generator (docs/IDEAS-aaron-pass.md — the mechanisms are quoted from Cohen's 1988 paper)
-  - Round-2 tuning notes in docs/plans/pi-round2-RESULTS.md; roadmap audit items (seed reroll, unsaved-work guard, perception pass)
-handoff_for: null
+  - "Merge feat/animation-previews and feat/lineart-v2 into main (Ian decides order/push); on push, announce the removed /api/animation/contact_sheet in the CHANGES feed and pull the Pi clone"
+  - Work the ROADMAP "URGENT fixes" list top-down (tray PNG popup preview, orientation coherence, image centering, effects-boxes collapse, …)
+  - Install apple/ml-depth-pro + checkpoint into .venv (diagnosed missing, not a bug — ROADMAP urgent item 6)
+  - Real-photo print test of a maxed lineart_edges layer (mass + ink_fill) — eye checks were on a synthetic subject
+  - AARON pass items still queued — core-figure generator, sheet-snapshot asset, felt-tip color kit (linedraw v2 itself shipped)
+handoff_for: ian
 ---
 
 # idk.axibridge — status
 
-**Session 2026-07-10 → 11 (12 commits on `main`, suite 301 green Mac /
-302 Pi).** The second unattended Pi run shipped all four round-2 tasks,
-reviewed and merged `66ca43f`:
+**Session 2026-07-12 → 13, two branches, suite green on both (main baseline
+301 → 308 with animation work → 351 with lineart).** Neither branch is
+pushed or merged — never push without asking.
 
-- **bitmap redesigned** — default `style="lines"`: paths keep their
-  identity, vertices snap to the layer-anchored grid, segments become hard
-  90° staircases; the old merged-raster lives on as `style="blocks"`.
-- **contract_expand** — signed mm offset (buffer for filled, offset_curve
-  for strokes); stacking gives onion rings.
-- **region_boundary: cut | continuous** — continuous stitches each path
-  below back into ONE pen-down line through the region (travel order via
-  midpoint projection; cut pinned byte-identical).
-- **workbench mouse drawing** — ✏ mode with raw/smooth/steps/zigzag/stitch
-  modes; drawings ride the whole pipeline via `WorkbenchBody.paths`
-  (scraps as `module="drawing"`, import live).
+**`feat/animation-previews`** (4 commits) — the "previews do nothing" fix:
+- `/api/preview/sheet` + canvas preview mode: the centre canvas swaps to a
+  grid page or tray sheet's REAL geometry with a banner + exit (before:
+  only the invisible travel overlay changed).
+- Tray A⇄B sharpened: same-kind/same-shape compat with named-field errors,
+  auto-preview after capture/interpolate, legible A/B pickers, ⇄ disabled
+  with a reason, `POST /staging/groups/{gid}/relayout` re-paginates a
+  capture (or re-runs a batch from sources) at a new grid.
+- Windows + time-curve demoted to an "advanced timing" fold; the
+  **contact-sheet bake endpoint is REMOVED** (capture-sheet → insert-as-
+  layers replaces it) — announce as a boundary change when this merges.
 
-Also this arc: **sheets v2** (fixed framing so motion survives flipbooks,
-crosshair registration marks, per-frame caches killing the
-O(frames×pages×passes) resolve blow-up, one-layout UI), **glyphgram**
-(asemic Hershey destruction, abstraction dial), **A/B capture series**
-(canvas-toolbar A · B · ⇄ → n-step interpolated staged batch), slider
-thumb/number desync fixed (range step="any" + our quantization), **Stop ⌂**
-(stop returns carriage home, user-stop only), workbench stage polish.
-Idea **pass 3 (AARON)** is in `docs/IDEAS-aaron-pass.md` with Cohen's 1988
-mechanisms quoted and a ROADMAP section (core figures → sheet-snapshot
-context asset → felt-tip color kit → linedraw v2).
+**`feat/lineart-v2`** (3 commits) — AARON §D shipped:
+- Engine `sources/_lineart.py` (numpy/scipy first): ETF flow field, XDoG,
+  Zhang–Suen thinning, angle-aware tracing, Jobard–Lefer streamlines with
+  band windows/cross-hatch/dash, carefulness wobble via distance transform.
+- `lineart_edges` + `lineart_hatch` generators (bands stack as layers, one
+  pen each), `session.add_lineart_stack` one-click faithful/artistic
+  presets (tuned on renders), ★ Create stack button.
+- Detail round from Ian's first prints: skeletonized tracing, `resolution`
+  ×1..2, `mass` + `ink_fill` (maxed edges layer holds as a full drawing);
+  clip-backed generator layers now default `frame_follow=True`.
 
-Housekeeping: merged mission branches deleted local/remote/Pi; both Pi
-mission logs + RESULTS docs in `docs/plans/`; `.claude/skills/pi` is the
-scheduled-run runbook. **The live server on :2942 still runs pre-glyphgram
-code and holds an unsaved 4-layer untitled project — save before
-restarting** (see the unsaved-work-guard roadmap item, born of a real loss
-on 2026-07-10).
+**URGENT list**: 11 items at the top of `ROADMAP.md`, dictated by Ian from
+real use 2026-07-13 — includes a confirmed diagnosis for the Depth Pro
+complaint (package genuinely absent from `.venv`, install task).
 
 ## Prior arc
 
-2026-07-10 uncanny push: freehand/bitmap/fat_tube effects, region layers
-(resolve order `occlusion(regions(effects(transform(source))))`), ⚗
-workbench + global scrap library, repo to private GitHub with idkpi dev
-clone, Pi round 1 (continue_strokes, misremembered, grammar, two_hands).
-Grid sheets + animation arcs: see ROADMAP's shipped sections and
-`tests/test_sheets.py` / `tests/test_sheet_framing.py`.
-
-Architecture and module contracts: `ARCHITECTURE.md`, `docs/MODULES.md` —
-non-negotiable invariants (single resolve path; scrubbing never mutates
-stored state). Deployment note: two AxiDraw modes contend for the serial
-port — Mac-driven pi_ssh (default) vs Pi-served `axibridge.service` at
-`idkpi:2942` (disabled by default).
+Pi round 2 (bitmap-lines, contract_expand, region continuity, workbench
+drawing), sheets v2, glyphgram, A/B capture series — see ROADMAP shipped
+sections. Architecture invariants: `ARCHITECTURE.md`, `docs/MODULES.md`
+(single resolve path; scrubbing never mutates stored state). Two AxiDraw
+modes contend for the serial port — Mac-driven pi_ssh (default) vs the
+disabled Pi-served service.
