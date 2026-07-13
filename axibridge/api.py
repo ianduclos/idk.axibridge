@@ -612,6 +612,82 @@ def list_assets() -> dict[str, Any]:
     return {"assets": asset_store.info()}
 
 
+def _asset_param_fields(schema: dict[str, Any]) -> list[str]:
+    """Field names in a module's Params JSON Schema that hold an asset
+    reference (``format == "asset"``, possibly nested in an ``anyOf`` for an
+    optional field) — mirrors the frontend's own detection (compose.js /
+    forms.js), so any current or future image-driven module is covered
+    without hardcoding field names like ``image``."""
+    fields = []
+    for name, spec in (schema.get("properties") or {}).items():
+        fmt = spec.get("format") or next(
+            (a.get("format") for a in spec.get("anyOf", []) if a.get("format")), None)
+        if fmt == "asset":
+            fields.append(name)
+    return fields
+
+
+def _referenced_asset_names() -> set[str]:
+    """Every asset/sequence-prefix name referenced by any layer's source or
+    effect-step params, across the whole project. Region layers are plain
+    ``CanvasLayer``s with a source + effect stack like any other layer, so
+    iterating ``session.project.layers`` covers them too."""
+    referenced: set[str] = set()
+
+    def _collect(module_id: str | None, params: dict[str, Any] | None, lookup: Any) -> None:
+        if not module_id or not params:
+            return
+        try:
+            module = lookup(module_id)
+        except Exception:
+            return  # unknown module id (e.g. stale/renamed) — nothing to keep for it
+        for field in _asset_param_fields(module.Params.model_json_schema()):
+            value = params.get(field)
+            if isinstance(value, str) and value:
+                referenced.add(value)
+
+    for layer in session.project.layers:
+        _collect(layer.source.generator, layer.source.params, get_source)
+        for step in layer.effects:
+            _collect(step.effect, step.params, get_effect)
+    return referenced
+
+
+def _expand_sequence_frames(names: set[str]) -> set[str]:
+    """A referenced name may be a sequence prefix (e.g. ``clip#``), which is
+    never itself a stored key — expand it to every concrete frame key so the
+    whole clip survives a clear, not just whichever frame a param happened to
+    freeze. Plain names pass through unchanged."""
+    keep: set[str] = set()
+    for name in names:
+        frames = asset_store.sequence_frames(name)
+        keep.update(frames) if frames else keep.add(name)
+    return keep
+
+
+@router.delete("/assets")
+def clear_assets(force: bool = Query(default=False)) -> dict[str, Any]:
+    """Drop assets from the in-memory store so a long session doesn't grow it
+    unboundedly. Mutates only the asset store (no undo checkpoint — assets
+    aren't part of the project's undo history).
+
+    Default: removes only assets no layer currently references (a sequence
+    clip is kept whole if any frame is referenced). ``force=true`` removes
+    everything, including referenced assets — the next regenerate/resolve of
+    a layer that depended on one raises "no asset named ..." until it's
+    re-picked."""
+    current = asset_store.all()
+    if force:
+        removed = sorted(current)
+        asset_store.replace_all({})
+        return {"removed": removed, "kept": []}
+    keep = _expand_sequence_frames(_referenced_asset_names())
+    kept = {name: data for name, data in current.items() if name in keep}
+    removed = sorted(set(current) - keep)
+    asset_store.replace_all(kept)
+    return {"removed": removed, "kept": sorted(kept)}
+
+
 @router.get("/assets/{name}")
 def get_asset(
     name: str, frame: float | None = Query(default=None, ge=0.0, le=1.0)

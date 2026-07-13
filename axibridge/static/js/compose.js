@@ -200,6 +200,9 @@ export function initComposeTab() {
         <label>every</label><input type="number" id="asset-every" min="1" placeholder="—" style="width:4.5em">
         <span class="hint">optional max / start / every — video or multiple files import as a frame sequence</span>
       </div>
+      <div class="row">
+        <button id="btn-clear-assets" title="Remove image assets no layer currently uses (referenced assets are kept)">Clear unused assets</button>
+      </div>
       <div id="asset-list"></div>
     </div>
     <div class="panel">
@@ -322,6 +325,23 @@ export function initComposeTab() {
       renderLayerDetail(); // asset selects in effect forms pick up the new name
     } catch (e) { actions.oops(e); }
     finally { if (isSequence) genBusy(false, btn); }
+  };
+
+  $("btn-clear-assets").onclick = async () => {
+    if (!confirm("Remove image assets not referenced by any layer's source or effects? "
+      + "Assets still in use are kept; this cannot be undone.")) return;
+    const btn = $("btn-clear-assets");
+    btn.disabled = true;
+    try {
+      const r = await api.del("/api/assets");
+      S.state.assets = (await api.get("/api/assets")).assets;
+      renderAssetList();
+      renderLayerDetail(); // asset selects in effect forms drop any removed name
+      actions.log(r.removed.length
+        ? `cleared ${r.removed.length} unused asset(s)`
+        : "no unused assets to clear");
+    } catch (e) { actions.oops(e); }
+    finally { btn.disabled = false; }
   };
   renderAssetList();
   refreshDepthProStatus();
