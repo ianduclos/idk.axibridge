@@ -217,6 +217,9 @@ main {
   padding: 0 5px; border-radius: 3px; color: var(--ochre); letter-spacing: 0;
 }
 .row { display: flex; align-items: center; gap: 8px; margin: 5px 0; flex-wrap: wrap; }
+/* display:flex beats the UA's [hidden]{display:none} — restore it (the
+   lineart "Create stack" row was showing for every generator) */
+.row[hidden] { display: none; }
 .hint { color: var(--ink-soft); font-size: 11.5px; margin-top: 4px; overflow-wrap: anywhere; }
 .hint.warn { color: var(--ochre); }
 .asset-tool { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
@@ -408,6 +411,20 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .wb-scrap span { font-size: 10.5px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wb-scrap-row { display: flex; gap: 4px; }
 .wb-scrap-row button { flex: 1; font-size: 10.5px; padding: 2px 3px; }
+
+/* bench latch chip (compose.js): the form is live-editing this layer */
+.latch-chip {
+  border-color: var(--accent); color: var(--accent-soft); background: transparent;
+  border-radius: 999px; font-size: 11.5px; padding: 2px 10px;
+  max-width: 15em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.latch-chip:hover { color: var(--accent); }
+
+/* canvas drop target: an image/video file is hovering over the sheet */
+#canvas-wrap.dropping {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
 
 /* grid-sheet layout presets (plot.js animation panel) */
 .anim-presets { display: inline-flex; gap: 3px; }

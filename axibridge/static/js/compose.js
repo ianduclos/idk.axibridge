@@ -10,6 +10,13 @@ import { applyViewDefaults } from "./viewmap.js";
 
 const $ = (id) => document.getElementById(id);
 let genParams = {};
+// the bench latch: after "＋ Create layer" the SAME form live-edits the new
+// layer (auto-apply on slider release, coalesced into one undo entry) until
+// "＋ New layer" unlatches or another layer gets selected. null = unlatched.
+let latch = null;
+// generator-switch carry-over: these keys survive into the next generator's
+// params when its schema declares them (same image, same placement intent)
+const STICKY_FIELDS = ["image", "rotate", "width", "frame"];
 const expandedSteps = new Set(); // "layerId:index" — effect steps open in the UI
 const collapsedTweens = new Set(JSON.parse(localStorage.getItem("axb-collapsed-tweens") || "[]"));
 let selAnchor = null;            // last plain/cmd-clicked layer id, for shift-range
@@ -164,10 +171,9 @@ const genPreviewReq = (key, module, params, transform = null) => ({
 export function initComposeTab() {
   $("tab-compose").innerHTML = `
     <div class="panel">
-      <h2>Add layer</h2>
+      <h2>Generate</h2>
       <div class="row">
-        <select id="gen-select"></select>
-        <button id="btn-generate" class="primary">Convert to layer</button>
+        <select id="gen-select" style="flex:1"></select>
       </div>
       <div id="gen-form" class="form"></div>
       <div class="row" id="lineart-stack-row" hidden>
@@ -179,7 +185,20 @@ export function initComposeTab() {
       </div>
       <div id="gen-progress" class="progress" hidden><div id="gen-progress-bar"></div></div>
       <div id="gen-progress-msg" class="hint" hidden></div>
-      <div class="row" style="margin-top:10px">
+      <div class="row" style="margin-top:8px">
+        <button id="btn-generate" class="primary">＋ Create layer</button>
+        <button id="gen-latch" class="latch-chip" hidden
+          title="the sliders above edit this layer live — click to select it"></button>
+        <label class="hint" style="cursor:pointer;margin-left:auto"
+          title="ghost the result of generator/effect sliders while you drag, before committing">
+          <input type="checkbox" id="gen-live"> live preview
+        </label>
+      </div>
+      <div id="gen-live-note" class="hint"></div>
+    </div>
+    <div class="panel" data-collapse-default="1">
+      <h2>Import &amp; assets</h2>
+      <div class="row">
         <input type="file" id="svg-file" accept=".svg,image/svg+xml" style="flex:1">
       </div>
       <div class="row">
@@ -204,14 +223,11 @@ export function initComposeTab() {
       <div class="row">
         <button id="btn-clear-assets" title="Remove image assets no layer currently uses (referenced assets are kept)">Clear unused assets</button>
       </div>
+      <div class="hint">tip: dropping an image or video on the canvas imports it too</div>
       <div id="asset-list"></div>
     </div>
     <div class="panel">
       <h2>Layers <span class="hint">(top of list = drawn on top / occludes below)</span></h2>
-      <label class="hint" style="cursor:pointer" title="ghost the result of generator/effect sliders while you drag, before committing">
-        <input type="checkbox" id="gen-live"> live preview (generators &amp; effects)
-      </label>
-      <div id="gen-live-note" class="hint"></div>
       <div id="layer-list"></div>
     </div>
     <div class="panel" id="timeline-panel" hidden>
@@ -252,21 +268,26 @@ export function initComposeTab() {
   live.onchange = () => {
     livePreview = live.checked;
     localStorage.setItem("axb-live-preview", livePreview ? "1" : "0");
-    if (livePreview) preview.schedule(genPreviewReq("new", sel.value, { ...genParams }));
+    if (livePreview) benchPreview();
     else preview.clear();
   };
+  $("gen-latch").onclick = () => { if (latch) actions.setSelection([latch]); };
   renderGenForm();
 
   $("btn-generate").onclick = async () => {
+    if (latch) { unlatch(); return; }  // "＋ New layer": keep params, arm a fresh create
     genBusy(true);
     try {
-      await api.post("/api/layers/generate", { module: sel.value, params: genParams });
+      const layer = await api.post("/api/layers/generate", { module: sel.value, params: genParams });
       preview.clear(); // the real layer replaces the dashed ghost
       await actions.refreshProject();
       await actions.refreshResolved();
+      latch = layer.id;               // the form now live-edits what it made
+      actions.setSelection([layer.id]);
     } catch (e) { actions.oops(e); }
-    finally { genBusy(false); }
+    finally { genBusy(false); renderBenchAction(); }  // after genBusy restores the label
   };
+  initCanvasDrop();
 
   $("btn-lineart-stack").onclick = async () => {
     const btn = $("btn-lineart-stack");
@@ -302,30 +323,13 @@ export function initComposeTab() {
   $("btn-asset").onclick = async () => {
     const files = [...$("asset-file").files];
     if (!files.length) return actions.oops(new Error("choose a PNG/JPEG (or a video, or several images) first"));
-    const isVideo = files.length === 1 && /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(files[0].name);
-    const isSequence = files.length > 1 || isVideo;
-    const btn = $("btn-asset");
-    if (isSequence) genBusy(true, btn); // sequence import emits gen-progress SSE
     try {
-      let r;
-      if (isSequence) {
-        const fd = new FormData();
-        for (const f of files) fd.append("files", f);
-        const frames = $("asset-frames").value, start = $("asset-start").value, every = $("asset-every").value;
-        if (frames) fd.append("frames", frames);
-        if (start) fd.append("start", start);
-        if (every) fd.append("every", every);
-        r = await api.upload("/api/assets/sequence", fd);
-      } else {
-        const fd = new FormData();
-        fd.append("file", files[0]);
-        r = await api.upload("/api/assets", fd);
-      }
-      S.state.assets = r.assets;
-      renderAssetList();
-      renderLayerDetail(); // asset selects in effect forms pick up the new name
+      await uploadAssetFiles(files, {
+        frames: $("asset-frames").value,
+        start: $("asset-start").value,
+        every: $("asset-every").value,
+      }, $("btn-asset"));
     } catch (e) { actions.oops(e); }
-    finally { if (isSequence) genBusy(false, btn); }
   };
 
   $("btn-clear-assets").onclick = async () => {
@@ -359,6 +363,66 @@ export function initComposeTab() {
     };
   }
   renderTimeline();
+}
+
+// One upload path for the panel button and the canvas drop: several files or
+// a single video import as a frame sequence, one image as a plain asset.
+async function uploadAssetFiles(files, { frames, start, every } = {}, busyEl = null) {
+  const isVideo = files.length === 1 && /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(files[0].name);
+  const isSequence = files.length > 1 || isVideo;
+  if (isSequence) genBusy(true, busyEl); // sequence import emits gen-progress SSE
+  try {
+    let r;
+    if (isSequence) {
+      const fd = new FormData();
+      for (const f of files) fd.append("files", f);
+      if (frames) fd.append("frames", frames);
+      if (start) fd.append("start", start);
+      if (every) fd.append("every", every);
+      r = await api.upload("/api/assets/sequence", fd);
+    } else {
+      const fd = new FormData();
+      fd.append("file", files[0]);
+      r = await api.upload("/api/assets", fd);
+    }
+    S.state.assets = r.assets;
+    renderAssetList();
+    renderLayerDetail(); // asset selects in effect forms pick up the new name
+    return r;
+  } finally { if (isSequence) genBusy(false, busyEl); }
+}
+
+// Drop an image/video anywhere on the canvas: import it as an asset and, if
+// the bench generator is image-driven, point the form at it right away.
+function initCanvasDrop() {
+  const wrap = document.getElementById("canvas-wrap");
+  if (!wrap) return;
+  const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+  wrap.addEventListener("dragover", (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    wrap.classList.add("dropping");
+  });
+  wrap.addEventListener("dragleave", () => wrap.classList.remove("dropping"));
+  wrap.addEventListener("drop", async (e) => {
+    wrap.classList.remove("dropping");
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    const files = [...e.dataTransfer.files].filter((f) =>
+      /^(image|video)\//.test(f.type) || /\.(png|jpe?g|mp4|mov|webm|mkv|avi|m4v)$/i.test(f.name));
+    if (!files.length) return actions.oops(new Error("drop a PNG/JPEG image or a video"));
+    try {
+      const r = await uploadAssetFiles(files);
+      actions.log(`asset added: ${r.name}`);
+      const m = S.state.modules.sources.find((x) => x.id === $("gen-select").value);
+      if (m && "image" in (m.schema.properties || {})) {
+        genParams.image = r.name;
+        const sched = bindGenForm(m); // re-render: the asset dropdown shows the pick
+        sched();
+        if (latch) applyLatched();
+      }
+    } catch (err) { actions.oops(err); }
+  });
 }
 
 function renderAssetList() {
@@ -473,7 +537,7 @@ async function refreshDepthProStatus() {
 
 // The lineart v2 generators (lineart_edges / lineart_hatch) get a one-click
 // "Create stack" row: runs session.add_lineart_stack instead of a single
-// "Convert to layer", building the whole tonal-band + edges family at once.
+// "＋ Create layer", building the whole tonal-band + edges family at once.
 const LINEART_STACK_IDS = new Set(["lineart_edges", "lineart_hatch"]);
 
 function updateLineartStackRow(m) {
@@ -489,23 +553,98 @@ function updateLineartStackRow(m) {
     : "choose an image first";
 }
 
+// ---- the bench latch ---------------------------------------------------------
+
+function latchedLayer() {
+  const layer = latch && (S.state.project?.layers || []).find((l) => l.id === latch);
+  if (latch && !layer) { latch = null; renderBenchAction(); } // deleted under us
+  return layer || null;
+}
+
+export function unlatch() {
+  if (!latch) return;
+  latch = null;
+  preview.clear();
+  renderBenchAction();
+  renderLayerDetail(); // the selected layer's generator section comes back
+}
+
+function renderBenchAction() {
+  const chip = $("gen-latch"), btn = $("btn-generate");
+  if (!chip || !btn) return;
+  const layer = latch && (S.state.project?.layers || []).find((l) => l.id === latch);
+  if (layer) {
+    chip.hidden = false;
+    chip.textContent = `⟿ editing “${layer.name}”`;
+    btn.textContent = "＋ New layer";
+    btn.title = "unlatch — keep these params and arm a fresh layer";
+  } else {
+    chip.hidden = true;
+    btn.textContent = "＋ Create layer";
+    btn.title = "create a layer from these params — the sliders then edit it live";
+  }
+}
+
+// slider release while latched: regenerate the layer with the new params.
+// coalesce=true folds the whole slider run into ONE undo entry server-side.
+// (hand-rolled debounce: `actions` isn't initialized at module-eval time —
+// compose.js evaluates before main.js in their import cycle)
+let applyTimer = null;
+function applyLatched() {
+  clearTimeout(applyTimer);
+  applyTimer = setTimeout(async () => {
+    const layer = latchedLayer();
+    if (!layer) return;
+    genBusy(true, null); // progress bar only — no button to repurpose per tweak
+    try {
+      await api.post(`/api/layers/${layer.id}/regenerate`, { params: { ...genParams }, coalesce: true });
+      preview.clear();
+      await actions.refreshProject();
+      await actions.refreshResolved();
+    } catch (e) { actions.oops(e); }
+    finally { genBusy(false, null); }
+  }, 300);
+}
+
+// dashed ghost for the bench form: in the layer's frame while latched
+// (the candidate replaces the layer), in the machine frame when arming new
+function benchPreview() {
+  const m = S.state.modules.sources.find((x) => x.id === $("gen-select").value);
+  if (!m) return;
+  const layer = latchedLayer();
+  if (layer) {
+    preview.schedule(genPreviewReq(layer.id, layer.source.generator, { ...genParams },
+      objToMat(layer.transform)));
+  } else {
+    preview.schedule(genPreviewReq("new", m.id, { ...genParams }));
+  }
+}
+
 // Renders the gen-form DOM against whatever `genParams` currently holds
 // (machine-frame, unchanged) — the shared tail of renderGenForm (new
 // generator picked) and rerenderForView (view toggled, params untouched).
 function bindGenForm(m) {
-  const sched = () => { preview.schedule(genPreviewReq("new", m.id, { ...genParams })); updateLineartStackRow(m); };
-  renderForm($("gen-form"), m.schema, genParams, sched, { onLive: sched, stateKey: `gen:${m.id}` });
+  const sched = () => { benchPreview(); updateLineartStackRow(m); };
+  const commit = () => { sched(); if (latch) applyLatched(); };
+  renderForm($("gen-form"), m.schema, genParams, commit, { onLive: sched, stateKey: `gen:${m.id}` });
   return sched;
 }
 
 function renderGenForm() {
   const m = S.state.modules.sources.find((x) => x.id === $("gen-select").value);
   if (!m) return;
+  unlatch(); // picking a generator arms a new layer — never retargets a latched one
+  const prev = genParams;
   genParams = { ...m.defaults };
   // portrait view: viewRotate/viewAngle-tagged defaults get remapped so what
   // reads "0" (or whatever the schema default is) to the user is the same
   // physical result regardless of view — see static/js/viewmap.js.
   applyViewDefaults(m.schema, genParams, S.state?.project?.view === "portrait");
+  // sticky carry-over AFTER the view remap: previous values are already
+  // machine-frame, remapping them again would double-map
+  for (const k of STICKY_FIELDS) {
+    if (k in (m.schema.properties || {}) && prev[k] !== undefined) genParams[k] = prev[k];
+  }
   preview.clear();
   const sched = bindGenForm(m);
   sched();
@@ -668,6 +807,7 @@ export function renderLayerList() {
     row.title = "click: select — shift-click: range — ⌘-click: toggle (select two layers to interpolate)";
     wrap.appendChild(row);
   });
+  renderBenchAction(); // latch chip follows renames; a deleted latch target clears
   renderTimeline();
   renderLayerDetail();
 }
@@ -727,6 +867,12 @@ export function renderLayerDetail() {
   const panel = $("layer-detail-panel");
   const wrap = $("layer-detail");
   if (!panel || !wrap) return;
+  // selecting a DIFFERENT layer unlatches the bench — its sliders must never
+  // silently retarget; selecting the latched layer itself keeps the latch
+  if (latch && S.selection.length && !(S.selection.length === 1 && S.selection[0] === latch)) {
+    latch = null;
+    renderBenchAction();
+  }
   // a regen preview ghost belongs to one layer: drop it when focus moves on
   if (preview.key && preview.key !== "new" && !S.selection.includes(preview.key)) {
     preview.clear();
@@ -1129,8 +1275,15 @@ export function renderLayerDetail() {
     wrap.appendChild(hint);
   }
 
-  // -- generator params (regenerate; baked layers can return to live output)
-  if (layer.source.generator && ["generator", "baked"].includes(layer.source.type)) {
+  // -- generator params (regenerate; baked layers can return to live output).
+  // While this layer is latched on the bench, the form lives THERE — two live
+  // editors for the same params would drift.
+  if (latch === layer.id) {
+    const h = document.createElement("div");
+    h.className = "hint";
+    h.textContent = "⟿ generator params are latched on the bench (Generate panel)";
+    wrap.appendChild(h);
+  } else if (layer.source.generator && ["generator", "baked"].includes(layer.source.type)) {
     const mod = S.state.modules.sources.find((m) => m.id === layer.source.generator);
     if (mod) {
       const baked = layer.source.type === "baked";

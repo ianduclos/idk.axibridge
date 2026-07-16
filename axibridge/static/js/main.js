@@ -531,7 +531,11 @@ document.addEventListener("click", (e) => {
 
 function applyPanelCollapse() {
   document.querySelectorAll(".panel > h2").forEach((h2) => {
-    h2.parentElement.classList.toggle("collapsed", localStorage.getItem(panelKey(h2)) === "1");
+    const stored = localStorage.getItem(panelKey(h2));
+    const collapsed = stored === null
+      ? h2.parentElement.dataset.collapseDefault === "1" // panel's declared default
+      : stored === "1";
+    h2.parentElement.classList.toggle("collapsed", collapsed);
   });
 }
 
