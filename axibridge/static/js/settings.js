@@ -212,11 +212,13 @@ async function refreshProjectList() {
 export function renderSettingsTab() {
   if (!$("settings-form")) return;
   const schema = structuredClone(S.state.schemas.settings);
-  // composite fields get dedicated UI elsewhere (wizard, presets)
-  for (const k of ["holder_calibration", "paper_presets"]) delete schema.properties[k];
+  // composite fields get dedicated UI elsewhere (wizard, presets, the Plot
+  // tab's motion panel) — a dict in the generic form renders as an editable
+  // "[object Object]" string that would corrupt settings.json on save
+  const composite = ["holder_calibration", "paper_presets", "backend_params", "soft_limits"];
+  for (const k of composite) delete schema.properties[k];
   settingsValues = { ...S.state.settings };
-  delete settingsValues.holder_calibration;
-  delete settingsValues.paper_presets;
+  for (const k of composite) delete settingsValues[k];
   renderForm($("settings-form"), schema, settingsValues, () => {});
 
   const g = S.state.project.guide;

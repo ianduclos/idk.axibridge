@@ -31,6 +31,24 @@
 }
 
 * { box-sizing: border-box; }
+
+/* custom scrollbars — slim warm-chrome rails; thumb only, no track chrome.
+   ::-webkit rules style WKWebView (the pywebview shell), Safari, Chromium;
+   the standard properties are gated to engines WITHOUT the webkit selector
+   (Firefox) because where both exist, the standard pair wins and turns the
+   custom styling back into native scrollbars. */
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+}
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--line); border-radius: 999px;
+  border: 2px solid transparent; background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ink-soft); }
+::-webkit-scrollbar-corner { background: transparent; }
+
 html, body { height: 100%; }
 body {
   margin: 0; background: var(--paper); color: var(--ink);
