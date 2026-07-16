@@ -72,12 +72,26 @@ def test_budget_is_the_dial():
     assert n_dense > n_sparse
 
 
-def test_dark_mass_gets_a_closed_filled_blob():
+def test_dark_mass_is_scrubbed_by_default():
     doc = _gen(budget=60, width=100)
+    # the disc is remembered as at least one long continuous scribble, not a fill
+    longest = max(doc.layers[0].paths, key=lambda p: len(p.points))
+    assert not longest.filled
+    assert len(longest.points) > 40
+
+
+def test_blob_style_keeps_v1_contract():
+    doc = _gen(budget=60, width=100, mass_style="blob", tone=0.0)
     blobs = [p for p in doc.layers[0].paths if p.filled]
     assert blobs, "the dark disc should be remembered as at least one mass"
     for b in blobs:
         assert b.points[0] == b.points[-1]  # closed — occlusion masks need it
+
+
+def test_tone_dial_changes_recall():
+    a = _gen(budget=80, width=100, tone=0.0)
+    b = _gen(budget=80, width=100, tone=0.8)
+    assert [p.points for p in a.layers[0].paths] != [p.points for p in b.layers[0].paths]
 
 
 def test_missing_asset_raises_helpfully():
