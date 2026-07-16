@@ -33,6 +33,42 @@ def test_undo_depth_is_eight():
     assert session.project.layer(layer.id).name == "n3"  # 12 edits, last 8 undone
 
 
+def test_coalesced_regenerates_are_one_undo_step():
+    """The bench's latched live-edit: a slider run of regenerates undoes as one."""
+    layer = session.add_generated_layer("polygon", {"sides": 3, "radius": 10})
+    session.clear_history()
+    for sides in (4, 5, 6):
+        session.regenerate_layer(layer.id, {"sides": sides, "radius": 10}, coalesce=True)
+    assert session.project.layer(layer.id).source.params["sides"] == 6
+    assert session.undo()
+    assert session.project.layer(layer.id).source.params["sides"] == 3
+    assert not session.undo()  # the whole run was one entry
+
+
+def test_coalesce_run_breaks_on_other_mutation():
+    layer = session.add_generated_layer("polygon", {"sides": 3, "radius": 10})
+    session.clear_history()
+    session.regenerate_layer(layer.id, {"sides": 4, "radius": 10}, coalesce=True)
+    session.update_layer(layer.id, {"name": "renamed"})  # interrupts the run
+    session.regenerate_layer(layer.id, {"sides": 5, "radius": 10}, coalesce=True)
+    assert session.undo()  # second run
+    assert session.project.layer(layer.id).source.params["sides"] == 4
+    assert session.project.layer(layer.id).name == "renamed"
+    assert session.undo()  # the rename
+    assert session.project.layer(layer.id).name != "renamed"
+    assert session.undo()  # first run
+    assert session.project.layer(layer.id).source.params["sides"] == 3
+
+
+def test_plain_regenerates_still_checkpoint_each():
+    layer = session.add_generated_layer("polygon", {"sides": 3, "radius": 10})
+    session.clear_history()
+    session.regenerate_layer(layer.id, {"sides": 4, "radius": 10})
+    session.regenerate_layer(layer.id, {"sides": 5, "radius": 10})
+    assert session.undo()
+    assert session.project.layer(layer.id).source.params["sides"] == 4
+
+
 def test_bulk_delete_is_one_undo_step():
     a = session.add_generated_layer("polygon", {})
     b = session.add_generated_layer("polygon", {})

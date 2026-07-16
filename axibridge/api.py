@@ -717,13 +717,15 @@ def patch_layer(layer_id: str, patch: dict[str, Any]) -> dict[str, Any]:
 
 class RegenerateBody(BaseModel):
     params: dict[str, Any] | None = None
+    #: latched live-edit: consecutive regenerates of one layer share one undo entry
+    coalesce: bool = False
 
 
 @router.post("/layers/{layer_id}/regenerate")
 def regenerate_layer(layer_id: str, body: RegenerateBody) -> dict[str, Any]:
     try:
         with progress_scope(_gen_progress_sink()):
-            return session.regenerate_layer(layer_id, body.params).model_dump()
+            return session.regenerate_layer(layer_id, body.params, coalesce=body.coalesce).model_dump()
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:

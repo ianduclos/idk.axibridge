@@ -118,6 +118,10 @@ class Session:
         self._history: deque[
             tuple[Project, dict[str, list[Path]], dict[str, str], dict[str, PathDocument]]
         ] = deque(maxlen=8)
+        #: last checkpoint's coalesce key: consecutive checkpoints carrying the
+        #: same key collapse into ONE undo entry (live slider runs on a latched
+        #: layer), so undo returns to the state before the run started.
+        self._coalesce_key: tuple | None = None
         #: tween layer id -> (content key, materialised paths)
         self._tween_cache: dict[str, tuple[str, list[Path]]] = {}
         #: frame-follow generator layer id -> (content key, clip-advanced paths).
@@ -139,7 +143,14 @@ class Session:
 
     # -- undo -----------------------------------------------------------------
 
-    def _checkpoint(self) -> None:
+    def _checkpoint(self, coalesce: tuple | None = None) -> None:
+        if coalesce is not None and coalesce == self._coalesce_key and self._history:
+            # same coalesce run as the previous checkpoint: keep the run's
+            # opening snapshot as THE undo point, but caches still go stale
+            self._frame_lru.clear()
+            self._frame_bbox.clear()
+            return
+        self._coalesce_key = coalesce
         self._history.append(
             (
                 self.project.model_copy(deep=True),
@@ -156,11 +167,13 @@ class Session:
         """Project switch: snapshots of another project must not restore here."""
         with self._lock:
             self._history.clear()
+            self._coalesce_key = None
             self._frame_lru.clear()
             self._frame_bbox.clear()
 
     def undo(self) -> bool:
         with self._lock:
+            self._coalesce_key = None  # a new edit after undo must push
             if not self._history:
                 return False
             self.project, self.source_geometry, self.svg_files, self.staging_documents = self._history.pop()
@@ -288,12 +301,16 @@ class Session:
             self.source_geometry[layer.id] = paths
         return layer
 
-    def regenerate_layer(self, layer_id: str, params: dict[str, Any] | None = None) -> CanvasLayer:
+    def regenerate_layer(self, layer_id: str, params: dict[str, Any] | None = None,
+                         coalesce: bool = False) -> CanvasLayer:
+        """``coalesce=True`` (the bench's latched live-edit) folds consecutive
+        regenerates of the same layer into one undo entry — undo returns to
+        the moment the slider run started, not one notch back."""
         with self._lock:
             layer = self.project.layer(layer_id)
             if layer.source.type not in ("generator", "baked") or not layer.source.generator:
                 raise RuntimeError("layer was not generated; nothing to regenerate")
-            self._checkpoint()
+            self._checkpoint(("regen", layer_id) if coalesce else None)
             if params is not None:
                 layer.source.params = params
             src = get_source(layer.source.generator)
