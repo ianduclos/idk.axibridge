@@ -14,6 +14,7 @@ import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
 import { initWorkbench } from "./workbench.js";
 import { initMenu } from "./menu.js";
+import { initDrawMode } from "./draw.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -461,6 +462,7 @@ function initTabs() {
   initSettingsTab();
   initWorkbench(); // no-op after first call; the modal survives re-inits
   initMenu(); // no-op after first call; the menu bar is static across project switches
+  initDrawMode(); // no-op after first call (returns early if already wired)
   renderLayerList();
   applyPanelCollapse();
 }

@@ -145,7 +145,20 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    `POST /api/workbench/preview` (no session/undo contact), global scrap
    library (`scraps.py`, `~/.axibridge/scraps/`, frozen SVG + recipe
    metadata), import live (generator layer + effects) or baked (scrap SVG →
-   layers, library name kept). Later: mouse drawing, scrap editing.
+   layers, library name kept). Later: scrap editing.
+0a. ~~Draw mode (main canvas)~~ — **shipped July 2026**
+   (`docs/plans/draw-mode.md` / `-RESULTS.md`): pointer strokes on the main
+   canvas are a first-class `sources/drawing.py` generator layer, not a
+   second geometry path — `strokes: [[x_mm, y_mm, t_s], …]` (hidden param,
+   timestamps captured now for a future velocity-tube render mode),
+   resampled at fixed arc-length + 3-point-smoothed. `static/js/draw.js`
+   captures via capture-phase listeners on `#canvas-wrap` (canvas.js's own
+   drag/marquee code never sees the events) and reuses `CanvasEditor.toBed`
+   for the pointer→mm conversion, so portrait/landscape both place strokes
+   correctly for free. Per-stroke undo (no coalesce); brush presets
+   (plain/sketchy/tube/wobble) swap the layer's effect stack. Workbench's
+   own ✏ Draw (raw/smooth/steps/zigzag/stitch shaping, scrap-only) is
+   unchanged and still the separate playground path.
 1. ~~Bitmap + fat tube effects~~ — **shipped July 2026** as
    `effects/bitmap.py` (merged staircase blocks, grid anchored to layer
    translation, `solid` interior fill) and `effects/fat_tube.py`

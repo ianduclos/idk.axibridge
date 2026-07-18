@@ -426,6 +426,11 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
   box-shadow: inset 0 0 0 2px var(--accent);
 }
 
+/* draw mode (draw.js): pointer strokes on the main canvas -> a Drawing layer */
+#draw-toggle.on { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+#canvas-wrap.draw-mode { cursor: crosshair; }
+#canvas-wrap.draw-mode svg { cursor: crosshair; }
+
 /* grid-sheet layout presets (plot.js animation panel) */
 .anim-presets { display: inline-flex; gap: 3px; }
 .anim-presets button { padding: 2px 9px; font-size: 11.5px; }
