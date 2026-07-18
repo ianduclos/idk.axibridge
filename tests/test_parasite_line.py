@@ -125,3 +125,18 @@ def test_side_left_right_opposite_signs():
     right_p = [p for p in right if p.points != src.points][0]
     # a horizontal line's normal is vertical; left/right should offset opposite ways
     assert (left_p.points[0][1] - src.points[0][1]) * (right_p.points[0][1] - src.points[0][1]) < 0
+
+
+def test_on_closed_false_skips_closed_paths():
+    """Response-brush targeting: with on_closed off, a closed outline stays
+    bare while open strokes still get their companion."""
+    eff = get_effect("parasite_line")
+    closed, open_ = _square(), _squiggle()
+    out = eff.apply([closed, open_], eff.Params(on_closed=False), EffectContext(seed=0))
+    added = [p for p in out if p.points not in ([closed.points], [open_.points])
+             and p.points != closed.points and p.points != open_.points]
+    assert added, "the open stroke should still grow a parasite"
+    # every added point should hug the open squiggle, not the square
+    def near(pt, path, tol=25.0):
+        return any(math.dist(pt, q) < tol for q in path.points[::4])
+    assert all(near(p.points[0], open_) for p in added)

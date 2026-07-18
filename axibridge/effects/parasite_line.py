@@ -57,6 +57,10 @@ class ParasiteLineParams(BaseModel):
     min_length: float = Field(default=8.0, ge=0.0, le=100.0, title="Min length (mm)",
                               description="Skip strokes shorter than this",
                               json_schema_extra={"group": "Fine tuning"})
+    on_closed: bool = Field(default=True, title="On closed paths",
+                            description="Also orbit closed paths — off targets open "
+                                        "strokes only (a tube outline stays bare)",
+                            json_schema_extra={"group": "Fine tuning"})
     seed: int = Field(default=0, ge=0, le=99999, title="Seed",
                       json_schema_extra={"group": "Fine tuning"})
 
@@ -215,6 +219,9 @@ class ParasiteLine(EffectModule):
         for idx, path in enumerate(paths):
             if path.length() < params.min_length:
                 continue
+            closed = len(path.points) > 2 and path.points[0] == path.points[-1]
+            if closed and not params.on_closed:
+                continue  # response-brush targeting: tube outlines stay bare
             seed = (base_seed + idx * 7919) & 0x7FFFFFFF
             out.extend(self._parasites(path, params, seed, idx))
         return out

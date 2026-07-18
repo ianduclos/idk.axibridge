@@ -23,6 +23,20 @@ const BRUSHES = [
   { id: "sketchy", label: "sketchy", source: {}, effects: [{ effect: "freehand", enabled: true, params: {} }] },
   { id: "tube", label: "tube", source: {}, effects: [{ effect: "fat_tube", enabled: true, params: { width: 5 } }] },
   { id: "wobble", label: "wobble", source: {}, effects: [{ effect: "coherent_jitter", enabled: true, params: { amplitude: 2 } }] },
+  // response: decorations target the OPEN centerline only (on_closed:false) —
+  // on the closed velocity outline they double up and its width wiggles read
+  // as corners, chaining rings along the whole tube. ORDER MATTERS: eyelets
+  // must run BEFORE parasite_line, or at_ends rings every 1.2mm parasite
+  // dash (hundreds of beads); parasite in turn skips the eyelet circles
+  // because they're closed. Hand strokes are jittery even after smoothing,
+  // so eyelets run less sensitive/wider-spaced than the module defaults
+  // tuned on clean synthetic paths.
+  { id: "response", label: "response",
+    source: { render: "velocity_tube" },
+    effects: [
+      { effect: "eyelets", enabled: true, params: { on_closed: false, sensitivity: 0.7, spacing: 18 } },
+      { effect: "parasite_line", enabled: true, params: { on_closed: false } },
+    ] },
 ];
 
 let on = false;

@@ -149,3 +149,16 @@ def test_closed_path_kept_closed_no_end_eyelets():
     # closed paths have no distinct "ends" — every eyelet should be corner-driven
     circles = _circles_only(out, src)
     assert len(circles) == 4  # one per corner, none doubled at the seam
+
+
+def test_on_closed_false_skips_closed_paths():
+    """Response-brush targeting: with on_closed off, the closed square grows
+    no rings while the open line still gets its end eyelets."""
+    eff = get_effect("eyelets")
+    square, line = _square(), _hline()
+    out = eff.apply([square, line], eff.Params(on_closed=False, at_ends=True),
+                    EffectContext(seed=0))
+    circles = [p for p in out
+               if p.points != square.points and p.points != line.points]
+    # exactly the line's two end eyelets — the square's four corners grew none
+    assert len(circles) == 2

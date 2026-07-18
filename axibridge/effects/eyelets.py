@@ -51,6 +51,10 @@ class EyeletsParams(BaseModel):
     nudge: float = Field(default=0.6, ge=0.0, le=4.0, title="Nudge (mm)",
                          description="Push eyelets outward from the corner, off the line",
                          json_schema_extra={"group": "Fine tuning"})
+    on_closed: bool = Field(default=True, title="On closed paths",
+                            description="Also ring closed paths' corners — off targets "
+                                        "open strokes only (a tube outline stays bare)",
+                            json_schema_extra={"group": "Fine tuning"})
     seed: int = Field(default=0, ge=0, le=99999, title="Seed",
                       json_schema_extra={"group": "Fine tuning"})
 
@@ -209,6 +213,9 @@ class Eyelets(EffectModule):
         base_seed = (params.seed * 31 + ctx.seed) & 0x7FFFFFFF
         out: list[Path] = list(paths)  # originals verbatim, untouched
         for idx, path in enumerate(paths):
+            closed = len(path.points) > 2 and path.points[0] == path.points[-1]
+            if closed and not params.on_closed:
+                continue  # response-brush targeting: tube outlines stay bare
             seed = (base_seed + idx * 7919) & 0x7FFFFFFF
             out.extend(self._eyelets(path, params, seed))
         return out
