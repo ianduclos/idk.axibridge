@@ -101,9 +101,10 @@ def test_drawing_bounds_and_budget_enforced(client):
     assert client.post("/api/workbench/preview", json=off_bed).status_code == 400
     dense = {**DRAWING, "paths": [[[float(i % 290), 10.0] for i in range(50_001)]]}
     assert client.post("/api/workbench/preview", json=dense).status_code == 400
-    # module "drawing" without paths is not a generator
+    # module "drawing" without paths now hits the real registered source
+    # (docs/plans/draw-mode.md Part 1) — empty strokes is a 400, not a 404
     assert client.post("/api/workbench/preview",
-                       json={"module": "drawing"}).status_code == 404
+                       json={"module": "drawing"}).status_code == 400
 
 
 def test_drawing_scrap_freezes_given_geometry(client):
