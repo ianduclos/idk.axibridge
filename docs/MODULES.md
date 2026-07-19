@@ -97,6 +97,32 @@ Contract:
   collapsed Image processing group), sample darkness 0–255 through
   `ImageSampler`, and return via `pixel_doc(...)` — it scales the fixed
   800-px working canvas to the `width` mm placement. Copy `sources/subline.py`.
+- **Geometry-as-params sources** (the canvas-tool family — draw mode, and
+  the pen/brush tools it precedes): the param model carries CAPTURED
+  geometry directly — a hidden `strokes`/`anchors` list, already in
+  machine-frame mm, bed-clamped and point/anchor-count capped — instead of
+  generating shape from a few numeric dials. `generate()` still has to be
+  pure and deterministic (same params → same output), it just has nothing
+  to seed: the geometry itself IS the input. The layer transform is
+  typically left at identity since the capture already placed the geometry
+  on the bed; downstream (occlusion, pens, estimates, undo, regions, A/B
+  capture) treats it exactly like any other layer for free — see
+  `sources/drawing.py`'s module docstring for why this beats a bespoke
+  client-side tool. A companion `static/js/<tool>.js` captures pointer
+  events into the params and POSTs `regenerate` (usually with
+  `coalesce=true` mid-drag — see CLAUDE.md's Undo discipline). Copy
+  `sources/drawing.py` + `static/js/draw.js`. **Tween is the one exception,
+  noted here on purpose rather than fixed**: `tween.py`'s same-generator
+  lerp only blends scalar (`int`/`float`) params — a captured geometry
+  param (`strokes`, and pen/brush's future `subpaths`) isn't a number, so it
+  *steps* at t=0.5 instead of morphing; the numeric dials
+  (`resample_mm`, `width_min`, …) blend smoothly while the actual shape
+  jump-cuts. A real fix (resample both geometries to a matching point count
+  via arc-length, then pointwise lerp) is a genuine design decision (three
+  real options: forbid it with a clear message, build the resample, or keep
+  documenting the snap) — deliberately left alone as of 2026-07-19 rather
+  than changed reflexively, since it happened this way for real workflow
+  reasons that shouldn't be disturbed by accident.
 
 ## Writing an Effect — the v2 per-layer stack
 

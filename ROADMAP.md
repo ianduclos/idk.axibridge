@@ -159,7 +159,8 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    (plain/sketchy/tube/wobble) swap the layer's effect stack. Workbench's
    own ✏ Draw (raw/smooth/steps/zigzag/stitch shaping, scrap-only) is
    unchanged and still the separate playground path.
-0b. **Pen tool (⚓ béziers)** — planned 2026-07-19. Photoshop grammar:
+0b. **Pen tool (⚓ béziers)** — planned 2026-07-19, briefed 2026-07-19
+   (`docs/plans/pen-brush-tools.md`, combined with 0c). Photoshop grammar:
    click = corner anchor, click-drag = smooth anchor with symmetric arms,
    rubber-band previews the next segment, Option-drag breaks arm symmetry,
    click-first-anchor closes (→ `filled=True` = instant occluder / region
@@ -173,15 +174,21 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    Toolbar becomes a mode segment: ↖ select · ✎ draw · ⚓ pen · ● brush;
    every tool = geometry-as-params source + canvas-mode JS module (the
    draw-mode pattern).
-0c. **Brush tool (● circle brush)** — planned 2026-07-19. A `brush`
+0c. **Brush tool (● circle brush)** — planned 2026-07-19, briefed 2026-07-19
+   (`docs/plans/pen-brush-tools.md`, combined with 0b). A `brush`
    source: strokes + brush radius (`[`/`]` resize, circle cursor);
    commit = shapely buffer + union → closed `filled=True` boundary
-   polygons. Eraser = boolean difference, with the hole question settled
-   as: brush ink renders as in-source hatching computed from the shapely
-   polygon (hatch respects holes trivially); only the occlusion mask
-   over-covers a donut's hole — documented limitation, consistent with
-   the IPR-hole note under Documentation debts. No even-odd occlusion
-   change until a second feature needs it.
+   polygons (exterior AND interior/hole rings each emitted as their own
+   closed `filled=True` path — nesting alone marks a hole, no flag needed).
+   Eraser = boolean difference. Correction 2026-07-19: the hole question
+   needs no compromise — `compose.build_mask`'s even-odd depth-parity pass
+   (shipped 2026-07-10, `test_filled_occlusion_mask_respects_nested_holes`)
+   already reassembles nested holes for OCCLUSION too, not just
+   `hatch_fill`; a donut brush stroke masks correctly as a ring, hole
+   included, with zero extra work. The stale "occlusion mask over-covers a
+   donut's hole" limitation this item originally cited (from the
+   Documentation-debts IPR-hole note, itself corrected below) no longer
+   applies to anything — don't reintroduce the caveat.
 1. ~~Bitmap + fat tube effects~~ — **shipped July 2026** as
    `effects/bitmap.py` (merged staircase blocks, grid anchored to layer
    translation, `solid` interior fill) and `effects/fat_tube.py`
@@ -204,7 +211,8 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    japanese, astrology, music…) through fragment/drop/displace/recombine/
    mirror-echo rules, one `abstraction` master dial (0 = almost reads,
    1 = pure scaffold); empty text = asemic glyph soup.
-5. **Perception pass — line weight = certainty** (the ideas doc calls this
+5. **Perception pass — line weight = certainty** — briefed 2026-07-19
+   (`docs/plans/perception-pass.md`; the ideas doc calls this
    the strongest AI-age principle; promoted 2026-07-10): run several cheap
    perception passes over one asset (threshold edges, Depth Pro
    discontinuities, a segmentation boundary) and let *agreement* set the
@@ -240,7 +248,10 @@ mechanisms are quoted there). Pull order:
    around it with carefulness varying along the body (freehand controller
    as the hand) → several placed foreground-first under AARON's
    never-overlap rule via the existing masks. The missing thing-ness that
-   two_hands lacks.
+   two_hands lacks. Briefed 2026-07-19 (`docs/plans/aaron-core-figure.md`) —
+   settles plant-morphology-not-figure-armature and the embodiment/
+   never-overlap mechanics as concrete, self-contained (no session/compose
+   change) design calls.
 2. **Sheet-snapshot asset** — one endpoint/button rasterizing the current
    resolved output into an asset; every image-driven generator becomes
    context-aware (negative-space filler, two_hands v2 perceiving the sheet,
@@ -479,9 +490,17 @@ deliberately:
   done June 2026: any generator layer with `image` + `show_map` params
   ghosts in the layer frame; only the depth-displace *effect* (paper-space
   placement) remains special-cased, correctly.
-- The IPR has no hole representation; holes are separate filled loops.
-  `hatch_fill` reassembles even-odd, occlusion does not. If holes start to
-  matter for occlusion, that is an IPR change — design, don't patch.
+- The IPR has no hole representation; holes are separate filled loops,
+  nesting-derived (a closed `filled=True` loop inside another is a hole by
+  depth parity, no explicit flag). **Corrected 2026-07-19** (was stale since
+  2026-07-10): both `hatch_fill` AND occlusion (`compose.build_mask`)
+  reassemble this even-odd — a donut occludes correctly as a ring, not a
+  solid island (`test_filled_occlusion_mask_respects_nested_holes`). The
+  remaining real gap is only the IPR itself carrying no hole *representation*
+  (a hole is inferred from nesting + nearest-covering nesting only handles
+  one level of "hole in a solid" cleanly) — if a design ever needs holes as
+  a first-class field, or nesting deeper than solid→hole→solid, that is an
+  IPR change; today's depth-parity pass is not that.
 - Pen-plotter-specific test gap: nothing exercises the native backend
   against recorded EBB traffic; a replay harness would catch the next
   protocol drift without hardware.

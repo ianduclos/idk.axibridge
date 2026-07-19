@@ -37,6 +37,7 @@ before structural changes.
 | Pen library & machine settings (global JSON stores) | `axibridge/stores.py` |
 | Roadmap / future direction | `ROADMAP.md` |
 | Project folder save/load/zip | `axibridge/project_io.py` |
+| Global scrap library (workbench "keep this" saves, `~/.axibridge/scraps/`) | `axibridge/scraps.py` |
 | HTTP API | `axibridge/api.py` |
 | Canvas editor / tabs | `axibridge/static/js/canvas.js`, `compose.js`, `plot.js`, … |
 
@@ -45,8 +46,10 @@ before structural changes.
 - **Single resolve path**: preview, estimates, and plotting all flow through
   `session.resolved*()` → `compose.resolve_project()`. Never add a second
   geometry path to the plotter.
-- Resolve order is `occlusion(effects(transform(source)))` — effects run in
-  paper space (mm params stay mm at any layer scale). Don't reorder.
+- Resolve order is `occlusion(regions(effects(transform(source))))` —
+  effects run in paper space (mm params stay mm at any layer scale); region
+  layers then clip+effect everything below them, post-effect/pre-occlusion,
+  bottom→top. Don't reorder. See ARCHITECTURE.md "Resolve order" for why.
 - Coordinates: millimetres, machine frame (x right ≤300, y down ≤218),
   origin at carriage home. View rotation is display-only (`canvas.js`).
 - Effects/transforms must be pure (never mutate input paths) and preserve
@@ -64,7 +67,12 @@ before structural changes.
 - **Undo discipline**: every `Session` method that mutates the project MUST
   call `self._checkpoint()` once, under `self._lock`, before mutating —
   and rely on module purity (geometry lists are shared by reference, never
-  mutated in place; they are only ever replaced wholesale).
+  mutated in place; they are only ever replaced wholesale). The one sanctioned
+  exception is `coalesce`: pass a stable key (e.g. `("regen", layer_id)`) to
+  `_checkpoint()` and consecutive checkpoints with the same key fold into one
+  undo entry — this is how a latched live-edit run (drag a slider, drag a pen
+  anchor) becomes a single ⌘Z instead of one per intermediate value. Never
+  coalesce across different layers/fields under one key.
 - Image assets live in the `assets.asset_store` singleton (name → bytes,
   cached grayscale/alpha); they travel in the project folder's `assets/`.
   Effects/generators reference them by name via a string param with
@@ -108,3 +116,14 @@ before structural changes.
   random long-lived servers unless a test explicitly needs a temporary port.
   The app bundle should use `Contents/Resources/AxiBridge.icns`, generated
   from `axibridge/static/favicon.png`.
+- **Open architecture questions are deliberately left open** — Ian wants
+  breadth of future options kept, not decisions forced early; well-mapped,
+  modular code is meant to carry that weight instead. The live ones (the IPR
+  carrying no explicit hole *field* — occlusion and hatch_fill both already
+  reassemble nesting-derived holes correctly as of 2026-07-10, that part is
+  settled, only a first-class representation is open; the node-editor
+  question; the unsaved-work autosave guard) are tracked in ROADMAP.md's "Far /
+  undecided" and "Documentation / robustness debts" sections, each with the
+  criterion for when to revisit. Don't resolve one implicitly as a side
+  effect of an unrelated change — if a task forces the issue, stop and flag
+  it rather than picking a side.

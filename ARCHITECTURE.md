@@ -158,7 +158,12 @@ the `Project` model is deep-copied, but geometry lists are shared by
 *reference* — safe because the module contract forbids in-place mutation
 (lists are only ever replaced wholesale). Every mutating `Session` method
 checkpoints once under the lock; bulk operations (multi-delete) are one
-checkpoint so one ⌘Z restores the lot. **Consolidate** bakes a layer's
+checkpoint so one ⌘Z restores the lot. **Coalesce** (`regenerate_layer`'s
+`coalesce=True`) is the latched-live-edit exception: consecutive checkpoints
+carrying the same key (e.g. `("regen", layer_id)`) collapse into the run's
+first entry instead of stacking one per intermediate value, so dragging a
+slider or a pen/brush anchor is one ⌘Z, not a hundred; any other checkpoint
+in between resets the key. **Consolidate** bakes a layer's
 transform + effect stack into its source geometry (resolved output is
 bit-identical; the layer's `source.type` becomes `"baked"` but keeps
 generator provenance, so *regenerate* explicitly reverts the bake).
