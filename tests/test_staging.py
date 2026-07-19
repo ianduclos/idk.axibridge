@@ -401,3 +401,56 @@ def test_capture_snapshot_shares_geometry_and_stays_frozen():
     # regenerate REPLACED the live list; the snapshot still holds the old one
     assert _paths_signature(snap.source_geometry[layer.id]) == frozen_sig
     assert snap.source_geometry[layer.id][0] is not session.source_geometry[layer.id][0]
+
+
+def test_project_json_externalizes_capture_snapshots(tmp_path):
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 12})
+    group = session.capture_to_staging(kind="plot", name="cap")
+    target = tmp_path / "proj"
+    project_io.save_project(
+        session.project, session.source_geometry, session.svg_files, target,
+        staging_documents=session.staging_documents)
+
+    manifest = json.loads((target / "project.json").read_text())
+    assert manifest["staging"][0]["snapshot"] is None, \
+        "snapshot geometry must not live inline in project.json"
+    snap_file = target / "staging" / f"snapshot-{group.id}.json"
+    assert snap_file.exists()
+    assert layer.id in json.loads(snap_file.read_text())["source_geometry"]
+
+    loaded, geo, _, _, _, _ = project_io.load_project(target)
+    snap = loaded.staging[0].snapshot
+    assert snap is not None, "load must rehydrate the externalized snapshot"
+    assert _paths_signature(snap.source_geometry[layer.id]) == \
+        _paths_signature(session.source_geometry[layer.id])
+
+
+def test_legacy_inline_snapshot_still_loads(tmp_path):
+    session.add_generated_layer("polygon", {"sides": 6, "radius": 12})
+    session.capture_to_staging(kind="plot", name="cap")
+    target = tmp_path / "proj"
+    project_io.save_project(
+        session.project, session.source_geometry, session.svg_files, target,
+        staging_documents=session.staging_documents)
+    # rebuild the pre-2026-07-19 layout: snapshot inline, no external file
+    (target / "project.json").write_text(session.project.model_dump_json(indent=2))
+    for f in (target / "staging").glob("snapshot-*.json"):
+        f.unlink()
+
+    loaded, _, _, _, _, _ = project_io.load_project(target)
+    assert loaded.staging[0].snapshot is not None
+
+
+def test_deleted_capture_prunes_its_snapshot_file(tmp_path):
+    session.add_generated_layer("polygon", {"sides": 6, "radius": 12})
+    group = session.capture_to_staging(kind="plot", name="cap")
+    target = tmp_path / "proj"
+    save = lambda: project_io.save_project(  # noqa: E731
+        session.project, session.source_geometry, session.svg_files, target,
+        staging_documents=session.staging_documents)
+    save()
+    snap_file = target / "staging" / f"snapshot-{group.id}.json"
+    assert snap_file.exists()
+    session.delete_capture_group(group.id)
+    save()
+    assert not snap_file.exists(), "stale snapshot files must be pruned on save"

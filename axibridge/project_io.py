@@ -9,6 +9,10 @@
         gen-*.svg       # generated/baked layers, snapshotted as SVG
       staging/
         *.svg           # frozen staged sheets/captures
+        snapshot-*.json # capture snapshots' source state, one per group —
+                        # kept OUT of project.json so the manifest stays
+                        # small and diff-able (legacy inline snapshots in
+                        # project.json still load)
       assets/
         *.png           # image assets (depth maps), verbatim
       history/
@@ -32,7 +36,7 @@ import zipfile
 from pathlib import Path as FsPath
 from typing import Any
 
-from .compose import CanvasLayer, Project
+from .compose import CanvasLayer, CaptureSnapshot, Project
 from .model import Path, PathDocument
 from .svg_io import doc_from_svg, doc_to_svg
 
@@ -120,7 +124,19 @@ def save_project(
         (project_dir / "assets").mkdir(parents=True, exist_ok=True)
         for name, data in assets.items():
             (project_dir / "assets" / safe_name(name)).write_bytes(data)
-    (project_dir / "project.json").write_text(project.model_dump_json(indent=2))
+    # capture snapshots carry full geometry — externalized to one compact
+    # file per group so project.json stays small and diff-able (its stated
+    # design goal). The dump cost is the same; only the destination changes.
+    import json
+
+    payload = project.model_dump(mode="json")
+    for gdump in payload["staging"]:
+        snap = gdump.get("snapshot")
+        if snap is not None:
+            (project_dir / "staging" / f"snapshot-{gdump['id']}.json").write_text(
+                json.dumps(snap, separators=(",", ":")))
+            gdump["snapshot"] = None
+    (project_dir / "project.json").write_text(json.dumps(payload, indent=2))
 
     # Prune: the folder must mirror CURRENT state. ``load_project`` reads every
     # file in assets/ and trusts sources/ references, so stale files would
@@ -138,6 +154,12 @@ def save_project(
     }
     for f in (project_dir / "staging").glob("*.svg"):
         if f"staging/{f.name}" not in keep_staging:
+            f.unlink()
+    keep_snapshots = {
+        f"snapshot-{g.id}.json" for g in project.staging if g.snapshot is not None
+    }
+    for f in (project_dir / "staging").glob("snapshot-*.json"):
+        if f.name not in keep_snapshots:
             f.unlink()
     if assets is not None:
         assets_dir = project_dir / "assets"
@@ -214,6 +236,13 @@ def load_project(
             )
     staging_documents: dict[str, PathDocument] = {}
     for group in project.staging:
+        if group.snapshot is None:
+            # externalized snapshot (2026-07-19 layout); a legacy project.json
+            # with the snapshot inline validated it above and skips this
+            snap_file = project_dir / "staging" / f"snapshot-{group.id}.json"
+            if snap_file.exists():
+                group.snapshot = CaptureSnapshot.model_validate_json(
+                    snap_file.read_text())
         for sheet in group.sheets:
             if not sheet.file:
                 continue
