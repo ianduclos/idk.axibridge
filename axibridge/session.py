@@ -1304,6 +1304,19 @@ class Session:
                 return out_layer, [p for lyr in doc.layers for p in lyr.paths]
             except Exception as e:
                 warnings.append(f"{la.name}: generator interpolation failed ({e}); stepped at midpoint")
+        if la.source.type == "tween" and lb.source.type == "tween":
+            # TweenParams floats (t, windows) lerp per the unblendables rule —
+            # refs/bools/curve step at 0.5 like everywhere else. Without this
+            # the blended layer kept capture A's params wholesale, and since
+            # re-materialisation (in the batch's temp state) overwrites the
+            # geometry lerped below, a tween-t change between captures froze
+            # every step at A's morph — the last step didn't reproduce B.
+            try:
+                pa = tween.TweenParams(**(la.source.params or {})).model_dump()
+                pb = tween.TweenParams(**(lb.source.params or {})).model_dump()
+                out_layer.source.params = tween.lerp_params(pa, pb, t, {})
+            except Exception:
+                pass  # invalid stored refs/params: keep A's source, as before
         if tween.structures_match(ga, gb):
             return out_layer, tween.lerp_paths(ga, gb, t)
         chosen_geo = gb if t >= 0.5 else ga

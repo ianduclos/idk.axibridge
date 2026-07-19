@@ -14,12 +14,9 @@ list, a step's `enabled` being just a bool that steps at 0.5):
 * Full-stack rule LANDED — ``blend_effect_stacks`` is shared by both paths;
   ``test_pin_canvas_tween_steps_on_disabled_extra_step`` documents the flip
   (tween.py used to blend past a disabled extra step, the tray stepped).
-* ``test_pin_tray_freezes_a_tweens_own_t`` — a KNOWN FIDELITY GAP still
-  pinned as-is: the tray keeps capture A's tween params at every step (the
-  non-generator branch never touches ``source``), so a tween-t change
-  between captures produces N identical sheets and the last step does NOT
-  reproduce capture B. TweenParams.t is a float; under the ruling it should
-  lerp — scheduled next.
+* Tween-t lerp LANDED — TweenParams floats blend across captures
+  (``test_pin_tray_lerps_a_tweens_own_t``; a tween-t change used to freeze
+  every step at capture A's morph, so the batch never reached capture B).
 * One-sided layers step at the midpoint in BOTH directions
   (``test_pin_one_sided_layers_step_at_midpoint``) — guards the 2026-07-19
   crash fix (B-only layers used to raise AttributeError for every step with
@@ -178,14 +175,14 @@ def test_pin_nested_tween_rederives_from_blended_endpoints():
     assert widths[2] == pytest.approx(_doc_width(session.staged_document(cap_b.id)))
 
 
-def test_pin_tray_freezes_a_tweens_own_t():
-    """KNOWN FIDELITY GAP, pinned as-is — scheduled to change. Captures that
-    differ ONLY in a tween's own t produce N IDENTICAL sheets at capture A's
-    t: the tray's non-generator branch never touches ``source``, and
-    re-materialisation overwrites the pointwise-lerped geometry. The final
-    step does NOT reproduce capture B. Under the 2026-07-19 ruling
-    (TweenParams.t is a float → it lerps) the unification should make the
-    steps sweep A→B; rewrite this test then."""
+def test_pin_tray_lerps_a_tweens_own_t():
+    """UNIFIED (was the frozen-t fidelity gap): captures differing ONLY in a
+    tween's own t used to produce N IDENTICAL sheets at capture A's t — the
+    non-generator branch kept A's ``source`` wholesale and re-materialisation
+    overwrote the lerped geometry, so the last step didn't reproduce capture
+    B. TweenParams floats now lerp across captures (refs/bools/curve still
+    step), so the batch sweeps A→B and both endpoint steps reproduce their
+    captures."""
     p, q, tw = _hidden_tween_pair()
     session.set_tween_params(tw.id, {"t": 0.1})
     cap_c = session.capture_to_staging(kind="plot", name="C")
@@ -196,5 +193,6 @@ def test_pin_tray_freezes_a_tweens_own_t():
     w_c = _doc_width(session.staged_document(cap_c.id))
     w_d = _doc_width(session.staged_document(cap_d.id))
     assert w_c < w_d  # the captures really do differ
-    for w in widths:
-        assert w == pytest.approx(w_c), "every step frozen at capture A's t"
+    assert widths[0] == pytest.approx(w_c)
+    assert widths[2] == pytest.approx(w_d)
+    assert widths[0] < widths[1] < widths[2]
