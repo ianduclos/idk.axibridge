@@ -1266,11 +1266,18 @@ class Session:
         gb: list[Path],
         t: float,
         warnings: list[str],
-    ) -> tuple[CanvasLayer, list[Path]]:
+    ) -> tuple[CanvasLayer, list[Path]] | None:
         if la is None or lb is None:
-            chosen = lb if (t >= 0.5 and lb is not None) else la
+            # one-sided layer: absent before the midpoint if it only exists in
+            # B, absent from the midpoint on if it only exists in A — the same
+            # step-at-0.5 rule as every other non-lerpable. (Returning None
+            # means "no layer in this in-between"; the old code crashed on the
+            # B-only-and-t<0.5 case instead of stepping.)
+            warnings.append(f"{(la or lb).name} only exists on one side; stepped at midpoint")
+            chosen = lb if t >= 0.5 else la
+            if chosen is None:
+                return None
             geo = gb if chosen is lb else ga
-            warnings.append(f"{chosen.name if chosen else 'layer'} only exists on one side; stepped at midpoint")
             return chosen.model_copy(deep=True), [p.model_copy(deep=True) for p in geo]
         if la.source.type != lb.source.type:
             chosen = lb if t >= 0.5 else la
@@ -1337,16 +1344,22 @@ class Session:
         for la in a.layers:
             lb = by_b.get(la.id)
             seen.add(la.id)
-            layer, geo = self._interpolate_layer(
+            blended = self._interpolate_layer(
                 la, lb, a.source_geometry.get(la.id, []),
                 b.source_geometry.get(la.id, []) if lb else [], t, warnings)
+            if blended is None:
+                continue  # A-only layer, t >= 0.5: stepped out
+            layer, geo = blended
             out_layers.append(layer)
             out_geo[layer.id] = geo
         for lb in b.layers:
             if lb.id in seen:
                 continue
-            layer, geo = self._interpolate_layer(
+            blended = self._interpolate_layer(
                 None, lb, [], b.source_geometry.get(lb.id, []), t, warnings)
+            if blended is None:
+                continue  # B-only layer, t < 0.5: not stepped in yet
+            layer, geo = blended
             out_layers.append(layer)
             out_geo[layer.id] = geo
         project = Project(
