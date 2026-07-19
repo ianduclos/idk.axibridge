@@ -155,7 +155,25 @@ The contract, and why each clause exists:
   depends on the input surviving.
 - **Preserve `filled` and closure.** Carry `filled=path.filled` through, and
   if a path arrived closed (first == last), return it closed — occlusion
-  masks are built from your output.
+  masks are built from your output. Use `Path.is_closed` / `model.is_closed`
+  for the check, never a hand-rolled `pts[0] == pts[-1]` (the definitions
+  had drifted three ways before 2026-07-19). Closure is EXACT float
+  equality: if your effect moves points, snap the closing point back onto
+  the first (see freehand's closed-path snap) — epsilon-close is open, and
+  an open path silently stops masking as a solid.
+  `tests/test_effect_contract.py` enforces the one-way implication
+  (`filled` ⇒ closed), purity, and determinism over every registered
+  effect automatically — your module is covered the moment it registers.
+
+  *Semantics corner, documented rather than fixed*: nested filled loops are
+  holes by even-odd parity, and both consumers agree for **proper nesting**
+  — but for *partially overlapping* filled paths in one layer they diverge:
+  `hatch_fill` XORs (`symmetric_difference` — the overlap lens comes out
+  unhatched) while `compose.build_mask` unions by representative-point
+  depth (the overlap usually occludes as solid). Partial overlap of filled
+  paths within a layer is effectively undefined behavior; emit properly
+  nested or disjoint filled loops (pre-union overlapping shapes yourself,
+  the way the brush tool spec does).
 - **Use `ctx` for stability.** `ctx.seed` is stable per layer — mix it into
   your RNG so overlapping layers differ and re-resolves are reproducible.
   `ctx.translation` is the layer's placement: sample noise fields at
