@@ -194,6 +194,20 @@ axis: the same A→B morph re-rendered as it drifts from variant A to variant B
 — the XY instrument. `relayout_capture` re-paginates a capture (or re-runs a
 batch from its sources) at a new grid without recapturing.
 
+Both instruments share **one per-layer blend core** (2026-07-19): the
+"given two versions of a layer, produce the in-between" semantics —
+`structures_match` / `lerp_paths` / `blend_generator_params` /
+`blend_effect_stacks` — live once in `tween.py`, and
+`session._interpolate_layer` composes them. The non-lerpable rule is
+uniform: floats/ints lerp; bools, seeds, refs and enums step at 0.5; a
+stack's identity is its FULL step list (`enabled` is just a bool that
+steps — disabling a step never changes compatibility). Caller policy stays
+with the callers (frame-follow folding, sweep positions and ctx-seed
+stepping are tween-side; warnings, one-sided midpoint stepping and
+snapshot regeneration are tray-side). `tests/test_interp_pinning.py` pins
+the semantics of both paths — any future interpolation feature (an XY pad,
+a third variant axis) should compose this core, never re-implement it.
+
 Neither instrument mutates stored geometry under a scrub: `master_t` drives an
 *ephemeral* overlay dict layered over `source_geometry` for one resolve, so
 the undo history and saved bytes stay identical. The **preview** for a

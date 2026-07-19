@@ -313,8 +313,15 @@ Still open, priority order (details in the session analysis):
   through `_documents_for_format` instead of swapping `self.*` under the
   lock; enables parallel interp batches.
 - **Interp fidelity**: layers only in capture B append at the END of
-  z-order in every in-between (needs a positional merge); batch steps are
-  hard-linear — accept the tween `time_curve` enum.
+  z-order (needs a positional merge) — since 2026-07-19 they only appear
+  from the midpoint step on (one-sided layers step at t=0.5 in both
+  directions; the B-only case used to crash below the midpoint). Batch
+  steps are hard-linear — accept the tween `time_curve` enum. The larger
+  2026-07-19 change: both interpolation instruments now share ONE per-layer
+  blend core in `tween.py` (`blend_effect_stacks`/`blend_generator_params`/
+  `lerp_paths`/`structures_match`), full-stack rule + tween-params-lerp
+  landed, behavior pinned in `tests/test_interp_pinning.py` — extend the
+  core, never re-fork it.
 - **Plot-cursor persistence**: the stepper's page/pass lives in browser JS
   and dies on reload; persist alongside staging (non-undoable) so a
   multi-hour flipbook survives a restart.
