@@ -151,13 +151,24 @@ class Session:
             self._frame_bbox.clear()
             return
         self._coalesce_key = coalesce
+        # The deep copy deliberately EXCLUDES staging: capture groups, their
+        # snapshots and staged documents are frozen by construction (staging
+        # mutations replace objects wholesale — see rename_capture_group), so
+        # history entries share them by reference, exactly like geometry
+        # lists. Without this exclusion every checkpoint deep-copied every
+        # capture snapshot's full geometry AND every staged document — the
+        # "snapshots are cheap by construction" invariant had broken silently
+        # when staging moved inside the Project model (found 2026-07-19).
+        staging = self.project.staging
+        self.project.staging = []
+        try:
+            proj = self.project.model_copy(deep=True)
+        finally:
+            self.project.staging = staging
+        proj.staging = list(staging)
         self._history.append(
-            (
-                self.project.model_copy(deep=True),
-                dict(self.source_geometry),
-                dict(self.svg_files),
-                {name: doc.model_copy(deep=True) for name, doc in self.staging_documents.items()},
-            )
+            (proj, dict(self.source_geometry), dict(self.svg_files),
+             dict(self.staging_documents))
         )
         # a checkpoint precedes a mutation — cached frames are about to go stale
         self._frame_lru.clear()
@@ -904,10 +915,13 @@ class Session:
             pens_used={k: v.model_copy(deep=True) for k, v in self.project.pens_used.items()},
             backend_params={k: dict(v) for k, v in self.project.backend_params.items()},
             plot_options=self.project.plot_options.model_copy(deep=True),
-            source_geometry={
-                lid: [p.model_copy(deep=True) for p in paths]
-                for lid, paths in self.source_geometry.items()
-            },
+            # geometry is shared by reference, not deep-copied: lists are only
+            # ever replaced wholesale and Path objects are never mutated (the
+            # module-purity contract, enforced by test_effect_contract), so
+            # the snapshot freezes for free — same argument as undo history.
+            # Layers stay deep-copied: regenerate/update DO rebind fields on
+            # the live layer objects (source.params etc.).
+            source_geometry=dict(self.source_geometry),
             svg_files=dict(self.svg_files),
         )
 
@@ -1067,7 +1081,9 @@ class Session:
             for pinfo, layer in zip(sheet.passes, doc.layers):
                 pinfo.name = layer.name or pinfo.name
             group.sheets.append(sheet)
-            self.staging_documents[relname] = doc.model_copy(deep=True)
+            # ownership handover, no defensive copy: staged documents are
+            # frozen at store time (reads go through staged_document's copy)
+            self.staging_documents[relname] = doc
         self.project.staging.append(group)
         return group
 
@@ -1172,8 +1188,12 @@ class Session:
         with self._lock:
             group = self._find_capture(group_id)
             self._checkpoint()
-            group.name = name.strip() or group.name
-            return group
+            # replace, never mutate: undo history shares group objects by
+            # reference, so an in-place rename would rewrite the past
+            renamed = group.model_copy(update={"name": name.strip() or group.name})
+            self.project.staging = [renamed if g.id == group_id else g
+                                    for g in self.project.staging]
+            return renamed
 
     def delete_capture_group(self, group_id: str) -> list[str]:
         with self._lock:
@@ -1199,8 +1219,12 @@ class Session:
     def duplicate_capture_group(self, group_id: str) -> CaptureGroup:
         with self._lock:
             group = self._find_capture(group_id)
+            # frozen objects are shared, not copied: the duplicate's sheets get
+            # their own ids/files but may point at the same document objects,
+            # and both groups may reference one snapshot — neither is ever
+            # mutated (the staging replace-wholesale discipline)
             docs = [
-                self.staging_documents[sheet.file].model_copy(deep=True)
+                self.staging_documents[sheet.file]
                 for sheet in group.sheets
                 if sheet.file and sheet.file in self.staging_documents
             ]
@@ -1215,7 +1239,7 @@ class Session:
                 kind=group.kind,
                 fmt=dict(group.format),
                 docs=docs,
-                snapshot=group.snapshot.model_copy(deep=True) if group.snapshot else None,
+                snapshot=group.snapshot,
                 pass_ids=pass_ids,
                 source_capture_ids=list(group.source_capture_ids),
                 warnings=list(group.warnings),
@@ -1549,7 +1573,7 @@ class Session:
                 kind="sheet",
                 fmt=fmt,
                 docs=docs,
-                snapshot=group.snapshot.model_copy(deep=True),
+                snapshot=group.snapshot,  # shared: snapshots are frozen
                 pass_ids=pass_ids,
             )
 

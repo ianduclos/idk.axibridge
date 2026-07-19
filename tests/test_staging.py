@@ -354,3 +354,50 @@ def test_staging_api_plan_export_and_plot(client):
         time.sleep(0.1)
     else:
         pytest.fail("simulator staged plot did not finish")
+
+
+# -- the cheap-checkpoint invariant (restored 2026-07-19) --------------------
+# Undo snapshots were "cheap by construction" (geometry shared by reference)
+# until staging moved capture snapshots inside the Project model — every
+# checkpoint then deep-copied every capture's geometry and every staged
+# document. These tests lock the restored discipline: staging is shared by
+# reference into history, staging mutations replace objects wholesale, and
+# capture snapshots share geometry with the live session without unfreezing.
+
+
+def test_checkpoint_shares_staging_by_reference():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 12})
+    group = session.capture_to_staging(kind="plot", name="cap")
+    doc_key = group.sheets[0].file
+    live_doc = session.staging_documents[doc_key]
+    session.update_layer(layer.id, {"transform": {
+        "a": 1, "b": 0, "c": 0, "d": 1, "e": 5.0, "f": 5.0}})  # any checkpointed mutation
+    hist_project, _, _, hist_docs = session._history[-1]
+    assert hist_project.staging[0] is group, "history must share the group object"
+    assert hist_docs[doc_key] is live_doc, "history must share the staged document"
+
+
+def test_rename_capture_replaces_the_group_object_and_undoes():
+    session.add_generated_layer("polygon", {"sides": 6, "radius": 12})
+    group = session.capture_to_staging(kind="plot", name="old name")
+    renamed = session.rename_capture_group(group.id, "new name")
+    assert renamed is not group, "rename must replace, not mutate"
+    assert group.name == "old name", "the shared (history) object must be untouched"
+    assert session.project.staging[0].name == "new name"
+    assert session.undo()
+    assert session.project.staging[0].name == "old name"
+
+
+def test_capture_snapshot_shares_geometry_and_stays_frozen():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 12})
+    group = session.capture_to_staging(kind="plot", name="cap")
+    snap = group.snapshot
+    assert snap is not None
+    live = session.source_geometry[layer.id]
+    # shared Path objects — no deep geometry copy at capture time
+    assert snap.source_geometry[layer.id][0] is live[0]
+    frozen_sig = _paths_signature(snap.source_geometry[layer.id])
+    session.regenerate_layer(layer.id, {"sides": 6, "radius": 40})
+    # regenerate REPLACED the live list; the snapshot still holds the old one
+    assert _paths_signature(snap.source_geometry[layer.id]) == frozen_sig
+    assert snap.source_geometry[layer.id][0] is not session.source_geometry[layer.id][0]
