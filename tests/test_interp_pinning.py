@@ -7,27 +7,24 @@ are unified onto one core (the 2026-07-19 review's item 1), these tests
 freeze today's observed behavior of BOTH paths, so the unification is a
 sequence of deliberate, visible changes instead of silent drift.
 
-Three pins are scheduled to CHANGE with the unification, per Ian's ruling
-(2026-07-19) that non-lerpables are exclusively bools, seeds, and mismatched
-stacks — where "stack" means the FULL step list (a step's `enabled` is just
-a bool field that steps at 0.5, and disabling a step must not change
-compatibility):
+Unification ledger (Ian's ruling, 2026-07-19: non-lerpables are exclusively
+bools, seeds, and mismatched stacks — where "stack" means the FULL step
+list, a step's `enabled` being just a bool that steps at 0.5):
 
-* ``test_pin_divergence_canvas_tween_blends_past_disabled_extra_step`` —
-  tween.py currently filters to enabled steps before comparing stacks, so a
-  disabled extra step doesn't break the match. Under the full-stack rule
-  this becomes a mismatch → step; the canvas expectation flips to match the
-  tray's.
-* ``test_pin_tray_freezes_a_tweens_own_t`` — a KNOWN FIDELITY GAP: the tray
-  keeps capture A's tween params at every step (the non-generator branch
-  never touches ``source``), so a tween-t change between captures produces
-  N identical sheets and the last step does NOT reproduce capture B.
-  TweenParams.t is a float; under the ruling it should lerp.
-* One-sided layers now step at the midpoint in BOTH directions
-  (``test_pin_one_sided_layers_step_at_midpoint``) — this pin guards the
-  2026-07-19 crash fix (B-only layers used to raise AttributeError for
-  every step with t < 0.5) and the deliberate symmetry change (A-only
-  layers used to persist across all steps).
+* Full-stack rule LANDED — ``blend_effect_stacks`` is shared by both paths;
+  ``test_pin_canvas_tween_steps_on_disabled_extra_step`` documents the flip
+  (tween.py used to blend past a disabled extra step, the tray stepped).
+* ``test_pin_tray_freezes_a_tweens_own_t`` — a KNOWN FIDELITY GAP still
+  pinned as-is: the tray keeps capture A's tween params at every step (the
+  non-generator branch never touches ``source``), so a tween-t change
+  between captures produces N identical sheets and the last step does NOT
+  reproduce capture B. TweenParams.t is a float; under the ruling it should
+  lerp — scheduled next.
+* One-sided layers step at the midpoint in BOTH directions
+  (``test_pin_one_sided_layers_step_at_midpoint``) — guards the 2026-07-19
+  crash fix (B-only layers used to raise AttributeError for every step with
+  t < 0.5) and the deliberate symmetry change (A-only layers used to
+  persist across all steps).
 
 Numbers used throughout: a closed hexagon is 7 points; multipass emits
 n + (n-1)·(count-1) points, so count 2/3/6 → 13/19/37.
@@ -90,26 +87,26 @@ def test_pin_matching_stacks_blend_identically_on_both_paths():
 # -- the divergence pins: one side flips with the unification ----------------
 
 
-def test_pin_divergence_canvas_tween_blends_past_disabled_extra_step():
-    """PRE-UNIFICATION BEHAVIOR — scheduled to flip. tween.py compares
-    enabled-filtered stacks, so B's disabled extra step doesn't break the
-    match and multipass params still blend (19 pts). Under the full-stack
-    rule this becomes a mismatch → step to A's stack (13 pts): when the
-    unification lands, this expectation changes to 13 and this docstring
-    moves to past tense."""
+def test_pin_canvas_tween_steps_on_disabled_extra_step():
+    """UNIFIED (was the divergence): tween.py used to compare
+    enabled-filtered stacks, so B's disabled extra step didn't break the
+    match and params blended (19 pts) while the tray stepped — the same A/B
+    pair morphed or jump-cut depending on the instrument. Both paths now
+    share blend_effect_stacks' full-stack rule: the extra step is a
+    mismatch, the stack steps at 0.5, t=0.25 renders A's stack (13 pts)."""
     a = _hex()
     b = _hex()
     session.update_layer(a.id, {"effects": [MP(2)]})
     session.update_layer(b.id, {"effects": [MP(6), dict(JITTER_OFF)]})
     tw = session.create_tween_layer(a.id, b.id)
     session.set_tween_params(tw.id, {"t": 0.25})
-    assert _pts(session.resolved()[tw.id]) == 19
+    assert _pts(session.resolved()[tw.id]) == 13
 
 
-def test_pin_divergence_tray_steps_on_disabled_extra_step():
-    """The tray compares FULL stacks: B's disabled extra step is a mismatch,
-    the whole stack steps at 0.5, and t=0.25 renders A's stack (13 pts) with
-    a warning. This side already matches the ruling — it survives."""
+def test_pin_tray_steps_on_disabled_extra_step():
+    """The tray side of the same rule (this side always compared full
+    stacks): B's disabled extra step is a mismatch, the whole stack steps at
+    0.5, and t=0.25 renders A's stack (13 pts) with a warning."""
     lay = _hex()
     session.update_layer(lay.id, {"effects": [MP(2)]})
     cap_a = session.capture_to_staging(kind="plot", name="A")

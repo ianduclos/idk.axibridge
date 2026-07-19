@@ -33,7 +33,7 @@ from .compose import (
 )
 from .machine import manager
 from .model import Layer, Path, PathDocument
-from .registry import get_effect, get_source
+from .registry import get_source
 from .stores import Pen, pen_library, settings_store
 from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
 
@@ -1254,10 +1254,6 @@ class Session:
     def _lerp_num(a: float, b: float, t: float) -> float:
         return a + (b - a) * t
 
-    @staticmethod
-    def _structures_match(a: list[Path], b: list[Path]) -> bool:
-        return len(a) == len(b) and all(len(pa.points) == len(pb.points) for pa, pb in zip(a, b))
-
     def _interpolate_layer(
         self,
         la: CanvasLayer | None,
@@ -1292,43 +1288,24 @@ class Session:
         for key in ("visible", "pen_id", "occluder", "receives_occlusion", "frame_follow", "name"):
             data[key] = getattr(la, key) if t < 0.5 else getattr(lb, key)
 
-        if [s.effect for s in la.effects] == [s.effect for s in lb.effects]:
-            effects = []
-            for ea, eb in zip(la.effects, lb.effects):
-                defaults = get_effect(ea.effect).Params().model_dump()
-                effects.append(EffectStep(
-                    effect=ea.effect,
-                    enabled=ea.enabled if t < 0.5 else eb.enabled,
-                    params=tween.lerp_params(ea.params, eb.params, t, defaults),
-                ))
-            data["effects"] = [e.model_dump() for e in effects]
-        else:
-            data["effects"] = [s.model_dump() for s in (la.effects if t < 0.5 else lb.effects)]
-            if la.effects or lb.effects:
-                warnings.append(f"{la.name}: effect stack changed; stepped at midpoint")
+        effects, stacks_matched = tween.blend_effect_stacks(la.effects, lb.effects, t)
+        data["effects"] = [e.model_dump() for e in effects]
+        if not stacks_matched and (la.effects or lb.effects):
+            warnings.append(f"{la.name}: effect stack changed; stepped at midpoint")
 
         out_layer = CanvasLayer(**data)
-        if (la.source.type == "generator" and la.source.generator
-                and la.source.generator == lb.source.generator):
-            src = get_source(la.source.generator)
-            defaults = src.Params().model_dump()
-            params = tween.lerp_params(la.source.params or {}, lb.source.params or {}, t, defaults)
-            out_layer.source.params = params
+        gen_params = tween.blend_generator_params(la, lb, t)
+        if gen_params is not None:
+            out_layer.source.params = gen_params
             out_layer.source.file = None
             try:
+                src = get_source(la.source.generator)
                 doc = src.generate(src.Params(**self._effective_gen_params(out_layer)))
                 return out_layer, [p for lyr in doc.layers for p in lyr.paths]
             except Exception as e:
                 warnings.append(f"{la.name}: generator interpolation failed ({e}); stepped at midpoint")
-        if self._structures_match(ga, gb):
-            paths = []
-            for pa, pb in zip(ga, gb):
-                pts = [
-                    (self._lerp_num(ax, bx, t), self._lerp_num(ay, by, t))
-                    for (ax, ay), (bx, by) in zip(pa.points, pb.points)
-                ]
-                paths.append(Path(points=pts, filled=pa.filled if t < 0.5 else pb.filled))
-            return out_layer, paths
+        if tween.structures_match(ga, gb):
+            return out_layer, tween.lerp_paths(ga, gb, t)
         chosen_geo = gb if t >= 0.5 else ga
         warnings.append(f"{la.name}: geometry structure changed; stepped at midpoint")
         return out_layer, [p.model_copy(deep=True) for p in chosen_geo]

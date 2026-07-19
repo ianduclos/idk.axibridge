@@ -51,7 +51,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from .compose import Affine, CanvasLayer, Project, _layer_seed, transform_paths
+from .compose import Affine, CanvasLayer, EffectStep, Project, _layer_seed, transform_paths
 from .model import Path
 from .registry import EffectContext, get_effect, get_source
 
@@ -160,10 +160,67 @@ def map_time_curve(local_t: float, curve: str = "linear") -> float:
     return t
 
 
-def _structures_match(ga: list[Path], gb: list[Path]) -> bool:
+def structures_match(ga: list[Path], gb: list[Path]) -> bool:
+    """Pointwise lerp needs identical structure: same path count, same point
+    count per path — what "duplicate layer" gives you."""
     return len(ga) == len(gb) and all(
         len(pa.points) == len(pb.points) for pa, pb in zip(ga, gb)
     )
+
+
+def lerp_paths(ga: list[Path], gb: list[Path], t: float) -> list[Path]:
+    """Pointwise structural lerp; requires ``structures_match(ga, gb)``.
+    ``filled`` steps at 0.5 like every bool."""
+    out: list[Path] = []
+    for pa, pb in zip(ga, gb):
+        pts = [(ax + (bx - ax) * t, ay + (by - ay) * t)
+               for (ax, ay), (bx, by) in zip(pa.points, pb.points)]
+        out.append(Path(points=pts, filled=pa.filled if t < 0.5 else pb.filled))
+    return out
+
+
+def _same_generator(la: CanvasLayer, lb: CanvasLayer) -> bool:
+    return (la.source.type == "generator" and lb.source.type == "generator"
+            and bool(la.source.generator)
+            and la.source.generator == lb.source.generator)
+
+
+def blend_generator_params(la: CanvasLayer, lb: CanvasLayer, t: float) -> dict[str, Any] | None:
+    """Same-generator param blend, or None when A/B aren't the same generator.
+    The caller regenerates (each caller folds frames/offsets its own way)."""
+    if not _same_generator(la, lb):
+        return None
+    src = get_source(la.source.generator)
+    return lerp_params(la.source.params or {}, lb.source.params or {},
+                       t, src.Params().model_dump())
+
+
+def blend_effect_stacks(
+    ea: list[EffectStep], eb: list[EffectStep], t: float,
+) -> tuple[list[EffectStep], bool]:
+    """THE stack-identity rule (Ian, 2026-07-19): the full step list IS the
+    stack — disabled steps included — and a step's ``enabled`` is just a bool
+    that steps at 0.5. Same effect-id sequence → per-step param lerp;
+    different sequences → the whole stack steps (non-lerpable). Disabling a
+    step must never change whether two layers are compatible.
+
+    Returns ``(stack, matched)`` — callers use ``matched`` for warnings.
+    Both interpolation instruments (canvas tween, tray capture blend) share
+    this function; before unification tween.py compared enabled-filtered
+    stacks and the tray compared full stacks, and the same A/B pair could
+    blend on one path and jump-cut on the other."""
+    if [s.effect for s in ea] != [s.effect for s in eb]:
+        chosen = ea if t < 0.5 else eb
+        return ([s.model_copy(deep=True) for s in chosen], False)
+    out: list[EffectStep] = []
+    for sa, sb in zip(ea, eb):
+        defaults = get_effect(sa.effect).Params().model_dump()
+        out.append(EffectStep(
+            effect=sa.effect,
+            enabled=sa.enabled if t < 0.5 else sb.enabled,
+            params=lerp_params(sa.params, sb.params, t, defaults),
+        ))
+    return (out, True)
 
 
 def check_compatible(
@@ -175,11 +232,7 @@ def check_compatible(
         return "pick two different layers"
     if la.source.type == "tween" or lb.source.type == "tween":
         return "tween-of-tween is not supported"
-    same_gen = (
-        la.source.type == "generator" and lb.source.type == "generator"
-        and la.source.generator and la.source.generator == lb.source.generator
-    )
-    if not same_gen and not _structures_match(geo_a, geo_b):
+    if not _same_generator(la, lb) and not structures_match(geo_a, geo_b):
         return ("layers are not interpolatable: need the same generator on both, "
                 "or identical path structure (use 'duplicate layer')")
     return None
@@ -188,14 +241,9 @@ def check_compatible(
 def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
                      geo_a: list[Path], geo_b: list[Path], t: float,
                      master_t: float | None = None) -> list[Path]:
-    same_gen = (
-        la.source.type == "generator" and lb.source.type == "generator"
-        and la.source.generator and la.source.generator == lb.source.generator
-    )
-    if same_gen:
+    params = blend_generator_params(la, lb, t)
+    if params is not None:
         src = get_source(la.source.generator)
-        defaults = src.Params().model_dump()
-        params = lerp_params(la.source.params or {}, lb.source.params or {}, t, defaults)
         # frame_offset is a layer-level lerped quantity (like the transform):
         # fold the interpolated offset into the generator's ``frame`` axis so an
         # A/B pair with identical params but different offsets plays the clip.
@@ -212,26 +260,16 @@ def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
         doc = src.generate(src.Params(**params))
         return [p for lyr in doc.layers for p in lyr.paths]
     # structural mode: pointwise lerp (validated to match)
-    out = []
-    for pa, pb in zip(geo_a, geo_b):
-        pts = [(ax + (bx - ax) * t, ay + (by - ay) * t)
-               for (ax, ay), (bx, by) in zip(pa.points, pb.points)]
-        out.append(Path(points=pts, filled=pa.filled if t < 0.5 else pb.filled))
-    return out
+    return lerp_paths(geo_a, geo_b, t)
 
 
 def _effects_at(la: CanvasLayer, lb: CanvasLayer, t: float):
-    """Lerped enabled-effect stack as (effect_id, params dict) pairs.
-    Mismatched stacks step whole at 0.5 (endpoint fidelity over smoothness)."""
-    ea = [s for s in la.effects if s.enabled]
-    eb = [s for s in lb.effects if s.enabled]
-    if [s.effect for s in ea] != [s.effect for s in eb]:
-        return [(s.effect, dict(s.params)) for s in (ea if t < 0.5 else eb)]
-    out = []
-    for sa, sb in zip(ea, eb):
-        defaults = get_effect(sa.effect).Params().model_dump()
-        out.append((sa.effect, lerp_params(sa.params, sb.params, t, defaults)))
-    return out
+    """The blended stack's ENABLED steps as (effect_id, params dict) pairs,
+    via the shared full-stack rule (``blend_effect_stacks``): stacks compare
+    by their full step list, ``enabled`` steps at 0.5 like any bool, and
+    mismatched sequences step whole (endpoint fidelity over smoothness)."""
+    stack, _matched = blend_effect_stacks(la.effects, lb.effects, t)
+    return [(s.effect, dict(s.params)) for s in stack if s.enabled]
 
 
 def materialize(
