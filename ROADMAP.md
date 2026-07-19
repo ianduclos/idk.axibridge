@@ -159,6 +159,29 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    (plain/sketchy/tube/wobble) swap the layer's effect stack. Workbench's
    own ✏ Draw (raw/smooth/steps/zigzag/stitch shaping, scrap-only) is
    unchanged and still the separate playground path.
+0b. **Pen tool (⚓ béziers)** — planned 2026-07-19. Photoshop grammar:
+   click = corner anchor, click-drag = smooth anchor with symmetric arms,
+   rubber-band previews the next segment, Option-drag breaks arm symmetry,
+   click-first-anchor closes (→ `filled=True` = instant occluder / region
+   input; visible ink fill = `hatch_fill` on the stack), Enter commits
+   open, Esc cancels, Backspace deletes last anchor. Storage: a `pen`
+   source with anchors + handle vectors + `closed` per subpath;
+   `generate()` flattens cubics at a bounded `flatten_tol` (~0.2 mm) — the
+   grammar generator's exact precedent, `model.py` untouched. Post-commit:
+   pen mode + selected pen layer shows an anchors/handles overlay; drags
+   regenerate with `coalesce=true` (one undo entry per editing run).
+   Toolbar becomes a mode segment: ↖ select · ✎ draw · ⚓ pen · ● brush;
+   every tool = geometry-as-params source + canvas-mode JS module (the
+   draw-mode pattern).
+0c. **Brush tool (● circle brush)** — planned 2026-07-19. A `brush`
+   source: strokes + brush radius (`[`/`]` resize, circle cursor);
+   commit = shapely buffer + union → closed `filled=True` boundary
+   polygons. Eraser = boolean difference, with the hole question settled
+   as: brush ink renders as in-source hatching computed from the shapely
+   polygon (hatch respects holes trivially); only the occlusion mask
+   over-covers a donut's hole — documented limitation, consistent with
+   the IPR-hole note under Documentation debts. No even-odd occlusion
+   change until a second feature needs it.
 1. ~~Bitmap + fat tube effects~~ — **shipped July 2026** as
    `effects/bitmap.py` (merged staircase blocks, grid anchored to layer
    translation, `solid` interior fill) and `effects/fat_tube.py`
