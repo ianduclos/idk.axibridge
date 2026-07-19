@@ -45,6 +45,7 @@ materialised geometry via the ordinary shape pipeline.
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Literal
 
@@ -53,6 +54,13 @@ from pydantic import BaseModel, Field
 from .compose import Affine, CanvasLayer, Project, _layer_seed, transform_paths
 from .model import Path
 from .registry import EffectContext, get_effect, get_source
+
+log = logging.getLogger(__name__)
+
+#: (layer_id, error repr) pairs already logged — materialize() runs on every
+#: resolve (every scrub tick for a follow_master tween), so a persistently
+#: broken tween must log its failure ONCE, not flood the ring buffer.
+_logged_failures: set[tuple[str, str]] = set()
 
 
 class TweenParams(BaseModel):
@@ -276,5 +284,13 @@ def materialize(
                 placed = eff.apply(placed, eff.Params(**params), ctx)
             out.extend(placed)
         return out
-    except Exception:
+    except Exception as exc:
+        # the no-crash contract stands (a stored project must always resolve),
+        # but swallowing silently also hides real generator/effect bugs behind
+        # an empty layer — log the first occurrence so the /api/logs ring
+        # shows WHY a tween went blank.
+        key = (layer.id, repr(exc))
+        if key not in _logged_failures:
+            _logged_failures.add(key)
+            log.warning("tween %s resolves empty: %s", layer.id, exc, exc_info=True)
         return []
