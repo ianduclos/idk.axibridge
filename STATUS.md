@@ -3,19 +3,59 @@ project: idk.axibridge
 state: active
 updated: 2026-07-19
 machine: mac+pi
-summary: Canon docs (CLAUDE.md/ARCHITECTURE.md/ROADMAP.md) audited and corrected against real drift; three build briefs written (pen+brush combined, AARON core-figure, perception-pass); Path.is_closed unifies a closed-path definition that had drifted three ways; suite at 432, all committed on main.
+summary: Deep architecture review shipped both of its structural items — one shared interpolation blend core (full-stack rule, tween-t lerps across captures, one-sided crash fixed) and the restored cheap-checkpoint invariant (staging shared by reference, snapshots externalized from project.json) — plus registry-wide contract tests; suite 481, all on main.
 next:
   - "Bench eye-check on paper: misremembered v2 (tone/mass_style on real photos), glyphgram v2 continuity dial, draw mode + response brush plots"
-  - Pull the idkpi clone to current main (lockstep after the merges — includes the compose.py/model.py/effects Path.is_closed refactor, behavior-neutral but touches shared files)
+  - Pull the idkpi clone to current main — interpolation semantics changed (see CHANGES.md feed) and the project-folder format gained staging/snapshot-*.json (legacy loads fine)
   - Run one of the three ready briefs when you want the work done: docs/plans/pen-brush-tools.md, aaron-core-figure.md, perception-pass.md
-  - Decide the tween/geometry-as-params gap (forbid / arc-length-resample / leave documented) — flagged in docs/MODULES.md, deliberately not decided this session
+  - Tween of geometry-as-params sources (drawing strokes) still hard-steps at 0.5 — documented in docs/MODULES.md, deliberately left open
   - Older URGENT-round eye-checks still open (see HANDOFF)
 handoff_for: ian
 ---
 
 # idk.axibridge — status
 
-**Session 2026-07-19 continued (Sonnet 5, no Fable in the loop).**
+**Session 2026-07-19, later (Fable): review round 2 → both structural items shipped.**
+
+A deep architecture critique (Ian asked about interpolation-axes
+compatibility, closed/open effect handling, and future curveballs) found two
+structural problems and both were fixed the same day, pinned first:
+
+- **One interpolation blend core** (`acbd717`, `d535d3e`): the canvas tween
+  and the tray capture-blend had implemented "blend two versions of a layer"
+  twice and drifted (disabled-effect handling differed — the same A/B pair
+  blended on one path, jump-cut on the other). `structures_match` /
+  `lerp_paths` / `blend_generator_params` / `blend_effect_stacks` now live
+  once in `tween.py`. Ian's ruling encoded: non-lerpables are EXCLUSIVELY
+  bools, seeds, and mismatched stacks, where stack identity is the FULL step
+  list (`enabled` is a bool that steps; disabling a step never changes
+  compatibility). Pinning first (`tests/test_interp_pinning.py`) surfaced
+  two real bugs: one-sided capture layers **crashed** below the midpoint
+  (`341b0cd`, now they step at t=0.5 both directions), and a tween-t change
+  between captures **froze every batch step at capture A's morph** — the
+  last step never reproduced capture B; TweenParams floats now lerp. Nested
+  tween-in-capture (re-derives from blended endpoints) locked as a test.
+  Any future interpolation dimension (XY pad) composes this core.
+- **Cheap-checkpoint invariant restored** (`2cf5eb6`, `5b1a828`): "snapshots
+  are cheap by construction" had silently broken when capture snapshots
+  moved inside the Project model — every checkpoint deep-copied every
+  capture's full geometry + every staged document (×8 history), and saves
+  wrote it all inline into project.json plus 4× again in history/. Staging
+  is now shared by reference into history (staging mutations replace
+  objects wholesale — rename builds a new group), capture snapshots share
+  geometry lists with the live session, and snapshots are externalized to
+  `staging/snapshot-<group>.json` (project.json stays diff-able; legacy
+  inline snapshots still load; stale files pruned on save).
+- Also shipped from the review's smaller items (`b02bee9`, `5e2a13b`):
+  **registry-wide contract tests** (`tests/test_effect_contract.py` —
+  purity, determinism, filled⇒closed, bounded numerics over every effect;
+  note: the registry is EMPTY at pytest collection unless
+  `registry.load_builtin_modules()` runs), tween materialize failures now
+  log once per (layer, error) to the /api/logs ring, and MODULES.md
+  documents the exact-equality closure rule + the partial-overlap
+  even-odd corner.
+
+**Session 2026-07-19, earlier (Sonnet 5).**
 
 Fable's own parting advice (previous session) was to spend remaining Fable
 time converting judgment into durable artifacts before losing access — this
