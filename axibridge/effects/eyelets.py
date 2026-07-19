@@ -213,7 +213,7 @@ class Eyelets(EffectModule):
         base_seed = (params.seed * 31 + ctx.seed) & 0x7FFFFFFF
         out: list[Path] = list(paths)  # originals verbatim, untouched
         for idx, path in enumerate(paths):
-            closed = len(path.points) > 2 and path.points[0] == path.points[-1]
+            closed = path.is_closed
             if closed and not params.on_closed:
                 continue  # response-brush targeting: tube outlines stay bare
             seed = (base_seed + idx * 7919) & 0x7FFFFFFF
@@ -221,7 +221,7 @@ class Eyelets(EffectModule):
         return out
 
     def _eyelets(self, path: Path, params: EyeletsParams, seed: int) -> list[Path]:
-        closed = len(path.points) > 2 and path.points[0] == path.points[-1]
+        closed = path.is_closed
         pts = _resample(path.points, _STEP)
         if len(pts) < 2:
             return []

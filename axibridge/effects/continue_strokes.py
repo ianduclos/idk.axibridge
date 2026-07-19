@@ -163,7 +163,7 @@ class ContinueStrokes(EffectModule):
         model = self._fit(paths, params)
         out: list[Path] = []
         for idx, path in enumerate(paths):
-            closed = len(path.points) > 2 and path.points[0] == path.points[-1]
+            closed = path.is_closed
             if closed or len(path.points) < 2 or model is None:
                 out.append(Path(points=list(path.points), filled=path.filled))
                 continue

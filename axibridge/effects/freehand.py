@@ -107,7 +107,7 @@ class Freehand(EffectModule):
         return out
 
     def _draw(self, path: Path, params: FreehandParams, seed: int) -> Path:
-        closed = len(path.points) > 2 and path.points[0] == path.points[-1]
+        closed = path.is_closed
         # explicit-Euler stability: keep the march well under the response scale
         ds = min(params.step, params.confidence / 8.0)
         intent = _resample(path.points, ds)

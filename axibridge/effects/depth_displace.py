@@ -171,7 +171,7 @@ class DepthDisplace(EffectModule):
 
         out: list[Path] = []
         for path in paths:
-            closed = len(path.points) > 2 and path.points[0] == path.points[-1]
+            closed = path.is_closed
             pts = _resample(path.points, params.step)
             n = len(pts)
             moved: list[tuple[float, float] | None] = []

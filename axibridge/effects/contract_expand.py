@@ -49,7 +49,7 @@ class ContractExpand(EffectModule):
         out: list[Path] = []
         for path in paths:
             pts = path.points
-            closed = len(pts) > 3 and pts[0] == pts[-1]
+            closed = path.is_closed
             if path.filled and closed:
                 shape = Polygon(pts)
                 if not shape.is_valid:

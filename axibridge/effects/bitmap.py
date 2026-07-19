@@ -130,7 +130,7 @@ class Bitmap(EffectModule):
         for path in paths:
             for x, y in _march(path.points, cell / 3.0):
                 lit.add(cell_of(x, y))
-            closed = len(path.points) > 3 and path.points[0] == path.points[-1]
+            closed = path.is_closed
             if not (params.solid and path.filled and closed):
                 continue
             shape = Polygon(path.points)

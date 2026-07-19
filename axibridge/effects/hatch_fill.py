@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field
 from shapely import affinity
 from shapely.geometry import LineString, Polygon
 
-from ..model import Path
+from ..model import Path, is_closed
 from ..registry import EffectContext, EffectModule, register_effect
 
 
@@ -76,8 +76,7 @@ class HatchFill(EffectModule):
         shapes: list[Polygon] = []
         for path in paths:
             pts = path.points
-            closed = len(pts) > 3 and pts[0] == pts[-1]
-            if not (path.filled and closed):
+            if not (path.filled and is_closed(pts)):
                 out.append(path)
                 continue
             if params.outline:

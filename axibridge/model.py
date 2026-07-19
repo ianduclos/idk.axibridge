@@ -34,6 +34,16 @@ from pydantic import BaseModel, Field
 #: A coordinate pair in millimetres, machine frame (x right, y down).
 Point = tuple[float, float]
 
+
+def is_closed(points: list[Point]) -> bool:
+    """The one definition of "closed" every consumer should share: at least
+    3 unique vertices (4 points including the closing repeat) with the first
+    exactly equal to the last. A 2-vertex back-and-forth (``[A, B, A]``, 3
+    points) is NOT closed by this definition — it can't form a valid polygon
+    (shapely needs 3 unique vertices), so treating it as closed/filled
+    elsewhere is itself a latent bug, not a looser-but-valid variant."""
+    return len(points) >= 4 and points[0] == points[-1]
+
 # Fallback layer palette (vpype-style) used when an SVG carries no colour info.
 LAYER_PALETTE = [
     "#0066cc", "#cc3300", "#00aa44", "#bb8800",
@@ -52,6 +62,13 @@ class Path(BaseModel):
 
     points: list[Point] = Field(min_length=1)
     filled: bool = False
+
+    @property
+    def is_closed(self) -> bool:
+        """See module-level :func:`is_closed` for the canonical definition —
+        this is the one every effect/compose call site should use instead of
+        re-deriving its own ``pts[0] == pts[-1]`` check."""
+        return is_closed(self.points)
 
     def length(self) -> float:
         """Pen-down distance along the polyline, in mm."""

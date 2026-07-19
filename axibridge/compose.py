@@ -43,7 +43,7 @@ from shapely.geometry import LineString, Point as ShPoint, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
-from .model import Layer, Path, PathDocument
+from .model import Layer, Path, PathDocument, is_closed
 from .registry import EffectContext, get_effect
 from .stores import Pen
 
@@ -302,7 +302,7 @@ def build_mask(
     half = max(line_diameter_mm, 0.01) / 2.0
     for p in shaped:
         pts = p.points
-        if len(pts) >= 4 and p.filled and pts[0] == pts[-1]:
+        if p.filled and p.is_closed:
             poly = Polygon(pts)
             if not poly.is_valid:
                 poly = poly.buffer(0)
@@ -364,7 +364,7 @@ def clip_paths(shaped: list[Path], mask: BaseGeometry) -> list[Path]:
             pts = _dedupe([(float(x), float(y)) for x, y in g.coords])
             if len(pts) < 2:
                 continue
-            survived_closed = len(pts) > 2 and pts[0] == pts[-1]
+            survived_closed = is_closed(pts)
             out.append(Path(points=pts, filled=p.filled and survived_closed))
     return out
 
@@ -389,7 +389,7 @@ def clip_paths_inside(shaped: list[Path], mask: BaseGeometry) -> list[Path]:
             pts = _dedupe([(float(x), float(y)) for x, y in g.coords])
             if len(pts) < 2:
                 continue
-            survived_closed = len(pts) > 2 and pts[0] == pts[-1]
+            survived_closed = is_closed(pts)
             out.append(Path(points=pts, filled=p.filled and survived_closed))
     return out
 
@@ -414,7 +414,7 @@ def region_stitch_paths(
     survived-closed rule on the stitched result.
     """
     def effected_points(pts: list[tuple[float, float]], filled: bool) -> list[tuple[float, float]]:
-        piece = Path(points=pts, filled=filled and len(pts) > 2 and pts[0] == pts[-1])
+        piece = Path(points=pts, filled=filled and is_closed(pts))
         return [pt for f in _apply_effect_stack([piece], steps, ctx) for pt in f.points]
 
     out: list[Path] = []
@@ -451,7 +451,7 @@ def region_stitch_paths(
         if not stitched:
             continue
         stitched = _dedupe(stitched)
-        survived_closed = len(stitched) > 2 and stitched[0] == stitched[-1]
+        survived_closed = is_closed(stitched)
         out.append(Path(points=stitched, filled=p.filled and survived_closed))
     return out
 

@@ -219,7 +219,7 @@ class ParasiteLine(EffectModule):
         for idx, path in enumerate(paths):
             if path.length() < params.min_length:
                 continue
-            closed = len(path.points) > 2 and path.points[0] == path.points[-1]
+            closed = path.is_closed
             if closed and not params.on_closed:
                 continue  # response-brush targeting: tube outlines stay bare
             seed = (base_seed + idx * 7919) & 0x7FFFFFFF

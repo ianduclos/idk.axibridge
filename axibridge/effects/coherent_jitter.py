@@ -106,7 +106,7 @@ class CoherentJitter(EffectModule):
         inv_wl = 1.0 / params.wavelength
         out: list[Path] = []
         for path in paths:
-            closed = len(path.points) > 2 and path.points[0] == path.points[-1]
+            closed = path.is_closed
             pts = _resample(path.points, params.step)
 
             def disp(p: tuple[float, float]) -> tuple[float, float]:

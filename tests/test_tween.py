@@ -416,6 +416,54 @@ def test_explode_tween_creates_layer_per_step():
     assert created[0].id not in {l.id for l in session.project.layers}
 
 
+# -- region x tween interaction ----------------------------------------------
+# ARCHITECTURE.md claims "since regions are ordinary layers, they transform,
+# tween, and follow the master timeline for free" — these two tests actually
+# exercise that claim rather than trusting the docstring (nothing else in the
+# suite combines the two features).
+
+
+def test_region_flag_on_a_tween_layer_shapes_layers_below():
+    """A tween layer with region=True should mask/effect layers below it in
+    z-order exactly like an ordinary region layer — the tween materializes
+    A/B into source_geometry same as any other resolve, so the region pass
+    (which only looks at CanvasLayer.region + source_geometry) shouldn't
+    care that the source happens to be a live interpolation."""
+    victim = session.add_generated_layer("polygon", {"sides": 6, "radius": 5})
+    session.update_layer(victim.id, {"transform": {
+        "a": 1, "b": 0, "c": 0, "d": 1, "e": 55.0, "f": 55.0}})  # centered inside the region below
+    a = session.add_generated_layer("polygon", {"sides": 6, "radius": 60})
+    b = session.add_generated_layer("polygon", {"sides": 6, "radius": 60})  # identical to A: deterministic silhouette at any t
+    tw = session.create_tween_layer(a.id, b.id)  # appended last -> above victim in z-order
+    session.update_layer(tw.id, {
+        "effects": [{"effect": "multipass", "enabled": True, "params": {"count": 3}}],
+    })
+
+    before = len(session.resolved()[victim.id][0].points)  # region still False (default)
+    session.update_layer(tw.id, {"region": True})
+    after_with_region = len(session.resolved()[victim.id][0].points)
+    session.update_layer(tw.id, {"region": False})
+    after_without_region = len(session.resolved()[victim.id][0].points)
+
+    assert after_with_region > before        # region=True shapes the layer below
+    assert after_without_region == before    # turning it back off releases it
+
+
+def test_tween_endpoints_can_themselves_be_region_layers():
+    """Marking A and/or B as region=True is orthogonal to tweening them —
+    materialize() only reads source.type/params, never .region — so this
+    must resolve cleanly. A/B, being regions, still never draw themselves."""
+    a, b = _pair()
+    session.update_layer(a.id, {"region": True})
+    session.update_layer(b.id, {"region": True})
+    tw = session.create_tween_layer(a.id, b.id)
+    session.set_tween_params(tw.id, {"t": 0.5})
+
+    r = session.resolved()
+    assert r[a.id] == [] and r[b.id] == []  # region endpoints never draw on their own
+    assert r[tw.id]                          # the tween itself still resolves non-empty
+
+
 def test_deleting_the_whole_group_explicitly_deletes_everything():
     """Selecting tween + BOTH keyframes and deleting must honour the explicit
     ask — no un-animate resurrection of a directly-targeted keyframe."""
