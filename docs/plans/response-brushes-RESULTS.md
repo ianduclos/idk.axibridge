@@ -13,7 +13,9 @@ Branch `feat/response-brushes`.
 - `sources/drawing.py` `render="velocity_tube"` — speed-derived width from
   the stored per-point `t_s`; slow swells, flicks taper to hairline.
   Defaults: width_min 1.0, width_max 6.0, speed_smooth_mm 8,
-  keep_centerline true. `"centerline"` output unchanged (tested).
+  keep_centerline false (2026-07-19: flipped from true — the tube alone is
+  the stroke; the response preset opts back in because its decorations
+  ride the open centerline). `"centerline"` output unchanged (tested).
 - `effects/eyelets.py` — rings at curvature extrema + open ends, seam-aware
   on closed paths, ±30% radius jitter. Defaults: radius 1.4,
   sensitivity 0.5, spacing 12, at_ends true, nudge 0.6.

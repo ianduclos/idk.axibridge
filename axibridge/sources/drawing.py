@@ -80,8 +80,9 @@ class DrawingParams(BaseModel):
         json_schema_extra={"group": "Velocity tube"},
     )
     keep_centerline: bool = Field(
-        default=True, title="Keep centerline",
-        description="Also emit the plain centerline path alongside the outline",
+        default=False, title="Keep centerline",
+        description="Also emit the plain centerline path alongside the outline "
+                    "(off: the tube alone is the stroke)",
         json_schema_extra={"group": "Velocity tube"},
     )
 

@@ -31,8 +31,12 @@ const BRUSHES = [
   // because they're closed. Hand strokes are jittery even after smoothing,
   // so eyelets run less sensitive/wider-spaced than the module defaults
   // tuned on clean synthetic paths.
+  // keep_centerline: the tube alone is the stroke by default (source default
+  // false); response opts back in because the open centerline is the skeleton
+  // its decorations ride (on_closed:false ignores the outline) — drop it and
+  // parasite/eyelets have nothing to decorate.
   { id: "response", label: "response",
-    source: { render: "velocity_tube" },
+    source: { render: "velocity_tube", keep_centerline: true },
     effects: [
       { effect: "eyelets", enabled: true, params: { on_closed: false, sensitivity: 0.7, spacing: 18 } },
       { effect: "parasite_line", enabled: true, params: { on_closed: false } },
