@@ -260,6 +260,14 @@ mechanisms are quoted there). Pull order:
    plumbing): overprint zones with pairwise intersections drawn in both
    pens; value-rule pen assignment with free hue (Cohen's color logic);
    duotone density mixing; repetition-as-pressure.
+   *Implementation note (2026-07-19)*: overprint needs cross-layer geometry,
+   which the effect protocol deliberately cannot see (effects are pure
+   single-layer functions — keep it that way). Build it as a **session-level
+   composer operation** — the `add_lineart_stack` pattern: compute the
+   pairwise shapely intersections once at creation time and emit baked
+   layers per pen. Do NOT bolt cross-layer reads onto effects, and don't
+   reach for region layers either (regions shape what's below, they don't
+   emit intersection geometry as new plottable layers).
 4. ~~**linedraw v2**~~ — **shipped 2026-07-13**: staged pipeline (edge
    extraction / stroke tracing / flow-aligned streamline hatching),
    multi-layer output by tonal band, each band its own texture + pen.
