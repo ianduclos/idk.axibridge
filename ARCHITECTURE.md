@@ -156,9 +156,17 @@ into per-layer effect stacks, leaving optimisation as a property of the
 The session keeps an 8-deep undo deque. Snapshots are cheap by construction:
 the `Project` model is deep-copied, but geometry lists are shared by
 *reference* — safe because the module contract forbids in-place mutation
-(lists are only ever replaced wholesale). Every mutating `Session` method
-checkpoints once under the lock; bulk operations (multi-delete) are one
-checkpoint so one ⌘Z restores the lot. **Coalesce** (`regenerate_layer`'s
+(lists are only ever replaced wholesale). The same discipline covers
+**staging** (2026-07-19, after the invariant had silently broken when
+capture snapshots moved inside the Project model): the checkpoint's deep
+copy excludes `staging` and shares capture groups, their snapshots, and
+staged documents by reference — which is why every staging mutation must
+*replace* objects wholesale, never edit them in place (`rename_capture_group`
+builds a new group; an in-place rename would rewrite history). Capture
+snapshots share geometry lists with the live session for the same reason —
+regenerate replaces the list, the snapshot keeps the old one. Every mutating
+`Session` method checkpoints once under the lock; bulk operations
+(multi-delete) are one checkpoint so one ⌘Z restores the lot. **Coalesce** (`regenerate_layer`'s
 `coalesce=True`) is the latched-live-edit exception: consecutive checkpoints
 carrying the same key (e.g. `("regen", layer_id)`) collapse into the run's
 first entry instead of stacking one per intermediate value, so dragging a
@@ -236,8 +244,11 @@ masks and depth background values stay separate.
 
 ## Persistence
 
-A **project is a folder**: `project.json` (the full `Project` model,
-pretty-printed, diff-able) plus `sources/*.svg` — uploaded files verbatim,
+A **project is a folder**: `project.json` (the `Project` model,
+pretty-printed, diff-able — capture snapshots' geometry is externalized to
+`staging/snapshot-<group>.json`, one compact file per capture, so a loaded
+tray doesn't turn the manifest into megabytes; legacy inline snapshots
+still load) plus `sources/*.svg` — uploaded files verbatim,
 generated *and baked* layers snapshotted as SVG (exact geometry survives
 generator-code drift; generator id+params stay in the manifest for
 re-editing) — plus `assets/*` (image assets, verbatim). Zip
