@@ -2,8 +2,9 @@
 
 Implements `docs/plans/pen-brush-tools.md` Parts 0 and 1 (toolbar segment +
 pen tool). **Part 2 (brush) was deliberately deferred to a separate pass** —
-Ian asked to start with pen only. Branch `feat/pen-tool`, 2 commits so far
-(source + tests, then toolbar/JS — this doc lands with the second).
+Ian asked to start with pen only. Branch `feat/pen-tool`, 4 commits (source +
+tests, toolbar/JS, then two hands-on-testing fixup commits — see "Post-ship
+fixes" below).
 
 ## Scope decision (asked, not improvised)
 
@@ -137,6 +138,34 @@ this since they only need self-consistent synthetic input. Hit-testing
 checks are NOT — reading the real rendered anchor's `getBoundingClientRect()`
 and dragging from there (rather than re-deriving a screen position from an
 assumed mm value) is the reliable way to test re-editing under any view.
+
+## Post-ship fixes (found by Ian using the real dev server, not caught by the Playwright pass)
+
+- **No line while placing the second point.** `redraw()` drew anchor circles
+  and the hover rubber-band to the pointer, but never the segment connecting
+  two anchors *already* placed — so committing a second anchor (plain click
+  or drag) left nothing visible until the whole subpath committed. Fixed:
+  the pending subpath's placed segments now render as solid native SVG "C"
+  curves as each anchor lands (`pendingSegmentsD`/`segmentD`); the hover
+  preview to the pointer stays dashed to read as "not committed yet."
+- **No curve visible while dragging a new anchor's handle out**, and
+  **Option-drag appeared to do nothing.** Two related gaps: (1) the live
+  drag-preview only drew the bare handle-guide line, never the actual curve
+  segment leading into the in-progress anchor, so there was nothing to
+  distinguish a productive drag from a dead one; (2) Option-drag was only
+  wired for the CURRENT anchor's own handle at placement time — re-editing a
+  committed corner anchor (no handle yet) with Option held did nothing,
+  because hit-testing only matched handle knobs that already existed (no
+  knob to grab until a handle exists). Fixed: factored `tentativeAnchor()`
+  out of `onUp` so the live preview during a drag and the actual commit
+  compute the SAME anchor and can't drift apart; `hitExisting` now treats an
+  Option-drag starting ON an anchor (not an existing handle) as "pull a new
+  one-sided `out_handle` out of it" (Illustrator's corner-to-curve
+  convention), leaving `in_handle` untouched.
+- Verified both live: a committed anchor placed via plain click-drag has
+  symmetric mirrored handles; one placed via Option-drag has `out_handle`
+  set and `in_handle: null`; the pending path's SVG `d` attribute updates on
+  every intermediate drag frame instead of staying `null` until release.
 
 ## What I'd tune
 
