@@ -2,9 +2,26 @@
 
 Implements `docs/plans/pen-brush-tools.md` Parts 0 and 1 (toolbar segment +
 pen tool). **Part 2 (brush) was deliberately deferred to a separate pass** —
-Ian asked to start with pen only. Branch `feat/pen-tool`, 5 commits (source +
-tests, toolbar/JS, then three hands-on-testing fixup commits — see "Post-ship
+Ian asked to start with pen only. Branch `feat/pen-tool`, 6 commits (source +
+tests, toolbar/JS, then four hands-on-testing fixup commits — see "Post-ship
 fixes" below).
+
+## Post-ship fix, round 3: editing before commit
+
+"Allow me to edit splines before consolidating" — until this fix, Option-
+drag re-editing only worked on an already-committed pen layer; an anchor
+placed earlier in the CURRENT, still-in-progress subpath had no way back to
+adjust its handle once you'd moved on to place the next point. `hitPending()`
+mirrors `hitExisting()` over the local `pending` array instead of a
+committed layer's subpaths; `applyAnchorEdit()` factors the shared
+anchor/handle math out of `applyEditDrag` so both paths use identical
+Option/Shift+Option semantics — only WHERE the edit lands differs (local
+mutation, no network call, vs. a coalesced server regenerate). In `onDown`,
+a pending subpath's own points take over re-editing entirely while one is in
+progress; committed-layer editing only applies once nothing is pending.
+Verified live: editing a pending anchor's handle never hits the server (no
+pen layer exists in the project yet), and the edit is exactly what lands in
+the subpath once it's finally committed.
 
 ## Post-ship fixes, round 2 (asked to plan before implementing)
 
