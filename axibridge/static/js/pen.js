@@ -311,6 +311,22 @@ const svgCircle = (cx, cy, r, cls) => svgEl("circle", { cx, cy, r, class: cls })
 const cubicPath = (p0, p1, p2, p3, cls) =>
   svgEl("path", { d: `M ${p0[0]},${p0[1]} C ${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]}`, class: cls, fill: "none" });
 
+// The already-placed segments of the pending subpath — SVG can draw the
+// cubic directly (native "C" commands), no need to flatten client-side like
+// the server does for the real Path geometry. This is what makes the shape
+// visible AS you place each anchor, not just once the whole thing commits.
+function pendingSegmentsD(anchors) {
+  if (anchors.length < 2) return null;
+  let d = `M ${anchors[0].x},${anchors[0].y}`;
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const a = anchors[i], b = anchors[i + 1];
+    const p1 = a.out_handle ? [a.x + a.out_handle[0], a.y + a.out_handle[1]] : [a.x, a.y];
+    const p2 = b.in_handle ? [b.x + b.in_handle[0], b.y + b.in_handle[1]] : [b.x, b.y];
+    d += ` C ${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${b.x},${b.y}`;
+  }
+  return d;
+}
+
 function ensureOverlay(editor) {
   if (overlay && overlay.isConnected) return overlay;
   overlay = svgEl("g", { class: "pen-overlay" });
@@ -349,7 +365,10 @@ function redraw() {
     }
   }
 
-  // the current uncommitted subpath
+  // the current uncommitted subpath: the segments placed so far, then
+  // anchors/handles on top
+  const pendingD = pendingSegmentsD(pending);
+  if (pendingD) g.appendChild(svgEl("path", { d: pendingD, class: "pen-pending-path", fill: "none" }));
   for (const a of pending) {
     if (a.out_handle) drawHandle(g, a, a.out_handle);
     if (a.in_handle) drawHandle(g, a, a.in_handle);
