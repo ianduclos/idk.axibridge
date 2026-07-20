@@ -431,7 +431,9 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 #canvas-wrap.draw-mode, #canvas-wrap.pen-mode { cursor: crosshair; }
 #canvas-wrap.draw-mode svg, #canvas-wrap.pen-mode svg { cursor: crosshair; }
 
-/* pen tool: anchor/handle overlay */
+/* pen tool: anchor/handle overlay. Anchors are small squares (Photoshop-
+   style, <rect> elements) so they read as visually distinct from the round
+   handle knobs at a glance. */
 .pen-anchor { fill: var(--paper); stroke: var(--accent); stroke-width: 0.6; }
 .pen-anchor.smooth { fill: var(--accent); }
 .pen-handle-line { stroke: var(--accent); stroke-width: 0.4; stroke-dasharray: 1.2 1; opacity: 0.7; }

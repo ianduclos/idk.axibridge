@@ -51,10 +51,21 @@ export function activatePenMode() {
 export function deactivatePenMode() {
   on = false;
   $("canvas-wrap")?.classList.remove("pen-mode");
-  pending = [];
   gesture = null;
   hoverPt = null;
-  clearOverlay();
+  // Leaving the tool FINISHES an in-progress subpath as an open line rather
+  // than discarding it — losing work silently just because you clicked
+  // another tool button would be worse than committing something you didn't
+  // explicitly ask to close. Escape (not a tool switch) is the deliberate
+  // "throw this away" gesture — see handlePenEscape. A lone anchor with
+  // nothing to connect isn't a line yet, so it's dropped rather than saved
+  // as a stray 1-point path.
+  if (pending.length >= 2) {
+    commitSubpath(false);
+  } else {
+    pending = [];
+    clearOverlay();
+  }
 }
 
 // First Escape clears a pending (uncommitted) subpath/in-progress drag
@@ -136,6 +147,10 @@ function hitDist(editor, x, y, e) {
 
 // An existing (committed) anchor or handle knob under the pointer, on the
 // active pen layer — how re-editing an already-committed shape is found.
+// Handle knobs are always FOUND here regardless of modifiers (so a plain
+// drag that starts on one doesn't fall through and accidentally begin a new
+// anchor) — but onMove only applies the edit while Option is held (handles
+// only move with Option; see the modifier scheme note on onMove).
 function hitExisting(editor, e) {
   const layer = activeLayer();
   if (!layer) return null;
@@ -217,7 +232,23 @@ function onMove(e) {
     return;
   }
 
-  applyEditDrag(gesture, bx, by);
+  if (gesture.kind === "anchor") {
+    applyEditDrag(gesture, bx, by, false);
+    gesture.dirty = true;
+    regenerateActiveLayer({ coalesce: true });
+    redraw();
+    return;
+  }
+
+  // gesture.kind === "handle": Option gates ALL handle manipulation, checked
+  // continuously (every move, not just at the initial grab) so toggling it
+  // mid-drag works — without it, this drag is inert (release harmlessly,
+  // nothing has changed). Shift+Option additionally mirrors the OPPOSITE
+  // handle onto the same line (angle only — each handle keeps its own
+  // length), so both stay "parallel" through the anchor as you drag either one.
+  if (!e.altKey) return;
+  applyEditDrag(gesture, bx, by, e.shiftKey);
+  gesture.dirty = true;
   regenerateActiveLayer({ coalesce: true });
   redraw();
 }
@@ -235,10 +266,12 @@ function onUp(e) {
     return;
   }
 
-  // anchor/handle re-edit: final frame closes out the coalesced drag run —
-  // still coalesce=true, so it folds into the SAME undo entry as the moves
-  // during this drag rather than opening a new one on release.
-  regenerateActiveLayer({ coalesce: true });
+  // final frame closes out the coalesced drag run — still coalesce=true, so
+  // it folds into the SAME undo entry as the moves during this drag rather
+  // than opening a new one on release. Skipped entirely if nothing was ever
+  // actually applied (e.g. a handle grabbed but Option never held) — no
+  // point creating a checkpoint for a drag that changed nothing.
+  if (g.dirty) regenerateActiveLayer({ coalesce: true });
   redraw();
 }
 
@@ -260,18 +293,27 @@ function tentativeAnchor(g) {
   return anchor;
 }
 
-function applyEditDrag(g, bx, by) {
+function applyEditDrag(g, bx, by, mirror) {
   const layer = activeLayer();
   if (!layer) return;
   const anchor = layer.source.params.subpaths[g.si].anchors[g.ai];
   if (g.kind === "anchor") {
     const [x, y] = clampBed(bx, by);
     anchor.x = x; anchor.y = y;
-  } else {
-    const [dx, dy] = clampHandle(bx - anchor.x, by - anchor.y);
-    if (g.side === "out") anchor.out_handle = [dx, dy];
-    else anchor.in_handle = [dx, dy];
+    return;
   }
+  const [dx, dy] = clampHandle(bx - anchor.x, by - anchor.y);
+  const draggedKey = `${g.side}_handle`;
+  const otherKey = `${g.side === "out" ? "in" : "out"}_handle`;
+  anchor[draggedKey] = [dx, dy];
+  if (!mirror) return;
+  // Angle-only mirror: the opposite handle points the other way along the
+  // SAME line, but keeps its OWN length (or, if it doesn't exist yet, starts
+  // at the dragged handle's length) — "parallel," not necessarily equal.
+  const len = Math.hypot(dx, dy);
+  const otherLen = anchor[otherKey] ? Math.hypot(anchor[otherKey][0], anchor[otherKey][1]) : len;
+  const scale = len > 1e-9 ? otherLen / len : 0;
+  anchor[otherKey] = [-dx * scale, -dy * scale];
 }
 
 async function regenerateActiveLayer({ coalesce }) {
@@ -319,6 +361,11 @@ function svgEl(tag, attrs) {
 }
 const svgLine = (x1, y1, x2, y2, cls) => svgEl("line", { x1, y1, x2, y2, class: cls });
 const svgCircle = (cx, cy, r, cls) => svgEl("circle", { cx, cy, r, class: cls });
+// Anchors render as small squares (Photoshop-style), not circles — keeps
+// them visually distinct from the round handle knobs at a glance.
+const svgSquare = (cx, cy, size, cls) =>
+  svgEl("rect", { x: cx - size / 2, y: cy - size / 2, width: size, height: size, class: cls });
+const ANCHOR_SIZE = 2.4, ANCHOR_SIZE_FIRST = 3.2; // bed mm
 const cubicPath = (p0, p1, p2, p3, cls) =>
   svgEl("path", { d: `M ${p0[0]},${p0[1]} C ${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]}`, class: cls, fill: "none" });
 
@@ -373,7 +420,7 @@ function redraw() {
         if (a.in_handle) drawHandle(g, a, a.in_handle);
       }
       for (const a of sp.anchors) {
-        g.appendChild(svgCircle(a.x, a.y, 1.3, "pen-anchor" + ((a.in_handle || a.out_handle) ? " smooth" : "")));
+        g.appendChild(svgSquare(a.x, a.y, ANCHOR_SIZE, "pen-anchor" + ((a.in_handle || a.out_handle) ? " smooth" : "")));
       }
     }
   }
@@ -388,7 +435,7 @@ function redraw() {
   }
   for (let i = 0; i < pending.length; i++) {
     const a = pending[i];
-    g.appendChild(svgCircle(a.x, a.y, i === 0 ? 1.6 : 1.3, "pen-pending-anchor"));
+    g.appendChild(svgSquare(a.x, a.y, i === 0 ? ANCHOR_SIZE_FIRST : ANCHOR_SIZE, "pen-pending-anchor"));
   }
 
   if (gesture?.kind === "place") {
@@ -404,7 +451,7 @@ function redraw() {
       }));
     }
     if (tentative.out_handle) drawHandle(g, tentative, tentative.out_handle);
-    g.appendChild(svgCircle(tentative.x, tentative.y, 1.3, "pen-pending-anchor"));
+    g.appendChild(svgSquare(tentative.x, tentative.y, ANCHOR_SIZE, "pen-pending-anchor"));
   } else if (!gesture && pending.length && hoverPt) {
     // hover rubber-band: preview the next segment from the last pending
     // anchor to the pointer, shaped by that anchor's own out_handle
