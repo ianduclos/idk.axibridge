@@ -56,7 +56,11 @@
         <input type="number" id="ab-steps" value="5" min="2" max="60" step="1" title="interpolation steps">
         <button id="ab-series" disabled>⇄ series</button>
       </div>
-      <button id="draw-toggle" title="Draw on the sheet — strokes become a Drawing layer">✎ Draw</button>
+      <div class="seg" id="tool-toggle">
+        <button data-tool="select" class="on" title="Select and transform layers">↖ Select</button>
+        <button data-tool="draw" title="Draw on the sheet — strokes become a Drawing layer">✎ Draw</button>
+        <button data-tool="pen" title="Anchor/handle pen — click for a corner, drag for a smooth curve">⚓ Pen</button>
+      </div>
       <select id="brush-select" hidden title="Brush — applies to the active drawing layer"></select>
     </div>
     <div id="canvas-wrap">

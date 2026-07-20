@@ -14,7 +14,8 @@ import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
 import { initWorkbench } from "./workbench.js";
 import { initMenu } from "./menu.js";
-import { initDrawMode } from "./draw.js";
+import { initDrawMode, activateDrawMode, deactivateDrawMode } from "./draw.js";
+import { initPenMode, activatePenMode, deactivatePenMode, handlePenEscape, refreshPenOverlay } from "./pen.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -200,6 +201,7 @@ export const actions = {
     canvas.setData({ layers: S.resolved.layers, images: mapGhosts() });
     renderLayerList();
     renderSelReadout();
+    refreshPenOverlay(); // pen's anchor/handle overlay tracks undo/redo and any other external edit
     if (opts.plan !== false) await actions.refreshPlan();
   },
 
@@ -463,8 +465,67 @@ function initTabs() {
   initWorkbench(); // no-op after first call; the modal survives re-inits
   initMenu(); // no-op after first call; the menu bar is static across project switches
   initDrawMode(); // no-op after first call (returns early if already wired)
+  initPenMode();  // no-op after first call (returns early if already wired)
   renderLayerList();
   applyPanelCollapse();
+}
+
+// ---- tool mode broker (select / draw / pen) ----------------------------------
+//
+// Exactly one canvas tool is active at a time. Each mode's activate()/
+// deactivate() lives in its own module (draw.js, pen.js); "select" is a no-op
+// pair — it's just canvas.js's existing drag/marquee behavior with no capture
+// listener stealing events. See docs/plans/pen-brush-tools.md Part 0.
+
+const TOOL_MODES = {
+  select: {},
+  draw: { activate: activateDrawMode, deactivate: deactivateDrawMode },
+  pen: { activate: activatePenMode, deactivate: deactivatePenMode, handleEscape: handlePenEscape },
+};
+
+let toolMode = "select";
+
+function setToolMode(mode) {
+  if (!TOOL_MODES[mode] || mode === toolMode) return;
+  TOOL_MODES[toolMode].deactivate?.();
+  toolMode = mode;
+  TOOL_MODES[toolMode].activate?.();
+  document.querySelectorAll("#tool-toggle button").forEach((b) => {
+    b.classList.toggle("on", b.dataset.tool === toolMode);
+  });
+}
+
+{
+  const seg = $("tool-toggle");
+  if (seg) {
+    for (const btn of seg.querySelectorAll("button")) {
+      btn.onclick = () => setToolMode(btn.dataset.tool);
+    }
+  }
+
+  // Escape: the active tool gets first refusal (e.g. pen clears a pending
+  // anchor/drag without leaving the tool); only when it declines does Escape
+  // fall through to "exit to select" — two stacked meanings on one key.
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || toolMode === "select") return;
+    if (TOOL_MODES[toolMode].handleEscape?.()) return;
+    setToolMode("select");
+  });
+
+  // the doc-preview banner has no event of its own — watch its `hidden`
+  // attribute so every tool forces back to select the instant a transient
+  // sheet/staged document takes over the canvas (drawing on top of a
+  // preview doc makes sense for none of them), re-enabling when it clears
+  const banner = $("doc-preview-banner");
+  if (banner && seg) {
+    const sync = () => {
+      const previewing = !banner.hidden;
+      seg.querySelectorAll("button").forEach((b) => { b.disabled = previewing; });
+      if (previewing) setToolMode("select");
+    };
+    new MutationObserver(sync).observe(banner, { attributes: true, attributeFilter: ["hidden"] });
+    sync();
+  }
 }
 
 // ---- sidebar: drag-resize + collapsible panels (state in localStorage) -------------
