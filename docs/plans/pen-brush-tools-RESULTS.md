@@ -2,9 +2,51 @@
 
 Implements `docs/plans/pen-brush-tools.md` Parts 0 and 1 (toolbar segment +
 pen tool). **Part 2 (brush) was deliberately deferred to a separate pass** —
-Ian asked to start with pen only. Branch `feat/pen-tool`, 4 commits (source +
-tests, toolbar/JS, then two hands-on-testing fixup commits — see "Post-ship
+Ian asked to start with pen only. Branch `feat/pen-tool`, 5 commits (source +
+tests, toolbar/JS, then three hands-on-testing fixup commits — see "Post-ship
 fixes" below).
+
+## Post-ship fixes, round 2 (asked to plan before implementing)
+
+Three more issues from hands-on use, planned via `AskUserQuestion` before
+touching code (two genuine design forks, not derivable from the existing
+code or plan):
+
+- **Unfinished shape lost on tool switch.** `deactivatePenMode()` cleared
+  `pending` unconditionally with no commit. Asked: auto-commit as an open
+  line, or keep the pending state alive (hidden) until you switch back to
+  pen? Answer: auto-commit (with "resume/extend an existing open line
+  later" flagged as a separate future idea, not built now). Leaving the
+  tool with 2+ pending anchors now commits them open, same as pressing
+  Enter; Escape remains the deliberate discard gesture — a tool switch
+  reads as "I'm done," not "throw it away." A lone anchor with nothing to
+  connect is still dropped.
+- **Handle modifier scheme redesigned.** Previously a plain drag on an
+  existing handle knob moved it; now handles are inert without Option
+  (checked continuously every pointermove, so toggling Option mid-drag
+  works — not just at the initial grab). Option+drag moves one handle
+  independently; Shift+Option+drag also mirrors the OPPOSITE handle onto
+  the same line through the anchor. Asked which mirror semantics: angle-only
+  (each handle keeps its own length) vs. full mirror (forces equal length
+  too). Answer: angle-only, matching Illustrator/Inkscape's smooth-anchor
+  convention. The same Option/Shift+Option split applies uniformly to
+  pulling a brand-new handle out of a bare corner anchor (one-sided vs.
+  symmetric-both-sides) — one code path (`applyEditDrag`'s `mirror` flag)
+  covers both origins. A handle gesture that never had Option held skips
+  the regenerate call entirely (no wasted network round-trip or empty undo
+  checkpoint for a drag that changed nothing).
+- **Anchor markers → small hollow squares** (Photoshop-style), replacing
+  circles, so they read as visually distinct from the round handle knobs.
+  The corner/smooth fill distinction (hollow vs. accent-filled) was kept —
+  useful information, orthogonal to the shape change that was actually
+  requested.
+
+Verified live (Playwright against the real dev flow, not just pytest): a
+2-anchor line auto-commits open with no Enter press; a plain handle-knob
+drag leaves `out_handle` unchanged; Option-drag moves it while `in_handle`
+stays untouched; Shift+Option-drag mirrors `in_handle` to exactly opposite
+(`cos(angle) ≈ -1.0`) while preserving its own prior length instead of
+snapping to the dragged handle's length.
 
 ## Scope decision (asked, not improvised)
 
