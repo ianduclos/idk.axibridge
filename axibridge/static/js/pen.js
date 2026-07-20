@@ -9,7 +9,11 @@
 // reach the server, exactly like draw.js commits a whole stroke at once.
 // Once committed, re-editing an anchor/handle on the SELECTED pen layer is a
 // live, coalesced regenerate per drag (one ⌘Z per drag), mirroring canvas.js's
-// own drag-then-commit split.
+// own drag-then-commit split. The anchors/handles of the CURRENT, still-
+// uncommitted subpath are ALSO re-editable the same way (same Option /
+// Shift+Option scheme) before you ever commit — pure local state, no server
+// round-trip, so you can tune a curve while still drawing it rather than
+// only after it's already a real layer.
 
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
@@ -177,6 +181,25 @@ function hitExisting(editor, e) {
   return null;
 }
 
+// Same idea as hitExisting, but over the CURRENT uncommitted subpath —
+// anchors/handles you've placed but haven't finished yet are just as
+// re-editable, entirely locally (nothing here touches the server).
+function hitPending(editor, e) {
+  for (let ai = 0; ai < pending.length; ai++) {
+    const a = pending[ai];
+    if (a.out_handle && hitDist(editor, a.x + a.out_handle[0], a.y + a.out_handle[1], e) <= HIT_PX) {
+      return { kind: "handle", side: "out", ai };
+    }
+    if (a.in_handle && hitDist(editor, a.x + a.in_handle[0], a.y + a.in_handle[1], e) <= HIT_PX) {
+      return { kind: "handle", side: "in", ai };
+    }
+    if (hitDist(editor, a.x, a.y, e) <= HIT_PX) {
+      return e.altKey ? { kind: "handle", side: "out", ai } : { kind: "anchor", ai };
+    }
+  }
+  return null;
+}
+
 // -- pointer capture -----------------------------------------------------------
 
 function onDown(e, wrap) {
@@ -193,12 +216,20 @@ function onDown(e, wrap) {
     return;
   }
 
-  // re-edit an existing committed anchor/handle — only when nothing is
-  // pending (finish or Esc-cancel the current shape first: one gesture at a time)
-  if (!pending.length) {
+  // re-edit an anchor/handle — the CURRENT uncommitted subpath if one is in
+  // progress, else an already-committed one on the active layer. Never both
+  // at once (one gesture surface at a time), so a pending shape's own points
+  // take priority and committed-layer edits stay off-limits mid-draw.
+  if (pending.length) {
+    const hit = hitPending(editor, e);
+    if (hit) {
+      gesture = { ...hit, target: "pending", downScreen: { x: e.clientX, y: e.clientY } };
+      return;
+    }
+  } else {
     const hit = hitExisting(editor, e);
     if (hit) {
-      gesture = { ...hit, downScreen: { x: e.clientX, y: e.clientY } };
+      gesture = { ...hit, target: "committed", downScreen: { x: e.clientX, y: e.clientY } };
       return;
     }
   }
@@ -233,9 +264,13 @@ function onMove(e) {
   }
 
   if (gesture.kind === "anchor") {
-    applyEditDrag(gesture, bx, by, false);
-    gesture.dirty = true;
-    regenerateActiveLayer({ coalesce: true });
+    if (gesture.target === "pending") {
+      applyPendingEditDrag(gesture, bx, by, false);
+    } else {
+      applyEditDrag(gesture, bx, by, false);
+      gesture.dirty = true;
+      regenerateActiveLayer({ coalesce: true });
+    }
     redraw();
     return;
   }
@@ -246,10 +281,17 @@ function onMove(e) {
   // nothing has changed). Shift+Option additionally mirrors the OPPOSITE
   // handle onto the same line (angle only — each handle keeps its own
   // length), so both stay "parallel" through the anchor as you drag either one.
+  // Applies identically whether the anchor is still pending or already
+  // committed — only WHERE the edit lands (locally vs. a server regenerate)
+  // differs.
   if (!e.altKey) return;
-  applyEditDrag(gesture, bx, by, e.shiftKey);
-  gesture.dirty = true;
-  regenerateActiveLayer({ coalesce: true });
+  if (gesture.target === "pending") {
+    applyPendingEditDrag(gesture, bx, by, e.shiftKey);
+  } else {
+    applyEditDrag(gesture, bx, by, e.shiftKey);
+    gesture.dirty = true;
+    regenerateActiveLayer({ coalesce: true });
+  }
   redraw();
 }
 
@@ -293,10 +335,10 @@ function tentativeAnchor(g) {
   return anchor;
 }
 
-function applyEditDrag(g, bx, by, mirror) {
-  const layer = activeLayer();
-  if (!layer) return;
-  const anchor = layer.source.params.subpaths[g.si].anchors[g.ai];
+// Core edit math, shared by committed-layer and pending-subpath editing —
+// only how the anchor OBJECT is located (and whether a server round-trip
+// follows) differs between the two callers below.
+function applyAnchorEdit(anchor, g, bx, by, mirror) {
   if (g.kind === "anchor") {
     const [x, y] = clampBed(bx, by);
     anchor.x = x; anchor.y = y;
@@ -314,6 +356,16 @@ function applyEditDrag(g, bx, by, mirror) {
   const otherLen = anchor[otherKey] ? Math.hypot(anchor[otherKey][0], anchor[otherKey][1]) : len;
   const scale = len > 1e-9 ? otherLen / len : 0;
   anchor[otherKey] = [-dx * scale, -dy * scale];
+}
+
+function applyEditDrag(g, bx, by, mirror) {
+  const layer = activeLayer();
+  if (!layer) return;
+  applyAnchorEdit(layer.source.params.subpaths[g.si].anchors[g.ai], g, bx, by, mirror);
+}
+
+function applyPendingEditDrag(g, bx, by, mirror) {
+  applyAnchorEdit(pending[g.ai], g, bx, by, mirror);
 }
 
 async function regenerateActiveLayer({ coalesce }) {
