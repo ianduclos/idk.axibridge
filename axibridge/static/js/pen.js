@@ -151,7 +151,11 @@ function hitExisting(editor, e) {
         return { kind: "handle", side: "in", si, ai };
       }
       if (hitDist(editor, a.x, a.y, e) <= HIT_PX) {
-        return { kind: "anchor", si, ai };
+        // Option/Alt-drag on the anchor itself pulls a NEW out_handle out of
+        // it (Illustrator-style "convert a corner into a curve"), rather
+        // than moving the anchor — the way to give an anchor a handle it
+        // doesn't have yet, since there's no knob to grab until one exists.
+        return e.altKey ? { kind: "handle", side: "out", si, ai } : { kind: "anchor", si, ai };
       }
     }
   }
@@ -226,13 +230,7 @@ function onUp(e) {
   gesture = null;
 
   if (g.kind === "place") {
-    const anchor = { x: g.x, y: g.y, in_handle: null, out_handle: null };
-    if (g.moved && g.dragTo) {
-      const [dx, dy] = clampHandle(g.dragTo[0] - g.x, g.dragTo[1] - g.y);
-      anchor.out_handle = [dx, dy];
-      if (!g.alt) anchor.in_handle = [-dx, -dy]; // symmetric unless Option broke it
-    }
-    pending.push(anchor);
+    pending.push(tentativeAnchor(g));
     redraw();
     return;
   }
@@ -247,6 +245,19 @@ function onUp(e) {
 function onCancel() {
   gesture = null;
   redraw();
+}
+
+// What a "place" gesture's anchor would look like if committed right now —
+// used both to finalize it on pointerup AND to preview it live during the
+// drag, so the two never drift apart.
+function tentativeAnchor(g) {
+  const anchor = { x: g.x, y: g.y, in_handle: null, out_handle: null };
+  if (g.moved && g.dragTo) {
+    const [dx, dy] = clampHandle(g.dragTo[0] - g.x, g.dragTo[1] - g.y);
+    anchor.out_handle = [dx, dy];
+    if (!g.alt) anchor.in_handle = [-dx, -dy]; // symmetric unless Option broke it
+  }
+  return anchor;
 }
 
 function applyEditDrag(g, bx, by) {
@@ -311,19 +322,21 @@ const svgCircle = (cx, cy, r, cls) => svgEl("circle", { cx, cy, r, class: cls })
 const cubicPath = (p0, p1, p2, p3, cls) =>
   svgEl("path", { d: `M ${p0[0]},${p0[1]} C ${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]}`, class: cls, fill: "none" });
 
-// The already-placed segments of the pending subpath — SVG can draw the
-// cubic directly (native "C" commands), no need to flatten client-side like
-// the server does for the real Path geometry. This is what makes the shape
-// visible AS you place each anchor, not just once the whole thing commits.
+// One cubic segment between two anchors — SVG draws it directly (native "C"
+// commands), no need to flatten client-side like the server does for the
+// real Path geometry.
+function segmentD(a, b) {
+  const p1 = a.out_handle ? [a.x + a.out_handle[0], a.y + a.out_handle[1]] : [a.x, a.y];
+  const p2 = b.in_handle ? [b.x + b.in_handle[0], b.y + b.in_handle[1]] : [b.x, b.y];
+  return `C ${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${b.x},${b.y}`;
+}
+
+// The already-placed segments of the pending subpath. This is what makes
+// the shape visible AS you place each anchor, not just once it commits.
 function pendingSegmentsD(anchors) {
   if (anchors.length < 2) return null;
   let d = `M ${anchors[0].x},${anchors[0].y}`;
-  for (let i = 0; i < anchors.length - 1; i++) {
-    const a = anchors[i], b = anchors[i + 1];
-    const p1 = a.out_handle ? [a.x + a.out_handle[0], a.y + a.out_handle[1]] : [a.x, a.y];
-    const p2 = b.in_handle ? [b.x + b.in_handle[0], b.y + b.in_handle[1]] : [b.x, b.y];
-    d += ` C ${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${b.x},${b.y}`;
-  }
+  for (let i = 0; i < anchors.length - 1; i++) d += ` ${segmentD(anchors[i], anchors[i + 1])}`;
   return d;
 }
 
@@ -378,10 +391,20 @@ function redraw() {
     g.appendChild(svgCircle(a.x, a.y, i === 0 ? 1.6 : 1.3, "pen-pending-anchor"));
   }
 
-  if (gesture?.kind === "place" && gesture.moved && gesture.dragTo) {
-    // live handle guide while dragging a new anchor's handle out
-    g.appendChild(svgLine(gesture.x, gesture.y, gesture.dragTo[0], gesture.dragTo[1], "pen-handle-line"));
-    g.appendChild(svgCircle(gesture.dragTo[0], gesture.dragTo[1], 0.9, "pen-handle-knob"));
+  if (gesture?.kind === "place") {
+    // live preview of the anchor being placed: the actual curve segment
+    // from the last already-placed anchor (using tentativeAnchor's in/out
+    // handles, exactly what commit will use), plus its own handle guide —
+    // not just a bare drag-handle line with no sense of the resulting shape
+    const tentative = tentativeAnchor(gesture);
+    if (pending.length) {
+      const last = pending[pending.length - 1];
+      g.appendChild(svgEl("path", {
+        d: `M ${last.x},${last.y} ${segmentD(last, tentative)}`, class: "pen-pending-path", fill: "none",
+      }));
+    }
+    if (tentative.out_handle) drawHandle(g, tentative, tentative.out_handle);
+    g.appendChild(svgCircle(tentative.x, tentative.y, 1.3, "pen-pending-anchor"));
   } else if (!gesture && pending.length && hoverPt) {
     // hover rubber-band: preview the next segment from the last pending
     // anchor to the pointer, shaped by that anchor's own out_handle
