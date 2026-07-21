@@ -1161,8 +1161,10 @@ export function renderLayerDetail() {
     const tw = document.createElement("div");
     tw.innerHTML = `<h3>Interpolation</h3>
       <div class="hint">A: ${nameOf(p.a)} → B: ${nameOf(p.b)} — interpolates generator params,
-      effect params and position/rotation/scale (not a shape morph). Edits to A/B update live.
-      Non-blendable differences (seeds, toggles, mismatched stacks) jump at t = 0.5.</div>
+      effect params and position/rotation/scale. Pen/drawing shapes morph anchor-by-anchor
+      when A and B share structure (same point count — what "animate" gives). Edits to A/B
+      update live. Non-blendable differences (seeds, toggles, mismatched stacks/structure)
+      jump at t = 0.5.</div>
       <div class="form" id="tw-form"></div>
       <details id="tw-stamping" class="form-group" ${p.sweep > 1 ? "open" : ""}>
         <summary>Stamping (sweep)</summary>
@@ -1188,6 +1190,7 @@ export function renderLayerDetail() {
             <label>curve</label>
             <select id="tw-time-curve" style="flex:1">
               <option value="linear">linear A→B</option>
+              <option value="cosine">cosine A→B (eased)</option>
               <option value="cosine_pingpong">cosine A→B→A</option>
             </select>
           </div>
