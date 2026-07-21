@@ -143,6 +143,31 @@ const scrub = {
   },
 };
 
+// Selecting a keyframe (the A or B sublayer of a follow_master tween) jumps
+// the master timeline to where that keyframe shows, so clicking "▸ B" to edit
+// it also previews it in the animation. A → the window's start, B → its end
+// (the linear/cosine default; a ping-pong tween reaches B mid-window, so we
+// leave those be rather than guess — scrub manually). No-op for a layer that
+// isn't a following tween's keyframe, or when the timeline panel is hidden.
+function jumpTimelineToKeyframe(layerId) {
+  const slider = $("master-t");
+  if (!slider || $("timeline-panel")?.hidden) return;
+  for (const l of S.state?.project?.layers || []) {
+    if (l.source.type !== "tween") continue;
+    const p = l.source.params || {};
+    if (!p.follow_master || (p.time_curve && p.time_curve !== "linear" && p.time_curve !== "cosine")) continue;
+    let target = null;
+    if (p.a === layerId) target = p.window_from ?? 0;
+    else if (p.b === layerId) target = p.window_to ?? 1;
+    if (target === null) continue;
+    slider.value = target;
+    const val = $("master-t-val");
+    if (val) val.textContent = `t = ${Number(target).toFixed(3)}`;
+    scrub.request(target);
+    return;
+  }
+}
+
 // Show the timeline panel when there's anything for it to drive: a tween
 // layer (whether or not it follows yet) or a frame-clip source (sequence
 // asset name ends "#"). Inside, a hint nudges the "follow timeline" opt-in
@@ -802,6 +827,7 @@ export function renderLayerList() {
       } else {
         actions.setSelection([layer.id]);
         selAnchor = layer.id;
+        jumpTimelineToKeyframe(layer.id);
       }
     };
     row.title = "click: select — shift-click: range — ⌘-click: toggle (select two layers to interpolate)";

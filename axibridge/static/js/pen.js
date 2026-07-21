@@ -209,10 +209,12 @@ function onDown(e, wrap) {
   wrap.setPointerCapture(e.pointerId);
   const editor = actions.canvas();
 
-  // closing click: back on the first pending anchor commits the subpath closed
+  // closing click: back on the first pending anchor. A plain click commits
+  // closed immediately; a click-DRAG curves JUST the closing segment by
+  // pulling the first anchor's in_handle — one spline, so the already-drawn
+  // first segment (governed by the first anchor's out_handle) is untouched.
   if (pending.length >= 2 && hitDist(editor, pending[0].x, pending[0].y, e) <= HIT_PX) {
-    gesture = null;
-    commitSubpath(true);
+    gesture = { kind: "close", moved: false, downScreen: { x: e.clientX, y: e.clientY } };
     return;
   }
 
@@ -254,7 +256,7 @@ function onMove(e) {
   const bed = editor.toBed(e);
   const [bx, by] = clampBed(bed.x, bed.y);
 
-  if (gesture.kind === "place") {
+  if (gesture.kind === "place" || gesture.kind === "close") {
     if (Math.hypot(e.clientX - gesture.downScreen.x, e.clientY - gesture.downScreen.y) > DRAG_PX) {
       gesture.moved = true;
     }
@@ -278,12 +280,11 @@ function onMove(e) {
   // gesture.kind === "handle": Option gates ALL handle manipulation, checked
   // continuously (every move, not just at the initial grab) so toggling it
   // mid-drag works — without it, this drag is inert (release harmlessly,
-  // nothing has changed). Shift+Option additionally mirrors the OPPOSITE
-  // handle onto the same line (angle only — each handle keeps its own
-  // length), so both stay "parallel" through the anchor as you drag either one.
-  // Applies identically whether the anchor is still pending or already
-  // committed — only WHERE the edit lands (locally vs. a server regenerate)
-  // differs.
+  // nothing has changed). Shift+Option additionally full-mirrors the OPPOSITE
+  // handle (exact reflection — same angle AND length), the classic symmetric
+  // smooth node. Applies identically whether the anchor is still pending or
+  // already committed — only WHERE the edit lands (locally vs. a server
+  // regenerate) differs.
   if (!e.altKey) return;
   if (gesture.target === "pending") {
     applyPendingEditDrag(gesture, bx, by, e.shiftKey);
@@ -305,6 +306,17 @@ function onUp(e) {
   if (g.kind === "place") {
     pending.push(tentativeAnchor(g));
     redraw();
+    return;
+  }
+
+  if (g.kind === "close") {
+    // drag on the closing click curves the closing segment via the first
+    // anchor's in_handle only; a plain click (no drag) closes straight
+    if (g.moved && g.dragTo) {
+      const first = pending[0];
+      first.in_handle = clampHandle(g.dragTo[0] - first.x, g.dragTo[1] - first.y);
+    }
+    commitSubpath(true);
     return;
   }
 
@@ -349,13 +361,9 @@ function applyAnchorEdit(anchor, g, bx, by, mirror) {
   const otherKey = `${g.side === "out" ? "in" : "out"}_handle`;
   anchor[draggedKey] = [dx, dy];
   if (!mirror) return;
-  // Angle-only mirror: the opposite handle points the other way along the
-  // SAME line, but keeps its OWN length (or, if it doesn't exist yet, starts
-  // at the dragged handle's length) — "parallel," not necessarily equal.
-  const len = Math.hypot(dx, dy);
-  const otherLen = anchor[otherKey] ? Math.hypot(anchor[otherKey][0], anchor[otherKey][1]) : len;
-  const scale = len > 1e-9 ? otherLen / len : 0;
-  anchor[otherKey] = [-dx * scale, -dy * scale];
+  // Full symmetric mirror (Shift+Option): the opposite handle becomes an exact
+  // reflection — same angle AND length — the classic smooth-node behaviour.
+  anchor[otherKey] = [-dx, -dy];
 }
 
 function applyEditDrag(g, bx, by, mirror) {
@@ -504,6 +512,19 @@ function redraw() {
     }
     if (tentative.out_handle) drawHandle(g, tentative, tentative.out_handle);
     g.appendChild(svgSquare(tentative.x, tentative.y, ANCHOR_SIZE, "pen-pending-anchor"));
+  } else if (gesture?.kind === "close" && pending.length >= 2) {
+    // live preview of the closing segment (last anchor → first anchor),
+    // curved by the first anchor's tentative in_handle — the first anchor's
+    // OWN out_handle (first segment) is left as-is, so only this one spline moves
+    const first = { ...pending[0] };
+    const last = pending[pending.length - 1];
+    if (gesture.moved && gesture.dragTo) {
+      first.in_handle = clampHandle(gesture.dragTo[0] - first.x, gesture.dragTo[1] - first.y);
+    }
+    g.appendChild(svgEl("path", {
+      d: `M ${last.x},${last.y} ${segmentD(last, first)}`, class: "pen-pending-path", fill: "none",
+    }));
+    if (first.in_handle) drawHandle(g, first, first.in_handle);
   } else if (!gesture && pending.length && hoverPt) {
     // hover rubber-band: preview the next segment from the last pending
     // anchor to the pointer, shaped by that anchor's own out_handle
