@@ -1,145 +1,110 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-07-19
+updated: 2026-07-21
 machine: mac+pi
-summary: Deep architecture review shipped both of its structural items — one shared interpolation blend core (full-stack rule, tween-t lerps across captures, one-sided crash fixed) and the restored cheap-checkpoint invariant (staging shared by reference, snapshots externalized from project.json) — plus registry-wide contract tests; suite 481, all on main.
+summary: Pen tool (Bézier anchor tool with full anchor/handle editing), captured-geometry tween morph + cosine ease, and a hatch-fill stroke-join were all built and verified this session, living on three unmerged feature branches awaiting review/merge.
 next:
-  - "Bench eye-check on paper: misremembered v2 (tone/mass_style on real photos), glyphgram v2 continuity dial, draw mode + response brush plots"
-  - Pull the idkpi clone to current main — interpolation semantics changed (see CHANGES.md feed) and the project-folder format gained staging/snapshot-*.json (legacy loads fine)
-  - Run one of the three ready briefs when you want the work done: docs/plans/pen-brush-tools.md, aaron-core-figure.md, perception-pass.md
-  - Tween of geometry-as-params sources (drawing strokes) still hard-steps at 0.5 — documented in docs/MODULES.md, deliberately left open
-  - Older URGENT-round eye-checks still open (see HANDOFF)
+  - "Review + merge the three session branches: feat/pen-tool (pen tool, suite ~492), feat/geometry-morph-tween (shape morph + cosine ease, suite 499), feat/hatch-connect-strokes (hatch join, suite 497) — NONE pushed yet"
+  - "Rebase feat/geometry-morph-tween onto the advanced feat/pen-tool before merging — it's stacked on an OLDER feat/pen-tool tip (cbb2df3); pen tool gained 2 more commits after"
+  - "Brush tool (ROADMAP 0c / pen-brush-tools.md Part 2) still deferred — the sibling to the shipped pen tool; Ian chose pen-only this pass"
+  - "After merging, pull the idkpi clone — geometry-as-params tween SEMANTICS change (pen/drawing shapes now MORPH instead of stepping at 0.5); add a CHANGES.md feed entry at merge time, not before"
+  - "Older bench eye-checks still open (generator v2 wave + URGENT round) — see HANDOFF; plus a new one: pen tool + animated pen morph on paper"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
 
-**Session 2026-07-19, later (Fable): review round 2 → both structural items shipped.**
+**Session 2026-07-20 → 21 (Sonnet 5 / Opus 4.8): pen tool built, tween shapes now morph, hatch strokes join. Three unmerged branches.**
 
-A deep architecture critique (Ian asked about interpolation-axes
-compatibility, closed/open effect handling, and future curveballs) found two
-structural problems and both were fixed the same day, pinned first:
+Executed `docs/plans/pen-brush-tools.md` (pen only — brush Part 2 deferred by
+Ian's call), then two adjacent features that came out of using it. Nothing
+merged to main; nothing pushed. Suites green on each branch.
 
-- **One interpolation blend core** (`acbd717`, `d535d3e`): the canvas tween
-  and the tray capture-blend had implemented "blend two versions of a layer"
-  twice and drifted (disabled-effect handling differed — the same A/B pair
-  blended on one path, jump-cut on the other). `structures_match` /
-  `lerp_paths` / `blend_generator_params` / `blend_effect_stacks` now live
-  once in `tween.py`. Ian's ruling encoded: non-lerpables are EXCLUSIVELY
-  bools, seeds, and mismatched stacks, where stack identity is the FULL step
-  list (`enabled` is a bool that steps; disabling a step never changes
-  compatibility). Pinning first (`tests/test_interp_pinning.py`) surfaced
-  two real bugs: one-sided capture layers **crashed** below the midpoint
-  (`341b0cd`, now they step at t=0.5 both directions), and a tween-t change
-  between captures **froze every batch step at capture A's morph** — the
-  last step never reproduced capture B; TweenParams floats now lerp. Nested
-  tween-in-capture (re-derives from blended endpoints) locked as a test.
-  Any future interpolation dimension (XY pad) composes this core.
-- **Cheap-checkpoint invariant restored** (`2cf5eb6`, `5b1a828`): "snapshots
-  are cheap by construction" had silently broken when capture snapshots
-  moved inside the Project model — every checkpoint deep-copied every
-  capture's full geometry + every staged document (×8 history), and saves
-  wrote it all inline into project.json plus 4× again in history/. Staging
-  is now shared by reference into history (staging mutations replace
-  objects wholesale — rename builds a new group), capture snapshots share
-  geometry lists with the live session, and snapshots are externalized to
-  `staging/snapshot-<group>.json` (project.json stays diff-able; legacy
-  inline snapshots still load; stale files pruned on save).
-- Also shipped from the review's smaller items (`b02bee9`, `5e2a13b`):
-  **registry-wide contract tests** (`tests/test_effect_contract.py` —
-  purity, determinism, filled⇒closed, bounded numerics over every effect;
-  note: the registry is EMPTY at pytest collection unless
-  `registry.load_builtin_modules()` runs), tween materialize failures now
-  log once per (layer, error) to the /api/logs ring, and MODULES.md
-  documents the exact-equality closure rule + the partial-overlap
-  even-odd corner.
+- **`feat/pen-tool`** (off main `5a31f58`; tip `4ecb49e`, suite ~492) — the
+  ⚓ pen tool, Parts 0 + 1 of the brief. `sources/pen.py` (Bézier
+  anchor/handle geometry-as-params source, adaptive de Casteljau flatten,
+  12 tests) + a 3-way toolbar mode segment (**select · draw · pen**) driven
+  by a shared `setToolMode` broker in `main.js` (draw.js refactored to
+  activate/deactivate hooks; brush button omitted until built) +
+  `static/js/pen.js` canvas mode. Then several rounds of hands-on fixes
+  (each its own commit + RESULTS note): pending-path rendered as you place
+  anchors; live curve preview while dragging a handle; Option-drag pulls a
+  one-sided handle out of a corner; **auto-commit an unfinished line on
+  tool-switch** (Escape stays the discard gesture); handles inert without
+  Option (Option = move one, **Shift+Option = full symmetric mirror** —
+  angle AND length, revised from an earlier angle-only choice); square
+  (Photoshop-style) anchor markers; editable pending anchors *before*
+  commit; **closing click-DRAG curves just the closing segment** (pulls only
+  the first anchor's in_handle, one spline, no distortion); **selecting a ▸ A
+  / ▸ B keyframe jumps the master timeline** to that end so you preview it.
+  Full record + live-verification detail: `docs/plans/pen-brush-tools-RESULTS.md`.
+- **`feat/geometry-morph-tween`** (stacked on feat/pen-tool @ `cbb2df3`; tip
+  `b06bb26`, suite 499) — **resolves the geometry-as-params tween morph that
+  MODULES.md had flagged as a deliberately-open question** (Ian directed
+  building it). `tween.blend_generator_params` now structurally deep-lerps a
+  hidden geometry field (`pen.subpaths`, `drawing.strokes`) when A and B
+  share structure — anchors, Bézier handles, points ease A→B pointwise, then
+  regenerate through the source's own flattening (true curved in-betweens,
+  not linearly-lerped points). All-or-nothing per field: mismatched counts
+  still step at 0.5 as before (the arc-length-resample case for
+  differently-shaped A/B is the one piece left open). Shared blend core, so
+  canvas tweens AND tray captures both morph. Also adds a **`cosine`** ease
+  curve (`0.5-0.5cos(pi t)`) beside `linear` and `cosine_pingpong` (the exact
+  addition ROADMAP predicted). Verified live: animated pen shape sweeps
+  mean-y 40→65→90→115→140 (was stepping), cosine eases it 40→55→90→125→140.
+  MODULES.md + ROADMAP.md updated on this branch.
+- **`feat/hatch-connect-strokes`** (off main; tip `8606992`, suite 497) —
+  `effects/hatch_fill.py` gains `connect_strokes` (opt-in, off by default):
+  merges adjacent serpentine hatch lines into one continuous stroke wherever
+  the connector stays inside the shape, cutting pen lifts; a hole still forces
+  a real lift; crosshatch passes never join to each other. Verified: a filled
+  rectangle dropped from 26 paths to 2 (**2 lifts**) with it on.
 
-**Session 2026-07-19, earlier (Sonnet 5).**
+**Merge/rebase note carried into `next`:** feat/geometry-morph-tween branched
+before feat/pen-tool's last two commits (`7af3fb4`, `4ecb49e`), so rebase it
+onto the current pen tip before merging or those pen fixes will look reverted.
 
-Fable's own parting advice (previous session) was to spend remaining Fable
-time converting judgment into durable artifacts before losing access — this
-continuation picked up two items from that list with Sonnet 5 instead:
+**Deferred this session by explicit choice:** brush tool (0c); "line modes"
+for pen (steps/zigzag/stitch — steps already exists as `bitmap` style
+`lines`; zigzag/stitch would be two new small effects — parked as its own
+task); and my read that the **⚗ Bench**'s own mouse-drawing feature is now
+largely superseded by the real Draw/Pen tools (a bench "drawing" scrap
+freezes to dead SVG; a real layer stays live) — flagged for a later,
+deliberate call, not touched.
 
-- **Canon-doc audit** (CLAUDE.md/ARCHITECTURE.md/docs/MODULES.md against
-  actual code): fixed CLAUDE.md's resolve-order invariant, which had been
-  silently missing `regions(...)` since region layers shipped (inconsistent
-  with its own handoff bullet and with ARCHITECTURE.md, which was correct);
-  documented `coalesce` in both files (shipped mid-July, was undocumented).
-  **Bigger find**: ROADMAP's "occlusion doesn't reassemble even-odd holes"
-  note — and TODAY's own brush-tool (0c) spec, built on the same claim —
-  were both stale. `compose.build_mask` has reassembled nested holes
-  correctly for occlusion, not just `hatch_fill`, since 2026-07-10
-  (`test_filled_occlusion_mask_respects_nested_holes` proves it). Both
-  corrected; the brush brief below reflects the real, better constraint.
-  `docs/MODULES.md` gained a named "geometry-as-params sources" pattern.
-- **Three build briefs** in `docs/plans/` (frozen-contract format, same as
-  `response-brushes.md`): `pen-brush-tools.md` (combined per Ian's call —
-  one philosophy doc for the tool-mode family, toolbar becomes a 4-way
-  select/draw/pen/brush segment), `aaron-core-figure.md` (settles
-  plant-morphology-over-figure-armature + reuses `effects/freehand.py`
-  directly for Cohen's carefulness parameter + a self-contained
-  never-overlap placement loop), `perception-pass.md` (agreement-as-
-  vote-count line weight; a depth detector stays optional since Depth Pro
-  isn't on the Pi venv).
-- **Architecture critique** (Ian asked specifically about tween/frame-
-  interpolation compatibility, closed-vs-open effect handling, and
-  color/3D "curveballs"): found tween's same-generator lerp only blends
-  scalar params, so geometry-as-params sources (drawing today, pen/brush
-  soon) hard-snap their actual shape at t=0.5 instead of morphing — flagged
-  as a real, deliberately-undecided design question, not fixed (Ian wants
-  it left alone for now — his own idiosyncratic workflow depends on the
-  current shape). Confirmed color/3D are both already correctly modeled
-  (pen-per-layer; depth stays an asset-space signal, never a geometry axis)
-  — validated as settled decisions, not gaps.
-- **Two small fixes made from the critique**: `Path.is_closed` (model.py)
-  replaces three drifted inline "is this closed" definitions
-  (`compose.py` used `>2` points, `hatch_fill.py` used `>3`,
-  `compose.build_mask` used the actually-correct `>=4`) — now one
-  definition, swept into `compose.py` and 8 effects. Two new tests in
-  `test_tween.py` actually exercise ARCHITECTURE.md's claim that "regions...
-  tween... for free" (nothing tested this combination before) — confirmed
-  true in both directions. Suite: 432 passed, 0 skipped when the port's
-  free. Both changes committed on main (`86eb7fd`, `f850dd9`).
+## Prior arc — 2026-07-19 (Fable + Sonnet 5): interpolation core unified, canon audit
 
-## Prior arc — 2026-07-16 → 19 (Fable, two supervised Sonnet agent runs)
+A deep architecture critique shipped two structural items, both on main
+before this session:
 
-- **Generator v2 pass** (from Ian's "blob machine / font airbrush" critique):
-  `misremembered` masses now scrub the actual silhouette (field-clipped
-  serpentine, `mass_style` keeps the v1 amoeba), a `tone` dial hatches
-  mid-dark isophotes, per-seed anchor bias varies layouts; `glyphgram`
-  distorts through one smooth field (strokes densified to ~mm vertices so
-  they can bend) and a `continuity` dial chains ends into continuous
-  almost-writing. Aesthetic rule recorded in auto-memory: structure-
-  following marks, coherent fields, chaining — never uniform scatter.
-- **Generate bench latch**: creating a layer latches the form — sliders
-  live-edit it (auto-apply on release), `＋ New layer` unlatches keeping
-  params; server merges consecutive regenerates of one layer into ONE undo
-  entry (`RegenerateBody.coalesce`). Import/assets folded into a collapsed
-  panel; sticky image/rotate/width/frame across generator switches;
-  drag-drop an image/video onto the canvas imports + selects it.
-- **Draw tool** (agent run 1, clean): `sources/drawing.py` — strokes as
-  `[[x,y,t]]` params, first-class layer; `static/js/draw.js` canvas mode;
-  brush presets. **Response brushes** (agent run 2, cut off at session
-  limit, completed by supervisor): `parasite_line` + `eyelets` effects,
-  `velocity_tube` render (speed-driven width), `response` preset. Two
-  composition bugs found post-agent: decorations must skip closed paths
-  (`on_closed`) and eyelets must run BEFORE parasite (else every dash end
-  grows a ring) — 1447 lifts → 174 for the acceptance stroke. See
-  `docs/plans/*-RESULTS.md`. `keep_centerline` now defaults off.
-- Smaller: custom scrollbars; Settings no longer renders dicts as
-  editable `[object Object]` (would have corrupted settings.json);
-  `.row[hidden]` CSS fix (Create-stack row showed for every generator).
-- **Roadmap**: pen tool (⚓ béziers, 0b) and brush tool (● circle brush,
-  0c) specced under "make what exists comfortable." *Correction, 2026-07-19*:
-  the eraser/hole caveat noted here at spec time ("occlusion mask
-  over-covers a donut's hole") was already stale when written — occlusion
-  has reassembled nested holes correctly since 2026-07-10; see the
-  continuation session above and the 0c entry in ROADMAP.md.
-- Agent-ops lesson recorded: worktree isolation is unusable here (PEP 660
-  editable install always imports the main checkout) — agents work in the
-  main checkout on feature branches; a stale agent test server holding the
-  verification port produced one false verification round.
+- **One interpolation blend core** (`acbd717`, `d535d3e`): canvas tween and
+  tray capture-blend had drifted (disabled-effect handling differed);
+  `structures_match` / `lerp_paths` / `blend_generator_params` /
+  `blend_effect_stacks` now live once in `tween.py`. Non-lerpables are
+  EXCLUSIVELY bools, seeds, mismatched stacks (stack identity = full step
+  list; `enabled` steps as a bool). Pinning (`tests/test_interp_pinning.py`)
+  caught two real bugs: one-sided capture layers crashed below the midpoint;
+  a tween-t change between captures froze every batch step at A. **This
+  session's geometry-morph builds directly on this core** — the hidden-field
+  deep-lerp slots into `blend_generator_params`.
+- **Cheap-checkpoint invariant restored** (`2cf5eb6`, `5b1a828`): staging
+  shared by reference into history; capture snapshots externalized to
+  `staging/snapshot-<group>.json` (legacy inline still loads).
+- Canon-doc audit + registry-wide contract tests (`test_effect_contract.py`);
+  `Path.is_closed` unified three drifted inline definitions; the three build
+  briefs in `docs/plans/` (pen-brush-tools, aaron-core-figure,
+  perception-pass) written — pen-brush-tools is what this session executed.
+
+## Prior arc — 2026-07-16 → 19 (generator v2, bench latch, draw/response tools)
+
+`misremembered`/`glyphgram` v2 (scribble masses + tone, coherent-field +
+continuity); generate-bench latch with coalesced undo; draw tool
+(`sources/drawing.py` + `static/js/draw.js`) and response brushes
+(`parasite_line`, `eyelets`, `velocity_tube`). Aesthetic rule (auto-memory):
+structure-following marks, coherent fields, chaining — never uniform scatter.
+Agent-ops: no worktrees (PEP 660 editable install imports main checkout);
+agents work in the main checkout on feature branches.
 
 ## Older history
 
