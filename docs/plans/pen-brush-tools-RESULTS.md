@@ -2,9 +2,33 @@
 
 Implements `docs/plans/pen-brush-tools.md` Parts 0 and 1 (toolbar segment +
 pen tool). **Part 2 (brush) was deliberately deferred to a separate pass** —
-Ian asked to start with pen only. Branch `feat/pen-tool`, 6 commits (source +
-tests, toolbar/JS, then four hands-on-testing fixup commits — see "Post-ship
+Ian asked to start with pen only. Branch `feat/pen-tool`, 7 commits (source +
+tests, toolbar/JS, then five hands-on-testing fixup commits — see "Post-ship
 fixes" below).
+
+## Post-ship fixes, round 4: closing-drag bezier, keyframe jump, full mirror
+
+Three more from hands-on use:
+
+- **Closing click-DRAG curves the closing segment** — a plain click on the
+  first anchor still closes straight, but a click-drag now pulls ONLY the
+  first anchor's `in_handle`, curving just the closing segment and leaving
+  its `out_handle` (the already-drawn first segment) untouched — "one spline,
+  no distortion." New `close` gesture with its own live preview.
+- **Selecting a keyframe jumps the master timeline** — clicking the ▸ A / ▸ B
+  sublayer of a follow_master tween scrubs the timeline to where that
+  keyframe shows (A→window start, B→window end), so selecting B to edit it
+  also previews it. Only for linear/cosine follow_master tweens; non-keyframe
+  layers (including the tween row itself) don't move the scrubber.
+  `compose.js::jumpTimelineToKeyframe`.
+- **Shift+Option is now a FULL symmetric mirror** — this SUPERSEDES round 2's
+  angle-only choice below: Ian asked for the length to mirror too, so the
+  opposite handle now becomes an exact reflection (same angle AND length —
+  the classic smooth node). Option-drag still moves one handle independently.
+
+Verified live: closing drag sets `first.in_handle` with `out_handle` still
+null and the other anchors clean; select B → master-t 1.000, A → 0.000, tween
+row unchanged; Shift+Option gives `in == -out` exactly.
 
 ## Post-ship fix, round 3: editing before commit
 
@@ -45,8 +69,9 @@ code or plan):
   independently; Shift+Option+drag also mirrors the OPPOSITE handle onto
   the same line through the anchor. Asked which mirror semantics: angle-only
   (each handle keeps its own length) vs. full mirror (forces equal length
-  too). Answer: angle-only, matching Illustrator/Inkscape's smooth-anchor
-  convention. The same Option/Shift+Option split applies uniformly to
+  too). Answer at the time: angle-only. **(Superseded in round 4 above — Ian
+  later asked for length to mirror too, so Shift+Option is now a full
+  symmetric mirror.)** The same Option/Shift+Option split applies uniformly to
   pulling a brand-new handle out of a bare corner anchor (one-sided vs.
   symmetric-both-sides) — one code path (`applyEditDrag`'s `mirror` flag)
   covers both origins. A handle gesture that never had Option held skips
