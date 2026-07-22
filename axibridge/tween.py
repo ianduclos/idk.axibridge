@@ -19,6 +19,14 @@ The contract that makes it sturdy:
   or non-generator sources: pointwise lerp of the *source* paths, which
   requires identical structure (same path/point counts — what "duplicate
   layer" gives you).
+* **Nested tweens (bilinear morph)** — an endpoint may itself be a tween, so
+  long as both sides *reduce to the same generator* (``effective_generator``
+  recurses through them). A ``sweep`` tween whose A and B are two
+  ``follow_master`` tweens gives a two-axis morph: the master timeline drives
+  the inner tweens (Xa→Xb, Ya→Yb) while sweep stamps copies across the pair
+  (X(t)→Y(t)) — every stamp is a bilinear blend of the four corner param sets,
+  computed in parameter space with no extra geometry path. Nesting is refused
+  when the sides don't share a generator (nothing coherent to lerp).
 * **Transforms lerp decomposed** (translate / rotate / scale / shear, the
   rotation along the shortest arc) — naive matrix lerp collapses rotations
   through zero scale.
@@ -187,12 +195,80 @@ def _same_generator(la: CanvasLayer, lb: CanvasLayer) -> bool:
 
 def blend_generator_params(la: CanvasLayer, lb: CanvasLayer, t: float) -> dict[str, Any] | None:
     """Same-generator param blend, or None when A/B aren't the same generator.
-    The caller regenerates (each caller folds frames/offsets its own way)."""
+    The caller regenerates (each caller folds frames/offsets its own way).
+
+    NOTE: this is the *direct* (non-nested) blend used by the capture/staging
+    tray. The live tween resolve path goes through :func:`effective_generator`,
+    which also reduces nested same-generator tweens."""
     if not _same_generator(la, lb):
         return None
     src = get_source(la.source.generator)
     return lerp_params(la.source.params or {}, lb.source.params or {},
                        t, src.Params().model_dump())
+
+
+def resolve_local_t(params: dict[str, Any], master_t: float | None = None) -> float:
+    """A tween's effective morph ``t``. With ``follow_master`` set and a master
+    value supplied, map it through the ``[window_from, window_to]`` window and
+    time curve exactly as the timeline does; otherwise the static stored ``t``.
+
+    Mirrors the window/curve mapping in ``session._materialize_tweens`` so a
+    *nested* tween samples its endpoints at the same ``t`` a top-level scrub
+    would — the two paths must not drift (the 2026-07-19 unification lesson)."""
+    if master_t is not None and params.get("follow_master"):
+        mt = min(1.0, max(0.0, master_t))
+        wf = params.get("window_from", 0.0)
+        wt = params.get("window_to", 1.0)
+        if wt > wf:
+            local = min(1.0, max(0.0, (mt - wf) / (wt - wf)))
+        else:  # degenerate window: step A -> B at the collapsed point
+            local = 0.0 if mt < wf else 1.0
+        return map_time_curve(local, params.get("time_curve", "linear"))
+    return params.get("t", 0.5)
+
+
+def effective_generator(
+    layer: CanvasLayer, project: Project | None, master_t: float | None = None,
+    _depth: int = 0,
+) -> tuple[str, dict[str, Any], float] | None:
+    """Reduce a layer to the ``(generator_id, params, frame_offset)`` it would
+    generate from — or ``None`` when it can't (non-generator source, a nested
+    tween whose sides don't share one generator, a missing/broken ref).
+
+    Recurses through tween layers: a same-generator tween reduces to its two
+    endpoints' params lerped at the tween's own effective ``t`` (``master_t``
+    drives a ``follow_master`` tween through its window/curve via
+    :func:`resolve_local_t`). This is what lets a *sweep* tween interpolate
+    between two time-animated tweens — the bilinear (time x sweep) morph —
+    entirely in parameter space, with no second geometry path. Bounded depth
+    guards against a reference cycle."""
+    if _depth > 8 or project is None and layer.source.type == "tween":
+        return None
+    src = layer.source
+    if src.type == "generator" and src.generator:
+        off = layer.frame_offset + (
+            master_t if (layer.frame_follow and master_t is not None) else 0.0)
+        return (src.generator, dict(src.params or {}), off)
+    if src.type == "tween":
+        try:
+            p = TweenParams(**(src.params or {}))
+            la = project.layer(p.a)  # type: ignore[union-attr]
+            lb = project.layer(p.b)  # type: ignore[union-attr]
+        except Exception:
+            return None
+        ega = effective_generator(la, project, master_t, _depth + 1)
+        egb = effective_generator(lb, project, master_t, _depth + 1)
+        if ega is None or egb is None or ega[0] != egb[0]:
+            return None
+        gen = ega[0]
+        ti = resolve_local_t(src.params or {}, master_t)
+        defaults = get_source(gen).Params().model_dump()
+        params = lerp_params(ega[1], egb[1], ti, defaults)
+        off = ega[2] + (egb[2] - ega[2]) * ti
+        own = layer.frame_offset + (
+            master_t if (layer.frame_follow and master_t is not None) else 0.0)
+        return (gen, params, off + own)
+    return None
 
 
 def blend_effect_stacks(
@@ -226,36 +302,56 @@ def blend_effect_stacks(
 def check_compatible(
     la: CanvasLayer, lb: CanvasLayer,
     geo_a: list[Path], geo_b: list[Path],
+    project: Project | None = None,
 ) -> str | None:
-    """None if A/B can tween; otherwise the human-readable reason."""
+    """None if A/B can tween; otherwise the human-readable reason.
+
+    Two routes make a pair interpolatable: the *parameter* route (both sides
+    reduce to the SAME generator via :func:`effective_generator` — this now
+    includes nested same-generator tweens, e.g. a sweep between two animated
+    tweens), or the *structural* route (identical path structure for pointwise
+    lerp). Nesting is allowed ONLY when the parameter route holds — a tween has
+    no fixed geometry, so two tweens that don't reduce to one generator have
+    nothing coherent to lerp."""
     if la.id == lb.id:
         return "pick two different layers"
+    ega = effective_generator(la, project) if project is not None else None
+    egb = effective_generator(lb, project) if project is not None else None
+    if ega is not None and egb is not None and ega[0] == egb[0]:
+        return None
+    # structural route: real geometry on BOTH sides (two empty lists match
+    # vacuously — an unmaterialised tween endpoint must not read as compatible)
+    if geo_a and geo_b and structures_match(geo_a, geo_b):
+        return None
     if la.source.type == "tween" or lb.source.type == "tween":
-        return "tween-of-tween is not supported"
-    if not _same_generator(la, lb) and not structures_match(geo_a, geo_b):
-        return ("layers are not interpolatable: need the same generator on both, "
-                "or identical path structure (use 'duplicate layer')")
-    return None
+        return ("interpolation layers can only nest when both sides reduce to "
+                "the same generator")
+    return ("layers are not interpolatable: need the same generator on both, "
+            "or identical path structure (use 'duplicate layer')")
 
 
 def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
                      geo_a: list[Path], geo_b: list[Path], t: float,
-                     master_t: float | None = None) -> list[Path]:
-    params = blend_generator_params(la, lb, t)
-    if params is not None:
-        src = get_source(la.source.generator)
+                     master_t: float | None = None,
+                     project: Project | None = None) -> list[Path]:
+    # Parameter route: reduce BOTH endpoints to (generator, params, offset) via
+    # effective_generator — which recurses through nested same-generator tweens,
+    # so an endpoint may be a plain generator OR an animated tween. When both
+    # reduce to one generator, blend in parameter space and regenerate.
+    ega = effective_generator(la, project, master_t)
+    egb = effective_generator(lb, project, master_t)
+    if ega is not None and egb is not None and ega[0] == egb[0]:
+        gen = ega[0]
+        src = get_source(gen)
+        params = lerp_params(ega[1], egb[1], t, src.Params().model_dump())
         # frame_offset is a layer-level lerped quantity (like the transform):
         # fold the interpolated offset into the generator's ``frame`` axis so an
         # A/B pair with identical params but different offsets plays the clip.
-        # Clip-follow: each endpoint's FULL effective offset also carries the raw
-        # (clamped) master value when that endpoint opted into ``frame_follow`` —
-        # so scrubbing the master timeline advances the clip content the ladder
-        # samples, without moving any stamp. The per-endpoint offsets lerp like
-        # the layer-level ones.
-        off_a = la.frame_offset + (master_t if (la.frame_follow and master_t is not None) else 0.0)
-        off_b = lb.frame_offset + (master_t if (lb.frame_follow and master_t is not None) else 0.0)
-        off = off_a + (off_b - off_a) * t
-        if (off or off_a or off_b) and "frame" in src.Params.model_fields:
+        # Each endpoint's effective offset already carries the raw (clamped)
+        # master value for any ``frame_follow`` layer in its reduction — so
+        # scrubbing advances the clip content without moving any stamp.
+        off = ega[2] + (egb[2] - ega[2]) * t
+        if (off or ega[2] or egb[2]) and "frame" in src.Params.model_fields:
             params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + off))
         doc = src.generate(src.Params(**params))
         return [p for lyr in doc.layers for p in lyr.paths]
@@ -300,7 +396,7 @@ def materialize(
         lb = project.layer(p.b)
         geo_a = source_geometry.get(la.id, [])
         geo_b = source_geometry.get(lb.id, [])
-        if check_compatible(la, lb, geo_a, geo_b) is not None:
+        if check_compatible(la, lb, geo_a, geo_b, project) is not None:
             return []
         if p.sweep <= 1:
             ts = [override_t if override_t is not None else p.t]
@@ -309,7 +405,7 @@ def materialize(
             ts = [i / (p.sweep + 1) for i in range(1, p.sweep + 1)]
         out: list[Path] = []
         for t in ts:
-            paths = _source_paths_at(la, lb, geo_a, geo_b, t, master_t)
+            paths = _source_paths_at(la, lb, geo_a, geo_b, t, master_t, project)
             placed = transform_paths(paths, lerp_affine(la.transform, lb.transform, t))
             ctx = EffectContext(
                 layer_id=layer.id,

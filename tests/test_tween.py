@@ -473,3 +473,98 @@ def test_deleting_the_whole_group_explicitly_deletes_everything():
     deleted = session.delete_layers([tw.id, a.id, b_id])
     assert set(deleted) == {tw.id, a.id, b_id}
     assert session.project.layers == []
+
+
+# -- nested tweens: the bilinear (time x sweep) morph -------------------------
+#
+# X and Y are each their own tween (Xa->Xb, Ya->Yb); a third tween sweeps
+# between X and Y. Same generator throughout (polygon 'radius'), so a stamp at
+# (master t, sweep s) is a bilinear blend of the four corner radii. Hexagon
+# width scales linearly with radius, so width is a faithful readout of radius.
+
+
+def _hex(radius):
+    return session.add_generated_layer("polygon", {"sides": 6, "radius": radius})
+
+
+def _width(paths):
+    xs = [x for p in paths for x, _ in p.points]
+    return max(xs) - min(xs)
+
+
+def _nested(xa=10, xb=20, ya=30, yb=40):
+    """Return (X, Y, O) where X=tween(xa,xb), Y=tween(ya,yb), O=tween(X,Y)."""
+    x = session.create_tween_layer(_hex(xa).id, _hex(xb).id)
+    y = session.create_tween_layer(_hex(ya).id, _hex(yb).id)
+    o = session.create_tween_layer(x.id, y.id)
+    return x, y, o
+
+
+def test_nested_tween_creation_is_allowed_same_generator():
+    x, y, o = _nested()
+    assert o.source.type == "tween"
+    assert session.resolved()[o.id]  # non-empty, no crash
+
+
+def test_nested_tween_of_different_generators_refused():
+    x = session.create_tween_layer(
+        session.add_generated_layer("polygon", {"sides": 5}).id,
+        session.add_generated_layer("polygon", {"sides": 6}).id)
+    y = session.create_tween_layer(
+        session.add_generated_layer("lissajous", {}).id,
+        session.add_generated_layer("lissajous", {}).id)
+    with pytest.raises(RuntimeError, match="same generator"):
+        session.create_tween_layer(x.id, y.id)
+
+
+def test_nested_endpoints_reproduce_inner_tweens():
+    """O at t=0 reproduces X's morph; O at t=1 reproduces Y's morph, for any
+    master value (the inner tweens are static here, follow_master off)."""
+    x, y, o = _nested()
+    session.set_tween_params(o.id, {"t": 0.0})
+    _approx_equal(session.resolved()[o.id], session.resolved()[x.id])
+    session.set_tween_params(o.id, {"t": 1.0})
+    _approx_equal(session.resolved()[o.id], session.resolved()[y.id])
+
+
+def test_nested_sweep_stamps_ordered_bilinear():
+    """A sweep across X(0)->Y(0): 4 stamps whose radii march monotonically from
+    just above Xa(10) toward Ya(30) — a genuine parameter interpolation, not a
+    step at 0.5."""
+    x, y, o = _nested()
+    session.set_tween_params(x.id, {"t": 0.0})
+    session.set_tween_params(y.id, {"t": 0.0})
+    session.set_tween_params(o.id, {"sweep": 4})
+    r = session.resolved()[o.id]
+    single = len(session.resolved()[x.id])
+    assert len(r) == single * 4
+    widths = [_width(r[i * single:(i + 1) * single]) for i in range(4)]
+    assert widths == sorted(widths)          # monotonic across the sweep
+    assert widths[0] != pytest.approx(widths[-1])  # actually spread, not stepped
+
+
+def test_nested_master_timeline_drives_inner_tweens():
+    """The two-axis morph: with the inner tweens on follow_master, scrubbing the
+    master moves X(t) and Y(t), so the outer sweep's stamps get wider over time
+    (Xa..Ya at t=0 -> Xb..Yb at t=1)."""
+    x, y, o = _nested()
+    session.set_tween_params(x.id, {"follow_master": True})
+    session.set_tween_params(y.id, {"follow_master": True})
+    session.set_tween_params(o.id, {"sweep": 4})
+
+    total_at0 = _width(session.resolved(master_t=0.0)[o.id])
+    total_at1 = _width(session.resolved(master_t=1.0)[o.id])
+    # widest stamp at t=1 draws from Yb(40) > widest at t=0 from Ya(30)
+    assert total_at1 > total_at0
+
+
+def test_nested_follows_live_grandchild_edits():
+    """Editing a grandchild (an inner tween's endpoint) must update the outer
+    tween — the dependency-ordered materialise keeps the cache honest."""
+    x, y, o = _nested()
+    session.set_tween_params(o.id, {"t": 1.0})  # O reproduces Y
+    before = session.resolved()[o.id]
+    yb_id = y.source.params["b"]
+    session.regenerate_layer(yb_id, {"sides": 6, "radius": 80})
+    after = session.resolved()[o.id]
+    assert [p.points for p in before] != [p.points for p in after]
