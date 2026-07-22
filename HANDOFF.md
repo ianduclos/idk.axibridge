@@ -1,8 +1,28 @@
 ---
 project: idk.axibridge
-updated: 2026-07-21
-entries: 3
+updated: 2026-07-22
+entries: 4
 ---
+
+### feat/nested-tween-morph — bilinear (timeline × sweep) tween — opened 2026-07-22, owner: ian
+- done: nested tween-of-tween now works when both sides reduce to the SAME
+  generator — a sweep tween between two `follow_master` tweens gives a
+  two-axis morph (master timeline drives Xa→Xb / Ya→Yb; sweep stamps copies
+  across X(t)→Y(t), each a bilinear blend of the four corner param sets, in
+  parameter space). Branch `feat/nested-tween-morph` (tip `f0f2d8d`), off
+  main, suite 486 green (+6 nested tests). Nothing on main; not pushed.
+- next: review + merge (independent of the other three branches — touches
+  only tween.py/session.py). AT MERGE: add a CHANGES.md feed entry
+  (interpolation semantics — `tween-of-tween is not supported` is lifted for
+  same-generator; new `effective_generator`) and pull the idkpi clone.
+- blockers: none — awaiting Ian's review/merge call. Built in response to
+  Ian's live use case (stack 4 threshold copies between two animated
+  image_threshold layers); UI path unchanged (select both tweens →
+  ⇄ Create interpolation layer → set Sweep).
+- context: axibridge/tween.py (`effective_generator`, `resolve_local_t`,
+  `check_compatible`, `_source_paths_at`), session.py
+  (`_tween_dependency_order`, `_materialize_tweens`); tests appended to
+  tests/test_tween.py.
 
 ### Three unmerged session branches — pen tool, tween morph, hatch join — opened 2026-07-21, owner: ian
 - done: all three built + suites green + live-verified (see STATUS.md this

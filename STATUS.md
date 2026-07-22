@@ -1,11 +1,12 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-07-21
+updated: 2026-07-22
 machine: mac+pi
-summary: Pen tool (Bézier anchor tool with full anchor/handle editing), captured-geometry tween morph + cosine ease, and a hatch-fill stroke-join were all built and verified this session, living on three unmerged feature branches awaiting review/merge.
+summary: Four unmerged feature branches await review/merge — the three from 07-21 (pen tool, geometry-morph tween, hatch join) plus a new feat/nested-tween-morph (bilinear timeline×sweep tween); Pi plotting was dead (wrong barrel-jack adapter, V+≈0) and is now fixed (correct 9V, V+ restored).
 next:
-  - "Review + merge the three session branches: feat/pen-tool (pen tool, suite ~492), feat/geometry-morph-tween (shape morph + cosine ease, suite 499), feat/hatch-connect-strokes (hatch join, suite 497) — NONE pushed yet"
+  - "Review + merge feat/nested-tween-morph (nested tween-of-tween bilinear morph, off main, suite 486) — independent of the other three; at merge add a CHANGES.md entry (tween-of-tween lifted for same-generator) + pull idkpi"
+  - "Review + merge the three 07-21 branches: feat/pen-tool (pen tool, suite ~492), feat/geometry-morph-tween (shape morph + cosine ease, suite 499), feat/hatch-connect-strokes (hatch join, suite 497) — NONE pushed yet"
   - "Rebase feat/geometry-morph-tween onto the advanced feat/pen-tool before merging — it's stacked on an OLDER feat/pen-tool tip (cbb2df3); pen tool gained 2 more commits after"
   - "Brush tool (ROADMAP 0c / pen-brush-tools.md Part 2) still deferred — the sibling to the shipped pen tool; Ian chose pen-only this pass"
   - "After merging, pull the idkpi clone — geometry-as-params tween SEMANTICS change (pen/drawing shapes now MORPH instead of stepping at 0.5); add a CHANGES.md feed entry at merge time, not before"
@@ -14,6 +15,13 @@ handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-07-22 (Opus 4.8): nested tween-of-tween bilinear morph built
+(`feat/nested-tween-morph`, suite 486) for Ian's stacked-threshold use case;
+Pi plotting revived after a dead motor rail traced to the wrong barrel-jack
+adapter (`QC` V+ 0023→0299). Four unmerged branches now; see HANDOFF.**
+
+---
 
 **Session 2026-07-20 → 21 (Sonnet 5 / Opus 4.8): pen tool built, tween shapes now morph, hatch strokes join. Three unmerged branches.**
 
