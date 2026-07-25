@@ -251,6 +251,10 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .seg button { border: none; border-radius: 0; background: transparent; }
 .seg button.on { background: var(--accent); color: var(--paper); }
 
+/* inline SVG toolbar icons (vendored, not emoji — currentColor tracks the
+   button's text color so .on's inverted state themes for free) */
+.tool-icon { width: 16px; height: 16px; vertical-align: -3px; margin-right: 3px; }
+
 /* backend cards */
 .backend-card {
   border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px;

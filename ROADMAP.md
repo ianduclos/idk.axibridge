@@ -4,7 +4,11 @@ Loose, ordered by conviction. Each item says *why*, so a future session (or
 a smaller model) can judge whether the reasoning still holds before acting.
 Rules of engagement for any of it: the resolve invariant and the module
 contracts (ARCHITECTURE.md, docs/MODULES.md) are not negotiable; UI changes
-must keep the zero-build ES-module setup; every numeric param stays bounded.
+must keep the zero-build ES-module setup — meaning no compiler/bundler in the
+edit-reload loop, NOT "no tooling at all"; vendored single-file libraries and
+`// @ts-check`+JSDoc are already in-bounds (see CLAUDE.md, ARCHITECTURE.md
+"Stack"). A real bundler/compiler is a separate, larger, still-undecided call
+— see "Far / undecided — UI revamp" below. Every numeric param stays bounded.
 Loose generator brainstorms (uncanny/Cohen-line direction, plus how the
 involved ones should meet the UI) live in `docs/IDEAS-generators.md`.
 
@@ -505,6 +509,85 @@ deliberately:
 - If/when: keep the IPR, registry, and resolve pipeline byte-identical;
   nodes become an alternative *editor* over `Project`, not a new engine.
   Anything that forces engine changes is the wrong node design.
+
+## Far / undecided — UI revamp (frontend tooling ceiling)
+
+Opened 2026-07-25, from a discussion prompted by the pen-tool icon (an
+emoji glyph, `⚓`, standing in for a real icon). The zero-build invariant
+(ARCHITECTURE.md "Stack") was checked against what it actually costs, since
+it hadn't been revisited since the fabric/konva rejection: are we still
+paying only for what we meant to pay for, or has "no build step" quietly
+turned into "no tooling of any kind" and started taxing things it was never
+meant to block?
+
+**What's already in-bounds without touching the invariant** (the zero-build
+rule bars a compiler/bundler from the edit-reload loop; it was never "no
+tooling at all" — see CLAUDE.md, ARCHITECTURE.md "Stack"):
+- ~~Vendored inline SVG icons~~ — **shipped 2026-07-25**: the canvas
+  toolbar's select/draw/pen buttons now use hand-authored inline SVG
+  (`currentColor`-themed, so the `.on` accent-invert state is free) instead
+  of Unicode/emoji glyphs (`↖ ✎ ⚓`). The pen icon deliberately echoes the
+  pen tool's own on-canvas anchor language (`.pen-anchor` squares) rather
+  than a generic library glyph. Legibility note for whoever touches this
+  next: thin multi-stroke detail (a bezier curve + two small squares) reads
+  as a blur at the ~16px toolbar size that actually ships — verified by
+  rendering variants in isolation before committing; bold, high-contrast
+  silhouettes (thick strokes, filled shapes) are what survives the scale-
+  down, not literal small-scale fidelity to a bigger design.
+- Still open, same tier (vendor-a-file, no npm/bundler): a matching pass
+  over the toolbar's remaining emoji glyphs (`⛶` zoom-fit, `▶` animate,
+  `⇄` series, plus any in the layer list / panels) for visual consistency
+  with the new icon buttons — do this as one pass, not piecemeal, so the
+  icon set reads as one system rather than accreting ad hoc.
+- `// @ts-check` + JSDoc across `static/js/*.js` — real type-checking (catches
+  the "passed a layer where an id was expected" class of bug) as an
+  editor/CI lint pass, zero compiled output, zero runtime cost.
+- A single vendored ESM component library (htm+preact is the known pattern
+  for this — templated/reactive components via plain `<script
+  type="module">` imports, no npm, no bundler) for the parts of the UI that
+  are pure DOM-wrangling duplication: the growing set of panel/tab bodies
+  (Compose/Draw/Pen/Bench/Timeline/Plot), the near-term list below.
+
+**What a real bundler/compiler (Vite + TypeScript + a compiled framework)
+would add on top, that the vendored tier can't:** compiled reactivity
+(fine-grained DOM updates without hand-written diffing), full TS across
+module boundaries (not just per-file JSDoc), CSS tooling (Tailwind/
+PostCSS), code-splitting/minification. Note how much of the classic "why
+npm" list does NOT apply here: geometry and authority are deliberately
+server-side (single-resolve invariant) — the frontend is thin (forms, one
+canvas, SSE) — so there's no large client-side data layer that needs a real
+framework's diffing to stay fast.
+
+**Costs of lifting it**, unchanged from the original call: the Node
+toolchain question for the idkpi clone (checked 2026-07-25 — Pi-scheduled
+agents currently work through `pytest`/PIL renders, never a browser, so
+this is real but narrower than it sounds: it'd only bite the day a
+Pi-scheduled agent needs to touch and verify frontend code); view-source
+debuggability; and the standing philosophy that rejected fabric/konva
+specifically for being "heavy and build-chain-y" for a single-operator
+instrument — a real toolchain reopens dependency/lockfile/version-drift
+overhead that the Python side has stayed almost entirely free of.
+
+**Previously-costed-out things this bears on**, so they're not silently
+re-litigated piecemeal later:
+- The near-term UI comfort list (collapsible panels, drag-to-reorder
+  layers, keyboard nudge) is exactly the kind of hand-rolled DOM code a
+  component layer would shrink — try the vendored htm+preact tier there
+  first if the hand-written version starts feeling like the bottleneck.
+- The node question above already flags "zero-build vanilla JS node editors
+  are non-trivial" as one of nodes' costs — if nodes are ever pursued, this
+  question and that one interact directly (a node editor is the strongest
+  concrete case for a real component framework, not just DOM cleanup).
+- A dope-sheet/keyframe editor (mentioned under Animation's deferred list)
+  is a similarly graph/state-heavy UI that would lean on the same tooling
+  question.
+
+**Criterion for reopening the "real bundler" question**: not "would it be
+nicer" — it always would. Reopen only when a *specific* wanted feature
+(the node editor, a dope-sheet, real drag-and-drop panel layout) genuinely
+needs compiled reactivity or cross-file TS, and the vendored-ESM tier has
+been tried and demonstrably isn't enough for it. Until then this stays
+here, not acted on.
 
 ## Documentation / robustness debts
 

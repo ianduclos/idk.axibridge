@@ -1,8 +1,27 @@
 ---
 project: idk.axibridge
 updated: 2026-07-25
-entries: 3
+entries: 4
 ---
+
+### hatch_fill connect_strokes v2: boundary-hugging connector — opened 2026-07-25, owner: opus
+- done: root-caused the "loose ends" Ian saw on a concave/holed shape
+  (screenshot this session) — `_join_where_possible`'s straight-line-only
+  connector test fails constantly near cusps/holes, exactly where joining
+  matters most. Loose plan written: `docs/plans/hatch-connect-strokes-v2.md`.
+- next: implement the boundary-hugging connector (walk the shape's own
+  boundary ring between two endpoints when the straight connector fails,
+  instead of forcing a lift) — the fix Ian specifically asked for. The plan
+  doc also notes two smaller, independent wins (min-length fragment filter,
+  greedy nearest-reachable join) that are worth doing alongside it but
+  aren't the main ask.
+- blockers: none — this is intentionally a loose/unfrozen plan (unlike the
+  other `docs/plans/*.md` briefs), leaving the exact mechanics to whoever
+  picks it up.
+- context: `axibridge/effects/hatch_fill.py` (`_hatch`, `_join_where_possible`,
+  lines ~56-105); `docs/plans/hatch-connect-strokes-v2.md` has the full
+  writeup, constraints (hole still forces a lift, crosshatch passes never
+  join, effects stay pure), and a verification sketch.
 
 ### Post-merge follow-through: idkpi pull + push + bench check — opened 2026-07-25, owner: ian
 - done: all four pending branches (feat/nested-tween-morph, feat/pen-tool,

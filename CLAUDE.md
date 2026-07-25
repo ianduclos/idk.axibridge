@@ -77,6 +77,16 @@ before structural changes.
   cached grayscale/alpha); they travel in the project folder's `assets/`.
   Effects/generators reference them by name via a string param with
   `json_schema_extra={"format": "asset"}` (renders as dropdown + upload).
+- **Frontend stays build-free, not tool-free.** Zero-build means no
+  compiler/bundler in the edit-reload loop (Pi has no Node toolchain; the
+  served file is the real source, view-source debuggable) — it does NOT
+  mean hand-authoring everything from scratch forever. In-bounds without
+  touching the invariant: vendored inline SVG icons (not emoji — shipped
+  2026-07-25 for the canvas toolbar), `// @ts-check` + JSDoc for real type
+  checking as an editor/lint pass (no compiled output), a single vendored
+  ESM library (e.g. htm+preact, one file, no npm/node_modules) for component
+  reuse. A real bundler/compiler is the bigger call — see ROADMAP.md "UI
+  revamp" for what it would unlock and the criterion for reopening it.
 - `estimate.py` is an estimator, never a motion planner.
 - In the svgelements-based reader, mm conversion uses svgelements' own
   constant (`_SE_PX_PER_MM` ≠ 96/25.4) — required for exact save/load
@@ -122,7 +132,9 @@ before structural changes.
   carrying no explicit hole *field* — occlusion and hatch_fill both already
   reassemble nesting-derived holes correctly as of 2026-07-10, that part is
   settled, only a first-class representation is open; the node-editor
-  question; the unsaved-work autosave guard) are tracked in ROADMAP.md's "Far /
+  question; the unsaved-work autosave guard; the frontend build-tooling
+  question — zero-build vs. a vendored-ESM middle ground vs. a real
+  bundler/compiler, opened 2026-07-25) are tracked in ROADMAP.md's "Far /
   undecided" and "Documentation / robustness debts" sections, each with the
   criterion for when to revisit. Don't resolve one implicitly as a side
   effect of an unrelated change — if a task forces the issue, stop and flag

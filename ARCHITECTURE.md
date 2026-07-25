@@ -297,6 +297,15 @@ debuggable; the only "framework" is ~80 lines of schema→form rendering and a
 heavy, and build-chain-y); shapely for occlusion; svgelements for fill-aware
 SVG reading; vpype for optimisation ops and SVG export.
 
+**Zero-build scope (revised 2026-07-25):** the invariant bars a
+compiler/bundler from the edit-reload loop, not all tooling. Vendoring a
+single self-contained ESM file (an icon sprite, htm+preact) or using
+`// @ts-check` + JSDoc as an editor/lint pass (no compiled output) don't
+touch either original reason (Pi has no Node toolchain; the served file is
+the real source). A real bundler/compiler is a bigger, deliberately undecided
+call — see ROADMAP.md "UI revamp" for what it would unlock and the criterion
+for reopening it.
+
 **Environment pinning:** the launchers hard-code the venv interpreter
 because the classic failure is pyaxidraw installed into a different Python
 than the server runs from. Backend `available()` diagnostics therefore name
