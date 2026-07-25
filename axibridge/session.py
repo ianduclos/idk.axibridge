@@ -432,6 +432,34 @@ class Session:
     def _tweens(self) -> list[CanvasLayer]:
         return [l for l in self.project.layers if l.source.type == "tween"]
 
+    def _tween_dependency_order(self) -> list[CanvasLayer]:
+        """Tween layers ordered so a tween is materialised AFTER any tween it
+        references. Nested tweens (a sweep between two tweens) need their inner
+        tweens resolved first: the inner geometry must be in the ephemeral
+        ``geo`` overlay, and its list identity is folded into the outer tween's
+        cache key, so a stale ordering would let a grandchild edit go unseen.
+        A reference cycle is broken by the visited/on-stack guard."""
+        tweens = self._tweens()
+        by_id = {l.id: l for l in tweens}
+        ordered: list[CanvasLayer] = []
+        seen: set[str] = set()
+
+        def visit(layer: CanvasLayer, stack: set[str]) -> None:
+            if layer.id in seen or layer.id in stack:
+                return
+            stack.add(layer.id)
+            for rid in self._tween_refs(layer):
+                dep = by_id.get(rid)
+                if dep is not None:
+                    visit(dep, stack)
+            stack.discard(layer.id)
+            seen.add(layer.id)
+            ordered.append(layer)
+
+        for layer in tweens:
+            visit(layer, set())
+        return ordered
+
     @staticmethod
     def _tween_refs(layer: CanvasLayer) -> tuple[Any, Any]:
         p = layer.source.params or {}
@@ -579,7 +607,8 @@ class Session:
             la = self.project.layer(a_id)
             lb = self.project.layer(b_id)
             reason = tween.check_compatible(
-                la, lb, self.source_geometry.get(a_id, []), self.source_geometry.get(b_id, [])
+                la, lb, self.source_geometry.get(a_id, []),
+                self.source_geometry.get(b_id, []), self.project,
             )
             if reason:
                 raise RuntimeError(reason)
@@ -1836,9 +1865,10 @@ class Session:
 
         read_geo = geo if geo is not None else self.source_geometry
         clamped_master = None if master_t is None else min(1.0, max(0.0, master_t))
-        for layer in self.project.layers:
-            if layer.source.type != "tween":
-                continue
+        # Dependency order (inner tweens first) so a nested tween reads a fresh
+        # inner result — for its geometry AND its cache key. See
+        # _tween_dependency_order.
+        for layer in self._tween_dependency_order():
             params = layer.source.params or {}
             override_t: float | None = None
             if master_t is not None and params.get("follow_master"):
