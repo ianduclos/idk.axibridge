@@ -96,3 +96,67 @@ def test_hatch_fill_treats_nested_loops_as_holes():
     for line in hatch:
         for x, y in line.points:
             assert not (15.5 < x < 24.5 and 15.5 < y < 24.5), "hatch entered the hole"
+
+
+def test_hatch_fill_connect_strokes_off_by_default():
+    eff = get_effect("hatch_fill")
+    unjoined = eff.apply([_square()], eff.Params(spacing=2.0, angle_deg=0, inset=0), EffectContext())
+    explicit_off = eff.apply(
+        [_square()], eff.Params(spacing=2.0, angle_deg=0, inset=0, connect_strokes=False), EffectContext())
+    assert [p.points for p in unjoined] == [p.points for p in explicit_off]
+
+
+def test_hatch_fill_connect_strokes_merges_a_holeless_shape_into_one_stroke():
+    eff = get_effect("hatch_fill")
+    square = _square()
+    unjoined = eff.apply([square], eff.Params(spacing=2.0, angle_deg=0, inset=0), EffectContext())
+    joined = eff.apply(
+        [square], eff.Params(spacing=2.0, angle_deg=0, inset=0, connect_strokes=True), EffectContext())
+    unjoined_hatch = [p for p in unjoined if not p.filled]
+    joined_hatch = [p for p in joined if not p.filled]
+    assert len(unjoined_hatch) > 1  # several separate scanlines to begin with
+    assert len(joined_hatch) == 1  # a plain square has no holes: everything joins
+    # no points lost or duplicated in the merge — just concatenated
+    total_unjoined_pts = sum(len(p.points) for p in unjoined_hatch)
+    assert len(joined_hatch[0].points) == total_unjoined_pts
+
+
+def test_hatch_fill_connect_strokes_still_lifts_around_a_hole():
+    eff = get_effect("hatch_fill")
+    outer = _square()
+    hole = Path(points=[(15, 15), (25, 15), (25, 25), (15, 25), (15, 15)], filled=True)
+    unjoined = eff.apply(
+        [outer, hole], eff.Params(spacing=2.0, angle_deg=0, inset=0), EffectContext())
+    joined = eff.apply(
+        [outer, hole], eff.Params(spacing=2.0, angle_deg=0, inset=0, connect_strokes=True), EffectContext())
+    unjoined_hatch = [p for p in unjoined if not p.filled]
+    joined_hatch = [p for p in joined if not p.filled]
+    # the hole blocks some joins (a pen lift is still forced around it), but
+    # scanlines untouched by the hole still merge — strictly fewer pieces,
+    # never all the way down to one
+    assert 1 < len(joined_hatch) < len(unjoined_hatch)
+    for line in joined_hatch:  # the join itself must never cut through the hole
+        for x, y in line.points:
+            assert not (15.5 < x < 24.5 and 15.5 < y < 24.5), "join crossed the hole"
+
+
+def test_hatch_fill_connect_strokes_keeps_crosshatch_passes_separate():
+    eff = get_effect("hatch_fill")
+    out = eff.apply(
+        [_square()],
+        eff.Params(spacing=2.0, angle_deg=0, inset=0, cross=True, connect_strokes=True),
+        EffectContext(),
+    )
+    hatch = [p for p in out if not p.filled]
+    # a holeless square fully joins WITHIN each angle pass (see the
+    # single-pass test above) but the two passes must never join to each
+    # other — exactly one continuous stroke per angle, never one combined stroke
+    assert len(hatch) == 2
+
+
+def test_hatch_fill_connect_strokes_deterministic():
+    eff = get_effect("hatch_fill")
+    params = eff.Params(spacing=2.0, angle_deg=30, inset=0.5, connect_strokes=True)
+    d1 = eff.apply([_square()], params, EffectContext())
+    d2 = eff.apply([_square()], params, EffectContext())
+    assert [p.points for p in d1] == [p.points for p in d2]
