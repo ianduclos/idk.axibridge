@@ -27,6 +27,14 @@ The contract that makes it sturdy:
   (X(t)→Y(t)) — every stamp is a bilinear blend of the four corner param sets,
   computed in parameter space with no extra geometry path. Nesting is refused
   when the sides don't share a generator (nothing coherent to lerp).
+* **Captured-geometry morph** — a geometry-as-params generator (pen, drawing)
+  holds its shape in a hidden param (``subpaths`` / ``strokes``). Same
+  generator on both sides, matching shape structure (identical anchor/point
+  counts, again what "animate"/"duplicate" give): that hidden field is
+  deep-lerped so the DRAWN FORM morphs A→B — anchors, Bézier handles and all
+  — then regenerated through the source's flattening (true curved
+  in-betweens, not linearly-lerped points). Structure mismatch falls back to
+  stepping the field at 0.5, as before. See ``blend_generator_params``.
 * **Transforms lerp decomposed** (translate / rotate / scale / shear, the
   rotation along the shortest arc) — naive matrix lerp collapses rotations
   through zero scale.
@@ -81,10 +89,11 @@ class TweenParams(BaseModel):
     follow_master: bool = Field(
         default=False, title="Follow timeline",
         description="Master timeline scrub / frame rendering drives this tween's t")
-    time_curve: Literal["linear", "cosine_pingpong"] = Field(
+    time_curve: Literal["linear", "cosine", "cosine_pingpong"] = Field(
         default="linear", title="Timeline curve",
-        description="linear: A→B. cosine_pingpong: A→B→A over the same timeline; "
-                    "clip/frame-follow playback stays linear.")
+        description="linear: A→B at constant rate. cosine: A→B eased "
+                    "(ease-in-out). cosine_pingpong: A→B→A over the same "
+                    "timeline. Clip/frame-follow playback stays linear.")
     window_from: float = Field(
         default=0.0, ge=0.0, le=1.0, title="Window from",
         description="Maps the master timeline into this tween's local t: hold A "
@@ -161,8 +170,15 @@ def lerp_affine(ma: Affine, mb: Affine, t: float) -> Affine:
 
 
 def map_time_curve(local_t: float, curve: str = "linear") -> float:
-    """Map a window-normalized timeline value into morph t."""
+    """Map a window-normalized timeline value into morph t.
+
+    * ``linear`` — A→B at constant rate.
+    * ``cosine`` — A→B eased (ease-in-out, zero velocity at both ends).
+    * ``cosine_pingpong`` — A→B→A over the same timeline.
+    """
     t = min(1.0, max(0.0, local_t))
+    if curve == "cosine":
+        return 0.5 - 0.5 * math.cos(math.pi * t)
     if curve == "cosine_pingpong":
         return 0.5 - 0.5 * math.cos(2 * math.pi * t)
     return t
@@ -193,18 +209,98 @@ def _same_generator(la: CanvasLayer, lb: CanvasLayer) -> bool:
             and la.source.generator == lb.source.generator)
 
 
+# -- captured-geometry (shape) morph ----------------------------------------
+#
+# A geometry-as-params generator (pen, drawing) carries its captured shape in
+# a hidden param — ``pen.subpaths``, ``drawing.strokes`` — a nested structure
+# of points/anchors, not a scalar dial. ``lerp_params`` can't blend it (a list
+# isn't a number), so it STEPS at t=0.5 and the shape jump-cuts. When A and B
+# share structure (what "animate"/"duplicate" produce — identical subpath and
+# anchor counts), we can instead deep-lerp that structure so the SHAPE morphs,
+# then regenerate through the source's own flattening — true Bézier in-betweens
+# at every t, not linearly-lerped points. Structure mismatch falls straight
+# back to the stepped value: endpoint fidelity holds, a stored project can
+# never fail to resolve.
+
+#: sentinel: this structure can't morph (mismatched shape) — keep the stepped value
+_NO_BLEND: Any = object()
+
+
+def _is_number(v: Any) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _is_handle(v: Any) -> bool:
+    """A Bézier handle: a 2-number delta, or ``None`` for a plain corner."""
+    return v is None or (
+        isinstance(v, (list, tuple)) and len(v) == 2 and _is_number(v[0]) and _is_number(v[1]))
+
+
+def _blend_geometry(a: Any, b: Any, t: float) -> Any:
+    """Structural deep-lerp of a captured-geometry value. Recurses matching
+    lists/dicts and lerps numeric leaves; bools/strings step at 0.5 (e.g. a
+    subpath's ``closed`` flag can't be half-set); a ``None`` handle counts as a
+    zero vector so a corner can grow into a curve across the morph. Returns
+    ``_NO_BLEND`` (propagated up) the moment two sub-structures don't match, so
+    the caller keeps the whole field's stepped value — morph is all-or-nothing
+    per field, mirroring ``structures_match``'s philosophy for baked paths."""
+    if _is_number(a) and _is_number(b):
+        out = a + (b - a) * t
+        return int(round(out)) if isinstance(a, int) and isinstance(b, int) else out
+    if isinstance(a, bool) or isinstance(b, bool):
+        return a if t < 0.5 else b
+    if isinstance(a, str) and isinstance(b, str):
+        return a if t < 0.5 else b
+    if a is None and b is None:
+        return None
+    # a handle pair — including corner (None) ↔ curve: None acts as [0,0], so
+    # the anchor's handle grows out of / retracts into the point continuously
+    if _is_handle(a) and _is_handle(b) and not (a is None and b is None):
+        va = a if a is not None else (0.0, 0.0)
+        vb = b if b is not None else (0.0, 0.0)
+        return [va[0] + (vb[0] - va[0]) * t, va[1] + (vb[1] - va[1]) * t]
+    if isinstance(a, list) and isinstance(b, list) and len(a) == len(b):
+        blended = [_blend_geometry(x, y, t) for x, y in zip(a, b)]
+        return _NO_BLEND if any(c is _NO_BLEND for c in blended) else blended
+    if isinstance(a, dict) and isinstance(b, dict) and a.keys() == b.keys():
+        blended = {k: _blend_geometry(a[k], b[k], t) for k in a}
+        return _NO_BLEND if any(c is _NO_BLEND for c in blended.values()) else blended
+    return _NO_BLEND
+
+
+def _geometry_param_fields(src: Any) -> list[str]:
+    """Param names a source marks as hidden captured geometry (``strokes``,
+    ``subpaths``) — the fields whose value is a shape structure, not a dial.
+    ``json_schema_extra={"hidden": True}`` is that marker and is used for
+    nothing else (see sources/pen.py, sources/drawing.py)."""
+    props = src.Params.model_json_schema().get("properties") or {}
+    return [name for name, spec in props.items() if spec.get("hidden") is True]
+
+
 def blend_generator_params(la: CanvasLayer, lb: CanvasLayer, t: float) -> dict[str, Any] | None:
     """Same-generator param blend, or None when A/B aren't the same generator.
+
+    Scalar dials lerp; a hidden captured-geometry field (pen ``subpaths`` /
+    drawing ``strokes``) additionally MORPHS structurally when A and B share
+    shape, so the drawn form eases from A to B instead of jump-cutting at 0.5.
     The caller regenerates (each caller folds frames/offsets its own way).
 
     NOTE: this is the *direct* (non-nested) blend used by the capture/staging
-    tray. The live tween resolve path goes through :func:`effective_generator`,
-    which also reduces nested same-generator tweens."""
+    tray. The live tween resolve path goes through :func:`effective_generator`
+    (which also reduces nested same-generator tweens) via ``_source_paths_at``
+    — that path applies the same captured-geometry deep-lerp separately, on
+    the effective (post-reduction) param dicts."""
     if not _same_generator(la, lb):
         return None
     src = get_source(la.source.generator)
-    return lerp_params(la.source.params or {}, lb.source.params or {},
-                       t, src.Params().model_dump())
+    pa = la.source.params or {}
+    pb = lb.source.params or {}
+    out = lerp_params(pa, pb, t, src.Params().model_dump())
+    for field in _geometry_param_fields(src):
+        blended = _blend_geometry(pa.get(field), pb.get(field), t)
+        if blended is not _NO_BLEND:
+            out[field] = blended  # else keep lerp_params' stepped value (structure mismatch)
+    return out
 
 
 def resolve_local_t(params: dict[str, Any], master_t: float | None = None) -> float:
@@ -344,6 +440,15 @@ def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
         gen = ega[0]
         src = get_source(gen)
         params = lerp_params(ega[1], egb[1], t, src.Params().model_dump())
+        # Captured-geometry morph (pen/drawing): a hidden shape field can't be
+        # scalar-lerped by lerp_params above (it stepped at t=0.5 there), so
+        # deep-lerp it structurally on the same reduced param dicts — for a
+        # direct (non-nested) pair ega[1]/egb[1] ARE la/lb's own params, so
+        # this reproduces blend_generator_params' morph exactly.
+        for field in _geometry_param_fields(src):
+            blended = _blend_geometry(ega[1].get(field), egb[1].get(field), t)
+            if blended is not _NO_BLEND:
+                params[field] = blended
         # frame_offset is a layer-level lerped quantity (like the transform):
         # fold the interpolated offset into the generator's ``frame`` axis so an
         # A/B pair with identical params but different offsets plays the clip.

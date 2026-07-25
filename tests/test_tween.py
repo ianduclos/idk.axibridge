@@ -8,7 +8,10 @@ from axibridge.compose import Affine
 from axibridge.model import Path
 from axibridge.registry import EffectContext, get_effect
 from axibridge.session import session
-from axibridge.tween import compose_affine, decompose_affine, lerp_affine, lerp_params, map_time_curve
+from axibridge.tween import (
+    _NO_BLEND, _blend_geometry, compose_affine, decompose_affine, lerp_affine,
+    lerp_params, map_time_curve,
+)
 
 
 def _pair(radius_b=30, move_b=(60.0, 25.0)):
@@ -235,6 +238,97 @@ def test_time_curve_mapping():
     assert map_time_curve(0.5, "cosine_pingpong") == pytest.approx(1.0)
     assert map_time_curve(1.0, "cosine_pingpong") == pytest.approx(0.0)
     assert map_time_curve(0.5, "future_curve") == pytest.approx(0.5)
+
+
+def test_time_curve_cosine_ease_is_monotonic_a_to_b():
+    # cosine ease: endpoints exact, midpoint = 0.5, eased (slower near the ends)
+    assert map_time_curve(0.0, "cosine") == pytest.approx(0.0)
+    assert map_time_curve(1.0, "cosine") == pytest.approx(1.0)
+    assert map_time_curve(0.5, "cosine") == pytest.approx(0.5)
+    # ease-in: a quarter of the way through time is less than a quarter of the morph
+    assert map_time_curve(0.25, "cosine") < 0.25
+    assert map_time_curve(0.75, "cosine") > 0.75  # ease-out symmetric
+
+
+# -- captured-geometry (shape) morph ----------------------------------------
+
+def _pen_subpath(pts, closed=False):
+    return [{"anchors": [{"x": x, "y": y, "in_handle": None, "out_handle": None}
+                         for x, y in pts], "closed": closed}]
+
+
+def test_blend_geometry_lerps_matching_anchor_structure():
+    a = _pen_subpath([(0, 0), (10, 0)])
+    b = _pen_subpath([(0, 20), (10, 20)])
+    mid = _blend_geometry(a, b, 0.5)
+    assert mid is not _NO_BLEND
+    ys = [anchor["y"] for sp in mid for anchor in sp["anchors"]]
+    assert ys == [10.0, 10.0]  # halfway between A and B
+    # endpoints reproduce A / B exactly
+    assert _blend_geometry(a, b, 0.0) == a
+    assert _blend_geometry(a, b, 1.0) == b
+
+
+def test_blend_geometry_lerps_handles_and_corner_to_curve():
+    a = [{"anchors": [{"x": 0, "y": 0, "in_handle": [4, 0], "out_handle": None}], "closed": False}]
+    b = [{"anchors": [{"x": 0, "y": 0, "in_handle": [6, 2], "out_handle": [8, 0]}], "closed": False}]
+    mid = _blend_geometry(a, b, 0.5)
+    anchor = mid[0]["anchors"][0]
+    assert anchor["in_handle"] == [5.0, 1.0]         # two real handles lerp
+    assert anchor["out_handle"] == [4.0, 0.0]        # None (corner) grows from [0,0]
+
+
+def test_blend_geometry_steps_bool_without_blocking_the_morph():
+    # a subpath's `closed` can't be half-set: it steps, but the anchors still morph
+    a = _pen_subpath([(0, 0)], closed=False)
+    b = _pen_subpath([(0, 20)], closed=True)
+    mid = _blend_geometry(a, b, 0.6)
+    assert mid is not _NO_BLEND
+    assert mid[0]["closed"] is True                  # bool stepped (t >= 0.5)
+    assert mid[0]["anchors"][0]["y"] == pytest.approx(12.0)  # anchor still morphed
+
+
+def test_blend_geometry_refuses_mismatched_structure():
+    a = _pen_subpath([(0, 0), (10, 0)])
+    b = _pen_subpath([(0, 0), (10, 0), (20, 0)])  # extra anchor
+    assert _blend_geometry(a, b, 0.5) is _NO_BLEND
+
+
+def _pen_pair(y_b=20.0):
+    a = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 0), (10, 0), (20, 0)])})
+    b = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, y_b), (10, y_b), (20, y_b)])})
+    return a, session.project.layer(b.id)
+
+
+def _mean_y(paths):
+    pts = [p for path in paths for p in path.points]
+    return sum(y for _, y in pts) / len(pts)
+
+
+def test_pen_tween_morphs_shape_continuously_not_stepped():
+    a, b = _pen_pair(y_b=20.0)
+    tw = session.create_tween_layer(a.id, b.id)
+    # endpoints exact
+    session.set_tween_params(tw.id, {"t": 0.0})
+    assert _mean_y(session.resolved()[tw.id]) == pytest.approx(0.0, abs=1e-6)
+    session.set_tween_params(tw.id, {"t": 1.0})
+    assert _mean_y(session.resolved()[tw.id]) == pytest.approx(20.0, abs=1e-6)
+    # the whole point: t=0.4 lands PART-WAY (≈8), not stepped to A(0) or B(20)
+    session.set_tween_params(tw.id, {"t": 0.4})
+    assert _mean_y(session.resolved()[tw.id]) == pytest.approx(8.0, abs=1e-6)
+    session.set_tween_params(tw.id, {"t": 0.6})
+    assert _mean_y(session.resolved()[tw.id]) == pytest.approx(12.0, abs=1e-6)
+
+
+def test_pen_tween_falls_back_to_step_on_structure_mismatch():
+    a = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 0), (10, 0)])})
+    b = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 20), (10, 20), (20, 20)])})
+    tw = session.create_tween_layer(a.id, session.project.layer(b.id).id)
+    # different anchor counts: can't morph → steps at 0.5 (A below, B at/after)
+    session.set_tween_params(tw.id, {"t": 0.4})
+    assert _mean_y(session.resolved()[tw.id]) == pytest.approx(0.0, abs=1e-6)   # A
+    session.set_tween_params(tw.id, {"t": 0.6})
+    assert _mean_y(session.resolved()[tw.id]) == pytest.approx(20.0, abs=1e-6)  # B
 
 
 def test_tween_missing_ref_resolves_empty_not_crashing():

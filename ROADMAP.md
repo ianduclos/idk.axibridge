@@ -400,12 +400,19 @@ advances; tween in-betweens are exclusive of A/B):
 
 Deferred, roughly in order of pull:
 
-- ~~Tween interpolation modes: linear vs cosine ping-pong~~ — **shipped July
-  2026** as `TweenParams.time_curve = "linear" | "cosine_pingpong"` in the
-  Timeline panel. Ping-pong maps morph time A→B→A over 0..1 while the raw
-  master timeline still drives clip/frame-follow playback linearly. If we
-  later want ordinary smooth A→B, add a separate `cosine_ease`
-  (`0.5 - 0.5*cos(pi*t)`) rather than overloading the ping-pong behavior.
+- ~~Tween interpolation modes: linear, cosine ease, cosine ping-pong~~ —
+  **shipped July 2026** as `TweenParams.time_curve = "linear" | "cosine" |
+  "cosine_pingpong"` in the Timeline panel. `cosine` is the ordinary smooth
+  A→B ease (`0.5 - 0.5*cos(pi*t)`, added 2026-07-21 as its own mode, not
+  overloading ping-pong); `cosine_pingpong` maps morph time A→B→A over 0..1.
+  The raw master timeline still drives clip/frame-follow playback linearly.
+- ~~Captured-geometry shape morph (pen/drawing tweens)~~ — **shipped
+  2026-07-21**: a hidden geometry param (`pen.subpaths`, `drawing.strokes`)
+  deep-lerps anchor-by-anchor when A and B share structure, so an animated
+  pen shape eases between forms instead of jump-cutting at t=0.5. Mismatched
+  point/anchor counts still step; arc-length resampling to morph
+  differently-structured A/B is the remaining open piece (see MODULES.md
+  "Geometry-as-params sources").
 - **Multidimensional video / sheet variants, v2** — user idea July 2026:
   staging/batch interpolation now covers the first manual workflow: capture A,
   change parameters, capture B with the same format, then generate staged

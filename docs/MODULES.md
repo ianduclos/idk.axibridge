@@ -111,18 +111,24 @@ Contract:
   client-side tool. A companion `static/js/<tool>.js` captures pointer
   events into the params and POSTs `regenerate` (usually with
   `coalesce=true` mid-drag — see CLAUDE.md's Undo discipline). Copy
-  `sources/drawing.py` + `static/js/draw.js`. **Tween is the one exception,
-  noted here on purpose rather than fixed**: `tween.py`'s same-generator
-  lerp only blends scalar (`int`/`float`) params — a captured geometry
-  param (`strokes`, and pen/brush's future `subpaths`) isn't a number, so it
-  *steps* at t=0.5 instead of morphing; the numeric dials
-  (`resample_mm`, `width_min`, …) blend smoothly while the actual shape
-  jump-cuts. A real fix (resample both geometries to a matching point count
-  via arc-length, then pointwise lerp) is a genuine design decision (three
-  real options: forbid it with a clear message, build the resample, or keep
-  documenting the snap) — deliberately left alone as of 2026-07-19 rather
-  than changed reflexively, since it happened this way for real workflow
-  reasons that shouldn't be disturbed by accident.
+  `sources/drawing.py` + `static/js/draw.js`. **Tween: captured geometry now
+  MORPHS when A and B share structure** (2026-07-21). A hidden geometry param
+  (`pen.subpaths`, `drawing.strokes` — anything marked
+  `json_schema_extra={"hidden": True}`) is deep-lerped by
+  `tween.blend_generator_params` → `_blend_geometry`: anchors, Bézier handles
+  and points ease A→B pointwise, then regenerate through the source's own
+  flattening (true curved in-betweens, not linearly-lerped points). This is
+  what "animate a pen shape and drag B's anchors" needs, and it flows through
+  the shared blend core so canvas tweens AND tray captures both get it. The
+  morph is all-or-nothing per field: **identical structure required** (same
+  subpath/anchor/point counts — what "animate"/"duplicate" produce). When the
+  counts DON'T match — e.g. B has an extra anchor, or two freehand drawings
+  with different point counts — that field still *steps* at t=0.5 as before.
+  The remaining open piece is only the mismatched-count case: resampling both
+  geometries to a common point count via arc-length so even differently-shaped
+  A/B could morph. That's still a genuine design decision (resample vs. keep
+  stepping mismatches) and is deliberately left for later — the structural
+  case covers the common workflow.
 
 ## Writing an Effect — the v2 per-layer stack
 
