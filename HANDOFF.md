@@ -1,47 +1,33 @@
 ---
 project: idk.axibridge
-updated: 2026-07-22
-entries: 4
+updated: 2026-07-25
+entries: 3
 ---
 
-### feat/nested-tween-morph — bilinear (timeline × sweep) tween — opened 2026-07-22, owner: ian
-- done: nested tween-of-tween now works when both sides reduce to the SAME
-  generator — a sweep tween between two `follow_master` tweens gives a
-  two-axis morph (master timeline drives Xa→Xb / Ya→Yb; sweep stamps copies
-  across X(t)→Y(t), each a bilinear blend of the four corner param sets, in
-  parameter space). Branch `feat/nested-tween-morph` (tip `f0f2d8d`), off
-  main, suite 486 green (+6 nested tests). Nothing on main; not pushed.
-- next: review + merge (independent of the other three branches — touches
-  only tween.py/session.py). AT MERGE: add a CHANGES.md feed entry
-  (interpolation semantics — `tween-of-tween is not supported` is lifted for
-  same-generator; new `effective_generator`) and pull the idkpi clone.
-- blockers: none — awaiting Ian's review/merge call. Built in response to
-  Ian's live use case (stack 4 threshold copies between two animated
-  image_threshold layers); UI path unchanged (select both tweens →
-  ⇄ Create interpolation layer → set Sweep).
-- context: axibridge/tween.py (`effective_generator`, `resolve_local_t`,
-  `check_compatible`, `_source_paths_at`), session.py
-  (`_tween_dependency_order`, `_materialize_tweens`); tests appended to
-  tests/test_tween.py.
-
-### Three unmerged session branches — pen tool, tween morph, hatch join — opened 2026-07-21, owner: ian
-- done: all three built + suites green + live-verified (see STATUS.md this
-  session). feat/pen-tool (⚓ pen tool, RESULTS doc, suite ~492),
-  feat/geometry-morph-tween (pen/drawing shapes MORPH in tweens + `cosine`
-  ease, suite 499), feat/hatch-connect-strokes (`connect_strokes` cuts pen
-  lifts, suite 497). Nothing pushed; nothing on main.
-- next: review + merge. ORDER MATTERS — feat/geometry-morph-tween is stacked
-  on an OLDER feat/pen-tool tip (`cbb2df3`); rebase it onto the current pen
-  tip (`4ecb49e`) before merging, or feat/pen-tool's last two commits
-  (`7af3fb4`, `4ecb49e`) look reverted. feat/hatch-connect-strokes is
-  independent (off main). At merge: add a CHANGES.md feed entry (tween
-  geometry semantics change — pen/drawing shapes morph instead of stepping)
-  and pull the idkpi clone.
-- blockers: none — awaiting Ian's review/merge call.
-- context: docs/plans/pen-brush-tools-RESULTS.md (pen tool, all fix rounds);
-  MODULES.md + ROADMAP.md on feat/geometry-morph-tween (morph resolution);
-  `git log --oneline --all` shows the three tips. Brush tool (0c) still
-  deferred — pen-brush-tools.md Part 2.
+### Post-merge follow-through: idkpi pull + push + bench check — opened 2026-07-25, owner: ian
+- done: all four pending branches (feat/nested-tween-morph, feat/pen-tool,
+  feat/geometry-morph-tween, feat/hatch-connect-strokes) merged to main in
+  dependency order, suite 511 green throughout. geometry-morph-tween was
+  rebased onto pen-tool's advanced tip as flagged; the rebase's tween.py
+  conflict exposed a real regression (nested-tween-morph's
+  `_source_paths_at` had switched to `effective_generator`/`lerp_params`
+  directly, bypassing `blend_generator_params`'s captured-geometry deep-lerp
+  — pen/drawing shape morph would have silently stopped working). Fixed by
+  applying the same deep-lerp inside `_source_paths_at` on the
+  post-reduction param dicts; caught by
+  `test_pen_tween_morphs_shape_continuously_not_stepped` failing before the
+  fix. CHANGES.md feed entry filed (2026-07-25 idk.axibridge entry).
+- next: pull the idkpi clone (semantics changed: tween-of-tween lifted for
+  same-generator, pen/drawing shapes morph instead of step); push main to
+  origin (confirm with Ian first — currently far ahead, not yet pushed);
+  bench-verify pen tool + animated pen morph on paper; once confirmed
+  nothing else needs them, delete the four now-merged local feature
+  branches.
+- blockers: none — routine follow-through, no design decision pending.
+- context: `git log --oneline main -8` shows the four merge commits atop
+  `8164dc8`; `axibridge/tween.py` `_source_paths_at`/`blend_generator_params`
+  docstrings explain the two call sites and why both apply the geometry
+  deep-lerp now.
 
 ### Bench eye-check of the 07-16→19 wave — opened 2026-07-19, owner: ian
 - done: generator v2 (misremembered scribble masses + tone dial, glyphgram

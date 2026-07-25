@@ -1,25 +1,42 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-07-22
+updated: 2026-07-25
 machine: mac+pi
-summary: Four unmerged feature branches await review/merge — the three from 07-21 (pen tool, geometry-morph tween, hatch join) plus a new feat/nested-tween-morph (bilinear timeline×sweep tween); Pi plotting was dead (wrong barrel-jack adapter, V+≈0) and is now fixed (correct 9V, V+ restored).
+summary: All four pending branches merged to main (pen tool, captured-geometry tween morph + cosine ease, hatch connect_strokes, nested tween-of-tween bilinear morph) — suite 511 green. idkpi clone needs pull; CHANGES.md entry filed. Bench eye-checks still open.
 next:
-  - "Review + merge feat/nested-tween-morph (nested tween-of-tween bilinear morph, off main, suite 486) — independent of the other three; at merge add a CHANGES.md entry (tween-of-tween lifted for same-generator) + pull idkpi"
-  - "Review + merge the three 07-21 branches: feat/pen-tool (pen tool, suite ~492), feat/geometry-morph-tween (shape morph + cosine ease, suite 499), feat/hatch-connect-strokes (hatch join, suite 497) — NONE pushed yet"
-  - "Rebase feat/geometry-morph-tween onto the advanced feat/pen-tool before merging — it's stacked on an OLDER feat/pen-tool tip (cbb2df3); pen tool gained 2 more commits after"
+  - "Pull the idkpi clone (git pull on ~/idk.axibridge) — geometry-as-params tween SEMANTICS change (pen/drawing shapes now MORPH instead of stepping) + tween-of-tween lifted for same-generator layers"
+  - "Push main to origin (16+ local commits ahead, not yet pushed — confirm with Ian first)"
+  - "Bench: pen tool + animated pen morph on paper (new, from this merge)"
   - "Brush tool (ROADMAP 0c / pen-brush-tools.md Part 2) still deferred — the sibling to the shipped pen tool; Ian chose pen-only this pass"
-  - "After merging, pull the idkpi clone — geometry-as-params tween SEMANTICS change (pen/drawing shapes now MORPH instead of stepping at 0.5); add a CHANGES.md feed entry at merge time, not before"
-  - "Older bench eye-checks still open (generator v2 wave + URGENT round) — see HANDOFF; plus a new one: pen tool + animated pen morph on paper"
+  - "Older bench eye-checks still open (generator v2 wave + URGENT round) — see HANDOFF"
+  - "Delete the four merged local feature branches once Ian confirms nothing else needs them (nested-tween-morph, pen-tool, geometry-morph-tween, hatch-connect-strokes)"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
 
-**Session 2026-07-22 (Opus 4.8): nested tween-of-tween bilinear morph built
+**Session 2026-07-25 (Sonnet 5): merged the four pending branches to main**
+(nested-tween-morph, pen-tool, geometry-morph-tween, hatch-connect-strokes),
+in dependency order with tests run after each step (suite 511 green).
+`feat/geometry-morph-tween` needed a rebase onto the advanced `feat/pen-tool`
+tip as flagged, which surfaced a real conflict/regression: nested-tween-morph
+had rewired the live tween resolve path (`_source_paths_at`) to reduce
+endpoints via `effective_generator` + `lerp_params` directly, bypassing
+`blend_generator_params` — where the captured-geometry deep-lerp (pen/drawing
+shape morph) lived. Fixed by applying the same deep-lerp inside
+`_source_paths_at` on the post-reduction param dicts (a no-op for generators
+without a hidden geometry field, so nested-tween-morph's own tests are
+unaffected); one failing test (`test_pen_tween_morphs_shape_continuously_not_stepped`)
+caught it before it reached main. CHANGES.md entry filed. Not yet done:
+pulling the idkpi clone, pushing main, bench eye-checks.
+
+---
+
+**Prior session 2026-07-22 (Opus 4.8): nested tween-of-tween bilinear morph built
 (`feat/nested-tween-morph`, suite 486) for Ian's stacked-threshold use case;
 Pi plotting revived after a dead motor rail traced to the wrong barrel-jack
-adapter (`QC` V+ 0023→0299). Four unmerged branches now; see HANDOFF.**
+adapter (`QC` V+ 0023→0299).**
 
 ---
 
