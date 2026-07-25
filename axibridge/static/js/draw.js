@@ -43,6 +43,10 @@ const BRUSHES = [
     ] },
 ];
 
+// Draw mode's on/off is now driven by main.js's shared tool-mode broker
+// (setToolMode) rather than its own toggle button — see docs/plans/
+// pen-brush-tools.md Part 0. activateDrawMode/deactivateDrawMode are the
+// broker's activate()/deactivate() for the "draw" mode.
 let on = false;
 let activeDrawLayerId = null;
 let pendingBrush = BRUSHES[0];
@@ -51,38 +55,18 @@ let wired = false; // initTabs() re-runs on every SSE reconnect — wire listene
 
 export function initDrawMode() {
   if (wired) return;
-  const toggle = $("draw-toggle");
   const brushSelect = $("brush-select");
   const wrap = $("canvas-wrap");
-  if (!toggle || !brushSelect || !wrap) return; // stale cached index.html: degrade silently
+  if (!brushSelect || !wrap) return; // stale cached index.html: degrade silently
   wired = true;
 
   fillBrushSelect(brushSelect);
 
-  toggle.onclick = () => setOn(!on, toggle, brushSelect, wrap);
   brushSelect.onchange = () => {
     pendingBrush = BRUSHES.find((b) => b.id === brushSelect.value) || BRUSHES[0];
     const id = currentTargetLayerId();
     if (id) applyBrushToLayer(id, pendingBrush);
   };
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && on) setOn(false, toggle, brushSelect, wrap);
-  });
-
-  // the doc-preview banner has no event of its own — watch its `hidden`
-  // attribute so the toggle disables the instant a transient sheet/staged
-  // document takes over the canvas, and re-enables when it clears
-  const banner = $("doc-preview-banner");
-  if (banner) {
-    const sync = () => {
-      const previewing = !banner.hidden;
-      toggle.disabled = previewing;
-      if (previewing && on) setOn(false, toggle, brushSelect, wrap);
-    };
-    new MutationObserver(sync).observe(banner, { attributes: true, attributeFilter: ["hidden"] });
-    sync();
-  }
 
   wrap.addEventListener("pointerdown", (e) => onDown(e, wrap), true);
   wrap.addEventListener("pointermove", (e) => onMove(e), true);
@@ -90,12 +74,21 @@ export function initDrawMode() {
   wrap.addEventListener("pointercancel", (e) => onUp(e), true);
 }
 
-function setOn(v, toggle, brushSelect, wrap) {
-  if (v && toggle.disabled) return; // doc-preview banner active
-  on = v;
-  toggle.classList.toggle("on", on);
-  wrap.classList.toggle("draw-mode", on);
-  brushSelect.hidden = !on;
+export function activateDrawMode() {
+  on = true;
+  const brushSelect = $("brush-select");
+  const wrap = $("canvas-wrap");
+  wrap?.classList.add("draw-mode");
+  if (brushSelect) brushSelect.hidden = false;
+}
+
+export function deactivateDrawMode() {
+  on = false;
+  const brushSelect = $("brush-select");
+  const wrap = $("canvas-wrap");
+  wrap?.classList.remove("draw-mode");
+  if (brushSelect) brushSelect.hidden = true;
+  if (drag) { drag.liveEl.remove(); drag = null; } // mode switched mid-stroke: drop it, don't commit
 }
 
 function fillBrushSelect(sel) {

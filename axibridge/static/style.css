@@ -426,10 +426,21 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
   box-shadow: inset 0 0 0 2px var(--accent);
 }
 
-/* draw mode (draw.js): pointer strokes on the main canvas -> a Drawing layer */
-#draw-toggle.on { background: var(--accent); color: var(--paper); border-color: var(--accent); }
-#canvas-wrap.draw-mode { cursor: crosshair; }
-#canvas-wrap.draw-mode svg { cursor: crosshair; }
+/* draw/pen modes: pointer capture on the main canvas -> a layer.
+   #tool-toggle button.on styling comes from the generic .seg rule above. */
+#canvas-wrap.draw-mode, #canvas-wrap.pen-mode { cursor: crosshair; }
+#canvas-wrap.draw-mode svg, #canvas-wrap.pen-mode svg { cursor: crosshair; }
+
+/* pen tool: anchor/handle overlay. Anchors are small squares (Photoshop-
+   style, <rect> elements) so they read as visually distinct from the round
+   handle knobs at a glance. */
+.pen-anchor { fill: var(--paper); stroke: var(--accent); stroke-width: 0.6; }
+.pen-anchor.smooth { fill: var(--accent); }
+.pen-handle-line { stroke: var(--accent); stroke-width: 0.4; stroke-dasharray: 1.2 1; opacity: 0.7; }
+.pen-handle-knob { fill: var(--paper); stroke: var(--accent); stroke-width: 0.4; }
+.pen-pending-path { stroke: var(--accent); stroke-width: 0.6; fill: none; }
+.pen-rubber-band { stroke: var(--accent); stroke-width: 0.6; stroke-dasharray: 1.5 1.2; fill: none; opacity: 0.7; }
+.pen-pending-anchor { fill: var(--accent); stroke: none; }
 
 /* grid-sheet layout presets (plot.js animation panel) */
 .anim-presets { display: inline-flex; gap: 3px; }
