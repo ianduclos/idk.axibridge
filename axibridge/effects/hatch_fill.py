@@ -1,7 +1,10 @@
 """Hatch fill: turn ``filled`` shapes into plottable line fill.
 
 The preview can paint a fill; a pen cannot — hatching is how a plotter says
-"solid". Every closed+filled path in the layer grows a set of parallel lines
+"solid". (``offset_fill`` is the other answer: it repeats the outline inward
+as concentric rings instead of laying scanlines across it. Same even-odd hole
+rule, same reason inner marks are not flagged ``filled``.)
+Every closed+filled path in the layer grows a set of parallel lines
 clipped to its interior (optionally crosshatched, optionally inset so wet ink
 doesn't bleed past the outline). Open / unfilled paths pass through untouched.
 
