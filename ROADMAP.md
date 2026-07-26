@@ -542,11 +542,19 @@ tooling at all" — see CLAUDE.md, ARCHITECTURE.md "Stack"):
   rendering variants in isolation before committing; bold, high-contrast
   silhouettes (thick strokes, filled shapes) are what survives the scale-
   down, not literal small-scale fidelity to a bigger design.
+- **Revised 2026-07-26**: the hand-authored tool icons were replaced with
+  **Lucide** (ISC, `THIRD-PARTY-NOTICES.md`) after Ian called the hand-drawn
+  pen and draw glyphs ugly — `mouse-pointer-2` / `pencil` / `pen-tool` /
+  `check`, path data inlined verbatim, with stroke width and joins moved out
+  of the markup into `.tool-icon` so the set has one place to stay
+  consistent (2.2, not Lucide's stock 2: a 24px grid scaled to 16px thins
+  strokes below toolbar legibility). The legibility lesson below still
+  holds — it is *why* a designed set beats hand-drawing at this size.
 - Still open, same tier (vendor-a-file, no npm/bundler): a matching pass
   over the toolbar's remaining emoji glyphs (`⛶` zoom-fit, `▶` animate,
-  `⇄` series, plus any in the layer list / panels) for visual consistency
-  with the new icon buttons — do this as one pass, not piecemeal, so the
-  icon set reads as one system rather than accreting ad hoc.
+  `⇄` series, plus any in the layer list / panels) — now with an obvious
+  answer (the matching Lucide icon), and now visibly inconsistent next to
+  the real icons. Still do it as one pass, not piecemeal.
 - `// @ts-check` + JSDoc across `static/js/*.js` — real type-checking (catches
   the "passed a layer where an id was expected" class of bug) as an
   editor/CI lint pass, zero compiled output, zero runtime cost.

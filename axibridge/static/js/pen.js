@@ -90,6 +90,15 @@ export function handlePenEscape() {
   return false;
 }
 
+/** Finish the pending subpath as an open line — what Enter does, exposed for
+ *  the toolbar's Commit button. Closing into a shape stays the on-canvas
+ *  gesture (click the first anchor), which is where the closing curve drag
+ *  lives; a button can't express that. */
+export function commitPendingPath() {
+  if (!on || gesture || !pending.length) return;
+  commitSubpath(false);
+}
+
 function onKeydown(e) {
   if (!on) return;
   const t = e.target;
@@ -464,8 +473,16 @@ function drawHandle(g, a, h) {
   g.appendChild(svgCircle(hx, hy, 0.7, "pen-handle-knob"));
 }
 
+// Every mutation of `pending` goes through redraw(), so this is the one place
+// that has to announce "there is / isn't something to commit" — the toolbar's
+// Commit button enables off it rather than polling.
+function announcePending() {
+  document.dispatchEvent(new CustomEvent("pen-pending-change",
+    { detail: { count: on ? pending.length : 0 } }));
+}
+
 function redraw() {
-  if (!on) { clearOverlay(); return; }
+  if (!on) { clearOverlay(); announcePending(); return; }
   const editor = actions.canvas();
   const g = ensureOverlay(editor);
   g.innerHTML = "";
@@ -532,4 +549,6 @@ function redraw() {
     const p1 = last.out_handle ? [last.x + last.out_handle[0], last.y + last.out_handle[1]] : [last.x, last.y];
     g.appendChild(cubicPath([last.x, last.y], p1, hoverPt, hoverPt, "pen-rubber-band"));
   }
+
+  announcePending();
 }

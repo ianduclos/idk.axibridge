@@ -15,7 +15,8 @@ import { initSettingsTab, renderSettingsTab } from "./settings.js";
 import { initWorkbench } from "./workbench.js";
 import { initMenu } from "./menu.js";
 import { initDrawMode, activateDrawMode, deactivateDrawMode } from "./draw.js";
-import { initPenMode, activatePenMode, deactivatePenMode, handlePenEscape, refreshPenOverlay } from "./pen.js";
+import { initPenMode, activatePenMode, deactivatePenMode, handlePenEscape, refreshPenOverlay,
+         commitPendingPath } from "./pen.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -493,6 +494,10 @@ function setToolMode(mode) {
   document.querySelectorAll("#tool-toggle button").forEach((b) => {
     b.classList.toggle("on", b.dataset.tool === toolMode);
   });
+  // per-tool companion controls sit outside the segment, so they can appear
+  // beside it without disturbing the segment's joined-button styling
+  const commit = $("pen-commit");
+  if (commit) commit.hidden = toolMode !== "pen";
 }
 
 {
@@ -501,6 +506,16 @@ function setToolMode(mode) {
     for (const btn of seg.querySelectorAll("button")) {
       btn.onclick = () => setToolMode(btn.dataset.tool);
     }
+  }
+
+  const commit = $("pen-commit");
+  if (commit) {
+    commit.onclick = () => commitPendingPath();
+    // pen.js owns the pending state and announces every change; the button is
+    // dead weight until there is actually something to finish
+    document.addEventListener("pen-pending-change", (e) => {
+      commit.disabled = !e.detail?.count;
+    });
   }
 
   // Escape: the active tool gets first refusal (e.g. pen clears a pending

@@ -260,6 +260,38 @@ def test_duplicate_layer():
     assert copy.id not in {l.id for l in session.project.layers}
 
 
+def test_split_hatch_layer_separates_fill_from_outline():
+    layer = session.add_generated_layer("polygon", {"sides": 5, "radius": 20, "filled": True})
+    session.update_layer(layer.id, {"effects": [
+        {"effect": "hatch_fill", "enabled": True,
+         "params": {"spacing": 3.0, "angle_deg": 0, "inset": 0}},
+    ]})
+    fill = session.split_hatch_layer(layer.id)
+
+    ids = [l.id for l in session.project.layers]
+    assert ids.index(fill.id) == ids.index(layer.id) + 1  # above, never under its own outline
+    assert fill.pen_id is None and fill.name.endswith("· hatch")
+    assert fill.effects[0].params["outline"] is False
+    outline = session.project.layer(layer.id)
+    assert outline.effects == []  # the fill left with the step
+
+    r = session.resolved()
+    # the outline layer draws the closed shape alone; the fill layer draws
+    # only hatch lines (no closed outline of its own)
+    assert all(p.is_closed for p in r[outline.id])
+    assert len(r[fill.id]) > 1 and not any(p.is_closed for p in r[fill.id])
+
+    assert session.undo()  # one undo step puts the pair back together
+    assert fill.id not in {l.id for l in session.project.layers}
+    assert [s.effect for s in session.project.layer(layer.id).effects] == ["hatch_fill"]
+
+
+def test_split_hatch_layer_rejects_a_layer_without_hatch():
+    layer = session.add_generated_layer("polygon", {"sides": 4, "radius": 10})
+    with pytest.raises(ValueError):
+        session.split_hatch_layer(layer.id)
+
+
 def test_asset_rotate_changes_gradient_axis():
     asset_store.replace_all({})
     name = asset_store.put("ramp.png", _png_gradient())  # bright at high x

@@ -30,6 +30,11 @@ connector may only draw where the drawing already is:
 * if even the hug would be a real detour — circling a hole, say — the pen
   lifts, exactly as before.
 
+To plot the fill with a *different pen* from the outline it fills, see
+``Session.split_hatch_layer`` (the "Split hatch onto its own layer" button on
+this step): a pen belongs to a layer, so that is a two-layer arrangement, not
+a parameter here.
+
 The search is greedy rather than strictly in scan order: each stroke absorbs
 the nearest reachable line within a short window ahead of it (either end
 first, so a line may be walked in reverse), which recovers the joins that
