@@ -87,10 +87,31 @@ Cheapest-first:
   - *Polar wrap*: x→angle, y→radius about a centre — straight hatching
     becomes rings/spirals; grids become spider webs.
   - *Mirror / kaleidoscope*: reflect/rotate-stamp about a paper-space axis.
-  - *Offset rings*: ~~shapely `buffer` at k spacings~~ — **mostly covered
-    2026-07-11** by `contract_expand` (Pi round 2): stack k copies with
-    growing offsets for insets/onion rings. A single-effect "k rings at one
-    spacing" convenience is still open if the stacking dance gets old.
+  - *Offset rings*: ~~shapely `buffer` at k spacings~~ — **shipped
+    2026-07-26** as `effects/offset_fill.py`, well past the "convenience"
+    this item asked for: a second fill primitive beside `hatch_fill` that
+    repeats the outline inward as concentric rings (contour-map look) rather
+    than laying scanlines across it. `contract_expand` (2026-07-11) remains
+    the per-path onion-ring tool; offset_fill is layer-wide because it has to
+    run the even-odd hole assembly first. Topology needs no special-casing —
+    components split, components vanish, holes grow and merge, and shapely
+    returning a `MultiPolygon` or an empty geometry *is* the event; the
+    levels form a monotone forest (erosion never invents a hole nor merges
+    components). Every ring is eroded from the ORIGINAL at `k*spacing`, never
+    iteratively, or corners re-round each pass. `medial_tail` draws a
+    centreline down limbs too narrow for another whole ring, suppressed when
+    it would double an existing one. `round_center` (Ian's ask, same day)
+    relaxes each ring's corners in proportion to its depth — a morphological
+    opening, so flat runs stay put and ring spacing is untouched — making the
+    family morph from the shape toward circles as it marches in; the radius
+    backs off by halves rather than ever costing a ring. It rounds CONVEX
+    corners only, so concave structure survives all the way down (a star's
+    centre becomes a flower, not a disc — the honest result, not a shortfall).
+    **Still open**: a continuous *spiral*.
+    One unbroken stroke only exists for a hole-free component that never
+    splits before it dies (a topological disk that stays a disk); anywhere
+    else the pen must lift, which is the `connect_strokes` problem again —
+    build it on top of the rings, not instead of them.
   - *Dash / stitch*: cut paths into dashes (gap, phase) for texture.
   - *Lens / attractor warp*: radial push/pull with falloff about a point —
     the hand-placed complement to the depth map.

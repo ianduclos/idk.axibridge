@@ -174,8 +174,9 @@ The contract, and why each clause exists:
   *Semantics corner, documented rather than fixed*: nested filled loops are
   holes by even-odd parity, and both consumers agree for **proper nesting**
   — but for *partially overlapping* filled paths in one layer they diverge:
-  `hatch_fill` XORs (`symmetric_difference` — the overlap lens comes out
-  unhatched) while `compose.build_mask` unions by representative-point
+  the fill effects XOR (`symmetric_difference` — the overlap lens comes out
+  unfilled; `hatch_fill` and `offset_fill` share this rule deliberately)
+  while `compose.build_mask` unions by representative-point
   depth (the overlap usually occludes as solid). Partial overlap of filled
   paths within a layer is effectively undefined behavior; emit properly
   nested or disjoint filled loops (pre-union overlapping shapes yourself,
