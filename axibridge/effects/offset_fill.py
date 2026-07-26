@@ -32,6 +32,16 @@ a square, Ian's easy case — comes out identical under every ``join_style``,
 and the setting only bites where a shape turns back on itself (a star's inner
 points). ``mitre`` keeps those sharp, which is what "repeats the shape" means.
 
+``round_center`` bends that on purpose. It relaxes each ring's corners by a
+radius proportional to how deep the ring sits (a morphological *opening* — see
+``_level``), so the family morphs as it marches in: the outer rings still read
+as the shape, the inner ones ease toward circles, and a square fills with
+squircles. It rounds the CONVEX corners, the ones an inward offset otherwise
+keeps perfectly sharp — the same reflex/convex asymmetry as above, used the
+other way round. A shape's *concave* structure therefore survives the whole
+way down, which is why a star's centre relaxes into a flower rather than a
+disc; that is the honest answer for a star, not a shortfall.
+
 Two things this shares with ``hatch_fill`` and must not diverge from:
 
 * the fill is assembled **layer-wide**, not per path. A donut is two nested
@@ -79,6 +89,10 @@ _TAIL_STEPS = 6
 #: a ring shorter than this (mm) is a numerical crumb from a cusp, not a mark.
 _MIN_RING_LEN = 0.05
 
+#: mm: below this a rounding radius is not worth a second pair of buffers, and
+#: the ring is taken sharp. Also the floor the round_center back-off walks to.
+_MIN_ROUND_R = 0.05
+
 #: × spacing: how far a medial tail must sit from the ring it grew out of to be
 #: worth drawing. A limb that dies just AFTER a ring lands its centreline right
 #: on top of that ring — three lines inside one spacing, which plots as a band
@@ -99,6 +113,13 @@ class OffsetFillParams(BaseModel):
                     "shape's own corners sharp, round softens them into "
                     "contour lines. Convex-only shapes (a square) look "
                     "identical under all three",
+    )
+    round_center: float = Field(
+        default=0.0, ge=0.0, le=1.0, title="Round the centre",
+        description="Relaxes each ring's corners in proportion to how deep it "
+                    "sits, so the outer rings still read as the shape while "
+                    "the inner ones ease toward circles. 0 repeats the shape "
+                    "unchanged all the way in",
     )
     outline: bool = Field(default=True, title="Keep outline",
                           description="Off also stops the shape occluding as a solid")
@@ -133,6 +154,37 @@ def _polygons(geom) -> list[Polygon]:
     return [g for g in parts if isinstance(g, Polygon) and not g.is_empty]
 
 
+def _level(region, depth: float, params: OffsetFillParams) -> list[Polygon]:
+    """The components at `depth`, with `round_center` applied.
+
+    Rounding is a morphological **opening**: erode an extra `r` past the depth
+    we want, then dilate `r` back with round joins. That rounds the *convex*
+    corners — the ones an inward offset otherwise keeps perfectly sharp, which
+    is exactly what "the middle should go round" is asking for — while leaving
+    straight runs where they already were, so ring spacing along an edge is
+    untouched and the ring still cannot escape the shape (an opening of a set
+    is contained in it).
+
+    `r` grows with depth, which is what makes the family *morph*: the outermost
+    ring is barely touched and each one after it relaxes further, so a square
+    becomes a squircle becomes a circle on the way in.
+
+    A large `r` can erode away a component that survives sharp, so the radius
+    backs off by halves until the ring exists. Rounding is a finish, and it may
+    not cost the fill a ring it would otherwise have drawn.
+    """
+    if params.round_center <= 0.0:
+        return _polygons(_erode(region, depth, params))
+    r = params.round_center * depth
+    while r > _MIN_ROUND_R:
+        eroded = _erode(region, depth + r, params)
+        if not eroded.is_empty:
+            return _polygons(eroded.buffer(r, quad_segs=params.smooth,
+                                           join_style="round"))
+        r /= 2
+    return _polygons(_erode(region, depth, params))
+
+
 def _rings(poly: Polygon, params: OffsetFillParams) -> list[list[Pt]]:
     """A polygon's exterior and every hole, as closed point lists.
 
@@ -163,7 +215,9 @@ def _medial_tail(poly: Polygon, params: OffsetFillParams) -> list[list[Pt]]:
 
     Eroding the component rather than the original region is exact, not an
     approximation — erosion by a disk is associative, so eroding a level-k
-    component by t is the level-(k*spacing + t) geometry inside it.
+    component by t is the level-(k*spacing + t) geometry inside it. (Under
+    ``round_center`` the parent is an opened level, so the tail inherits that
+    rounding instead — which is what keeps it looking like the rings it ends.)
 
     The bisected depth doubles as the tail's own quality test: it IS the gap to
     the parent ring, so a tail that would land on top of that ring is dropped.
@@ -225,7 +279,7 @@ class OffsetFill(EffectModule):
             return out
         region = unary_union(level)
         for k in range(1, params.max_rings + 1):
-            deeper = _polygons(_erode(region, k * params.spacing, params))
+            deeper = _level(region, k * params.spacing, params)
             if params.medial_tail:
                 # a component of the previous level with nothing under it died
                 # somewhere in this step; give it a centreline before moving on

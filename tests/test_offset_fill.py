@@ -157,6 +157,58 @@ def test_max_rings_caps_the_output():
     assert len(few) == 3
 
 
+# -- round_center --------------------------------------------------------------
+
+def test_round_center_softens_the_inner_rings():
+    """A square's rings gain corner arcs as they go in — and the OUTER ring is
+    less affected than the inner one, which is what makes the family morph."""
+    rings = _rings(_run([_square(side=40.0)], spacing=2.0, round_center=1.0,
+                        medial_tail=False))
+    assert len(rings) >= 4
+    by_size = sorted(rings, key=lambda p: -(_bounds(p.points)[2] - _bounds(p.points)[0]))
+    assert len(by_size[0].points) > 5, "even the outer ring picks up corner arcs"
+    assert len(by_size[1].points) > len(by_size[0].points), (
+        "rounding must grow with depth, or the family does not morph"
+    )
+
+
+def test_round_center_zero_is_the_sharp_original():
+    sharp = _rings(_run([_square()], spacing=2.0, round_center=0.0,
+                        medial_tail=False))
+    assert all(len(p.points) == 5 for p in sharp)
+
+
+def test_rounding_never_costs_a_ring():
+    """The back-off in `_level`: a rounding radius big enough to erode a ring
+    away is halved until the ring exists. Ring COUNT is invariant."""
+    for shape in ([_square(side=40.0)], [_circle(r=20.0)],
+                  [Path(points=[(30.0, 4.0), (56.0, 52.0), (4.0, 52.0), (30.0, 4.0)],
+                        filled=True)]):
+        counts = {rc: len(_rings(_run(shape, spacing=2.0, round_center=rc)))
+                  for rc in (0.0, 0.5, 1.0)}
+        assert len(set(counts.values())) == 1, f"rounding changed ring count: {counts}"
+
+
+def test_rounding_does_not_move_straight_runs():
+    """An opening leaves flat edges exactly where they were, so ring spacing
+    along an edge — the thing that makes the fill read as even — is untouched."""
+    sharp = _rings(_run([_square(side=40.0)], spacing=2.0, round_center=0.0,
+                        medial_tail=False))
+    round_ = _rings(_run([_square(side=40.0)], spacing=2.0, round_center=1.0,
+                         medial_tail=False))
+    widths = lambda rs: sorted(_bounds(p.points)[2] - _bounds(p.points)[0] for p in rs)
+    for a, b in zip(widths(sharp), widths(round_)):
+        assert abs(a - b) < 0.01, "a ring's edge-to-edge span moved under rounding"
+
+
+def test_rounded_rings_stay_inside_the_shape_and_out_of_holes():
+    out = _run([_circle(r=20.0), _circle(r=8.0)], spacing=2.0, round_center=1.0)
+    for p in _rings(out):
+        for x, y in p.points:
+            d = math.dist((x, y), (100.0, 100.0))
+            assert 8.0 - 1e-6 < d < 20.0 + 1e-6, "a rounded ring escaped its band"
+
+
 # -- thin areas ----------------------------------------------------------------
 
 def test_medial_tail_closes_a_shape_too_thin_for_a_ring():

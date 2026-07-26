@@ -100,7 +100,14 @@ Cheapest-first:
     components). Every ring is eroded from the ORIGINAL at `k*spacing`, never
     iteratively, or corners re-round each pass. `medial_tail` draws a
     centreline down limbs too narrow for another whole ring, suppressed when
-    it would double an existing one. **Still open**: a continuous *spiral*.
+    it would double an existing one. `round_center` (Ian's ask, same day)
+    relaxes each ring's corners in proportion to its depth — a morphological
+    opening, so flat runs stay put and ring spacing is untouched — making the
+    family morph from the shape toward circles as it marches in; the radius
+    backs off by halves rather than ever costing a ring. It rounds CONVEX
+    corners only, so concave structure survives all the way down (a star's
+    centre becomes a flower, not a disc — the honest result, not a shortfall).
+    **Still open**: a continuous *spiral*.
     One unbroken stroke only exists for a hole-free component that never
     splits before it dies (a topological disk that stays a disk); anywhere
     else the pen must lift, which is the `connect_strokes` problem again —
