@@ -809,6 +809,19 @@ def duplicate_layer(layer_id: str) -> dict[str, Any]:
         raise _fail(e, 404)
 
 
+@router.post("/layers/{layer_id}/split-hatch")
+def split_hatch_layer(layer_id: str, step: int | None = None) -> dict[str, Any]:
+    """Move a hatch_fill's fill onto its own layer, so it can plot with its
+    own pen. ``step`` picks which hatch_fill step when the stack has several
+    (default: the first)."""
+    try:
+        return session.split_hatch_layer(layer_id, step).model_dump()
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+
+
 @router.post("/layers/{layer_id}/animate")
 def animate_layer(layer_id: str) -> dict[str, Any]:
     """One-click: turn a layer into a keyframed (A/B) tween animation."""

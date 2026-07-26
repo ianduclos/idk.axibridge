@@ -34,6 +34,27 @@ def test_state_shape(client):
     assert "cornering" not in native["params_schema"]["properties"]
 
 
+def test_split_hatch_route(client):
+    r = client.post("/api/layers/generate",
+                    json={"module": "polygon", "params": {"sides": 5, "radius": 20, "filled": True}})
+    lid = r.json()["id"]
+    client.patch(f"/api/layers/{lid}", json={"effects": [
+        {"effect": "hatch_fill", "enabled": True, "params": {"spacing": 3.0, "inset": 0}}]})
+
+    fill = client.post(f"/api/layers/{lid}/split-hatch?step=0")
+    assert fill.status_code == 200
+    fill_id = fill.json()["id"]
+    assert fill.json()["pen_id"] is None
+
+    res = client.get("/api/compose/resolved").json()
+    by_id = {l["id"]: l for l in res["layers"]}
+    assert fill_id in by_id and by_id[fill_id]["stats"]["paths"] > 1
+
+    # a step that isn't a hatch_fill is a 400, not a silent no-op
+    assert client.post(f"/api/layers/{lid}/split-hatch?step=0").status_code == 400
+    assert client.post("/api/layers/nope/split-hatch").status_code == 404
+
+
 def test_layer_lifecycle_and_resolved(client):
     r = client.post("/api/layers/generate",
                     json={"module": "lissajous", "params": {"size": 100, "points_per_turn": 256}})
