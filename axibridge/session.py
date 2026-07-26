@@ -1623,6 +1623,67 @@ class Session:
             self.source_geometry[copy.id] = self.source_geometry.get(layer_id, [])
             return copy
 
+    def split_hatch_layer(self, layer_id: str, step: int | None = None) -> CanvasLayer:
+        """Move a ``hatch_fill`` step's FILL onto a layer of its own, so the
+        fill can plot with a different pen from the outline it fills.
+
+        A pen is a property of a layer (``CanvasLayer.pen_id``) — plot passes,
+        pen registration offsets and SVG export all group by it — while hatch
+        lines are just paths inside one layer. So "hatch on a different pen"
+        is a two-layer arrangement, and this builds it in one undo step:
+
+        * a new layer directly above, same source/transform/effects, with the
+          hatch step's ``outline`` turned off (fill only) and no pen assigned,
+          so it is its own plot pass immediately and the operator picks the pen;
+        * the original keeps everything else but loses the hatch step, so it
+          draws the outline alone — and keeps occluding as a solid, since
+          occlusion masks come from filled outlines (see hatch_fill's module
+          docstring; the fill-only copy deliberately no longer occludes).
+
+        Above, not below, because a filled occluder must not end up on top of
+        its own fill. Pass order follows layer order, so an operator who wants
+        the fill laid down before the outline reorders the two.
+
+        Effects *after* the hatch step are copied to both layers, where they
+        then see different input (outline only / fill only) — which is the
+        point, but worth knowing if the tail of the stack is doing something
+        that assumed both.
+        """
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            if step is None:
+                step = next((i for i, s in enumerate(layer.effects)
+                             if s.effect == "hatch_fill"), None)
+                if step is None:
+                    raise ValueError("layer has no hatch_fill step to split")
+            if not (0 <= step < len(layer.effects)):
+                raise ValueError(f"no effect step {step} on this layer")
+            if layer.effects[step].effect != "hatch_fill":
+                raise ValueError(f"step {step} is {layer.effects[step].effect!r}, not hatch_fill")
+            self._checkpoint()
+
+            fill_data = layer.model_dump()
+            del fill_data["id"]  # CanvasLayer mints a fresh one
+            fill_data["name"] = f"{layer.name} · hatch"
+            fill_data["pen_id"] = None
+            fill_data["effects"][step]["params"] = {
+                **fill_data["effects"][step]["params"], "outline": False,
+            }
+            fill = CanvasLayer(**fill_data)
+            fill.source.file = None  # the snapshot belongs to the original
+
+            outline_data = layer.model_dump()  # keeps the id
+            outline_data["effects"].pop(step)
+            outline = CanvasLayer(**outline_data)
+
+            idx = self.project.layers.index(layer)
+            self.project.layers[idx] = outline
+            self.project.layers.insert(idx + 1, fill)
+            # shared by reference: source geometry is only ever replaced
+            # wholesale, never mutated in place
+            self.source_geometry[fill.id] = self.source_geometry.get(layer_id, [])
+            return fill
+
     def add_lineart_stack(
         self, image: str, flavor: str, rotate: int = 0, width: float = 150.0
     ) -> list[CanvasLayer]:

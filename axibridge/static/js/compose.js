@@ -1150,6 +1150,24 @@ export function renderLayerDetail() {
         commitEffects(layer, i, { params: values });
       }, { onLive: sched, stateKey: `fx:${layer.id}:${i}` });
       div.appendChild(form);
+      // A pen belongs to a LAYER, so hatching with a different pen from the
+      // outline it fills means two layers. One click builds that pair.
+      if (step.effect === "hatch_fill") {
+        const split = document.createElement("button");
+        split.className = "step-action";
+        split.textContent = "Split hatch onto its own layer";
+        split.title = "Fill moves to a new layer above (outline off, no pen yet — "
+          + "pick one to give it its own plot pass); this layer keeps the outline. One undo step.";
+        split.onclick = async () => {
+          try {
+            const fill = await api.post(`/api/layers/${layer.id}/split-hatch?step=${i}`);
+            await actions.refreshProject();
+            await actions.refreshResolved();
+            actions.setSelection([fill.id]); // land on the new layer to pick its pen
+          } catch (e) { actions.oops(e); }
+        };
+        div.appendChild(split);
+      }
     }
     steps.appendChild(div);
   });
