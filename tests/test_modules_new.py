@@ -121,7 +121,7 @@ def test_hatch_fill_connect_strokes_merges_a_holeless_shape_into_one_stroke():
     assert len(joined_hatch[0].points) == total_unjoined_pts
 
 
-def test_hatch_fill_connect_strokes_still_lifts_around_a_hole():
+def test_hatch_fill_connect_strokes_routes_around_a_hole_without_crossing_it():
     eff = get_effect("hatch_fill")
     outer = _square()
     hole = Path(points=[(15, 15), (25, 15), (25, 25), (15, 25), (15, 15)], filled=True)
@@ -131,13 +131,74 @@ def test_hatch_fill_connect_strokes_still_lifts_around_a_hole():
         [outer, hole], eff.Params(spacing=2.0, angle_deg=0, inset=0, connect_strokes=True), EffectContext())
     unjoined_hatch = [p for p in unjoined if not p.filled]
     joined_hatch = [p for p in joined if not p.filled]
-    # the hole blocks some joins (a pen lift is still forced around it), but
-    # scanlines untouched by the hole still merge — strictly fewer pieces,
-    # never all the way down to one
-    assert 1 < len(joined_hatch) < len(unjoined_hatch)
-    for line in joined_hatch:  # the join itself must never cut through the hole
+    # a hole no longer forces a lift by itself: there is a way around this one
+    # INSIDE the material, so the greedy join finds it. What it must never do
+    # is take the shortcut straight across.
+    assert len(joined_hatch) < len(unjoined_hatch)
+    for line in joined_hatch:
         for x, y in line.points:
             assert not (15.5 < x < 24.5 and 15.5 < y < 24.5), "join crossed the hole"
+
+
+def test_hatch_fill_connect_strokes_still_lifts_when_there_is_no_way_round():
+    """A comb: teeth share one exterior ring, but reaching the next tooth means
+    either cutting across open air or walking the whole ring. Both are refused,
+    so the pen still lifts — one stroke per tooth."""
+    eff = get_effect("hatch_fill")
+    teeth = 4
+    pts = [(0.0, 0.0)]
+    for i in range(teeth):  # up the tooth, across, back down, along the spine
+        x = i * 10.0
+        pts += [(x, 30.0), (x + 6.0, 30.0), (x + 6.0, 0.0), (x + 10.0, 0.0)]
+    pts += [(teeth * 10.0, -6.0), (0.0, -6.0), (0.0, 0.0)]
+    comb = Path(points=pts, filled=True)
+    params = dict(spacing=2.0, angle_deg=0, inset=0)
+    unjoined = [p for p in eff.apply([comb], eff.Params(**params), EffectContext())
+                if not p.filled]
+    hatch = [p for p in eff.apply([comb], eff.Params(**params, connect_strokes=True),
+                                  EffectContext()) if not p.filled]
+    # joining still helps a lot (each tooth's own rows merge), but a lift per
+    # tooth survives — there is no route between teeth that stays in the material
+    assert teeth <= len(hatch) < len(unjoined)
+
+
+def test_hatch_fill_connect_strokes_hugs_a_concave_boundary():
+    """The case straight-line-only joining could not do: on a boundary that
+    curves inward, the chord between two consecutive scanline ends falls
+    OUTSIDE the shape, so every join on that side used to fail. Hugging the
+    boundary closes them."""
+    eff = get_effect("hatch_fill")
+    left = [(0.0, y) for y in (40.0, 0.0)]
+    # right edge bows inward: r(y) convex in y ⇒ every row-to-row chord exits
+    right = [(40.0 - 8.0 * math.sin(math.pi * y / 40.0), y)
+             for y in [i * 0.5 for i in range(81)]]
+    shape = Path(points=[(0.0, 0.0), *right, *left], filled=True)
+    params = dict(spacing=2.0, angle_deg=0, inset=0)
+    unjoined = [p for p in eff.apply([shape], eff.Params(**params), EffectContext())
+                if not p.filled]
+    joined = [p for p in eff.apply([shape], eff.Params(**params, connect_strokes=True),
+                                   EffectContext()) if not p.filled]
+    assert len(unjoined) > 15  # one scanline each to begin with
+    assert len(joined) == 1, "the concave side should now join like the flat one"
+    rows = {round(y, 6) for p in unjoined for _, y in p.points}
+    hug_pts = [(x, y) for x, y in joined[0].points if round(y, 6) not in rows]
+    assert hug_pts, "no boundary-following points: the join went straight, not hugging"
+    for x, y in joined[0].points:  # every hug point stays inside the shape
+        assert -1e-6 <= x <= 40.0 - 8.0 * math.sin(math.pi * y / 40.0) + 1e-6
+
+
+def test_hatch_fill_min_stroke_drops_slivers():
+    eff = get_effect("hatch_fill")
+    spike = Path(points=[(0, 0), (40, 0), (20, 40), (0, 0)], filled=True)  # sharp apex
+    params = dict(spacing=2.0, angle_deg=0, inset=0)
+    keep_all = [p for p in eff.apply([spike], eff.Params(**params), EffectContext())
+                if not p.filled]
+    filtered = [p for p in eff.apply([spike], eff.Params(**params, min_stroke=3.0),
+                                     EffectContext()) if not p.filled]
+    assert len(filtered) < len(keep_all)  # the apex slivers are gone
+    for line in filtered:
+        length = sum(math.dist(a, b) for a, b in zip(line.points, line.points[1:]))
+        assert length > 3.0
 
 
 def test_hatch_fill_connect_strokes_keeps_crosshatch_passes_separate():
