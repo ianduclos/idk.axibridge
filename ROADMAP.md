@@ -512,6 +512,14 @@ deliberately:
 
 ## Far / undecided — UI revamp (frontend tooling ceiling)
 
+**Brainstorm pass: `docs/IDEAS-ui-revamp.md` (2026-07-26)** — what "serious
+UI" concretely means here, ranked by operator value with a tooling tier
+marked per item. Its two load-bearing findings: most of the wanted work is
+Tier 0 (no invariant change), and *generating* types offline from the
+server's own OpenAPI schema and checking them in is a tier this section's
+three-way framing doesn't name — it captures most of the TypeScript case
+without a build step. The criterion below is unchanged by it.
+
 Opened 2026-07-25, from a discussion prompted by the pen-tool icon (an
 emoji glyph, `⚓`, standing in for a real icon). The zero-build invariant
 (ARCHITECTURE.md "Stack") was checked against what it actually costs, since
