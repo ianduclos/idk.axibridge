@@ -199,7 +199,18 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    Toolbar becomes a mode segment: ↖ select · ✎ draw · ⚓ pen · ● brush;
    every tool = geometry-as-params source + canvas-mode JS module (the
    draw-mode pattern).
-0c. **Brush tool (● circle brush)** — planned 2026-07-19, briefed 2026-07-19
+0c. ~~**Brush tool (● circle brush)**~~ — **shipped 2026-07-27** as
+   `sources/brush.py` + `static/js/brush.js` + a 4th toolbar segment button.
+   Paint/erase circle brush; the swept area folds into closed `filled=True`
+   rings (holes by nesting, no flag). The correctness rule is the
+   **sequential fold** — erases apply per stroke in order, never
+   union-all-then-subtract-all, or a repaint over an erased spot is swallowed
+   (`test_repaint_over_an_erase_survives` is the only test of 17 that catches
+   it). Per-point timestamps captured and unused, drawing.py's bet before
+   velocity_tube: a **tapered brush** (radius from drawing speed) is the
+   queued follow-up and lands as a pure addition. Original brief below, kept
+   because its reasoning still holds:
+0c-orig. **Brush tool (● circle brush)** — planned 2026-07-19, briefed 2026-07-19
    (`docs/plans/pen-brush-tools.md`, combined with 0b). A `brush`
    source: strokes + brush radius (`[`/`]` resize, circle cursor);
    commit = shapely buffer + union → closed `filled=True` boundary
@@ -214,6 +225,23 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    donut's hole" limitation this item originally cited (from the
    Documentation-debts IPR-hole note, itself corrected below) no longer
    applies to anything — don't reintroduce the caveat.
+0d. **Liquify (soft-brush warp effect)** — raised 2026-07-27 as a
+   hypothetical, thinking written down in `docs/plans/liquify-effect.md`
+   (loose plan, NOT a commitment — read it before starting, the reasoning is
+   the value). Push/twirl/pinch under a soft circular brush, in paper-space
+   mm. Three things it settles: it would be the **first captured-input
+   *Effect*** (draw/pen/brush are all Sources — the only unfamiliar plumbing
+   is PATCHing a step's params rather than POSTing `regenerate`); "depth as
+   parameter" reads as a global `amount` 0..1 that must be *exactly* identity
+   at 0, which makes timeline animation free; and **interpolating two
+   liquifications is easier than the geometry morph already shipped**,
+   because a warp is a field, not a structure, so it blends unconditionally.
+   The trap there: `blend_effect_stacks` doesn't deep-lerp hidden geometry
+   fields (only `blend_generator_params` does), and the tempting fix — A/B
+   inside the effect — re-forks interpolation, which the 2026-07-19
+   unification exists to prevent. Extend the core instead. Reuse
+   `coherent_jitter._resample` (densify before warping, or straight segments
+   stay straight) and `depth_displace`'s `anchor: layer|paper`.
 1. ~~Bitmap + fat tube effects~~ — **shipped July 2026** as
    `effects/bitmap.py` (merged staircase blocks, grid anchored to layer
    translation, `solid` interior fill) and `effects/fat_tube.py`
