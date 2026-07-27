@@ -1,52 +1,40 @@
 ---
 project: idk.axibridge
-updated: 2026-07-25
+updated: 2026-07-27
 entries: 4
 ---
 
-### hatch_fill connect_strokes v2: boundary-hugging connector — opened 2026-07-25, owner: opus
-- done: root-caused the "loose ends" Ian saw on a concave/holed shape
-  (screenshot this session) — `_join_where_possible`'s straight-line-only
-  connector test fails constantly near cusps/holes, exactly where joining
-  matters most. Loose plan written: `docs/plans/hatch-connect-strokes-v2.md`.
-- next: implement the boundary-hugging connector (walk the shape's own
-  boundary ring between two endpoints when the straight connector fails,
-  instead of forcing a lift) — the fix Ian specifically asked for. The plan
-  doc also notes two smaller, independent wins (min-length fragment filter,
-  greedy nearest-reachable join) that are worth doing alongside it but
-  aren't the main ask.
-- blockers: none — this is intentionally a loose/unfrozen plan (unlike the
-  other `docs/plans/*.md` briefs), leaving the exact mechanics to whoever
-  picks it up.
-- context: `axibridge/effects/hatch_fill.py` (`_hatch`, `_join_where_possible`,
-  lines ~56-105); `docs/plans/hatch-connect-strokes-v2.md` has the full
-  writeup, constraints (hole still forces a lift, crosshatch passes never
-  join, effects stay pure), and a verification sketch.
+### Push + idkpi pull: the module roster changed — opened 2026-07-25, updated 2026-07-27, owner: ian
+- done: everything merged to `main` and green (suite 559). This session added
+  a new EFFECT (`offset_fill`) and a new SOURCE (`brush`), and merged the
+  pending `feat/ui-round-0726`. Earlier: the four 07-25 branches (pen tool,
+  geometry morph, hatch connect, nested tween) and `feat/hatch-connect-v2`.
+- next: (1) push `main` to origin — 48 commits ahead, never yet pushed,
+  needs Ian's OK; (2) pull the idkpi clone, which is now a HARD requirement
+  rather than hygiene: `tests/test_app.py::test_state_shape` pins the effect
+  roster as a contract and `offset_fill` is in it, so the shared suite FAILS
+  on the Pi until it pulls; (3) delete the merged local branches
+  (`feat/ui-round-0726`, `feat/offset-fill`, plus the six older merged ones).
+- blockers: none — routine, but (1) is Ian's call by standing rule.
+- context: `git log --oneline origin/main..main`; the roster assertion is
+  `tests/test_app.py` ~line 22; `.claude/skills/pi` is the Pi runbook.
 
-### Post-merge follow-through: idkpi pull + push + bench check — opened 2026-07-25, owner: ian
-- done: all four pending branches (feat/nested-tween-morph, feat/pen-tool,
-  feat/geometry-morph-tween, feat/hatch-connect-strokes) merged to main in
-  dependency order, suite 511 green throughout. geometry-morph-tween was
-  rebased onto pen-tool's advanced tip as flagged; the rebase's tween.py
-  conflict exposed a real regression (nested-tween-morph's
-  `_source_paths_at` had switched to `effective_generator`/`lerp_params`
-  directly, bypassing `blend_generator_params`'s captured-geometry deep-lerp
-  — pen/drawing shape morph would have silently stopped working). Fixed by
-  applying the same deep-lerp inside `_source_paths_at` on the
-  post-reduction param dicts; caught by
-  `test_pen_tween_morphs_shape_continuously_not_stepped` failing before the
-  fix. CHANGES.md feed entry filed (2026-07-25 idk.axibridge entry).
-- next: pull the idkpi clone (semantics changed: tween-of-tween lifted for
-  same-generator, pen/drawing shapes morph instead of step); push main to
-  origin (confirm with Ian first — currently far ahead, not yet pushed);
-  bench-verify pen tool + animated pen morph on paper; once confirmed
-  nothing else needs them, delete the four now-merged local feature
-  branches.
-- blockers: none — routine follow-through, no design decision pending.
-- context: `git log --oneline main -8` shows the four merge commits atop
-  `8164dc8`; `axibridge/tween.py` `_source_paths_at`/`blend_generator_params`
-  docstrings explain the two call sites and why both apply the geometry
-  deep-lerp now.
+### Bench eye-check: offset_fill + brush — opened 2026-07-27, owner: ian
+- done: both modules built, merged and screen-verified only — `offset_fill`
+  via rendered PNG sweeps across square/circle/donut/dumbbell/star/L/two-holes
+  and a `round_center` 0→1 grid; `brush` via Playwright against the real UI
+  (4 strokes, erase bite and repaint bulge both visible, no console errors).
+  23 + 17 tests respectively.
+- next: put ink on paper — (1) `offset_fill` spacing vs pen width, the one
+  thing only real ink settles (does 2mm read as fill or as stripes at a 0.3mm
+  pen?); (2) whether `medial_tail` slivers read as intentional or as noise;
+  (3) `round_center` ~0.5 on a shape with real corners; (4) a brush mass with
+  `offset_fill` stacked on it — the module docstring claims rings suit a
+  painted mass better than hatching does, which is an aesthetic bet, not a
+  tested fact.
+- blockers: none.
+- context: `axibridge/effects/offset_fill.py` and `axibridge/sources/brush.py`
+  module docstrings carry the full reasoning; ROADMAP "Offset rings" and 0c.
 
 ### Bench eye-check of the 07-16→19 wave — opened 2026-07-19, owner: ian
 - done: generator v2 (misremembered scribble masses + tone dial, glyphgram
