@@ -3,13 +3,12 @@ project: idk.axibridge
 state: active
 updated: 2026-07-27
 machine: mac+pi
-summary: Two new modules on main — offset_fill (concentric-ring fill, topology-aware, with round_center) and the brush tool (paint/erase masses) — plus the pending UI round merged; suite 559 green, nothing plotted on paper yet.
+summary: offset_fill + the brush tool shipped and pushed; main is on origin for the first time and idkpi is in lockstep (560 green there), and the app's 5s-and-a-SIGKILL quit turned out to be a one-line uvicorn default.
 next:
-  - "Push main to origin — 48 commits ahead, never yet pushed (needs Ian's OK)"
-  - "Pull the idkpi clone: the effect/source ROSTER changed (new offset_fill effect, new brush source) and tests/test_app.py pins it, so the shared suite fails there until it pulls"
   - "Bench: plot offset_fill (ring spacing vs pen width is the thing only ink settles) and a brush mass with a fill stacked on it"
   - "Tapered brush (radius from drawing speed) — the queued brush follow-up; per-point timestamps are already captured so it is a pure addition"
   - "Delete the now-merged local feature branches (ui-round-0726, offset-fill, and the six older merged ones)"
+  - "App-shell polish, only if it still feels cheap after a week's use: window state, ⌘W, menu bar — small concrete items, NOT a toolchain (see the note below)"
 handoff_for: ian
 ---
 
@@ -73,6 +72,30 @@ since 07-26.
 **Not done:** nothing has touched paper. Both new modules are screen-verified
 only (rendered PNGs + Playwright), and ring-spacing-vs-pen-width is exactly
 the kind of thing only real ink settles.
+
+**Late in the session** (Ian's ask, all pushed):
+
+- **`main` is on origin** — first push ever, and **idkpi pulled** to the same
+  commit with 560 green there. Standing rule changed: push without asking on
+  this project.
+- **`fix(server)`: the app's slow quit was a one-line uvicorn default.**
+  `timeout_graceful_shutdown` defaults to *wait forever* for open connections,
+  and `/api/events` is an SSE stream that never finishes by design — so every
+  quit hung until `launch/axibridge_app.py`'s 5s grace expired and SIGKILLed
+  it. Measured with a stream held open: before, SIGTERM hung past 10s; after,
+  clean exit in 2.17s. The plot-running close guard is untouched.
+- **"Unknown source: brush" is a stale server, not a bug.**
+  `load_builtin_modules()` runs once at startup, so a process started before a
+  new module file exists never imports it — the browser picks up new JS
+  instantly (no build step) and the mismatch looks like a broken tool. Restart
+  the app after any new source/effect lands. Worth knowing generally.
+- **"Graduate to a real app?"** — the shell question and the frontend-build
+  question are separate and must stay that way (ROADMAP keeps the latter
+  deliberately open). A Tauri/Electron shell would still point at
+  `localhost:2942`, so the dev loop would be unchanged; a bundler is what
+  would actually add tedium. Most of the "cheap" feeling was the shutdown bug
+  above. Recommendation on record: use it a week, then fix the specific
+  irritations rather than buying an architecture.
 
 ---
 

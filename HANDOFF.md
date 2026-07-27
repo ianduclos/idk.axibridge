@@ -1,23 +1,8 @@
 ---
 project: idk.axibridge
 updated: 2026-07-27
-entries: 4
+entries: 3
 ---
-
-### Push + idkpi pull: the module roster changed — opened 2026-07-25, updated 2026-07-27, owner: ian
-- done: everything merged to `main` and green (suite 559). This session added
-  a new EFFECT (`offset_fill`) and a new SOURCE (`brush`), and merged the
-  pending `feat/ui-round-0726`. Earlier: the four 07-25 branches (pen tool,
-  geometry morph, hatch connect, nested tween) and `feat/hatch-connect-v2`.
-- next: (1) push `main` to origin — 48 commits ahead, never yet pushed,
-  needs Ian's OK; (2) pull the idkpi clone, which is now a HARD requirement
-  rather than hygiene: `tests/test_app.py::test_state_shape` pins the effect
-  roster as a contract and `offset_fill` is in it, so the shared suite FAILS
-  on the Pi until it pulls; (3) delete the merged local branches
-  (`feat/ui-round-0726`, `feat/offset-fill`, plus the six older merged ones).
-- blockers: none — routine, but (1) is Ian's call by standing rule.
-- context: `git log --oneline origin/main..main`; the roster assertion is
-  `tests/test_app.py` ~line 22; `.claude/skills/pi` is the Pi runbook.
 
 ### Bench eye-check: offset_fill + brush — opened 2026-07-27, owner: ian
 - done: both modules built, merged and screen-verified only — `offset_fill`
