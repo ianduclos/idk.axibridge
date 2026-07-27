@@ -24,7 +24,14 @@ def main() -> None:
 
     from .app import create_app
 
-    uvicorn.run(create_app(), host=args.host, port=args.port, log_level="info")
+    # timeout_graceful_shutdown is NOT optional here. uvicorn's default is to
+    # wait forever for open connections to finish, and /api/events is an SSE
+    # stream that never finishes by design — so a plain SIGTERM hung until the
+    # app shell's own 5s grace ran out and SIGKILLed it. That was the whole of
+    # "the app takes ages to close". Two seconds is longer than any real
+    # request here and short enough that quitting feels instant.
+    uvicorn.run(create_app(), host=args.host, port=args.port, log_level="info",
+                timeout_graceful_shutdown=2)
 
 
 if __name__ == "__main__":
