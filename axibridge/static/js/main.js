@@ -15,6 +15,7 @@ import { initSettingsTab, renderSettingsTab } from "./settings.js";
 import { initWorkbench } from "./workbench.js";
 import { initMenu } from "./menu.js";
 import { initDrawMode, activateDrawMode, deactivateDrawMode } from "./draw.js";
+import { initBrushMode, activateBrushMode, deactivateBrushMode, handleBrushEscape } from "./brush.js";
 import { initPenMode, activatePenMode, deactivatePenMode, handlePenEscape, refreshPenOverlay,
          commitPendingPath } from "./pen.js";
 
@@ -467,6 +468,7 @@ function initTabs() {
   initMenu(); // no-op after first call; the menu bar is static across project switches
   initDrawMode(); // no-op after first call (returns early if already wired)
   initPenMode();  // no-op after first call (returns early if already wired)
+  initBrushMode();
   renderLayerList();
   applyPanelCollapse();
 }
@@ -474,7 +476,7 @@ function initTabs() {
 // ---- tool mode broker (select / draw / pen) ----------------------------------
 //
 // Exactly one canvas tool is active at a time. Each mode's activate()/
-// deactivate() lives in its own module (draw.js, pen.js); "select" is a no-op
+// deactivate() lives in its own module (draw.js, pen.js, brush.js); "select" is a no-op
 // pair — it's just canvas.js's existing drag/marquee behavior with no capture
 // listener stealing events. See docs/plans/pen-brush-tools.md Part 0.
 
@@ -482,6 +484,7 @@ const TOOL_MODES = {
   select: {},
   draw: { activate: activateDrawMode, deactivate: deactivateDrawMode },
   pen: { activate: activatePenMode, deactivate: deactivatePenMode, handleEscape: handlePenEscape },
+  brush: { activate: activateBrushMode, deactivate: deactivateBrushMode, handleEscape: handleBrushEscape },
 };
 
 let toolMode = "select";
@@ -498,6 +501,8 @@ function setToolMode(mode) {
   // beside it without disturbing the segment's joined-button styling
   const commit = $("pen-commit");
   if (commit) commit.hidden = toolMode !== "pen";
+  const brushBar = $("brush-bar");
+  if (brushBar) brushBar.hidden = toolMode !== "brush";
 }
 
 {

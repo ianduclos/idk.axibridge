@@ -445,6 +445,18 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
    #tool-toggle button.on styling comes from the generic .seg rule above. */
 #canvas-wrap.draw-mode, #canvas-wrap.pen-mode { cursor: crosshair; }
 #canvas-wrap.draw-mode svg, #canvas-wrap.pen-mode svg { cursor: crosshair; }
+/* brush: the circle IS the cursor (it shows the real mm radius), so the
+   pointer itself gets out of the way rather than doubling up */
+#canvas-wrap.brush-mode, #canvas-wrap.brush-mode svg { cursor: none; }
+.brush-cursor { fill: none; stroke: var(--accent); stroke-width: 0.4; opacity: 0.9; pointer-events: none; }
+.brush-cursor.erasing { stroke: var(--rust); stroke-dasharray: 2 1.5; }
+/* the live swept mass during a drag: stroke-width is set to 2x radius in mm
+   by brush.js, so this previews the area shapely will buffer server-side */
+.brush-live { fill: none; stroke: var(--accent); stroke-opacity: 0.35;
+              stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.brush-live.erasing { stroke: var(--rust); }
+#brush-bar { align-items: center; }
+#brush-size { padding: 0 .5em; font-variant-numeric: tabular-nums; opacity: .8; }
 
 /* pen tool: anchor/handle overlay. Anchors are small squares (Photoshop-
    style, <rect> elements) so they read as visually distinct from the round
