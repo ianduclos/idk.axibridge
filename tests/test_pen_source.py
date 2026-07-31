@@ -28,9 +28,10 @@ def test_registered():
     assert m.label == "Pen (anchors)"
 
 
-def test_empty_subpaths_raises():
-    with pytest.raises(ValueError, match="draw a path first"):
-        _gen(subpaths=[])
+def test_empty_subpaths_is_an_empty_doc():
+    # deliberate state: the "＋ empty layer" button creates a blank pen target
+    doc = _gen(subpaths=[])
+    assert doc.layers == [] or all(not layer.paths for layer in doc.layers)
 
 
 def test_straight_segment_two_corner_anchors():

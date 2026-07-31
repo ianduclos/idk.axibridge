@@ -356,11 +356,30 @@ def test_lerp_affine_endpoints_and_shortest_arc():
 
 def test_lerp_params_rules():
     out = lerp_params({"n": 10, "s": 2.0, "seed": 1, "on": True},
-                      {"n": 20, "s": 4.0, "seed": 9, "on": False}, 0.25,
+                      {"n": 20, "s": 4.0, "seed": 1, "on": False}, 0.25,
                       {"n": 0, "s": 0.0, "seed": 0, "on": False})
     assert out["n"] == 12 and out["s"] == pytest.approx(2.5)
-    assert out["seed"] == 1 and out["on"] is True  # step, not blend
-    assert lerp_params({"seed": 1}, {"seed": 9}, 0.9, {"seed": 0})["seed"] == 9
+    assert out["seed"] == 1 and out["on"] is True  # equal seeds stay constant; bool steps
+
+
+def test_lerp_params_seed_per_frame():
+    # differing endpoint seeds: a fresh deterministic seed per frame, no 0.5 snap
+    seeds = [lerp_params({"seed": 1}, {"seed": 9}, t, {})["seed"]
+             for t in (0.2, 0.4, 0.6, 0.8)]
+    assert len(set(seeds)) == 4
+    assert all(s not in (1, 9) for s in seeds)
+    assert all(0 <= s <= 9999 for s in seeds)  # fits every module's seed bound
+    # same t reproduces the same seed (preview == plot, scrub-stable)
+    again = [lerp_params({"seed": 1}, {"seed": 9}, t, {})["seed"]
+             for t in (0.2, 0.4, 0.6, 0.8)]
+    assert seeds == again
+    # endpoint fidelity: t=0 is A's seed, t=1 is B's
+    assert lerp_params({"seed": 1}, {"seed": 9}, 0.0, {})["seed"] == 1
+    assert lerp_params({"seed": 1}, {"seed": 9}, 1.0, {})["seed"] == 9
+    # a manually zeroed seed is the "random" wildcard — hashed even at endpoints
+    assert lerp_params({"seed": 0}, {"seed": 0}, 0.0, {})["seed"] not in (0,)
+    assert lerp_params({"seed": 0}, {"seed": 5}, 0.0, {})["seed"] != 0
+    assert lerp_params({"seed": 5}, {"seed": 0}, 1.0, {})["seed"] != 0
 
 
 def test_perspective_preserves_closure_and_foreshortens():

@@ -37,7 +37,6 @@ before structural changes.
 | Pen library & machine settings (global JSON stores) | `axibridge/stores.py` |
 | Roadmap / future direction | `ROADMAP.md` |
 | Project folder save/load/zip | `axibridge/project_io.py` |
-| Global scrap library (workbench "keep this" saves, `~/.axibridge/scraps/`) | `axibridge/scraps.py` |
 | HTTP API | `axibridge/api.py` |
 | Canvas editor / tabs | `axibridge/static/js/canvas.js`, `compose.js`, `plot.js`, … |
 

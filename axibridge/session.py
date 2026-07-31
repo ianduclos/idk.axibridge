@@ -13,6 +13,8 @@ times is what the pen draws.
 
 from __future__ import annotations
 
+import math
+import random
 import threading
 from collections import OrderedDict, deque
 from typing import Any
@@ -36,6 +38,35 @@ from .model import Layer, Path, PathDocument
 from .registry import get_source
 from .stores import Pen, pen_library, settings_store
 from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
+
+
+def _subpath_by_distance(
+    points: list[tuple[float, float]], d0: float, d1: float
+) -> list[tuple[float, float]]:
+    """The sub-polyline of ``points`` between arc distances ``d0``..``d1``
+    (mm along the stroke) — where the pen was down between two moments of an
+    interrupted plot. ``[]`` when the interval misses the stroke entirely."""
+    if d1 <= d0:
+        return []
+    out: list[tuple[float, float]] = []
+    cum = 0.0
+    for i in range(len(points) - 1):
+        x0, y0 = points[i]
+        x1, y1 = points[i + 1]
+        seg = math.hypot(x1 - x0, y1 - y0)
+        nxt = cum + seg
+        if seg > 0 and nxt > d0 and cum < d1:
+            fa = (max(d0, cum) - cum) / seg
+            fb = (min(d1, nxt) - cum) / seg
+            pa = (x0 + (x1 - x0) * fa, y0 + (y1 - y0) * fa)
+            pb = (x0 + (x1 - x0) * fb, y0 + (y1 - y0) * fb)
+            if not out:
+                out.append(pa)
+            out.append(pb)
+        cum = nxt
+        if cum >= d1:
+            break
+    return out
 
 
 def _mul_affine(left: Affine, right: Affine) -> Affine:
@@ -98,6 +129,11 @@ LINEART_STACK_PRESETS: dict[str, list[dict[str, Any]]] = {
                     "wobble": 1.5, "carefulness_loose": 3.0}},
     ],
 }
+
+
+#: grid shapes (cols, rows) whose cells are portrait on a landscape sheet —
+#: ``_grid_place`` flips the scene 90° inside them to use the paper
+_ROTATED_GRIDS = {(2, 1), (4, 2)}
 
 
 class Session:
@@ -332,6 +368,55 @@ class Session:
             self._shaped_cache.pop(layer_id, None)
             return layer
 
+    def append_shape_op(self, layer_id: str, op: dict[str, Any]) -> CanvasLayer:
+        """Commit one add/subtract op to a shape-mass layer, CONVERTING the
+        layer first when it is still a plain pen or brush layer: the existing
+        content becomes the leading ops (pen subpaths → ``add`` pen ops,
+        brush strokes → add/subtract brush ops) and the new gesture is
+        appended. This is the single seam behind every cross-tool action
+        (erase into a pen shape, pen-cut into a brushed blob, pen subtract
+        anywhere) — see sources/shape.py's docstring.
+
+        One checkpoint: convert+commit is a single undo step, so ⌘Z returns
+        the layer to its pre-conversion pen/brush state with the gesture
+        uncommitted. The op is validated BEFORE anything mutates."""
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            gen = layer.source.generator if layer.source.type == "generator" else None
+            params = layer.source.params or {}
+            if gen == "shape":
+                new_params = {**params, "ops": [*params.get("ops", []), op]}
+            elif gen == "pen":
+                ops = [{"kind": "pen", "mode": "add",
+                        "anchors": sp.get("anchors", []),
+                        "closed": sp.get("closed", False)}
+                       for sp in params.get("subpaths", [])]
+                new_params = {"ops": [*ops, op]}
+            elif gen == "brush":
+                ops = [{"kind": "brush",
+                        "mode": "subtract" if s.get("mode") == "erase" else "add",
+                        "points": s.get("points", []),
+                        "radius": s.get("radius", 5.0)}
+                       for s in params.get("strokes", [])]
+                new_params = {"ops": [*ops, op]}
+            else:
+                raise RuntimeError(
+                    "only pen, brush and shape layers take shape ops "
+                    f"(this layer is {gen or layer.source.type})")
+            src = get_source("shape")
+            validated = src.Params(**new_params)  # raises before any mutation
+            self._checkpoint()
+            layer.source.type = "generator"
+            layer.source.generator = "shape"
+            layer.source.file = None
+            layer.source.params = new_params
+            if gen != "shape":
+                layer.name = src.label
+            doc = src.generate(validated)
+            self.source_geometry[layer.id] = [p for lyr in doc.layers for p in lyr.paths]
+            self._shaped_cache.pop(layer_id, None)
+            return layer
+
     def preview_layer_effects(self, layer_id: str, effects: list[dict[str, Any]]) -> list[Path]:
         """Shape a layer with a CANDIDATE effect stack — strictly read-only:
         no checkpoint, no cache writes, nothing stored. Feeds the live
@@ -344,15 +429,15 @@ class Session:
             raise RuntimeError("layer has no source geometry to preview (tween layers preview live already)")
         candidate.effects = [EffectStep(**e) for e in effects]
         # outside the lock: shape_layer is pure and src is never mutated in place
-        return compose.shape_layer(candidate, src)
+        return compose.shape_layer(candidate, src, compose.guide_page(self.project))
 
     def add_svg_layers(
         self, svg_text: str, filename: str, quantization_mm: float,
         rename: str | None = None,
     ) -> list[CanvasLayer]:
         """An uploaded SVG contributes its layers as compositor layers.
-        ``rename`` overrides the SVG-derived layer names (scrap import: the
-        library name beats whatever ids the SVG round-trip produced)."""
+        ``rename`` overrides the SVG-derived layer names (the caller's name
+        beats whatever ids the SVG round-trip produced)."""
         doc = doc_from_svg(svg_text, quantization_mm, source=filename)
         if not doc.layers:
             raise RuntimeError("no plottable geometry found in the SVG")
@@ -381,6 +466,7 @@ class Session:
     def update_layer(self, layer_id: str, patch: dict[str, Any]) -> CanvasLayer:
         allowed = {"name", "visible", "draw", "transform", "effects", "pen_id",
                    "occluder", "receives_occlusion", "occlusion_margin_mm",
+                   "occlude_groups", "receives_groups",
                    "region", "region_boundary", "frame_offset", "frame_follow"}
         with self._lock:
             layer = self.project.layer(layer_id)
@@ -659,7 +745,7 @@ class Session:
                 step = layer.model_copy(deep=True)
                 step.source.params = {**(layer.source.params or {}), "t": t, "sweep": 1}
                 paths = tween.materialize(step, self.project, self.source_geometry)
-                shaped = compose.shape_layer(layer, paths)  # tween's own tf/fx baked in
+                shaped = compose.shape_layer(layer, paths, compose.guide_page(self.project))  # tween's own tf/fx baked in
                 data = layer.model_dump()
                 del data["id"]
                 data.update(
@@ -768,7 +854,14 @@ class Session:
         if cell_w <= 0 or cell_h <= 0:
             raise RuntimeError("margin too large for this grid on the current paper guide")
 
-        scale = min(cell_w / bw, cell_h / bh)  # shared: no per-frame size jitter
+        # 2-up and 8-up leave portrait cells on a landscape sheet — flip the
+        # scene 90° inside each cell (scale computed against the swapped
+        # bbox) so a landscape animation covers the paper instead of
+        # letterboxing. Keyed on grid SHAPE, not the preset button, so
+        # hand-entered 2×1 / 4×2 behaves the same.
+        rotate = (cols, rows) in _ROTATED_GRIDS
+        fit_w, fit_h = (bh, bw) if rotate else (bw, bh)
+        scale = min(cell_w / fit_w, cell_h / fit_h)  # shared: no per-frame size jitter
 
         placed_frames: list[dict[str, list[Path]]] = []
         for i, t in enumerate(ts):
@@ -782,8 +875,12 @@ class Session:
                 box = frame_bbox(t)
                 fcx = (box[0] + box[2]) / 2 if box else 0.0
                 fcy = (box[1] + box[3]) / 2 if box else 0.0
-            aff = Affine(a=scale, b=0.0, c=0.0, d=scale,
-                         e=cx - scale * fcx, f=cy - scale * fcy)
+            if rotate:
+                aff = Affine(a=0.0, b=scale, c=-scale, d=0.0,
+                             e=cx + scale * fcy, f=cy - scale * fcx)
+            else:
+                aff = Affine(a=scale, b=0.0, c=0.0, d=scale,
+                             e=cx - scale * fcx, f=cy - scale * fcy)
             placed_frames.append(
                 {lid: compose.transform_paths(paths, aff) for lid, paths in frame.items()}
             )
@@ -1810,7 +1907,8 @@ class Session:
             layer = self.project.layer(layer_id)
             self._checkpoint()
             self._materialize_tweens()  # a stale tween must bake its CURRENT look
-            shaped = compose.shape_layer(layer, self.source_geometry.get(layer_id, []))
+            shaped = compose.shape_layer(layer, self.source_geometry.get(layer_id, []),
+                                        compose.guide_page(self.project))
             self.source_geometry[layer_id] = shaped
             layer.transform = Affine()
             layer.effects = []
@@ -2064,6 +2162,85 @@ class Session:
         out.width, out.height = doc.width, doc.height
         return out
 
+    # -- interrupted-plot fragments --------------------------------------------
+
+    def interrupt_fragment(
+        self,
+        seed: int = 0,
+        start: float | None = None,
+        stop: float | None = None,
+        optimized: bool = True,
+    ) -> tuple[CanvasLayer, float, float]:
+        """Recreate a plot that was interrupted: the WHOLE resolved project in
+        draw order, keeping only a contiguous pen-down slice — a random start
+        spot, an early stop, strokes cut mid-line exactly where the pen would
+        have lifted. The fragment becomes ONE baked layer on top.
+
+        Order basis: ``optimized=True`` runs the flatten through
+        :meth:`_optimize` first, so an active plot-pass optimisation
+        (linesort/merge/reloop/crop) gives the order the machine would really
+        have drawn — nib compensation is NOT applied (it only shifts where the
+        carriage goes; the ink lands at resolved positions).
+
+        ``start``/``stop`` are fractions of total pen-down distance; either
+        left None is rolled from ``seed`` (deterministic per seed — rerolling
+        the same seed recreates the same fragment). Returns the new layer and
+        the (rolled or given) fractions so the UI can show what the seed
+        picked. One undo step.
+
+        Known approximation: the slice is taken from post-occlusion geometry,
+        so regions hidden under layers that "hadn't been drawn yet" stay
+        hidden — this recreates the PLANNED plot stopped early."""
+        with self._lock:
+            doc = self.resolved_document("all")  # flatten skips hidden layers
+            if optimized:
+                doc = self._optimize(doc)
+            flat = [p for _layer, p in doc.iter_paths()]
+            total = sum(p.length() for p in flat)
+            if total <= 0:
+                raise RuntimeError("nothing to interrupt (no pen-down geometry)")
+
+            rng = random.Random(seed)
+            a = start if start is not None else rng.uniform(0.0, 1.0)
+            b = stop if stop is not None else rng.uniform(0.0, 1.0)
+            a, b = min(a, b), max(a, b)
+            a = min(max(a, 0.0), 1.0)
+            b = min(max(b, 0.0), 1.0)
+            if b - a < 0.01:  # never a sliver — keep the fragment readable
+                b = min(1.0, a + 0.01)
+                if b - a < 0.01:
+                    a = b - 0.01
+            d0, d1 = a * total, b * total
+
+            fragment: list[Path] = []
+            cum = 0.0
+            for p in flat:
+                plen = p.length()
+                lo, hi = cum, cum + plen
+                cum = hi
+                if hi <= d0 or lo >= d1:
+                    continue
+                if len(p.points) < 2:
+                    fragment.append(Path(points=list(p.points), filled=False))
+                    continue
+                pts = _subpath_by_distance(p.points, d0 - lo, d1 - lo)
+                if len(pts) >= 2:
+                    # filled=False always: a cut fill outline is just a line,
+                    # exactly like the ink of a real interrupted stroke
+                    fragment.append(Path(points=pts, filled=False))
+            if not fragment:
+                raise RuntimeError("the rolled slice contains no strokes")
+
+            self._checkpoint()
+            layer = CanvasLayer(
+                name=f"interrupted {a * 100:.0f}–{b * 100:.0f}%",
+                source=LayerSource(type="baked"),
+                transform=Affine(),
+            )
+            self.project.layers.append(layer)
+            self.source_geometry[layer.id] = fragment
+            return layer, a, b
+
     # -- backend params (stored in the project, per spec) -----------------------
 
     def params_for(self, backend_id: str):
@@ -2082,6 +2259,8 @@ class Session:
         machine = dict(settings_store.settings.backend_params)
         machine[backend_id] = dumped
         settings_store.update({"backend_params": machine})
+        if backend_id == "native" and "model" in values:
+            manager.sync_limits_for_model(validated.model)
         return dumped
 
     @staticmethod

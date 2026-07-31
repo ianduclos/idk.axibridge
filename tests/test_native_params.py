@@ -53,3 +53,48 @@ def test_project_params_win_over_machine_defaults():
     settings_store.update({"backend_params": {"simulator": {"time_scale": 250}}})
     session.project.backend_params["simulator"] = {"time_scale": 99}
     assert session.params_for("simulator").time_scale == 99
+
+
+def test_apply_casts_machine_options_to_int():
+    b = _stub_backend()
+    b._apply(NativeParams(resolution=1.0, penlift=2.0, model=5.0))
+    for name in ("resolution", "penlift", "model"):
+        assert type(getattr(b._ad.options, name)) is int, name
+    assert b._ad.options.resolution == 1
+    assert b._ad.options.penlift == 2
+    assert b._ad.options.model == 5
+
+
+def test_model_syncs_stock_envelope_but_never_a_custom_one():
+    from axibridge.machine import manager
+
+    saved = manager.limits.model_copy()
+    try:
+        manager.limits.width, manager.limits.height = 300.0, 218.0  # stock V3
+        assert manager.sync_limits_for_model(2) is True
+        assert (manager.limits.width, manager.limits.height) == (430.0, 297.0)
+        assert manager.sync_limits_for_model(5) is True  # stock → stock follows
+        assert (manager.limits.width, manager.limits.height) == (864.0, 594.0)
+        manager.limits.width = 999.0  # hand-tuned: no longer a stock envelope
+        assert manager.sync_limits_for_model(1) is False
+        assert manager.limits.width == 999.0
+    finally:
+        manager.limits = saved
+
+
+def test_envelope_tolerance_ignores_float_noise():
+    from axibridge.machine import manager
+    from axibridge.model import Layer, Path, PathDocument
+
+    saved = manager.limits.model_copy()
+    try:
+        manager.limits.width, manager.limits.height = 300.0, 218.0
+        manager.limits.enabled = True
+        hair = PathDocument(layers=[Layer(id=1, name="l", paths=[
+            Path(points=[(0.0, 0.0), (300.04, 217.96)])])])
+        assert manager.check_envelope(hair) == []  # 0.04mm over is noise
+        over = PathDocument(layers=[Layer(id=1, name="l", paths=[
+            Path(points=[(0.0, 0.0), (301.0, 100.0)])])])
+        assert manager.check_envelope(over)  # 1mm over is a real violation
+    finally:
+        manager.limits = saved

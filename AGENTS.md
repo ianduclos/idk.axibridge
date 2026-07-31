@@ -27,7 +27,7 @@ before structural changes.
 | Concern | File |
 |---|---|
 | IPR (geometry⇄execution contract) | `axibridge/model.py` (`PathDocument`) |
-| Layer model + compositor (resolve, occlusion masks) | `axibridge/compose.py` |
+| Layer model + compositor (resolve, occlusion masks + group channels) | `axibridge/compose.py` |
 | One open project + the resolve pipeline + undo history | `axibridge/session.py` |
 | Image assets (depth maps, `clip#NNNN` frame sequences) | `axibridge/assets.py` |
 | Module registry (Source / Effect / Transform) | `axibridge/registry.py` |

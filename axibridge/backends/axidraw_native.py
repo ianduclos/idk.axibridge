@@ -52,13 +52,44 @@ class NativeParams(BaseModel):
     pen_delay_down: float = Field(default=0, ge=-500, le=2000, title="Extra delay after lowering (ms)")
     pen_delay_up: float = Field(default=0, ge=-500, le=2000, title="Extra delay after raising (ms)")
     const_speed: bool = Field(default=False, title="Constant pen-down speed")
+    resolution: int = Field(
+        default=1, ge=1, le=2, title="Motor resolution",
+        description="1 = high (16× microstepping, smoothest) · 2 = low (8×, "
+                    "slightly faster). pyaxidraw already defaults to high; "
+                    "this pins it.",
+        json_schema_extra={"group": "Machine"},
+    )
+    penlift: int = Field(
+        default=1, ge=1, le=3, title="Pen-lift servo",
+        description="1 = model default · 2 = standard servo · 3 = narrow-band "
+                    "brushless (different pin + PWM timings)",
+        json_schema_extra={"group": "Machine"},
+    )
+    servo_timeout_s: float = Field(
+        default=60.0, ge=0.0, le=600.0, title="Servo power-down (s)",
+        description="Servo de-energises this long after the last move "
+                    "(quieter, cooler). 0 = stay energised",
+        json_schema_extra={"group": "Machine"},
+    )
     model: int = Field(
         default=1, ge=1, le=6, title="AxiDraw model",
-        description="1=V3/SE/A4, 2=V3/A3 or SE/A3, 3=V3 XLX, 4=MiniKit, 5=SE/A1, 6=SE/A2",
-        # hidden from the auto-form: it's a hardware identity, not a knob —
-        # wrong values let pyaxidraw command past the V3's physical travel
-        json_schema_extra={"hidden": True},
+        description="Travel: 1=V3/SE/A4 300×218 · 2=V3/A3 or SE/A3 430×297 · "
+                    "3=V3 XLX 595×218 · 4=MiniKit 160×102 · 5=SE/A1 864×594 · "
+                    "6=SE/A2 594×432 mm. Changing it also updates the soft "
+                    "envelope when it still matches a stock model size.",
+        json_schema_extra={"group": "Machine"},
     )
+
+
+#: physical travel per AxiDraw model (mm), mirroring axidraw_conf.py
+MODEL_TRAVELS = {
+    1: (300.0, 218.0),
+    2: (430.0, 297.0),
+    3: (595.0, 218.0),
+    4: (160.0, 101.6),
+    5: (864.0, 594.0),
+    6: (594.0, 432.0),
+}
 
 
 class NativeAxidrawBackend(ExecutionBackend):
@@ -119,6 +150,10 @@ class NativeAxidrawBackend(ExecutionBackend):
             if port:
                 ad.options.port = port
             ad.options.units = 2  # millimetres — the IPR convention
+            # raise (don't just flag) on the pause button and USB loss, so the
+            # plot loop can tell them apart from ordinary serial noise
+            ad.errors.button = True
+            ad.errors.disconnect = True
             if not ad.connect():
                 raise RuntimeError(
                     f"could not connect to AxiDraw on {port or 'auto-detected port'}"
@@ -130,7 +165,20 @@ class NativeAxidrawBackend(ExecutionBackend):
             # pyaxidraw stores the firmware version on plot_status, not the
             # main object; query directly only if connect didn't capture it.
             self._firmware = getattr(ad.plot_status, "fw_version", "") or self._query_fw()
-            return {"port": port or "auto", "firmware": self._firmware}
+            info: dict[str, Any] = {"port": port or "auto", "firmware": self._firmware}
+            # barrel-jack check: the EBB reports its PSU voltage; without the
+            # supply the machine accepts moves and nothing physically moves —
+            # warn loudly, never block (a no-PSU dry run is legitimate)
+            try:
+                from plotink import ebb_motion  # noqa: PLC0415 — guarded optional dep
+                if not ebb_motion.queryVoltage(ad.plot_status.port, False):
+                    logger.warning(
+                        "AxiDraw reports insufficient PSU voltage (barrel-jack "
+                        "unplugged?) — motors will not move")
+                    info["voltage_warning"] = True
+            except Exception:
+                pass  # firmware too old for QC: no check, no warning
+            return info
 
     def _flush_stale(self) -> None:
         """Drain unread bytes from the EBB's receive buffer.
@@ -207,11 +255,19 @@ class NativeAxidrawBackend(ExecutionBackend):
         for name in (
             "speed_pendown", "speed_penup", "accel", "pen_pos_down", "pen_pos_up",
             "pen_rate_lower", "pen_rate_raise", "pen_delay_down", "pen_delay_up",
-            "model",
+            "resolution", "penlift", "model",
         ):
             setattr(ad.options, name, int(round(getattr(p, name))))
         ad.options.const_speed = p.const_speed
         ad.update()  # required in interactive mode after changing options
+        # servo power-down timeout — plotink sets it once per session, not via
+        # options; harmless to re-send on every apply (one SC command)
+        try:
+            from plotink import ebb_motion  # noqa: PLC0415 — guarded optional dep
+            ebb_motion.servo_timeout(ad.plot_status.port,
+                                     int(round(p.servo_timeout_s * 1000)), None, False)
+        except Exception:
+            pass  # pre-2.6 firmware / no port: the servo simply stays energised
 
     # -- interactive ---------------------------------------------------------
 
@@ -263,6 +319,15 @@ class NativeAxidrawBackend(ExecutionBackend):
                 return (reply or "").strip()
             ad.usb_command(cmd)
             return ""
+
+    def block(self) -> None:
+        """Wait until the EBB's motion queue drains (QG poll) — the companion
+        to raw(): after fire-and-forget raw motion, block before the next
+        command (or before trusting dead reckoning again)."""
+        with self._lock:
+            ad = self._require()
+            from axidrawinternal import serial_utils  # noqa: PLC0415 — guarded dep
+            serial_utils.exhaust_queue(ad)
 
     # -- plotting --------------------------------------------------------------
 
@@ -318,12 +383,22 @@ class NativeAxidrawBackend(ExecutionBackend):
                     ad.moveto(ox, oy)
                     self._pos = (ox, oy)
             except Exception:
-                # Serial died mid-plot (or the board faulted): don't keep a
-                # zombie handle that makes the UI claim "connected" while
-                # every command fails. Drop the connection so status reflects
-                # reality and auto/manual reconnect starts clean.
-                self._kill_connection()
-                raise
+                code = ad.plot_status.stopped
+                if code == 102:
+                    # PRG pause button (ad.errors.button made it raise): end
+                    # the job gracefully and KEEP the link — the machine is
+                    # fine, the user just reached over and stopped it
+                    control.stop()
+                    emit({"kind": "message",
+                          "message": "stopped by the AxiDraw pause button"})
+                else:
+                    # Serial died mid-plot / USB lost (104, also raised via
+                    # ad.errors.disconnect) or the board faulted: don't keep a
+                    # zombie handle that makes the UI claim "connected" while
+                    # every command fails. Drop the connection so status
+                    # reflects reality and auto/manual reconnect starts clean.
+                    self._kill_connection()
+                    raise
             finally:
                 if self._ad is not None:
                     try:

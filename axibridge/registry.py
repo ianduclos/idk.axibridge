@@ -100,11 +100,15 @@ class EffectContext(BaseModel):
     effects sample their field at ``point - translation`` so dragging a layer
     around the canvas does not reshuffle its wobble. ``seed`` is stable per
     layer, so two overlapping layers with the same effect get distinct fields.
+    ``page`` is the paper-guide rect (x, y, w, h — the bed when no guide is
+    set), for effects whose geometry is page-relative (invert). ``None`` only
+    in hand-built contexts; the resolve path always fills it.
     """
 
     layer_id: str = ""
     translation: tuple[float, float] = (0.0, 0.0)
     seed: int = 0
+    page: tuple[float, float, float, float] | None = None
 
 
 class EffectModule(ABC):

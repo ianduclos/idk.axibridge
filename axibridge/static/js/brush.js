@@ -127,7 +127,11 @@ function currentTargetLayerId() {
     activeBrushLayerId = null; // the active layer was deleted — never assume
   }
   const sel = S.selection.length === 1 ? project.layers.find((l) => l.id === S.selection[0]) : null;
-  if (sel && sel.source?.type === "generator" && sel.source?.generator === "brush") {
+  // brush, shape AND pen layers are targets: a pen layer converts to a shape
+  // layer on commit (erase bites into the committed pen shapes)
+  if (sel && sel.source?.type === "generator" &&
+      (sel.source?.generator === "brush" || sel.source?.generator === "shape" ||
+       sel.source?.generator === "pen")) {
     activeBrushLayerId = sel.id; // selecting a different brush layer retargets
     return sel.id;
   }
@@ -232,12 +236,22 @@ function resample(pts, step) {
 async function commitStroke(stroke) {
   try {
     const id = currentTargetLayerId();
-    if (id) {
-      const layer = S.state.project.layers.find((l) => l.id === id);
-      const strokes = [...(layer.source.params.strokes || []), stroke];
+    const target = id ? S.state.project.layers.find((l) => l.id === id) : null;
+    const gen = target?.source?.type === "generator" ? target.source.generator : null;
+    if (target && gen !== "brush") {
+      // shape layer (or a pen layer being painted into / erased out of):
+      // region semantics via an op — a plain pen target converts to a shape
+      // layer inside the same server-side undo step (session.append_shape_op)
+      await api.post(`/api/layers/${target.id}/shape_op`,
+                     { op: { kind: "brush",
+                             mode: stroke.mode === "erase" ? "subtract" : "add",
+                             points: stroke.points, radius: stroke.radius } });
+      activeBrushLayerId = target.id;
+    } else if (target) {
+      const strokes = [...(target.source.params.strokes || []), stroke];
       // no coalesce: per-stroke undo is the point (⌘Z removes exactly one
       // stroke, paint or erase) — the same call draw.js makes
-      await api.post(`/api/layers/${id}/regenerate`, { params: { ...layer.source.params, strokes } });
+      await api.post(`/api/layers/${target.id}/regenerate`, { params: { ...target.source.params, strokes } });
     } else {
       if (stroke.mode === "erase") return; // nothing to erase from yet
       const layer = await api.post("/api/layers/generate",

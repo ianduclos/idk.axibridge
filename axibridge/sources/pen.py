@@ -139,7 +139,10 @@ class PenSource(SourceModule):
     def generate(self, params: PenParams) -> PathDocument:
         subpaths = _prepare_subpaths(params.subpaths)
         if not subpaths:
-            raise ValueError("draw a path first")
+            # an empty layer is a deliberate state ("＋ empty layer" button):
+            # a blank target the pen tool appends subpaths into
+            return PathDocument(layers=[], width=BED_WIDTH, height=BED_HEIGHT,
+                                source="pen (empty)")
         paths: list[Path] = []
         for sp in subpaths:
             pts = _flatten_subpath(sp, params.flatten_tol)

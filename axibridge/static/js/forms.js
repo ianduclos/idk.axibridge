@@ -257,6 +257,12 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
         set(store(v));
       };
       ctl.appendChild(num);
+    } else if (spec.format === "textarea" || s.format === "textarea") {
+      const ta = document.createElement("textarea");
+      ta.value = val ?? "";
+      ta.rows = 3;
+      ta.onchange = () => set(ta.value);
+      ctl.appendChild(ta);
     } else { // string and anything else
       const inp = document.createElement("input");
       inp.type = "text";

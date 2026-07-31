@@ -38,7 +38,7 @@ import json
 import uuid
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from shapely.geometry import LineString, Point as ShPoint, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
@@ -123,6 +123,29 @@ class CanvasLayer(BaseModel):
     pen_id: str | None = None
     occluder: bool = False
     receives_occlusion: bool = True
+    occlude_groups: list[Literal["A", "B", "C", "D"]] = Field(
+        default_factory=list,
+        description="When this layer occludes: which groups it masks. EMPTY = "
+                    "mask every receiver below (the classic global occluder); "
+                    "otherwise only receivers listing any of these groups")
+    receives_groups: list[Literal["A", "B", "C", "D"]] = Field(
+        default_factory=list,
+        description="Group channels this receiver listens to, ON TOP of the "
+                    "global mask (additive semantics). EMPTY = receives only "
+                    "ungrouped occlusion")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_occlusion_group(cls, data):
+        """Load-time migration for projects saved when occlusion had a single
+        shared ``occlusion_group`` letter: it meant both directions, so it
+        becomes both lists."""
+        if isinstance(data, dict):
+            legacy = data.pop("occlusion_group", None)
+            if legacy:
+                data.setdefault("occlude_groups", [legacy])
+                data.setdefault("receives_groups", [legacy])
+        return data
     region: bool = Field(
         default=False,
         description="Affects below: this layer's placed silhouette becomes a "
@@ -264,11 +287,21 @@ def transform_paths(paths: list[Path], t: Affine) -> list[Path]:
     return [Path(points=[t.apply(x, y) for x, y in p.points], filled=p.filled) for p in paths]
 
 
-def _layer_ctx(layer: CanvasLayer) -> EffectContext:
+def guide_page(project: Project) -> tuple[float, float, float, float]:
+    """The page rect page-relative effects see (paper guide, else full bed)."""
+    g = project.guide
+    if g is None:
+        return (0.0, 0.0, BED_WIDTH, BED_HEIGHT)
+    return (g.x, g.y, g.width, g.height)
+
+
+def _layer_ctx(layer: CanvasLayer,
+               page: tuple[float, float, float, float] | None = None) -> EffectContext:
     return EffectContext(
         layer_id=layer.id,
         translation=layer.transform.translation,
         seed=_layer_seed(layer.id),
+        page=page,
     )
 
 
@@ -284,10 +317,11 @@ def _apply_effect_stack(paths: list[Path], steps: list[EffectStep], ctx: EffectC
     return paths
 
 
-def shape_layer(layer: CanvasLayer, source_paths: list[Path]) -> list[Path]:
+def shape_layer(layer: CanvasLayer, source_paths: list[Path],
+                page: tuple[float, float, float, float] | None = None) -> list[Path]:
     """transform → effect stack. Pure; caller caches."""
     placed = transform_paths(source_paths, layer.transform)
-    return _apply_effect_stack(placed, layer.effects, _layer_ctx(layer))
+    return _apply_effect_stack(placed, layer.effects, _layer_ctx(layer, page))
 
 
 def build_mask(
@@ -478,21 +512,22 @@ def resolve_project(
     """
     # 1. shape every visible layer (cached). Region layers are skipped: their
     # effect stack is a payload for the layers below, never for themselves.
+    page = guide_page(project)
     shaped: dict[str, list[Path]] = {}
     for layer in project.layers:
         if not layer.visible or layer.region:
             continue
         src = source_geometry.get(layer.id, [])
         if shaped_cache is not None:
-            key = _shape_key(layer, src)
+            key = _shape_key(layer, src, page)
             hit = shaped_cache.get(layer.id)
             if hit is not None and hit[0] == key:
                 shaped[layer.id] = hit[1]
                 continue
-            shaped[layer.id] = shape_layer(layer, src)
+            shaped[layer.id] = shape_layer(layer, src, page)
             shaped_cache[layer.id] = (key, shaped[layer.id])
         else:
-            shaped[layer.id] = shape_layer(layer, src)
+            shaped[layer.id] = shape_layer(layer, src, page)
 
     # 1.5 region layers ("affects below"), bottom -> top so an upper region
     # sees the output of a lower one (adjustment-layer stacking). The region's
@@ -507,7 +542,7 @@ def resolve_project(
         mask = build_mask(placed, line_diameter_for(region, pens), 0.0)
         if mask is None:
             continue
-        ctx = _layer_ctx(region)
+        ctx = _layer_ctx(region, page)
         for below in project.layers[:r_idx]:
             if below.id not in shaped:
                 continue  # hidden, or itself a region
@@ -521,9 +556,14 @@ def resolve_project(
             outside = clip_paths(shaped[below.id], mask)
             shaped[below.id] = outside + _apply_effect_stack(inside, region.effects, ctx)
 
-    # 2. occlusion, top -> bottom, accumulating the mask union
+    # 2. occlusion, top -> bottom, accumulating mask unions PER CHANNEL:
+    # the global union (occluders with an EMPTY occlude_groups — these mask
+    # every receiver) plus one union per group. An occluder with groups adds
+    # its mask to each of them; a receiver is clipped by global ∪ every group
+    # it listens to — additive semantics, all-empty behaves exactly as before.
     resolved: dict[str, list[Path]] = {}
-    cum_mask: BaseGeometry | None = None
+    global_mask: BaseGeometry | None = None
+    group_masks: dict[str, BaseGeometry] = {}
     for layer in reversed(project.layers):
         if not layer.visible:
             continue
@@ -531,24 +571,36 @@ def resolve_project(
             resolved[layer.id] = []  # a region is never drawn and never occludes
             continue
         s = shaped[layer.id]
-        if layer.receives_occlusion and cum_mask is not None:
-            clipped = clip_paths(s, cum_mask)
+        parts = [global_mask,
+                 *(group_masks[g] for g in layer.receives_groups if g in group_masks)]
+        parts = [p for p in parts if p is not None]
+        applicable = unary_union(parts) if parts else None
+        if layer.receives_occlusion and applicable is not None:
+            clipped = clip_paths(s, applicable)
         else:
             clipped = s
         resolved[layer.id] = clipped if layer.draw else []
         if layer.occluder:
             m = build_mask(s, line_diameter_for(layer, pens), layer.occlusion_margin_mm)
             if m is not None:
-                cum_mask = m if cum_mask is None else unary_union([cum_mask, m])
+                if not layer.occlude_groups:
+                    global_mask = m if global_mask is None else unary_union([global_mask, m])
+                else:
+                    for g in layer.occlude_groups:
+                        prev = group_masks.get(g)
+                        group_masks[g] = m if prev is None else unary_union([prev, m])
     return resolved
 
 
-def _shape_key(layer: CanvasLayer, src: list[Path]) -> str:
+def _shape_key(layer: CanvasLayer, src: list[Path],
+               page: tuple[float, float, float, float] | None = None) -> str:
     h = hashlib.sha256()
     h.update(str(id(src)).encode())  # source list identity: replaced wholesale on regen
     h.update(json.dumps({
         "t": layer.transform.model_dump(),
         "e": [s.model_dump() for s in layer.effects],
+        # page-relative effects (invert) must re-run when the guide moves
+        "p": page,
     }, sort_keys=True).encode())
     return h.hexdigest()
 

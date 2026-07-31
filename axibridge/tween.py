@@ -10,10 +10,14 @@ materialised into ``source_geometry`` by the session before every resolve).
 The contract that makes it sturdy:
 
 * **Endpoint fidelity** — t=0 reproduces A exactly, t=1 reproduces B
-  exactly. Everything non-lerpable (bools, strings, enums, ``seed`` fields,
-  mismatched effect stacks, the effect ctx seed) *steps* at t=0.5 rather
+  exactly. Everything non-lerpable (bools, strings, enums, mismatched
+  effect stacks, the effect ctx seed) *steps* at t=0.5 rather
   than blending, precisely to keep the endpoints exact. Expect a visible
-  jump at 0.5 when A and B differ in such a field.
+  jump at 0.5 when A and B differ in such a field. ``seed`` fields are the
+  exception: equal nonzero seeds stay constant, but differing (or zeroed,
+  the "random" wildcard) seeds get a deterministic per-frame hash instead
+  of a snap — every in-between frame is a fresh roll that still reproduces
+  exactly on re-resolve (see ``lerp_params``).
 * **Two compatibility modes** — same generator on both sides: lerp generator
   params and regenerate (geometry follows params continuously). Different
   or non-generator sources: pointwise lerp of the *source* paths, which
@@ -61,13 +65,14 @@ materialised geometry via the ordinary shape pipeline.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from .compose import Affine, CanvasLayer, EffectStep, Project, _layer_seed, transform_paths
+from .compose import Affine, CanvasLayer, EffectStep, Project, _layer_seed, guide_page as _guide_page, transform_paths
 from .model import Path
 from .registry import EffectContext, get_effect, get_source
 
@@ -116,17 +121,36 @@ def _lerp_value(va: Any, vb: Any, t: float) -> Any:
     return va if t < 0.5 else vb
 
 
+def _frame_seed(va: Any, vb: Any, t: float) -> int:
+    """A fresh-but-stable seed for one tween frame: hashed from both endpoint
+    seeds and t, so every frame differs yet scrubbing/preview/plot reproduce
+    the same value. mod 10000 fits the smallest ``le`` bound any module
+    declares for ``seed`` (9999)."""
+    h = hashlib.sha256(f"{va}:{vb}:{t}".encode()).digest()
+    return int.from_bytes(h[:4], "big") % 10000
+
+
 def lerp_params(pa: dict[str, Any], pb: dict[str, Any], t: float,
                 defaults: dict[str, Any]) -> dict[str, Any]:
     """Key-wise lerp of two param dicts over the union of keys (defaults fill
-    gaps). ``seed`` keys step at 0.5: blending RNG seeds is meaningless and
-    endpoint fidelity matters more than a smooth middle."""
+    gaps). ``seed`` keys: equal nonzero endpoints keep the seed constant;
+    differing endpoints (or a manually zeroed seed, the "random" wildcard)
+    get a deterministic per-frame seed via :func:`_frame_seed` instead of
+    snapping at 0.5 — blending RNG seeds is meaningless, but a snap wastes
+    the variation the user asked for by giving two different seeds."""
     out: dict[str, Any] = {}
     for key in {*defaults, *pa, *pb}:
         va = pa.get(key, defaults.get(key))
         vb = pb.get(key, defaults.get(key))
         if key == "seed":
-            out[key] = va if t < 0.5 else vb
+            if va == vb and va != 0:
+                out[key] = va
+            elif va != 0 and t <= 0.0:
+                out[key] = va  # endpoint fidelity: t=0 reproduces A exactly
+            elif vb != 0 and t >= 1.0:
+                out[key] = vb  # ... and t=1 reproduces B
+            else:
+                out[key] = _frame_seed(va, vb, t)
         else:
             out[key] = _lerp_value(va, vb, t)
     return out
@@ -517,6 +541,7 @@ def materialize(
                 translation=lerp_affine(la.transform, lb.transform, t).translation,
                 # step the ctx seed too: noise fields match A/B at the endpoints
                 seed=_layer_seed(la.id) if t < 0.5 else _layer_seed(lb.id),
+                page=_guide_page(project),
             )
             for effect_id, params in _effects_at(la, lb, t):
                 eff = get_effect(effect_id)

@@ -133,7 +133,7 @@ function onDown(e, wrap) {
   const p = editor.toBed(e);
   const pt = clampBed([p.x, p.y, 0]);
   const live = document.createElementNS(NS, "polyline");
-  live.setAttribute("class", "wb-line wb-draw-live");
+  live.setAttribute("class", "draw-line draw-live");
   live.setAttribute("points", `${pt[0]},${pt[1]}`);
   editor.world.appendChild(live);
   drag = { pts: [pt], t0: performance.now(), pointerId: e.pointerId, liveEl: live };

@@ -59,3 +59,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## CamBam stick fonts — freeware
+
+The ten TrueType engraving fonts in `axibridge/fonts/stick/`
+(`1CamBam_Stick_0.ttf` … `1CAMBam_Stick_9.ttf`) are the CamBam "stick"
+(single-line) fonts bundled with the CamBam CAD/CAM application by Andy
+Payne / Hexagon. They are distributed as freeware; CamBam's documentation
+states they may be used and shared freely. They are vendored here (rather
+than referenced from a user font folder) so the text generator works
+identically on every machine, including the Pi.
+

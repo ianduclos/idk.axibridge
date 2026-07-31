@@ -48,6 +48,10 @@ class SoftLimits(BaseModel):
         return (not self.enabled) or (0 <= x <= self.width and 0 <= y <= self.height)
 
 
+#: sub-0.1mm overshoot is float noise, not a real envelope violation
+_ENVELOPE_TOL_MM = 0.1
+
+
 def find_ebb_port() -> str | None:
     """The EBB enumerates as USB CDC with product string 'EiBotBoard'
     (VID 0x04D8, PID 0xFD92)."""
@@ -76,6 +80,24 @@ class MachineManager:
         self._job_state = "idle"  # idle | plotting | paused
         self._return_home = False  # stop(return_home=True) pending
         self._last_connect_info: dict[str, Any] = {}
+
+    def sync_limits_for_model(self, model: int) -> bool:
+        """Follow the native backend's AxiDraw model to its physical travel
+        envelope — but ONLY while the limits still match a stock model size.
+        A hand-tuned envelope is never stomped. Returns True when it changed
+        (and persisted) the limits."""
+        from .backends.axidraw_native import MODEL_TRAVELS
+        travel = MODEL_TRAVELS.get(int(model))
+        if travel is None:
+            return False
+        with self._lock:
+            current = (self.limits.width, self.limits.height)
+            if current == travel or current not in MODEL_TRAVELS.values():
+                return False  # already right, or a custom envelope — leave it
+            self.limits = self.limits.model_copy(
+                update={"width": travel[0], "height": travel[1]})
+            settings_store.update({"soft_limits": self.limits.model_dump()})
+            return True
 
     # -- introspection ---------------------------------------------------
 
@@ -197,6 +219,11 @@ class MachineManager:
                 raise RuntimeError(f"backend {b.id!r} has no raw EBB access")
             return b.raw(command, expect_reply)
 
+    def block(self) -> None:
+        """Wait for the machine's motion queue to drain (raw-EBB companion)."""
+        with self._lock:
+            self._require_idle().block()
+
     # -- plotting ----------------------------------------------------------------
 
     def check_envelope(self, doc: PathDocument) -> list[str]:
@@ -211,8 +238,9 @@ class MachineManager:
         if b and self.limits.enabled:
             ox, oy = self.active.origin_offset() if self.active.connected else (0.0, 0.0)
             xmin, ymin, xmax, ymax = b
-            if (xmin + ox < 0 or ymin + oy < 0
-                    or xmax + ox > self.limits.width or ymax + oy > self.limits.height):
+            if (xmin + ox < -_ENVELOPE_TOL_MM or ymin + oy < -_ENVELOPE_TOL_MM
+                    or xmax + ox > self.limits.width + _ENVELOPE_TOL_MM
+                    or ymax + oy > self.limits.height + _ENVELOPE_TOL_MM):
                 offset_note = (
                     f" (machine origin is offset by ({ox:.1f}, {oy:.1f}) mm — "
                     "set-origin at the home corner to clear)"

@@ -70,6 +70,12 @@
         <button id="brush-erase" title="Painting — click or press E to erase"><svg class="tool-icon" viewBox="0 0 24 24"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12 21"/><path d="m5.082 11.09 8.828 8.828"/></svg> Erase</button>
         <span id="brush-size" title="Brush radius — [ and ] resize">5.0 mm</span>
       </div>
+      <!-- pen-only: add/subtract mode. Subtract commits the shape as a bite
+           out of the target layer (converting pen/brush layers to a shape
+           layer). Shown by the tool broker in main.js, like #brush-bar. -->
+      <div id="pen-bar" class="seg" hidden>
+        <button id="pen-subtract" title="Adding — click or press E to subtract this shape out of the target layer">Subtract</button>
+      </div>
       <!-- pen-only: commits the in-progress path without reaching for Enter.
            Shown by the tool broker in main.js, disabled until there is
            something pending (pen.js dispatches pen-pending-change). -->

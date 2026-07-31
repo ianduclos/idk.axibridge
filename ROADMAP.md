@@ -78,8 +78,8 @@ Cheapest-first:
   numbers 1–4 switch tabs. The keydown plumbing exists (main.js).
 - **🎲 seed reroll in the main forms** (IDEAS pass-1 UI principle 3): one
   generic forms.js addition — a dice button beside any `seed` field — pays
-  off across every stochastic module. The workbench has its own recipe-wide
-  reroll; this brings the affordance to Compose layer/effect forms.
+  off across every stochastic module. (Layer creation already rolls a fresh
+  seed into the form; this would put the affordance on every form.)
 - **More simple effects** — each a drop-in pure file, ~an afternoon each:
   - *Perspective / 3D plane rotation*: treat the layer as a textured plane,
     tilt around x/y, perspective-project. Pure point map; bound the tilt so
@@ -140,8 +140,10 @@ Cheapest-first:
     "separate channels" mode emitting one layer per C/M/Y/K channel, each
     assignable to a pen. Needs `asset_store` channel decode + a multi-layer
     return path from generate (the PathDocument already supports it).
-- **Hershey/single-stroke text generator**: classic plotter need; fonts are
-  public domain (Hershey set), output is plain polylines.
+- ~~Hershey/single-stroke text generator~~ — **shipped 2026-07-31**: `text`
+  source with the 10 bundled CamBam stick fonts (fontTools outlines,
+  reversed-stroke dedupe) plus vpype's whole Hershey set, multiline
+  (textarea control, `\n` lines), tracking/line-spacing.
 - **Plot resume**: the job already reports `paths_done`; persist the last
   finished index and offer "resume from path N" after a USB/power failure.
   Saves real plots, cheap to do at path granularity (native backend plots
@@ -159,18 +161,59 @@ Cheapest-first:
   generators and effects worth porting or inventing — keep a shortlist
   with a sample image each before committing to any.
 
+## Shipped 2026-07-31 (mixed batch)
+
+- **Seeds**: layer-create rolls a random seed into the form (no more
+  universal 0). Tween seeds no longer snap at 0.5: differing or zeroed
+  endpoint seeds get a deterministic per-frame hash
+  (`sha256(a:b:t) mod 10000`, scrub/plot-stable, endpoint fidelity kept);
+  equal nonzero seeds stay constant. Still open: a dice button on every
+  form (item above).
+- **Grid sheets**: new 8-preset (4×2); 2×1 and 4×2 grids rotate the scene
+  90° inside each cell (keyed on grid SHAPE, so hand-entered grids flip
+  too) — portrait cells stop letterboxing landscape scenes.
+- **Canvas tools**: "＋ empty layer" button (a `shape` layer for pen/brush,
+  a drawing layer for draw) — an explicit fresh target instead of the
+  tools' sticky last-layer append. Pen tool has add/subtract (E toggles,
+  rust preview). New unified **`shape` source**: chronological
+  add/subtract ops (brush strokes + pen silhouettes, implicitly closed)
+  folded through shapely; plain pen/brush layers AUTO-CONVERT in place
+  when a gesture needs region semantics (erase into a pen shape, pen-cut
+  into a blob) — one undo step for convert+commit. Brush preview is fully
+  opaque now.
+- **Interrupted plot**: plot-tab panel bakes a contiguous pen-down slice
+  of the whole resolved project (machine order after plot-pass opts,
+  mid-stroke cuts, seed-rolled or manual start/stop) into one baked
+  layer — recreates the plot that got stopped early.
+- **fat_tube `solid`**: unions all tubes into one silhouette — crossing
+  strokes leave no seam rings.
+- **Invert effect**: page negative — the layer's ink (fills by even-odd
+  parity, strokes as a configurable-width band) subtracted from the
+  paper-guide rect; `margin` crops the boundary inward. `EffectContext`
+  gained `page` (guide, else bed) — threaded through resolve + tween.
+- **Occlusion groups**: checkbox group sets (A–D) on both sides —
+  occluders pick which groups they mask (none = everything, the classic
+  behaviour), receivers pick which they hear (none = global only).
+  Additive semantics; single-letter projects migrate on load.
+- **Native backend hardening** (from an evil-mad/axidraw review): PSU
+  voltage warning on connect (barrel-jack missing — warn, never block);
+  pause button ends a job gracefully and keeps the link, USB loss drops
+  the zombie connection; `block()` + a Wait-idle button by the raw
+  console; `resolution` (already defaulted to high — rough curves are
+  geometry flattening, NOT microstepping), `penlift`, `servo_timeout_s`
+  params; AxiDraw `model` picker syncs the soft envelope when it still
+  matches a stock size; 0.1 mm envelope tolerance.
+
 ## Near term — Oehlen pass: regime collision (July 2026)
 
 From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
 *why* lives there). Ordered by dependency, not just conviction:
 
-0. ~~Generation workbench popup~~ — **shipped July 2026**: ⚗ Bench button →
-   popup with generator + effect stack (same auto-forms), 🎲 reroll of every
-   seed in the recipe, live SVG preview via stateless
-   `POST /api/workbench/preview` (no session/undo contact), global scrap
-   library (`scraps.py`, `~/.axibridge/scraps/`, frozen SVG + recipe
-   metadata), import live (generator layer + effects) or baked (scrap SVG →
-   layers, library name kept). Later: scrap editing.
+0. ~~Generation workbench popup~~ — shipped July 2026, **removed July 2026**:
+   the stateless recipe playground + global scrap library (`scraps.py`,
+   `/api/workbench/*`, `/api/scraps*`) never earned its keep once layer
+   creation got seed-rolling and the canvas tools grew up. Scrap files on
+   disk (`~/.axibridge/scraps/`) are left in place.
 0a. ~~Draw mode (main canvas)~~ — **shipped July 2026**
    (`docs/plans/draw-mode.md` / `-RESULTS.md`): pointer strokes on the main
    canvas are a first-class `sources/drawing.py` generator layer, not a
@@ -181,9 +224,7 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
    drag/marquee code never sees the events) and reuses `CanvasEditor.toBed`
    for the pointer→mm conversion, so portrait/landscape both place strokes
    correctly for free. Per-stroke undo (no coalesce); brush presets
-   (plain/sketchy/tube/wobble) swap the layer's effect stack. Workbench's
-   own ✏ Draw (raw/smooth/steps/zigzag/stitch shaping, scrap-only) is
-   unchanged and still the separate playground path.
+   (plain/sketchy/tube/wobble) swap the layer's effect stack.
 0b. **Pen tool (⚓ béziers)** — planned 2026-07-19, briefed 2026-07-19
    (`docs/plans/pen-brush-tools.md`, combined with 0c). Photoshop grammar:
    click = corner anchor, click-drag = smooth anchor with symmetric arms,
@@ -379,7 +420,7 @@ Still open, priority order (details in the session analysis):
   and dies on reload; persist alongside staging (non-undoable) so a
   multi-hour flipbook survives a restart.
 - **Staging browser ergonomics**: batches make the tray list long — a grid
-  browser with thumbnails (scrap-strip pattern from the workbench).
+  browser with thumbnails.
 - ~~A/B capture series ergonomics~~ — **shipped 2026-07-10**: A · B · ⇄
   buttons in the canvas toolbar — capture the whole current output as A,
   change anything, capture B, generate an n-step interpolated staged series
@@ -391,8 +432,8 @@ Still open, priority order (details in the session analysis):
   `contract_expand` signed-offset effect, region boundary continuity
   (`region_boundary: cut|continuous` — continuous stitches each path below
   back into one path through the seam), and workbench mouse drawing
-  (✏ pointer strokes with raw/smooth/steps/zigzag/stitch modes, riding the
-  scrap save/import machinery via `WorkbenchBody.paths`).
+  (✏ pointer strokes with raw/smooth/steps/zigzag/stitch modes — the
+  workbench itself was removed July 2026, see item 0 above).
 
 ## Animation — **SHIPPED July 2026** (v1: linear A→B over a master timeline)
 

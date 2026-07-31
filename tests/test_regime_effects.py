@@ -2,6 +2,8 @@
 
 import math
 
+import pytest
+
 from axibridge.model import Path
 from axibridge.registry import EffectContext, get_effect
 
@@ -135,3 +137,30 @@ def test_tube_pure():
     before = [tuple(p) for p in src.points]
     eff.apply([src], eff.Params(), EffectContext())
     assert [tuple(p) for p in src.points] == before
+
+
+def test_tube_solid_merges_crossing_strokes():
+    eff = get_effect("fat_tube")
+    # a + : two strokes crossing at (100, 100)
+    h = Path(points=[(60.0, 100.0), (140.0, 100.0)], filled=False)
+    v = Path(points=[(100.0, 60.0), (100.0, 140.0)], filled=False)
+
+    separate = eff.apply([h, v], eff.Params(width=8.0), EffectContext())
+    assert len(separate) == 2  # two tubes, each with its own outline = seam rings
+
+    solid = eff.apply([h, v], eff.Params(width=8.0, solid=True), EffectContext())
+    assert len(solid) == 1  # one merged silhouette, no overlap seams
+    assert solid[0].filled and solid[0].points[0] == solid[0].points[-1]
+    # the union spans both strokes' extents
+    xs = [x for x, _ in solid[0].points]
+    ys = [y for _, y in solid[0].points]
+    assert max(xs) - min(xs) == pytest.approx(88.0, abs=0.2)
+    assert max(ys) - min(ys) == pytest.approx(88.0, abs=0.2)
+
+
+def test_tube_solid_keeps_disjoint_shapes_separate():
+    eff = get_effect("fat_tube")
+    a = Path(points=[(20.0, 20.0), (50.0, 20.0)], filled=False)
+    b = Path(points=[(200.0, 150.0), (230.0, 150.0)], filled=False)
+    out = eff.apply([a, b], eff.Params(width=8.0, solid=True), EffectContext())
+    assert len(out) == 2  # a MultiPolygon's parts, not one glued mass

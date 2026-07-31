@@ -12,7 +12,6 @@ import { initComposeTab, renderLayerList, renderLayerDetail, setGenProgress, set
 import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
 import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
-import { initWorkbench } from "./workbench.js";
 import { initMenu } from "./menu.js";
 import { initDrawMode, activateDrawMode, deactivateDrawMode } from "./draw.js";
 import { initBrushMode, activateBrushMode, deactivateBrushMode, handleBrushEscape } from "./brush.js";
@@ -464,7 +463,6 @@ function initTabs() {
   initPlotTab();
   initPensTab();
   initSettingsTab();
-  initWorkbench(); // no-op after first call; the modal survives re-inits
   initMenu(); // no-op after first call; the menu bar is static across project switches
   initDrawMode(); // no-op after first call (returns early if already wired)
   initPenMode();  // no-op after first call (returns early if already wired)
@@ -501,6 +499,8 @@ function setToolMode(mode) {
   // beside it without disturbing the segment's joined-button styling
   const commit = $("pen-commit");
   if (commit) commit.hidden = toolMode !== "pen";
+  const penBar = $("pen-bar");
+  if (penBar) penBar.hidden = toolMode !== "pen";
   const brushBar = $("brush-bar");
   if (brushBar) brushBar.hidden = toolMode !== "brush";
 }

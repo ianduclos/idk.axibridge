@@ -110,8 +110,8 @@ def _prepare_strokes(strokes: list[list[tuple[float, float, float]]]
 def _resample(pts: list[tuple[float, float, float]], step: float
               ) -> list[tuple[float, float, float]]:
     """Even resampling along arc length (mm); t is interpolated alongside
-    x/y. Ports workbench.js's ``resample`` (see static/js/workbench.js) with
-    a third channel. Endpoints are always preserved exactly."""
+    x/y. Ports draw.js's stroke ``resample`` with a third channel.
+    Endpoints are always preserved exactly."""
     if len(pts) < 2:
         return list(pts)
     out = [pts[0]]
@@ -279,7 +279,10 @@ class DrawingSource(SourceModule):
     def generate(self, params: DrawingParams) -> PathDocument:
         strokes = _prepare_strokes(params.strokes)
         if not strokes:
-            raise ValueError("draw a stroke first")
+            # an empty layer is a deliberate state ("＋ empty layer" button):
+            # a blank target the draw tool appends strokes into
+            return PathDocument(layers=[], width=BED_WIDTH, height=BED_HEIGHT,
+                                source="drawing (empty)")
         paths: list[Path] = []
         for stroke in strokes:
             pts = _resample(stroke, params.resample_mm)

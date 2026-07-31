@@ -180,10 +180,11 @@ class BrushSource(SourceModule):
     def generate(self, params: BrushParams) -> PathDocument:
         strokes = _prepare_strokes(params.strokes)
         if not strokes:
-            # a layer that exists with nothing captured is a client bug — but
-            # painting everything and then erasing it all is a legitimate (if
-            # useless) state, handled below by an empty fold, NOT by raising
-            raise ValueError("paint a stroke first")
+            # an empty layer is a deliberate state ("＋ empty layer" button):
+            # a blank target the brush tool paints into. Painting everything
+            # and then erasing it all is likewise legal — an empty fold below
+            return PathDocument(layers=[], width=BED_WIDTH, height=BED_HEIGHT,
+                                source="brush (empty)")
         region = _fold(strokes, params.smooth)
         if region is not None and not region.is_empty and params.grow != 0.0:
             region = region.buffer(params.grow, quad_segs=params.smooth,

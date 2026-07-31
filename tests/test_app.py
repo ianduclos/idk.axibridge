@@ -22,7 +22,7 @@ def test_state_shape(client):
     assert sorted(m["id"] for m in st["modules"]["effects"]) == [
         "bitmap", "coherent_jitter", "continue_strokes", "contract_expand",
         "depth_displace", "eyelets", "fat_tube", "freehand", "hatch_fill",
-        "multipass", "offset_fill", "parasite_line", "perspective",
+        "invert", "multipass", "offset_fill", "parasite_line", "perspective",
     ]
     assert {m["id"] for m in st["modules"]["sources"]} >= {"grid", "flowfield", "lissajous", "polygon"}
     assert st["bed"] == {"width": 300.0, "height": 218.0}

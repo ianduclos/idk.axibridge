@@ -144,9 +144,10 @@ def test_repaint_over_an_erase_survives():
 
 # -- contract ------------------------------------------------------------------
 
-def test_no_strokes_raises():
-    with pytest.raises(ValueError):
-        _run([])
+def test_no_strokes_is_an_empty_doc():
+    # deliberate state: the "＋ empty layer" button creates a blank brush target
+    doc = _run([])
+    assert doc.layers == [] or all(not layer.paths for layer in doc.layers)
 
 
 def test_deterministic():

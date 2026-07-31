@@ -399,33 +399,9 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
   #inspector { border-left: none; border-top: 1px solid var(--line); }
 }
 
-/* ---- generation workbench (workbench.js): playground popup + scrap strip ------- */
-#workbench-open { margin-left: auto; }
-.wb-modal { height: 92vh; }
-.wb-body { flex: 1; display: grid; grid-template-columns: 310px 1fr; gap: 10px; min-height: 0; }
-.wb-controls { overflow-y: auto; min-height: 0; padding-right: 4px; }
-.wb-right { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
-.wb-stage { min-height: 0; flex: 1; }
-.wb-stage svg { width: 100%; height: 100%; }
-.wb-sheet { fill: var(--sheet); stroke: var(--line); stroke-width: 0.4; }
-.wb-line { fill: none; stroke: #16161d; stroke-width: 0.35; stroke-linecap: round; stroke-linejoin: round; }
-.wb-drawbar { display: flex; gap: 6px; align-items: center; }
-.wb-drawbar button.active { background: var(--accent); border-color: var(--accent); color: var(--paper); }
-.wb-stage.wb-drawing svg { cursor: crosshair; }
-.wb-draw-live { stroke: var(--accent); }
-.wb-actions { display: flex; gap: 6px; align-items: center; }
-.wb-actions #wb-status { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wb-actions input { width: 11em; }
-.wb-fx-step { border: 1px solid var(--line); border-radius: 5px; padding: 4px 8px; margin: 6px 0; }
-.wb-fx-head { display: flex; gap: 7px; align-items: center; }
-.wb-fx-head strong { flex: 1; font-size: 11.5px; }
-.wb-fx-head button { font-size: 10.5px; padding: 2px 6px; }
-.wb-scraps { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0; min-height: 112px; align-items: stretch; }
-.wb-scrap { flex: 0 0 auto; width: 112px; display: flex; flex-direction: column; gap: 3px; border: 1px solid var(--line); border-radius: 5px; padding: 5px; background: var(--paper-deep); }
-.wb-scrap img { width: 100%; height: 64px; object-fit: contain; background: var(--sheet); border-radius: 3px; }
-.wb-scrap span { font-size: 10.5px; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wb-scrap-row { display: flex; gap: 4px; }
-.wb-scrap-row button { flex: 1; font-size: 10.5px; padding: 2px 3px; }
+/* draw tool (draw.js): the in-progress stroke previewed on the canvas */
+.draw-line { fill: none; stroke: #16161d; stroke-width: 0.35; stroke-linecap: round; stroke-linejoin: round; }
+.draw-live { stroke: var(--accent); }
 
 /* bench latch chip (compose.js): the form is live-editing this layer */
 .latch-chip {
@@ -448,11 +424,12 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 /* brush: the circle IS the cursor (it shows the real mm radius), so the
    pointer itself gets out of the way rather than doubling up */
 #canvas-wrap.brush-mode, #canvas-wrap.brush-mode svg { cursor: none; }
-.brush-cursor { fill: none; stroke: var(--accent); stroke-width: 0.4; opacity: 0.9; pointer-events: none; }
+.brush-cursor { fill: none; stroke: var(--accent); stroke-width: 0.4; pointer-events: none; }
 .brush-cursor.erasing { stroke: var(--rust); stroke-dasharray: 2 1.5; }
 /* the live swept mass during a drag: stroke-width is set to 2x radius in mm
-   by brush.js, so this previews the area shapely will buffer server-side */
-.brush-live { fill: none; stroke: var(--accent); stroke-opacity: 0.35;
+   by brush.js, so this previews the area shapely will buffer server-side —
+   fully opaque: a translucent preview misreads the mass you'll actually get */
+.brush-live { fill: none; stroke: var(--accent);
               stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 .brush-live.erasing { stroke: var(--rust); }
 #brush-bar { align-items: center; }
@@ -467,13 +444,13 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .pen-handle-knob { fill: var(--paper); stroke: var(--accent); stroke-width: 0.4; }
 .pen-pending-path { stroke: var(--accent); stroke-width: 0.6; fill: none; }
 .pen-rubber-band { stroke: var(--accent); stroke-width: 0.6; stroke-dasharray: 1.5 1.2; fill: none; opacity: 0.7; }
+.subtracting .pen-pending-path, .subtracting .pen-rubber-band { stroke: var(--rust); }
 .pen-pending-anchor { fill: var(--accent); stroke: none; }
 
 /* grid-sheet layout presets (plot.js animation panel) */
 .anim-presets { display: inline-flex; gap: 3px; }
 .anim-presets button { padding: 2px 9px; font-size: 11.5px; }
 
-/* A/B capture-series toolbar segment + workbench stage message */
+/* A/B capture-series toolbar segment */
 #ab-capture input { width: 3.4em; }
 #ab-capture button.on { background: var(--accent); color: var(--paper); border-color: var(--accent); }
-.wb-msg { font-size: 8px; fill: #a0522d; text-anchor: middle; }

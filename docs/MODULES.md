@@ -40,6 +40,7 @@ Rendering rules (`static/js/forms.js`):
 | `number`/`integer` unbounded | spinbox |
 | `bool` | checkbox |
 | `str` | text input |
+| `str` + `json_schema_extra={"format": "textarea"}` | multiline textarea |
 | `enum`/`Literal` | dropdown |
 | `str` + `json_schema_extra={"format": "asset"}` | dropdown over uploaded image assets, with inline upload |
 
@@ -186,6 +187,10 @@ The contract, and why each clause exists:
   `ctx.translation` is the layer's placement: sample noise fields at
   `point − ctx.translation` so dragging a layer keeps its character
   (see `coherent_jitter.py`).
+- **`ctx.page` is the page rect** (x, y, w, h) — the paper guide, or the
+  full bed when no guide is set. Use it for page-relative geometry
+  (`invert.py` is the worked example); it's `None` only in hand-built
+  contexts, so fall back to the bed constants.
 - Declare missing optional deps via `available()` rather than import-time
   crashes; the UI greys you out with your reason.
 

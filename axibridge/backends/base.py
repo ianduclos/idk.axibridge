@@ -165,6 +165,10 @@ class ExecutionBackend(ABC):
         """Raw EBB pass-through. The trapdoor."""
         raise NotImplementedError(f"{self.id}: raw EBB access not supported")
 
+    def block(self) -> None:
+        """Wait until the machine's motion queue is empty."""
+        raise NotImplementedError(f"{self.id}: wait-for-idle not supported")
+
     # -- plotting ----------------------------------------------------------
 
     @abstractmethod

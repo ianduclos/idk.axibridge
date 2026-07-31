@@ -28,6 +28,7 @@ const MAX_HANDLE_MM = 60;  // UI-side clamp: a wild drag can't produce an absurd
 let on = false;
 let wired = false;
 let activePenLayerId = null;
+let subtract = false; // add/subtract mode — subtract commits as a bite via shape_op
 let pending = [];   // uncommitted PenAnchor-shaped objects: {x,y,in_handle,out_handle}
 let overlay = null; // persistent <g> appended to editor.world (NOT canvas.js's own
                      // this.overlay, which _renderSelection() clears/repopulates itself)
@@ -44,6 +45,20 @@ export function initPenMode() {
   wrap.addEventListener("pointerup", (e) => onUp(e), true);
   wrap.addEventListener("pointercancel", () => onCancel(), true);
   document.addEventListener("keydown", onKeydown);
+  const sub = $("pen-subtract");
+  if (sub) sub.onclick = () => setSubtract(!subtract);
+}
+
+function setSubtract(v) {
+  subtract = v;
+  const b = $("pen-subtract");
+  if (b) {
+    b.classList.toggle("on", subtract);
+    b.title = subtract
+      ? "Subtracting — click or press E to go back to adding"
+      : "Adding — click or press E to subtract this shape out of the target layer";
+  }
+  redraw(); // pending path flips to rust while subtracting
 }
 
 export function activatePenMode() {
@@ -110,6 +125,9 @@ function onKeydown(e) {
     e.preventDefault();
     pending.pop();
     redraw();
+  } else if ((e.key === "e" || e.key === "E") && !gesture) {
+    e.preventDefault();
+    setSubtract(!subtract);
   }
 }
 
@@ -122,7 +140,11 @@ function currentTargetLayerId() {
     activePenLayerId = null; // the active layer was deleted — never assume
   }
   const sel = S.selection.length === 1 ? project.layers.find((l) => l.id === S.selection[0]) : null;
-  if (sel && sel.source?.type === "generator" && sel.source?.generator === "pen") {
+  // pen, shape AND brush layers are targets: a brush layer converts to a
+  // shape layer on commit (the pen silhouette unions/bites into the blob)
+  if (sel && sel.source?.type === "generator" &&
+      (sel.source?.generator === "pen" || sel.source?.generator === "shape" ||
+       sel.source?.generator === "brush")) {
     activePenLayerId = sel.id; // selecting a different pen layer retargets to it
     return sel.id;
   }
@@ -405,15 +427,28 @@ async function commitSubpath(closed) {
   redraw();
   try {
     const id = currentTargetLayerId();
-    if (id) {
-      const layer = S.state.project.layers.find((l) => l.id === id);
-      const subpaths = [...(layer.source.params.subpaths || []), subpath];
+    const target = id ? S.state.project.layers.find((l) => l.id === id) : null;
+    const gen = target?.source?.type === "generator" ? target.source.generator : null;
+    if (subtract && !target) {
+      actions.log("subtract: nothing to bite into — select a pen, brush or shape layer");
+      return;
+    }
+    if (target && (subtract || gen !== "pen")) {
+      // region semantics: one op onto the mass. A plain pen/brush target
+      // converts to a shape layer inside the same server-side undo step
+      // (session.append_shape_op) — "erase from a pen shape commits the shape".
+      await api.post(`/api/layers/${target.id}/shape_op`,
+                     { op: { kind: "pen", mode: subtract ? "subtract" : "add",
+                             anchors: subpath.anchors, closed } });
+      activePenLayerId = target.id;
+    } else if (target) {
+      const subpaths = [...(target.source.params.subpaths || []), subpath];
       // no coalesce: one finished shape = one ⌘Z, exactly like draw.js's per-stroke commit
-      await api.post(`/api/layers/${id}/regenerate`, { params: { ...layer.source.params, subpaths } });
+      await api.post(`/api/layers/${target.id}/regenerate`, { params: { ...target.source.params, subpaths } });
     } else {
-      const layer = await api.post("/api/layers/generate", { module: "pen", params: { subpaths: [subpath] } });
-      activePenLayerId = layer.id;
-      actions.setSelection([layer.id]);
+      const created = await api.post("/api/layers/generate", { module: "pen", params: { subpaths: [subpath] } });
+      activePenLayerId = created.id;
+      actions.setSelection([created.id]);
     }
     await actions.refreshProject();
     await actions.refreshResolved();
@@ -486,6 +521,7 @@ function redraw() {
   const editor = actions.canvas();
   const g = ensureOverlay(editor);
   g.innerHTML = "";
+  g.classList.toggle("subtracting", subtract); // pending paths render rust
 
   // committed anchors/handles for the active (selected) pen layer — the
   // "post-commit overlay" that makes re-editing possible

@@ -46,6 +46,31 @@ export function initPlotTab() {
     </div>
 
     <div class="panel">
+      <h2>Interrupted plot</h2>
+      <div class="hint">bake a contiguous slice of the whole plot — random start, early stop,
+        strokes cut mid-line where the pen lifted — into a new layer</div>
+      <div class="row">
+        <label>seed</label><input type="number" id="interrupt-seed" min="0" max="99999" step="1" style="width:6em">
+        <button id="interrupt-reroll" title="new random seed">🎲</button>
+        <label class="hint" style="cursor:pointer"
+          title="slice in the order the machine would draw (plot-pass optimisation applied); off = layer z-order">
+          <input type="checkbox" id="interrupt-optimized" checked> machine order</label>
+      </div>
+      <div class="row">
+        <label>start</label><input type="range" id="interrupt-start" min="0" max="1" step="0.01" value="0" style="flex:1">
+        <span class="hint" id="interrupt-start-val" style="min-width:3em">auto</span>
+      </div>
+      <div class="row">
+        <label>stop</label><input type="range" id="interrupt-stop" min="0" max="1" step="0.01" value="1" style="flex:1">
+        <span class="hint" id="interrupt-stop-val" style="min-width:3em">auto</span>
+      </div>
+      <div class="hint">"auto" = the seed picks; touch a slider to place the cut yourself</div>
+      <div class="row">
+        <button id="btn-interrupt" class="primary">Create interrupted layer</button>
+      </div>
+    </div>
+
+    <div class="panel">
       <h2>Animation & grid sheets</h2>
       <details id="anim-details">
         <summary>Frames on paper — preview, capture to tray, stepper, export</summary>
@@ -59,8 +84,9 @@ export function initPlotTab() {
           <label>layout</label>
           <span id="anim-presets" class="anim-presets">
             <button type="button" data-grid="1,1" title="one frame per sheet">1</button>
-            <button type="button" data-grid="2,1" title="two A5-ish halves">2</button>
+            <button type="button" data-grid="2,1" title="two A5-ish halves, scene flipped 90°">2</button>
             <button type="button" data-grid="2,2" title="quads">4</button>
+            <button type="button" data-grid="4,2" title="eight, scene flipped 90°">8</button>
             <button type="button" data-grid="4,4" title="4×4 flipbook page">16</button>
           </span>
           <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1" style="width:4em">
@@ -180,6 +206,7 @@ export function initPlotTab() {
       <div class="row">
         <input id="raw-input" placeholder="QM  /  SP,1  /  SM,1000,500,500" spellcheck="false" style="flex:1">
         <button id="raw-send">Send</button>
+        <button id="raw-block" title="Wait until the machine's motion queue drains (QG poll) — use after fire-and-forget raw motion before the next command">Wait idle</button>
       </div>
     </div>
 
@@ -214,7 +241,8 @@ export function initPlotTab() {
   $("btn-connect").onclick = async () => {
     try {
       const info = await api.post("/api/connect", { port: $("port-select").value || null });
-      $("connect-info").textContent = `port: ${info.port} · firmware: ${info.firmware}`;
+      $("connect-info").textContent = `port: ${info.port} · firmware: ${info.firmware}` +
+        (info.voltage_warning ? " · ⚠ low PSU voltage (barrel-jack?) — motors won't move" : "");
       await actions.refreshState();
     } catch (e) { actions.oops(e); }
   };
@@ -239,6 +267,50 @@ export function initPlotTab() {
   $("btn-pause").onclick = () => api.post("/api/plot/pause").catch(actions.oops);
   $("btn-resume").onclick = () => api.post("/api/plot/resume").catch(actions.oops);
   $("btn-stop").onclick = () => api.post("/api/plot/stop", { return_home: true }).catch(actions.oops);
+
+  // ---- interrupted plot: bake a random pen-down slice of the whole plot
+  let interruptManual = false;  // sliders untouched = the seed rolls start/stop
+  const rollInterruptSeed = () => {
+    $("interrupt-seed").value = Math.floor(Math.random() * 100000);
+  };
+  const syncInterruptLabels = (rolled) => {
+    $("interrupt-start-val").textContent =
+      interruptManual ? Number($("interrupt-start").value).toFixed(2)
+                      : rolled != null ? rolled[0].toFixed(2) : "auto";
+    $("interrupt-stop-val").textContent =
+      interruptManual ? Number($("interrupt-stop").value).toFixed(2)
+                      : rolled != null ? rolled[1].toFixed(2) : "auto";
+  };
+  rollInterruptSeed();
+  for (const id of ["interrupt-start", "interrupt-stop"]) {
+    $(id).oninput = () => { interruptManual = true; syncInterruptLabels(); };
+  }
+  $("interrupt-seed").onchange = () => { interruptManual = false; syncInterruptLabels(); };
+  $("interrupt-reroll").onclick = () => {
+    rollInterruptSeed();
+    interruptManual = false;
+    syncInterruptLabels();
+  };
+  $("btn-interrupt").onclick = async () => {
+    const body = {
+      seed: Math.max(0, Math.round(Number($("interrupt-seed").value) || 0)),
+      optimized: $("interrupt-optimized").checked,
+    };
+    if (interruptManual) {
+      body.start = Number($("interrupt-start").value);
+      body.stop = Number($("interrupt-stop").value);
+    }
+    try {
+      const r = await api.post("/api/layers/interrupt", body);
+      $("interrupt-start").value = r.start;
+      $("interrupt-stop").value = r.stop;
+      syncInterruptLabels([r.start, r.stop]); // show what the seed picked
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      actions.setSelection([r.layer.id]);
+      actions.log(`created "${r.layer.name}"`);
+    } catch (e) { actions.oops(e); }
+  };
 
   // ---- animation: one layout block feeds preview, capture, stepper, export
   $("anim-frames").value = anim.n;
@@ -447,6 +519,13 @@ export function initPlotTab() {
   };
   $("raw-send").onclick = sendRaw;
   $("raw-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendRaw(); });
+  $("raw-block").onclick = async () => {
+    rawLog("… waiting for idle", "tx");
+    try {
+      await api.post("/api/machine/block", {});
+      rawLog("idle (queue drained)");
+    } catch (e) { rawLog(`✗ ${e.message}`, "err"); }
+  };
 
   // ---- limits
   const pushLimits = actions.debounce(async () => {
@@ -1350,7 +1429,7 @@ export function applyCapabilities() {
   $("btn-pen-up").disabled = $("btn-pen-down").disabled = $("btn-pen-cycle").disabled =
     !(caps.pen_control && connected && idle);
   $("btn-test-stroke").disabled = $("btn-cal-mark").disabled = !(connected && idle);
-  $("raw-send").disabled = $("raw-input").disabled = !(caps.raw_ebb && connected && idle);
+  $("raw-send").disabled = $("raw-input").disabled = $("raw-block").disabled = !(caps.raw_ebb && connected && idle);
   $("btn-plot").disabled = !(connected && idle);
   $("btn-pause").disabled = !(caps.pause_resume && m.job_state === "plotting");
   $("btn-resume").disabled = !(m.job_state === "paused");
@@ -1360,7 +1439,8 @@ export function applyCapabilities() {
   // reflect server-side connections too (auto-connect at startup)
   const info = m.connect_info || {};
   if (connected && info.firmware) {
-    $("connect-info").textContent = `port: ${info.port} · firmware: ${info.firmware}`;
+    $("connect-info").textContent = `port: ${info.port} · firmware: ${info.firmware}` +
+      (info.voltage_warning ? " · ⚠ low PSU voltage (barrel-jack?) — motors won't move" : "");
   } else if (!connected) {
     $("connect-info").textContent = "";
   }

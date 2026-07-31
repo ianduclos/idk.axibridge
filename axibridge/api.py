@@ -31,9 +31,7 @@ from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
 from .events import bus
 from .machine import SoftLimits, manager
-from .model import Layer as DocLayer, Path as DocPath, PathDocument
-from .registry import EffectContext, describe_modules, get_effect, get_source, progress_scope
-from .scraps import scrap_library
+from .registry import describe_modules, get_effect, get_source, progress_scope
 from .session import session
 from .stores import Pen, pen_library, settings_store
 from .tween import TweenParams
@@ -241,6 +239,16 @@ def raw(body: RawBody) -> dict[str, str]:
     except (RuntimeError, NotImplementedError) as e:
         raise _fail(e)
     return {"reply": reply}
+
+
+@router.post("/machine/block")
+def block() -> dict[str, bool]:
+    """Wait until the machine's motion queue drains — the raw-EBB companion."""
+    try:
+        manager.block()
+    except (RuntimeError, NotImplementedError) as e:
+        raise _fail(e)
+    return {"ok": True}
 
 
 @router.get("/limits")
@@ -726,6 +734,22 @@ def regenerate_layer(layer_id: str, body: RegenerateBody) -> dict[str, Any]:
     try:
         with progress_scope(_gen_progress_sink()):
             return session.regenerate_layer(layer_id, body.params, coalesce=body.coalesce).model_dump()
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+
+
+class ShapeOpBody(BaseModel):
+    op: dict[str, Any]
+
+
+@router.post("/layers/{layer_id}/shape_op")
+def append_shape_op(layer_id: str, body: ShapeOpBody) -> dict[str, Any]:
+    """Commit one add/subtract op to a pen/brush/shape layer, converting the
+    layer to a shape layer first when needed (one undo step for both)."""
+    try:
+        return session.append_shape_op(layer_id, body.op).model_dump()
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:
@@ -1277,6 +1301,26 @@ def insert_staged_sheet(group_id: str, sheet_id: str) -> dict[str, Any]:
     return {"layers": [l.model_dump() for l in layers]}
 
 
+class InterruptBody(BaseModel):
+    seed: int = 0
+    start: float | None = Field(default=None, ge=0.0, le=1.0)
+    stop: float | None = Field(default=None, ge=0.0, le=1.0)
+    optimized: bool = True
+
+
+@router.post("/layers/interrupt")
+def interrupt_fragment(body: InterruptBody) -> dict[str, Any]:
+    """Recreate an interrupted plot: bake a contiguous pen-down slice of the
+    whole project (draw order, strokes cut mid-line) into one new layer."""
+    try:
+        layer, start, stop = session.interrupt_fragment(
+            seed=body.seed, start=body.start, stop=body.stop,
+            optimized=body.optimized)
+    except Exception as e:
+        raise _fail(e, 400)
+    return {"layer": layer.model_dump(), "start": start, "stop": stop}
+
+
 class RelayoutCaptureBody(BaseModel):
     cols: int = Field(ge=1, le=12)
     rows: int = Field(ge=1, le=12)
@@ -1356,132 +1400,6 @@ def export_staged_zip(group_id: str | None = None) -> Response:
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{name}_staging.zip"'},
     )
-
-
-# -- generation workbench (stateless playground + global scrap library) --------------
-
-
-class WorkbenchBody(BaseModel):
-    """A workbench recipe: one generator plus a candidate effect stack — or,
-    with ``paths``, a mouse drawing (mm, already placed on the bed) used
-    verbatim as the base instead of running a generator."""
-    module: str
-    params: dict[str, Any] = Field(default_factory=dict)
-    effects: list[dict[str, Any]] = Field(default_factory=list)
-    name: str = ""
-    paths: list[list[tuple[float, float]]] | None = None
-
-
-# drawings are geometry-as-params: the bounded-params rule applies, so cap
-# the point budget and keep every point on the bed before touching shapely
-_MAX_DRAWING_POINTS = 50_000
-
-
-def _drawing_paths(body: WorkbenchBody) -> list[DocPath]:
-    total = sum(len(p) for p in body.paths)
-    if total > _MAX_DRAWING_POINTS:
-        raise ValueError(f"drawing too dense: {total} points (max {_MAX_DRAWING_POINTS})")
-    for stroke in body.paths:
-        for x, y in stroke:
-            if not (0 <= x <= compose.BED_WIDTH and 0 <= y <= compose.BED_HEIGHT):
-                raise ValueError(f"drawing point ({x:.1f}, {y:.1f}) is off the bed")
-    return [DocPath(points=[tuple(pt) for pt in stroke], filled=False)
-            for stroke in body.paths if stroke]
-
-
-def _workbench_result(body: WorkbenchBody) -> tuple[Any, list[Any]]:
-    """Run the recipe touching NOTHING: no session, no undo, no lock.
-    Geometry stays at the canvas origin (identity placement), so effects run
-    in paper space exactly as they would on a real layer. Nothing plots from
-    here — geometry reaches the machine only after import, through the
-    normal single resolve path."""
-    if body.paths is not None:
-        paths = _drawing_paths(body)
-        doc = PathDocument(layers=[DocLayer(id=1, name=body.name or "drawing", paths=paths)],
-                           width=compose.BED_WIDTH, height=compose.BED_HEIGHT,
-                           source="workbench:drawing")
-    else:
-        src = get_source(body.module)
-        doc = src.generate(src.Params(**body.params))
-        paths = [p for layer in doc.layers for p in layer.paths]
-    for step_dict in body.effects:
-        step = compose.EffectStep(**step_dict)
-        if not step.enabled:
-            continue
-        eff = get_effect(step.effect)
-        paths = eff.apply(paths, eff.Params(**step.params), EffectContext())
-    return doc, paths
-
-
-@router.post("/workbench/preview")
-def workbench_preview(body: WorkbenchBody) -> dict[str, Any]:
-    try:
-        with progress_scope(_gen_progress_sink()):
-            doc, paths = _workbench_result(body)
-    except KeyError as e:
-        raise _fail(e, 404)
-    except Exception as e:
-        raise _fail(e, 400)
-    return {**_preview_payload(paths), "width": doc.width, "height": doc.height}
-
-
-@router.get("/scraps")
-def list_scraps() -> dict[str, Any]:
-    return {"scraps": [s.model_dump() for s in scrap_library.all()]}
-
-
-@router.post("/scraps")
-def save_scrap(body: WorkbenchBody) -> dict[str, Any]:
-    """Regenerate server-side and freeze to SVG — a scrap stores what the
-    recipe produces, not what the client happened to render."""
-    try:
-        doc, paths = _workbench_result(body)
-    except KeyError as e:
-        raise _fail(e, 404)
-    except Exception as e:
-        raise _fail(e, 400)
-    if not any(p.points for p in paths):
-        raise HTTPException(status_code=400, detail="nothing to save")
-    frozen = PathDocument(
-        layers=[DocLayer(id=1, name=body.name or body.module, paths=paths)],
-        width=doc.width, height=doc.height, source=f"workbench:{body.module}",
-    )
-    scrap = scrap_library.save(
-        name=body.name, module=body.module, params=body.params,
-        effects=body.effects, svg=svg_io.doc_to_svg(frozen),
-        points=sum(len(p.points) for p in paths),
-    )
-    return scrap.model_dump()
-
-
-@router.get("/scraps/{scrap_id}.svg")
-def scrap_svg(scrap_id: str) -> Response:
-    svg = scrap_library.svg(scrap_id)
-    if svg is None:
-        raise HTTPException(status_code=404, detail="unknown scrap")
-    return Response(content=svg, media_type="image/svg+xml")
-
-
-@router.delete("/scraps/{scrap_id}")
-def delete_scrap(scrap_id: str) -> dict[str, Any]:
-    scrap_library.delete(scrap_id)
-    return {"ok": True}
-
-
-@router.post("/scraps/{scrap_id}/import")
-def import_scrap(scrap_id: str) -> dict[str, Any]:
-    """Insert a scrap's frozen SVG into the current project as baked layers —
-    exactly what was saved, however module code evolved since."""
-    scrap = scrap_library.get(scrap_id)
-    svg = scrap_library.svg(scrap_id)
-    if scrap is None or svg is None:
-        raise HTTPException(status_code=404, detail="unknown scrap")
-    try:
-        created = session.add_svg_layers(
-            svg, f"{project_io.safe_name(scrap.name)}.svg", 0.1, rename=scrap.name)
-    except Exception as e:
-        raise _fail(e, 400)
-    return {"layers": [layer.model_dump() for layer in created]}
 
 
 # -- plot control -------------------------------------------------------------------

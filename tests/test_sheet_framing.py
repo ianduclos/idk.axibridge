@@ -41,12 +41,14 @@ def _cell_offsets(placed, cols):
 
 def test_center_framing_cancels_translation_fixed_preserves_it():
     _translating_follow()
-    centered = session._grid_place([0.0, 1.0], cols=2, rows=1, margin_mm=5.0, framing="center")
-    off_c = _cell_offsets(centered, 2)
+    # 1×2 (unrotated — 2×1/4×2 flip the scene 90°, which would swap the axes
+    # this test measures): two stacked cells, motion measured along x
+    centered = session._grid_place([0.0, 1.0], cols=1, rows=2, margin_mm=5.0, framing="center")
+    off_c = _cell_offsets(centered, 1)
     assert all(abs(o) < 1e-6 for o in off_c), "center: every frame re-centred (motion cancelled)"
 
-    fixed = session._grid_place([0.0, 1.0], cols=2, rows=1, margin_mm=5.0, framing="fixed")
-    off_f = _cell_offsets(fixed, 2)
+    fixed = session._grid_place([0.0, 1.0], cols=1, rows=2, margin_mm=5.0, framing="fixed")
+    off_f = _cell_offsets(fixed, 1)
     assert off_f[0] < -1.0 and off_f[1] > 1.0, "fixed: t=0 sits left of centre, t=1 right"
     assert off_f[1] - off_f[0] > 2.0  # the scaled 60mm translation survives
 

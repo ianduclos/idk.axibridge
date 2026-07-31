@@ -21,9 +21,34 @@ def test_registered():
     assert m.label == "Drawing (pointer)"
 
 
-def test_empty_strokes_raises():
-    with pytest.raises(ValueError, match="draw a stroke first"):
-        _gen(strokes=[])
+def test_empty_strokes_is_an_empty_doc():
+    # deliberate state: the "＋ empty layer" button creates a blank draw target
+    doc = _gen(strokes=[])
+    assert doc.layers == [] or all(not layer.paths for layer in doc.layers)
+
+
+def test_session_adds_empty_draw_layers():
+    # the "＋ empty layer" button path: all three tool modules accept empty
+    # captures, produce no geometry, and get NO centering transform (their
+    # strokes are already bed-frame — centering an empty doc would fight the
+    # first appended stroke's coordinates)
+    for module, params in (("drawing", {"strokes": []}),
+                           ("pen", {"subpaths": []}),
+                           ("brush", {"strokes": []})):
+        layer = session.add_generated_layer(module, params)
+        assert session.source_geometry[layer.id] == []
+        assert (layer.transform.a, layer.transform.b, layer.transform.c,
+                layer.transform.d, layer.transform.e, layer.transform.f) == (1, 0, 0, 1, 0, 0)
+        # and the tool's first append regenerates into real geometry
+        if module == "pen":
+            sub = {"anchors": [{"x": 5.0, "y": 5.0}, {"x": 25.0, "y": 5.0}],
+                   "closed": False}
+            session.regenerate_layer(layer.id, {"subpaths": [sub]})
+        elif module == "brush":
+            session.regenerate_layer(layer.id, {"strokes": [{"points": _stroke()}]})
+        else:
+            session.regenerate_layer(layer.id, {"strokes": [_stroke()]})
+        assert session.source_geometry[layer.id]
 
 
 def test_deterministic():

@@ -253,6 +253,10 @@ export function initComposeTab() {
     </div>
     <div class="panel">
       <h2>Layers <span class="hint">(top of list = drawn on top / occludes below)</span></h2>
+      <div class="row">
+        <button id="btn-empty-layer"
+          title="blank layer the pen/brush/draw tools draw onto (a shape layer both pen and brush can add to and subtract from when those tools are active) — an explicit fresh target instead of appending to the last drawn layer">＋ empty layer</button>
+      </div>
       <div id="layer-list"></div>
     </div>
     <div class="panel" id="timeline-panel" hidden>
@@ -313,6 +317,21 @@ export function initComposeTab() {
     finally { genBusy(false); renderBenchAction(); }  // after genBusy restores the label
   };
   initCanvasDrop();
+
+  $("btn-empty-layer").onclick = async () => {
+    // pen/brush tools get the tool-agnostic shape layer (both commit ops into
+    // it, add or subtract); the draw tool keeps its stroke-capturing module
+    const tool = document.querySelector("#tool-toggle button.on")?.dataset.tool;
+    const isShapeTool = tool === "pen" || tool === "brush";
+    const module = isShapeTool ? "shape" : "drawing";
+    const params = isShapeTool ? { ops: [] } : { strokes: [] };
+    try {
+      const layer = await api.post("/api/layers/generate", { module, params });
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      actions.setSelection([layer.id]); // selected + module match = the tools target it
+    } catch (e) { actions.oops(e); }
+  };
 
   $("btn-lineart-stack").onclick = async () => {
     const btn = $("btn-lineart-stack");
@@ -661,6 +680,10 @@ function renderGenForm() {
   unlatch(); // picking a generator arms a new layer — never retargets a latched one
   const prev = genParams;
   genParams = { ...m.defaults };
+  // roll a fresh seed on layer creation — the rolled value is stored in the
+  // project, so saved layers stay reproducible (seed 0 means nothing special)
+  const seedSpec = m.schema.properties?.seed;
+  if (seedSpec) genParams.seed = Math.floor(Math.random() * ((seedSpec.maximum ?? 99999) + 1));
   // portrait view: viewRotate/viewAngle-tagged defaults get remapped so what
   // reads "0" (or whatever the schema default is) to the user is the same
   // physical result regardless of view — see static/js/viewmap.js.
@@ -770,6 +793,10 @@ export function renderLayerList() {
     const occ = btn("◼", "occluder: masks layers below", () =>
       actions.patchLayer(layer.id, { occluder: !layer.occluder }));
     occ.className = "occ " + (layer.occluder ? "on" : "off");
+    if ((layer.occlude_groups || []).length) {
+      occ.textContent = layer.occlude_groups.join("");
+      occ.title = `occluder into group(s) ${layer.occlude_groups.join(", ")}: masks only their receivers`;
+    }
 
     const up = btn("↑", "raise (towards top/occluding)", () => move(layer.id, +1));
     const down = btn("↓", "lower", () => move(layer.id, -1));
@@ -1035,6 +1062,18 @@ export function renderLayerDetail() {
       <label>margin</label>
       <input type="number" id="ld-margin" value="${layer.occlusion_margin_mm}" step="0.25" min="-20" max="20" style="width:5.5em">
       <span class="hint">mm — + opens a gap, − bleeds under</span>
+    </div>
+    <div class="row">
+      <label title="When this layer occludes: which groups it masks. None checked = mask EVERY layer below (the classic global occluder).">occludes into</label>
+      ${["A", "B", "C", "D"].map((g) =>
+        `<label class="hint"><input type="checkbox" class="ld-og" value="${g}" ${(layer.occlude_groups || []).includes(g) ? "checked" : ""}> ${g}</label>`).join("")}
+      <span class="hint">none = all layers</span>
+    </div>
+    <div class="row">
+      <label title="Group channels this receiver listens to, on top of the global mask. None checked = receives only ungrouped occlusion.">receives from</label>
+      ${["A", "B", "C", "D"].map((g) =>
+        `<label class="hint"><input type="checkbox" class="ld-rg" value="${g}" ${(layer.receives_groups || []).includes(g) ? "checked" : ""}> ${g}</label>`).join("")}
+      <span class="hint">none = global only</span>
     </div>`;
   wrap.appendChild(occ);
   const penSel = occ.querySelector("#ld-pen");
@@ -1054,6 +1093,12 @@ export function renderLayerDetail() {
   if (cont) cont.onchange = (e) => actions.patchLayer(layer.id, {
     region_boundary: e.target.checked ? "continuous" : "cut" });
   occ.querySelector("#ld-margin").onchange = (e) => actions.patchLayer(layer.id, { occlusion_margin_mm: +e.target.value });
+  const groupPatch = (cls, field) => {
+    const vals = [...occ.querySelectorAll(`${cls}:checked`)].map((c) => c.value);
+    actions.patchLayer(layer.id, { [field]: vals });
+  };
+  occ.querySelectorAll(".ld-og").forEach((c) => { c.onchange = () => groupPatch(".ld-og", "occlude_groups"); });
+  occ.querySelectorAll(".ld-rg").forEach((c) => { c.onchange = () => groupPatch(".ld-rg", "receives_groups"); });
 
   // -- effect stack
   const fx = document.createElement("div");

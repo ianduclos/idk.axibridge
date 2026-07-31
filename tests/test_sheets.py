@@ -78,6 +78,58 @@ def test_grid_place_shared_scale_is_global_not_per_frame():
     assert glob[1] < local[1]
 
 
+def _wide_scene():
+    """Two layers 180mm apart horizontally: a strongly landscape union bbox."""
+    a = session.add_generated_layer("polygon", {"sides": 5, "radius": 10})
+    b = session.add_generated_layer("polygon", {"sides": 5, "radius": 10})
+    session.update_layer(b.id, {"transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 180, "f": 0}})
+    return a, b
+
+
+def _bbox(frame):
+    xs = [x for paths in frame.values() for p in paths for x, _ in p.points]
+    ys = [y for paths in frame.values() for p in paths for _, y in p.points]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def test_grid_place_rotates_two_up_and_eight_up():
+    _wide_scene()
+    g = session.project.guide
+
+    rotated = session._grid_place([0.0, 0.0], cols=2, rows=1, margin_mm=5.0)
+    assert len(rotated) == 2
+    cell_w, cell_h = g.width / 2, g.height
+    for i, frame in enumerate(rotated):
+        box = _bbox(frame)
+        # a landscape scene lands portrait in its cell: the 90° flip
+        assert box[3] - box[1] > box[2] - box[0]
+        # contained in cell i's portrait half (rotation didn't drift off-cell)
+        x0 = g.x + i * cell_w
+        assert x0 <= box[0] and box[2] <= x0 + cell_w
+        assert g.y <= box[1] and box[3] <= g.y + cell_h
+
+    eight = session._grid_place([0.0] * 8, cols=4, rows=2, margin_mm=5.0)
+    assert _bbox(eight[0])[3] - _bbox(eight[0])[1] > _bbox(eight[0])[2] - _bbox(eight[0])[0]
+
+    # a non-rotated grid keeps the landscape orientation
+    plain = session._grid_place([0.0] * 4, cols=2, rows=2, margin_mm=5.0)
+    box = _bbox(plain[0])
+    assert box[2] - box[0] > box[3] - box[1]
+
+
+def test_grid_place_rotation_covers_more_paper():
+    _wide_scene()
+    g = session.project.guide
+
+    # the scene's long axis fills the cell's long axis: placed height is the
+    # full inner cell height, where an unrotated fit would letterbox a
+    # 200×20 scene into a thin strip (height ≈ width/10)
+    cell_h = g.height - 2 * 5.0
+    box = _bbox(session._grid_place([0.0, 0.0], cols=2, rows=1, margin_mm=5.0)[0])
+    assert box[3] - box[1] == pytest.approx(cell_h, abs=1e-6)
+    assert box[3] - box[1] > 3 * (box[2] - box[0])
+
+
 # -- sheet documents: paging, pen grouping, offsets ---------------------------
 
 
