@@ -1,5 +1,8 @@
 # AGENTS.md — operational context for working in this repo
 
+This project was developed with Claude Code conventions: **`CLAUDE.md`** at
+this root is the fuller operating context — read it first, then this file.
+
 axibridge: full-stack layer-compositing control surface for an AxiDraw V3
 pen plotter. FastAPI + Pydantic v2 server owns the serial port; zero-build
 vanilla-ES-module frontend; SSE for one-way progress. Design rationale lives
