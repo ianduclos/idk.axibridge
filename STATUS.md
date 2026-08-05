@@ -1,14 +1,15 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-07-27
+updated: 2026-08-05
 machine: mac+pi
-summary: offset_fill + the brush tool shipped and pushed; main is on origin for the first time and idkpi is in lockstep (560 green there), and the app's 5s-and-a-SIGKILL quit turned out to be a one-line uvicorn default.
+summary: The repo is PUBLIC on GitHub as of 2026-08-05 — Pi specifics were genericized out of the code into local config first and all 158 commits scanned for secrets; offset_fill + the brush tool remain the live work, 630 tests green.
 next:
   - "Bench: plot offset_fill (ring spacing vs pen width is the thing only ink settles) and a brush mass with a fill stacked on it"
   - "Tapered brush (radius from drawing speed) — the queued brush follow-up; per-point timestamps are already captured so it is a pure addition"
   - "Delete the now-merged local feature branches (ui-round-0726, offset-fill, and the six older merged ones)"
   - "App-shell polish, only if it still feels cheap after a week's use: window state, ⌘W, menu bar — small concrete items, NOT a toolchain (see the note below)"
+  - "Public-repo hygiene: machine-specific values live in ~/.axibridge/settings.json (host, axicli_path, notify_env) — keep them out of code defaults from now on"
 handoff_for: ian
 ---
 
