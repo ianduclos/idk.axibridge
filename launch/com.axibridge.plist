@@ -22,12 +22,12 @@
   <key>ProgramArguments</key>
   <array>
     <!-- pinned interpreter: the one with pyaxidraw installed -->
-    <string>/Users/ianduclos/_SecondBrain/01_Projects/idk.axibridge/.venv/bin/python</string>
+    <string>/Users/ianduclos/_SecondBrain/02_Areas/_Coding/idk.axibridge/.venv/bin/python</string>
     <string>-m</string>
     <string>axibridge</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>/Users/ianduclos/_SecondBrain/01_Projects/idk.axibridge</string>
+  <string>/Users/ianduclos/_SecondBrain/02_Areas/_Coding/idk.axibridge</string>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
