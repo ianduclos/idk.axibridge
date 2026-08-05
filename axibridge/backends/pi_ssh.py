@@ -43,13 +43,17 @@ _SSH_OPTS = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=10"]
 
 
 class PiSshParams(BaseModel):
-    host: str = Field(default="idkpi", title="SSH host",
-                      description="ssh alias or user@host (Tailscale name works)")
+    host: str = Field(default="raspberrypi", title="SSH host",
+                      description="ssh alias or user@host (a Tailscale name works)")
     axicli_path: str = Field(
-        default="/home/ianduclos/axibridge/.venv/bin/axicli", title="axicli path",
+        default="/home/pi/axibridge/.venv/bin/axicli", title="axicli path",
         description="Absolute path on the Pi — non-interactive ssh has a minimal PATH")
     remote_tmp: str = Field(default="/tmp/axibridge-job.svg", title="Remote job file",
                             json_schema_extra={"hidden": True})
+    notify_env: str = Field(
+        default="/etc/axibridge/notify.env", title="Notify env file",
+        description="Optional file on the Pi holding NTFY_URL=\"...\"; a finished-plot "
+                    "ping is sent there. Skipped silently if absent or unreadable.")
     speed_pendown: float = Field(default=25, ge=1, le=110, title="Pen-down speed %")
     speed_penup: float = Field(default=75, ge=1, le=110, title="Pen-up speed %")
     accel: float = Field(default=75, ge=1, le=100, title="Acceleration %")
@@ -192,10 +196,10 @@ class PiSshBackend(ExecutionBackend):
     def plot(self, doc: PathDocument, params: PiSshParams, control: JobControl, emit: EmitFn) -> None:
         """Detached execution: the job is launched on the Pi under setsid and
         survives the Mac sleeping, roaming or dropping ssh entirely — this
-        thread only POLLS for the exit marker. Completion also pings the
-        Pi's ntfy topic (read from /etc/idkpi/idkpi.env, root-only, via
-        sudo -n), so "start a plot and walk away" actually works. Stop kills
-        the detached process group over a fresh ssh and raises the pen."""
+        thread only POLLS for the exit marker. Completion optionally pings an
+        ntfy topic (NTFY_URL, read from the `notify_env` file on the Pi if it
+        is readable), so "start a plot and walk away" actually works. Stop
+        kills the detached process group over a fresh ssh and raises the pen."""
         self._require()
         self._host = params.host
         self._axicli = params.axicli_path
@@ -216,8 +220,12 @@ class PiSshBackend(ExecutionBackend):
         inner = (
             f"{axicli_cmd} > {shlex.quote(log)} 2>&1; ec=$?; "
             f"echo $ec > {shlex.quote(exit_f)}; "
-            # notify: NTFY_URL lives in a root-only env file; sudo -n is passwordless
-            'url=$( (cat /etc/idkpi/idkpi.env 2>/dev/null || sudo -n cat /etc/idkpi/idkpi.env 2>/dev/null) '
+            # Optional finished-plot ping. Reads NTFY_URL from notify_env if that
+            # file is readable — directly, else via sudo -n, which succeeds only
+            # where it's already been granted. Any failure is swallowed; the plot
+            # result never depends on it.
+            f'url=$( (cat {shlex.quote(params.notify_env)} 2>/dev/null '
+            f'|| sudo -n cat {shlex.quote(params.notify_env)} 2>/dev/null) '
             "| sed -n 's/^NTFY_URL=\"\\(.*\\)\"/\\1/p'); "
             '[ -n "$url" ] && curl -s -m 10 -d "axibridge: plot finished (exit $ec)" "$url" '
             ">/dev/null 2>&1; true"
