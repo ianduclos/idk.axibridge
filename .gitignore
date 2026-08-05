@@ -6,3 +6,11 @@ __pycache__/
 .claude/settings.local.json
 graphify-out/
 checkpoints/
+
+# Agent harness — local working files, not part of the published project
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+HANDOFF.md
+STATUS.md
+.claude/
