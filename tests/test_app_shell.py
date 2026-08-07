@@ -534,3 +534,31 @@ def test_on_main_never_raises_when_appkit_is_missing(monkeypatch):
     shell = _shell()
     monkeypatch.setitem(sys.modules, "AppKit", None)
     assert shell.on_main(lambda: None, "probe") is False
+
+
+def test_the_window_title_names_the_open_project():
+    """Review proposal 05's available half: the native title bar and the
+    in-page header both said "axibridge", 40px apart, so one carried no
+    information. It names the document now.
+
+    An empty or missing name must NOT produce "axibridge — " with a dangling
+    dash: a fresh project has no name until you give it one."""
+    shell = _shell()
+    api = shell.ShellApi()
+    titles = []
+    api.window = type("W", (), {"set_title": lambda _s, t: titles.append(t)})()
+
+    assert api.set_title("gridwork") is True
+    assert api.set_title("  spaced  ") is True
+    assert api.set_title("") is True
+    assert api.set_title(None) is True
+    assert titles == ["axibridge — gridwork", "axibridge — spaced",
+                      "axibridge", "axibridge"]
+
+
+def test_setting_the_title_never_raises():
+    """Best-effort like every other window op here — a shell with no window
+    must not take the app down over a cosmetic title."""
+    shell = _shell()
+    api = shell.ShellApi()          # .window is None
+    assert api.set_title("anything") is False

@@ -527,6 +527,30 @@ class ShellApi:
             shell_log(f"menu state could not be applied: {exc!r}")
             return False
 
+    def set_title(self, project: str | None = None) -> bool:
+        """Put the open project in the window title: `axibridge — <name>`.
+
+        Review proposal 05's core insight, and the half of it that is
+        actually available: the native title bar and the in-page header both
+        said "axibridge", 40px apart, so one of them was carrying no
+        information. Now it names the document.
+
+        NOT the whole proposal. Deleting the in-page header is impossible in
+        this shell — the header IS the title-bar band, it reserves the space
+        the traffic lights sit in (`[data-shell="native"] header`), so it can
+        only go in a browser tab. And the unsaved marker the proposal wants
+        needs a dirty-state concept the app does not have: ROADMAP's
+        "Unsaved-work guard" is still open, and inventing one here would
+        resolve it by side effect.
+        """
+        try:
+            name = (project or "").strip()
+            self.window.set_title(f"axibridge — {name}" if name else "axibridge")
+            return True
+        except Exception as exc:
+            shell_log(f"window title could not be set: {exc!r}")
+            return False
+
     def zoom_window(self) -> bool:
         """Double-click on the title-bar band, same as the green button.
 

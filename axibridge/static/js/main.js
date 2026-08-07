@@ -369,6 +369,8 @@ function renderMachineStrip() {
 
 // ---- header / status -------------------------------------------------------------
 
+let lastTitled = null;   // avoid re-titling the window on every state refresh
+
 function renderHeader() {
   const m = S.state.machine;
   const backend = S.state.backends.find((b) => b.active);
@@ -378,6 +380,12 @@ function renderHeader() {
   pill.textContent = `${backend?.label || m.backend} · ${m.connected ? m.job_state : "disconnected"}`;
   pill.className = `pill ${cls}`;
   $("project-name").value = S.state.project.name;
+  // give the native title bar a job: it and the in-page header both said
+  // "axibridge", 40px apart. A no-op in a browser tab.
+  if (S.state.project.name !== lastTitled) {
+    lastTitled = S.state.project.name;
+    window.pywebview?.api?.set_title?.(lastTitled);
+  }
   renderMachineStrip();
   // toolbar toggles reflect server state (view is saved in the project)
   document.querySelectorAll("#view-toggle button").forEach((b) =>
