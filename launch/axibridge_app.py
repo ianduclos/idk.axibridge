@@ -83,44 +83,65 @@ def terminate(proc: subprocess.Popen, grace: float = 5.0) -> None:
 # internals, so they are wrapped rather than trusted. A failure here must never
 # stop the app from opening — it just leaves the stock chrome.
 
+#: what integrate_titlebar managed — published to the page by mark_native_shell
+#: so a silent no-op is visible in the DOM instead of invisible. Three rounds
+#: of this were lost to failures that raised nothing and did nothing.
+_titlebar_status = "pending"
+
+
 def integrate_titlebar(window) -> bool:
     """Merge the title bar into the page: transparent bar, no duplicated
-    "axibridge" title, content running full height. The traffic lights stay
-    exactly where macOS puts them and keep working — they simply sit over the
-    app's own header now instead of on a separate grey strip above it.
+    title, content running full height, and the title bar's own background
+    cleared. The traffic lights stay where macOS puts them and keep working —
+    they simply sit over the app's own header now.
 
-    The AppKit calls are dispatched to the main queue: pywebview fires window
-    events from a worker thread, and window mutations from off the main thread
-    silently do nothing (the first version of this looked correct, raised
-    nothing, and had no effect).
+    Three things have to happen together, and each was a separate bug:
+
+    * the AppKit calls are dispatched to the main queue — pywebview fires
+      window events from a worker thread, and window mutations from off the
+      main thread silently do nothing;
+    * the style mask gains FullSizeContentView so the page reaches y=0;
+    * the title bar view's background is cleared. pywebview paints it
+      `windowBackgroundColor` on purpose ("so that it does not change with the
+      window color"), which sat as a lighter band over the header and clipped
+      whatever was at the top of it. Transparency alone does not beat an
+      explicit background.
 
     The header reserves room for the lights via `[data-shell="native"]` in
-    style.css. Returns True if the work was dispatched.
+    style.css. Best-effort throughout: a failure leaves the stock title bar.
     """
+    global _titlebar_status
     try:
         import AppKit
 
         native = getattr(window, "native", None)
         if native is None:
+            _titlebar_status = "no-native-window"
             return False
 
         def apply() -> None:
-            native.setTitlebarAppearsTransparent_(True)
-            native.setTitleVisibility_(AppKit.NSWindowTitleHidden)
-            native.setStyleMask_(
-                native.styleMask() | AppKit.NSWindowStyleMaskFullSizeContentView)
-            # kills the hairline between title bar and content (macOS 11+)
-            style_none = getattr(AppKit, "NSTitlebarSeparatorStyleNone", None)
-            if style_none is not None:
-                try:
+            global _titlebar_status
+            try:
+                native.setTitlebarAppearsTransparent_(True)
+                native.setTitleVisibility_(AppKit.NSWindowTitleHidden)
+                native.setStyleMask_(
+                    native.styleMask() | AppKit.NSWindowStyleMaskFullSizeContentView)
+                # the band pywebview paints over our header
+                titlebar = native.contentView().superview().subviews().lastObject()
+                titlebar.setBackgroundColor_(AppKit.NSColor.clearColor())
+                # hairline under the bar (macOS 11+)
+                style_none = getattr(AppKit, "NSTitlebarSeparatorStyleNone", None)
+                if style_none is not None:
                     native.setTitlebarSeparatorStyle_(style_none)
-                except Exception:
-                    pass
+                _titlebar_status = "merged"
+            except Exception as exc:               # noqa: BLE001 — reported, not raised
+                _titlebar_status = f"failed: {type(exc).__name__}"
 
         AppKit.NSOperationQueue.mainQueue().addOperationWithBlock_(apply)
         return True
-    except Exception:
-        return False  # cosmetic only — never block startup
+    except Exception as exc:                        # noqa: BLE001
+        _titlebar_status = f"unavailable: {type(exc).__name__}"
+        return False
 
 
 def build_menu(window):
@@ -164,7 +185,9 @@ def mark_native_shell(window) -> None:
     in-page menu bar can stand down and the header can leave room for the
     traffic lights. One flag, read by CSS."""
     try:
-        window.evaluate_js("document.documentElement.dataset.shell = 'native'")
+        window.evaluate_js(
+            "document.documentElement.dataset.shell = 'native';"
+            f"document.documentElement.dataset.titlebar = '{_titlebar_status}';")
     except Exception:
         pass
 

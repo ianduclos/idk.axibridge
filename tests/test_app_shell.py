@@ -192,8 +192,14 @@ def test_menu_items_only_proxy_existing_controls():
     assert clicked >= 4
 
 
-def test_mark_native_shell_sets_only_the_flag():
+def test_mark_native_shell_publishes_shell_and_titlebar_state():
+    """The title-bar tweak is a best-effort AppKit poke, and three separate
+    rounds of it failed by doing nothing at all rather than raising. Its
+    outcome is published to the DOM so a no-op is inspectable."""
     shell = _shell()
     win = _FakeWindow()
+    shell.integrate_titlebar(win)          # no native window -> degraded path
     shell.mark_native_shell(win)
-    assert win.js == ["document.documentElement.dataset.shell = 'native'"]
+    (src,) = win.js
+    assert "dataset.shell = 'native'" in src
+    assert "dataset.titlebar = 'no-native-window'" in src
