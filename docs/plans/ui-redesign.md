@@ -59,7 +59,7 @@ Everything below is ordered by that.
 | Toolchain | **Vite + TypeScript** | Ian's call. Buys npm access + cross-file types. NOT speed — see Facts |
 | TS strictness | loose, ratchet per file | Keeps the port mechanical instead of a 6,400-line annotation project |
 | Test runner | **pytest + Playwright only** | One suite, one command, no second ecosystem |
-| Typeface | **IBM Plex Sans** + Roboto Mono | Technical/industrial, pairs with mono, closer to the CAD/Ableton anchors than Inter |
+| Typeface | ~~**IBM Plex Sans** + Roboto Mono~~ → **Roboto Mono alone** | Built 2026-08-07 and reverted the same day on Ian's look: *"got used to the mono"*. The app keeps one voice. See 4b. |
 | Toolbar | thinner; menu bar grows | Toolbar wraps to 3 rows at 1100px and moves the canvas edge ~140px |
 | Tools | stay **horizontal**, first position | Wrapping is caused by the other clusters, which this pass removes; a vertical rail would spend canvas width on a solved problem |
 | Menu rule | actions + simple on/off **only** | Anything with a readout or live value stays a panel. This is the guardrail that stops consolidation hiding machine truth |
@@ -202,9 +202,43 @@ except the build". Slice 2's tests must pass identically before and after.
 Only now. Sub-steps are independently shippable; commit each.
 
 **4a. Consolidate `.engraved` first** (see Facts) so the typography change is
-a one-place edit.
+a one-place edit. **[Done 2026-08-07, `50dab95`. Eight rules restated the
+treatment, not seven — `button.primary.big` was missed by the audit. One
+selector list now states the four properties once, through
+`--engraved-size / -weight / -track / -case`; sites set only their delta.
+Zero visual change, measured: 2904 elements across all four tabs, 0
+computed-style differences.]**
 
-**4b. Typography.** Vendor IBM Plex Sans (Latin subset, woff2, alongside the
+**4b. Typography — BUILT, THEN REVERTED AT IAN'S CALL (2026-08-07).**
+`dda73c3` shipped it; the commit carrying this note reverted it. Ian, on
+seeing it:
+*"Meh, got used to the mono, roll it back."* **Do not rebuild this from the
+spec below.** The app is mono-only again and that is now a decision, not an
+omission — the header comment in `style.css` ("One face, three roles… the
+machine has one voice") stands.
+
+What was learned, so a later pass doesn't relearn it:
+
+- The face split itself worked mechanically and was verified — both faces
+  loaded with no 404 in the bundle *and* in the source frontend the Pi
+  serves. It was rejected on taste, not on defect.
+- **A real trap, still live in the current mono CSS:** form controls do not
+  inherit `font-family`, so `input, select, textarea { font-family: inherit }`
+  is load-bearing *only while `body` is mono*. Any future face change to
+  `body` silently sends every number field with it, from a rule further down
+  the file at equal specificity. A screenshot does not reveal it.
+- **The ink demotion has a contrast floor.** `#d8d2c4` on `--live-fill`
+  measures **4.42:1** — under AA. `#ece7da` holds the 5.40:1 that
+  `--live-fill` was chosen for. Demoting body ink therefore costs either a
+  second reserved use of `#ece7da` (the filled primary button) or a lighter
+  `--live-fill`, which trades against its deliberately-darker-than-the-sheet
+  property. Not free either way.
+- Three parts of 4b were independent of the face and could still land in
+  mono if wanted: the scale collapse (8 sizes → `--t-10/12/13/15` tokens),
+  the ink demotion, and sentence-case `h3`. Ian was told this and did not
+  ask for them; treat that as "not now", not as unexplored.
+
+*Original spec, kept for the record:* Vendor IBM Plex Sans (Latin subset, woff2, alongside the
 existing Roboto Mono — offline, no CDN, matching `@font-face` pattern). Mono
 keeps readouts, values, inputs and panel titles; sans takes prose, control
 labels, buttons, menus. Collapse the scale to ~10/12/13/15/20. Demote body ink
