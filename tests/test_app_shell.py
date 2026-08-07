@@ -6,6 +6,7 @@ import logging
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import pytest
 
@@ -116,3 +117,83 @@ def test_app_shell_wait_ready_reports_early_exit():
     dead.wait()
     with pytest.raises(RuntimeError, match="exited during startup"):
         shell.wait_ready(dead, timeout=2)
+
+
+# -- macOS chrome integration -------------------------------------------------
+#
+# Both tweaks poke at AppKit and pywebview internals, so they are written to
+# degrade rather than raise: a failure must leave the stock title bar and the
+# in-page menu, never stop the window opening. These tests pin that contract
+# (they run headless on any platform — no window is created).
+
+def _shell():
+    sys.path.insert(0, "launch")
+    try:
+        import axibridge_app
+        return axibridge_app
+    finally:
+        sys.path.pop(0)
+
+
+class _FakeWindow:
+    """A window with no native handle — the degraded path."""
+
+    native = None
+
+    def __init__(self):
+        self.js = []
+
+    def evaluate_js(self, src):
+        self.js.append(src)
+
+
+def test_integrate_titlebar_degrades_without_a_native_window():
+    assert _shell().integrate_titlebar(_FakeWindow()) is False
+
+
+def test_integrate_titlebar_survives_a_hostile_window():
+    """Anything unexpected from pywebview must be swallowed, not raised."""
+    class Boom:
+        @property
+        def native(self):
+            raise RuntimeError("no window yet")
+
+    assert _shell().integrate_titlebar(Boom()) is False
+
+
+def test_menu_items_only_proxy_existing_controls():
+    """Same rule as the in-page bar (menu.js): every item clicks a control that
+    already exists, so the native menu cannot drift from the app's own logic.
+    No item may call an API directly."""
+    shell = _shell()
+    win = _FakeWindow()
+    menus = shell.build_menu(win)
+    if not menus:
+        pytest.skip("pywebview menu API unavailable")
+
+    assert [m.title for m in menus] == ["File", "View"]
+
+    index = (Path("axibridge/static/index.html")).read_text()
+    clicked = 0
+    for menu in menus:
+        for item in menu.items:
+            fn = getattr(item, "function", None)
+            if fn is None:      # separator
+                continue
+            win.js.clear()
+            fn()
+            (src,) = win.js
+            assert ".click()" in src, f"{item.title!r} must proxy a real control"
+            assert "/api/" not in src, f"{item.title!r} must not call the API directly"
+            selector = src.split("'")[1]
+            token = selector.split("[")[0].split()[0].lstrip("#")  # "#a b[c]" -> "a"
+            assert token in index, f"{item.title!r} targets {selector}, absent from index.html"
+            clicked += 1
+    assert clicked >= 4
+
+
+def test_mark_native_shell_sets_only_the_flag():
+    shell = _shell()
+    win = _FakeWindow()
+    shell.mark_native_shell(win)
+    assert win.js == ["document.documentElement.dataset.shell = 'native'"]

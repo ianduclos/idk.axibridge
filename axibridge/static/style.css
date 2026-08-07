@@ -163,6 +163,18 @@ header h1 span { color: var(--ink-soft); }
   color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: 12px;
 }
 
+/* App-shell chrome. launch/axibridge_app.py sets data-shell="native" once the
+   page loads inside the pywebview window, where the title bar is transparent
+   and the content runs full height — so the header has to leave room for the
+   traffic lights, and the in-page menu stands down in favour of the real
+   system menu bar. In a browser tab the flag is absent and none of this
+   applies: the in-page menu is the only menu there. */
+:root[data-shell="native"] header {
+  padding-top: 13px;
+  padding-left: 84px;   /* close · minimise · zoom live here */
+}
+:root[data-shell="native"] #menubar { display: none; }
+
 /* ---- header menu bar (File / View) ---- */
 
 #menubar { display: flex; gap: 2px; }

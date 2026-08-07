@@ -10,6 +10,10 @@ Double-clicked via launch/AxiBridge.app (no Terminal). Lifecycle contract:
   the terminal launcher) and terminate it when the window closes.
 * Closing is refused while a plot is running on an owned server — stop the
   job first. The server log is readable in the UI (Settings → Server log).
+* On macOS the window title bar is merged into the app's own header, and the
+  File/View menus are served from the real system menu bar. Both are
+  best-effort: if either fails the app still starts, with the standard title
+  bar and the in-page menu.
 
 Import-safe: no side effects at import time (unit tests import the helpers).
 """
@@ -72,6 +76,80 @@ def terminate(proc: subprocess.Popen, grace: float = 5.0) -> None:
         proc.wait()
 
 
+# -- macOS chrome -------------------------------------------------------------
+#
+# Two cosmetic integrations, both deliberately best-effort: they poke at
+# AppKit through pyobjc (which pywebview already depends on) and at pywebview
+# internals, so they are wrapped rather than trusted. A failure here must never
+# stop the app from opening — it just leaves the stock chrome.
+
+def integrate_titlebar(window) -> bool:
+    """Merge the title bar into the page: transparent bar, no duplicated
+    "axibridge" title, content running full height. The traffic lights stay
+    exactly where macOS puts them and keep working — they simply sit over the
+    app's own header now instead of on a separate grey strip above it.
+
+    The header reserves room for them via `[data-shell="native"]` in style.css.
+    Returns True if the tweak applied.
+    """
+    try:
+        import AppKit
+
+        native = getattr(window, "native", None)
+        if native is None:
+            return False
+        native.setTitlebarAppearsTransparent_(True)
+        native.setTitleVisibility_(AppKit.NSWindowTitleHidden)
+        native.setStyleMask_(
+            native.styleMask() | AppKit.NSWindowStyleMaskFullSizeContentView)
+        return True
+    except Exception:
+        return False  # cosmetic only — never block startup
+
+
+def build_menu(window):
+    """The system menu bar, on the same rule as the in-page one (menu.js):
+    every item proxy-clicks a control that already exists, so this can't drift
+    out of sync with the app's own logic. Returns [] if pywebview's menu API
+    isn't available.
+
+    The in-page bar stays for browser tabs, where a native menu doesn't exist;
+    `mark_native_shell` hides it here so the two never show at once.
+    """
+    try:
+        from webview.menu import Menu, MenuAction, MenuSeparator
+    except Exception:
+        return []
+
+    def click(selector: str):
+        # json-free single-quote selector: all of ours are simple ids/attrs
+        return lambda: window.evaluate_js(
+            f"document.querySelector('{selector}')?.click()")
+
+    view = lambda v: click(f'#view-toggle button[data-view="{v}"]')  # noqa: E731
+    return [
+        Menu("File", [
+            MenuAction("Save", click("#btn-save")),
+            MenuSeparator(),
+            MenuAction("Download resolved SVG", click("#btn-svg")),
+        ]),
+        Menu("View", [
+            MenuAction("Portrait", view("portrait")),
+            MenuAction("Landscape", view("landscape")),
+        ]),
+    ]
+
+
+def mark_native_shell(window) -> None:
+    """Tell the page it's hosted in the app shell, not a browser tab, so the
+    in-page menu bar can stand down and the header can leave room for the
+    traffic lights. One flag, read by CSS."""
+    try:
+        window.evaluate_js("document.documentElement.dataset.shell = 'native'")
+    except Exception:
+        pass
+
+
 def plot_running() -> bool:
     state = probe()
     return bool(state) and state.get("machine", {}).get("job_state") not in (None, "idle")
@@ -93,6 +171,15 @@ def main() -> None:
 
     window = webview.create_window("axibridge", URL, width=1440, height=900)
 
+    def on_shown():
+        integrate_titlebar(window)
+
+    def on_loaded():
+        mark_native_shell(window)
+
+    window.events.shown += on_shown
+    window.events.loaded += on_loaded
+
     def on_closing():
         # never strand a moving plotter: an owned server mid-plot refuses to die
         if owned is not None and plot_running():
@@ -103,7 +190,7 @@ def main() -> None:
 
     window.events.closing += on_closing
     try:
-        webview.start()
+        webview.start(menu=build_menu(window))
     finally:
         if owned is not None:
             terminate(owned)
