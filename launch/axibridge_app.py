@@ -188,7 +188,12 @@ def main() -> None:
             terminate(owned)
             raise
 
-    window = webview.create_window("axibridge", URL, width=1440, height=900)
+    # Only the header bar's OWN empty space drags the window — direct-target-only
+    # keeps every control inside it clickable. Without `draggable` the web view
+    # covers the (now transparent) title bar and swallows the drag entirely.
+    webview.settings["DRAG_REGION_DIRECT_TARGET_ONLY"] = True
+    window = webview.create_window("axibridge", URL, width=1440, height=900,
+                                   draggable=True)
 
     def on_shown():
         integrate_titlebar(window)

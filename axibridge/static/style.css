@@ -142,12 +142,9 @@ header {
   padding: 9px 16px; border-bottom: 1px solid var(--bench-edge);
   background: var(--bench);
 }
-/* wordmark: value contrast, not hue — the chrome has no brand colour left */
-header h1 {
-  font-size: 20px; margin: 0; font-weight: 700; letter-spacing: -0.5px;
-  color: var(--ink);
-}
-header h1 span { color: var(--ink-soft); }
+/* No wordmark: the OS menu bar and the window already say "axibridge", and a
+   third copy inside the app was the duplication Ian flagged. The project name
+   is the identity that actually varies. */
 .project-name {
   font-family: inherit; font-size: 13px; width: 14em;
   background: transparent; border: 1px solid transparent; border-radius: 0;
@@ -170,7 +167,6 @@ header h1 span { color: var(--ink-soft); }
    system menu bar. In a browser tab the flag is absent and none of this
    applies: the in-page menu is the only menu there. */
 :root[data-shell="native"] header {
-  padding-top: 6px;
   padding-left: 84px;   /* close · minimise · zoom live here */
   min-height: 38px;     /* the title-bar band the lights sit in */
 }

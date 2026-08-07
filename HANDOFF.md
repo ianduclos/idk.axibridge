@@ -10,7 +10,9 @@ entries: 4
   persisted per section; white button faces dropped for a measured steel blue
   (darker than the sheet, so no control outshines the paper); sliders became
   faders with shift fine-tune; quitting went 2.20s -> 0.17s; macOS title bar
-  merged into the header with File/Canvas moved to the system menu bar.
+  merged into the header with File/Canvas moved to the system menu bar, the
+  in-app "axibridge" wordmark removed (the OS already says it twice), and the
+  header made a drag region so the window still moves.
 - next: restart AxiBridge.app and eye-check the shell — whether the traffic
   lights sit correctly in the header band (84px clearance and the 38px band
   are considered guesses, not measurements) and whether the Canvas menu reads

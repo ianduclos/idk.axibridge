@@ -9,8 +9,10 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header>
-  <h1>axi<span>bridge</span></h1>
+<!-- pywebview-drag-region: with DRAG_REGION_DIRECT_TARGET_ONLY only the bar's
+     own empty space drags the window, so the controls inside stay clickable.
+     Inert in a browser tab. -->
+<header class="pywebview-drag-region">
   <nav class="menubar" id="menubar">
     <div class="menu" data-menu="file">
       <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">File</button>
