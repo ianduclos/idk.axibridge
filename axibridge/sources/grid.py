@@ -37,6 +37,7 @@ class GridParams(BaseModel):
 @register_source
 class Grid(SourceModule):
     id = "grid"
+    orientation = "geometry"  # a width x height ruled field: 'width' should mean the width you see
     label = "Grid"
     description = "Ruled grid with open-frame and overshoot options."
     Params = GridParams

@@ -26,6 +26,7 @@ class SquiggleLRParams(PixelGenParams):
 @register_source
 class SquiggleLR(SourceModule):
     id = "squiggle_lr"
+    orientation = "param"
     label = "Squiggle (left-right)"
     description = "Squigglecam: scan lines oscillating with darkness, alternating direction."
     Params = SquiggleLRParams

@@ -29,6 +29,7 @@ class LinescanParams(PixelGenParams):
 @register_source
 class Linescan(SourceModule):
     id = "linescan"
+    orientation = "param"
     label = "Linescan"
     description = "Scan lines drawn only where the image is dark — banded shading."
     Params = LinescanParams

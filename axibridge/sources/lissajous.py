@@ -32,6 +32,7 @@ class LissajousParams(BaseModel):
 @register_source
 class Lissajous(SourceModule):
     id = "lissajous"
+    orientation = "none"  # a centred figure; its axis is whatever freq_x/freq_y say, not the sheet's
     label = "Lissajous / harmonograph"
     description = "Damped Lissajous curve — a one-path stress test for speed and cornering params."
     Params = LissajousParams

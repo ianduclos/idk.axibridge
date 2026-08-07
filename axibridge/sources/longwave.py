@@ -31,6 +31,7 @@ class LongwaveParams(PixelGenParams):
 @register_source
 class Longwave(SourceModule):
     id = "longwave"
+    orientation = "param"
     label = "Longwave"
     description = "Sinusoidal scan lines gated by darkness with hysteresis."
     Params = LongwaveParams

@@ -40,7 +40,7 @@ import pkgutil
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, Literal
 
 from pydantic import BaseModel
 
@@ -87,6 +87,27 @@ class SourceModule(ABC):
     label: str
     description: str = ""
     Params: type[BaseModel] = ModuleParams
+
+    #: How this generator's output relates to the sheet's orientation.
+    #: **Every source must state this** — `tests/test_orientation.py` fails on
+    #: a module that leaves it ``None``, which is the regression guard the
+    #: three previous orientation rounds lacked (ROADMAP "URGENT", option B).
+    #: In portrait the canvas draws through `translate(H 0) rotate(90)`, so
+    #: machine-frame geometry arrives a quarter-turn round unless something
+    #: corrects it. Who corrects it is what this declares:
+    #:
+    #: ``"none"``      output has no dominant axis (a polygon, a lissajous, a
+    #:                 mark the user drew themselves) — nothing to correct.
+    #: ``"param"``     output is oriented AND the module exposes a rotation
+    #:                 param tagged `viewRotate`/`viewAngle`/`viewOrient`, so
+    #:                 `static/js/viewmap.js` remaps its default at form-render
+    #:                 time. The layer must NOT also rotate, or it corrects
+    #:                 twice.
+    #: ``"geometry"``  output is oriented and there is no such param (a text
+    #:                 baseline, a width×height field): `Session`'s placement
+    #:                 transform carries portrait's quarter-turn, once, at
+    #:                 layer creation.
+    orientation: Literal["none", "param", "geometry"] | None = None
 
     @abstractmethod
     def generate(self, params: BaseModel) -> PathDocument:

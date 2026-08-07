@@ -77,7 +77,12 @@ def test_add_generated_layer_plotterfun_generator_centers_too():
 def test_add_generated_layer_non_image_generator_keeps_identity():
     """Procedural generators (no ``image`` param) are NOT re-centred — they
     place themselves via their own size/margin params, and existing tooling
-    (compose/tween/sheet tests) depends on that identity transform."""
+    (compose/tween/sheet tests) depends on that identity transform.
+
+    Checked in landscape, where nothing else touches the transform. In
+    portrait a source declaring ``orientation = "geometry"`` also carries the
+    quarter-turn — see tests/test_orientation.py."""
+    session.project.view = "landscape"
     layer = session.add_generated_layer("rectangle", {"width": 40, "height": 20})
     assert layer.transform.e == 0.0
     assert layer.transform.f == 0.0
@@ -85,6 +90,12 @@ def test_add_generated_layer_non_image_generator_keeps_identity():
     layer2 = session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
     assert layer2.transform.e == 0.0
     assert layer2.transform.f == 0.0
+
+    # a source with no dominant axis stays at identity in portrait too
+    session.project.view = "portrait"
+    layer3 = session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
+    assert (layer3.transform.e, layer3.transform.f) == (0.0, 0.0)
+    assert (layer3.transform.a, layer3.transform.d) == (1.0, 1.0)
 
 
 def test_regenerate_layer_preserves_existing_transform():

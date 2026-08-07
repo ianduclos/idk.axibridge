@@ -97,6 +97,7 @@ def _bias_field(shape: tuple[int, int], rng: random.Random, lo: float = 0.5) -> 
 @register_source
 class Misremembered(SourceModule):
     id = "misremembered"
+    orientation = "param"
     label = "Misremembered image"
     description = ("Recalls the image with a budget of strokes, scribbled masses and "
                    "tonal hatching — masses right, details confabulated; confidence "

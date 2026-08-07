@@ -225,6 +225,7 @@ def _hatch(cols: list[list[float]], w: int, h: int, sc: int) -> list[list[Pt]]:
 @register_source
 class Linedraw(SourceModule):
     id = "linedraw"
+    orientation = "param"
     label = "Linedraw (sketch)"
     description = "Sketch portrait: edge contours + multi-density hatching with perlin wobble."
     Params = LinedrawParams

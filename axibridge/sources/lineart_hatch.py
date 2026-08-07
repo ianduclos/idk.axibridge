@@ -93,6 +93,7 @@ def _tone_lut(p: LineartHatchParams) -> np.ndarray:
 @register_source
 class LineartHatch(SourceModule):
     id = "lineart_hatch"
+    orientation = "param"
     label = "Lineart hatch (v2)"
     description = "Flow-aligned tonal streamline hatching for one darkness band."
     Params = LineartHatchParams

@@ -60,6 +60,19 @@ UNDO_DEPTH = 100
 UNDO_GEOMETRY_BUDGET_POINTS = 1_000_000
 
 
+def _nudge_onto(coords: list[float], extent: float) -> float:
+    """How far to slide a span so it sits inside ``0..extent``. Zero when it
+    already does; centres it when it is simply too big to fit."""
+    lo, hi = min(coords), max(coords)
+    if hi - lo > extent:
+        return (extent - (lo + hi)) / 2
+    if lo < 0:
+        return -lo
+    if hi > extent:
+        return extent - hi
+    return 0.0
+
+
 def _subpath_by_distance(
     points: list[tuple[float, float]], d0: float, d1: float
 ) -> list[tuple[float, float]]:
@@ -391,6 +404,52 @@ class Session:
             return Affine()
         return Affine(e=(compose.BED_WIDTH - doc.width) / 2, f=(compose.BED_HEIGHT - doc.height) / 2)
 
+    def _placement_transform(
+        self, generator_id: str, params: dict[str, Any], doc: PathDocument,
+        paths: list[Path],
+    ) -> Affine:
+        """A new layer's opening transform: centring, plus portrait's
+        quarter-turn for sources that declare ``orientation = "geometry"``.
+
+        THE ONE PLACE orientation is corrected (ROADMAP "URGENT", option B).
+        The canvas draws portrait through ``translate(H 0) rotate(90)``, i.e.
+        machine (x, y) appears at (H - y, x), so machine-frame geometry with a
+        dominant axis — a text baseline, a scan direction, a width x height
+        field — arrives a quarter-turn round. The layer's own affine undoes
+        exactly that display map, so the layer lands **where it would have
+        landed in landscape, on screen**: apply the inverse, (x, y) ->
+        (y, H - x), which is a 270-degree (clockwise) turn plus H — the same
+        machine-frame value ``viewmap.js`` hands a ``viewRotate`` param whose
+        displayed default is 0.
+
+        Sources declaring ``"param"`` already get this from their tagged
+        rotation param and must not be turned twice; ``"none"`` has no
+        dominant axis to get wrong. Nothing downstream reads ``view``: the
+        correction is baked into the stored transform at creation, so resolve
+        stays byte-identical across a view toggle (test_view_coherence)."""
+        base = self._centering_transform(generator_id, params, doc)
+        if self.project.view != "portrait":
+            return base
+        if getattr(get_source(generator_id), "orientation", None) != "geometry":
+            return base
+        pts = [pt for path in paths for pt in path.points]
+        if not pts:
+            return base
+        # (x, y) -> (y + base.f, H - x - base.e): the display map's inverse,
+        # composed after the centring translation.
+        turned = Affine(a=0.0, b=-1.0, c=1.0, d=0.0,
+                        e=base.f, f=compose.BED_HEIGHT - base.e)
+        # The portrait sheet is narrower than the landscape one (218 vs 300),
+        # so geometry laid out for the full width can now hang off the bed.
+        # Slide it back rather than hand the user something to rescue.
+        corners = [turned.apply(x, y)
+                   for x in (min(x for x, _ in pts), max(x for x, _ in pts))
+                   for y in (min(y for _, y in pts), max(y for _, y in pts))]
+        return turned.model_copy(update={
+            "e": turned.e + _nudge_onto([c[0] for c in corners], compose.BED_WIDTH),
+            "f": turned.f + _nudge_onto([c[1] for c in corners], compose.BED_HEIGHT),
+        })
+
     def add_generated_layer(self, generator_id: str, params: dict[str, Any]) -> CanvasLayer:
         src = get_source(generator_id)
         doc = src.generate(src.Params(**params))
@@ -398,7 +457,7 @@ class Session:
         layer = CanvasLayer(
             name=src.label,
             source=LayerSource(type="generator", generator=generator_id, params=params),
-            transform=self._centering_transform(generator_id, params, doc),
+            transform=self._placement_transform(generator_id, params, doc, paths),
             frame_follow=self._sequence_driven(generator_id, params),
         )
         with self._lock:
@@ -1864,9 +1923,10 @@ class Session:
             params = {"image": image, "rotate": rotate, "width": width, **spec["params"]}
             src = get_source(spec["generator"])
             doc = src.generate(src.Params(**params))
+            paths = [p for lyr in doc.layers for p in lyr.paths]
             generated.append((
-                spec, params, [p for lyr in doc.layers for p in lyr.paths],
-                self._centering_transform(spec["generator"], params, doc),
+                spec, params, paths,
+                self._placement_transform(spec["generator"], params, doc, paths),
             ))
         with self._lock:
             self._checkpoint()

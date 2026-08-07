@@ -23,6 +23,7 @@ class WavesParams(PixelGenParams):
 @register_source
 class Waves(SourceModule):
     id = "waves"
+    orientation = "param"
     label = "Waves"
     description = "Angled parallel lines repelled by bright areas."
     Params = WavesParams

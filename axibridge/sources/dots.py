@@ -25,6 +25,7 @@ class DotsParams(PixelGenParams):
 @register_source
 class Dots(SourceModule):
     id = "dots"
+    orientation = "param"
     label = "Dots (stipple strokes)"
     description = "Probabilistic short strokes — darker areas stipple denser."
     Params = DotsParams

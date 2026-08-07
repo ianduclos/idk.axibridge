@@ -84,6 +84,7 @@ class _Hand:
 @register_source
 class TwoHands(SourceModule):
     id = "two_hands"
+    orientation = "none"  # a square-ish field of agent marks with no dominant axis
     label = "Two hands (negotiation)"
     description = ("Two line-agents take turns responding to each other's marks — echoing, "
                    "completing, contradicting. The composition is the conversation.")

@@ -90,6 +90,18 @@ Contract:
 - Deterministic for fixed params (seed any randomness): "regenerate" and
   project-loading both re-run you. (Projects also snapshot generated
   geometry to SVG, so old artworks survive changes to your code.)
+- **Declare `orientation` — it is mandatory** (`tests/test_orientation.py`
+  fails on a module that doesn't). The canvas draws portrait through
+  `translate(H 0) rotate(90)`, so anything with a dominant axis arrives a
+  quarter-turn round unless something corrects it, and "somebody will notice"
+  is exactly how this bug came back three times. Pick one:
+  `"none"` (no dominant axis — a polygon, a lissajous, marks the user drew
+  themselves), `"param"` (you expose a rotation param tagged `viewRotate` /
+  `viewAngle` / `viewOrient`, so `static/js/viewmap.js` remaps its default —
+  the image family; the test also checks the tag really exists), or
+  `"geometry"` (oriented output with no such param — a text baseline, a
+  width x height field: `Session._placement_transform` bakes portrait's
+  quarter-turn into the layer's affine at creation).
 - Slow generators should call `registry.report_progress(frac, msg)` from
   their loops — it feeds the Generate button's load bar over SSE and is a
   no-op outside a request. Call it freely; the API layer throttles.

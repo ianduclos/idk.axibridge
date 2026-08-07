@@ -219,6 +219,7 @@ class GrammarParams(BaseModel):
 @register_source
 class Grammar(SourceModule):
     id = "grammar"
+    orientation = "none"  # a square-ish field of shapes with no dominant axis
     label = "Grammar (transgression budget)"
     description = ("A shape grammar that obeys itself almost everywhere — and spends a "
                    "small budget of rule-aware violations at the most salient sites.")

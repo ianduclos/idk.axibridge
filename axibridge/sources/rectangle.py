@@ -19,6 +19,7 @@ class RectangleParams(BaseModel):
 @register_source
 class RectangleSource(SourceModule):
     id = "rectangle"
+    orientation = "geometry"  # width x height, and width should mean the width you see
     label = "Rectangle"
     description = "Closed rectangle, filled by default for solid masks and simple blocks."
     Params = RectangleParams

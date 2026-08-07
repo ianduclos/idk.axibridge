@@ -132,6 +132,7 @@ def _flatten_subpath(sp: PenSubpath, tol: float) -> list[XY]:
 @register_source
 class PenSource(SourceModule):
     id = "pen"
+    orientation = "none"  # the anchors are where the user put them, already in their frame
     label = "Pen (anchors)"
     description = "Bezier anchor/handle paths drawn with the pen tool."
     Params = PenParams

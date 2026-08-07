@@ -272,6 +272,7 @@ def _velocity_outline(pts: list[tuple[float, float, float]], width_min: float,
 @register_source
 class DrawingSource(SourceModule):
     id = "drawing"
+    orientation = "none"  # the strokes are the marks the user drew, already in their frame
     label = "Drawing (pointer)"
     description = "Freehand pointer strokes captured on the canvas."
     Params = DrawingParams

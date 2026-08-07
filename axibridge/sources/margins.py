@@ -26,6 +26,7 @@ class MarginsParams(PixelGenParams):
 @register_source
 class Margins(SourceModule):
     id = "margins"
+    orientation = "param"
     label = "Margins (arc field)"
     description = "Grid of short arcs, bent and spun by image darkness."
     Params = MarginsParams

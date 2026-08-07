@@ -123,6 +123,7 @@ def _subsample_keep_ends(line: L.Line, stride: int) -> L.Line:
 @register_source
 class LineartEdges(SourceModule):
     id = "lineart_edges"
+    orientation = "param"
     label = "Lineart edges (v2)"
     description = "XDoG/Sobel edge extraction, traced into hand-wobbled contour strokes."
     Params = LineartEdgesParams

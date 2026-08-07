@@ -28,6 +28,7 @@ class PolygonParams(BaseModel):
 @register_source
 class PolygonSource(SourceModule):
     id = "polygon"
+    orientation = "none"  # radial about its centre
     label = "Polygon / star"
     description = "Closed (optionally filled) shape — the occluder workhorse."
     Params = PolygonParams

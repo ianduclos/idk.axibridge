@@ -22,6 +22,7 @@ class SublineParams(PixelGenParams):
 @register_source
 class Subline(SourceModule):
     id = "subline"
+    orientation = "param"
     label = "Subline"
     description = "Scan lines made of strands that fan apart over dark areas."
     Params = SublineParams

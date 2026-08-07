@@ -178,6 +178,7 @@ def _shoelace(loop: list[tuple[float, float]]) -> float:
 @register_source
 class ImageThreshold(SourceModule):
     id = "image_threshold"
+    orientation = "param"
     label = "Image threshold"
     description = "Trace an image's dark regions as filled outlines — occlude or hatch-fill them."
     Params = ImageThresholdParams

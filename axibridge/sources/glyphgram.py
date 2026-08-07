@@ -168,6 +168,7 @@ def _chain(strokes: list[list[tuple[float, float]]],
 @register_source
 class GlyphGram(SourceModule):
     id = "glyphgram"
+    orientation = "geometry"  # letterforms on a baseline, and no rotation param to remap
     label = "Glyph grammar (asemic)"
     description = ("Hershey letterforms through a coherent distortion field, "
                    "chained into continuous lines. Almost reads; refuses.")

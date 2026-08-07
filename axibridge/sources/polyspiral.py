@@ -27,6 +27,7 @@ class PolyspiralParams(PixelGenParams):
 @register_source
 class Polyspiral(SourceModule):
     id = "polyspiral"
+    orientation = "param"
     label = "Polygon spiral"
     description = "One continuous polygonal spiral, oscillating with darkness."
     Params = PolyspiralParams

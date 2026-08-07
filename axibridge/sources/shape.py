@@ -137,6 +137,7 @@ def _fold_ops(ops: list[ShapeOp], p: ShapeParams):
 @register_source
 class ShapeSource(SourceModule):
     id = "shape"
+    orientation = "none"  # the ops are the marks the user made, already in their frame
     label = "Shape (add/subtract)"
     description = ("One ink mass the pen and brush tools both add to and "
                    "subtract from — chronological boolean ops, folded.")

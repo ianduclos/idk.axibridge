@@ -173,6 +173,7 @@ def _rings(geom, simplify: float) -> list[list[tuple[float, float]]]:
 @register_source
 class BrushSource(SourceModule):
     id = "brush"
+    orientation = "none"  # the strokes are the marks the user painted, already in their frame
     label = "Brush (painted mass)"
     description = "Painted and erased circle-brush strokes merged into filled shapes."
     Params = BrushParams

@@ -230,6 +230,7 @@ def _block(params: TextParams) -> list[list[tuple[float, float]]]:
 @register_source
 class TextSource(SourceModule):
     id = "text"
+    orientation = "geometry"  # a horizontal baseline, and no rotation param to remap — the reported bug
     label = "Text"
     description = ("Clean plottable text: CamBam stick fonts (single-line "
                    "engraving) plus vpype's Hershey fonts, multiline.")

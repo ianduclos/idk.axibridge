@@ -65,6 +65,7 @@ class _SpacingGrid:
 @register_source
 class FlowField(SourceModule):
     id = "flowfield"
+    orientation = "geometry"  # a width x height field of streamlines: 'width' should mean the width you see
     label = "Flow field"
     description = "Evenly-spaced streamlines through fractal noise — hair, water, wind."
     Params = FlowFieldParams

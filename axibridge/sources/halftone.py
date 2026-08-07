@@ -25,6 +25,7 @@ class HalftoneParams(PixelGenParams):
 @register_source
 class Halftone(SourceModule):
     id = "halftone"
+    orientation = "param"
     label = "Halftone"
     description = "Dot screen: circles or diamonds sized by local darkness."
     Params = HalftoneParams
