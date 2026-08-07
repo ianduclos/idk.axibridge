@@ -35,6 +35,25 @@ PYTHON = REPO / ".venv" / "bin" / "python"
 PORT = 2942
 URL = f"http://127.0.0.1:{PORT}"
 
+#: Every AppKit poke in this file is best-effort and swallows its exception,
+#: because a failed cosmetic tweak must never stop the app opening. The cost
+#: showed up on 2026-08-07: three menu bugs in a row that did nothing, raised
+#: nothing and left no trace, and each one cost a round trip through Ian
+#: relaunching the app to find out. Finder gives the bundle no stderr, so
+#: "best-effort" has to mean "leaves a record", not "is invisible".
+SHELL_LOG = Path.home() / "Library" / "Logs" / "axibridge-shell.log"
+
+
+def shell_log(msg: str) -> None:
+    """Append one line. Never raises — a logger that can break the app it is
+    diagnosing is worse than no logger."""
+    try:
+        SHELL_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with SHELL_LOG.open("a", encoding="utf-8") as fh:
+            fh.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {msg}\n")
+    except Exception:
+        pass
+
 
 def probe(timeout: float = 1.0) -> dict | None:
     """The server's /api/state, or None if nothing is listening."""
@@ -217,6 +236,14 @@ def build_menu(window):
     return menus
 
 
+#: Last state the page reported, so the two things that can set the ticks —
+#: the page telling us something changed, and the merge finishing — do not
+#: have to happen in a fixed order. They race: `loaded` (which installs the
+#: probe and brings the first report) and `shown` (which merges) are separate
+#: pywebview events. Whichever runs last re-applies, and the ticks are right
+#: either way.
+_menu_states: dict = {}
+
 #: menus we contribute that pywebview also builds itself. Ian's call
 #: (2026-08-07): ours merge INTO those rather than sitting beside them under
 #: invented names, so the system bar reads the same as the in-page bar.
@@ -318,6 +345,27 @@ def set_menu_states(main_menu, states: dict, index: dict, on, off) -> int:
     return done
 
 
+def apply_menu_states() -> int:
+    """Push `_menu_states` onto the native items. Main thread only — called
+    from inside the blocks that already run there."""
+    try:
+        import AppKit
+
+        from axibridge.menu_spec import item_index
+
+        main_menu = AppKit.NSApplication.sharedApplication().mainMenu()
+        if main_menu is None or not _menu_states:
+            return 0
+        index = item_index()
+        n = set_menu_states(main_menu, _menu_states, index,
+                            AppKit.NSControlStateValueOn, AppKit.NSControlStateValueOff)
+        shell_log(f"menu state: set {n}/{len(index)} from {_menu_states}")
+        return n
+    except Exception as exc:
+        shell_log(f"menu state FAILED: {exc!r}")
+        return 0
+
+
 def merge_native_menus() -> bool:
     """Fold our Edit/View items into pywebview's own menus of those names.
 
@@ -343,12 +391,40 @@ def merge_native_menus() -> bool:
             main_menu = AppKit.NSApplication.sharedApplication().mainMenu()
             if main_menu is None:
                 return
-            merge_menus_into_native(main_menu, _MERGE_INTO_NATIVE,
-                                    AppKit.NSMenuItem.separatorItem)
+            try:
+                merged = merge_menus_into_native(main_menu, _MERGE_INTO_NATIVE,
+                                                 AppKit.NSMenuItem.separatorItem)
+                bar = [menu_title(main_menu.itemAtIndex_(i))
+                       for i in range(main_menu.numberOfItems())]
+                shell_log(f"menu merge: merged={merged} bar={bar}")
+                # a state report that arrived before the merge looked into
+                # pywebview's untouched menus and found none of our items
+                apply_menu_states()
+            except Exception as exc:          # inside a main-queue block: nothing
+                shell_log(f"menu merge FAILED: {exc!r}")   # above can catch this
 
         AppKit.NSOperationQueue.mainQueue().addOperationWithBlock_(apply)
         return True
-    except Exception:
+    except Exception as exc:
+        shell_log(f"menu merge could not be scheduled: {exc!r}")
+        return False
+
+
+def install_menu_probe(window) -> bool:
+    """Hand the page the expression that reads its own menu state.
+
+    Generated in `axibridge.menu_spec` from the same spec that builds the
+    native menu, so `menu.js` never has to know what a menu item is or how to
+    read one — it only calls what it was given, and there is still exactly one
+    definition to get wrong.
+    """
+    try:
+        from axibridge.menu_spec import state_probe_js
+
+        window.evaluate_js(f"window.__axbMenuProbe = () => ({state_probe_js()});")
+        return True
+    except Exception as exc:
+        shell_log(f"menu probe could not be installed: {exc!r}")
         return False
 
 
@@ -375,36 +451,35 @@ class ShellApi:
     def __init__(self) -> None:
         self.window = None  # set once create_window has returned
 
-    def menu_changed(self) -> bool:
-        """The page saying "a menu control changed" — nothing more.
+    def menu_changed(self, states: dict | None = None) -> bool:
+        """The page reporting the state of every menu toggle.
 
-        It deliberately sends no data. What has a state, how that state is
-        read, and which native item shows it all come from
-        `axibridge.menu_spec`, so the page cannot hold a second opinion about
-        the menu; it only knows *when* to say something. The read-back is a
-        pull rather than a push for the same reason.
+        The page PASSES the states rather than the shell reading them back.
+        Pulling would mean `evaluate_js` from inside a js_api handler, while
+        the JS side is awaiting this very call to return — the classic way to
+        deadlock a webview bridge, and a deadlock here is indistinguishable
+        from the silent no-op this feature already failed as once.
 
-        A no-op in a browser tab, where `window.pywebview` does not exist and
-        the in-page menu bar is the visible one anyway.
+        It still holds no opinion about the menu: the expression it evaluates
+        is generated by `axibridge.menu_spec` and injected by
+        `install_menu_probe`, so the page runs code it was handed and names
+        nothing itself.
+
+        A no-op in a browser tab, where `window.pywebview` does not exist.
         """
         try:
             import AppKit
 
-            from axibridge.menu_spec import item_index, state_probe_js
-
-            states = self.window.evaluate_js(state_probe_js()) or {}
-            index = item_index()
-
-            def apply() -> None:
-                main_menu = AppKit.NSApplication.sharedApplication().mainMenu()
-                if main_menu is not None:
-                    set_menu_states(main_menu, states, index,
-                                    AppKit.NSControlStateValueOn,
-                                    AppKit.NSControlStateValueOff)
-
-            AppKit.NSOperationQueue.mainQueue().addOperationWithBlock_(apply)
+            if isinstance(states, dict):
+                _menu_states.clear()
+                _menu_states.update(states)
+            else:
+                shell_log(f"menu state: page sent {states!r}, ignoring")
+                return False
+            AppKit.NSOperationQueue.mainQueue().addOperationWithBlock_(apply_menu_states)
             return True
-        except Exception:
+        except Exception as exc:
+            shell_log(f"menu state could not be applied: {exc!r}")
             return False
 
     def zoom_window(self) -> bool:
@@ -493,6 +568,10 @@ def main() -> None:
 
     def on_loaded():
         mark_native_shell(window)
+        # the probe must exist before the page's first report, and the page
+        # re-pings whenever the bar mutates, so one install per load is enough
+        install_menu_probe(window)
+        api.menu_changed(window.evaluate_js("window.__axbMenuProbe()"))
 
     window.events.shown += on_shown
     window.events.loaded += on_loaded

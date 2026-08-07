@@ -62,18 +62,26 @@ export function initMenu() {
 // display:none, so the checkmarks a user actually sees are native. They can
 // only be right if something says when a control changed.
 //
-// This is the whole of the page's involvement, on purpose: it sends no data
-// and names no control. WHAT has a state, HOW that state is read and WHICH
-// native item shows it all live in `axibridge/menu_spec.py`, which also
-// generates the read-back expression — so this file cannot hold a second,
-// drifting opinion about the menu. That split is the fix for the bug that
-// started all this (two hand-maintained menus), applied to state as well as
-// to membership.
+// This file still holds no opinion about the menu. WHAT has a state, HOW it
+// is read and WHICH native item shows it all live in
+// `axibridge/menu_spec.py`, which generates `window.__axbMenuProbe` and has
+// the shell inject it — so the page runs an expression it was handed and
+// names nothing itself. One definition, as with membership.
+//
+// It PASSES the result rather than letting the shell read it back: a pull
+// would mean the shell calling evaluate_js from inside the js_api handler
+// this call is awaiting, which is how a webview bridge deadlocks. A deadlock
+// here looks exactly like the silent no-op this feature already shipped as
+// once, so the shape that cannot deadlock wins.
 //
 // No-op in a browser tab: `window.pywebview` doesn't exist there, and the
 // in-page bar shows its own ticks from CSS.
 function watchForNativeMenu(bar) {
-  const ping = () => window.pywebview?.api?.menu_changed?.();
+  const ping = () => {
+    const probe = window.__axbMenuProbe;
+    if (!probe) return;          // shell hasn't installed it yet; it re-pings
+    window.pywebview?.api?.menu_changed?.(probe());
+  };
 
   let queued = false;
   const schedule = () => {
@@ -91,7 +99,10 @@ function watchForNativeMenu(bar) {
   });
   bar.addEventListener("change", schedule);
 
-  // and once at boot, so the menu opens correct before anything is touched
+  // and once at boot, so the menu opens correct before anything is touched.
+  // The shell also reports once itself after installing the probe, because
+  // this can fire before that install — belt and braces on an ordering we do
+  // not control, and applying the same state twice costs nothing.
   if (window.pywebview) ping();
   else window.addEventListener("pywebviewready", ping, { once: true });
 }
