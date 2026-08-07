@@ -30,26 +30,12 @@
     </div>
     <div class="menu" data-menu="view">
       <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">View</button>
-      <!-- Everything in here IS the control, not a proxy for one: each group
-           moved wholesale out of the canvas toolbar, keeping its id and its
-           DOM node, so main.js's existing handlers and state sync bind to the
-           same elements and nothing was re-implemented. The checkboxes are
-           still real <input type="checkbox"> for the same reason — only their
-           presentation became a menu tick (style.css, `:has(:checked)`). -->
-      <div class="menu-panel" role="menu">
-        <div class="menu-group" id="view-toggle">
-          <button class="menu-item" type="button" data-view="portrait" title="Display rotation only — geometry never changes"><span class="menu-check">✓</span>Portrait</button>
-          <button class="menu-item" type="button" data-view="landscape" title="Display rotation only — geometry never changes"><span class="menu-check">✓</span>Landscape</button>
-        </div>
-        <div class="menu-sep"></div>
-        <div class="menu-group" id="mode-toggle">
-          <button class="menu-item on" type="button" data-mode="schematic" title="Uniform hairlines — read the structure, not the ink"><span class="menu-check">✓</span>Schematic</button>
-          <button class="menu-item" type="button" data-mode="ink" title="True stroke widths and transparency"><span class="menu-check">✓</span>Ink</button>
-        </div>
-        <div class="menu-sep"></div>
-        <label class="menu-item" title="Show the pen-up moves between paths"><span class="menu-check">✓</span><input type="checkbox" id="show-travel">Travel moves</label>
-        <label class="menu-item" title="Number the paths in the order the pen draws them"><span class="menu-check">✓</span><input type="checkbox" id="show-order">Draw order</label>
-        <label class="menu-item" title="Dashed outline of the usable sheet area"><span class="menu-check">✓</span><input type="checkbox" id="show-guide" checked>Paper guide</label>
+      <!-- #view-toggle IS the control now: it moved here wholesale from the
+           canvas toolbar, so main.js's existing handlers and state sync bind
+           to the same ids and nothing had to be re-implemented in the menu. -->
+      <div class="menu-panel" role="menu" id="view-toggle">
+        <button class="menu-item" type="button" data-view="portrait" title="Display rotation only — geometry never changes"><span class="menu-check">✓</span>Portrait</button>
+        <button class="menu-item" type="button" data-view="landscape" title="Display rotation only — geometry never changes"><span class="menu-check">✓</span>Landscape</button>
       </div>
     </div>
   </nav>
@@ -62,7 +48,14 @@
   <!-- persistent centre canvas -->
   <section id="canvas-area">
     <div id="canvas-toolbar">
+      <div class="seg" id="mode-toggle">
+        <button data-mode="schematic" class="on">Schematic</button>
+        <button data-mode="ink" title="True stroke widths and transparency">Ink</button>
+      </div>
       <button id="zoom-fit" title="Fit page">⛶</button>
+      <label><input type="checkbox" id="show-travel"> travel</label>
+      <label><input type="checkbox" id="show-order"> draw order</label>
+      <label><input type="checkbox" id="show-guide" checked> paper guide</label>
       <button id="btn-animate" title="Replay the planned job at speed">▶ Animate plot</button>
       <label>×<input type="number" id="anim-speed" value="20" min="1" max="500" step="1"></label>
       <div class="seg" id="ab-capture" title="Capture the current output as A, change anything, capture B, then ⇄ generates a staged series interpolating A → B (find it under Plot › Staging)">
