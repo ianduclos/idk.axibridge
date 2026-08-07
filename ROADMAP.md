@@ -604,6 +604,52 @@ segmentation for auto-masking subjects. Constraint: keep it an *asset
 producer* (a tool that writes into `assets/`), not a resolve-path stage —
 the resolve pipeline stays deterministic and offline.
 
+## Far / undecided — interrupted plot should have been a generator
+
+Ian, 2026-08-07: *"interrupted plot should have been a generator
+(non-modifiable)."* He is right about the smell, and the reason it isn't one
+is a real architecture question rather than an oversight — so it is filed
+here rather than decided.
+
+**The smell.** `session.interrupt_fragment` is an *aesthetic* tool: it rolls a
+random start/stop over the plot's draw order, cuts strokes mid-line where the
+pen would have lifted, and makes marks. Nothing in it touches the plotter. Yet
+it lives in the Plot tab between Backend and Motion parameters, and it **bakes**
+— `LayerSource(type="baked")`, geometry parked in `source_geometry`. Every
+other generator in the app stays live: reroll a param, tween it, animate it,
+scrub it on the master timeline. This one is frozen the moment it is made, and
+undo is the only way back to before it.
+
+**Why it isn't a source module.** A `SourceModule` produces geometry from its
+params alone. `interrupt_fragment` needs `resolved_document("all")` — the whole
+rest of the project, after plot-pass optimisation, because the whole point is
+the order the machine would really have drawn in. That makes it the first
+source that reads the document it is part of, which is a cycle against the
+single-resolve invariant: the layer is inside what it consumes, so resolving it
+changes its own input.
+
+**Two ways out, both real work:**
+
+- *Exclude-self.* It resolves against everything BELOW it, exactly as region
+  layers already do — the resolve order (`occlusion(regions(effects(transform
+  (source))))`) has the precedent and the machinery. Cost: the layer becomes
+  order-dependent, and its output changes whenever anything beneath it changes.
+  That is either exactly right (it stays a live view of "this plot, stopped
+  early") or maddening (you nudge a layer and last week's fragment redraws).
+- *Snapshot input.* It captures the resolved document once, and stays live only
+  in its own params (seed, start, stop). Rerollable, tweenable and animatable
+  with no cycle; the captured input goes stale when the layers under it change.
+  This is what the A/B capture path already does, so the pattern exists.
+
+**Revisit when** either (a) someone wants to animate or tween an interrupted
+fragment — that is the use the bake blocks and the one that would force the
+choice, or (b) the node question below is answered, since a node graph makes
+"a layer whose input is other layers" ordinary rather than exceptional.
+
+Note the ambiguity in Ian's phrasing that should be settled first:
+"(non-modifiable)" may mean *it currently is, and shouldn't be*, or *it should
+be a generator of a deliberately fixed-param kind*. Ask before building.
+
 ## Far / undecided — the node question
 
 Intuition: modules are already pure functions; a node editor is "just" UI

@@ -18,12 +18,19 @@ entries: 4
   only when a timeline or staged series exists, (3) then `flex-wrap: nowrap`
   + a "»" overflow so the canvas top edge stops moving on resize. All three
   are page-only and fully testable headless. After that, the Machine menu.
-- blockers: (1) Ian's call, deferred twice and now due at the Machine menu:
-  does jog earn its place at all once it is a menu item? Do not delete it
-  unilaterally — pen up/down and go-to-origin inside that group may be the
-  parts that earn their keep. (2) SETTLED earlier today: the
-  rectangle/grid/flowfield orientation classification is accepted, nothing to
-  flip.
+- blockers: **the Machine step is blocked on one decision.** Of the five
+  panels leaving the Plot tab, only ACTIONS can be menu items — Ian's own menu
+  rule sends anything with a readout or live value to a panel, and motion
+  parameters, raw EBB, soft-limit values and calibration steps all have one.
+  They need a destination: Settings tab, a new Machine tab, or both. Asked
+  2026-08-07, not answered — do not pick one unilaterally, it changes the
+  whole shape of the step.
+  SETTLED 2026-08-07: (a) jog stays for now — move it as a menu item and
+  **re-ask after Ian has used it that way**, which is the whole point of
+  deferring rather than carrying it forever; (b) the header's dead middle is
+  parked until 4d needs somewhere to put machine state, and the project-name
+  fix already landed; (c) the rectangle/grid/flowfield orientation
+  classification is accepted, nothing to flip.
 - context: `docs/plans/ui-redesign.md` (4b annotated BUILT-THEN-REVERTED, 4a
   marked done, the Settled table's Typeface row struck through).
   `axibridge/menu_spec.py`'s module docstring carries the whole why.
@@ -33,6 +40,11 @@ entries: 4
   `~/Library/Logs/axibridge-shell.log` FIRST; it exists because four bugs in a
   row failed silently. Any new main-thread work must go through
   `axibridge_app.on_main()` — a block that returns a value kills the app.
+  New, 2026-08-07: Ian observed that **interrupted plot should have been a
+  generator** — it is an aesthetic tool in a machine tab, and it bakes where
+  everything else stays live. Filed with the real obstacle (a source that
+  reads its own document is a cycle) in ROADMAP "Far / undecided — interrupted
+  plot should have been a generator". Not a 4c task; do not fold it in.
 
 ### Bench eye-check: offset_fill + brush — opened 2026-07-27, owner: ian
 - done: both modules built, merged and screen-verified only — `offset_fill`
