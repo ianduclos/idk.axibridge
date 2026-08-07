@@ -95,12 +95,33 @@
 /* type roles ------------------------------------------------------------- */
 /* .engraved — silkscreen on a machine panel: panel headings, tab labels,
    segmented toggles. Small, heavy, wide-tracked, uppercase.
+
+   ONE definition, one selector list — this list IS the set of things wearing
+   the engraved voice, so changing that voice is a change here and nowhere
+   else. It used to be restated inline in eight rules, which made
+   "sentence-case the headings" an eight-place edit. Sites that differ set
+   only the delta (--engraved-size / -weight / -track / -case) inside their
+   own rule; no other rule states these four properties. Colour is NOT part of
+   the voice — the sites set their own, and they disagree on purpose (a panel
+   heading is --ink, a sub-heading and a summary are --ink-soft).
+
    .readout — numbers that are machine truth (mm, seconds, counts). Tabular so
    digits don't shift as they tick. */
-.engraved {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 1.6px; color: var(--ink);
+.engraved,
+#tabs button,
+.panel > h2,
+.panel h3,
+.preview-head h2,
+.seg button,
+.form-group > summary,
+details:not(.form-group) > summary,
+button.primary.big {
+  font-size: var(--engraved-size, 10px);
+  font-weight: var(--engraved-weight, 700);
+  letter-spacing: var(--engraved-track, 1.6px);
+  text-transform: var(--engraved-case, uppercase);
 }
+.engraved { color: var(--ink); }
 .readout { font-variant-numeric: tabular-nums; }
 
 /* custom scrollbars — slim warm-chrome rails; thumb only, no track chrome.
@@ -316,7 +337,6 @@ main {
   flex: 1; background: var(--bench-deep); color: var(--ink-soft);
   border: none; border-right: 1px solid var(--bench-edge); padding: 9px 0 8px;
   font-family: inherit; cursor: pointer;
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px;
   box-shadow: inset 0 2px 0 transparent;
 }
 #tabs button:last-child { border-right: none; }
@@ -335,8 +355,8 @@ main {
   margin-bottom: 26px;
 }
 .panel > h2 {
+  --engraved-size: 11px; --engraved-track: 2px;
   display: flex; align-items: center; gap: 9px;
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
   color: var(--ink); margin: 0 0 12px;
   cursor: pointer; user-select: none;
 }
@@ -357,18 +377,23 @@ main {
    case-transform it: "~/.axibridge/settings.json" is not a label, it's a path
    the reader has to be able to type back. */
 .panel > h2 .hint,
-.preview-head h2 .hint {
-  text-transform: none; letter-spacing: 0; font-weight: 400; margin-top: 0;
+/* a .hint nested INSIDE an engraved heading cancels the voice — these are
+   children, not members of the list above, so they undo the three inherited
+   properties directly (font-size does not inherit; .hint sets its own). */
+.panel h3 .hint,
+.preview-head h2 .hint,
+details:not(.form-group) > summary .hint {
+  text-transform: none; letter-spacing: 0; font-weight: 400;
 }
+.preview-head h2 .hint { margin-top: 0; }
 .panel.collapsed { margin-bottom: 14px; }
 .panel.collapsed > h2 { margin-bottom: 0; color: var(--ink-soft); }
 .panel.collapsed > h2::before { background: var(--ink); }
 .panel.collapsed > *:not(h2) { display: none; }
 .panel h3 {
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px;
+  --engraved-track: 1.4px;
   margin: 14px 0 6px; color: var(--ink-soft);
 }
-.panel h3 .hint { text-transform: none; letter-spacing: 0; font-weight: 400; }
 
 .tag {
   font-size: 9.5px; background: var(--bench-deep); border: 1px solid var(--bench-edge);
@@ -410,8 +435,8 @@ button.danger:hover { background: var(--rust); color: var(--bench-deep); border-
 /* Plot gets scale, not a different colour — it's the same primary path, taken
    seriously. .big is unique to this button. */
 button.primary.big {
-  padding: 11px 26px; font-size: 13px; letter-spacing: 1.8px; text-transform: uppercase;
-  border-radius: 4px;
+  --engraved-size: 13px; --engraved-weight: 400; --engraved-track: 1.8px;
+  padding: 11px 26px; border-radius: 4px;
 }
 button.primary.big:disabled {
   background: var(--bench-rise); border-color: var(--bench-edge); color: var(--ink-soft);
@@ -480,8 +505,8 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
   overflow: hidden;
 }
 .seg button {
+  --engraved-track: 1.2px;
   border: none; border-radius: 0; background: transparent; box-shadow: none;
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
   color: var(--ink-soft); padding: 5px 10px;
 }
 .seg button:hover { background: var(--bench-rise); color: var(--ink); }
@@ -494,7 +519,9 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
 }
 /* icon-bearing segments keep sentence case — the icon plus a word reads as a
    tool name, not a silkscreened setting */
-.seg button:has(.tool-icon) { text-transform: none; letter-spacing: .3px; font-size: 12px; font-weight: 400; }
+.seg button:has(.tool-icon) {
+  --engraved-case: none; --engraved-size: 12px; --engraved-weight: 400; --engraved-track: .3px;
+}
 
 /* inline SVG toolbar icons (vendored Lucide, ISC — see THIRD-PARTY-NOTICES.md;
    not emoji — currentColor tracks the button's text color so .on's inverted
@@ -557,7 +584,6 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
 .preview-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
 .preview-head h2 {
   margin: 0; flex: 1;
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px;
   color: var(--ink);
 }
 .preview-stage {
@@ -608,8 +634,8 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
   border-radius: 0; padding: 0 0 2px 10px;
 }
 .form-group > summary {
+  --engraved-track: 1.4px;
   cursor: pointer; user-select: none;
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px;
   color: var(--ink-soft); padding: 2px 0;
 }
 .form-group > summary:hover { color: var(--ink); }
@@ -617,13 +643,10 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
 /* standalone disclosures (the server log) get the same engraved voice as a
    form group, so one section doesn't read as loose body text */
 details:not(.form-group) > summary {
+  --engraved-track: 1.4px;
   cursor: pointer; user-select: none; color: var(--ink-soft);
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px;
 }
 details:not(.form-group) > summary:hover { color: var(--ink); }
-details:not(.form-group) > summary .hint {
-  text-transform: none; letter-spacing: 0; font-weight: 400;
-}
 .form .field > label { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-soft); }
 .form .ctl { display: flex; gap: 8px; align-items: center; }
 /* 6.2em, not 5.2: "279.4" plus the spinner was clipping its last digit, and a
