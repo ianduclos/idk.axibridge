@@ -12,6 +12,52 @@ edit-reload loop, NOT "no tooling at all"; vendored single-file libraries and
 Loose generator brainstorms (uncanny/Cohen-line direction, plus how the
 involved ones should meet the UI) live in `docs/IDEAS-generators.md`.
 
+## URGENT (Ian, 2026-08-07) — orientation coherence is opt-in, so it keeps regressing
+
+**Symptom, from real use:** the `text` generator renders its baseline
+*vertical* in portrait. Same for `glyphgram` (asemic glyphs), and probably
+others. This is the same class of bug we have "mostly fixed" several times.
+
+**Why it keeps coming back.** The 2026-07-13 orientation pass (item 4 below)
+built the right *mechanism* — params stay machine-frame forever, the display
+layer remaps once via schema tags (`viewRotate` / `viewAngle` / `viewOrient` /
+`viewSize`) in `static/js/viewmap.js` + `forms.js`. But participation is
+**opt-in per module**, and only 7 of 27 sources opt in:
+
+    tagged:   _pixelgen · dots · image_threshold · lineart_hatch ·
+              linescan · longwave · waves
+    untagged: brush · drawing · flowfield · glyphgram · grammar · grid ·
+              halftone · lineart_edges · linedraw · lissajous · margins ·
+              misremembered · pen · polygon · polyspiral · rectangle ·
+              shape · squiggle_lr · subline · text · two_hands
+
+Worse: `text` and `glyphgram` have **no rotation param at all**, so there is
+nothing to tag — `applyViewDefaults` can only remap a param that already
+exists. Any generator emitting *oriented* geometry (a baseline, a scan
+direction, a dominant axis) is wrong in portrait until a human notices, which
+is exactly why it recurs every time a generator lands.
+
+**The decision to make — don't pick it implicitly:**
+
+- **A — finish the opt-in.** Audit all 27 sources, add a bounded `rotate`
+  param wherever output is oriented, tag it. Cheap per module, but the failure
+  mode survives: the next generator forgets and nothing catches it.
+- **B — make orientation a layer property, not a generator param.** The layer
+  already carries an affine; portrait contributes a documented rotation at
+  layer-creation time for any source declaring `oriented = True`. One place to
+  get right, and a new module's default becomes "declare your orientation"
+  rather than "be silently wrong".
+
+Acceptance criteria whichever way it goes:
+
+1. Creating any source layer in portrait produces output whose dominant axis
+   reads the same as it does in landscape.
+2. A test that **fails when a new source module is added without declaring
+   its orientation behaviour** — the regression guard missing today, and the
+   only thing that stops a fourth round of this.
+3. Resolve stays bit-identical across views (`tests/test_view_coherence.py`
+   keeps passing — view rotation remains display-only).
+
 ## URGENT fixes (Ian, 2026-07-13, from real use — do these first)
 
 **Round worked 2026-07-13 on `fix/urgent-round1` (Sonnet agent waves,

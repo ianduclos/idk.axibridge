@@ -76,9 +76,9 @@
   --r: 3px;
   --r-sm: 2px;
 
-  /* Depth, kept subtle: raised things catch a little light on their top edge,
-     recessed things (inputs, wells, the log) sit in a shallow shadow. This is
-     what keeps the bench from reading as flat black. */
+  /* Depth, kept subtle. --lift is for list rows only: on buttons the top
+     highlight read as a stray line across the chrome (the underline marking an
+     active tab/segment is the one horizontal rule that earns its place). */
   --lift: inset 0 1px 0 rgba(255, 250, 235, .045);
   --recess: inset 0 1px 2px rgba(0, 0, 0, .38);
 
@@ -373,7 +373,6 @@ button {
   background: var(--bench-rise); color: var(--ink); border: 1px solid var(--bench-edge);
   border-radius: var(--r); padding: 4px 11px; cursor: pointer;
   font-family: inherit; font-size: 12.5px;
-  box-shadow: var(--lift);
 }
 button:hover { border-color: var(--ink-soft); background: var(--bench-edge); }
 button:active { box-shadow: var(--recess); }
@@ -462,7 +461,7 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
 
 .seg {
   display: inline-flex; border: 1px solid var(--bench-edge); border-radius: var(--r);
-  overflow: hidden; box-shadow: var(--lift);
+  overflow: hidden;
 }
 .seg button {
   border: none; border-radius: 0; background: transparent; box-shadow: none;
