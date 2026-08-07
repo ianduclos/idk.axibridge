@@ -167,13 +167,19 @@ header {
 /* No wordmark: the OS menu bar and the window already say "axibridge", and a
    third copy inside the app was the duplication Ian flagged. The project name
    is the identity that actually varies. */
+/* The project name is a title you can type in, not a form field. It was
+   drawn as one anyway: `.project-name` overrode the input rule's border and
+   background but not its `box-shadow: var(--recess)`, so an empty-looking
+   well sat in the header at rest — which is most of why the title reads as
+   not earning its place. Borderless and shadowless until you touch it. */
 .project-name {
   font-family: inherit; font-size: 13px; width: 14em;
   background: transparent; border: 1px solid transparent; border-radius: 0;
-  padding: 3px 8px; color: var(--ink);
+  padding: 3px 8px; color: var(--ink); box-shadow: none;
 }
 .project-name:hover, .project-name:focus {
   border-color: var(--bench-edge); background: var(--bench-deep);
+  box-shadow: var(--recess);
 }
 /* the readout cluster: connection lamp + estimate are both machine state, so
    they sit together at the right rather than stranded apart */
