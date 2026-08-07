@@ -1204,14 +1204,14 @@ export function renderLayerDetail() {
     </div>
     <div class="row">
       <label title="When this layer occludes: which groups it masks. None checked = mask EVERY layer below (the classic global occluder).">occludes into</label>
-      ${["A", "B", "C", "D"].map((g) =>
-        `<label class="hint"><input type="checkbox" class="ld-og" value="${g}" ${(layer.occlude_groups || []).includes(g) ? "checked" : ""}> ${g}</label>`).join("")}
+      <div class="seg group-seg">${["A", "B", "C", "D"].map((g) =>
+        `<button type="button" class="ld-og${(layer.occlude_groups || []).includes(g) ? " on" : ""}" value="${g}">${g}</button>`).join("")}</div>
       <span class="hint">none = all layers</span>
     </div>
     <div class="row">
       <label title="Group channels this receiver listens to, on top of the global mask. None checked = receives only ungrouped occlusion.">receives from</label>
-      ${["A", "B", "C", "D"].map((g) =>
-        `<label class="hint"><input type="checkbox" class="ld-rg" value="${g}" ${(layer.receives_groups || []).includes(g) ? "checked" : ""}> ${g}</label>`).join("")}
+      <div class="seg group-seg">${["A", "B", "C", "D"].map((g) =>
+        `<button type="button" class="ld-rg${(layer.receives_groups || []).includes(g) ? " on" : ""}" value="${g}">${g}</button>`).join("")}</div>
       <span class="hint">none = global only</span>
     </div>`;
   wrap.appendChild(occ);
@@ -1232,12 +1232,21 @@ export function renderLayerDetail() {
   if (cont) cont.onchange = (e) => actions.patchLayer(layer.id, {
     region_boundary: e.target.checked ? "continuous" : "cut" });
   occ.querySelector("#ld-margin").onchange = (e) => actions.patchLayer(layer.id, { occlusion_margin_mm: +e.target.value });
+  // Two four-segment groups instead of eight loose single-letter checkboxes.
+  // The letters are channels, not independent settings — they read as one
+  // control per row, and a `.seg` says so where eight tickboxes said "eight
+  // unrelated things". State lives on the button's `.on` class, the same way
+  // every other multi-select segment in the app carries it, so nothing here
+  // needs a hidden input to be the truth.
   const groupPatch = (cls, field) => {
-    const vals = [...occ.querySelectorAll(`${cls}:checked`)].map((c) => c.value);
+    const vals = [...occ.querySelectorAll(`${cls}.on`)].map((b) => b.value);
     actions.patchLayer(layer.id, { [field]: vals });
   };
-  occ.querySelectorAll(".ld-og").forEach((c) => { c.onchange = () => groupPatch(".ld-og", "occlude_groups"); });
-  occ.querySelectorAll(".ld-rg").forEach((c) => { c.onchange = () => groupPatch(".ld-rg", "receives_groups"); });
+  for (const [cls, field] of [[".ld-og", "occlude_groups"], [".ld-rg", "receives_groups"]]) {
+    occ.querySelectorAll(cls).forEach((b) => {
+      b.onclick = () => { b.classList.toggle("on"); groupPatch(cls, field); };
+    });
+  }
 
   // -- effect stack
   const fx = document.createElement("div");

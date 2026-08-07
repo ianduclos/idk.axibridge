@@ -572,6 +572,9 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
   color: var(--ink-soft); padding: 5px 10px;
 }
 .seg button:hover { background: var(--bench-rise); color: var(--ink); }
+/* the occlusion channel groups: four one-letter segments, tight, because they
+   are a channel picker rather than four sentences */
+.group-seg button { padding: 3px 9px; min-width: 2.2em; }
 /* A mode toggle is state, not an action: several are lit at once, so they get
    weight and a marker rather than a filled face. Filled (white or blue) at
    three-at-a-time pulled the eye away from the sheet. */
