@@ -57,12 +57,20 @@ def test_undo_and_redo_are_in_edit_and_carry_their_shortcut():
     )
 
 
-def test_orientation_is_in_view_and_addresses_the_real_buttons():
+def test_the_view_menu_holds_the_controls_that_left_the_toolbar():
+    """Two radio groups and three overlays, in that order, separated. Each is
+    the control itself — the selectors address `#view-toggle`, `#mode-toggle`
+    and the three real checkboxes, not menu-shaped copies of them."""
     view = next(m for m in menu_spec() if m.title == "View")
-    assert [i.label for i in view.actions] == ["Portrait", "Landscape"]
-    for item in view.actions:
-        assert item.kind == "radio"
-        assert item.selector.startswith("#view-toggle button[data-view=")
+    assert [None if i is None else (i.label, i.kind) for i in view.items] == [
+        ("Portrait", "radio"), ("Landscape", "radio"), None,
+        ("Schematic", "radio"), ("Ink", "radio"), None,
+        ("Travel moves", "check"), ("Draw order", "check"), ("Paper guide", "check"),
+    ]
+    by_label = {i.label: i.selector for i in view.actions}
+    assert by_label["Portrait"].startswith("#view-toggle button[data-view=")
+    assert by_label["Ink"].startswith("#mode-toggle button[data-mode=")
+    assert by_label["Paper guide"] == "#show-guide"
 
 
 # -- the shapes the parser must keep handling ------------------------------
@@ -77,11 +85,22 @@ def _one_menu(inner: str):
 def test_a_moved_checkbox_is_addressed_by_its_own_input():
     """A control moved bodily into the menu keeps being the real control —
     the selector must point at the <input>, not the wrapping label, or the
-    native menu would click a label and toggle nothing."""
+    native menu would click a label and toggle nothing.
+
+    The item AFTER it is the point. `<input>` is a void element with no end
+    tag, so a tag stack that pushes it never unwinds, and every depth
+    comparison downstream is off by one — which silently dropped the entire
+    View menu from the spec the first time the real markup had a checkbox in
+    it. A checkbox on its own would not have caught that."""
     (menu,) = _one_menu(
         '<label class="menu-item"><span class="menu-check">✓</span>'
-        '<input type="checkbox" id="show-guide" checked>Paper guide</label>')
-    assert menu.actions == (MenuItem("Paper guide", "#show-guide", "check", None),)
+        '<input type="checkbox" id="show-guide" checked>Paper guide</label>'
+        '<button class="menu-item" id="after">After</button>')
+    assert menu.actions == (
+        MenuItem("Paper guide", "#show-guide", "check", None),
+        MenuItem("After", "#after", "action", None),
+    )
+    assert menu.title == "T", "the menu itself still closed"
 
 
 def test_a_separator_survives_as_a_separator():

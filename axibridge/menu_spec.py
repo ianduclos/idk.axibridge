@@ -32,6 +32,14 @@ from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
 
+#: HTML void elements: they have no end tag, so `handle_endtag` never fires
+#: for them and a naive tag stack never unwinds past one. The checkbox inside
+#: a moved menu item is exactly this case — with `<input>` left on the stack,
+#: every depth comparison after it was off by one and the View menu vanished
+#: from the spec entirely (silently, which is this parser's whole hazard).
+VOID_TAGS = frozenset({"area", "base", "br", "col", "embed", "hr", "img",
+                       "input", "link", "meta", "param", "source", "track", "wbr"})
+
 #: kinds that carry a visible state — the only ones worth probing or ticking.
 #: An "action" has nothing to show, and giving it a checkmark would invent
 #: state the app does not have.
@@ -159,9 +167,13 @@ class _MenubarParser(HTMLParser):
             if tag == "input" and attrs.get("type") == "checkbox" and attrs.get("id"):
                 self._item_input = attrs["id"]
 
+        if tag in VOID_TAGS:
+            self._stack.pop()          # no end tag is coming; balance it here
+
     def handle_startendtag(self, tag: str, attrlist) -> None:
         self.handle_starttag(tag, attrlist)
-        self.handle_endtag(tag)
+        if tag not in VOID_TAGS:       # handle_starttag already popped it
+            self.handle_endtag(tag)
 
     def handle_data(self, data: str) -> None:
         if not self._in_menubar or self._reading is None:

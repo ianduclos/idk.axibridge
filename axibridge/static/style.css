@@ -221,11 +221,26 @@ header {
 }
 #menubar .menu-item:hover,
 #menubar .menu-item:focus-visible { background: var(--live); color: var(--bench-deep); outline: none; }
-#menubar .menu-check { width: 1em; opacity: 0; }
-/* `.on` is what main.js sets on #view-toggle's buttons — the same control,
-   just living in the View menu now instead of the canvas toolbar. */
+#menubar .menu-check { width: 1em; opacity: 0; flex: none; }
+/* `.on` is what main.js sets on the #view-toggle / #mode-toggle buttons — the
+   same controls, just living in the View menu now instead of the canvas
+   toolbar. */
 #menubar .menu-item.checked .menu-check,
 #menubar .menu-item.on .menu-check { opacity: 1; }
+/* A menu item that carries a real <input type="checkbox"> is the SAME control
+   that used to sit in the toolbar, moved bodily — main.js still reads
+   `.checked` and still gets `onchange`. Only its presentation changes: the
+   native box is taken out of the layout (not `display:none`, which would drop
+   it from the label's activation and from the tab order) and the row's tick
+   is driven off the input's own state, so the menu cannot show a state the
+   control does not have. */
+#menubar .menu-item > input[type="checkbox"] {
+  position: absolute; opacity: 0; width: 0; height: 0; margin: 0;
+}
+#menubar .menu-item:has(> input[type="checkbox"]:checked) .menu-check { opacity: 1; }
+/* groups of radio-ish items inside one panel, and the hairline between them */
+#menubar .menu-group { display: flex; flex-direction: column; gap: 1px; }
+#menubar .menu-sep { height: 1px; margin: 4px 6px; background: var(--bench-edge); }
 #menubar .menu-key { margin-left: auto; padding-left: 18px; color: var(--ink-faint, var(--ink-soft)); }
 #menubar .menu-item:hover .menu-key { color: inherit; }
 

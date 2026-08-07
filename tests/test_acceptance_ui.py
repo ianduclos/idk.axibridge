@@ -431,7 +431,14 @@ def test_the_generated_state_probe_runs_and_tells_the_truth(ui):
 
     portrait = '#view-toggle button[data-view="portrait"]'
     landscape = '#view-toggle button[data-view="landscape"]'
-    assert sum(states.values()) == 1, f"exactly one orientation is on: {states}"
+
+    def group(states, prefix):
+        return sum(v for k, v in states.items() if k.startswith(prefix))
+
+    # a radio group has exactly one on; the overlay checkboxes are free
+    assert group(states, "#view-toggle") == 1, f"one orientation: {states}"
+    assert group(states, "#mode-toggle") == 1, f"one render mode: {states}"
+    assert states["#show-guide"] is True, "paper guide ships on"
 
     was = states[portrait]
     ui.click('.menu[data-menu="view"] .menu-trigger')
@@ -440,7 +447,7 @@ def test_the_generated_state_probe_runs_and_tells_the_truth(ui):
 
     after = ui.evaluate(f"() => ({state_probe_js()})")
     assert after[portrait] != was, "the probe follows the control it names"
-    assert sum(after.values()) == 1
+    assert group(after, "#view-toggle") == 1
     assert not ui.errors
 
 
@@ -467,7 +474,8 @@ def test_the_page_reports_menu_state_to_the_shell(ui):
     pings = ui.evaluate("() => window.__pings")
     assert pings, "the page never told the shell anything — no ticks would ever appear"
     assert set(pings[0]) == set(item_index())
-    assert sum(pings[0].values()) == 1, f"exactly one orientation on: {pings[0]}"
+    assert sum(v for k, v in pings[0].items() if k.startswith("#view-toggle")) == 1, \
+        f"exactly one orientation on: {pings[0]}"
 
     portrait = '#view-toggle button[data-view="portrait"]'
     was = pings[0][portrait]
@@ -477,6 +485,53 @@ def test_the_page_reports_menu_state_to_the_shell(ui):
 
     assert ui.evaluate("() => window.__pings.at(-1)")[portrait] != was, \
         "the report followed the click"
+    assert not ui.errors
+
+
+def test_view_menu_overlays_drive_the_canvas(ui):
+    """The canvas overlays live in the View menu now, not the toolbar — and
+    ticking one still changes what is on the sheet.
+
+    This asserts the OUTCOME (travel moves appear over the drawing), not that
+    a checkbox flipped, because the interesting failure when a control is
+    moved is precisely that its face still works and its wiring no longer
+    does. Paper guide is checked at rest, which is what proves the tick
+    reflects the control's real state rather than clicks it has seen."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 30})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    ui.click('.menu[data-menu="view"] .menu-trigger')
+    assert ui.is_checked("#show-guide"), "paper guide is on at rest"
+    assert not ui.is_checked("#show-travel")
+
+    travel = "#canvas g polyline"
+    before = ui.locator(travel).count()
+    ui.click('.menu[data-menu="view"] label:has(#show-travel)')
+    ui.wait_for_function(
+        f"() => document.querySelectorAll('{travel}').length > {before}", timeout=15_000)
+
+    ui.click('.menu[data-menu="view"] .menu-trigger')
+    assert ui.is_checked("#show-travel"), "the menu row drives the real control"
+    assert not ui.errors
+
+
+def test_view_menu_render_mode_is_a_radio_choice(ui):
+    """Schematic/Ink moved into the same menu as a two-item radio group: one
+    is always marked, never both, and the mark follows the click."""
+    add_layer(ui, "polygon", {"sides": 4, "radius": 25})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    marked = lambda: ui.eval_on_selector_all(
+        "#mode-toggle .menu-item",
+        "els => els.filter(e => e.classList.contains('on')).map(e => e.dataset.mode)")
+
+    ui.click('.menu[data-menu="view"] .menu-trigger')
+    assert marked() == ["schematic"]
+    ui.click('.menu[data-menu="view"] [data-mode="ink"]')
+    ui.click('.menu[data-menu="view"] .menu-trigger')
+    assert marked() == ["ink"], "exactly one mode is marked, and it is the one clicked"
     assert not ui.errors
 
 
