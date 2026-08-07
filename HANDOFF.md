@@ -4,49 +4,37 @@ updated: 2026-08-07
 entries: 4
 ---
 
-### UI redesign — Slice 4c (menus and toolbar) — opened 2026-08-07, owner: ian
-- done: 4a (engraved consolidation, measured no-op). 4b typography BUILT AND
-  REVERTED — Ian: "got used to the mono"; do not rebuild it, the plan's 4b
-  section says why and keeps the findings. Emoji removed from the layer list.
-  The two menu bars became ONE definition: `axibridge/menu_spec.py` parses
-  `#menubar` out of `index.html` and the macOS menu is derived from it, merged
-  into pywebview's own Edit/View, with working checkmarks. 4c's first step
-  landed — View took the canvas overlays and Schematic·Ink, toolbar 3 rows → 2.
-  Suite 689 → 712. Ian confirmed all of it in the running app.
-- next: 4c continues — (1) the A/B/steps/⇄ cluster moves to Plot › Staging,
-  (2) Animate plot + speed becomes a playback strip at the canvas foot shown
-  only when a timeline or staged series exists, (3) then `flex-wrap: nowrap`
-  + a "»" overflow so the canvas top edge stops moving on resize. All three
-  are page-only and fully testable headless. After that, the Machine menu.
-- blockers: none open. CLOSED 2026-08-07: menu items no longer lie about
-  availability — the probe reports `{on, enabled}` per item and the shell
-  greys what its control cannot do. Ian has NOT eye-checked that greying in
-  the app yet; it is the one thing here verified only against real AppKit
-  objects and a faked bridge.
-  RESOLVED 2026-08-07: the destination question was delegated to Claude
-  ("choose machine/settings yourself for each") and answered per panel — all
-  five panels to Settings, only the pure actions to the menu. Reasons are in
-  `plot.js`'s MACHINE_PANELS comment.
-  SETTLED 2026-08-07: (a) jog stays for now — move it as a menu item and
-  **re-ask after Ian has used it that way**, which is the whole point of
-  deferring rather than carrying it forever; (b) the header's dead middle is
-  parked until 4d needs somewhere to put machine state, and the project-name
-  fix already landed; (c) the rectangle/grid/flowfield orientation
-  classification is accepted, nothing to flip.
-- context: `docs/plans/ui-redesign.md` (4b annotated BUILT-THEN-REVERTED, 4a
-  marked done, the Settled table's Typeface row struck through).
-  `axibridge/menu_spec.py`'s module docstring carries the whole why.
-  **Editing `#menubar` in `index.html` now changes the macOS menu too** — that
-  is the contract, and `tests/test_menu_spec.py` + `tests/test_app_shell.py`
-  enforce it. When a shell-only thing misbehaves, read
-  `~/Library/Logs/axibridge-shell.log` FIRST; it exists because four bugs in a
-  row failed silently. Any new main-thread work must go through
-  `axibridge_app.on_main()` — a block that returns a value kills the app.
-  New, 2026-08-07: Ian observed that **interrupted plot should have been a
-  generator** — it is an aesthetic tool in a machine tab, and it bakes where
-  everything else stays live. Filed with the real obstacle (a source that
-  reads its own document is a cycle) in ROADMAP "Far / undecided — interrupted
-  plot should have been a generator". Not a 4c task; do not fold it in.
+### Layers panel + eye-check of the finished Slice 4 — opened 2026-08-07, owner: ian
+- done: **Slice 4 of `docs/plans/ui-redesign.md` is complete, a through g.**
+  Toolbar is one fixed row of tools; View and Machine menus hold what left it;
+  machine state + Pause/Resume/Stop live in the always-visible status line;
+  Plot tab 10 panels -> 5 (the machine ones went to Settings); plot targets
+  accept `pen:<id>`; layer list drags to reorder, renames in place, and the
+  occlusion channels are two segmented groups. The app shell's macOS menu is
+  DERIVED from `#menubar`'s markup (`axibridge/menu_spec.py`), merged into
+  pywebview's own Edit/View, showing checkmarks and greying what it cannot do.
+  Suite 727, 26 acceptance tests.
+- next: **build `docs/plans/layers-panel.md`** — Ian's Photoshop-style ask:
+  hoist the layer LIST (not its settings) into a persistent, collapsible,
+  resizable box at the foot of the sidebar, so selecting a layer stops costing
+  a scroll past Generate and Import. The plan is written to be read cold and
+  carries the three facts that matter: the seam already exists in the markup,
+  selection is already global, and drag-to-reorder already computes once after
+  the drop. Slice 3 of it (a busy indicator) is a MEASUREMENT first — time a
+  reorder on a heavy project with the occlusion cache in place, and drop the
+  slice if the gap is imperceptible.
+- blockers: none. Two decisions are flagged inside the plan for when there is
+  something to look at (does the box scroll or grow; should the plot target
+  follow the selection — probably not, plotting the wrong layer costs paper).
+- context: `docs/plans/layers-panel.md` (the plan, with Ian's words verbatim).
+  **Ian has NOT eye-checked the 4c-4g round** — the Machine menu's greying is
+  verified only against real AppKit objects and a faked bridge, and the status
+  strip only against the simulator. When anything shell-only misbehaves read
+  `~/Library/Logs/axibridge-shell.log` FIRST, and route any new main-thread
+  work through `axibridge_app.on_main()` — a block that returns a value kills
+  the app. Editing `#menubar` in `index.html` now changes the macOS menu too.
+  Re-ask the jog question: Ian's ruling was to keep it, use it as a menu item,
+  then decide.
 
 ### Bench eye-check: offset_fill + brush — opened 2026-07-27, owner: ian
 - done: both modules built, merged and screen-verified only — `offset_fill`

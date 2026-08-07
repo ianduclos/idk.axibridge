@@ -3,16 +3,62 @@ project: idk.axibridge
 state: active
 updated: 2026-08-07
 machine: mac+pi
-summary: The app shell's macOS menu is now DERIVED from the in-page menu bar instead of hand-written beside it, so the two can no longer disagree, and it shows checkmarks; the View menu has taken the canvas overlays and the render mode, dropping the toolbar from three rows to two; 712 tests green and Ian has confirmed all of it in the app.
+summary: Slice 4 of the UI redesign is complete (a-g) — the toolbar is one fixed row of tools, the View and Machine menus hold what left it, machine state and plot transport live in the always-visible status line, the Plot tab is down from ten panels to five, plotting can be addressed by pen, and the layer list drags to reorder and renames in place; the app shell's macOS menu is now derived from the page's own markup instead of hand-written beside it; 727 tests green.
 next:
-  - "Continue Slice 4c in a FRESH session: the A/B/steps/⇄ cluster moves to Plot › Staging, then Animate plot + speed becomes a playback strip at the canvas foot — that is what gets the toolbar to one row with flex-wrap: nowrap"
-  - "Then 4c's Machine menu (raw EBB, soft limits, holder calibration, jog/pen), which is where Ian's jog decision has to be asked"
-  - "Ian's call, still open: does jog earn its place at all once it is a menu item?"
-  - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16→19 wave, and the URGENT round (see HANDOFF)"
+  - "Build docs/plans/layers-panel.md — hoist the layer list into a persistent, collapsible, resizable box at the foot of the sidebar (Ian's Photoshop-style ask; the seam already exists and drag-reorder already ships)"
+  - "Ian eye-checks the 4c-4g round in the app: Machine menu greying, the status-line machine strip during a real plot, drag-to-reorder and inline rename"
+  - "Re-ask whether jog earns its place, now that it is a menu item (Ian's ruling: use it that way first, then decide)"
+  - "ROADMAP: interrupted plot as a live generator — the design is settled (snapshot-input) and the cost measured (~64 B/point), so it is ready to build rather than ready to decide"
+  - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16 to 19 wave, and the URGENT round (see HANDOFF)"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-08-07 (part 3, Opus 5): Slice 4 finished — 4c through 4g.**
+
+The redesign's own slice, done. 727 tests green, 26 acceptance tests.
+
+- **The canvas toolbar is one fixed row of tools.** It wrapped to three at
+  1500px and every row it wrapped to pushed the sheet down while you resized.
+  The overlays and render mode went to the View menu, the A/B ⇄ cluster to
+  Plot › Staging, Animate + speed to a playback strip under the sheet that is
+  absent when there is nothing to play. Measured 1600 → 900px: toolbar 39.8px
+  and canvas top 95.8px, both constant. Below 900 the HEADER wraps — a
+  separate control, recorded rather than hidden.
+- **Machine state lives in the status line** (4d), visible from any tab:
+  position, pen, progress, time left, and Pause/Resume/Stop moved there
+  bodily. Fixes the bug the plan named — `remaining …` used to be written
+  OVER the est/ink/lifts readout and never restored.
+- **The Plot tab is five panels, not ten.** Motion parameters, jog & pen, raw
+  EBB, soft limits and holder calibration went to Settings (which already
+  owned calibration's reset button, so that control is reunited); only the
+  pure actions became a **Machine menu**. Ian delegated the per-panel calls;
+  the reasoning is in `plot.js`'s `MACHINE_PANELS` comment.
+- **Plot by pen** (4e): `target` takes `pen:<id>`, one filter in
+  `compose.flatten_to_document` so every consumer sees it through the single
+  resolve path. No done-ledger, on purpose — a stale one authorises
+  replotting over wet ink.
+- **The layer list** (4f): drag to reorder with a drop line, ⌥-drag to
+  duplicate, rename in place, and the per-row ↑ ↓ retired — moving a layer
+  across fifteen was fourteen reorders and fourteen resolves. Occlusion
+  channels are two segmented groups instead of eight tickboxes (4g).
+- **The menu greys what it cannot do.** The probe reports `{on, enabled}` per
+  item; an NSMenu autoenables its items by default and would have overruled
+  every `setEnabled_` on open, so `setAutoenablesItems_(False)` is what makes
+  it stick.
+
+Two of my own mistakes worth carrying forward. Double-click-to-rename never
+fired and I blamed `draggable`, changed the code on that theory, and the probe
+came back `draggable: false` with the event still missing — the real cause is
+that selecting a row rebuilds it between the two clicks, so `e.detail` is used
+instead. And two acceptance assertions depended on which tests ran first (the
+server fixture is session-scoped): both now establish their own precondition.
+
+**Ian has not eye-checked this round.** The Machine menu's greying in
+particular is verified only against real AppKit objects and a faked bridge.
+
+---
 
 **Session 2026-08-07 later (Opus 5): the two menu bars became one definition.**
 
