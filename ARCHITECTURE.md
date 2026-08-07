@@ -179,7 +179,17 @@ edit (drag, param, visibility, pen, reorder) retains only the deep-copied
 geometry (bake, regenerate, draw, brush, shape ops) pins its own copy of that
 layer's paths at ~130 bytes per point, so 50 bakes of a 1200-path import is
 ~110 MB. A checkpoint costs 0.4 ms either way, and the persisted history is
-capped separately at 4 entries in `project_io`. Snapshots are cheap by
+capped separately at 4 entries in `project_io`.
+
+**Redo** (2026-08-07) makes history a pair of stacks rather than a cursor:
+`_history` holds the states behind you, `_redo` the states you stepped out
+of. `undo()` moves the current state from one to the other, `redo()` moves it
+back, and any real checkpoint clears `_redo` — editing after an undo abandons
+the branch it would have returned to, which is what every editor does and the
+only rule that can't surprise. Both stacks are counted by the geometry budget,
+and trimming always drops the end furthest from now (oldest undo first, then
+furthest-future redo). A coalesced run is one entry in both directions, so a
+slider drag that undid in one ⌘Z comes back in one ⇧⌘Z. Snapshots are cheap by
 construction:
 the `Project` model is deep-copied, but geometry lists are shared by
 *reference* — safe because the module contract forbids in-place mutation

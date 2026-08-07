@@ -191,6 +191,13 @@ class Session:
         self._history: deque[
             tuple[Project, dict[str, list[Path]], dict[str, str], dict[str, PathDocument]]
         ] = deque(maxlen=UNDO_DEPTH)
+        #: redo branch: states undone away, newest last. Filled only by
+        #: ``undo()`` and emptied by the next real edit — a mutation after an
+        #: undo abandons the branch it was going to redo into, which is what
+        #: every editor does and the only behaviour that can't surprise.
+        self._redo: deque[
+            tuple[Project, dict[str, list[Path]], dict[str, str], dict[str, PathDocument]]
+        ] = deque(maxlen=UNDO_DEPTH)
         #: id(geometry list) -> (list ref, point count) for the history budget.
         #: The stored reference keeps the id valid — same identity discipline
         #: as the occlusion memo — and the map is pruned to what history still
@@ -222,6 +229,7 @@ class Session:
     # -- undo -----------------------------------------------------------------
 
     def _checkpoint(self, coalesce: tuple | None = None) -> None:
+        self._redo.clear()  # a fresh edit abandons the branch redo led into
         if coalesce is not None and coalesce == self._coalesce_key and self._history:
             # same coalesce run as the previous checkpoint: keep the run's
             # opening snapshot as THE undo point, but caches still go stale
@@ -229,14 +237,25 @@ class Session:
             self._frame_bbox.clear()
             return
         self._coalesce_key = coalesce
-        # The deep copy deliberately EXCLUDES staging: capture groups, their
-        # snapshots and staged documents are frozen by construction (staging
-        # mutations replace objects wholesale — see rename_capture_group), so
-        # history entries share them by reference, exactly like geometry
-        # lists. Without this exclusion every checkpoint deep-copied every
-        # capture snapshot's full geometry AND every staged document — the
-        # "snapshots are cheap by construction" invariant had broken silently
-        # when staging moved inside the Project model (found 2026-07-19).
+        self._history.append(self._snapshot())
+        self._trim_history()
+        # a checkpoint precedes a mutation — cached frames are about to go stale
+        self._frame_lru.clear()
+        self._frame_bbox.clear()
+
+    def _snapshot(self) -> tuple[Project, dict[str, list[Path]], dict[str, str],
+                                 dict[str, PathDocument]]:
+        """One history entry for the CURRENT state — what undo and redo both
+        step between.
+
+        The deep copy deliberately EXCLUDES staging: capture groups, their
+        snapshots and staged documents are frozen by construction (staging
+        mutations replace objects wholesale — see rename_capture_group), so
+        history entries share them by reference, exactly like geometry lists.
+        Without this exclusion every checkpoint deep-copied every capture
+        snapshot's full geometry AND every staged document — the "snapshots
+        are cheap by construction" invariant had broken silently when staging
+        moved inside the Project model (found 2026-07-19)."""
         staging = self.project.staging
         self.project.staging = []
         try:
@@ -244,12 +263,18 @@ class Session:
         finally:
             self.project.staging = staging
         proj.staging = list(staging)
-        self._history.append(
-            (proj, dict(self.source_geometry), dict(self.svg_files),
-             dict(self.staging_documents))
-        )
-        self._trim_history()
-        # a checkpoint precedes a mutation — cached frames are about to go stale
+        return (proj, dict(self.source_geometry), dict(self.svg_files),
+                dict(self.staging_documents))
+
+    def _restore(self, entry: tuple[Project, dict[str, list[Path]], dict[str, str],
+                                    dict[str, PathDocument]]) -> None:
+        """Adopt a history entry as the live state and drop every derived
+        cache. Shared by undo and redo so they cannot diverge."""
+        self.project, self.source_geometry, self.svg_files, self.staging_documents = entry
+        self._shaped_cache.clear()
+        self._occlusion_cache.clear()
+        self._tween_cache.clear()
+        self._clip_cache.clear()
         self._frame_lru.clear()
         self._frame_bbox.clear()
 
@@ -259,7 +284,7 @@ class Session:
         referenced, so the map can never outlive the history."""
         seen: dict[int, tuple[list[Path], int]] = {}
         total = 0
-        for _proj, geo, _svg, _staging in self._history:
+        for _proj, geo, _svg, _staging in (*self._history, *self._redo):
             for paths in geo.values():
                 key = id(paths)
                 if key in seen:
@@ -273,33 +298,60 @@ class Session:
         return total
 
     def _trim_history(self) -> None:
-        """Drop the oldest entries while the geometry they pin is over budget.
-        The newest entry always survives — one undo step is never traded away."""
-        while len(self._history) > 1 and self._history_points() > UNDO_GEOMETRY_BUDGET_POINTS:
-            self._history.popleft()
+        """Drop entries while the geometry they pin is over budget, always from
+        the end furthest from now: the oldest undo step first, then the
+        furthest-future redo step. One undo step is never traded away."""
+        while self._history_points() > UNDO_GEOMETRY_BUDGET_POINTS:
+            if len(self._history) > 1:
+                self._history.popleft()
+            elif self._redo:
+                self._redo.popleft()
+            else:
+                return
 
     def clear_history(self) -> None:
         """Project switch: snapshots of another project must not restore here."""
         with self._lock:
             self._history.clear()
+            self._redo.clear()
             self._geom_points.clear()
             self._coalesce_key = None
             self._frame_lru.clear()
             self._frame_bbox.clear()
 
     def undo(self) -> bool:
+        """Step back one entry, remembering where we were so redo can return.
+
+        History is a pair of stacks rather than a cursor: ``_history`` holds
+        the states behind us, ``_redo`` the states we stepped out of. Undo
+        moves the current state from one to the other, redo moves it back, and
+        any real edit clears ``_redo`` (see ``_checkpoint``)."""
         with self._lock:
             self._coalesce_key = None  # a new edit after undo must push
             if not self._history:
                 return False
-            self.project, self.source_geometry, self.svg_files, self.staging_documents = self._history.pop()
-            self._shaped_cache.clear()
-            self._occlusion_cache.clear()
-            self._tween_cache.clear()
-            self._clip_cache.clear()
-            self._frame_lru.clear()
-            self._frame_bbox.clear()
+            self._redo.append(self._snapshot())
+            self._restore(self._history.pop())
             return True
+
+    def redo(self) -> bool:
+        """Step forward again into the branch ``undo`` stepped out of. Empty
+        as soon as anything is edited — there is no branch left to return to."""
+        with self._lock:
+            self._coalesce_key = None
+            if not self._redo:
+                return False
+            self._history.append(self._snapshot())
+            self._restore(self._redo.pop())
+            return True
+
+    def can_undo(self) -> bool:
+        with self._lock:
+            return bool(self._history)
+
+    def can_redo(self) -> bool:
+        with self._lock:
+            return bool(self._redo)
 
     def history_for_save(
         self,
@@ -314,6 +366,7 @@ class Session:
     ) -> None:
         with self._lock:
             self._history.clear()
+            self._redo.clear()
             self._geom_points.clear()
             for item in history[-self._history.maxlen:]:
                 self._history.append(item)

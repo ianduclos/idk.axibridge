@@ -171,7 +171,9 @@ def test_menu_items_only_proxy_existing_controls():
     if not menus:
         pytest.skip("pywebview menu API unavailable")
 
-    assert [m.title for m in menus] == ["File", "Canvas"]  # not "View": pywebview owns that
+    # neither "Edit" nor "View": pywebview installs its own of both, and its
+    # Edit > Undo means "undo my typing", not "undo the project"
+    assert [m.title for m in menus] == ["File", "History", "Canvas"]
 
     index = (Path("axibridge/static/index.html")).read_text()
     clicked = 0
@@ -189,7 +191,7 @@ def test_menu_items_only_proxy_existing_controls():
             token = selector.split("[")[0].split()[0].lstrip("#")  # "#a b[c]" -> "a"
             assert token in index, f"{item.title!r} targets {selector}, absent from index.html"
             clicked += 1
-    assert clicked >= 4
+    assert clicked >= 6
 
 
 def test_mark_native_shell_publishes_shell_and_titlebar_state():

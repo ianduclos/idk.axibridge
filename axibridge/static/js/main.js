@@ -377,6 +377,33 @@ async function saveProject() {
 }
 $("btn-save").onclick = saveProject;
 
+// ---- undo / redo -------------------------------------------------------------------
+//
+// One implementation, three entry points: the Edit menu items, ⌘Z / ⇧⌘Z, and
+// nothing else. The server owns the history (session.py: two stacks, redo
+// cleared by any real edit); this just re-reads the project afterwards, drops
+// selection of layers that no longer exist, and repaints.
+
+async function historyStep(direction) {
+  try {
+    await api.post(`/api/${direction}`);
+    await actions.refreshProject();
+    // selection may reference layers the step removed
+    actions.setSelection(S.selection.filter((id) => S.state.project.layers.some((l) => l.id === id)));
+    await actions.refreshResolved();
+    renderLayerDetail();
+  } catch (err) {
+    // "nothing to undo/redo" is an answer, not a failure — say so where the
+    // click happened rather than popping an error or doing nothing at all.
+    if (new RegExp(`nothing to ${direction}`).test(err.message || "")) log(`nothing to ${direction}`);
+    else oops(err);
+  }
+}
+const undoStep = () => historyStep("undo");
+const redoStep = () => historyStep("redo");
+$("btn-undo").onclick = undoStep;
+$("btn-redo").onclick = redoStep;
+
 // ---- canvas toolbar ----------------------------------------------------------------
 
 for (const btn of document.querySelectorAll("#view-toggle button")) {
@@ -792,18 +819,9 @@ document.addEventListener("keydown", async (e) => {
       await actions.refreshResolved();
       logDeleted(names, r.deleted || S.selection);
     } catch (err) { oops(err); }
-  } else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "z") {
+  } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
     e.preventDefault();
-    try {
-      await api.post("/api/undo");
-      await actions.refreshProject();
-      // selection may reference layers the undo removed
-      actions.setSelection(S.selection.filter((id) => S.state.project.layers.some((l) => l.id === id)));
-      await actions.refreshResolved();
-      renderLayerDetail();
-    } catch (err) {
-      if (!/nothing to undo/.test(err.message || "")) oops(err);
-    }
+    await (e.shiftKey ? redoStep() : undoStep());
   } else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "s") {
     e.preventDefault(); // the browser's save-page dialog is never what's wanted here
     await saveProject();

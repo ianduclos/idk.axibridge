@@ -170,6 +170,14 @@ def build_menu(window):
             MenuSeparator(),
             MenuAction("Download resolved SVG", click("#btn-svg")),
         ]),
+        # NOT "Edit", for the same reason "View" below isn't: pywebview
+        # installs its own app/Edit/View menus, and theirs already has an
+        # Undo that means "undo my typing". Ours is the project's history, so
+        # it gets its own name rather than sitting confusingly beside it.
+        Menu("History", [
+            MenuAction("Undo", click("#btn-undo")),
+            MenuAction("Redo", click("#btn-redo")),
+        ]),
         # NOT "View": pywebview installs its own app/Edit/View menus, and a
         # second View sat next to theirs in the bar. This is the sheet's
         # orientation, so name it for the thing it acts on.

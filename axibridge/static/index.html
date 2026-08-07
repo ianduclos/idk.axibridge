@@ -21,11 +21,21 @@
         <a id="btn-svg" class="menu-item" href="/api/doc/all/svg" download title="Download the resolved geometry (what the pen draws) as SVG">Download SVG</a>
       </div>
     </div>
+    <div class="menu" data-menu="edit">
+      <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">Edit</button>
+      <div class="menu-panel" role="menu">
+        <button id="btn-undo" class="menu-item" type="button" title="Step back one edit"><span class="menu-check"></span>Undo<span class="menu-key">⌘Z</span></button>
+        <button id="btn-redo" class="menu-item" type="button" title="Step forward again — cleared by the next edit"><span class="menu-check"></span>Redo<span class="menu-key">⇧⌘Z</span></button>
+      </div>
+    </div>
     <div class="menu" data-menu="view">
       <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">View</button>
-      <div class="menu-panel" role="menu">
-        <button class="menu-item" type="button" data-view-proxy="portrait" title="Display rotation only — geometry never changes"><span class="menu-check">✓</span>Portrait</button>
-        <button class="menu-item" type="button" data-view-proxy="landscape" title="Display rotation only — geometry never changes"><span class="menu-check">✓</span>Landscape</button>
+      <!-- #view-toggle IS the control now: it moved here wholesale from the
+           canvas toolbar, so main.js's existing handlers and state sync bind
+           to the same ids and nothing had to be re-implemented in the menu. -->
+      <div class="menu-panel" role="menu" id="view-toggle">
+        <button class="menu-item" type="button" data-view="portrait" title="Display rotation only — geometry never changes"><span class="menu-check">✓</span>Portrait</button>
+        <button class="menu-item" type="button" data-view="landscape" title="Display rotation only — geometry never changes"><span class="menu-check">✓</span>Landscape</button>
       </div>
     </div>
   </nav>
@@ -38,10 +48,6 @@
   <!-- persistent centre canvas -->
   <section id="canvas-area">
     <div id="canvas-toolbar">
-      <div class="seg" id="view-toggle">
-        <button data-view="portrait" class="on" title="Display rotation only — geometry never changes">Portrait</button>
-        <button data-view="landscape">Landscape</button>
-      </div>
       <div class="seg" id="mode-toggle">
         <button data-mode="schematic" class="on">Schematic</button>
         <button data-mode="ink" title="True stroke widths and transparency">Ink</button>

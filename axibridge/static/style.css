@@ -201,7 +201,12 @@ header {
 #menubar .menu-item:hover,
 #menubar .menu-item:focus-visible { background: var(--live); color: var(--bench-deep); outline: none; }
 #menubar .menu-check { width: 1em; opacity: 0; }
-#menubar .menu-item.checked .menu-check { opacity: 1; }
+/* `.on` is what main.js sets on #view-toggle's buttons — the same control,
+   just living in the View menu now instead of the canvas toolbar. */
+#menubar .menu-item.checked .menu-check,
+#menubar .menu-item.on .menu-check { opacity: 1; }
+#menubar .menu-key { margin-left: auto; padding-left: 18px; color: var(--ink-faint, var(--ink-soft)); }
+#menubar .menu-item:hover .menu-key { color: inherit; }
 
 /* connection lamp — round, because indicator lamps are round. One of two
    things in the app allowed a radius. */

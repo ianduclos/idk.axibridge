@@ -875,6 +875,15 @@ def undo() -> dict[str, Any]:
     return _project_payload()
 
 
+@router.post("/redo")
+def redo() -> dict[str, Any]:
+    """Step back into what undo stepped out of. Empty after any real edit —
+    the redo branch is abandoned the moment the project changes."""
+    if not session.redo():
+        raise HTTPException(status_code=409, detail="nothing to redo")
+    return _project_payload()
+
+
 class OrderBody(BaseModel):
     ids: list[str]
 

@@ -55,6 +55,115 @@ def test_geometry_budget_trims_history_before_it_gets_expensive(monkeypatch):
     assert session.undo(), "the newest entry is never traded away"
 
 
+def test_undo_and_redo_endpoints():
+    """The HTTP surface the Edit menu and ⌘Z / ⇧⌘Z both go through. An empty
+    branch is a 409, not a silent no-op — the UI says so rather than looking
+    broken."""
+    from fastapi.testclient import TestClient
+
+    from axibridge.app import create_app
+
+    with TestClient(create_app()) as client:
+        assert client.post("/api/undo").status_code == 409
+        assert client.post("/api/redo").status_code == 409
+
+        made = client.post("/api/layers/generate", json={
+            "module": "polygon", "params": {"sides": 5, "radius": 12}}).json()
+        client.patch(f"/api/layers/{made['id']}", json={"name": "renamed"})
+
+        r = client.post("/api/undo")
+        assert r.status_code == 200
+        assert r.json()["layers"][0]["name"] != "renamed"
+
+        r = client.post("/api/redo")
+        assert r.status_code == 200
+        assert r.json()["layers"][0]["name"] == "renamed"
+        assert client.post("/api/redo").status_code == 409
+
+
+# -- redo -----------------------------------------------------------------
+#
+# History is two stacks, not a cursor: undo moves the current state onto the
+# redo stack, redo moves it back, and any real edit clears the redo branch.
+
+
+def test_redo_returns_what_undo_took_away():
+    layer = session.add_generated_layer("polygon", {"sides": 5, "radius": 12})
+    session.clear_history()
+    session.update_layer(layer.id, {"name": "renamed"})
+    assert session.undo()
+    assert session.project.layer(layer.id).name != "renamed"
+    assert session.redo()
+    assert session.project.layer(layer.id).name == "renamed"
+    assert not session.redo(), "the branch is exhausted"
+
+
+def test_redo_restores_geometry_not_just_the_model():
+    """The entry carries source geometry too — a redone delete must bring the
+    layer's paths back, not an empty shell."""
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 20})
+    keep = session.add_generated_layer("polygon", {"sides": 4, "radius": 10})
+    before = [p.points for p in session.resolved()[layer.id]]
+    session.delete_layer(layer.id)
+    assert session.undo()
+    assert [p.points for p in session.resolved()[layer.id]] == before
+    assert session.redo()
+    assert layer.id not in {l.id for l in session.project.layers}
+    assert session.resolved()[keep.id], "the surviving layer still resolves"
+
+
+def test_a_new_edit_abandons_the_redo_branch():
+    """Standard editor behaviour, and the only one that can't surprise: once
+    you edit after undoing, there is no future to return to."""
+    layer = session.add_generated_layer("polygon", {"sides": 5, "radius": 12})
+    session.clear_history()
+    session.update_layer(layer.id, {"name": "first"})
+    assert session.undo()
+    assert session.can_redo()
+    session.update_layer(layer.id, {"name": "second"})
+    assert not session.can_redo()
+    assert not session.redo()
+    assert session.project.layer(layer.id).name == "second"
+
+
+def test_undo_redo_round_trips_many_steps():
+    layer = session.add_generated_layer("polygon", {})
+    session.clear_history()
+    for i in range(10):
+        session.update_layer(layer.id, {"name": f"n{i}"})
+    for _ in range(10):
+        assert session.undo()
+    assert not session.can_undo()
+    for _ in range(10):
+        assert session.redo()
+    assert session.project.layer(layer.id).name == "n9"
+    assert not session.can_redo()
+
+
+def test_a_coalesced_run_redoes_as_one_step():
+    """The latched live-edit is one undo entry, so it must be one redo entry
+    too — a slider drag that undid in one ⌘Z can't take ten ⇧⌘Z to come back."""
+    layer = session.add_generated_layer("polygon", {"sides": 3, "radius": 10})
+    session.clear_history()
+    for sides in (4, 5, 6):
+        session.regenerate_layer(layer.id, {"sides": sides, "radius": 10}, coalesce=True)
+    assert session.undo()
+    assert session.project.layer(layer.id).source.params["sides"] == 3
+    assert session.redo()
+    assert session.project.layer(layer.id).source.params["sides"] == 6
+    assert not session.redo()
+
+
+def test_clear_history_drops_the_redo_branch_too():
+    """A project switch must not leave another project's future reachable."""
+    layer = session.add_generated_layer("polygon", {})
+    session.update_layer(layer.id, {"name": "x"})
+    assert session.undo()
+    assert session.can_redo()
+    session.clear_history()
+    assert not session.can_redo() and not session.can_undo()
+
+
 def test_coalesced_regenerates_are_one_undo_step():
     """The bench's latched live-edit: a slider run of regenerates undoes as one."""
     layer = session.add_generated_layer("polygon", {"sides": 3, "radius": 10})

@@ -73,7 +73,10 @@ Everything below is ordered by that.
 
 - **Undo is 8 deep.** `session.py:156`, `deque(maxlen=8)`. `undo()` **pops**
   (`session.py:226`) so there is nothing to redo to — redo needs history to
-  become a cursor, not an appended function. Each entry is a full project +
+  become a cursor, not an appended function. **[Done 2026-08-07, out of
+  order, at Ian's request: depth is now 50 + a geometry budget, and redo
+  ships as a second stack — see ARCHITECTURE "Undo, duplication,
+  consolidation".]** Each entry is a full project +
   source-geometry + staging snapshot, which is presumably why it's 8.
 - **Occlusion recomputes on every resolve.** `_shaped_cache` covers
   transform+effects; occlusion runs after it. Measured on 5 layers with an
@@ -264,7 +267,8 @@ and collapse the occlusion block behind a one-line summary.
 ## Explicitly out of scope
 
 ⌘K launcher (unblocked by npm now, but its own decision) · layer groups ·
-redo · split inspector (worsens density before density is fixed) · frameless
+~~redo~~ (shipped 2026-08-07 at Ian's request, with the Edit menu) ·
+split inspector (worsens density before density is fixed) · frameless
 window · any change to the resolve order or the single-resolve invariant.
 
 ## Open decisions — these are Ian's, not yours
