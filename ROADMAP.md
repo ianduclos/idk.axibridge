@@ -604,6 +604,78 @@ segmentation for auto-masking subjects. Constraint: keep it an *asset
 producer* (a tool that writes into `assets/`), not a resolve-path stage —
 the resolve pipeline stays deterministic and offline.
 
+## Near term — module gallery: generators and effects, thumbnails and tags
+
+Ian, 2026-08-07: *"a possible generator gallery and effect gallery with
+thumbnails and tags for later cause the list is growing."* Brainstormed the
+same day; the measurements below are the reason the design looks like it does.
+
+**Browse structurally, filter by tags.** Three classes, and they DERIVE — a
+new module lands in the right one without anyone remembering to file it:
+
+| class | how it is known | today |
+|---|---|---|
+| image-based | any param with `format: "asset"` (already load-bearing) | 14 |
+| captured | a small declared set — you are the input | 3 (pen, brush, drawing) |
+| generative | everything else | 10 |
+
+Tags are the user's, not the module's: free text, editable, stored
+machine-level in `~/.axibridge/` beside the pen library so the vocabulary
+survives projects — Ableton's model, and Ian asked for it by name. **Modules
+ship with no tags.** The structural spine makes the gallery useful on day one,
+so tagging stays something you do when a distinction starts mattering, not
+data entry the tool demands upfront.
+
+**Thumbnails are live, cached, and rendered against an image YOU choose.**
+Ian's improvement on the original proposal, and the better idea: it turns the
+gallery from "what does this do to a stock photo" into "what would this do to
+*my* photo", which is the question you are actually asking while browsing.
+Cache key = module + example params + the module file's mtime + which fixture
+image, so editing a generator invalidates exactly its own tile and swapping
+the image rebuilds in the background.
+
+**Measured, because "live rendering is heavy" was the obvious objection:**
+
+| | |
+|---|---|
+| all 27 sources, full rebuild, against a 512x512 fixture | **4.35 s** |
+| worst single tile | `linedraw` 1.61 s, `lineart_hatch` 1.16 s |
+| everything else | under 250 ms |
+| 13 sources that render with no image at all | 0.17 s for the set |
+
+At double the module count that is ~9 s, once, in the background, incremental
+after. Pre-rendering and committing the images buys those seconds and pays for
+them forever in silent drift — a thumbnail that stops matching a generator the
+moment it is tuned, on a project where generators are tuned constantly. Live
+and cached means a stale thumbnail is impossible rather than merely unlikely.
+
+**Each module declares one example params dict**, same pattern as
+`orientation`, with a test that fails when a new module omits it. Defaults are
+not good enough: 14 of 27 sources render *nothing* at defaults, and
+`misremembered` at defaults does not sell `misremembered`.
+
+**The effect gallery is the same shelf with two differences.** Measured 14
+effects at defaults on a generic reference (a filled circle plus one stroke):
+11 read clearly; `hatch_fill` and `offset_fill` needed a shape the reference
+was not, and `depth_displace` needs a depth map. So:
+
+1. **Each effect also declares what to demonstrate it ON** — a filled shape,
+   open strokes, or an image. One generic reference cannot serve all of them,
+   and that was proven on the first attempt rather than argued.
+2. **An effect tile is before → after, not after.** `contract_expand` scores a
+   visible delta, but only *against the original*; "what does it do" is
+   unanswerable from an after-image alone. A ghost of the input under the
+   output carries what one frame cannot. This is a genuinely different tile
+   from a source tile, where the output IS the answer.
+
+**Build order:** gallery before ⌘K. They are two doors onto the same list, and
+the gallery's tags are what a launcher should search alongside names. Both
+exist to make deleting the two 27-item Compose `<select>` boxes safe.
+
+**Not designed yet, deliberately:** where the gallery opens (modal, tab, or
+the Compose panel it replaces), and whether transforms — 4 of them, all in one
+file — are worth a shelf at all.
+
 ## Near term — ⌘K launcher over the module registry
 
 Ranked 11 of 12 in the 2026-08-07 multi-agent review, and the ONLY proposal
