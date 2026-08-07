@@ -21,6 +21,16 @@ before structural changes.
   (set in `tests/conftest.py` before any axibridge import — keep it first).
 - UI smoke-testing with Playwright: use `wait_until="domcontentloaded"`;
   the SSE stream keeps connections open so `networkidle` never fires.
+- **"I restarted it and nothing changed" = check for a stale server first.**
+  A server outlives its own source directory (modules are already in memory),
+  so one left over from before a move keeps serving from a path that no longer
+  exists — 500s on everything that touches disk. Worse, a stale process bound
+  to `127.0.0.1:2942` **silently shadows** a new one bound to `0.0.0.0:2942`:
+  both start cleanly, the new one logs no requests, and the browser talks to
+  the corpse. Diagnose with `lsof -nP -iTCP:2942 -sTCP:LISTEN` and read the
+  path in `ps -p <pid> -o command`; if it isn't this directory, kill it.
+  (Happened 2026-08-07 with a process from the pre-`02_Areas` layout that had
+  been running since 26 July.)
 
 ## Where things live
 
