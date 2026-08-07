@@ -324,6 +324,17 @@ main {
 #playback label { color: var(--ink-soft); font-size: 12px; display: flex; align-items: center; gap: 4px; }
 #playback input[type="number"] { width: 4.2em; }
 
+/* the machine strip lives inside the status line — same row, same quiet ink,
+   no extra band. Buttons shrink to the line's scale so a persistent Stop does
+   not sit there shouting while nothing is running. */
+#machine-state {
+  display: flex; align-items: center; gap: 14px;
+}
+#machine-state[hidden] { display: none; }
+#machine-state button { padding: 1px 9px; font-size: 11px; }
+#machine-state .readout:empty { display: none; }
+#pen-state.warn { color: var(--ochre); }
+
 #canvas-status {
   display: flex; gap: 18px; padding-top: 8px;
   color: var(--ink-soft); font-size: 12px; min-height: 1.6em;

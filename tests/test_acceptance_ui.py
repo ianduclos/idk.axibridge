@@ -739,6 +739,61 @@ def test_the_machine_menu_drives_the_real_controls(ui):
     assert ui.evaluate("() => window.__hit") == ["btn-pen-up", "jog-left"]
 
 
+def test_machine_state_is_visible_without_opening_a_tab(ui):
+    """Position, pen, progress, time left and Stop, in the status line that is
+    always on screen — previously all of it needed the Plot tab open, which is
+    the wrong place to go looking when a machine is moving.
+
+    Runs a real job on the simulator rather than asserting the wiring: the
+    interesting failure is a readout that never updates. Disconnects at the
+    end because the server fixture is session-scoped."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 60})
+    # establish the precondition rather than assume it: the server fixture is
+    # session-scoped, so whether anything is connected depends on which tests
+    # ran first, and asserting on that tests the ordering
+    _post(f"{ui.base}/api/disconnect", {})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    assert not ui.is_visible("#machine-state"), "nothing to report while disconnected"
+    # the estimate arrives on a debounced /api/plan, one beat after the ink
+    ui.wait_for_function(
+        "() => document.querySelector('#estimate').textContent.includes('est.')",
+        timeout=20_000)
+    estimate = ui.inner_text("#estimate")
+
+    try:
+        _post(f"{ui.base}/api/backend/select", {"backend": "simulator"})
+        _post(f"{ui.base}/api/connect", {})
+        ui.wait_for_function(
+            "() => !document.querySelector('#machine-state').hidden", timeout=20_000)
+        assert ui.is_visible("#btn-stop"), "stop is reachable from any tab"
+
+        _post(f"{ui.base}/api/plot/start", {"target": "all"})
+        ui.wait_for_function(
+            "() => (document.querySelector('#job-progress').textContent || '')"
+            ".includes('%')", timeout=30_000)
+
+        assert "left" in ui.inner_text("#job-remaining")
+        assert ui.inner_text("#pos-xy").startswith("X ")
+        assert ui.inner_text("#pen-state") in ("pen up", "pen down")
+
+        # the bug this slice names: `remaining` used to be written OVER the
+        # est/ink/lifts readout, which is a fact about the job you asked for
+        # and stays true while it runs — and it was never restored afterwards
+        assert ui.inner_text("#estimate") == estimate, \
+            "the job estimate must survive the job"
+
+        ui.click("#btn-stop")
+        ui.wait_for_function(
+            "() => document.querySelector('#job-progress').textContent.trim() === ''",
+            timeout=20_000)
+    finally:
+        _post(f"{ui.base}/api/disconnect", {})
+
+    assert not ui.errors
+
+
 def test_no_console_errors_on_any_tab(ui):
     """A JS error on a tab you rarely open is a bug you find mid-plot."""
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})

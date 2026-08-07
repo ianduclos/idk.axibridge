@@ -130,9 +130,28 @@
       <button id="btn-animate" title="Replay the planned job at speed">▶ Animate plot</button>
       <label>speed ×<input type="number" id="anim-speed" value="20" min="1" max="500" step="1"></label>
     </div>
+    <!-- The status line is the one strip that is always on screen and does
+         not care which tab you are in, so machine truth lives here rather
+         than in a panel you have to go and find. Costs no vertical space: the
+         line already existed holding "nothing selected".
+
+         Pause / Resume / Stop MOVED here bodily from the Plot panel (same
+         ids, plot.js still binds them): they are the controls you want while
+         watching the sheet, and needing the Plot tab open to stop a running
+         machine was the wrong place for them. Plot itself stays in the Plot
+         tab — starting a job is a deliberate act, stopping one is not. -->
     <div id="canvas-status">
       <span id="sel-readout">nothing selected</span>
       <span id="plan-warnings" class="warn"></span>
+      <div id="machine-state" hidden>
+        <span id="job-progress" class="readout"></span>
+        <span id="job-remaining" class="readout"></span>
+        <span id="pos-xy" class="readout" title="carriage position, machine frame">X — Y —</span>
+        <span id="pen-state" title="pen up or down">pen —</span>
+        <button id="btn-pause">Pause</button>
+        <button id="btn-resume">Resume</button>
+        <button id="btn-stop" class="danger" title="Stop the job, then return the carriage to home (0,0)">Stop ⌂</button>
+      </div>
       <span id="global-error"></span>
     </div>
   </section>

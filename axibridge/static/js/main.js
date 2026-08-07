@@ -141,6 +141,8 @@ export const actions = {
   debounce,
   canvas: () => canvas,
   setSeqProgress, // forms.js's inline sequence-asset upload rides the same gen-progress bar
+  // plot.js's jog/pen replies carry a position too; one writer for the strip
+  setMachineReadout: (...a) => setMachineReadout(...a),
 
   async refreshAll() {
     await actions.refreshState();
@@ -328,6 +330,43 @@ async function commitPatch(id, patch) {
   } catch (e) { oops(e); }
 }
 
+// ---- the machine strip (persistent, in #canvas-status) ---------------------------
+//
+// Machine truth that used to be reachable only by opening the Plot tab:
+// position, pen state, job progress and time remaining, plus Pause/Resume/
+// Stop. It shows whenever the machine is connected — position and pen state
+// are worth seeing while jogging, not only while plotting — and costs no
+// vertical space, because the status line was already there holding
+// "nothing selected".
+
+function setMachineReadout({ pos, penDown, progress, remaining } = {}) {
+  if (pos) $("pos-xy").textContent = `X ${pos[0].toFixed(1)}  Y ${pos[1].toFixed(1)}`;
+  if (penDown !== undefined) {
+    $("pen-state").textContent = `pen ${penDown ? "down" : "up"}`;
+    $("pen-state").classList.toggle("warn", !!penDown);
+  }
+  if (progress !== undefined) {
+    $("job-progress").textContent = progress === null ? "" : `${Math.round(progress * 100)}%`;
+  }
+  if (remaining !== undefined) {
+    $("job-remaining").textContent =
+      remaining === null ? "" : `${fmtTime(remaining)} left`;
+  }
+}
+
+function renderMachineStrip() {
+  const m = S.state?.machine;
+  const strip = $("machine-state");
+  if (!strip || !m) return;
+  strip.hidden = !m.connected;
+  if (!m.connected || m.job_state === "idle") {
+    // a stale "62% · 4m left" beside an idle machine is a lie about the job
+    // you are looking at, and the estimate readout in the header already says
+    // what the NEXT job will cost
+    setMachineReadout({ progress: null, remaining: null });
+  }
+}
+
 // ---- header / status -------------------------------------------------------------
 
 function renderHeader() {
@@ -339,6 +378,7 @@ function renderHeader() {
   pill.textContent = `${backend?.label || m.backend} · ${m.connected ? m.job_state : "disconnected"}`;
   pill.className = `pill ${cls}`;
   $("project-name").value = S.state.project.name;
+  renderMachineStrip();
   // toolbar toggles reflect server state (view is saved in the project)
   document.querySelectorAll("#view-toggle button").forEach((b) =>
     b.classList.toggle("on", b.dataset.view === S.state.project.view));
@@ -849,11 +889,16 @@ function onJobEvent(ev) {
     case "position":
       canvas.setMachinePos(ev.position, ev.pen_down);
       if (bar && ev.progress !== undefined) bar.style.width = `${ev.progress * 100}%`;
-      if (ev.remaining !== undefined) $("estimate").textContent = `remaining ${fmtTime(ev.remaining)}`;
+      // remaining goes to the strip, NOT over #estimate: est/ink/lifts are
+      // facts about the job you asked for and stay true while it runs. This
+      // readout used to be overwritten mid-plot and never restored.
+      setMachineReadout({ pos: ev.position, penDown: ev.pen_down,
+                          progress: ev.progress, remaining: ev.remaining });
       break;
     case "progress":
       if (bar && ev.progress !== undefined) bar.style.width = `${ev.progress * 100}%`;
       if (ev.position) canvas.setMachinePos(ev.position, !!ev.pen_down);
+      setMachineReadout({ pos: ev.position, penDown: ev.pen_down, progress: ev.progress });
       if (ev.paths_done !== undefined) log(`path ${ev.paths_done}/${ev.paths_total}`);
       break;
     case "message":
@@ -862,6 +907,7 @@ function onJobEvent(ev) {
     case "finished":
       if (bar) bar.style.width = "100%";
       log("✓ finished");
+      setMachineReadout({ progress: null, remaining: null });
       actions.refreshPlan();
       break;
     case "stopped":

@@ -116,9 +116,7 @@ export function initPlotTab() {
       <div class="hint" id="target-pen-hint"></div>
       <div class="row" style="justify-content:center; margin-top:6px">
         <button id="btn-plot" class="primary big">Plot</button>
-        <button id="btn-pause">Pause</button>
-        <button id="btn-resume">Resume</button>
-        <button id="btn-stop" class="danger" title="Stop the job, then return the carriage to home (0,0)">Stop ⌂</button>
+        <span class="hint">pause and stop live in the status line under the sheet</span>
       </div>
       <div class="progress"><div id="progress-bar"></div></div>
       <div id="job-log" class="log"></div>
@@ -1554,6 +1552,7 @@ export function applyCapabilities() {
 function setPos(pos) {
   const el = $("pos-readout");
   if (el) el.textContent = `${pos[0].toFixed(1)}, ${pos[1].toFixed(1)} mm`;
+  actions.setMachineReadout({ pos });     // the always-visible copy
   actions.canvas().setMachinePos(pos, false);
 }
 
