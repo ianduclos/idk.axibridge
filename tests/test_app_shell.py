@@ -357,6 +357,30 @@ def test_merge_against_real_appkit_menus():
     assert [str(view.itemAtIndex_(i).title()) for i in range(view.numberOfItems())] == \
         ["Portrait", "Landscape", "", "Enter Full Screen"]
 
+    # -- and the checkmarks, on the same real objects ----------------------
+    # A toggle in a menu that cannot show its state is worse than one in the
+    # toolbar, so this is the gate on moving any more controls into the menu.
+    index = {"#sel-portrait": ("View", "Portrait"),
+             "#sel-landscape": ("View", "Landscape")}
+    on, off = AppKit.NSControlStateValueOn, AppKit.NSControlStateValueOff
+
+    assert shell.set_menu_states(
+        main, {"#sel-portrait": True, "#sel-landscape": False}, index, on, off) == 2
+    assert view.itemAtIndex_(0).state() == on
+    assert view.itemAtIndex_(1).state() == off
+
+    # the tick must FOLLOW the page, not accumulate
+    shell.set_menu_states(main, {"#sel-portrait": False, "#sel-landscape": True},
+                          index, on, off)
+    assert view.itemAtIndex_(0).state() == off
+    assert view.itemAtIndex_(1).state() == on
+
+    # a selector the page reports but the bar has no item for is ignored,
+    # not an exception on the main thread
+    assert shell.set_menu_states(main, {"#gone": True}, index, on, off) == 0
+    assert shell.find_menu_item(main, "View", "Nope") is None
+    assert shell.find_menu_item(main, "Nope", "Portrait") is None
+
 
 def test_a_menu_with_no_counterpart_is_left_alone():
     """If pywebview stops shipping an Edit menu, ours must survive as its own
@@ -423,3 +447,53 @@ def test_mark_native_shell_publishes_shell_and_titlebar_state():
     (src,) = win.js
     assert "dataset.shell = 'native'" in src
     assert "dataset.titlebar = 'no-native-window'" in src
+
+
+# -- main-queue blocks must never return a value ---------------------------
+
+_BLOCK_PROBE = """
+import sys
+sys.path.insert(0, {repo!r})
+sys.path.insert(0, {launch!r})
+import AppKit
+import axibridge_app as shell
+
+ran = []
+shell.on_main(lambda: (ran.append(1), 42)[1], "probe")   # returns 42
+AppKit.NSRunLoop.currentRunLoop().runUntilDate_(
+    AppKit.NSDate.dateWithTimeIntervalSinceNow_(0.6))
+print("RAN" if ran else "NOTRUN")
+"""
+
+
+def test_a_main_queue_block_that_returns_a_value_does_not_kill_the_app():
+    """The crash that took the app down on 2026-08-07.
+
+    PyObjC type-checks a void block's return: give `addOperationWithBlock_` a
+    function that returns something and it raises an uncaught ObjC exception
+    on the main thread — "did not return None, expecting void return value" —
+    and `libc++abi` terminates the process. `apply_menu_states` returned its
+    count, so the shell logged a successful menu sync and then vanished.
+
+    Run in a subprocess on purpose: a regression does not fail an assertion,
+    it kills the interpreter, and that must show up as one red test rather
+    than as the whole suite disappearing.
+    """
+    pytest.importorskip("AppKit", reason="not macOS")
+    repo = str(Path(__file__).resolve().parent.parent)
+    src = _BLOCK_PROBE.format(repo=repo, launch=str(Path(repo) / "launch"))
+
+    r = subprocess.run([sys.executable, "-c", src], capture_output=True, text=True,
+                       timeout=60)
+    assert r.returncode == 0, (
+        "a value-returning block took the process down — on_main must discard "
+        f"the return value.\nstdout={r.stdout}\nstderr={r.stderr[-600:]}")
+    assert "RAN" in r.stdout, f"the block never executed: {r.stdout!r}"
+
+
+def test_on_main_never_raises_when_appkit_is_missing(monkeypatch):
+    """Scheduling is best-effort like everything else here: on a machine with
+    no AppKit the shell must carry on, not fail to open."""
+    shell = _shell()
+    monkeypatch.setitem(sys.modules, "AppKit", None)
+    assert shell.on_main(lambda: None, "probe") is False

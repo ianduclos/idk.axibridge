@@ -414,6 +414,72 @@ def test_every_native_menu_item_hits_exactly_one_live_control(ui):
     assert not ui.errors
 
 
+def test_the_generated_state_probe_runs_and_tells_the_truth(ui):
+    """The app shell ticks its native menu from a JS expression GENERATED in
+    Python (`menu_spec.state_probe_js`). Generated code that is subtly wrong
+    fails in a window with no console, so it gets run against a real page
+    here, and checked against a state the test actually changes."""
+    from axibridge.menu_spec import item_index, state_probe_js
+
+    add_layer(ui, "polygon", {"sides": 3, "radius": 20})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    states = ui.evaluate(f"() => ({state_probe_js()})")
+    assert set(states) == set(item_index()), "the probe reports exactly the stateful items"
+    assert all(isinstance(v, bool) for v in states.values())
+
+    portrait = '#view-toggle button[data-view="portrait"]'
+    landscape = '#view-toggle button[data-view="landscape"]'
+    assert sum(states.values()) == 1, f"exactly one orientation is on: {states}"
+
+    was = states[portrait]
+    ui.click('.menu[data-menu="view"] .menu-trigger')
+    ui.click(landscape if was else portrait)
+    ui.wait_for_timeout(600)
+
+    after = ui.evaluate(f"() => ({state_probe_js()})")
+    assert after[portrait] != was, "the probe follows the control it names"
+    assert sum(after.values()) == 1
+    assert not ui.errors
+
+
+def test_the_page_reports_menu_state_to_the_shell(ui):
+    """The app shell's native checkmarks come from the page calling
+    `menu_changed(states)`. That call only happens where `window.pywebview`
+    exists, so it is invisible to every other test here — and it has already
+    shipped once doing nothing at all.
+
+    So the bridge is faked exactly as pywebview installs it, and the probe is
+    injected exactly as the shell injects it. What is asserted is the payload
+    the shell would receive: it must arrive at boot (a menu opened before you
+    touch anything still has to be right) and it must follow the control."""
+    from axibridge.menu_spec import item_index, state_probe_js
+
+    add_layer(ui, "polygon", {"sides": 6, "radius": 25})
+    ui.add_init_script(
+        "window.__pings = [];"
+        "window.pywebview = { api: { menu_changed: (s) => window.__pings.push(s) } };"
+        f"window.__axbMenuProbe = () => ({state_probe_js()});")
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    pings = ui.evaluate("() => window.__pings")
+    assert pings, "the page never told the shell anything — no ticks would ever appear"
+    assert set(pings[0]) == set(item_index())
+    assert sum(pings[0].values()) == 1, f"exactly one orientation on: {pings[0]}"
+
+    portrait = '#view-toggle button[data-view="portrait"]'
+    was = pings[0][portrait]
+    ui.click('.menu[data-menu="view"] .menu-trigger')
+    ui.click('#view-toggle button[data-view="landscape"]' if was else portrait)
+    ui.wait_for_function("() => window.__pings.length > 1", timeout=15_000)
+
+    assert ui.evaluate("() => window.__pings.at(-1)")[portrait] != was, \
+        "the report followed the click"
+    assert not ui.errors
+
+
 def test_no_console_errors_on_any_tab(ui):
     """A JS error on a tab you rarely open is a bug you find mid-plot."""
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})
