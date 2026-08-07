@@ -46,8 +46,14 @@
   --sheet: #faf7ef;        /* paper. do not touch: it is the colour of the ink's ground */
   --sheet-ink: #26241f;    /* ink drawn ON the sheet */
 
-  /* engraved label */
-  --ink: #ece7da;
+  /* Ink. Body ink is deliberately NOT the brightest value available: when
+     every label sat at #ece7da there was no headroom left to mark the thing
+     you are acting on. --ink-hi is that headroom and is spent in two places
+     only — the focused element, and the filled primary button, where it is
+     also required: #d8d2c4 on --live-fill measures 4.42:1, under AA, while
+     #ece7da holds the 5.40:1 that --live-fill was chosen for. */
+  --ink: #d8d2c4;
+  --ink-hi: #ece7da;
   --ink-soft: #8e877a;
 
   /* reserved — meaning only, never decoration */
@@ -58,6 +64,9 @@
                               paper; 5.4:1 against --ink for its label */
   --live-fill-hi: #3f6f8c;
   --live-deep: #24455a;    /* the shaded edge under a filled control */
+  --fader: #6f6859;        /* a fader's travelled groove — graphite, never
+                              --live: three sliders on screen all lit in the
+                              selection colour said "you are here" three times */
   --ochre: #c79c4a;        /* in motion, guides, warnings */
   --rust: #c0644c;         /* danger, origin, subtract */
   --moss: #8aa06e;         /* connected, ok */
@@ -111,7 +120,6 @@
 #tabs button,
 .panel > h2,
 #layers-dock-title,
-.panel h3,
 .preview-head h2,
 .seg button,
 .form-group > summary,
@@ -145,9 +153,14 @@ button.primary.big {
 html, body { height: 100%; }
 body {
   margin: 0; color: var(--ink);
-  /* a very shallow top-to-bottom fall across the whole housing — no visible
-     banding, but the bench stops reading as one flat slab */
-  background: var(--bench) linear-gradient(179deg, #211f1c 0%, #1a1916 100%) fixed;
+  /* Flat, on purpose. The page-wide gradient that used to live here measured
+     ΔL* 3.1 across a full-viewport fixed repaint — real, but below threshold,
+     and it repainted the whole viewport on a Pi to do it. Recession comes
+     from the lamp in the canvas well instead (see #canvas-wrap): bounded to
+     one region, visible where the page gradient wasn't, and on the metaphor —
+     a lamp over a drafting bed is what this whole direction is pretending to
+     be. */
+  background: var(--bench);
   font-family: "Roboto Mono", ui-monospace, monospace;
   line-height: 1.45;
   display: flex; flex-direction: column;
@@ -157,6 +170,7 @@ body {
    jogs) — every focusable thing must show where focus is. */
 :focus-visible {
   outline: 1px solid var(--live); outline-offset: 1px;
+  color: var(--ink-hi);
 }
 
 header {
@@ -339,9 +353,19 @@ main {
    through a frame. (Corner registration crops were tried here and cut: pinned
    to the wrapper they marked nothing, since the sheet floats independently of
    it. A registration mark that doesn't register anything is decoration.) */
+/* The lamp. Brightness falls off with distance from the sheet, so the well
+   is lit where the paper is and goes to shadow at the frame — recession by
+   light rather than by a rule that suppresses every chrome surface uniformly
+   by fiat. That rule is why nothing receded and everything demanded reading.
+   Centred at 45% height because the sheet sits high in the well once the
+   playback strip is showing. */
 #canvas-wrap {
   flex: 1; min-height: 0; border: none; border-radius: var(--r);
-  background: var(--bench-deep); position: relative; overflow: hidden;
+  background:
+    radial-gradient(120% 100% at 50% 45%,
+      #191816 0%, #151413 45%, #101010 78%, #0c0c0b 100%),
+    var(--bench-deep);
+  position: relative; overflow: hidden;
   box-shadow: var(--recess);
 }
 /* absolutely positioned so the SVG's intrinsic aspect ratio (from viewBox)
@@ -494,8 +518,14 @@ details:not(.form-group) > summary .hint {
 .panel.collapsed > h2 { margin-bottom: 0; color: var(--ink-soft); }
 .panel.collapsed > h2::before { background: var(--ink); }
 .panel.collapsed > *:not(h2) { display: none; }
+/* Sentence case, and out of the engraved family. The silkscreen device
+   registers an AREA of the instrument; the layer panel nested four of them
+   (LAYER: X > PLACEMENT > PEN & OCCLUSION > GENERATOR: X) and a panel that
+   shouts four times registers nothing. Weight and --ink-soft separate a
+   sub-heading from its rows without a second silkscreen. Still mono — the
+   machine keeps one voice; only the shouting goes. */
 .panel h3 {
-  --engraved-track: 1.4px;
+  font-size: 11.5px; font-weight: 700;
   margin: 14px 0 6px; color: var(--ink-soft);
 }
 
@@ -528,7 +558,7 @@ button:disabled { opacity: .3; cursor: default; border-color: var(--bench-edge);
    ever being brighter than the drawing. Regular weight — bold at this size
    shouts. */
 button.primary {
-  background: var(--live-fill); border-color: var(--live-fill); color: var(--ink);
+  background: var(--live-fill); border-color: var(--live-fill); color: var(--ink-hi);
   font-weight: 400;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 1px 0 var(--live-deep);
 }
@@ -565,44 +595,67 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
    machined bar for the thumb. --fill is painted by main.js (paintRange) so the
    filled portion tracks the value; it falls back to 0% before the first paint.
    Shift-drag and shift-arrow fine-tune are wired there too. */
+/* Faders, not hairlines. The groove was 4px under a 7px thumb — mass wildly
+   out of proportion to a control that sets millimetres on an open-loop
+   machine, and the thinnest thing on screen was one of the most consequential.
+   12px groove, 14x24 machined thumb.
+
+   The fill is GRAPHITE, not --live. That was the real bug: --live means
+   selection, "you are here", and with three sliders on screen all three were
+   claiming it at once. Colour is spent on ink, machine state and the primary
+   path — a slider's own travel is none of those. The number field stays: on an
+   open-loop machine the typed millimetre is the contract, and a 400px groove
+   over 0-300mm is 0.75mm per pixel. */
 input[type="range"] {
   -webkit-appearance: none; appearance: none;
-  padding: 0; flex: 1; height: 18px; background: transparent;
+  padding: 0; flex: 1; height: 26px; background: transparent;
   border: none; box-shadow: none; cursor: pointer; min-width: 80px;
 }
 input[type="range"]::-webkit-slider-runnable-track {
-  height: 4px; border-radius: 999px;
+  height: 12px; border-radius: 999px;
   background:
-    linear-gradient(90deg, var(--live) 0 var(--fill, 0%), transparent var(--fill, 0%) 100%),
+    linear-gradient(90deg, var(--fader) 0 var(--fill, 0%), transparent var(--fill, 0%) 100%),
     var(--bench-deep);
-  box-shadow: inset 0 1px 2px rgba(0,0,0,.5);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.55);
 }
 input[type="range"]::-moz-range-track {
-  height: 4px; border-radius: 999px;
+  height: 12px; border-radius: 999px;
   background:
-    linear-gradient(90deg, var(--live) 0 var(--fill, 0%), transparent var(--fill, 0%) 100%),
+    linear-gradient(90deg, var(--fader) 0 var(--fill, 0%), transparent var(--fill, 0%) 100%),
     var(--bench-deep);
-  box-shadow: inset 0 1px 2px rgba(0,0,0,.5);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.55);
 }
+/* the cap: light on top, shadow under, a milled centre line — it should read
+   as a part you could grip, which is the whole difference between a slider
+   and a fader */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 7px; height: 15px; margin-top: -5.5px; border-radius: 2px;
-  background: var(--ink-soft); border: none;
-  box-shadow: 0 1px 2px rgba(0,0,0,.55);
+  width: 14px; height: 24px; margin-top: -6px; border-radius: 3px;
+  background:
+    linear-gradient(180deg, #4a463e 0%, #35322c 52%, #2a2722 100%);
+  border: 1px solid #171512;
+  box-shadow: 0 1px 3px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,250,235,.13);
 }
 input[type="range"]::-moz-range-thumb {
-  width: 7px; height: 15px; border-radius: 2px;
-  background: var(--ink-soft); border: none;
-  box-shadow: 0 1px 2px rgba(0,0,0,.55);
+  width: 14px; height: 24px; border-radius: 3px;
+  background: linear-gradient(180deg, #4a463e 0%, #35322c 52%, #2a2722 100%);
+  border: 1px solid #171512;
+  box-shadow: 0 1px 3px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,250,235,.13);
 }
-input[type="range"]:hover::-webkit-slider-thumb { background: var(--ink); }
-input[type="range"]:hover::-moz-range-thumb { background: var(--ink); }
+input[type="range"]:hover::-webkit-slider-thumb { border-color: var(--ink-soft); }
+input[type="range"]:hover::-moz-range-thumb { border-color: var(--ink-soft); }
 input[type="range"]:focus-visible { outline: none; }
 input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--live); }
 input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--live); }
 /* holding shift switches to fine-tune — the thumb narrows to say so */
-input[type="range"].fine::-webkit-slider-thumb { width: 4px; background: var(--live-soft); }
-input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-soft); }
+/* fine mode narrows the cap to a blade — the one place --live earns a look
+   here, because it is a MODE you are in, not a value */
+input[type="range"].fine::-webkit-slider-thumb {
+  width: 5px; border-color: var(--live); background: var(--live-soft);
+}
+input[type="range"].fine::-moz-range-thumb {
+  width: 5px; border-color: var(--live); background: var(--live-soft);
+}
 
 .seg {
   display: inline-flex; border: 1px solid var(--bench-edge); border-radius: var(--r);
@@ -750,7 +803,7 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
   border-radius: 0; padding: 0 0 2px 10px;
 }
 .form-group > summary {
-  --engraved-track: 1.4px;
+  --engraved-case: none; --engraved-track: 0; --engraved-size: 11.5px;
   cursor: pointer; user-select: none;
   color: var(--ink-soft); padding: 2px 0;
 }
@@ -759,7 +812,7 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
 /* standalone disclosures (the server log) get the same engraved voice as a
    form group, so one section doesn't read as loose body text */
 details:not(.form-group) > summary {
-  --engraved-track: 1.4px;
+  --engraved-case: none; --engraved-track: 0; --engraved-size: 11.5px;
   cursor: pointer; user-select: none; color: var(--ink-soft);
 }
 details:not(.form-group) > summary:hover { color: var(--ink); }
