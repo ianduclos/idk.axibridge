@@ -441,39 +441,6 @@ $("btn-animate").onclick = () => {
   }
 };
 
-// ---- A/B capture series: freeze the whole current output as A, change
-// anything (params, effects, transforms), freeze B, then ⇄ generates a
-// staged batch interpolating the two snapshots over N steps. Re-pressing a
-// letter replaces that capture (the superseded staging group is deleted).
-const ab = { a: null, b: null };
-function abRefresh() {
-  $("cap-a").classList.toggle("on", !!ab.a);
-  $("cap-b").classList.toggle("on", !!ab.b);
-  $("ab-series").disabled = !(ab.a && ab.b);
-}
-async function abCapture(which) {
-  try {
-    const r = await api.post("/api/staging/capture",
-      { kind: "plot", target: "all", name: which.toUpperCase() });
-    const old = ab[which];
-    ab[which] = r.group.id;
-    if (old) await api.del(`/api/staging/groups/${old}`).catch(() => {});
-    await actions.refreshProject();
-    log(`captured ${which.toUpperCase()} — change something, capture the other, then ⇄`);
-  } catch (e) { oops(e); }
-  abRefresh();
-}
-$("cap-a").onclick = () => abCapture("a");
-$("cap-b").onclick = () => abCapture("b");
-$("ab-series").onclick = async () => {
-  const steps = Math.max(2, Math.min(60, Math.round(Number($("ab-steps").value) || 5)));
-  try {
-    const r = await api.post("/api/staging/interpolate", { a: ab.a, b: ab.b, steps });
-    await actions.refreshProject();
-    log(`⇄ series "${r.group.name}" (${steps} sheets) in the staging tray — Plot tab`);
-  } catch (e) { oops(e); }
-};
-
 // ---- tabs -------------------------------------------------------------------------
 
 for (const btn of document.querySelectorAll("#tabs button")) {

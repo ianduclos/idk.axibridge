@@ -519,6 +519,12 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
   display: inline-flex; border: 1px solid var(--bench-edge); border-radius: var(--r);
   overflow: hidden;
 }
+/* same trap as `.row[hidden]` above: a class rule that sets display outranks
+   the UA's `[hidden] { display: none }`, so the contextual brush and pen bars
+   sat in the toolbar with the Select tool active, offering an Erase width and
+   a Subtract toggle for a tool that has neither. Invisible while the toolbar
+   wrapped to three rows; obvious once it was one. */
+.seg[hidden] { display: none; }
 .seg button {
   --engraved-track: 1.2px;
   border: none; border-radius: 0; background: transparent; box-shadow: none;

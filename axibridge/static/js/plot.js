@@ -134,6 +134,21 @@ export function initPlotTab() {
         <a id="stage-export-link" href="/api/staging/export.zip" download><button type="button">Export tray</button></a>
       </div>
       <div class="hint">grid layouts are captured from the Animation panel above (“Capture to tray”)</div>
+
+      <h3>Quick A ⇄ B <span class="hint">(captures the current output — no need to name a tray group)</span></h3>
+      <div class="row" id="ab-capture"
+           title="Capture the current output as A, change anything, capture B, then ⇄ generates a staged series interpolating A → B">
+        <div class="seg">
+          <button id="cap-a">A</button>
+          <button id="cap-b">B</button>
+        </div>
+        <label>steps</label>
+        <input type="number" id="ab-steps" value="5" min="2" max="60" step="1"
+               title="interpolation steps" style="width:4.5em">
+        <button id="ab-series" disabled>⇄ series</button>
+      </div>
+
+      <h3>From the tray</h3>
       <div class="row">
         <label>A</label><select id="stage-a" style="flex:1"></select>
         <label>B</label><select id="stage-b" style="flex:1"></select>
@@ -452,6 +467,7 @@ export function initPlotTab() {
   $("stage-capture-plot").onclick = () => captureStaged("plot");
   $("stage-capture-frame").onclick = () => captureStaged("frame");
   $("stage-interp").onclick = () => interpolateStaged();
+  bindAbCapture();   // rebinds after every innerHTML rebuild; `ab` outlives it
   refreshAnimPanel();
   renderStaging();
 
@@ -560,6 +576,54 @@ export function initPlotTab() {
 
 let motionValues = {};
 const currentMotionValues = () => motionValues;
+
+// ---- A/B capture series: freeze the whole current output as A, change
+// anything (params, effects, transforms), freeze B, then ⇄ generates a staged
+// batch interpolating the two snapshots over N steps. Re-pressing a letter
+// replaces that capture (the superseded staging group is deleted).
+//
+// This lived in main.js while the controls sat in the canvas toolbar. It moved
+// here with them rather than staying behind as a remote handler: the toolbar
+// is for tools, and everything this does is staging. `ab` is module-level for
+// the reason the animation stepper below is — `initPlotTab` rebuilds the tab's
+// innerHTML on every project load, so anything held in that closure would be
+// lost while the captures it names still exist on the server.
+const ab = { a: null, b: null };
+
+function abRefresh() {
+  if (!$("cap-a")) return;              // plot tab not built yet
+  $("cap-a").classList.toggle("on", !!ab.a);
+  $("cap-b").classList.toggle("on", !!ab.b);
+  $("ab-series").disabled = !(ab.a && ab.b);
+}
+
+async function abCapture(which) {
+  try {
+    const r = await api.post("/api/staging/capture",
+      { kind: "plot", target: "all", name: which.toUpperCase() });
+    const old = ab[which];
+    ab[which] = r.group.id;
+    if (old) await api.del(`/api/staging/groups/${old}`).catch(() => {});
+    await actions.refreshProject();
+    actions.log(`captured ${which.toUpperCase()} — change something, capture the other, then ⇄`);
+  } catch (e) { actions.oops(e); }
+  abRefresh();
+}
+
+function bindAbCapture() {
+  if (!$("cap-a")) return;
+  $("cap-a").onclick = () => abCapture("a");
+  $("cap-b").onclick = () => abCapture("b");
+  $("ab-series").onclick = async () => {
+    const steps = Math.max(2, Math.min(60, Math.round(Number($("ab-steps").value) || 5)));
+    try {
+      const r = await api.post("/api/staging/interpolate", { a: ab.a, b: ab.b, steps });
+      await actions.refreshProject();
+      actions.log(`⇄ series "${r.group.name}" (${steps} sheets) in the staging tray`);
+    } catch (e) { actions.oops(e); }
+  };
+  abRefresh();                          // restore the lit letters after a rebuild
+}
 
 // ---- Animation: frame stepper state ------------------------------------------
 // Module-level (survives initPlotTab's innerHTML rebuilds, e.g. on project

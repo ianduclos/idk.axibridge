@@ -535,6 +535,80 @@ def test_view_menu_render_mode_is_a_radio_choice(ui):
     assert not ui.errors
 
 
+def test_ab_capture_series_still_works_from_the_plot_tab(ui):
+    """The A/B/⇄ cluster left the canvas toolbar for Plot › Staging, where the
+    rest of staging lives. It carries a live step count, so by the menu rule
+    it belongs in a panel and not in a menu.
+
+    The move is the risk: `#tab-plot` is rebuilt by innerHTML on every project
+    refresh, and A/B is browser-side state naming two staging groups on the
+    server. If the rebuild lost the binding or the lit letters, the flow would
+    look fine right up to the point where ⇄ stayed dead."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 30})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    assert ui.query_selector("#canvas-toolbar #ab-capture") is None, "left the toolbar"
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.wait_for_selector("#tab-plot #ab-capture", timeout=10_000)
+    assert ui.is_disabled("#ab-series"), "dead until both captures exist"
+
+    ui.click("#cap-a")
+    ui.wait_for_function(
+        "() => document.querySelector('#cap-a')?.classList.contains('on')", timeout=20_000)
+    assert ui.is_disabled("#ab-series"), "still dead with only A"
+
+    add_layer(ui, "rectangle", {})          # change something between captures
+    ui.click("#cap-b")
+    ui.wait_for_function(
+        "() => !document.querySelector('#ab-series')?.disabled", timeout=20_000)
+    assert "on" in (ui.get_attribute("#cap-a", "class") or ""), \
+        "A survived the tab rebuild that capturing B triggers"
+
+    before = len(_get(f"{ui.base}/api/state")["project"]["staging"])
+    ui.fill("#ab-steps", "4")
+    ui.click("#ab-series")
+    deadline = time.time() + 30
+    sheets = []
+    while time.time() < deadline:
+        groups = _get(f"{ui.base}/api/state")["project"]["staging"]
+        sheets = [len(g.get("sheets", [])) for g in groups]
+        if len(groups) > before and 4 in sheets:
+            break
+        time.sleep(0.3)
+    assert 4 in sheets, f"⇄ never produced a 4-sheet series; sheet counts {sheets}"
+    assert not ui.errors
+
+
+def test_the_toolbar_shows_only_the_active_tool_s_controls(ui):
+    """The brush and pen bars are contextual: they belong to a tool, and
+    offering an Erase width while Select is active describes a tool you are
+    not holding.
+
+    They carry `hidden`, and carried it all along — but `.seg` sets `display`,
+    and a class rule outranks the UA's `[hidden] { display: none }`, so they
+    showed anyway. Asserting on VISIBILITY rather than on the attribute is the
+    whole point: the attribute was always right."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 25})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    assert not ui.is_visible("#brush-bar"), "no brush controls without the brush tool"
+    assert not ui.is_visible("#pen-bar")
+    assert not ui.is_visible("#pen-commit")
+
+    ui.click('#tool-toggle button[data-tool="brush"]')
+    ui.wait_for_selector("#brush-bar:not([hidden])", timeout=10_000)
+    assert ui.is_visible("#brush-bar"), "the brush tool brings its own controls"
+    assert not ui.is_visible("#pen-bar"), "and only its own"
+
+    ui.click('#tool-toggle button[data-tool="select"]')
+    ui.wait_for_function(
+        "() => !document.querySelector('#brush-bar')?.offsetParent", timeout=10_000)
+    assert not ui.is_visible("#brush-bar"), "and takes them away again"
+    assert not ui.errors
+
+
 def test_no_console_errors_on_any_tab(ui):
     """A JS error on a tab you rarely open is a bug you find mid-plot."""
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})
