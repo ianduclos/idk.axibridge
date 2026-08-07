@@ -714,7 +714,15 @@ export function rerenderForView() {
 
 // ---- layer list ------------------------------------------------------------
 
+// While a name is being edited the list must not be rebuilt under the cursor.
+// Selecting a row kicks off an async refresh that ends in renderLayerList(),
+// and that used to replace the open field a beat after it appeared — the edit
+// looked like it simply never opened. `prompt()` never hit this because it is
+// modal and synchronous.
+let renaming = null;
+
 export function renderLayerList() {
+  if (renaming) return;
   const wrap = $("layer-list");
   if (!wrap) return;
   wrap.innerHTML = "";
@@ -779,13 +787,47 @@ export function renderLayerList() {
 
     const name = document.createElement("span");
     name.className = "lname";
+
     name.textContent = layer.name;
     name.title = `${layer.name} — double-click to rename`;
-    name.ondblclick = (e) => {
-      e.stopPropagation();
-      const v = prompt("Layer name", layer.name);
-      if (v) actions.patchLayer(layer.id, { name: v });
+    // Inline, not `prompt()`: a native prompt is modal, is blockable by the
+    // browser (a rename that silently does nothing), loses the row you were
+    // looking at, and cannot be escaped back to the old name reliably.
+    //
+    // Driven by the click COUNTER, not by `dblclick`. The first click selects
+    // the layer, which kicks off an async refresh that rebuilds this row — so
+    // the second click lands on a different element and the browser never
+    // pairs the two into a dblclick. It fired reliably for `prompt()` only
+    // because that path predates the rebuild. `e.detail` counts the click
+    // sequence rather than the element, so it survives the swap.
+    name.onclick = (e) => {
+      if (e.detail !== 2) return;       // let a single click select as usual
+      const input = document.createElement("input");
+      input.className = "lname-edit";
+      input.value = layer.name;
+      let done = false;
+      renaming = layer.id;
+      const finish = (commit) => {
+        if (done) return;               // blur fires after Enter/Escape too
+        done = true;
+        renaming = null;
+        const v = input.value.trim();
+        input.replaceWith(name);
+        if (commit && v && v !== layer.name) actions.patchLayer(layer.id, { name: v });
+        else renderLayerList();         // pick up whatever changed while editing
+      };
+      input.onkeydown = (ev) => {
+        ev.stopPropagation();           // tool letters must not fire while typing
+        if (ev.key === "Enter") finish(true);
+        else if (ev.key === "Escape") finish(false);
+      };
+      input.onblur = () => finish(true);
+      input.onclick = (ev) => ev.stopPropagation();   // clicking it isn't selecting
+      name.replaceWith(input);
+      input.focus();
+      input.select();
     };
+    name.ondblclick = (e) => e.stopPropagation();   // no text-selection flash
 
     const est = document.createElement("span");
     est.className = "est";
@@ -800,15 +842,7 @@ export function renderLayerList() {
       occ.title = `occluder into group(s) ${layer.occlude_groups.join(", ")}: masks only their receivers`;
     }
 
-    const up = btn("↑", "raise (towards top/occluding)", () => move(layer.id, +1));
-    const down = btn("↓", "lower", () => move(layer.id, -1));
-    const dup = btn("⧉", "duplicate layer", async () => {
-      try {
-        await api.post(`/api/layers/${layer.id}/duplicate`);
-        await actions.refreshProject();
-        await actions.refreshResolved();
-      } catch (e) { actions.oops(e); }
-    });
+    const dup = btn("⧉", "duplicate layer (or ⌥-drag)", () => duplicate(layer.id));
     // two-click delete — native confirm() dialogs are blockable/suppressible
     // by the browser, which reads as "the button does nothing"
     const deleteTitle = isAnimateKeyframe
@@ -840,9 +874,11 @@ export function renderLayerList() {
       } catch (e) { actions.oops(e); }
     });
 
-    row.append(fold, eye, swatch, name, est, occ, up, down, dup, del);
+    row.append(fold, eye, swatch, name, est, occ, dup, del);
+    makeDraggable(row, layer);
     row.onclick = (e) => {
       if (e.target.tagName === "BUTTON") return;
+      if (renaming) return;             // the second click of a double-click
       const displayed = [...S.state.project.layers].reverse().map((l) => l.id);
       if (e.shiftKey && selAnchor && displayed.includes(selAnchor)) {
         // range select, file-manager style: anchor … clicked (inclusive)
@@ -927,14 +963,81 @@ function btn(txt, title, fn) {
   return b;
 }
 
-async function move(id, dir) {
-  const ids = S.state.project.layers.map((l) => l.id);
-  const i = ids.indexOf(id);
-  const j = i + dir;
-  if (j < 0 || j >= ids.length) return;
-  [ids[i], ids[j]] = [ids[j], ids[i]];
+// Drag to reorder, with a drop line. Replaces the per-row ↑ ↓: moving a layer
+// across fifteen cost fourteen clicks and fourteen resolves, because each one
+// was a separate reorder round-trip. A drag is one.
+//
+// The list is drawn TOP-FIRST (the topmost layer draws last and occludes), so
+// screen order is the reverse of `project.layers`. All the arithmetic here is
+// in screen order and reversed exactly once, at the end, which is the only
+// place that can get it wrong.
+let dragging = null;
+
+function makeDraggable(row, layer) {
+  row.draggable = true;
+  row.dataset.layerId = layer.id;
+
+  row.addEventListener("dragstart", (e) => {
+    dragging = { id: layer.id, copy: e.altKey };
+    e.dataTransfer.effectAllowed = "copyMove";
+    e.dataTransfer.setData("text/plain", layer.id);  // Firefox needs a payload
+    row.classList.add("dragging");
+  });
+  row.addEventListener("dragend", () => {
+    dragging = null;
+    row.classList.remove("dragging");
+    for (const r of document.querySelectorAll(".layer-row"))
+      r.classList.remove("drop-above", "drop-below");
+  });
+  row.addEventListener("dragover", (e) => {
+    if (!dragging || dragging.id === layer.id) return;
+    e.preventDefault();
+    // ⌥ is read continuously, not just at dragstart: you decide to copy
+    // mid-drag as often as before it
+    dragging.copy = e.altKey;
+    e.dataTransfer.dropEffect = dragging.copy ? "copy" : "move";
+    const box = row.getBoundingClientRect();
+    const above = e.clientY < box.top + box.height / 2;
+    row.classList.toggle("drop-above", above);
+    row.classList.toggle("drop-below", !above);
+  });
+  row.addEventListener("dragleave", () => {
+    row.classList.remove("drop-above", "drop-below");
+  });
+  row.addEventListener("drop", async (e) => {
+    if (!dragging || dragging.id === layer.id) return;
+    e.preventDefault();
+    const box = row.getBoundingClientRect();
+    const above = e.clientY < box.top + box.height / 2;
+    const { id, copy } = dragging;
+    dragging = null;
+    await dropLayer(id, layer.id, above, copy);
+  });
+}
+
+async function dropLayer(movedId, targetId, above, copy) {
   try {
-    await api.post("/api/layers/order", { ids });
+    if (copy) {
+      const r = await api.post(`/api/layers/${movedId}/duplicate`);
+      movedId = r.id || r.layer?.id || movedId;
+      await actions.refreshProject();
+    }
+    // screen order: top of the list first
+    const screen = [...S.state.project.layers].reverse().map((l) => l.id);
+    const from = screen.indexOf(movedId);
+    if (from >= 0) screen.splice(from, 1);
+    let at = screen.indexOf(targetId);
+    if (at < 0) return;
+    screen.splice(above ? at : at + 1, 0, movedId);
+    await api.post("/api/layers/order", { ids: screen.reverse() });  // back to draw order
+    await actions.refreshProject();
+    await actions.refreshResolved();
+  } catch (e) { actions.oops(e); }
+}
+
+async function duplicate(id) {
+  try {
+    await api.post(`/api/layers/${id}/duplicate`);
     await actions.refreshProject();
     await actions.refreshResolved();
   } catch (e) { actions.oops(e); }

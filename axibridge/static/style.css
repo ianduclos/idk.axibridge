@@ -756,6 +756,23 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
   background: rgba(0, 0, 0, .22); border-color: transparent;
 }
 .layer-row button:hover { background: var(--bench-rise); border-color: var(--bench-edge); }
+.layer-row { position: relative; }
+.layer-row.dragging { opacity: .4; }
+/* the drop line is a hairline ON the row you would land beside, not a gap
+   opening up — the list must not reflow while you are aiming at it */
+.layer-row.drop-above::before,
+.layer-row.drop-below::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 2px;
+  background: var(--live); pointer-events: none;
+}
+.layer-row.drop-above::before { top: -1px; }
+.layer-row.drop-below::after { bottom: -1px; }
+/* inline rename: sits exactly where the name was, so the row does not jump */
+.layer-row .lname-edit {
+  flex: 1; min-width: 0; font: inherit; padding: 0 3px;
+  background: var(--bench-deep); color: var(--ink);
+  border: 1px solid var(--live); border-radius: var(--r-sm);
+}
 .layer-row .fold { width: 18px; flex: none; text-align: center; }
 /* the fold marker is a disclosure triangle, not a control with a face */
 .layer-row .fold { background: none; }

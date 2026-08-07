@@ -794,6 +794,81 @@ def test_machine_state_is_visible_without_opening_a_tab(ui):
     assert not ui.errors
 
 
+def _layer_names(page):
+    """Draw order, bottom-first — the server's own order, not the screen's."""
+    return [l["name"] for l in _get(f"{page.base}/api/state")["project"]["layers"]]
+
+
+def _rename(page, index, to):
+    page.locator("#layer-list .layer-row .lname").nth(index).dblclick()
+    page.wait_for_selector(".lname-edit", timeout=10_000)
+    page.fill(".lname-edit", to)
+    page.keyboard.press("Enter")
+    page.wait_for_function(
+        f"() => !document.querySelector('.lname-edit')", timeout=10_000)
+
+
+def test_renaming_a_layer_happens_in_place(ui):
+    """Was a native `prompt()`: modal, blockable by the browser (a rename that
+    silently does nothing), and it loses the row you were looking at.
+
+    The interesting part is that it is driven by the click COUNTER, not by
+    `dblclick`. The first click selects the layer, which starts an async
+    refresh that rebuilds the row — so the second click lands on a different
+    element and the browser never pairs them into a dblclick. Escape must
+    leave the old name alone."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    reload_app(ui)
+    ui.wait_for_selector("#layer-list .layer-row", timeout=15_000)
+
+    _rename(ui, 0, "outline")
+    ui.wait_for_function(
+        "() => [...document.querySelectorAll('#layer-list .lname')]"
+        ".some(e => e.textContent === 'outline')", timeout=15_000)
+    assert "outline" in _layer_names(ui)
+
+    ui.locator("#layer-list .layer-row .lname").nth(0).dblclick()
+    ui.wait_for_selector(".lname-edit", timeout=10_000)
+    ui.fill(".lname-edit", "discard me")
+    ui.keyboard.press("Escape")
+    ui.wait_for_function("() => !document.querySelector('.lname-edit')", timeout=10_000)
+    assert "discard me" not in _layer_names(ui), "Escape must not commit"
+    assert not ui.errors
+
+
+def test_dragging_a_layer_reorders_it(ui):
+    """Replaces the per-row ↑ ↓: moving a layer across fifteen cost fourteen
+    clicks and fourteen resolves, because each was its own reorder round-trip.
+
+    The list is drawn TOP-FIRST (the topmost layer draws last and occludes),
+    so screen order is the reverse of the server's. Dragging the top row below
+    the bottom one must land it FIRST in draw order — getting that reversal
+    wrong is the whole risk, and asserting "the order changed" would not catch
+    it."""
+    for _ in range(3):
+        add_layer(ui, "polygon", {"sides": 4, "radius": 20})
+    reload_app(ui)
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#layer-list .layer-row').length === 3",
+        timeout=15_000)
+
+    for i, name in enumerate(("A", "B", "C")):     # A is topmost on screen
+        _rename(ui, i, name)
+    assert _layer_names(ui) == ["C", "B", "A"], "draw order is the screen's reverse"
+
+    rows = ui.locator("#layer-list .layer-row")
+    height = rows.nth(2).bounding_box()["height"]
+    # Playwright's raw mouse events do not drive HTML5 drag-and-drop; drag_to
+    # does. Landing low in the last row means "drop below it".
+    rows.nth(0).drag_to(rows.nth(2), target_position={"x": 40, "y": height - 3})
+
+    ui.wait_for_function(
+        "() => [...document.querySelectorAll('#layer-list .lname')]"
+        ".map(e => e.textContent).join() === 'B,C,A'", timeout=15_000)
+    assert _layer_names(ui) == ["A", "C", "B"], "A moved to the bottom of the screen list"
+    assert not ui.errors
+
+
 def test_no_console_errors_on_any_tab(ui):
     """A JS error on a tab you rarely open is a bug you find mid-plot."""
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})
