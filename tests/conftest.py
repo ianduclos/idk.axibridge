@@ -28,6 +28,7 @@ def fresh_session(tmp_path):
     session._shaped_cache.clear()
     session._tween_cache.clear()
     session._clip_cache.clear()
+    session._occlusion_cache.clear()
     session.clear_history()
     settings_store.update({
         "projects_root": str(tmp_path / "projects"),

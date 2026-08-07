@@ -123,6 +123,22 @@ Why shapely and not vpype-occult: occult has no signed margins, no
 per-layer occluder/receives flags, and no stroke-band masks; shapely (already
 a vpype dependency) provides polygon/buffer/difference directly.
 
+**Caching (2026-08-07).** Occlusion is the expensive stage — with an occluder
+over a dense layer, ~87% of a resolve sits inside shapely's `difference`, and
+it used to run in full on every preview refresh. `compose.OcclusionCache`
+(session-owned, passed into `resolve_project`) memoises the built masks, the
+channel unions and the per-layer clip. It is **content-keyed, not
+invalidated**: geometry is identified by object identity — legal because
+modules are pure and geometry lists are replaced wholesale, never mutated —
+alongside the occluder's pen diameter, margin and groups, and the receiver's
+flags. `id()` reuse cannot bite because every entry keeps a strong reference
+to each list its key names, so a cached id always belongs to a live object.
+Passing no cache produces byte-identical output; `tests/test_occlusion_cache.py`
+pins that equivalence across every mutation that can move a mask. The known
+gap: a visible **region** layer replaces the shaped geometry of everything
+below it on every resolve, so those layers miss the cache every time — slow,
+never wrong.
+
 ### Pens & diameter-driven registration
 
 The pen library is **global** (`~/.axibridge/pens.json` — the physical

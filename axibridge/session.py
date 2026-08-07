@@ -148,6 +148,10 @@ class Session:
         #: project-relative staging/<id>.svg -> frozen staged document.
         self.staging_documents: dict[str, PathDocument] = {}
         self._shaped_cache: dict[str, tuple[str, list[Path]]] = {}
+        #: occlusion-stage memo (the expensive one). Content-keyed on geometry
+        #: identity + the occluder properties, so it needs no invalidation —
+        #: see ``compose.OcclusionCache`` for why the key is complete.
+        self._occlusion_cache = compose.OcclusionCache()
         #: undo snapshots, newest last. Paths/lists are never mutated in place
         #: (module purity contract), so sharing references is safe — only the
         #: project model needs a deep copy.
@@ -225,6 +229,7 @@ class Session:
                 return False
             self.project, self.source_geometry, self.svg_files, self.staging_documents = self._history.pop()
             self._shaped_cache.clear()
+            self._occlusion_cache.clear()
             self._tween_cache.clear()
             self._clip_cache.clear()
             self._frame_lru.clear()
@@ -1525,6 +1530,7 @@ class Session:
         old_project, old_geo, old_svg = self.project, self.source_geometry, self.svg_files
         old_shaped, old_tween, old_clip = self._shaped_cache, self._tween_cache, self._clip_cache
         old_frames, old_bbox = self._frame_lru, self._frame_bbox
+        old_occlusion = self._occlusion_cache
         try:
             self.project = project
             self.source_geometry = geo
@@ -1532,6 +1538,7 @@ class Session:
             self._shaped_cache = {}
             self._tween_cache = {}
             self._clip_cache = {}
+            self._occlusion_cache = compose.OcclusionCache()
             self._frame_lru = OrderedDict()
             self._frame_bbox = {}
             return self._documents_for_format(fmt), self._pass_ids_for_format(fmt)
@@ -1542,6 +1549,7 @@ class Session:
             self._shaped_cache = old_shaped
             self._tween_cache = old_tween
             self._clip_cache = old_clip
+            self._occlusion_cache = old_occlusion
             self._frame_lru = old_frames
             self._frame_bbox = old_bbox
 
@@ -1946,7 +1954,8 @@ class Session:
             geo = {**self.source_geometry, **overrides}
             self._materialize_tweens(master_t, geo)
             return compose.resolve_project(
-                self.project, geo, self.pens(), self._shaped_cache
+                self.project, geo, self.pens(), self._shaped_cache,
+                self._occlusion_cache,
             )
 
     def _clip_overrides(self, master_t: float | None) -> dict[str, list[Path]]:

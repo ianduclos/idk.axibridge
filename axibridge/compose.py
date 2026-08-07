@@ -36,7 +36,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from typing import Any, Literal
+from typing import Any, Literal, NamedTuple
 
 from pydantic import BaseModel, Field, model_validator
 import shapely
@@ -520,11 +520,125 @@ def line_diameter_for(layer: CanvasLayer, pens: dict[str, Pen]) -> float:
     return pen.line_diameter_mm if pen else DEFAULT_LINE_DIAMETER_MM
 
 
+# ---------------------------------------------------------------------------
+# Occlusion memo
+# ---------------------------------------------------------------------------
+#
+# Occlusion is by far the most expensive stage of a resolve: with an occluder
+# over a dense layer, ~87% of the time is inside shapely's ``difference``.
+# It also ran unconditionally on every resolve, so idle re-renders (a preview
+# refresh, an estimate, a tab switch) paid full price for geometry that had
+# not changed.
+#
+# THE SAFETY ARGUMENT — a stale occlusion cache would make the tool draw
+# something that is not true, so the key has to be provably complete:
+#
+# * The clip result for a layer is a pure function of exactly four things:
+#   its shaped geometry, its ``receives_occlusion`` flag, which channels it
+#   listens to, and the masks accumulated from the occluders ABOVE it.
+#   ``layer.draw`` is deliberately NOT part of it — it selects between the
+#   clip result and ``[]`` outside the memo.
+# * A mask is a pure function of the occluder's shaped geometry, its pen line
+#   diameter and its occlusion margin; which channel it lands in is its
+#   ``occlude_groups``. All of those ride in the signature.
+# * Geometry is identified by **object identity**, the same discipline the
+#   shaped cache uses: modules are pure and geometry lists are replaced
+#   wholesale, never mutated, so a changed list is always a NEW list.
+# * ``id()`` reuse — the one way identity keys go wrong — cannot happen here
+#   because every entry stores a strong reference to each list its key names.
+#   A cached id therefore belongs to a live object, and no other live object
+#   can share it, so an id match IS an object match.
+# * Layer order rides in the signature implicitly: the accumulated tuple
+#   records which occluders were seen above this layer, in order.
+#
+# Regions are the documented gap: step 1.5 replaces the shaped list of every
+# layer under a visible region with a fresh list each resolve, so those layers
+# (and anything they occlude) legitimately miss every time. That is slow, not
+# wrong.
+
+
+class _Channel(NamedTuple):
+    """One accumulating mask channel (the global one, or a group letter).
+
+    ``sig`` is the hashable identity of everything folded in so far; ``refs``
+    holds the geometry lists that ``sig`` names, keeping them alive so their
+    ids cannot be recycled; ``mask`` is the union itself."""
+
+    sig: tuple
+    refs: tuple
+    mask: BaseGeometry
+
+
+class _ClipEntry(NamedTuple):
+    key: tuple
+    subject: list[Path]     # keeps the clipped layer's shaped list alive
+    refs: tuple             # keeps every occluder list named in ``key`` alive
+    result: list[Path]
+
+
+class OcclusionCache:
+    """Session-owned memo for the occlusion stage. Content-keyed, so it needs
+    no explicit invalidation — see the safety argument above. ``resolve_project``
+    prunes whatever it did not touch, which bounds the memory."""
+
+    def __init__(self) -> None:
+        self._masks: dict[tuple, tuple[list[Path], BaseGeometry | None]] = {}
+        self._unions: dict[tuple, tuple[tuple, BaseGeometry]] = {}
+        self._clips: dict[str, _ClipEntry] = {}
+        self._touched_masks: set[tuple] = set()
+        self._touched_unions: set[tuple] = set()
+
+    def clear(self) -> None:
+        self._masks.clear()
+        self._unions.clear()
+        self._clips.clear()
+
+    # -- one resolve ------------------------------------------------------
+    def begin(self) -> None:
+        self._touched_masks.clear()
+        self._touched_unions.clear()
+
+    def end(self, live_layer_ids: set[str]) -> None:
+        self._masks = {k: v for k, v in self._masks.items() if k in self._touched_masks}
+        self._unions = {k: v for k, v in self._unions.items() if k in self._touched_unions}
+        self._clips = {k: v for k, v in self._clips.items() if k in live_layer_ids}
+
+    def mask(self, layer: CanvasLayer, shaped: list[Path],
+             diameter: float, margin: float) -> BaseGeometry | None:
+        key = (layer.id, id(shaped), diameter, margin)
+        self._touched_masks.add(key)
+        hit = self._masks.get(key)
+        if hit is not None and hit[0] is shaped:
+            return hit[1]
+        built = build_mask(shaped, diameter, margin)
+        self._masks[key] = (shaped, built)
+        return built
+
+    def union(self, sig: tuple, refs: tuple, geoms: list[BaseGeometry]) -> BaseGeometry:
+        self._touched_unions.add(sig)
+        hit = self._unions.get(sig)
+        if hit is not None:
+            return hit[1]
+        merged = unary_union(geoms)
+        self._unions[sig] = (refs, merged)
+        return merged
+
+    def clipped(self, layer_id: str, key: tuple, subject: list[Path],
+                refs: tuple, mask: BaseGeometry) -> list[Path]:
+        hit = self._clips.get(layer_id)
+        if hit is not None and hit.key == key and hit.subject is subject:
+            return hit.result
+        result = clip_paths(subject, mask)
+        self._clips[layer_id] = _ClipEntry(key, subject, refs, result)
+        return result
+
+
 def resolve_project(
     project: Project,
     source_geometry: dict[str, list[Path]],
     pens: dict[str, Pen],
     shaped_cache: dict[str, tuple[str, list[Path]]] | None = None,
+    occlusion_cache: "OcclusionCache | None" = None,
 ) -> dict[str, list[Path]]:
     """Resolve every visible layer. Returns ``{layer_id: resolved paths}``.
 
@@ -534,6 +648,10 @@ def resolve_project(
     ``shaped_cache`` (optional, owned by the session) memoises the
     transform+effects stage per layer, keyed by a content hash, so dragging
     one layer doesn't re-run every other layer's effect stack.
+    ``occlusion_cache`` (optional, likewise session-owned) memoises the far
+    more expensive occlusion stage — see the safety argument above
+    :class:`OcclusionCache`. Both are pure accelerators: passing neither
+    produces byte-identical output, just slower.
     """
     # 1. shape every visible layer (cached). Region layers are skipped: their
     # effect stack is a payload for the layers below, never for themselves.
@@ -587,8 +705,13 @@ def resolve_project(
     # its mask to each of them; a receiver is clipped by global ∪ every group
     # it listens to — additive semantics, all-empty behaves exactly as before.
     resolved: dict[str, list[Path]] = {}
-    global_mask: BaseGeometry | None = None
-    group_masks: dict[str, BaseGeometry] = {}
+    if occlusion_cache is not None:
+        occlusion_cache.begin()
+    #: accumulating channels: the global one plus one per group letter. Each
+    #: carries the mask AND the identity of everything folded into it, which
+    #: is what lets a receiver below decide whether its clip is still valid.
+    global_ch: _Channel | None = None
+    group_ch: dict[str, _Channel] = {}
     for layer in reversed(project.layers):
         if not layer.visible:
             continue
@@ -596,24 +719,49 @@ def resolve_project(
             resolved[layer.id] = []  # a region is never drawn and never occludes
             continue
         s = shaped[layer.id]
-        parts = [global_mask,
-                 *(group_masks[g] for g in layer.receives_groups if g in group_masks)]
-        parts = [p for p in parts if p is not None]
-        applicable = unary_union(parts) if parts else None
-        if layer.receives_occlusion and applicable is not None:
-            clipped = clip_paths(s, applicable)
+        channels = [global_ch, *(group_ch[g] for g in layer.receives_groups if g in group_ch)]
+        channels = [c for c in channels if c is not None]
+        if layer.receives_occlusion and channels:
+            parts = [c.mask for c in channels]
+            sig = tuple(c.sig for c in channels)
+            refs = tuple(r for c in channels for r in c.refs)
+            if occlusion_cache is not None:
+                applicable = occlusion_cache.union(("|",) + sig, refs, parts)
+                clipped = occlusion_cache.clipped(
+                    layer.id, (id(s), sig), s, refs, applicable)
+            else:
+                clipped = clip_paths(s, unary_union(parts))
         else:
             clipped = s
         resolved[layer.id] = clipped if layer.draw else []
         if layer.occluder:
-            m = build_mask(s, line_diameter_for(layer, pens), layer.occlusion_margin_mm)
+            diameter = line_diameter_for(layer, pens)
+            margin = layer.occlusion_margin_mm
+            if occlusion_cache is not None:
+                m = occlusion_cache.mask(layer, s, diameter, margin)
+            else:
+                m = build_mask(s, diameter, margin)
             if m is not None:
-                if not layer.occlude_groups:
-                    global_mask = m if global_mask is None else unary_union([global_mask, m])
-                else:
-                    for g in layer.occlude_groups:
-                        prev = group_masks.get(g)
-                        group_masks[g] = m if prev is None else unary_union([prev, m])
+                item = (layer.id, id(s), diameter, margin)
+                targets = layer.occlude_groups or [None]
+                for g in targets:
+                    prev = global_ch if g is None else group_ch.get(g)
+                    if prev is None:
+                        merged = _Channel((item,), (s,), m)
+                    else:
+                        grown_sig = prev.sig + (item,)
+                        grown_refs = prev.refs + (s,)
+                        grown_mask = (
+                            occlusion_cache.union(grown_sig, grown_refs, [prev.mask, m])
+                            if occlusion_cache is not None
+                            else unary_union([prev.mask, m]))
+                        merged = _Channel(grown_sig, grown_refs, grown_mask)
+                    if g is None:
+                        global_ch = merged
+                    else:
+                        group_ch[g] = merged
+    if occlusion_cache is not None:
+        occlusion_cache.end({lay.id for lay in project.layers})
     return resolved
 
 
