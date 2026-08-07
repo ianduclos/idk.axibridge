@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -39,6 +40,25 @@ sync_playwright = pytest.importorskip(
 
 REPO = Path(__file__).resolve().parent.parent
 BOOT_TIMEOUT_S = 30.0
+
+
+@pytest.fixture(scope="session")
+def frontend_mode() -> str:
+    """Build the frontend before anything starts, so these tests exercise the
+    BUNDLE and not the source.
+
+    This is the point of running them at all after the Vite port: the
+    works-in-dev-broken-in-build class only shows up against real bundled
+    output. Without a node toolchain (the Pi) the server falls back to the
+    source and the tests still run — they just cover less, and
+    ``test_the_acceptance_suite_runs_against_the_built_frontend`` says so."""
+    if shutil.which("npm") is None or not (REPO / "node_modules").is_dir():
+        return "source"
+    r = subprocess.run(["npm", "run", "build"], cwd=REPO,
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        pytest.fail(f"npm run build failed:\n{r.stdout[-2000:]}\n{r.stderr[-2000:]}")
+    return "built"
 
 
 # -- the real server ------------------------------------------------------
@@ -63,7 +83,7 @@ def _post(url: str, payload: dict | None = None):
 
 
 @pytest.fixture(scope="session")
-def server():
+def server(frontend_mode):
     """A real axibridge on a temp port, with its own config dir — never the
     machine's stores, never port 2942 (Ian's app may be running)."""
     port = _free_port()
@@ -188,6 +208,20 @@ def wait_for_ink(page) -> str:
     page.wait_for_function(
         "() => document.querySelectorAll('#canvas path').length > 0", timeout=20_000)
     return canvas_ink(page)
+
+
+# -- what is actually under test ------------------------------------------
+
+def test_the_acceptance_suite_runs_against_the_built_frontend(ui, frontend_mode):
+    """Proof, not assumption: the served index must be the bundled one."""
+    html = urllib.request.urlopen(ui.base, timeout=10).read().decode()
+    if frontend_mode != "built":
+        pytest.skip("no node toolchain here — the server is serving the source")
+    assert "/assets/index-" in html, "expected Vite's hashed entry"
+    assert "/js/main.js" not in html, "unbundled source leaked into the build"
+    # and the one URL that must survive bundling untouched: it is a server
+    # route, not an asset
+    assert "/api/doc/all/svg" in html
 
 
 # -- the flows ------------------------------------------------------------

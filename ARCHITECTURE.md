@@ -328,20 +328,33 @@ writer) because vpype's writer would drop them and fills are mask input.
 
 FastAPI + Pydantic v2 (one type system = contract + validation + UI schema;
 sync handlers in the thread pool so serial I/O never blocks the loop);
-zero-build vanilla-ES-module frontend (no toolchain on the Pi, view-source
-debuggable; the only "framework" is ~80 lines of schema→form rendering and a
-~400-line SVG canvas editor — fabric/konva were rejected as canvas-based,
-heavy, and build-chain-y); shapely for occlusion; svgelements for fill-aware
-SVG reading; vpype for optimisation ops and SVG export.
+vanilla-ES-module frontend built by Vite (the only "framework" is ~80 lines
+of schema→form rendering and a ~400-line SVG canvas editor — fabric/konva
+were rejected as canvas-based, heavy, and build-chain-y); shapely for
+occlusion; svgelements for fill-aware SVG reading; vpype for optimisation
+ops and SVG export.
 
-**Zero-build scope (revised 2026-07-25):** the invariant bars a
-compiler/bundler from the edit-reload loop, not all tooling. Vendoring a
-single self-contained ESM file (an icon sprite, htm+preact) or using
-`// @ts-check` + JSDoc as an editor/lint pass (no compiled output) don't
-touch either original reason (Pi has no Node toolchain; the served file is
-the real source). A real bundler/compiler is a bigger, deliberately undecided
-call — see ROADMAP.md "UI revamp" for what it would unlock and the criterion
-for reopening it.
+**Frontend build (2026-08-07, replacing the zero-build invariant).** Ian's
+call, after the invariant had been revisited twice; the reasoning and what it
+bought are in ROADMAP.md "UI revamp — RESOLVED". The shape of it:
+
+* **The source did not move.** `axibridge/static/` is still where you edit,
+  still plain ES modules, still view-source debuggable. `vite.config.js`
+  points `root` at it and writes the bundle to `axibridge/static_dist/`
+  (gitignored).
+* **One switch, in `app.frontend_dir()`:** the server serves the BUILT output
+  when it exists and the SOURCE when it does not. No env var, no third mode.
+  The fallback is load-bearing, not a nicety — it is what keeps a machine
+  with no Node toolchain (the Pi) serving the UI exactly as before.
+* **The trap that creates:** a stale `static_dist/` shadows your edits to
+  `static/`. `create_app()` logs which frontend is live, so "I changed the JS
+  and nothing happened" is one line away from an answer.
+* **TypeScript is a lint pass, not a compile step**: `allowJs`, `checkJs:
+  false`, `noEmit`, nothing renamed. `npm run typecheck` is the whole
+  surface, and files tighten one at a time as they're touched anyway.
+* `npm run dev` is the fast edit loop (Vite + HMR, `/api` proxied to a real
+  axibridge on 2942). It listens on `localhost:5173` — IPv6, so
+  `127.0.0.1:5173` will refuse the connection.
 
 **Environment pinning:** the launchers hard-code the venv interpreter
 because the classic failure is pyaxidraw installed into a different Python

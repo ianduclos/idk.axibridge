@@ -325,3 +325,38 @@ def test_stop_with_return_home(client):
         _t.sleep(0.05)
     st = client.get("/api/state").json()["machine"]
     assert st["position"] != [0, 0], "normal finish should stay where the plot ended"
+
+
+# -- which frontend the server hands out ----------------------------------
+#
+# One rule (app.frontend_dir): the BUILT output when it exists, the SOURCE
+# when it doesn't. The fallback is load-bearing — it is what keeps a machine
+# with no Node toolchain (the Pi) serving the UI exactly as before there was
+# a build step.
+
+
+def test_frontend_falls_back_to_the_source_without_a_build(monkeypatch, tmp_path):
+    from axibridge import app as app_mod
+
+    monkeypatch.setattr(app_mod, "DIST_DIR", tmp_path / "static_dist")
+    monkeypatch.setattr(app_mod, "STATIC_DIR", tmp_path / "static")
+    assert app_mod.frontend_dir() == tmp_path / "static"
+
+
+def test_frontend_prefers_the_build_when_there_is_one(monkeypatch, tmp_path):
+    from axibridge import app as app_mod
+
+    dist = tmp_path / "static_dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<!doctype html>")
+    monkeypatch.setattr(app_mod, "DIST_DIR", dist)
+    monkeypatch.setattr(app_mod, "STATIC_DIR", tmp_path / "static")
+    assert app_mod.frontend_dir() == dist
+
+
+def test_static_responses_stay_no_cache(client):
+    """Still required after the Vite port: index.html is NOT hashed, so a
+    cached one can point at an asset hash that no longer exists."""
+    r = client.get("/")
+    assert r.status_code == 200
+    assert r.headers["cache-control"] == "no-cache"

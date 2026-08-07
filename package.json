@@ -1,0 +1,16 @@
+{
+  "name": "axibridge-frontend",
+  "private": true,
+  "type": "module",
+  "description": "Build for axibridge's frontend. Source lives in axibridge/static/; the bundle goes to axibridge/static_dist/, which the server prefers when present.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0"
+  }
+}

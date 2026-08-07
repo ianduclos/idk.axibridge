@@ -627,7 +627,40 @@ deliberately:
   nodes become an alternative *editor* over `Project`, not a new engine.
   Anything that forces engine changes is the wrong node design.
 
-## Far / undecided — UI revamp (frontend tooling ceiling)
+## ~~Far / undecided — UI revamp (frontend tooling ceiling)~~ — RESOLVED 2026-08-07
+
+**Ian's call, taken as part of `docs/plans/ui-redesign.md`: Vite +
+TypeScript.** Everything below is kept as the reasoning that led here, not as
+an open question — read it before proposing a *different* toolchain, not
+before touching the frontend.
+
+What was actually adopted, and how it answers each cost the section raises:
+
+- **Source did not move.** `axibridge/static/` is still the source of truth,
+  still plain ES modules, still view-source debuggable. Vite's `root` points
+  at it; the bundle lands in `axibridge/static_dist/`.
+- **The Pi keeps working with no Node at all.** `app.frontend_dir()` serves
+  the build when it exists and the source when it doesn't — one rule, no env
+  var, no third mode. That is the whole answer to "the Node toolchain question
+  for the idkpi clone": a machine without npm serves exactly what it served
+  before, because the source is real runnable code and not an intermediate.
+- **TypeScript is loose and opt-in per file** (`allowJs`, `checkJs: false`,
+  `noEmit`). `npm run typecheck` is the entire surface; nothing was renamed.
+  The "generate types from OpenAPI" tier the brainstorm identified is still
+  available and still a good idea — this doesn't foreclose it.
+- **What it actually bought**, and it was NOT speed: npm access (so the
+  deferred ⌘K launcher and a component tier stop being blocked on vendoring),
+  and cross-file types. The measured build is ~260 ms, which was never the
+  problem.
+- **What it costs**, honestly: a lockfile and version drift on the JS side,
+  and the stale-build trap (a `static_dist/` left over from an old build
+  shadows your edits — the startup log names which frontend is live).
+
+The criterion below was written for "reopen only when a specific feature needs
+it". It was overtaken by a direct decision rather than met; recorded plainly
+so nobody later reads a met criterion that wasn't.
+
+### The reasoning that led here (kept)
 
 **Brainstorm pass: `docs/IDEAS-ui-revamp.md` (2026-07-26)** — what "serious
 UI" concretely means here, ranked by operator value with a tooling tier

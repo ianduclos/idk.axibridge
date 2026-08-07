@@ -194,6 +194,48 @@ def test_menu_items_only_proxy_existing_controls():
     assert clicked >= 6
 
 
+def test_refresh_frontend_build_never_creates_one(tmp_path, monkeypatch):
+    """It keeps an existing build fresh; with no build it must leave the
+    source alone, or a machine with no npm would be worse off than before
+    there was a build step at all."""
+    shell = _shell()
+    monkeypatch.setattr(shell, "REPO", tmp_path)
+    (tmp_path / "axibridge").mkdir()
+    called = []
+    monkeypatch.setattr(shell.subprocess, "run",
+                        lambda *a, **k: called.append(a) or _Ran(0))
+
+    assert "no build" in shell.refresh_frontend_build()
+    assert not called, "must not build when there is no build"
+
+    dist = tmp_path / "axibridge" / "static_dist"
+    dist.mkdir()
+    (dist / "index.html").write_text("<!doctype html>")
+    (tmp_path / "node_modules").mkdir()
+    monkeypatch.setattr(shell.shutil, "which", lambda _: "/usr/bin/npm")
+    assert shell.refresh_frontend_build() == "built (refreshed)"
+    assert called, "an existing build must be refreshed"
+
+
+def test_refresh_frontend_build_survives_a_broken_toolchain(tmp_path, monkeypatch):
+    """A failed build must never stop the window opening."""
+    shell = _shell()
+    monkeypatch.setattr(shell, "REPO", tmp_path)
+    dist = tmp_path / "axibridge" / "static_dist"
+    dist.mkdir(parents=True)
+    (dist / "index.html").write_text("<!doctype html>")
+    (tmp_path / "node_modules").mkdir()
+    monkeypatch.setattr(shell.shutil, "which", lambda _: "/usr/bin/npm")
+    monkeypatch.setattr(shell.subprocess, "run",
+                        lambda *a, **k: _Ran(1, err="vite exploded"))
+    assert "REFRESH FAILED" in shell.refresh_frontend_build()
+
+
+class _Ran:
+    def __init__(self, code, out="", err=""):
+        self.returncode, self.stdout, self.stderr = code, out, err
+
+
 def test_mark_native_shell_publishes_shell_and_titlebar_state():
     """The title-bar tweak is a best-effort AppKit poke, and three separate
     rounds of it failed by doing nothing at all rather than raising. Its

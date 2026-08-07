@@ -21,6 +21,7 @@ Import-safe: no side effects at import time (unit tests import the helpers).
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 import time
@@ -40,6 +41,31 @@ def probe(timeout: float = 1.0) -> dict | None:
             return json.load(r)
     except Exception:
         return None
+
+
+def refresh_frontend_build() -> str:
+    """Keep an EXISTING frontend build fresh; never create one.
+
+    The server prefers `axibridge/static_dist/` over the source when it
+    exists (app.frontend_dir), so a build left over from before a `git pull`
+    would quietly serve yesterday's UI — the exact "I restarted it and
+    nothing changed" failure this repo already has a warning about. ~260 ms
+    to rule out.
+
+    Deliberately does NOT build when there is no build: that stays a decision
+    you make once, with `npm run build`, and a machine with no npm keeps
+    serving the source exactly as before. Never fatal — a broken toolchain
+    must not stop the window opening.
+    """
+    dist = REPO / "axibridge" / "static_dist"
+    if not (dist / "index.html").is_file():
+        return "source (no build present)"
+    if shutil.which("npm") is None or not (REPO / "node_modules").is_dir():
+        return "built (stale? no npm here to refresh it)"
+    r = subprocess.run(["npm", "run", "build"], cwd=str(REPO),
+                       capture_output=True, text=True)
+    return "built (refreshed)" if r.returncode == 0 else \
+        f"built (REFRESH FAILED: {(r.stderr or r.stdout).strip()[-200:]})"
 
 
 def spawn_server() -> subprocess.Popen:
@@ -271,6 +297,9 @@ def main() -> None:
     if probe() is None:
         if not PYTHON.exists():
             raise SystemExit(f"pinned interpreter not found: {PYTHON}")
+        # before the server picks a frontend, not after — it decides once, at
+        # create_app(). Skipped when attaching to somebody else's server.
+        print(f"frontend: {refresh_frontend_build()}", flush=True)
         owned = spawn_server()
         try:
             wait_ready(owned)

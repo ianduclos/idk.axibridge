@@ -1,0 +1,26 @@
+{
+  // Type checking as an EDITOR AND LINT pass, never a compile step: noEmit,
+  // allowJs, and nothing renamed. `npm run typecheck` is the whole surface.
+  //
+  // Deliberately loose (ROADMAP: "loose, ratchet per file"). The point is to
+  // catch cross-file mistakes — a misspelled export, a function called with
+  // the wrong arity — not to turn 6,400 lines of working JS into an
+  // annotation project. Tighten a file by adding `// @ts-check` to it, or by
+  // renaming it .ts when you are already changing it for another reason.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "allowJs": true,
+    "checkJs": false,
+    "strict": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["axibridge/static/js/**/*", "vite.config.js"],
+  "exclude": ["node_modules", "axibridge/static_dist"]
+}

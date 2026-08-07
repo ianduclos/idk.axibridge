@@ -11,12 +11,21 @@ before structural changes.
 ```bash
 .venv/bin/python -m axibridge          # serves on 0.0.0.0:2942
 .venv/bin/python -m pytest -q          # hardware-free suite (simulator)
+npm run build                          # bundle the frontend (~260 ms)
+npm run dev                            # Vite + HMR on localhost:5173, /api proxied to 2942
+npm run typecheck                      # tsc --noEmit; a lint pass, never a compile step
 ```
 
 - The venv at `.venv/` is the pinned interpreter — it has `pyaxidraw`
   installed (NOT on PyPI; see `launch/axibridge.command` for the install URL).
   Never "fix" an import error by switching interpreters.
-- Frontend has no build step: edit `axibridge/static/**`, reload the browser.
+- **Frontend: edit `axibridge/static/**` — that is still the source.** The
+  server serves the BUILT output (`axibridge/static_dist/`, from
+  `npm run build`) when it exists and the SOURCE when it doesn't. One rule,
+  in `app.frontend_dir()`, no env var, no third mode; the source fallback is
+  what keeps the Pi (no Node) working. **The trap: a stale `static_dist/`
+  shadows your edits.** If a JS change does nothing, either re-run the build
+  or delete it — `create_app()` logs which frontend is live at startup.
 - Tests isolate machine-level stores via `AXIBRIDGE_CONFIG_DIR`
   (set in `tests/conftest.py` before any axibridge import — keep it first).
 - **UI acceptance tests are part of the same suite**:
@@ -98,16 +107,16 @@ before structural changes.
   cached grayscale/alpha); they travel in the project folder's `assets/`.
   Effects/generators reference them by name via a string param with
   `json_schema_extra={"format": "asset"}` (renders as dropdown + upload).
-- **Frontend stays build-free, not tool-free.** Zero-build means no
-  compiler/bundler in the edit-reload loop (Pi has no Node toolchain; the
-  served file is the real source, view-source debuggable) — it does NOT
-  mean hand-authoring everything from scratch forever. In-bounds without
-  touching the invariant: vendored inline SVG icons (not emoji — shipped
-  2026-07-25 for the canvas toolbar), `// @ts-check` + JSDoc for real type
-  checking as an editor/lint pass (no compiled output), a single vendored
-  ESM library (e.g. htm+preact, one file, no npm/node_modules) for component
-  reuse. A real bundler/compiler is the bigger call — see ROADMAP.md "UI
-  revamp" for what it would unlock and the criterion for reopening it.
+- **The frontend has a build (Vite + TypeScript, 2026-08-07)** — Ian's call;
+  the zero-build invariant is retired and the reasoning is in ROADMAP.md
+  "UI revamp — RESOLVED". Two things did NOT change and are still load-bearing:
+  the **source stays plain ES modules in `axibridge/static/`** (nothing was
+  renamed, nothing moved), and the server still runs from that source on a
+  machine with no npm. TypeScript is loose and per-file (`allowJs`,
+  `checkJs: false`, `noEmit`) — tighten a file when you're already touching
+  it, don't open an annotation project. npm is now available, which unblocks
+  the deferred ⌘K launcher and a real component tier; that does not make
+  reaching for a dependency free.
 - `estimate.py` is an estimator, never a motion planner.
 - In the svgelements-based reader, mm conversion uses svgelements' own
   constant (`_SE_PX_PER_MM` ≠ 96/25.4) — required for exact save/load
