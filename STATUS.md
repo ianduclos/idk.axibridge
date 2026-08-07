@@ -3,10 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-08-07
 machine: mac+pi
-summary: Slice 4 of the UI redesign is complete (a-g) — the toolbar is one fixed row of tools, the View and Machine menus hold what left it, machine state and plot transport live in the always-visible status line, the Plot tab is down from ten panels to five, plotting can be addressed by pen, and the layer list drags to reorder and renames in place; the app shell's macOS menu is now derived from the page's own markup instead of hand-written beside it; 727 tests green.
+summary: The layer list is now a persistent collapsible dock at the foot of the sidebar (Ian's Photoshop ask), and Slice 4 of the UI redesign is complete (a-g) — the toolbar is one fixed row of tools, the View and Machine menus hold what left it, machine state and plot transport live in the always-visible status line, the Plot tab is down from ten panels to five, plotting can be addressed by pen, and the layer list drags to reorder and renames in place; the app shell's macOS menu is now derived from the page's own markup instead of hand-written beside it; 727 tests green.
 next:
-  - "Build docs/plans/layers-panel.md — hoist the layer list into a persistent, collapsible, resizable box at the foot of the sidebar (Ian's Photoshop-style ask; the seam already exists and drag-reorder already ships)"
-  - "Ian eye-checks the 4c-4g round in the app: Machine menu greying, the status-line machine strip during a real plot, drag-to-reorder and inline rename"
+  - "Ian eye-checks — CHECKME.md at the repo root is the list, grouped by how likely each thing is to be wrong; the shell-only paths need a full relaunch and are verified only against fakes"
   - "Re-ask whether jog earns its place, now that it is a menu item (Ian's ruling: use it that way first, then decide)"
   - "ROADMAP: interrupted plot as a live generator — the design is settled (snapshot-input) and the cost measured (~64 B/point), so it is ready to build rather than ready to decide"
   - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16 to 19 wave, and the URGENT round (see HANDOFF)"
