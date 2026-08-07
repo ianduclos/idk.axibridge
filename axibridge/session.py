@@ -39,6 +39,26 @@ from .registry import get_source
 from .stores import Pen, pen_library, settings_store
 from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
 
+#: Undo depth, capped two ways because undo entries are not all the same size.
+#: Measured 2026-08-07 on a 16-layer project with 59k source points:
+#:
+#: * a checkpoint costs 0.4 ms and ~29 KB of deep-copied Project, so the
+#:   ordinary edits — drag, param tweak, visibility, pen, reorder — retain
+#:   only that: 100 of them is ~2.6 MB, and the old depth of 8 was throwing
+#:   away 92 free undo steps.
+#: * edits that REPLACE geometry (bake, regenerate, draw, brush, shape ops)
+#:   are a different animal: each entry pins its own copy of that layer's
+#:   paths at roughly 130 bytes per point, so 50 bakes of a 1200-path import
+#:   is ~110 MB.
+#:
+#: Hence a count cap for the cheap case and a geometry budget for the
+#: expensive one — depth stays generous without a heavy project quietly
+#: eating a gigabyte. The persisted history is capped separately, at 4
+#: entries, in ``project_io``.
+UNDO_DEPTH = 100
+#: ~130 MB of retained path points at ~130 bytes each.
+UNDO_GEOMETRY_BUDGET_POINTS = 1_000_000
+
 
 def _subpath_by_distance(
     points: list[tuple[float, float]], d0: float, d1: float
@@ -157,7 +177,12 @@ class Session:
         #: project model needs a deep copy.
         self._history: deque[
             tuple[Project, dict[str, list[Path]], dict[str, str], dict[str, PathDocument]]
-        ] = deque(maxlen=8)
+        ] = deque(maxlen=UNDO_DEPTH)
+        #: id(geometry list) -> (list ref, point count) for the history budget.
+        #: The stored reference keeps the id valid — same identity discipline
+        #: as the occlusion memo — and the map is pruned to what history still
+        #: holds every time the budget is measured.
+        self._geom_points: dict[int, tuple[list[Path], int]] = {}
         #: last checkpoint's coalesce key: consecutive checkpoints carrying the
         #: same key collapse into ONE undo entry (live slider runs on a latched
         #: layer), so undo returns to the state before the run started.
@@ -210,14 +235,41 @@ class Session:
             (proj, dict(self.source_geometry), dict(self.svg_files),
              dict(self.staging_documents))
         )
+        self._trim_history()
         # a checkpoint precedes a mutation — cached frames are about to go stale
         self._frame_lru.clear()
         self._frame_bbox.clear()
+
+    def _history_points(self) -> int:
+        """Total points of geometry pinned by history, counting each list once
+        however many entries share it. Also prunes the memo to what is still
+        referenced, so the map can never outlive the history."""
+        seen: dict[int, tuple[list[Path], int]] = {}
+        total = 0
+        for _proj, geo, _svg, _staging in self._history:
+            for paths in geo.values():
+                key = id(paths)
+                if key in seen:
+                    continue
+                hit = self._geom_points.get(key)
+                if hit is None or hit[0] is not paths:
+                    hit = (paths, sum(len(p.points) for p in paths))
+                seen[key] = hit
+                total += hit[1]
+        self._geom_points = seen
+        return total
+
+    def _trim_history(self) -> None:
+        """Drop the oldest entries while the geometry they pin is over budget.
+        The newest entry always survives — one undo step is never traded away."""
+        while len(self._history) > 1 and self._history_points() > UNDO_GEOMETRY_BUDGET_POINTS:
+            self._history.popleft()
 
     def clear_history(self) -> None:
         """Project switch: snapshots of another project must not restore here."""
         with self._lock:
             self._history.clear()
+            self._geom_points.clear()
             self._coalesce_key = None
             self._frame_lru.clear()
             self._frame_bbox.clear()
@@ -249,8 +301,10 @@ class Session:
     ) -> None:
         with self._lock:
             self._history.clear()
+            self._geom_points.clear()
             for item in history[-self._history.maxlen:]:
                 self._history.append(item)
+            self._trim_history()
 
     # -- pens ---------------------------------------------------------------
 

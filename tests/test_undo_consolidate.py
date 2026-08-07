@@ -7,7 +7,8 @@ import pytest
 from axibridge.assets import asset_store
 from axibridge.model import Path
 from axibridge.registry import EffectContext, get_effect
-from axibridge.session import session
+from axibridge import session as sess_mod
+from axibridge.session import UNDO_DEPTH, session
 
 
 def test_undo_restores_deleted_layer():
@@ -21,16 +22,37 @@ def test_undo_restores_deleted_layer():
     assert [p.points for p in before] == [p.points for p in after]
 
 
-def test_undo_depth_is_eight():
+def test_undo_depth_is_the_configured_cap():
+    """Cheap edits retain ~29 KB each, so depth is generous — the old cap of 8
+    was throwing away free undo steps (measured 2026-08-07)."""
     layer = session.add_generated_layer("polygon", {})
     session.clear_history()
-    for i in range(12):
+    edits = UNDO_DEPTH + 4
+    for i in range(edits):
         session.update_layer(layer.id, {"name": f"n{i}"})
     undone = 0
     while session.undo():
         undone += 1
-    assert undone == 8
-    assert session.project.layer(layer.id).name == "n3"  # 12 edits, last 8 undone
+    assert undone == UNDO_DEPTH
+    assert session.project.layer(layer.id).name == f"n{edits - UNDO_DEPTH - 1}"
+
+
+def test_geometry_budget_trims_history_before_it_gets_expensive(monkeypatch):
+    """An edit that REPLACES geometry pins its own copy of the layer's paths,
+    so depth has a second cap in points — otherwise a run of bakes on a heavy
+    layer would quietly retain hundreds of megabytes."""
+    layer = session.add_generated_layer("lissajous", {"size": 100, "margin": 5})
+    per_entry = sum(len(p.points) for p in session.source_geometry[layer.id])
+    assert per_entry > 0
+    monkeypatch.setattr(sess_mod, "UNDO_GEOMETRY_BUDGET_POINTS", per_entry * 3)
+
+    session.clear_history()
+    for _ in range(20):
+        session.consolidate_effects(layer.id)  # bake: new geometry list each time
+
+    assert len(session._history) < UNDO_DEPTH, "the budget must bite before the count cap"
+    assert session._history_points() <= per_entry * 3
+    assert session.undo(), "the newest entry is never traded away"
 
 
 def test_coalesced_regenerates_are_one_undo_step():
