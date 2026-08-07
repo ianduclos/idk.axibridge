@@ -19,14 +19,16 @@ entries: 4
   4c the menu/toolbar restructure. Sub-steps 4a-4g are independently
   shippable; commit and checkpoint after each, and put a before/after in front
   of Ian at 4c's FIRST step, not at the end.
-- blockers: two decisions are Ian's, neither blocking 4a-4b. (1) Are
-  `rectangle`/`grid`/`flowfield` right as `orientation="geometry"`? They now
-  turn in portrait, so "Width 160" means 160mm across the screen in either
-  view; `text`/`glyphgram` were the reported bug and are unambiguous, these
-  three were the agent's judgement. One word per module to flip. (2) The plan
-  asks whether jog earns its place at all once it is a menu item — do not
-  delete it unilaterally; pen up/down and go-to-origin inside that group may
-  be the parts that earn their keep.
+- blockers: (1) SETTLED 2026-08-07 — Ian checked the generators at the bench:
+  `rectangle`/`grid`/`flowfield` as `orientation="geometry"` is right, they
+  behave. No flip needed; treat the 27-source classification as accepted.
+  (2) Still Ian's: the plan asks whether jog earns its place at all once it is
+  a menu item — do not delete it unilaterally; pen up/down and go-to-origin
+  inside that group may be the parts that earn their keep. Raise it when 4c
+  reaches the Machine menu.
+  (3) NEW, decided 2026-08-07: 4b (IBM Plex Sans) was built, shown, and
+  reverted — "got used to the mono". Mono-only is now a decision. See the
+  plan's 4b note; do not rebuild it.
 - context: `docs/plans/ui-redesign.md` is written to be loaded cold and now
   carries inline notes where this session overtook it (redo shipped early at
   Ian's request; the Playwright chromium mismatch fixed properly). Slice 4's
