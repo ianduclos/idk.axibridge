@@ -356,6 +356,41 @@ bought are in ROADMAP.md "UI revamp — RESOLVED". The shape of it:
   axibridge on 2942). It listens on `localhost:5173` — IPv6, so
   `127.0.0.1:5173` will refuse the connection.
 
+**The menu bar is one definition (2026-08-07).** The app has two menu
+surfaces — the in-page bar (the only menu a browser tab has) and the macOS
+menu (the only one the app shell shows, since `[data-shell="native"]` hides
+the in-page one). They were two hand-written lists, and they drifted: an Edit
+menu with Undo/Redo and a View menu with orientation existed in the page and
+never reached the native bar, so from the app the work looked undone. The old
+defence — "every native item proxy-clicks a real control, so it cannot drift"
+— is true of BEHAVIOUR and silent about MEMBERSHIP.
+
+So the native menu is no longer written. `axibridge/menu_spec.py` parses
+`#menubar` out of `index.html` into `(label, selector, kind, shortcut)` and
+the shell walks it: **add an item to the page and it appears in both bars.**
+The parse is a pure function over HTML text — no browser, no server — so the
+one surface headless tests cannot look at is covered by the ordinary suite.
+Consequences worth knowing before editing the markup:
+
+* **`#menubar`'s markup is a contract.** Editing it changes the macOS menu.
+* An item may carry `data-target="#some-control"` to drive a control living
+  elsewhere (the Machine menu's Pen up is the button in Settings). Checked
+  before the item's own id, or the parser derives that and the item clicks
+  itself.
+* Ours merge INTO pywebview's own Edit and View rather than sitting beside
+  them under invented names. `menu_title()` reads the SUBMENU's title, not the
+  item's: pywebview titles only the submenu for its own menus, and an item
+  built with plain `init` carries the literal string `"NSMenuItem"`, not an
+  empty one.
+* State is pushed by the page, never pulled: `evaluate_js` from inside a
+  `js_api` handler the page is awaiting is a bridge deadlock, and a deadlock
+  is indistinguishable from a silent no-op.
+* **Every main-thread call goes through `on_main()`.** A block that returns a
+  value makes PyObjC raise an uncaught ObjC exception that terminates the
+  process, and `NSMenu` autoenables its items unless told not to — both
+  failures are silent, which is why the shell writes
+  `~/Library/Logs/axibridge-shell.log`.
+
 **Environment pinning:** the launchers hard-code the venv interpreter
 because the classic failure is pyaxidraw installed into a different Python
 than the server runs from. Backend `available()` diagnostics therefore name

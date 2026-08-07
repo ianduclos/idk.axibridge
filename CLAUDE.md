@@ -69,6 +69,7 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
 | Roadmap / future direction | `ROADMAP.md` |
 | Project folder save/load/zip | `axibridge/project_io.py` |
 | HTTP API | `axibridge/api.py` |
+| Menu bar — ONE definition: the macOS menu is parsed out of `#menubar`'s markup | `axibridge/menu_spec.py`, `static/js/menu.js`, `launch/axibridge_app.py` |
 | Canvas editor / tabs | `axibridge/static/js/canvas.js`, `compose.js`, `plot.js`, … |
 
 ## Conventions & invariants (break these and the tool lies)

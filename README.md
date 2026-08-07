@@ -175,8 +175,10 @@ axibridge/
   svg_io.py         # fill-aware SVG reader (svgelements) + vpype interop
   backends/         # base protocol, native, simulator, saxi
   machine.py        # port arbitration, job thread, soft limits
+  menu_spec.py      # the in-page menu bar parsed into the macOS menu (one list)
   api.py events.py app.py
-  static/           # zero-build frontend (canvas editor, tabs, forms)
-launch/             # macOS .command launcher + launchd plist
-tests/              # 24 hardware-free tests
+  static/           # frontend source: plain ES modules, built by Vite
+  static_dist/      # the build (gitignored); served when present, source when not
+launch/             # macOS .command launcher, the .app shell, launchd plist
+tests/              # 668 hardware-free tests, incl. a Playwright UI suite
 ```

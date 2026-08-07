@@ -604,6 +604,34 @@ segmentation for auto-masking subjects. Constraint: keep it an *asset
 producer* (a tool that writes into `assets/`), not a resolve-path stage —
 the resolve pipeline stays deterministic and offline.
 
+## Near term — ⌘K launcher over the module registry
+
+Ranked 11 of 12 in the 2026-08-07 multi-agent review, and the ONLY proposal
+there that needed tooling the project did not have. It has it now: the Vite
+port landed the same day, so the "vendored-esm" tag on that row is spent.
+
+**What it is, and what it is not.** Not a generic command palette. A launcher
+scoped to the registry — 27 sources, 14 effects, 4 transforms, plus backends
+and the project's own layers by name. Press ⌘K, type `hatch`, get
+"hatch_fill — effect", Enter, it is added to the selected layer.
+
+**Why it earns its place:** the registry is 45 modules and growing, which is
+what makes the two Compose `<select>` boxes hard to scan — a 27-item dropdown
+is a list you read, not a thing you pick. The review's point is that the
+launcher is what makes DELETING those selects safe: typing three letters
+beats scrolling twenty-seven options, and the dropdown stops being the only
+way in. It also answers the same problem a Generate ▸ submenu would have
+answered badly — the review explicitly ruled that a 27-item submenu does not
+earn its place while a fuzzy-matched launcher does.
+
+**Needs:** a fuzzy-match input, not a framework. The matching is the whole
+build; everything it launches already exists and is already addressable
+(`/api/layers/generate`, the effect stack, `menu_spec`'s selector idea).
+
+**Do it after** the module gallery below if that gets built — a launcher and
+a gallery are the two ways into the same list, and the gallery's tags are the
+thing a launcher should search alongside names.
+
 ## Far / undecided — interrupted plot should have been a generator
 
 Ian, 2026-08-07: *"interrupted plot should have been a generator

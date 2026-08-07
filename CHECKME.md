@@ -30,6 +30,17 @@ been through it.
 - **Plot by pen.** The target picker now offers `pen: <name> (N layers)`.
   Worth one real multi-pen sheet: pick a pen, plot, swap, pick the next.
 
+## New since you last looked — all taste, mined from the August review
+
+- **Sliders are faders now**: 12px groove, machined cap, and the fill is
+  graphite instead of `--live`. That last bit was a real bug — three sliders
+  on screen all claimed the selection colour, i.e. "you are here", at once.
+- **The canvas well has a lamp**: brightness falls off from the sheet to the
+  frame. The old page-wide gradient is gone.
+- **Sentence case below panel level** (`Fine tuning`, `Placement`, `Pen &
+  occlusion`), body ink one step quieter, panel headings unchanged.
+- **The window title says `axibridge — <project>`.**
+
 ## Verified in a browser — just taste, not correctness
 
 - **The toolbar** is one row of tools and zoom-fit. Does losing the overlays

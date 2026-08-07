@@ -3,9 +3,10 @@ project: idk.axibridge
 state: active
 updated: 2026-08-07
 machine: mac+pi
-summary: The layer list is now a persistent collapsible dock at the foot of the sidebar (Ian's Photoshop ask), and Slice 4 of the UI redesign is complete (a-g) — the toolbar is one fixed row of tools, the View and Machine menus hold what left it, machine state and plot transport live in the always-visible status line, the Plot tab is down from ten panels to five, plotting can be addressed by pen, and the layer list drags to reorder and renames in place; the app shell's macOS menu is now derived from the page's own markup instead of hand-written beside it; 727 tests green.
+summary: Slice 4 of the UI redesign is complete (a-g), the layer list is a persistent collapsible dock (Ian's Photoshop ask), and four more ideas were mined back out of the August multi-agent review — the free typography test that had been reverted as collateral, sliders rebuilt as faders, a lamp falloff replacing the page gradient, and the window title finally naming the project — the toolbar is one fixed row of tools, the View and Machine menus hold what left it, machine state and plot transport live in the always-visible status line, the Plot tab is down from ten panels to five, plotting can be addressed by pen, and the layer list drags to reorder and renames in place; the app shell's macOS menu is now derived from the page's own markup instead of hand-written beside it; 727 tests green.
 next:
   - "Ian eye-checks — CHECKME.md at the repo root is the list, grouped by how likely each thing is to be wrong; the shell-only paths need a full relaunch and are verified only against fakes"
+  - "Brainstorm in flight: a generator/effect gallery with thumbnails and tags, for when the 45-module list outgrows two dropdowns — Ian asked for it light and for later"
   - "Re-ask whether jog earns its place, now that it is a menu item (Ian's ruling: use it that way first, then decide)"
   - "ROADMAP: interrupted plot as a live generator — the design is settled (snapshot-input) and the cost measured (~64 B/point), so it is ready to build rather than ready to decide"
   - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16 to 19 wave, and the URGENT round (see HANDOFF)"
