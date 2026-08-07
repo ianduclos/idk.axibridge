@@ -1,15 +1,14 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-08-05
+updated: 2026-08-07
 machine: mac+pi
-summary: The repo is PUBLIC on GitHub as of 2026-08-05 — Pi specifics were genericized out of the code into local config first and all 158 commits scanned for secrets; offset_fill + the brush tool remain the live work, 630 tests green.
+summary: A full UI pass landed on the unmerged branch design/bench-and-bed (11 commits) — a new visual direction, a three-critic review with ranked proposals, and real fixes for slow quitting and the macOS title bar; 639 tests green; a four-slice redesign plan is written and agreed at docs/plans/ui-redesign.md, including the decision to adopt Vite+TypeScript.
 next:
-  - "Bench: plot offset_fill (ring spacing vs pen width is the thing only ink settles) and a brush mass with a fill stacked on it"
-  - "Tapered brush (radius from drawing speed) — the queued brush follow-up; per-point timestamps are already captured so it is a pure addition"
-  - "Delete the now-merged local feature branches (ui-round-0726, offset-fill, and the six older merged ones)"
-  - "App-shell polish, only if it still feels cheap after a week's use: window state, ⌘W, menu bar — small concrete items, NOT a toolchain (see the note below)"
-  - "Public-repo hygiene: machine-specific values live in ~/.axibridge/settings.json (host, axicli_path, notify_env) — keep them out of code defaults from now on"
+  - "Execute docs/plans/ui-redesign.md in a fresh session — starts by merging design/bench-and-bed to main, then correctness, tests, Vite+TS port, redesign"
+  - "Eye-check the app shell after a restart: title-bar band, double-click zoom, File-first menu"
+  - "Slice 1 blockers to measure, not guess: one undo history entry's real size, and whether the occlusion cache key can be made complete"
+  - "Still open from July: bench eye-check of offset_fill + brush (see HANDOFF)"
 handoff_for: ian
 ---
 

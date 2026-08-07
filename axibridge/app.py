@@ -35,6 +35,7 @@ async def _lifespan(app: FastAPI):
         threading.Thread(target=manager.auto_connect, name="axibridge-autoconnect",
                          daemon=True).start()
     yield
+    bus.close()  # end the SSE streams so graceful shutdown doesn't wait them out
     manager.shutdown()
 
 

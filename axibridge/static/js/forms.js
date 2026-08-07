@@ -224,6 +224,10 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
         range.min = num.min; range.max = num.max;
         range.step = "any";
         range.value = show(val);
+        // The track is continuous but the committed value is quantized (below),
+        // so tell main.js's shift fine-tune what one quantum actually is —
+        // nudging by less than this just gets rounded away on commit.
+        range.dataset.fineStep = step;
         const quant = (v) => (step === 1 ? Math.round(v)
           : Number(v.toFixed(step === 0.01 ? 2 : 1)));
         // live number readout while dragging; commit ONCE on release — a

@@ -1,8 +1,37 @@
 ---
 project: idk.axibridge
-updated: 2026-07-27
-entries: 3
+updated: 2026-08-07
+entries: 4
 ---
+
+### UI pass on design/bench-and-bed — opened 2026-08-07, owner: ian
+- done: 6 commits on the branch, 638 tests green. New visual direction
+  ("bench & bed", rationale in the `style.css` header comment); collapse state
+  persisted per section; white button faces dropped for a measured steel blue
+  (darker than the sheet, so no control outshines the paper); sliders became
+  faders with shift fine-tune; quitting went 2.20s -> 0.17s; macOS title bar
+  merged into the header with File/Canvas moved to the system menu bar, the
+  in-app "axibridge" wordmark removed (the OS already says it twice), and the
+  header made a drag region so the window still moves.
+- next: execute `docs/plans/ui-redesign.md` in a fresh session (it is written
+  to be loaded cold — settled decisions, measured facts, four slices with
+  checkpoints). Before that, restart AxiBridge.app and eye-check the shell — whether the traffic
+  lights sit correctly in the header band (84px clearance and the 38px band
+  are considered guesses, not measurements) and whether the Canvas menu reads
+  right. Then decide what to take from the review and whether to merge the
+  branch.
+- blockers: none. The title-bar look is the only thing that could not be
+  verified headless — it needs a real window.
+- context: review artifact
+  https://claude.ai/code/artifact/eb6f2105-7669-4bab-867b-2012122f84f6
+  (three critics, rulings, 12 ranked proposals, corrections);
+  direction artifact
+  https://claude.ai/code/artifact/b595fdb0-9204-45c0-83ce-571dbcfb6427.
+  Unfixed and highest-value: occlusion recomputes on every resolve
+  (`compose.py` `clip_paths`; ~2.1s with an occluder over a hatch_fill layer,
+  87% inside shapely's difference) — caching it needs a staleness design.
+  Undo is 8 deep (`session.py:156`) and `undo()` pops, so redo is not
+  bolt-on. ROADMAP's new URGENT section covers the portrait orientation bug.
 
 ### Bench eye-check: offset_fill + brush — opened 2026-07-27, owner: ian
 - done: both modules built, merged and screen-verified only — `offset_fill`

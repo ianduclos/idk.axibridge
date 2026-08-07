@@ -1,6 +1,28 @@
-/* axibridge v2 — dark drafting table: warm near-black chrome around a
-   paper-white sheet (the canvas stays the color of the output). Roboto Mono
-   throughout (vendored — works offline on the Pi). */
+/* axibridge v2 — "bench & bed".
+
+   Two materials, not one grey. The BED is the sheet: warm paper under a lamp,
+   the only light surface in the app, because it is the colour of the output.
+   The BENCH is everything else: a machined instrument housing — matte warm
+   graphite, engraved labels, hairline structure.
+
+   Colour rule: the surfaces are grey; colour is spent only on ink, on
+   machine state, and on the primary path. --live marks selection, the active
+   toggle and the filled primary button; --ochre means moving; --rust means
+   danger or origin; --moss means connected. Nothing in the chrome is ever
+   lighter than the sheet — a white-faced control competes with the paper for
+   the eye, worst of all when the plot itself is monochrome. That leaves the
+   pen swatches, where colour is physically true, as the only saturated thing
+   in the sidebar.
+
+   Structure: a panel is a registered area (engraved label + hairline rule +
+   a −/+ marker), not a card — cards made every part of the app look equally
+   important. Hairline structure stays square; anything you press or type into
+   takes a 2-3px radius, because fully sharp controls read as unfinished at
+   button size. Depth is --lift and --recess, not borders.
+
+   Roboto Mono throughout (vendored — works offline on the Pi). One face, three
+   roles: engraved label, bench body, and readout. A second display face was
+   considered and cut; the machine has one voice. */
 
 @font-face {
   font-family: "Roboto Mono";
@@ -14,23 +36,72 @@
 }
 
 :root {
-  --paper: #211f1b;        /* warm near-black surface */
-  --paper-deep: #1a1815;   /* panel insets */
-  --bed: #2a2823;          /* inset cards / inputs */
-  --sheet: #faf7ef;        /* the canvas sheet — stays paper-white */
+  /* bench — the machined housing */
+  --bench: #1c1b19;        /* the ground */
+  --bench-deep: #131211;   /* recesses: canvas well, tab strip, inputs */
+  --bench-rise: #262420;   /* raised: buttons, rows, cards */
+  --bench-edge: #38352f;   /* hairlines and engraved rules */
+
+  /* bed — the output */
+  --sheet: #faf7ef;        /* paper. do not touch: it is the colour of the ink's ground */
   --sheet-ink: #26241f;    /* ink drawn ON the sheet */
-  --ink: #e6e1d3;          /* light warm text */
-  --ink-soft: #9b9381;     /* secondary text */
-  --line: #3d3a31;         /* hairlines */
-  --accent: #7396ac;       /* steel blue, lifted for dark chrome */
-  --accent-soft: #9eb2bf;
-  --ochre: #c79c4a;        /* warnings, guide */
-  --rust: #c0644c;         /* danger, machine marker */
-  --moss: #8aa06e;         /* ok */
+
+  /* engraved label */
+  --ink: #ece7da;
+  --ink-soft: #8e877a;
+
+  /* reserved — meaning only, never decoration */
+  --live: #7396ac;         /* selection / you-are-here / the primary path */
+  --live-soft: #9eb2bf;
+  --live-fill: #35617c;    /* filled primary control — deliberately DARKER than
+                              the sheet (6.2:1) so a button never outshines the
+                              paper; 5.4:1 against --ink for its label */
+  --live-fill-hi: #3f6f8c;
+  --live-deep: #24455a;    /* the shaded edge under a filled control */
+  --ochre: #c79c4a;        /* in motion, guides, warnings */
+  --rust: #c0644c;         /* danger, origin, subtract */
+  --moss: #8aa06e;         /* connected, ok */
+
+  /* legacy aliases — older rules and a few JS-set styles still read these */
+  --paper: var(--bench);
+  --paper-deep: var(--bench-deep);
+  --bed: var(--bench-rise);
+  --line: var(--bench-edge);
+  --accent: var(--live);
+  --accent-soft: var(--live-soft);
+
+  /* Corners: hairline structure stays square, but anything you press or type
+     into gets a small radius — fully sharp controls read as unfinished at
+     button size. Not the old 5-6px; just enough to soften the corner. */
+  --r: 3px;
+  --r-sm: 2px;
+
+  /* Depth, kept subtle. --lift is for list rows only: on buttons the top
+     highlight read as a stray line across the chrome (the underline marking an
+     active tab/segment is the one horizontal rule that earns its place). */
+  --lift: inset 0 1px 0 rgba(255, 250, 235, .045);
+  --recess: inset 0 1px 2px rgba(0, 0, 0, .38);
+
+  /* native controls (number spinners, selects, checkboxes) must render in
+     their dark form — the spinner arrows on the stamping field were dark-on
+     -dark and effectively invisible */
+  color-scheme: dark;
+
   font-size: 13px;
 }
 
 * { box-sizing: border-box; }
+
+/* type roles ------------------------------------------------------------- */
+/* .engraved — silkscreen on a machine panel: panel headings, tab labels,
+   segmented toggles. Small, heavy, wide-tracked, uppercase.
+   .readout — numbers that are machine truth (mm, seconds, counts). Tabular so
+   digits don't shift as they tick. */
+.engraved {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.6px; color: var(--ink);
+}
+.readout { font-variant-numeric: tabular-nums; }
 
 /* custom scrollbars — slim warm-chrome rails; thumb only, no track chrome.
    ::-webkit rules style WKWebView (the pywebview shell), Safari, Chromium;
@@ -38,12 +109,12 @@
    (Firefox) because where both exist, the standard pair wins and turns the
    custom styling back into native scrollbars. */
 @supports not selector(::-webkit-scrollbar) {
-  * { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  * { scrollbar-width: thin; scrollbar-color: var(--bench-edge) transparent; }
 }
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--line); border-radius: 999px;
+  background: var(--bench-edge); border-radius: 999px;
   border: 2px solid transparent; background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--ink-soft); }
@@ -51,59 +122,92 @@
 
 html, body { height: 100%; }
 body {
-  margin: 0; background: var(--paper); color: var(--ink);
+  margin: 0; color: var(--ink);
+  /* a very shallow top-to-bottom fall across the whole housing — no visible
+     banding, but the bench stops reading as one flat slab */
+  background: var(--bench) linear-gradient(179deg, #211f1c 0%, #1a1916 100%) fixed;
   font-family: "Roboto Mono", ui-monospace, monospace;
   line-height: 1.45;
   display: flex; flex-direction: column;
 }
 
-header {
-  display: flex; align-items: center; gap: 14px;
-  padding: 8px 16px; border-bottom: 1px solid var(--line);
-  background: var(--paper);
+/* the app is driven by keyboard as much as pointer (⌘Z, tool letters, arrow
+   jogs) — every focusable thing must show where focus is. */
+:focus-visible {
+  outline: 1px solid var(--live); outline-offset: 1px;
 }
-header h1 { font-size: 16px; margin: 0; font-weight: 700; letter-spacing: .5px; }
-header h1 span { color: var(--accent); }
+
+header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 16px; min-height: 44px;
+  border-bottom: 1px solid var(--bench-edge);
+  background: var(--bench);
+}
+/* No wordmark: the OS menu bar and the window already say "axibridge", and a
+   third copy inside the app was the duplication Ian flagged. The project name
+   is the identity that actually varies. */
 .project-name {
   font-family: inherit; font-size: 13px; width: 14em;
-  background: transparent; border: 1px solid transparent; border-radius: 4px;
+  background: transparent; border: 1px solid transparent; border-radius: 0;
   padding: 3px 8px; color: var(--ink);
 }
-.project-name:hover, .project-name:focus { border-color: var(--line); background: var(--bed); }
-.estimate { margin-left: auto; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.project-name:hover, .project-name:focus {
+  border-color: var(--bench-edge); background: var(--bench-deep);
+}
+/* the readout cluster: connection lamp + estimate are both machine state, so
+   they sit together at the right rather than stranded apart */
+#status-pill { margin-left: auto; }
+.estimate {
+  color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: 12px;
+}
+
+/* App-shell chrome. launch/axibridge_app.py sets data-shell="native" once the
+   page loads inside the pywebview window, where the title bar is transparent
+   and the content runs full height — so the header has to leave room for the
+   traffic lights, and the in-page menu stands down in favour of the real
+   system menu bar. In a browser tab the flag is absent and none of this
+   applies: the in-page menu is the only menu there. */
+:root[data-shell="native"] header {
+  padding-left: 84px;   /* close · minimise · zoom live here */
+  min-height: 42px;     /* the band the traffic lights sit in */
+  border-bottom-color: transparent;  /* the band and the toolbar are one surface */
+}
+:root[data-shell="native"] #menubar { display: none; }
 
 /* ---- header menu bar (File / View) ---- */
 
 #menubar { display: flex; gap: 2px; }
 #menubar .menu { position: relative; }
 #menubar .menu-trigger {
-  background: transparent; border: 1px solid transparent; border-radius: 4px;
+  background: transparent; border: 1px solid transparent; border-radius: 0;
   padding: 4px 10px; font-family: inherit; font-size: 12.5px; color: var(--ink);
   cursor: pointer;
 }
 #menubar .menu-trigger:hover,
-#menubar .menu.open .menu-trigger { background: var(--bed); border-color: var(--line); }
+#menubar .menu.open .menu-trigger { background: var(--bench-rise); border-color: var(--bench-edge); }
 #menubar .menu-panel {
   display: none; flex-direction: column; gap: 1px;
-  position: absolute; top: 100%; left: 0; margin-top: 4px; min-width: 190px;
-  background: var(--paper-deep); border: 1px solid var(--line); border-radius: 6px;
-  padding: 4px; z-index: 40; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  position: absolute; top: 100%; left: 0; margin-top: 5px; min-width: 190px;
+  background: var(--bench-deep); border: 1px solid var(--bench-edge); border-radius: var(--r);
+  padding: 4px; z-index: 40; box-shadow: 0 10px 26px rgba(0,0,0,.5);
 }
 #menubar .menu.open .menu-panel { display: flex; }
 #menubar .menu-item {
   display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
-  background: transparent; border: none; border-radius: 4px; padding: 6px 10px;
+  background: transparent; border: none; border-radius: 0; padding: 6px 10px;
   font-family: inherit; font-size: 12.5px; color: var(--ink); cursor: pointer;
   text-decoration: none; white-space: nowrap;
 }
 #menubar .menu-item:hover,
-#menubar .menu-item:focus-visible { background: var(--accent); color: var(--paper); }
+#menubar .menu-item:focus-visible { background: var(--live); color: var(--bench-deep); outline: none; }
 #menubar .menu-check { width: 1em; opacity: 0; }
 #menubar .menu-item.checked .menu-check { opacity: 1; }
 
+/* connection lamp — round, because indicator lamps are round. One of two
+   things in the app allowed a radius. */
 .pill {
-  padding: 1px 12px; border-radius: 999px; background: var(--paper-deep);
-  border: 1px solid var(--line); color: var(--ink-soft); font-size: 11.5px;
+  padding: 2px 12px; border-radius: 999px; background: var(--bench-deep);
+  border: 1px solid var(--bench-edge); color: var(--ink-soft); font-size: 11.5px;
 }
 .pill.ok { color: var(--moss); border-color: var(--moss); }
 .pill.busy { color: var(--ochre); border-color: var(--ochre); }
@@ -114,18 +218,24 @@ main {
   gap: 0; min-height: 0;
 }
 
-/* ---- canvas (the persistent centre workspace) ---- */
+/* ---- the bed (the persistent centre workspace) ---- */
 
-#canvas-area { display: flex; flex-direction: column; min-width: 0; padding: 10px 12px; }
+#canvas-area { display: flex; flex-direction: column; min-width: 0; padding: 12px 16px 10px; }
 #canvas-toolbar {
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  padding-bottom: 8px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding-bottom: 10px;
 }
 #canvas-toolbar label { color: var(--ink-soft); font-size: 12px; display: flex; gap: 5px; align-items: center; }
 #canvas-toolbar input[type="number"] { width: 4.2em; }
+/* the well the sheet sits in: recessed and unbordered. The bed reads as a bed
+   through material contrast — near-black well, paper sheet, real shadow — not
+   through a frame. (Corner registration crops were tried here and cut: pinned
+   to the wrapper they marked nothing, since the sheet floats independently of
+   it. A registration mark that doesn't register anything is decoration.) */
 #canvas-wrap {
-  flex: 1; min-height: 0; border: 1px solid var(--line); border-radius: 6px;
-  background: var(--paper-deep); position: relative; overflow: hidden;
+  flex: 1; min-height: 0; border: none; border-radius: var(--r);
+  background: var(--bench-deep); position: relative; overflow: hidden;
+  box-shadow: var(--recess);
 }
 /* absolutely positioned so the SVG's intrinsic aspect ratio (from viewBox)
    can't inflate the flex layout — letterboxing happens inside the SVG */
@@ -133,32 +243,38 @@ main {
 /* preview-mode banner: floats over the top of the sheet while the canvas is
    showing a transient sheet/staged document instead of the live project */
 #doc-preview-banner {
-  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 2;
   display: flex; align-items: center; gap: 12px;
-  padding: 4px 6px 4px 12px; border-radius: 999px;
-  background: var(--paper-deep); border: 1px solid var(--accent);
+  padding: 4px 6px 4px 12px; border-radius: 0;
+  background: var(--bench-deep); border: 1px solid var(--live);
   color: var(--ink-soft); font-size: 12px; white-space: nowrap;
-  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+  box-shadow: 0 2px 12px rgba(0,0,0,.45);
 }
 #doc-preview-banner[hidden] { display: none; }
-#doc-preview-label { color: var(--accent-soft); }
-#doc-preview-exit { padding: 1px 10px; font-size: 11.5px; border-radius: 999px; }
+#doc-preview-label { color: var(--live-soft); }
+#doc-preview-exit { padding: 1px 10px; font-size: 11.5px; }
 #canvas-status {
-  display: flex; gap: 18px; padding-top: 6px;
+  display: flex; gap: 18px; padding-top: 8px;
   color: var(--ink-soft); font-size: 12px; min-height: 1.6em;
+  font-variant-numeric: tabular-nums;
 }
 .warn { color: var(--ochre); }
 #global-error { color: var(--rust); margin-left: auto; }
 
-/* in-SVG styling */
-.bed-rect { fill: var(--sheet); stroke: var(--ink-soft); stroke-width: .4; }
+/* in-SVG styling. Lengths here are USER UNITS (mm), not px — the sheet's
+   shadow scales with the zoom, which is what you want: it stays a sheet
+   sitting on a bed rather than a div with a box-shadow. */
+.bed-rect {
+  fill: var(--sheet); stroke: none;
+  filter: drop-shadow(0.7px 1px 1.4px rgba(0,0,0,.55));
+}
 .map-ghost { opacity: .4; pointer-events: none; }
 
 #tooltip {
   position: fixed; z-index: 100; pointer-events: none;
-  background: var(--bed); color: var(--ink); border: 1px solid var(--line);
-  border-radius: 5px; padding: 4px 8px; font-size: 11px; line-height: 1.4;
-  max-width: 320px; box-shadow: 0 3px 10px rgba(0,0,0,.45);
+  background: var(--bench-rise); color: var(--ink); border: 1px solid var(--bench-edge);
+  border-radius: var(--r-sm); padding: 5px 9px; font-size: 11px; line-height: 1.4;
+  max-width: 320px; box-shadow: 0 3px 12px rgba(0,0,0,.5);
 }
 .bed-origin { fill: var(--rust); }
 .guide-rect {
@@ -171,85 +287,209 @@ main {
   white-space: pre-wrap; word-break: break-all; margin: 8px 0 0; opacity: .85; }
 .layer-hit { fill: none; stroke: transparent; stroke-width: 3; pointer-events: stroke; cursor: grab; }
 .layer.selected .layer-hit { cursor: grabbing; }
-.sel-box { fill: none; stroke: var(--accent); stroke-width: .5; stroke-dasharray: 2 2; }
-.handle { fill: var(--sheet); stroke: var(--accent); stroke-width: .5; cursor: pointer; }
-.handle.rot { fill: var(--accent-soft); }
-.travel-path { stroke: var(--accent-soft); stroke-dasharray: 2 2; fill: none; stroke-width: .3; }
+.sel-box { fill: none; stroke: var(--live); stroke-width: .5; stroke-dasharray: 2 2; }
+.handle { fill: var(--sheet); stroke: var(--live); stroke-width: .5; cursor: pointer; }
+.handle.rot { fill: var(--live-soft); }
+.travel-path { stroke: var(--live-soft); stroke-dasharray: 2 2; fill: none; stroke-width: .3; }
 .machine-marker { fill: var(--rust); }
 .anim-marker { fill: var(--ochre); }
-.marquee { fill: rgba(94,123,143,.12); stroke: var(--accent); stroke-width: .4; }
+.marquee { fill: rgba(115,150,172,.12); stroke: var(--live); stroke-width: .4; }
 
 /* ---- inspector ---- */
 
 #inspector {
-  border-left: 1px solid var(--line); display: flex; flex-direction: column;
-  min-height: 0; background: var(--paper); position: relative;
+  border-left: 1px solid var(--bench-edge); display: flex; flex-direction: column;
+  min-height: 0; background: var(--bench); position: relative;
 }
 #sidebar-resize {
   position: absolute; left: -5px; top: 0; bottom: 0; width: 10px;
   cursor: col-resize; z-index: 5;
 }
-#sidebar-resize:hover { background: rgba(115,150,172,.25); }
-#tabs { display: flex; border-bottom: 1px solid var(--line); }
+#sidebar-resize:hover { background: var(--bench-edge); }
+#tabs { display: flex; border-bottom: 1px solid var(--bench-edge); }
 #tabs button {
-  flex: 1; background: var(--paper-deep); color: var(--ink-soft);
-  border: none; border-right: 1px solid var(--line); padding: 8px 0;
-  font-family: inherit; font-size: 12.5px; cursor: pointer; letter-spacing: .5px;
+  flex: 1; background: var(--bench-deep); color: var(--ink-soft);
+  border: none; border-right: 1px solid var(--bench-edge); padding: 9px 0 8px;
+  font-family: inherit; cursor: pointer;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px;
+  box-shadow: inset 0 2px 0 transparent;
 }
 #tabs button:last-child { border-right: none; }
-#tabs button.on { background: var(--paper); color: var(--ink); font-weight: 700; }
-.tab-body { flex: 1; overflow-y: auto; padding: 12px 14px; min-height: 0; }
+#tabs button:hover { color: var(--ink); }
+#tabs button.on {
+  background: var(--bench); color: var(--ink);
+  box-shadow: inset 0 2px 0 var(--live);
+}
+.tab-body { flex: 1; overflow-y: auto; padding: 14px 16px 24px; min-height: 0; }
 
-.panel { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; background: var(--paper); }
+/* A panel is a registered area, not a card: engraved label, hairline rule
+   running out to the edge, no box. Boxes made every section look equally
+   important and turned the sidebar into a field of identical rectangles. */
+.panel {
+  border: none; border-radius: 0; padding: 0; background: none;
+  margin-bottom: 26px;
+}
 .panel > h2 {
-  font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
-  color: var(--ink-soft); margin: 0 0 8px; font-weight: 700;
+  display: flex; align-items: center; gap: 9px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--ink); margin: 0 0 12px;
   cursor: pointer; user-select: none;
 }
-.panel > h2::before { content: "▾ "; color: var(--ink-soft); }
-.panel.collapsed > h2::before { content: "▸ "; }
-.panel.collapsed > h2 { margin-bottom: 0; }
+/* the marker is the section's own control, engraved: − open, + closed */
+.panel > h2::before {
+  content: "−"; color: var(--bench-deep); background: var(--ink-soft);
+  font-weight: 700; letter-spacing: 0; font-size: 10px; line-height: 14px;
+  width: 14px; height: 14px; text-align: center; flex: none;
+}
+.panel > h2:hover::before { background: var(--ink); }
+.panel.collapsed > h2::before { content: "+"; }
+/* the engraved rule: fills whatever the label leaves */
+.panel > h2::after {
+  content: ""; flex: 1; height: 1px; background: var(--bench-edge);
+}
+.panel > h2:hover::after { background: var(--ink-soft); }
+/* a heading may carry a literal (a file path, a unit) in a .hint — never
+   case-transform it: "~/.axibridge/settings.json" is not a label, it's a path
+   the reader has to be able to type back. */
+.panel > h2 .hint,
+.preview-head h2 .hint {
+  text-transform: none; letter-spacing: 0; font-weight: 400; margin-top: 0;
+}
+.panel.collapsed { margin-bottom: 14px; }
+.panel.collapsed > h2 { margin-bottom: 0; color: var(--ink-soft); }
+.panel.collapsed > h2::before { background: var(--ink); }
 .panel.collapsed > *:not(h2) { display: none; }
-.panel h3 { font-size: 11.5px; margin: 10px 0 4px; color: var(--ink-soft); font-weight: 700; }
+.panel h3 {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px;
+  margin: 14px 0 6px; color: var(--ink-soft);
+}
+.panel h3 .hint { text-transform: none; letter-spacing: 0; font-weight: 400; }
 
 .tag {
-  font-size: 9.5px; background: var(--paper-deep); border: 1px solid var(--line);
-  padding: 0 5px; border-radius: 3px; color: var(--ochre); letter-spacing: 0;
+  font-size: 9.5px; background: var(--bench-deep); border: 1px solid var(--bench-edge);
+  padding: 0 5px; border-radius: var(--r-sm); color: var(--ochre); letter-spacing: 0;
 }
-.row { display: flex; align-items: center; gap: 8px; margin: 5px 0; flex-wrap: wrap; }
+.row { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
 /* display:flex beats the UA's [hidden]{display:none} — restore it (the
    lineart "Create stack" row was showing for every generator) */
 .row[hidden] { display: none; }
+.row > label { color: var(--ink-soft); font-size: 11.5px; }
 .hint { color: var(--ink-soft); font-size: 11.5px; margin-top: 4px; overflow-wrap: anywhere; }
 .hint.warn { color: var(--ochre); }
-.asset-tool { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.asset-tool { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--bench-edge); }
 .asset-tool select { max-width: 18em; }
 .asset-tool input[type="number"] { width: 4.8em; }
 
 button {
-  background: var(--paper-deep); color: var(--ink); border: 1px solid var(--line);
-  border-radius: 5px; padding: 4px 11px; cursor: pointer;
+  background: var(--bench-rise); color: var(--ink); border: 1px solid var(--bench-edge);
+  border-radius: var(--r); padding: 4px 11px; cursor: pointer;
   font-family: inherit; font-size: 12.5px;
 }
-button:hover { border-color: var(--accent); }
-button:disabled { opacity: .35; cursor: default; border-color: var(--line); }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--paper); }
-button.primary:hover { background: #86a8be; }
-button.danger { background: transparent; border-color: var(--rust); color: var(--rust); }
-button.big { padding: 7px 24px; font-size: 14px; }
+button:hover { border-color: var(--ink-soft); background: var(--bench-edge); }
+button:active { box-shadow: var(--recess); }
+button:disabled { opacity: .3; cursor: default; border-color: var(--bench-edge); background: var(--bench-rise); box-shadow: none; }
+/* Primary is steel blue, not white. Paper is the output; a light-faced button
+   competes with the sheet for the eye, and hardest of all when the plot itself
+   is monochrome. Colour on a filled control reads as "the main path" without
+   ever being brighter than the drawing. Regular weight — bold at this size
+   shouts. */
+button.primary {
+  background: var(--live-fill); border-color: var(--live-fill); color: var(--ink);
+  font-weight: 400;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 1px 0 var(--live-deep);
+}
+button.primary:hover { background: var(--live-fill-hi); border-color: var(--live-fill-hi); }
+button.primary:active { box-shadow: inset 0 1px 3px rgba(0,0,0,.3); }
+button.danger { background: transparent; border-color: var(--rust); color: var(--rust); box-shadow: none; }
+button.danger:hover { background: var(--rust); color: var(--bench-deep); border-color: var(--rust); }
+/* Plot gets scale, not a different colour — it's the same primary path, taken
+   seriously. .big is unique to this button. */
+button.primary.big {
+  padding: 11px 26px; font-size: 13px; letter-spacing: 1.8px; text-transform: uppercase;
+  border-radius: 4px;
+}
+button.primary.big:disabled {
+  background: var(--bench-rise); border-color: var(--bench-edge); color: var(--ink-soft);
+  box-shadow: none;
+}
 
 input, select, textarea {
-  background: var(--bed); color: var(--ink); border: 1px solid var(--line);
-  border-radius: 5px; padding: 3px 7px; font-family: inherit; font-size: 12.5px;
-  max-width: 100%;
+  background: var(--bench-deep); color: var(--ink); border: 1px solid var(--bench-edge);
+  border-radius: var(--r-sm); padding: 3px 7px; font-family: inherit; font-size: 12.5px;
+  max-width: 100%; box-shadow: var(--recess);
 }
-input[type="checkbox"] { accent-color: var(--accent); }
-input[type="range"] { padding: 0; flex: 1; accent-color: var(--accent); }
+input[type="number"] { font-variant-numeric: tabular-nums; }
+/* keep the spinner arrows permanently visible — on a dark field the
+   show-on-hover default is effectively a hidden control */
+input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+input:hover, select:hover, textarea:hover { border-color: var(--ink-soft); }
+input[type="checkbox"] { accent-color: var(--live); box-shadow: none; }
 input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
-.seg button { border: none; border-radius: 0; background: transparent; }
-.seg button.on { background: var(--accent); color: var(--paper); }
+/* ---- sliders --------------------------------------------------------------
+   A fader on an instrument: a shallow groove, the travelled part filled, and a
+   machined bar for the thumb. --fill is painted by main.js (paintRange) so the
+   filled portion tracks the value; it falls back to 0% before the first paint.
+   Shift-drag and shift-arrow fine-tune are wired there too. */
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  padding: 0; flex: 1; height: 18px; background: transparent;
+  border: none; box-shadow: none; cursor: pointer; min-width: 80px;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 999px;
+  background:
+    linear-gradient(90deg, var(--live) 0 var(--fill, 0%), transparent var(--fill, 0%) 100%),
+    var(--bench-deep);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.5);
+}
+input[type="range"]::-moz-range-track {
+  height: 4px; border-radius: 999px;
+  background:
+    linear-gradient(90deg, var(--live) 0 var(--fill, 0%), transparent var(--fill, 0%) 100%),
+    var(--bench-deep);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.5);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 7px; height: 15px; margin-top: -5.5px; border-radius: 2px;
+  background: var(--ink-soft); border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.55);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 7px; height: 15px; border-radius: 2px;
+  background: var(--ink-soft); border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.55);
+}
+input[type="range"]:hover::-webkit-slider-thumb { background: var(--ink); }
+input[type="range"]:hover::-moz-range-thumb { background: var(--ink); }
+input[type="range"]:focus-visible { outline: none; }
+input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--live); }
+input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--live); }
+/* holding shift switches to fine-tune — the thumb narrows to say so */
+input[type="range"].fine::-webkit-slider-thumb { width: 4px; background: var(--live-soft); }
+input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-soft); }
+
+.seg {
+  display: inline-flex; border: 1px solid var(--bench-edge); border-radius: var(--r);
+  overflow: hidden;
+}
+.seg button {
+  border: none; border-radius: 0; background: transparent; box-shadow: none;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--ink-soft); padding: 5px 10px;
+}
+.seg button:hover { background: var(--bench-rise); color: var(--ink); }
+/* A mode toggle is state, not an action: several are lit at once, so they get
+   weight and a marker rather than a filled face. Filled (white or blue) at
+   three-at-a-time pulled the eye away from the sheet. */
+.seg button.on {
+  background: var(--bench-rise); color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--live);
+}
+/* icon-bearing segments keep sentence case — the icon plus a word reads as a
+   tool name, not a silkscreened setting */
+.seg button:has(.tool-icon) { text-transform: none; letter-spacing: .3px; font-size: 12px; font-weight: 400; }
 
 /* inline SVG toolbar icons (vendored Lucide, ISC — see THIRD-PARTY-NOTICES.md;
    not emoji — currentColor tracks the button's text color so .on's inverted
@@ -262,61 +502,72 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
   stroke-linecap: round; stroke-linejoin: round;
 }
 
-/* backend cards */
+/* backend cards — selection is a tick in the margin, not a coloured outline */
 .backend-card {
-  border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px;
-  margin-bottom: 6px; cursor: pointer; background: var(--bed);
+  border: none; border-left: 2px solid transparent; border-radius: 0;
+  padding: 7px 10px; margin-bottom: 2px; cursor: pointer; background: var(--bench-rise);
+  border-radius: var(--r-sm); box-shadow: var(--lift);
 }
-.backend-card.active { border-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent); }
-.backend-card.unavailable { opacity: .55; cursor: default; }
+.backend-card:hover { background: var(--bench-edge); }
+.backend-card.active { border-left-color: var(--live); background: var(--bench-rise); }
+.backend-card.active .name { color: var(--live-soft); }
+.backend-card.unavailable { opacity: .45; cursor: default; }
 .backend-card .name { font-weight: 700; font-size: 12.5px; }
 .backend-card .desc { font-size: 11px; color: var(--ink-soft); }
-.backend-card .caps { font-size: 10px; color: var(--ink-soft); margin-top: 2px; }
+.backend-card .caps { font-size: 10px; color: var(--ink-soft); margin-top: 2px; letter-spacing: .3px; }
 .backend-card .caps b { color: var(--moss); font-weight: 700; }
 
 /* jog */
-.jog-grid { display: grid; grid-template-columns: repeat(3, 42px); gap: 4px; justify-content: start; margin-bottom: 6px; }
+.jog-grid { display: grid; grid-template-columns: repeat(3, 42px); gap: 3px; justify-content: start; margin-bottom: 6px; }
 .jog-grid button { height: 34px; }
 
 /* logs */
 .log {
-  font-size: 11px; background: var(--bed); border: 1px solid var(--line);
-  border-radius: 5px; padding: 5px 8px; height: 100px; overflow-y: auto;
-  white-space: pre-wrap;
+  font-size: 11px; background: var(--bench-deep); border: 1px solid var(--bench-edge);
+  border-radius: var(--r-sm); padding: 6px 9px; height: 100px; overflow-y: auto;
+  white-space: pre-wrap; font-variant-numeric: tabular-nums; box-shadow: var(--recess);
 }
-.log .tx { color: var(--accent); }
+.log .tx { color: var(--live-soft); }
 .log .err { color: var(--rust); }
 
-.progress { height: 7px; background: var(--paper-deep); border-radius: 999px; overflow: hidden; margin: 8px 0; border: 1px solid var(--line); }
-#progress-bar, #gen-progress-bar, #anim-preview-progress { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.progress {
+  height: 6px; background: var(--bench-deep); border-radius: 999px; overflow: hidden;
+  margin: 10px 0; border: 1px solid var(--bench-edge); box-shadow: var(--recess);
+}
+/* progress is the machine moving — ochre, same as every other "in motion" cue */
+#progress-bar, #gen-progress-bar, #anim-preview-progress {
+  height: 100%; width: 0; background: var(--ochre); transition: width .2s;
+}
 
 .modal-backdrop {
   position: fixed; inset: 0; z-index: 50; display: grid; place-items: center;
-  padding: 24px; background: rgba(10, 9, 8, .78);
+  padding: 24px; background: rgba(10, 9, 8, .82);
 }
 .modal-backdrop[hidden] { display: none; }
 .preview-modal {
   width: min(1180px, 96vw); max-height: 94vh; display: flex; flex-direction: column;
-  border: 1px solid var(--line); border-radius: 6px; background: var(--paper);
-  box-shadow: 0 16px 48px rgba(0,0,0,.55); padding: 10px 12px;
+  border: 1px solid var(--bench-edge); border-radius: var(--r); background: var(--bench);
+  box-shadow: 0 18px 52px rgba(0,0,0,.6); padding: 12px 14px;
 }
-.preview-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.preview-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
 .preview-head h2 {
-  margin: 0; flex: 1; font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px;
-  color: var(--ink-soft);
+  margin: 0; flex: 1;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px;
+  color: var(--ink);
 }
 .preview-stage {
   min-height: 260px; flex: 1; display: grid; place-items: center; overflow: hidden;
-  border: 1px solid var(--line); border-radius: 5px; background: var(--paper-deep);
+  border: none; border-radius: 0; background: var(--bench-deep);
 }
 .preview-stage img {
   display: block; max-width: 100%; max-height: min(68vh, 760px);
   background: var(--sheet); object-fit: contain;
+  box-shadow: 0 3px 18px rgba(0,0,0,.5);
 }
-.stage-list { display: grid; gap: 8px; margin-top: 8px; }
+.stage-list { display: grid; gap: 10px; margin-top: 10px; }
 .stage-group {
-  border: 1px solid var(--line); border-radius: 5px; padding: 7px;
-  background: color-mix(in srgb, var(--paper) 82%, var(--paper-deep));
+  border: none; border-left: 1px solid var(--bench-edge); border-radius: 0;
+  padding: 2px 0 2px 10px; background: none;
 }
 .stage-head, .stage-sheet {
   display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
@@ -324,54 +575,93 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .stage-head { margin-bottom: 6px; }
 .stage-head strong { margin-right: auto; }
 .stage-sheet {
-  padding: 5px 0; border-top: 1px solid var(--line);
+  padding: 5px 0; border-top: 1px solid var(--bench-edge);
 }
-.stage-sheet.on { background: var(--paper-deep); }
+.stage-sheet.on { background: var(--bench-rise); box-shadow: inset 2px 0 0 var(--live); }
 .stage-sheet button { font-size: 11px; padding: 3px 6px; }
-.stage-relayout { padding: 4px 0; border-top: 1px solid var(--line); }
+.stage-relayout { padding: 4px 0; border-top: 1px solid var(--bench-edge); }
 .stage-relayout label { color: var(--ink-soft); font-size: 11.5px; }
 .stage-relayout button { font-size: 11px; padding: 3px 8px; }
 
 /* live generator preview: dashed transient ghost, never interactive */
 .gen-preview { pointer-events: none; }
-.gen-preview-path { stroke: var(--accent); stroke-width: 0.3; stroke-opacity: 0.65; stroke-dasharray: 1.4 1; stroke-linecap: round; }
+.gen-preview-path { stroke: var(--live); stroke-width: 0.3; stroke-opacity: 0.65; stroke-dasharray: 1.4 1; stroke-linecap: round; }
 
 /* forms (auto-generated from JSON Schema) */
-.form .field { margin: 6px 0; }
-.form-group { margin: 8px 0 4px; border: 1px solid var(--line); border-radius: 5px; padding: 2px 8px 4px; }
-.form-group > summary { cursor: pointer; font-size: 11.5px; color: var(--ink-soft); user-select: none; }
+.form .field { margin: 7px 0; }
+/* a boolean is one decision, so it gets one line, and the box leads: you scan
+   a column of checkboxes to see what's on. Reversing the row puts the control
+   first without the renderer having to know about it. */
+.form .field:has(> .ctl > input[type="checkbox"]:only-child) {
+  display: flex; flex-direction: row-reverse; justify-content: flex-end;
+  align-items: center; gap: 9px; margin: 5px 0;
+}
+.form .field:has(> .ctl > input[type="checkbox"]:only-child) > label { flex: none; }
+.form .field:has(> .ctl > input[type="checkbox"]:only-child) > .ctl { flex: none; }
+.form-group {
+  margin: 10px 0 4px; border: none; border-left: 1px solid var(--bench-edge);
+  border-radius: 0; padding: 0 0 2px 10px;
+}
+.form-group > summary {
+  cursor: pointer; user-select: none;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px;
+  color: var(--ink-soft); padding: 2px 0;
+}
+.form-group > summary:hover { color: var(--ink); }
+.form-group[open] > summary { color: var(--ink); margin-bottom: 2px; }
+/* standalone disclosures (the server log) get the same engraved voice as a
+   form group, so one section doesn't read as loose body text */
+details:not(.form-group) > summary {
+  cursor: pointer; user-select: none; color: var(--ink-soft);
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.4px;
+}
+details:not(.form-group) > summary:hover { color: var(--ink); }
+details:not(.form-group) > summary .hint {
+  text-transform: none; letter-spacing: 0; font-weight: 400;
+}
 .form .field > label { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-soft); }
-.form .ctl { display: flex; gap: 7px; align-items: center; }
-.form .ctl input[type="number"] { width: 5.2em; }
+.form .ctl { display: flex; gap: 8px; align-items: center; }
+/* 6.2em, not 5.2: "279.4" plus the spinner was clipping its last digit, and a
+   machine value you can't read in full is worse than a wide control */
+.form .ctl input[type="number"] { width: 6.2em; }
 .form .ctl input[type="text"] { flex: 1; }
 
-/* layer list */
+/* layer list — the pen swatch is the only saturated thing in the sidebar,
+   because it is the only thing standing for a real object (the pen in the
+   carriage). Selection is a tick in the margin. */
 .layer-row {
-  display: flex; align-items: center; gap: 6px;
-  border: 1px solid var(--line); border-radius: 5px; background: var(--bed);
-  padding: 4px 7px; margin: 4px 0; cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; gap: 7px;
+  border: none; border-left: 2px solid transparent; border-radius: 0;
+  background: var(--bench-rise);
+  padding: 5px 8px; margin: 2px 0; cursor: pointer; font-size: 12px;
+  border-radius: var(--r-sm); box-shadow: var(--lift);
   user-select: none; /* shift/cmd-click selects layers, not label text */
 }
+.layer-row:hover { background: var(--bench-edge); }
 .layer-row.keyframe-row {
   margin-left: 16px;
-  background: var(--paper-deep);
-  box-shadow: inset 2px 0 0 var(--line);
+  background: var(--bench-deep);
 }
-.layer-row.selected { border-color: var(--accent); box-shadow: inset 2px 0 0 var(--accent); }
+.layer-row.selected { border-left-color: var(--live); background: var(--bench-edge); }
+.layer-row.selected .lname { color: var(--live-soft); }
 .layer-row .swatch {
-  width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line);
+  width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,.5);
   flex: none;
 }
 .layer-row .lname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.layer-row .est { color: var(--ink-soft); font-size: 10.5px; }
-.layer-row button { padding: 0 6px; font-size: 11px; }
+.layer-row .est { color: var(--ink-soft); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.layer-row button { padding: 0 6px; font-size: 11px; background: transparent; border-color: transparent; }
+.layer-row button:hover { background: var(--bench-rise); border-color: var(--bench-edge); }
 .layer-row .fold { width: 18px; flex: none; text-align: center; }
 .layer-row .eye.off, .layer-row .occ.off { opacity: .3; }
 .layer-row .occ.on { color: var(--ochre); border-color: var(--ochre); }
 
 /* effect steps */
-.step { border: 1px solid var(--line); border-radius: 5px; padding: 5px 8px; margin: 5px 0; background: var(--bed); }
-.step.disabled { opacity: .5; }
+.step {
+  border: none; border-left: 1px solid var(--bench-edge); border-radius: 0;
+  padding: 5px 0 5px 10px; margin: 6px 0; background: none;
+}
+.step.disabled { opacity: .45; }
 .step .head { display: flex; align-items: center; gap: 6px; }
 .step .head .name { flex: 1; font-weight: 700; font-size: 12px; cursor: pointer; }
 .step .head button { padding: 0 6px; font-size: 11px; }
@@ -382,39 +672,43 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 
 /* pens */
 .pen-row {
-  display: flex; align-items: center; gap: 8px;
-  border: 1px solid var(--line); border-radius: 5px; background: var(--bed);
-  padding: 5px 8px; margin: 4px 0; cursor: pointer;
+  display: flex; align-items: center; gap: 9px;
+  border: none; border-left: 2px solid transparent; border-radius: 0;
+  background: var(--bench-rise);
+  padding: 6px 9px; margin: 2px 0; cursor: pointer;
+  border-radius: var(--r-sm); box-shadow: var(--lift);
 }
-.pen-row.selected { border-color: var(--accent); }
-.pen-row .swatch { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line); }
-.pen-row .meta { color: var(--ink-soft); font-size: 11px; margin-left: auto; }
+.pen-row:hover { background: var(--bench-edge); }
+.pen-row.selected { border-left-color: var(--live); background: var(--bench-edge); }
+.pen-row .swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,.5); flex: none; }
+.pen-row .meta { color: var(--ink-soft); font-size: 11px; margin-left: auto; font-variant-numeric: tabular-nums; }
 
-.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: 11.5px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-size: 11.5px; }
 .kv dt { color: var(--ink-soft); }
-.kv dd { margin: 0; }
+.kv dd { margin: 0; font-variant-numeric: tabular-nums; }
 
 @media (max-width: 1000px) {
   main { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; }
-  #inspector { border-left: none; border-top: 1px solid var(--line); }
+  #inspector { border-left: none; border-top: 1px solid var(--bench-edge); }
+  header { flex-wrap: wrap; gap: 10px; }
+  .project-name { width: 10em; }
 }
 
 /* draw tool (draw.js): the in-progress stroke previewed on the canvas */
 .draw-line { fill: none; stroke: #16161d; stroke-width: 0.35; stroke-linecap: round; stroke-linejoin: round; }
-.draw-live { stroke: var(--accent); }
+.draw-live { stroke: var(--live); }
 
 /* bench latch chip (compose.js): the form is live-editing this layer */
 .latch-chip {
-  border-color: var(--accent); color: var(--accent-soft); background: transparent;
+  border-color: var(--live); color: var(--live-soft); background: transparent;
   border-radius: 999px; font-size: 11.5px; padding: 2px 10px;
   max-width: 15em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.latch-chip:hover { color: var(--accent); }
+.latch-chip:hover { color: var(--live); background: transparent; border-color: var(--live-soft); }
 
 /* canvas drop target: an image/video file is hovering over the sheet */
 #canvas-wrap.dropping {
-  border-color: var(--accent);
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--live);
 }
 
 /* draw/pen modes: pointer capture on the main canvas -> a layer.
@@ -424,12 +718,12 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 /* brush: the circle IS the cursor (it shows the real mm radius), so the
    pointer itself gets out of the way rather than doubling up */
 #canvas-wrap.brush-mode, #canvas-wrap.brush-mode svg { cursor: none; }
-.brush-cursor { fill: none; stroke: var(--accent); stroke-width: 0.4; pointer-events: none; }
+.brush-cursor { fill: none; stroke: var(--live); stroke-width: 0.4; pointer-events: none; }
 .brush-cursor.erasing { stroke: var(--rust); stroke-dasharray: 2 1.5; }
 /* the live swept mass during a drag: stroke-width is set to 2x radius in mm
    by brush.js, so this previews the area shapely will buffer server-side —
    fully opaque: a translucent preview misreads the mass you'll actually get */
-.brush-live { fill: none; stroke: var(--accent);
+.brush-live { fill: none; stroke: var(--live);
               stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 .brush-live.erasing { stroke: var(--rust); }
 #brush-bar { align-items: center; }
@@ -438,19 +732,23 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 /* pen tool: anchor/handle overlay. Anchors are small squares (Photoshop-
    style, <rect> elements) so they read as visually distinct from the round
    handle knobs at a glance. */
-.pen-anchor { fill: var(--paper); stroke: var(--accent); stroke-width: 0.6; }
-.pen-anchor.smooth { fill: var(--accent); }
-.pen-handle-line { stroke: var(--accent); stroke-width: 0.4; stroke-dasharray: 1.2 1; opacity: 0.7; }
-.pen-handle-knob { fill: var(--paper); stroke: var(--accent); stroke-width: 0.4; }
-.pen-pending-path { stroke: var(--accent); stroke-width: 0.6; fill: none; }
-.pen-rubber-band { stroke: var(--accent); stroke-width: 0.6; stroke-dasharray: 1.5 1.2; fill: none; opacity: 0.7; }
+.pen-anchor { fill: var(--bench); stroke: var(--live); stroke-width: 0.6; }
+.pen-anchor.smooth { fill: var(--live); }
+.pen-handle-line { stroke: var(--live); stroke-width: 0.4; stroke-dasharray: 1.2 1; opacity: 0.7; }
+.pen-handle-knob { fill: var(--bench); stroke: var(--live); stroke-width: 0.4; }
+.pen-pending-path { stroke: var(--live); stroke-width: 0.6; fill: none; }
+.pen-rubber-band { stroke: var(--live); stroke-width: 0.6; stroke-dasharray: 1.5 1.2; fill: none; opacity: 0.7; }
 .subtracting .pen-pending-path, .subtracting .pen-rubber-band { stroke: var(--rust); }
-.pen-pending-anchor { fill: var(--accent); stroke: none; }
+.pen-pending-anchor { fill: var(--live); stroke: none; }
 
 /* grid-sheet layout presets (plot.js animation panel) */
-.anim-presets { display: inline-flex; gap: 3px; }
-.anim-presets button { padding: 2px 9px; font-size: 11.5px; }
+.anim-presets { display: inline-flex; gap: 2px; }
+.anim-presets button { padding: 2px 9px; font-size: 11.5px; font-variant-numeric: tabular-nums; }
 
 /* A/B capture-series toolbar segment */
-#ab-capture input { width: 3.4em; }
-#ab-capture button.on { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+#ab-capture input { width: 3.4em; border: none; border-left: 1px solid var(--bench-edge); border-right: 1px solid var(--bench-edge); }
+#ab-capture button.on { background: var(--bench-rise); color: var(--ink); box-shadow: inset 0 -2px 0 var(--live); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

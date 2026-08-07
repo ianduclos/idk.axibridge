@@ -252,7 +252,8 @@ export function initComposeTab() {
       <div id="asset-list"></div>
     </div>
     <div class="panel">
-      <h2>Layers <span class="hint">(top of list = drawn on top / occludes below)</span></h2>
+      <h2>Layers</h2>
+      <div class="hint">Top of the list draws last and occludes what's below.</div>
       <div class="row">
         <button id="btn-empty-layer"
           title="blank layer the pen/brush/draw tools draw onto (a shape layer both pen and brush can add to and subtract from when those tools are active) — an explicit fresh target instead of appending to the last drawn layer">＋ empty layer</button>

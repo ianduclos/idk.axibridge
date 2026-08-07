@@ -1431,6 +1431,9 @@ export function applyCapabilities() {
   $("btn-test-stroke").disabled = $("btn-cal-mark").disabled = !(connected && idle);
   $("raw-send").disabled = $("raw-input").disabled = $("raw-block").disabled = !(caps.raw_ebb && connected && idle);
   $("btn-plot").disabled = !(connected && idle);
+  // once connected, Connect is no longer the thing to do — stop styling it as
+  // the primary path (it was the brightest control in the panel while idle)
+  $("btn-connect").classList.toggle("primary", !connected);
   $("btn-pause").disabled = !(caps.pause_resume && m.job_state === "plotting");
   $("btn-resume").disabled = !(m.job_state === "paused");
   $("btn-stop").disabled = idle;

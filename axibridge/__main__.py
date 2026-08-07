@@ -23,15 +23,25 @@ def main() -> None:
     import uvicorn
 
     from .app import create_app
+    from .events import bus
 
-    # timeout_graceful_shutdown is NOT optional here. uvicorn's default is to
-    # wait forever for open connections to finish, and /api/events is an SSE
-    # stream that never finishes by design — so a plain SIGTERM hung until the
-    # app shell's own 5s grace ran out and SIGKILLed it. That was the whole of
-    # "the app takes ages to close". Two seconds is longer than any real
-    # request here and short enough that quitting feels instant.
-    uvicorn.run(create_app(), host=args.host, port=args.port, log_level="info",
-                timeout_graceful_shutdown=2)
+    # Quitting used to cost a flat 2 s. /api/events is an SSE stream that never
+    # finishes by design, and uvicorn's graceful shutdown waits for open
+    # connections — the browser always holds one, so every quit sat out the
+    # whole timeout (measured: 0.13 s with no client attached, 2.2 s with one).
+    #
+    # timeout_graceful_shutdown is the backstop. The actual fix is ending the
+    # streams the moment the signal lands: uvicorn waits for connections BEFORE
+    # running the app's lifespan shutdown, so closing the bus from the lifespan
+    # is too late to help. handle_exit is the hook that runs first.
+    class _Server(uvicorn.Server):
+        def handle_exit(self, sig, frame):  # type: ignore[override]
+            bus.close_threadsafe()
+            super().handle_exit(sig, frame)
+
+    config = uvicorn.Config(create_app(), host=args.host, port=args.port,
+                            log_level="info", timeout_graceful_shutdown=2)
+    _Server(config).run()
 
 
 if __name__ == "__main__":
