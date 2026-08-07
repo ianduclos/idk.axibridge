@@ -34,7 +34,11 @@ dependencies = [
 #   pip install https://cdn.evilmadscientist.com/dl/ad/public/AxiDraw_API.zip
 # The native backend reports itself unavailable until pyaxidraw is importable.
 occult = ["vpype-occult>=0.4"]
-dev = ["pytest>=8", "httpx>=0.27"]
+# playwright drives the acceptance harness (tests/test_acceptance_ui.py).
+# The browser itself is a separate, once-per-machine step:
+#   .venv/bin/python -m playwright install chromium
+# Without either, that module skips — the Pi stays backend-only.
+dev = ["pytest>=8", "httpx>=0.27", "playwright>=1.44"]
 
 [project.scripts]
 axibridge = "axibridge.__main__:main"

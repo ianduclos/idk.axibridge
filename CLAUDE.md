@@ -19,8 +19,20 @@ before structural changes.
 - Frontend has no build step: edit `axibridge/static/**`, reload the browser.
 - Tests isolate machine-level stores via `AXIBRIDGE_CONFIG_DIR`
   (set in `tests/conftest.py` before any axibridge import — keep it first).
-- UI smoke-testing with Playwright: use `wait_until="domcontentloaded"`;
-  the SSE stream keeps connections open so `networkidle` never fires.
+- **UI acceptance tests are part of the same suite**:
+  `tests/test_acceptance_ui.py` drives the real UI in headless chromium
+  against a real server on a temp port. They need the browser once per
+  machine — `.venv/bin/python -m playwright install chromium` — and skip
+  cleanly without it, which is how the Pi stays backend-only. They assert
+  what the user sees, never how it is built; keep them that way or they
+  will fight the next redesign instead of protecting it.
+- Driving the UI with Playwright: use `wait_until="domcontentloaded"`; the
+  SSE stream keeps connections open so `networkidle` never fires. `<option>`
+  elements are never "visible", so wait on a counting `wait_for_function`,
+  not `wait_for_selector`. And keep `sync_playwright()` **function-scoped**:
+  its asyncio loop runs on the main thread for as long as the context is
+  open, and a session-scoped one makes every later `asyncio.run()` in the
+  suite raise "cannot be called from a running event loop".
 - **"I restarted it and nothing changed" = check for a stale server first.**
   A server outlives its own source directory (modules are already in memory),
   so one left over from before a move keeps serving from a path that no longer

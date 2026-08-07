@@ -104,7 +104,12 @@ Everything below is ordered by that.
 - **Playwright gotcha.** The venv's playwright wants chromium revision 1223;
   only 1234 is installed. Either run `playwright install`, or pass
   `executable_path=` — see any probe script pattern. Fix this properly in
-  Slice 2 rather than carrying the workaround.
+  Slice 2 rather than carrying the workaround. **[Done 2026-08-07:
+  `.venv/bin/python -m playwright install chromium` fetched 1223; no
+  `executable_path` anywhere. Two more gotchas found while building the
+  harness — `<option>` is never "visible" to Playwright, and a
+  session-scoped `sync_playwright()` breaks every later `asyncio.run()` in
+  the suite. Both are written up in CLAUDE.md.]**
 - **pywebview gotchas** (all already bitten, all in `launch/axibridge_app.py`):
   window events fire **off the main thread**, so AppKit calls must be
   dispatched to `NSOperationQueue.mainQueue()` or they silently no-op;
