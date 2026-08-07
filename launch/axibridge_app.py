@@ -281,6 +281,43 @@ def merge_menus_into_native(main_menu, titles, separator) -> list[str]:
     return merged
 
 
+def find_menu_item(main_menu, menu_title_wanted: str, item_label: str):
+    """The NSMenuItem for (menu, label), after the merge has moved ours into
+    pywebview's menus. Returns None if it isn't there."""
+    for i in range(main_menu.numberOfItems()):
+        bar_item = main_menu.itemAtIndex_(i)
+        if menu_title(bar_item) != menu_title_wanted:
+            continue
+        sub = bar_item.submenu()
+        if sub is None:
+            continue
+        for j in range(sub.numberOfItems()):
+            if sub.itemAtIndex_(j).title() == item_label:
+                return sub.itemAtIndex_(j)
+    return None
+
+
+def set_menu_states(main_menu, states: dict, index: dict, on, off) -> int:
+    """Tick the native items the page says are on. Returns how many were set.
+
+    `states` is {selector: bool} straight from the page; `index` maps a
+    selector to the (menu, label) that addresses its native item. Both come
+    from `axibridge.menu_spec`, so what is ticked and what is clicked can
+    never be two different opinions.
+    """
+    done = 0
+    for selector, is_on in states.items():
+        where = index.get(selector)
+        if where is None:
+            continue
+        item = find_menu_item(main_menu, *where)
+        if item is None:
+            continue
+        item.setState_(on if is_on else off)
+        done += 1
+    return done
+
+
 def merge_native_menus() -> bool:
     """Fold our Edit/View items into pywebview's own menus of those names.
 
@@ -337,6 +374,38 @@ class ShellApi:
 
     def __init__(self) -> None:
         self.window = None  # set once create_window has returned
+
+    def menu_changed(self) -> bool:
+        """The page saying "a menu control changed" — nothing more.
+
+        It deliberately sends no data. What has a state, how that state is
+        read, and which native item shows it all come from
+        `axibridge.menu_spec`, so the page cannot hold a second opinion about
+        the menu; it only knows *when* to say something. The read-back is a
+        pull rather than a push for the same reason.
+
+        A no-op in a browser tab, where `window.pywebview` does not exist and
+        the in-page menu bar is the visible one anyway.
+        """
+        try:
+            import AppKit
+
+            from axibridge.menu_spec import item_index, state_probe_js
+
+            states = self.window.evaluate_js(state_probe_js()) or {}
+            index = item_index()
+
+            def apply() -> None:
+                main_menu = AppKit.NSApplication.sharedApplication().mainMenu()
+                if main_menu is not None:
+                    set_menu_states(main_menu, states, index,
+                                    AppKit.NSControlStateValueOn,
+                                    AppKit.NSControlStateValueOff)
+
+            AppKit.NSOperationQueue.mainQueue().addOperationWithBlock_(apply)
+            return True
+        except Exception:
+            return False
 
     def zoom_window(self) -> bool:
         """Double-click on the title-bar band, same as the green button.
