@@ -767,8 +767,9 @@ export function renderLayerList() {
       : document.createElement("span");
     fold.className = "fold";
 
-    const eye = btn(layer.visible ? "👁" : "—", "visible", () =>
-      actions.patchLayer(layer.id, { visible: !layer.visible }));
+    const eye = btn("", layer.visible ? "visible — click to hide" : "hidden — click to show",
+      () => actions.patchLayer(layer.id, { visible: !layer.visible }));
+    eye.append(icon(layer.visible ? EYE : EYE_OFF));
     eye.className = "eye" + (layer.visible ? "" : " off");
 
     const swatch = document.createElement("span");
@@ -882,6 +883,40 @@ export function logDeleted(names, deletedIds) {
   } else {
     actions.log(`deleted ${subject}`);
   }
+}
+
+/* Vendored Lucide path data (ISC — see THIRD-PARTY-NOTICES.md). Inline SVG,
+   never an emoji: an emoji is a colour glyph the OS picks for you, so it
+   ignores currentColor, changes shape between machines and reads as a
+   sticker on an instrument panel. These inherit the button's colour, so the
+   hidden state and the row's selected state theme for free. Stroke geometry
+   is in `.tool-icon` (style.css), not here, so the icon set stays one system. */
+const EYE = ['M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0'];
+const EYE_OFF = [
+  'M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49',
+  'M14.084 14.158a3 3 0 0 1-4.242-4.242',
+  'M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143',
+  'm2 2 20 20',
+];
+
+function icon(paths) {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("class", "tool-icon");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  for (const d of paths) {
+    const el = document.createElementNS(NS, "path");
+    el.setAttribute("d", d);
+    svg.append(el);
+  }
+  // the pupil: a circle rather than a path, exactly as Lucide draws it
+  if (paths === EYE) {
+    const c = document.createElementNS(NS, "circle");
+    c.setAttribute("cx", "12"); c.setAttribute("cy", "12"); c.setAttribute("r", "3");
+    svg.append(c);
+  }
+  return svg;
 }
 
 function btn(txt, title, fn) {

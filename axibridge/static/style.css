@@ -533,6 +533,9 @@ input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-
   fill: none; stroke: currentColor; stroke-width: 2.2;
   stroke-linecap: round; stroke-linejoin: round;
 }
+/* an icon that IS the button needs no gap after it, and centres rather than
+   sitting on a text baseline that isn't there */
+.tool-icon:only-child { margin-right: 0; vertical-align: middle; }
 
 /* backend cards — selection is a tick in the margin, not a coloured outline */
 .backend-card {
@@ -678,10 +681,27 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 }
 .layer-row .lname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .layer-row .est { color: var(--ink-soft); font-size: 10.5px; font-variant-numeric: tabular-nums; }
-.layer-row button { padding: 0 6px; font-size: 11px; background: transparent; border-color: transparent; }
+/* The row's controls were fully transparent, which made a row of live
+   controls read as a row of decoration — you could not tell what was
+   clickable until you were already over it. They get a shallow well instead
+   of a fill: rgba black rather than a named surface, so ONE value works on
+   all three row grounds (--bench-rise normally, --bench-edge selected or
+   hovered, --bench-deep for a keyframe row) and the contrast stays the same
+   step wherever the row is. A named colour would have to be picked for one
+   of the three and would disappear against another. */
+.layer-row button {
+  padding: 0 6px; font-size: 11px;
+  background: rgba(0, 0, 0, .22); border-color: transparent;
+}
 .layer-row button:hover { background: var(--bench-rise); border-color: var(--bench-edge); }
 .layer-row .fold { width: 18px; flex: none; text-align: center; }
-.layer-row .eye.off, .layer-row .occ.off { opacity: .3; }
+/* the fold marker is a disclosure triangle, not a control with a face */
+.layer-row .fold { background: none; }
+.layer-row .tool-icon { width: 14px; height: 14px; }
+/* a hidden layer dims, but not so far that the crossed-out eye stops reading
+   — the icon already carries the state, the opacity only seconds it */
+.layer-row .eye.off { opacity: .55; }
+.layer-row .occ.off { opacity: .3; }
 .layer-row .occ.on { color: var(--ochre); border-color: var(--ochre); }
 
 /* effect steps */

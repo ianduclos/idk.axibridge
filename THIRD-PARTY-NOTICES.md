@@ -6,14 +6,16 @@ vendored — this file covers things copied into the tree.
 
 ## Lucide icons — ISC
 
-The canvas toolbar's tool icons (`axibridge/static/index.html`: select, draw,
-pen, commit) are Lucide icon path data, inlined as SVG. Inlined rather than
+The tool icons are Lucide icon path data, inlined as SVG — six in the canvas
+toolbar's markup (`axibridge/static/index.html`) and two built in JS for the
+layer list (`static/js/compose.js`, the `EYE` / `EYE_OFF` constants). Inlined rather than
 loaded as a sprite or font on purpose: the frontend has no build step, and an
 inline `<svg>` inherits `currentColor`, so the toolbar's inverted active state
 themes for free. Stroke width and joins are overridden in `style.css`
 (`.tool-icon`) — the paths themselves are unmodified.
 
-Icons used: `mouse-pointer-2`, `pencil`, `pen-tool`, `check`.
+Icons used: `mouse-pointer-2`, `pencil`, `pen-tool`, `brush`, `eraser`,
+`check`, `eye`, `eye-off`.
 
 ```
 ISC License
