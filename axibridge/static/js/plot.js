@@ -9,6 +9,87 @@ import { S, actions } from "./main.js";
 
 const $ = (id) => document.getElementById(id);
 
+// The machine panels — motion parameters, jog & pen, the raw EBB trapdoor,
+// soft limits, holder calibration. They are built here because their handlers
+// are (initPlotTab binds every id below), but they are APPENDED TO THE
+// SETTINGS TAB: none of them is about running a plot, they are about the
+// machine that runs it, and five of them buried the Plot tab's actual work
+// ten panels deep. Settings already owned half of holder calibration (its
+// reset button), so this reunites a control that was split across two tabs.
+//
+// Placement per panel, decided rather than defaulted: motion parameters and
+// raw EBB are forms and could never be menu items; soft limits keeps its
+// checkbox next to the millimetres it guards; holder calibration is a
+// three-step procedure with measurements. Only the pure ACTIONS in jog & pen
+// go to the Machine menu, which addresses these very buttons by id.
+const MACHINE_PANELS = `    <div class="panel">
+      <h2>Motion parameters <span class="tag" id="motion-backend-tag"></span></h2>
+      <div id="motion-form" class="form"></div>
+    </div>
+
+    <div class="panel" id="panel-jog">
+      <h2>Jog & pen</h2>
+      <div class="jog-grid">
+        <span></span><button id="jog-up" data-jog="0,-1">▲</button><span></span>
+        <button id="jog-left" data-jog="-1,0">◀</button><button id="btn-goto-origin" title="Go to origin">⌂</button><button id="jog-right" data-jog="1,0">▶</button>
+        <span></span><button id="jog-down" data-jog="0,1">▼</button><span></span>
+      </div>
+      <div class="row">
+        <label>step</label>
+        <select id="jog-step"><option>0.1</option><option>1</option><option selected>10</option><option>50</option></select>
+        <span class="hint">mm · position: <span id="pos-readout">—</span></span>
+      </div>
+      <div class="row">
+        <button id="btn-pen-up">Pen up</button>
+        <button id="btn-pen-down">Pen down</button>
+        <button id="btn-set-origin" title="Declare current position (0,0)">Set origin</button>
+        <button id="btn-origin-guide" title="Jog to the paper guide corner first, then press">Origin = guide corner</button>
+      </div>
+      <h3>Pen height test <span class="hint">(live — tweak heights above, then:)</span></h3>
+      <div class="row">
+        <button id="btn-pen-cycle">Cycle ↓↑</button>
+        <button id="btn-test-stroke">Test stroke (20mm)</button>
+        <select id="save-heights-pen"><option value="">save heights to pen…</option></select>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-raw">
+      <h2>Raw EBB <span class="tag">trapdoor</span></h2>
+      <div class="hint warn">Bypasses planner & soft limits. Motion commands desync dead reckoning — re-set origin after.</div>
+      <div id="raw-log" class="log"></div>
+      <div class="row">
+        <input id="raw-input" placeholder="QM  /  SP,1  /  SM,1000,500,500" spellcheck="false" style="flex:1">
+        <button id="raw-send">Send</button>
+        <button id="raw-block" title="Wait until the machine's motion queue drains (QG poll) — use after fire-and-forget raw motion before the next command">Wait idle</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Soft limits</h2>
+      <label class="row"><input type="checkbox" id="limits-enabled"> guard envelope</label>
+      <div class="row">
+        <input type="number" id="limits-w" step="1" min="10" style="width:5.5em"> ×
+        <input type="number" id="limits-h" step="1" min="10" style="width:5.5em"> <span class="hint">mm</span>
+      </div>
+      <div class="hint">No limit switches — past the envelope the carriage grinds the frame.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Holder calibration <span class="tag">once per holder</span></h2>
+      <div class="hint">The V-cradle self-centres every barrel: nib offset = vector × barrel ⌀.
+        1) load pen A, plot the mark. 2) load pen B, plot again.
+        3) caliper the displacement of mark B relative to mark A (machine axes) and enter everything below.</div>
+      <div class="row"><button id="btn-cal-mark">Plot registration mark</button></div>
+      <div class="row">
+        <label>⌀A</label><input type="number" id="cal-d1" step="0.05" style="width:5em">
+        <label>⌀B</label><input type="number" id="cal-d2" step="0.05" style="width:5em">
+        <label>Δx</label><input type="number" id="cal-dx" step="0.05" style="width:5em">
+        <label>Δy</label><input type="number" id="cal-dy" step="0.05" style="width:5em">
+      </div>
+      <div class="row"><button id="btn-cal-compute" class="primary">Compute & save vector</button></div>
+      <div class="hint" id="cal-current"></div>
+    </div>`;
+
 export function initPlotTab() {
   $("tab-plot").innerHTML = `
     <div class="panel">
@@ -181,73 +262,8 @@ export function initPlotTab() {
       </div>
     </div>
 
-    <div class="panel">
-      <h2>Motion parameters <span class="tag" id="motion-backend-tag"></span></h2>
-      <div id="motion-form" class="form"></div>
-    </div>
+`;
 
-    <div class="panel" id="panel-jog">
-      <h2>Jog & pen</h2>
-      <div class="jog-grid">
-        <span></span><button data-jog="0,-1">▲</button><span></span>
-        <button data-jog="-1,0">◀</button><button id="btn-goto-origin" title="Go to origin">⌂</button><button data-jog="1,0">▶</button>
-        <span></span><button data-jog="0,1">▼</button><span></span>
-      </div>
-      <div class="row">
-        <label>step</label>
-        <select id="jog-step"><option>0.1</option><option>1</option><option selected>10</option><option>50</option></select>
-        <span class="hint">mm · position: <span id="pos-readout">—</span></span>
-      </div>
-      <div class="row">
-        <button id="btn-pen-up">Pen up</button>
-        <button id="btn-pen-down">Pen down</button>
-        <button id="btn-set-origin" title="Declare current position (0,0)">Set origin</button>
-        <button id="btn-origin-guide" title="Jog to the paper guide corner first, then press">Origin = guide corner</button>
-      </div>
-      <h3>Pen height test <span class="hint">(live — tweak heights above, then:)</span></h3>
-      <div class="row">
-        <button id="btn-pen-cycle">Cycle ↓↑</button>
-        <button id="btn-test-stroke">Test stroke (20mm)</button>
-        <select id="save-heights-pen"><option value="">save heights to pen…</option></select>
-      </div>
-    </div>
-
-    <div class="panel" id="panel-raw">
-      <h2>Raw EBB <span class="tag">trapdoor</span></h2>
-      <div class="hint warn">Bypasses planner & soft limits. Motion commands desync dead reckoning — re-set origin after.</div>
-      <div id="raw-log" class="log"></div>
-      <div class="row">
-        <input id="raw-input" placeholder="QM  /  SP,1  /  SM,1000,500,500" spellcheck="false" style="flex:1">
-        <button id="raw-send">Send</button>
-        <button id="raw-block" title="Wait until the machine's motion queue drains (QG poll) — use after fire-and-forget raw motion before the next command">Wait idle</button>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Soft limits</h2>
-      <label class="row"><input type="checkbox" id="limits-enabled"> guard envelope</label>
-      <div class="row">
-        <input type="number" id="limits-w" step="1" min="10" style="width:5.5em"> ×
-        <input type="number" id="limits-h" step="1" min="10" style="width:5.5em"> <span class="hint">mm</span>
-      </div>
-      <div class="hint">No limit switches — past the envelope the carriage grinds the frame.</div>
-    </div>
-
-    <div class="panel">
-      <h2>Holder calibration <span class="tag">once per holder</span></h2>
-      <div class="hint">The V-cradle self-centres every barrel: nib offset = vector × barrel ⌀.
-        1) load pen A, plot the mark. 2) load pen B, plot again.
-        3) caliper the displacement of mark B relative to mark A (machine axes) and enter everything below.</div>
-      <div class="row"><button id="btn-cal-mark">Plot registration mark</button></div>
-      <div class="row">
-        <label>⌀A</label><input type="number" id="cal-d1" step="0.05" style="width:5em">
-        <label>⌀B</label><input type="number" id="cal-d2" step="0.05" style="width:5em">
-        <label>Δx</label><input type="number" id="cal-dx" step="0.05" style="width:5em">
-        <label>Δy</label><input type="number" id="cal-dy" step="0.05" style="width:5em">
-      </div>
-      <div class="row"><button id="btn-cal-compute" class="primary">Compute & save vector</button></div>
-      <div class="hint" id="cal-current"></div>
-    </div>`;
 
   // ---- backends / connection
   $("ports-refresh").onclick = refreshPorts;
@@ -466,6 +482,9 @@ export function initPlotTab() {
   };
   $("stage-capture-plot").onclick = () => captureStaged("plot");
   $("stage-capture-frame").onclick = () => captureStaged("frame");
+  // append, never assign: initSettingsTab has already written its own body
+  $("tab-settings").insertAdjacentHTML("beforeend", MACHINE_PANELS);
+
   $("stage-interp").onclick = () => interpolateStaged();
   bindAbCapture();   // rebinds after every innerHTML rebuild; `ab` outlives it
   refreshAnimPanel();

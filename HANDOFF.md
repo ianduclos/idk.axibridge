@@ -18,13 +18,19 @@ entries: 4
   only when a timeline or staged series exists, (3) then `flex-wrap: nowrap`
   + a "»" overflow so the canvas top edge stops moving on resize. All three
   are page-only and fully testable headless. After that, the Machine menu.
-- blockers: **the Machine step is blocked on one decision.** Of the five
-  panels leaving the Plot tab, only ACTIONS can be menu items — Ian's own menu
-  rule sends anything with a readout or live value to a panel, and motion
-  parameters, raw EBB, soft-limit values and calibration steps all have one.
-  They need a destination: Settings tab, a new Machine tab, or both. Asked
-  2026-08-07, not answered — do not pick one unilaterally, it changes the
-  whole shape of the step.
+- blockers: **one real gap, and it is the same class as the checkmark work.**
+  A Machine menu item shows as ENABLED while the button it drives is disabled
+  — with no machine connected, "Pen up" looks available and does nothing (the
+  API answers 409 "not connected"). That is the menu lying about machine
+  truth, which is exactly what the menu rule exists to prevent. The machinery
+  to fix it already exists: `menu_spec.state_probe_js` reports
+  `{selector: bool}` and the shell sets checkmarks from it, so extend the
+  probe to report `disabled` too and call `setEnabled_` alongside
+  `setState_`. Do this before adding any more menu items.
+  RESOLVED 2026-08-07: the destination question was delegated to Claude
+  ("choose machine/settings yourself for each") and answered per panel — all
+  five panels to Settings, only the pure actions to the menu. Reasons are in
+  `plot.js`'s MACHINE_PANELS comment.
   SETTLED 2026-08-07: (a) jog stays for now — move it as a menu item and
   **re-ask after Ian has used it that way**, which is the whole point of
   deferring rather than carrying it forever; (b) the header's dead middle is

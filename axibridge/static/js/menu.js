@@ -44,7 +44,17 @@ export function initMenu() {
     // buttons, the download anchor) run first — this delegated listener just
     // closes the menu afterward, since it fires after the item's own bubbling.
     m.querySelector(".menu-panel").addEventListener("click", (e) => {
-      if (e.target.closest(".menu-item")) closeAll();
+      const item = e.target.closest(".menu-item");
+      if (!item) return;
+      // An item may NAME the control it drives (`data-target`) when that
+      // control lives elsewhere — the Machine menu's Pen up is the Pen up
+      // button in Settings › Jog & pen. This forwards the click to it, and
+      // `menu_spec` reads the same attribute to build the native menu, so
+      // both bars drive the identical element. It is a forward, not a second
+      // implementation: nothing here knows what Pen up does.
+      const target = item.dataset.target && document.querySelector(item.dataset.target);
+      if (target) target.click();
+      closeAll();
     });
   }
 

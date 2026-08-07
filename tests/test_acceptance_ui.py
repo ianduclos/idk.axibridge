@@ -669,6 +669,62 @@ def test_the_canvas_top_edge_does_not_move_when_the_window_resizes(ui):
     assert not ui.errors
 
 
+def test_the_machine_panels_left_the_plot_tab(ui):
+    """Plot had ten panels and five of them were about the machine rather than
+    about running a plot, which buried Staging five deep. They are in Settings
+    now — built by plot.js, whose handlers they are, but appended there.
+
+    The ordering this depends on is the fragile part: `initSettingsTab` must
+    run BEFORE `initPlotTab`, or Settings' own innerHTML overwrites the
+    appended panels and every machine control silently disappears. Counting
+    both tabs is what catches that."""
+    reload_app(ui)
+    # attached, not visible: an inactive tab body is `hidden`, and the panels
+    # are built into it whether or not you are looking at it (same family as
+    # the <option>-is-never-visible gotcha in CLAUDE.md)
+    ui.wait_for_selector("#tab-settings .panel", state="attached", timeout=15_000)
+
+    def panels(tab):
+        return ui.eval_on_selector_all(
+            f"#{tab} .panel > h2", "els => els.map(e => e.firstChild.textContent.trim())")
+
+    plot, settings = panels("tab-plot"), panels("tab-settings")
+    assert len(plot) == 5, f"Plot should hold only plotting: {plot}"
+    assert "Staging" in plot
+    for name in ("Motion parameters", "Jog & pen", "Raw EBB", "Soft limits",
+                 "Holder calibration"):
+        assert any(name in p for p in settings), f"{name} lost on the way: {settings}"
+    assert not ui.errors
+
+
+def test_the_machine_menu_drives_the_real_controls(ui):
+    """Every Machine item names a button that lives in Settings › Jog & pen
+    (`data-target`), and clicking the item clicks that button.
+
+    Without the forward it would click itself — a menu that appears to work and
+    drives nothing. The targets are disabled with no machine connected and a
+    disabled button swallows `.click()`, so they are enabled here: what is
+    under test is the wiring, not the plotter."""
+    reload_app(ui)
+    ui.wait_for_selector('.menu[data-menu="machine"]', timeout=15_000)
+
+    ui.evaluate("""() => {
+        window.__hit = [];
+        for (const id of ['btn-pen-up', 'jog-left']) {
+          const el = document.getElementById(id);
+          el.disabled = false;
+          el.addEventListener('click', (e) => { e.stopPropagation(); window.__hit.push(id); },
+                              { capture: true });
+        }
+    }""")
+    for target in ("#btn-pen-up", "#jog-left"):
+        ui.click('.menu[data-menu="machine"] .menu-trigger')
+        ui.click(f'.menu[data-menu="machine"] [data-target="{target}"]')
+        ui.wait_for_timeout(200)
+
+    assert ui.evaluate("() => window.__hit") == ["btn-pen-up", "jog-left"]
+
+
 def test_no_console_errors_on_any_tab(ui):
     """A JS error on a tab you rarely open is a bug you find mid-plot."""
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})

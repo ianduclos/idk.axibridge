@@ -44,7 +44,7 @@ def test_every_menu_item_in_the_markup_is_addressable():
 
 
 def test_the_menus_are_the_ones_the_page_shows():
-    assert [m.title for m in menu_spec()] == ["File", "Edit", "View"]
+    assert [m.title for m in menu_spec()] == ["File", "Edit", "View", "Machine"]
 
 
 def test_undo_and_redo_are_in_edit_and_carry_their_shortcut():
@@ -172,3 +172,40 @@ def test_the_probe_survives_a_control_that_is_not_on_the_page_yet():
 
     assert "el ? [" in state_probe_js()
     assert ".filter(Boolean)" in state_probe_js()
+
+
+def test_a_menu_item_may_name_a_control_that_lives_elsewhere():
+    """The Machine menu's Pen up IS the Pen up button in Settings › Jog & pen.
+
+    Without `data-target` the parser would fall through to the item's own id
+    and the menu item would click itself — a control that appears to work and
+    drives nothing. `data-target` is checked BEFORE `id` for that reason, and
+    `menu.js` forwards the in-page click off the same attribute, so both bars
+    drive the identical element."""
+    machine = next(m for m in menu_spec() if m.title == "Machine")
+    assert [None if i is None else (i.label, i.selector) for i in machine.items] == [
+        ("Pen up", "#btn-pen-up"), ("Pen down", "#btn-pen-down"), None,
+        ("Go to origin", "#btn-goto-origin"), ("Set origin", "#btn-set-origin"), None,
+        ("Jog up", "#jog-up"), ("Jog down", "#jog-down"),
+        ("Jog left", "#jog-left"), ("Jog right", "#jog-right"),
+    ]
+    assert not any(i.selector.startswith("#menu-") for i in machine.actions), \
+        "an item addressing itself would be a control that does nothing"
+
+
+def test_data_target_wins_over_the_items_own_id():
+    (menu,) = _one_menu(
+        '<button class="menu-item" id="menu-thing" data-target="#real-thing">Thing</button>')
+    assert menu.actions == (MenuItem("Thing", "#real-thing", "action", None),)
+
+
+def test_the_machine_menu_carries_no_forms():
+    """The menu rule, applied: motion parameters and raw EBB are forms, soft
+    limits belongs beside the millimetres it guards, holder calibration is a
+    procedure. Only actions are in the menu — and none of them is a `check`,
+    because nothing here has a state to show."""
+    machine = next(m for m in menu_spec() if m.title == "Machine")
+    assert {i.kind for i in machine.actions} == {"action"}
+    labels = " ".join(i.label.lower() for i in machine.actions)
+    for forbidden in ("raw", "ebb", "limit", "calibrat", "motion", "speed"):
+        assert forbidden not in labels, f"{forbidden!r} is a panel, not a menu item"

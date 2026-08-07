@@ -52,6 +52,28 @@
         <label class="menu-item" title="Dashed outline of the usable sheet area"><span class="menu-check">✓</span><input type="checkbox" id="show-guide" checked>Paper guide</label>
       </div>
     </div>
+    <!-- Machine: the ACTIONS out of the jog & pen panel, which now lives in
+         Settings. Actions only, per the menu rule — motion parameters and raw
+         EBB are forms, soft limits belongs beside the millimetres it guards,
+         and holder calibration is a procedure. Each item addresses the very
+         button in that panel, so the menu cannot mean something different
+         from the panel. Jog is here on Ian's ruling (2026-08-07): keep it,
+         use it as a menu item, then decide whether it earns its place. -->
+    <div class="menu" data-menu="machine">
+      <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">Machine</button>
+      <div class="menu-panel" role="menu">
+        <button class="menu-item" data-target="#btn-pen-up" type="button" title="Raise the pen">Pen up</button>
+        <button class="menu-item" data-target="#btn-pen-down" type="button" title="Lower the pen">Pen down</button>
+        <div class="menu-sep"></div>
+        <button class="menu-item" data-target="#btn-goto-origin" type="button" title="Return the carriage to 0,0">Go to origin</button>
+        <button class="menu-item" data-target="#btn-set-origin" type="button" title="Declare the current position 0,0">Set origin</button>
+        <div class="menu-sep"></div>
+        <button class="menu-item" data-target="#jog-up" type="button" title="Jog by the step size set in Settings › Jog &amp; pen">Jog up</button>
+        <button class="menu-item" data-target="#jog-down" type="button" title="Jog by the step size set in Settings › Jog &amp; pen">Jog down</button>
+        <button class="menu-item" data-target="#jog-left" type="button" title="Jog by the step size set in Settings › Jog &amp; pen">Jog left</button>
+        <button class="menu-item" data-target="#jog-right" type="button" title="Jog by the step size set in Settings › Jog &amp; pen">Jog right</button>
+      </div>
+    </div>
   </nav>
   <input id="project-name" class="project-name" value="untitled" spellcheck="false">
   <div id="status-pill" class="pill">connecting…</div>

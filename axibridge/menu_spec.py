@@ -120,7 +120,14 @@ class _MenubarParser(HTMLParser):
         attrs = self._item_attrs
         key = "".join(self._key).strip() or None
 
-        if self._item_input:                      # a real checkbox moved here
+        if attrs.get("data-target"):
+            # The item names the control it drives, because that control lives
+            # somewhere else — the Machine menu's Pen up is the Pen up BUTTON
+            # in Settings › Jog & pen. Without this the parser would derive the
+            # menu item's own id and the item would click itself. Checked
+            # before `id` for exactly that reason.
+            selector, kind = attrs["data-target"], "action"
+        elif self._item_input:                    # a real checkbox moved here
             selector, kind = f"#{self._item_input}", "check"
         elif attrs.get("id"):
             selector, kind = f"#{attrs['id']}", "action"

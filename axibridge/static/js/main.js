@@ -474,9 +474,14 @@ for (const btn of document.querySelectorAll("#tabs button")) {
 
 function initTabs() {
   initComposeTab();
+  // Settings BEFORE Plot: the machine panels are built by plot.js (their
+  // handlers are its) but they live in the Settings tab now, so plot.js
+  // appends into a tab body that must already exist. Reversed, initSettingsTab
+  // would overwrite them with its own innerHTML and every machine control
+  // would silently vanish.
+  initSettingsTab();
   initPlotTab();
   initPensTab();
-  initSettingsTab();
   initMenu(); // no-op after first call; the menu bar is static across project switches
   initDrawMode(); // no-op after first call (returns early if already wired)
   initPenMode();  // no-op after first call (returns early if already wired)
