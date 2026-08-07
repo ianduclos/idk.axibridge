@@ -61,6 +61,8 @@ Everything below is ordered by that.
 | Test runner | **pytest + Playwright only** | One suite, one command, no second ecosystem |
 | Typeface | **IBM Plex Sans** + Roboto Mono | Technical/industrial, pairs with mono, closer to the CAD/Ableton anchors than Inter |
 | Toolbar | thinner; menu bar grows | Toolbar wraps to 3 rows at 1100px and moves the canvas edge ~140px |
+| Tools | stay **horizontal**, first position | Wrapping is caused by the other clusters, which this pass removes; a vertical rail would spend canvas width on a solved problem |
+| Menu rule | actions + simple on/off **only** | Anything with a readout or live value stays a panel. This is the guardrail that stops consolidation hiding machine truth |
 | Targeting | pen targets **and** layer targets | Pen addresses the swap loop; layers stay for complex runs |
 | Groups | deferred | Touches model, save/load, occlusion, tweens — too big inside a redesign |
 | ⌘K launcher | deferred (now unblocked by npm) | Shouldn't share a slice with a restructure |
@@ -205,12 +207,37 @@ Sentence-case `h3`; the engraved+rule device survives at panel level only.
 Layer / Machine / Plot / Help, **on the proxy rule `menu.js` already states**:
 every item clicks a control that already exists, so the menu cannot drift.
 Mirror the same structure into the native macOS menu in `launch/axibridge_app.py`
-from one shared definition — do not maintain two lists. Then *delete what the
-menus replace*: five of the Plot tab's ten panels, the Settings project panel,
-the Compose import rows, and the toolbar's view toggles / display checkboxes /
-A-B cluster. Toolbar keeps tools and zoom-fit, fixed at one row with overflow.
-This is the biggest density win and the biggest edit — do it in visible steps,
-not one sweep.
+from one shared definition — do not maintain two lists.
+
+**The menu rule (decided, Ian):** a menu item may be an action, a checkmark or
+a radio choice. Anything carrying a readout, a live value or explanatory state
+stays a panel. Apply it literally; it is what keeps this consolidation from
+hiding machine truth.
+
+*Leaves the Plot tab* → a Machine menu: raw EBB, soft limits, holder
+calibration, **and jog/pen**. Jog looks like it violates the rule because it
+has a position readout — it doesn't, because 4d promotes that readout to the
+persistent machine strip. The jog *actions* become menu items; the *value*
+becomes always-visible, which is strictly better than today.
+
+*Stays visible in the Plot tab:* **Backend** (its cards carry the capability
+tags — "no raw · jog · no pause" — that you need BEFORE committing to a job,
+and a menu cannot show them), plus passes/targets, plot-pass optimisation,
+interrupted plot, animation/sheets, staging.
+
+*Leaves the canvas toolbar* (all four, decided): the travel / draw-order /
+paper-guide checkboxes and the Portrait-Landscape + Schematic-Ink toggles → the
+View menu as checkmarks and radios; the A/B/steps/⇄ cluster → Plot › Staging
+entirely; Animate plot + speed → a playback strip at the canvas foot that
+appears only when a timeline or staged series exists.
+
+*The toolbar then holds:* tools (Select/Draw/Pen/Brush, horizontal, first
+position), zoom-fit, and the existing contextual brush/pen bars. One row,
+`flex-wrap: nowrap`, overflow behind a "»" — the canvas top edge must stop
+moving when the window resizes.
+
+Biggest density win and biggest edit — do it in visible steps, not one sweep,
+and show Ian a before/after at the FIRST step.
 
 **4d. Machine state into `#canvas-status`** — it already exists, is already
 persistent across tabs, and currently holds one line of "nothing selected".
@@ -246,8 +273,12 @@ window · any change to the resolve order or the single-resolve invariant.
    a number, let him choose. Do not silently trade an annoyance for a stall.
 2. **Occlusion cache key completeness** — if in doubt, say so rather than ship
    a cache that can lie.
-3. **How far the toolbar thins** — 4c deletes a lot of visible surface. Show
-   him a before/after at the first step, not at the end.
+3. **Does jog earn its place at all?** Ian: *"never used jog matter of fact,
+   not sure bout the utility."* The plan moves it to a menu rather than
+   deleting it — but if, once it's a menu item, it still goes untouched, raise
+   deleting it rather than carrying it forever. Do not delete it unilaterally:
+   pen up/down and go-to-origin inside that group may be the parts that
+   actually earn their keep.
 
 ## Verification protocol (mandatory)
 
