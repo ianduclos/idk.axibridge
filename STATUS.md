@@ -3,16 +3,59 @@ project: idk.axibridge
 state: active
 updated: 2026-08-07
 machine: mac+pi
-summary: The UI pass is merged to main (Slice 0 of the redesign plan done) — a new visual direction, a three-critic review with ranked proposals, and real fixes for slow quitting and the macOS title bar; 639 tests green; a four-slice redesign plan is written and agreed at docs/plans/ui-redesign.md, including the decision to adopt Vite+TypeScript.
+summary: Slices 0-3 of the UI redesign plan are done and on main — occlusion is memoised (430ms repeat resolves now ~0), undo is 50 deep with a geometry budget and now has redo, source-module orientation is a mandatory declaration with a test that fails when a new module omits it, a 10-test Playwright acceptance harness runs against the bundle, and the frontend is built by Vite with the source unmoved; 689 tests green, Ian has eye-checked the app.
 next:
-  - "Execute docs/plans/ui-redesign.md from Slice 1 in a FRESH session — Slice 0 (merge) is done; next is correctness: occlusion cache, undo depth, orientation option B"
-  - "Eye-check the app shell after a restart: title-bar band, double-click zoom, File-first menu"
-  - "Slice 1 blockers to measure, not guess: one undo history entry's real size, and whether the occlusion cache key can be made complete"
-  - "Still open from July: bench eye-check of offset_fill + brush (see HANDOFF)"
+  - "Execute Slice 4 (the redesign itself) of docs/plans/ui-redesign.md in a FRESH session — 4a .engraved consolidation first, then typography, then the menu/toolbar restructure; show Ian a before/after at 4c's first step"
+  - "Ian's call: are rectangle/grid/flowfield right as orientation='geometry'? They turn in portrait so 'Width 160' means 160mm across the screen — one word per module to flip"
+  - "Ian's call, deferred from the plan: does jog earn its place at all once it is a menu item, or should it go?"
+  - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16→19 wave, and the URGENT round (see HANDOFF)"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-08-07 (Opus 5): the redesign plan's first three slices, plus redo.**
+
+Worked `docs/plans/ui-redesign.md` from Slice 1 to Slice 3, checkpointing
+after each. Seven commits, suite 639 → 689.
+
+- **Occlusion is memoised** (`compose.OcclusionCache`). It used to run in full
+  on every resolve; a repeat resolve on a 5-layer scene with a stroke occluder
+  over a dense hatch fill went 430 ms → ~0. The cache is **content-keyed and
+  never invalidated**: geometry is identified by object identity (legal only
+  because modules are pure and lists are replaced wholesale), plus pen
+  diameter, margin, groups, the receives flag, and layer order via the
+  accumulated channel signature. `id()` reuse can't bite because every entry
+  holds a strong reference to each list its key names. `tests/test_occlusion_cache.py`
+  never inspects the cache — it asserts the cached resolve is byte-identical
+  to an uncached one after every mutation that can move a mask. Known gap,
+  documented: a visible region layer rewrites the shaped geometry below it
+  each resolve, so those layers miss every time. Slow, never wrong.
+- **Undo 8 → 50, with a geometry budget, and redo.** Measured first: an
+  ordinary edit retains ~29 KB (the deep-copied Project), while an edit that
+  REPLACES geometry pins its own copy at ~130 bytes/point — 50 bakes of a
+  1200-path import is ~110 MB. Hence two caps, not one number. Redo makes
+  history a pair of stacks; any real edit clears the redo branch, and a
+  coalesced slider run is one entry in both directions.
+- **Orientation is a declared layer property** (ROADMAP option B).
+  `SourceModule.orientation` is mandatory — `"none" | "param" | "geometry"` —
+  and for `"geometry"` sources in portrait the layer's affine carries the
+  display map's inverse, so a layer lands where it would have in landscape,
+  on screen. All 27 sources classified. The recurrence-stopper is
+  `tests/test_orientation.py`: it fails on a source that declares nothing.
+- **Acceptance harness** (`tests/test_acceptance_ui.py`): ten Playwright tests
+  driving the real UI against a real server on a temp port, asserting what the
+  user sees. They skip cleanly with no browser, which is how the Pi stays
+  backend-only.
+- **Vite + TypeScript**, with the source unmoved. `app.frontend_dir()` is the
+  whole switch: built output when it exists, source when it doesn't — the
+  fallback is what keeps a machine with no npm working. TypeScript is a lint
+  pass (`allowJs`, `noEmit`), nothing renamed. ROADMAP's "Far / undecided — UI
+  revamp" is marked RESOLVED with what was adopted and what it cost.
+- **Edit menu** (Ian's ask, mid-session): Undo/Redo with ⌘Z / ⇧⌘Z; the
+  portrait/landscape control **moved** into the View menu rather than being
+  proxied there, so it cannot drift from `main.js`.
+
 
 **Session 2026-07-27 (Opus 5): two new modules, and the workflow changed.**
 
