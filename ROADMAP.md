@@ -646,9 +646,32 @@ fragment — that is the use the bake blocks and the one that would force the
 choice, or (b) the node question below is answered, since a node graph makes
 "a layer whose input is other layers" ordinary rather than exceptional.
 
-Note the ambiguity in Ian's phrasing that should be settled first:
-"(non-modifiable)" may mean *it currently is, and shouldn't be*, or *it should
-be a generator of a deliberately fixed-param kind*. Ask before building.
+**Ian settled the ambiguity, 2026-08-07:** "(non-modifiable)" meant *once
+baked* — the fragment is fixed after it is made — *"unless it is not expensive
+to hold a copy of the plot to reiterate."*
+
+**It is not expensive. Measured** (`tracemalloc`, snapshotting the flattened,
+optimised path list, which is what a reroll needs):
+
+| plot | paths | points | snapshot |
+|---|---|---|---|
+| 10 polygons | 10 | 80 | 0.01 MB |
+| 20 lissajous | 20 | 14,420 | 0.89 MB |
+| 100 lissajous | 100 | 72,100 | 4.6 MB |
+| 400 lissajous (heavy) | 400 | 288,400 | 18.6 MB |
+
+~64 B/point — lower than undo's ~130 B/point, which also carries a deep-copied
+`Project`. For scale the whole undo geometry budget is ~65 MB. And the baked
+layer ALREADY retains the fragment slice, so the marginal cost of holding the
+whole plot instead is about `1/fraction-kept`, not the full figure.
+
+So **snapshot-input is the affordable design**: the layer captures the
+flattened plot once and stays live in its own params (seed, start, stop),
+making it rerollable, tweenable and animatable with no cycle and no exclude-
+self rule. Remaining cost to weigh when building: the snapshot goes stale when
+layers under it change (needs a visible "recapture" affordance, like A/B), and
+several such layers plus undo history multiply the figure — the existing undo
+geometry budget already accounts for retained geometry, so check it holds.
 
 ## Far / undecided — the node question
 
