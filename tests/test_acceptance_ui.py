@@ -392,6 +392,53 @@ def test_view_toggle_changes_the_display_only(ui):
     assert not ui.errors
 
 
+def test_view_menu_overlays_drive_the_canvas(ui):
+    """The canvas overlays live in the View menu now, not the toolbar — and
+    ticking one still changes what is on the sheet.
+
+    This asserts the OUTCOME (travel moves appear over the drawing), not that
+    a checkbox flipped, because the interesting failure when a control is
+    moved is precisely that its face still works and its wiring no longer
+    does. Paper guide is checked at rest, which is what proves the tick
+    reflects the control's real state rather than clicks it has seen."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 30})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    ui.click('.menu[data-menu="view"] .menu-trigger')
+    assert ui.is_checked("#show-guide"), "paper guide is on at rest"
+    assert not ui.is_checked("#show-travel")
+
+    travel = "#canvas g polyline"
+    before = ui.locator(travel).count()
+    ui.click('.menu[data-menu="view"] label:has(#show-travel)')
+    ui.wait_for_function(
+        f"() => document.querySelectorAll('{travel}').length > {before}", timeout=15_000)
+
+    ui.click('.menu[data-menu="view"] .menu-trigger')
+    assert ui.is_checked("#show-travel"), "the menu row drives the real control"
+    assert not ui.errors
+
+
+def test_view_menu_render_mode_is_a_radio_choice(ui):
+    """Schematic/Ink moved into the same menu as a two-item radio group: one
+    is always marked, never both, and the mark follows the click."""
+    add_layer(ui, "polygon", {"sides": 4, "radius": 25})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    marked = lambda: ui.eval_on_selector_all(
+        "#mode-toggle .menu-item",
+        "els => els.filter(e => e.classList.contains('on')).map(e => e.dataset.mode)")
+
+    ui.click('.menu[data-menu="view"] .menu-trigger')
+    assert marked() == ["schematic"]
+    ui.click('.menu[data-menu="view"] [data-mode="ink"]')
+    ui.click('.menu[data-menu="view"] .menu-trigger')
+    assert marked() == ["ink"], "exactly one mode is marked, and it is the one clicked"
+    assert not ui.errors
+
+
 def test_no_console_errors_on_any_tab(ui):
     """A JS error on a tab you rarely open is a bug you find mid-plot."""
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})
