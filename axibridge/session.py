@@ -44,8 +44,8 @@ from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
 #:
 #: * a checkpoint costs 0.4 ms and ~29 KB of deep-copied Project, so the
 #:   ordinary edits — drag, param tweak, visibility, pen, reorder — retain
-#:   only that: 100 of them is ~2.6 MB, and the old depth of 8 was throwing
-#:   away 92 free undo steps.
+#:   only that: 50 of them is ~1.3 MB, and the old depth of 8 was throwing
+#:   away free undo steps.
 #: * edits that REPLACE geometry (bake, regenerate, draw, brush, shape ops)
 #:   are a different animal: each entry pins its own copy of that layer's
 #:   paths at roughly 130 bytes per point, so 50 bakes of a 1200-path import
@@ -55,9 +55,9 @@ from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
 #: expensive one — depth stays generous without a heavy project quietly
 #: eating a gigabyte. The persisted history is capped separately, at 4
 #: entries, in ``project_io``.
-UNDO_DEPTH = 100
-#: ~130 MB of retained path points at ~130 bytes each.
-UNDO_GEOMETRY_BUDGET_POINTS = 1_000_000
+UNDO_DEPTH = 50  # Ian's call, 2026-08-07, off the measurement above
+#: ~65 MB of retained path points at ~130 bytes each.
+UNDO_GEOMETRY_BUDGET_POINTS = 500_000
 
 
 def _nudge_onto(coords: list[float], extent: float) -> float:

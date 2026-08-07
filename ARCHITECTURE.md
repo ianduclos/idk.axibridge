@@ -169,13 +169,13 @@ into per-layer effect stacks, leaving optimisation as a property of the
 
 ### Undo, duplication, consolidation
 
-The session keeps an undo deque capped two ways (`UNDO_DEPTH` = 100 entries,
-plus `UNDO_GEOMETRY_BUDGET_POINTS` ≈ 130 MB of pinned geometry — the oldest
+The session keeps an undo deque capped two ways (`UNDO_DEPTH` = 50 entries,
+plus `UNDO_GEOMETRY_BUDGET_POINTS` ≈ 65 MB of pinned geometry — the oldest
 entries are trimmed when the budget is exceeded, never the newest). It used
 to be a flat 8. The two caps exist because entries are not the same size,
 measured 2026-08-07 on a 16-layer project with 59k source points: an ordinary
 edit (drag, param, visibility, pen, reorder) retains only the deep-copied
-`Project`, ~29 KB — 100 of them is 2.6 MB — while an edit that REPLACES
+`Project`, ~29 KB — 50 of them is 1.3 MB — while an edit that REPLACES
 geometry (bake, regenerate, draw, brush, shape ops) pins its own copy of that
 layer's paths at ~130 bytes per point, so 50 bakes of a 1200-path import is
 ~110 MB. A checkpoint costs 0.4 ms either way, and the persisted history is
