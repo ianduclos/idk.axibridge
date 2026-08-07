@@ -4,37 +4,35 @@ updated: 2026-08-07
 entries: 4
 ---
 
-### UI redesign — Slice 4 (the redesign itself) — opened 2026-08-07, owner: ian
-- done: Slices 0-3 of `docs/plans/ui-redesign.md`, seven commits on main,
-  suite 639 -> 689. Occlusion memoised (repeat resolve 430ms -> ~0, key
-  completeness argued in `compose.OcclusionCache`'s header and pinned by
-  `tests/test_occlusion_cache.py`); undo 8 -> 50 with a geometry budget, plus
-  redo as a second stack; orientation made a mandatory `SourceModule`
-  declaration with a test that fails on a module that omits it; a 10-test
-  Playwright acceptance harness that runs against the BUILT frontend; the Vite
-  + TypeScript port with the source unmoved and a one-rule server switch
-  (`app.frontend_dir`). Ian eye-checked the running app: "seems to work".
-- next: Slice 4, in a FRESH session — 4a (consolidate the dead `.engraved`
-  rule so the typography change is a one-place edit), then 4b typography, then
-  4c the menu/toolbar restructure. Sub-steps 4a-4g are independently
-  shippable; commit and checkpoint after each, and put a before/after in front
-  of Ian at 4c's FIRST step, not at the end.
-- blockers: (1) SETTLED 2026-08-07 — Ian checked the generators at the bench:
-  `rectangle`/`grid`/`flowfield` as `orientation="geometry"` is right, they
-  behave. No flip needed; treat the 27-source classification as accepted.
-  (2) Still Ian's: the plan asks whether jog earns its place at all once it is
-  a menu item — do not delete it unilaterally; pen up/down and go-to-origin
-  inside that group may be the parts that earn their keep. Raise it when 4c
-  reaches the Machine menu.
-  (3) NEW, decided 2026-08-07: 4b (IBM Plex Sans) was built, shown, and
-  reverted — "got used to the mono". Mono-only is now a decision. See the
-  plan's 4b note; do not rebuild it.
-- context: `docs/plans/ui-redesign.md` is written to be loaded cold and now
-  carries inline notes where this session overtook it (redo shipped early at
-  Ian's request; the Playwright chromium mismatch fixed properly). Slice 4's
-  spec is in it verbatim. CLAUDE.md, ARCHITECTURE.md "Stack" and ROADMAP's
-  "UI revamp — RESOLVED" describe the new build; `tests/test_acceptance_ui.py`
-  is the contract the redesign must not break.
+### UI redesign — Slice 4c (menus and toolbar) — opened 2026-08-07, owner: ian
+- done: 4a (engraved consolidation, measured no-op). 4b typography BUILT AND
+  REVERTED — Ian: "got used to the mono"; do not rebuild it, the plan's 4b
+  section says why and keeps the findings. Emoji removed from the layer list.
+  The two menu bars became ONE definition: `axibridge/menu_spec.py` parses
+  `#menubar` out of `index.html` and the macOS menu is derived from it, merged
+  into pywebview's own Edit/View, with working checkmarks. 4c's first step
+  landed — View took the canvas overlays and Schematic·Ink, toolbar 3 rows → 2.
+  Suite 689 → 712. Ian confirmed all of it in the running app.
+- next: 4c continues — (1) the A/B/steps/⇄ cluster moves to Plot › Staging,
+  (2) Animate plot + speed becomes a playback strip at the canvas foot shown
+  only when a timeline or staged series exists, (3) then `flex-wrap: nowrap`
+  + a "»" overflow so the canvas top edge stops moving on resize. All three
+  are page-only and fully testable headless. After that, the Machine menu.
+- blockers: (1) Ian's call, deferred twice and now due at the Machine menu:
+  does jog earn its place at all once it is a menu item? Do not delete it
+  unilaterally — pen up/down and go-to-origin inside that group may be the
+  parts that earn their keep. (2) SETTLED earlier today: the
+  rectangle/grid/flowfield orientation classification is accepted, nothing to
+  flip.
+- context: `docs/plans/ui-redesign.md` (4b annotated BUILT-THEN-REVERTED, 4a
+  marked done, the Settled table's Typeface row struck through).
+  `axibridge/menu_spec.py`'s module docstring carries the whole why.
+  **Editing `#menubar` in `index.html` now changes the macOS menu too** — that
+  is the contract, and `tests/test_menu_spec.py` + `tests/test_app_shell.py`
+  enforce it. When a shell-only thing misbehaves, read
+  `~/Library/Logs/axibridge-shell.log` FIRST; it exists because four bugs in a
+  row failed silently. Any new main-thread work must go through
+  `axibridge_app.on_main()` — a block that returns a value kills the app.
 
 ### Bench eye-check: offset_fill + brush — opened 2026-07-27, owner: ian
 - done: both modules built, merged and screen-verified only — `offset_fill`

@@ -3,16 +3,78 @@ project: idk.axibridge
 state: active
 updated: 2026-08-07
 machine: mac+pi
-summary: Slices 0-3 of the UI redesign plan are done and on main — occlusion is memoised (430ms repeat resolves now ~0), undo is 50 deep with a geometry budget and now has redo, source-module orientation is a mandatory declaration with a test that fails when a new module omits it, a 10-test Playwright acceptance harness runs against the bundle, and the frontend is built by Vite with the source unmoved; 689 tests green, Ian has eye-checked the app.
+summary: The app shell's macOS menu is now DERIVED from the in-page menu bar instead of hand-written beside it, so the two can no longer disagree, and it shows checkmarks; the View menu has taken the canvas overlays and the render mode, dropping the toolbar from three rows to two; 712 tests green and Ian has confirmed all of it in the app.
 next:
-  - "Execute Slice 4 (the redesign itself) of docs/plans/ui-redesign.md in a FRESH session — 4a .engraved consolidation first, then typography, then the menu/toolbar restructure; show Ian a before/after at 4c's first step"
-  - "Ian's call: are rectangle/grid/flowfield right as orientation='geometry'? They turn in portrait so 'Width 160' means 160mm across the screen — one word per module to flip"
-  - "Ian's call, deferred from the plan: does jog earn its place at all once it is a menu item, or should it go?"
+  - "Continue Slice 4c in a FRESH session: the A/B/steps/⇄ cluster moves to Plot › Staging, then Animate plot + speed becomes a playback strip at the canvas foot — that is what gets the toolbar to one row with flex-wrap: nowrap"
+  - "Then 4c's Machine menu (raw EBB, soft limits, holder calibration, jog/pen), which is where Ian's jog decision has to be asked"
+  - "Ian's call, still open: does jog earn its place at all once it is a menu item?"
   - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16→19 wave, and the URGENT round (see HANDOFF)"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-08-07 later (Opus 5): the two menu bars became one definition.**
+
+Slice 4 of `docs/plans/ui-redesign.md`. 15 commits, suite 689 → 712. Four of
+those commits are reverts, and the reverts are the story.
+
+- **4a shipped, 4b was built and reverted.** The engraved-voice consolidation
+  (`50dab95`) stands: one selector list states the uppercase/tracked treatment
+  once through `--engraved-*` custom properties, where eight rules used to
+  restate it. Zero visual change, measured over 2904 elements across all four
+  tabs. **4b (IBM Plex Sans) was built, shown, and reverted the same day** —
+  Ian: *"got used to the mono"*. Mono-only is now a decision, not an omission;
+  the plan's 4b section is annotated BUILT-THEN-REVERTED with the three
+  findings that outlive it, chief among them that
+  `input, select, textarea { font-family: inherit }` is load-bearing only
+  while `body` is mono.
+- **No emoji in this UI** (`e3adad3`) — the layer-visibility `👁` is now inline
+  Lucide `eye`/`eye-off` via the existing `.tool-icon` class, and the layer
+  row's controls got a shallow well so they stop reading as decoration. Ian
+  has said this before; it is now in auto-memory.
+- **The menu unification, which took most of the session and four failures.**
+  The app shell hides the in-page menu bar and showed a SECOND hand-written
+  list, where Undo sat under "History" and orientation under "Canvas" — so the
+  previous session's Edit-menu work had never been visible to Ian at all, and
+  moving controls into the in-page menu made them *unreachable* in his app.
+  `axibridge/menu_spec.py` now parses `#menubar` out of `index.html` into
+  (label, selector, kind, shortcut); `build_menu` walks it; `merge_native_menus`
+  folds our Edit/View items into pywebview's own menus of those names. **The
+  markup is the contract now** — add a menu item to the page and it appears in
+  both bars, with a checkmark.
+- **Four bugs, all in the one path no test here can reach**, each fixed by
+  removing its class rather than its instance:
+  `item.title()` on a bar menu (pywebview titles the SUBMENU) → prefer the
+  submenu; `NSMenuItem.alloc().init()` leaves the title as the literal string
+  **"NSMenuItem"**, not empty, so an emptiness fallback never fired; the state
+  sync pulled via `evaluate_js` from inside the `js_api` handler the page was
+  awaiting (a bridge deadlock) → the page pushes instead; and a main-queue
+  block that **returns a value** makes PyObjC raise an uncaught ObjC exception
+  that terminates the app → `on_main()` is now the only way this file schedules
+  main-thread work, and it always returns None.
+- **The shell leaves evidence now.** Every AppKit poke swallows its exception
+  so a cosmetic failure cannot stop the app opening, and Finder gives the
+  bundle no stderr — so "best-effort" meant "invisible", and each bug cost a
+  round trip through Ian relaunching. `~/Library/Logs/axibridge-shell.log`
+  records the merge, the resulting bar, every state sync and every swallowed
+  exception. It found the crash in one step after three days' worth of guessing
+  in one afternoon.
+- **4c's first step landed** (`6d0f047`): the View menu took the travel /
+  draw-order / paper-guide checkboxes and Schematic·Ink. Toolbar three rows →
+  two. It shook out a parser bug worth remembering — `<input>` is a VOID
+  element, so `handle_endtag` never fires and a naive tag stack never unwinds;
+  the whole View menu silently vanished from the spec until void tags were
+  balanced on the way in.
+
+Ian confirmed the menu bar, the checkmarks and the moved controls in the real
+app. **Testing lesson banked:** two of the four fixes passed a unit test whose
+fake encoded what I believed about NSMenu rather than what it does. There is
+now a real-AppKit test (`test_merge_against_real_appkit_menus`) and a
+subprocess test for the crash class, because a recurrence kills the
+interpreter rather than failing an assertion.
+
+---
 
 **Session 2026-08-07 (Opus 5): the redesign plan's first three slices, plus redo.**
 
