@@ -170,8 +170,9 @@ header h1 span { color: var(--ink-soft); }
    system menu bar. In a browser tab the flag is absent and none of this
    applies: the in-page menu is the only menu there. */
 :root[data-shell="native"] header {
-  padding-top: 13px;
+  padding-top: 6px;
   padding-left: 84px;   /* close · minimise · zoom live here */
+  min-height: 38px;     /* the title-bar band the lights sit in */
 }
 :root[data-shell="native"] #menubar { display: none; }
 

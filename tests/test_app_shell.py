@@ -171,7 +171,7 @@ def test_menu_items_only_proxy_existing_controls():
     if not menus:
         pytest.skip("pywebview menu API unavailable")
 
-    assert [m.title for m in menus] == ["File", "View"]
+    assert [m.title for m in menus] == ["File", "Canvas"]  # not "View": pywebview owns that
 
     index = (Path("axibridge/static/index.html")).read_text()
     clicked = 0

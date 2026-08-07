@@ -89,8 +89,13 @@ def integrate_titlebar(window) -> bool:
     exactly where macOS puts them and keep working — they simply sit over the
     app's own header now instead of on a separate grey strip above it.
 
-    The header reserves room for them via `[data-shell="native"]` in style.css.
-    Returns True if the tweak applied.
+    The AppKit calls are dispatched to the main queue: pywebview fires window
+    events from a worker thread, and window mutations from off the main thread
+    silently do nothing (the first version of this looked correct, raised
+    nothing, and had no effect).
+
+    The header reserves room for the lights via `[data-shell="native"]` in
+    style.css. Returns True if the work was dispatched.
     """
     try:
         import AppKit
@@ -98,10 +103,21 @@ def integrate_titlebar(window) -> bool:
         native = getattr(window, "native", None)
         if native is None:
             return False
-        native.setTitlebarAppearsTransparent_(True)
-        native.setTitleVisibility_(AppKit.NSWindowTitleHidden)
-        native.setStyleMask_(
-            native.styleMask() | AppKit.NSWindowStyleMaskFullSizeContentView)
+
+        def apply() -> None:
+            native.setTitlebarAppearsTransparent_(True)
+            native.setTitleVisibility_(AppKit.NSWindowTitleHidden)
+            native.setStyleMask_(
+                native.styleMask() | AppKit.NSWindowStyleMaskFullSizeContentView)
+            # kills the hairline between title bar and content (macOS 11+)
+            style_none = getattr(AppKit, "NSTitlebarSeparatorStyleNone", None)
+            if style_none is not None:
+                try:
+                    native.setTitlebarSeparatorStyle_(style_none)
+                except Exception:
+                    pass
+
+        AppKit.NSOperationQueue.mainQueue().addOperationWithBlock_(apply)
         return True
     except Exception:
         return False  # cosmetic only — never block startup
@@ -133,7 +149,10 @@ def build_menu(window):
             MenuSeparator(),
             MenuAction("Download resolved SVG", click("#btn-svg")),
         ]),
-        Menu("View", [
+        # NOT "View": pywebview installs its own app/Edit/View menus, and a
+        # second View sat next to theirs in the bar. This is the sheet's
+        # orientation, so name it for the thing it acts on.
+        Menu("Canvas", [
             MenuAction("Portrait", view("portrait")),
             MenuAction("Landscape", view("landscape")),
         ]),
