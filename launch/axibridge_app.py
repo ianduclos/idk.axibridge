@@ -192,6 +192,65 @@ def mark_native_shell(window) -> None:
         pass
 
 
+class ShellApi:
+    """The bridge JS can call: `window.pywebview.api.<name>()`.
+
+    Deliberately tiny — anything that isn't a *window* operation belongs in the
+    HTTP API, not here, so the browser and the app shell keep the same
+    surface. Window ops are the one thing a page genuinely cannot do itself.
+    """
+
+    def __init__(self) -> None:
+        self.window = None  # set once create_window has returned
+
+    def zoom_window(self) -> bool:
+        """Double-click on the title-bar band, same as the green button.
+
+        The band is our own header now, so macOS's own double-click-to-zoom
+        never sees the event — the web view swallows it.
+        """
+        try:
+            import AppKit
+
+            native = getattr(self.window, "native", None)
+            if native is None:
+                return False
+            AppKit.NSOperationQueue.mainQueue().addOperationWithBlock_(
+                lambda: native.zoom_(None))
+            return True
+        except Exception:
+            return False
+
+
+def order_menu_file_first() -> bool:
+    """Put File right after the app menu.
+
+    pywebview appends custom menus after its own app/View/Edit ones, so File
+    landed fourth. The main menu is a plain NSMenu, so it can be reordered
+    once pywebview has built it. Main queue, like every other AppKit poke here.
+    """
+    try:
+        import AppKit
+
+        def apply() -> None:
+            main_menu = AppKit.NSApplication.sharedApplication().mainMenu()
+            if main_menu is None:
+                return
+            for i in range(main_menu.numberOfItems()):
+                item = main_menu.itemAtIndex_(i)
+                if item.title() == "File" and i != 1:
+                    item.retain()
+                    main_menu.removeItemAtIndex_(i)
+                    main_menu.insertItem_atIndex_(item, 1)  # 0 is the app menu
+                    item.release()
+                    return
+
+        AppKit.NSOperationQueue.mainQueue().addOperationWithBlock_(apply)
+        return True
+    except Exception:
+        return False
+
+
 def plot_running() -> bool:
     state = probe()
     return bool(state) and state.get("machine", {}).get("job_state") not in (None, "idle")
@@ -215,11 +274,14 @@ def main() -> None:
     # keeps every control inside it clickable. Without `draggable` the web view
     # covers the (now transparent) title bar and swallows the drag entirely.
     webview.settings["DRAG_REGION_DIRECT_TARGET_ONLY"] = True
+    api = ShellApi()
     window = webview.create_window("axibridge", URL, width=1440, height=900,
-                                   draggable=True)
+                                   draggable=True, js_api=api)
+    api.window = window
 
     def on_shown():
         integrate_titlebar(window)
+        order_menu_file_first()
 
     def on_loaded():
         mark_native_shell(window)

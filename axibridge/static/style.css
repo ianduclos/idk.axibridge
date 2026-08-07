@@ -139,7 +139,8 @@ body {
 
 header {
   display: flex; align-items: center; gap: 16px;
-  padding: 9px 16px; border-bottom: 1px solid var(--bench-edge);
+  padding: 0 16px; min-height: 44px;
+  border-bottom: 1px solid var(--bench-edge);
   background: var(--bench);
 }
 /* No wordmark: the OS menu bar and the window already say "axibridge", and a
@@ -168,7 +169,8 @@ header {
    applies: the in-page menu is the only menu there. */
 :root[data-shell="native"] header {
   padding-left: 84px;   /* close · minimise · zoom live here */
-  min-height: 38px;     /* the title-bar band the lights sit in */
+  min-height: 42px;     /* the band the traffic lights sit in */
+  border-bottom-color: transparent;  /* the band and the toolbar are one surface */
 }
 :root[data-shell="native"] #menubar { display: none; }
 

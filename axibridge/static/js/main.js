@@ -631,6 +631,20 @@ export function rememberDetails(det, key, dflt = det.open) {
     localStorage.setItem(detailsKey(key), det.open ? "1" : "0"));
 }
 
+// ---- app shell: double-click the header band to zoom -------------------------
+//
+// The transparent title bar means our header IS the title-bar band, so macOS
+// never sees the double-click that would normally zoom the window — the web
+// view swallows it. Only the bar's own empty space counts (same target rule as
+// the drag region), and it is a no-op in a browser tab, where window.pywebview
+// doesn't exist.
+
+document.addEventListener("dblclick", (e) => {
+  const header = document.querySelector("header");
+  if (!header || e.target !== header) return;
+  window.pywebview?.api?.zoom_window?.();
+});
+
 // ---- sliders: filled track + shift fine-tune --------------------------------
 //
 // One delegated implementation covers every range in the app — the ones
