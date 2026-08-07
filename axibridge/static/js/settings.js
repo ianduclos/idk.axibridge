@@ -5,7 +5,7 @@
 
 import { api } from "./api.js";
 import { renderForm } from "./forms.js";
-import { S, actions } from "./main.js";
+import { S, actions, rememberDetails } from "./main.js";
 
 const $ = (id) => document.getElementById(id);
 let settingsValues = {};
@@ -115,6 +115,8 @@ export function initSettingsTab() {
       logTimer = setInterval(pollLog, 2000);
     }
   };
+  // restore AFTER ontoggle is wired: reopening it starts the poll again
+  rememberDetails(logDetails, "server-log", false);
 
   $("btn-proj-new").onclick = async () => {
     if (!confirm("Start a new empty project? Unsaved changes are lost.")) return;

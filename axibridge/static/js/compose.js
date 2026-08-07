@@ -4,7 +4,7 @@
 
 import { api } from "./api.js";
 import { renderForm } from "./forms.js";
-import { S, actions } from "./main.js";
+import { S, actions, rememberDetails } from "./main.js";
 import { mul, translate, rotate, scale, matToObj, objToMat } from "./canvas.js";
 import { applyViewDefaults } from "./viewmap.js";
 
@@ -1272,6 +1272,10 @@ export function renderLayerDetail() {
           title="bake each sweep step into its own layer (pen/occlusion editable per step); the tween stays, hidden">÷ Split into layers</button>
       </div>`;
     wrap.appendChild(tw);
+    // sub-sections keep whatever the user last left them at; the `open`
+    // attributes above are only the first-time default (sweep/follow-driven)
+    for (const id of ["tw-stamping", "tw-timeline", "tw-advanced"])
+      rememberDetails(tw.querySelector(`#${id}`), id);
     tw.querySelector("#tw-edit-a").onclick = () => actions.setSelection([p.a]);
     tw.querySelector("#tw-edit-b").onclick = () => actions.setSelection([p.b]);
 

@@ -70,62 +70,60 @@ export function initPlotTab() {
       </div>
     </div>
 
-    <div class="panel">
-      <h2>Animation & grid sheets</h2>
-      <details id="anim-details">
-        <summary>Frames on paper — preview, capture to tray, stepper, export</summary>
-        <div class="row">
-          <label>frames</label><input type="number" id="anim-frames" min="2" max="240" step="1" style="width:5em">
-          <label>t from</label><input type="number" id="anim-t-from" min="0" max="1" step="0.01" style="width:5.5em">
-          <label>t to</label><input type="number" id="anim-t-to" min="0" max="1" step="0.01" style="width:5.5em">
-        </div>
-        <div class="hint">for one clip-frame per rendered frame, set frames = the clip's length</div>
-        <div class="row">
-          <label>layout</label>
-          <span id="anim-presets" class="anim-presets">
-            <button type="button" data-grid="1,1" title="one frame per sheet">1</button>
-            <button type="button" data-grid="2,1" title="two A5-ish halves, scene flipped 90°">2</button>
-            <button type="button" data-grid="2,2" title="quads">4</button>
-            <button type="button" data-grid="4,2" title="eight, scene flipped 90°">8</button>
-            <button type="button" data-grid="4,4" title="4×4 flipbook page">16</button>
-          </span>
-          <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1" style="width:4em">
-          <label>rows</label><input type="number" id="anim-rows" min="1" max="12" step="1" style="width:4em">
-          <label>margin</label><input type="number" id="anim-sheet-margin" min="0" max="30" step="0.5" style="width:5em">
-        </div>
-        <div class="row">
-          <label>framing</label>
-          <select id="anim-framing" title="fixed = one shared window, motion stays motion; center = each frame centred by its own bounds (parameter sweeps)">
-            <option value="fixed">fixed window (flipbook)</option>
-            <option value="center">centre each frame (sweep)</option>
-          </select>
-          <label class="hint" style="cursor:pointer" title="small ＋ marks at the grid intersections, plotted with the first pass">
-            <input type="checkbox" id="anim-marks"> crosshairs</label>
-        </div>
-        <div class="row"><span id="anim-layout-summary" class="hint"></span></div>
-        <div class="row">
-          <button id="anim-preview-render" class="primary">Render popup</button>
-          <button id="anim-preview-toggle">Live play</button>
-          <button id="anim-preview-step">Frame →</button>
-          <label>fps</label><input type="number" id="anim-preview-fps" min="1" max="24" step="1" style="width:4em">
-          <label class="hint" style="cursor:pointer"><input type="checkbox" id="anim-preview-loop"> loop</label>
-        </div>
-        <div class="row"><span id="anim-preview-label"></span></div>
-        <div class="row">
-          <button id="anim-capture" class="primary"
-            title="Freeze this layout into the staging tray: per-pass geometry + a source snapshot. Tray sheets preview, plot, export, and interpolate (A ⇄ B) — the durable path.">
-            Capture to tray</button>
-          <a id="anim-export-link" download><button type="button">Export SVG frames (zip)</button></a>
-        </div>
+    <div class="panel" id="anim-panel" data-collapse-default="1">
+      <h2>Animation &amp; grid sheets</h2>
+      <div class="hint">Frames on paper — preview, capture to tray, stepper, export</div>
+      <div class="row">
+        <label>frames</label><input type="number" id="anim-frames" min="2" max="240" step="1" style="width:5em">
+        <label>t from</label><input type="number" id="anim-t-from" min="0" max="1" step="0.01" style="width:5.5em">
+        <label>t to</label><input type="number" id="anim-t-to" min="0" max="1" step="0.01" style="width:5.5em">
+      </div>
+      <div class="hint">for one clip-frame per rendered frame, set frames = the clip's length</div>
+      <div class="row">
+        <label>layout</label>
+        <span id="anim-presets" class="anim-presets">
+          <button type="button" data-grid="1,1" title="one frame per sheet">1</button>
+          <button type="button" data-grid="2,1" title="two A5-ish halves, scene flipped 90°">2</button>
+          <button type="button" data-grid="2,2" title="quads">4</button>
+          <button type="button" data-grid="4,2" title="eight, scene flipped 90°">8</button>
+          <button type="button" data-grid="4,4" title="4×4 flipbook page">16</button>
+        </span>
+        <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1" style="width:4em">
+        <label>rows</label><input type="number" id="anim-rows" min="1" max="12" step="1" style="width:4em">
+        <label>margin</label><input type="number" id="anim-sheet-margin" min="0" max="30" step="0.5" style="width:5em">
+      </div>
+      <div class="row">
+        <label>framing</label>
+        <select id="anim-framing" title="fixed = one shared window, motion stays motion; center = each frame centred by its own bounds (parameter sweeps)">
+          <option value="fixed">fixed window (flipbook)</option>
+          <option value="center">centre each frame (sweep)</option>
+        </select>
+        <label class="hint" style="cursor:pointer" title="small ＋ marks at the grid intersections, plotted with the first pass">
+          <input type="checkbox" id="anim-marks"> crosshairs</label>
+      </div>
+      <div class="row"><span id="anim-layout-summary" class="hint"></span></div>
+      <div class="row">
+        <button id="anim-preview-render" class="primary">Render popup</button>
+        <button id="anim-preview-toggle">Live play</button>
+        <button id="anim-preview-step">Frame →</button>
+        <label>fps</label><input type="number" id="anim-preview-fps" min="1" max="24" step="1" style="width:4em">
+        <label class="hint" style="cursor:pointer"><input type="checkbox" id="anim-preview-loop"> loop</label>
+      </div>
+      <div class="row"><span id="anim-preview-label"></span></div>
+      <div class="row">
+        <button id="anim-capture" class="primary"
+          title="Freeze this layout into the staging tray: per-pass geometry + a source snapshot. Tray sheets preview, plot, export, and interpolate (A ⇄ B) — the durable path.">
+          Capture to tray</button>
+        <a id="anim-export-link" download><button type="button">Export SVG frames (zip)</button></a>
+      </div>
 
-        <h3>Plot stepper <span class="hint">(transient — plots the layout above, one pass at a time; never auto-plots)</span></h3>
-        <div class="row"><span id="anim-frame-label"></span></div>
-        <div class="row">
-          <button id="anim-plot-frame" class="primary">Plot frame</button>
-          <button id="anim-skip">Skip →</button>
-          <button id="anim-reset">Reset</button>
-        </div>
-      </details>
+      <h3>Plot stepper <span class="hint">(transient — plots the layout above, one pass at a time; never auto-plots)</span></h3>
+      <div class="row"><span id="anim-frame-label"></span></div>
+      <div class="row">
+        <button id="anim-plot-frame" class="primary">Plot frame</button>
+        <button id="anim-skip">Skip →</button>
+        <button id="anim-reset">Reset</button>
+      </div>
     </div>
 
     <div class="panel">
@@ -392,8 +390,8 @@ export function initPlotTab() {
     anim.i = nextFrameIndex();
     previewScrub.request(anim.i);
   };
-  // the plan overlay previews the page only while the panel is open (B3)
-  $("anim-details").ontoggle = syncSheetPlan;
+  // the plan overlay previews the page only while the panel is expanded (B3)
+  $("anim-panel").addEventListener("panel-toggle", syncSheetPlan);
 
   $("anim-reset").onclick = () => {
     stopPreview();
@@ -601,12 +599,14 @@ function currentSheetSpec(extra = {}) {
 }
 
 // The plan overlay/estimate previews the CURRENT page only while the Animation
-// panel is open and per-sheet > 1; otherwise the plain target (one plan path).
-// When active it ALSO swaps the centre canvas to the page's real geometry (the
-// plan overlay alone only draws travel); closing the panel or dropping to a
-// 1×1 grid exits that preview — but a live staged-sheet preview is left alone.
+// panel is expanded and per-sheet > 1; otherwise the plain target (one plan
+// path). When active it ALSO swaps the centre canvas to the page's real
+// geometry (the plan overlay alone only draws travel); collapsing the panel or
+// dropping to a 1×1 grid exits that preview — a live staged-sheet preview is
+// left alone.
 function syncSheetPlan() {
-  const open = $("anim-details") && $("anim-details").open;
+  const panel = $("anim-panel");
+  const open = panel && !panel.classList.contains("collapsed");
   const active = open && gridCells() > 1;
   S.sheetPlan = active ? currentSheetSpec() : null;
   if (S.sheetPlan) {

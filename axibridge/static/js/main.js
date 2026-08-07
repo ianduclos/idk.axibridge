@@ -610,7 +610,26 @@ document.addEventListener("click", (e) => {
   const panel = h2.parentElement;
   panel.classList.toggle("collapsed");
   localStorage.setItem(panelKey(h2), panel.classList.contains("collapsed") ? "1" : "");
+  // a panel is a collapse level in its own right — no <details> wrapper inside
+  // one. Panes whose behaviour keys off "am I visible?" (plot.js's sheet-plan
+  // overlay) listen for this instead of a <details> toggle event.
+  panel.dispatchEvent(new CustomEvent("panel-toggle", { bubbles: true }));
 });
+
+// Collapse state that survives a reload, for the <details> sections *inside*
+// panels (form groups, tween sub-sections, the server log). `key` must be
+// stable across re-renders; `dflt` only applies until the user touches it.
+// Setting .open fires a toggle event, so wire any ontoggle handler that must
+// run on restore BEFORE calling this.
+const detailsKey = (key) => "details:" + key;
+
+export function rememberDetails(det, key, dflt = det.open) {
+  const stored = localStorage.getItem(detailsKey(key));
+  const open = stored === null ? dflt : stored === "1";
+  if (det.open !== open) det.open = open;
+  det.addEventListener("toggle", () =>
+    localStorage.setItem(detailsKey(key), det.open ? "1" : "0"));
+}
 
 function applyPanelCollapse() {
   document.querySelectorAll(".panel > h2").forEach((h2) => {
