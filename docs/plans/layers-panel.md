@@ -73,7 +73,7 @@ not a section of a scrolling page — is the right one.
 
 Each is independently shippable; commit and check in after each.
 
-### Slice 1 — hoist the list
+### Slice 1 — hoist the list — **DONE 2026-08-07**
 
 Move `#layer-list` out of the Compose tab into a persistent element in the
 sidebar, below the tab bodies. Keep the panel heading ("Layers") and the
@@ -91,7 +91,7 @@ question does not arise a third time.
 **Done when:** the list is visible on all four tabs, there is exactly one of
 it in the DOM, and selecting from the Plot tab highlights on the canvas.
 
-### Slice 2 — collapse and resize
+### Slice 2 — collapse and resize — **DONE 2026-08-07**
 
 - Collapse: reuse the `.panel` collapse device (`applyPanelCollapse` +
   its localStorage key) rather than inventing a second one.
@@ -103,7 +103,35 @@ it in the DOM, and selecting from the Plot tab highlights on the canvas.
 **Done when:** the height survives a reload, the collapsed state survives a
 reload, and neither can put the tab body at zero height.
 
-### Slice 3 — say when it is working
+### Slice 3 — say when it is working — **DROPPED 2026-08-07, on the measurement**
+
+The slice said to measure first and drop it if the gap is imperceptible. It
+is. Reorder + resolve, best of three, warm:
+
+| project | points | reorder + resolve |
+|---|---|---|
+| 10 layers | 7,210 | 0.2 ms |
+| 40 layers | 28,840 | 0.8 ms |
+| 100 layers | 72,100 | 2.1 ms |
+| 20 layers + hatch_fill | 14,420 | 0.6 ms |
+| 5 layers, occluder over hatch | 2,206 | 0.2 ms |
+
+Nothing here is perceptible, so no indicator was built. **Caveat, stated
+because it limits the claim:** the last row was an attempt to rebuild the
+scenario Slice 1 of the redesign measured at 430 ms (an occluder over a dense
+hatch fill) and it only produced 2,206 points — an order of magnitude short of
+representative. So this says "I could not construct a slow reorder", not "a
+slow reorder cannot exist". The occlusion memoisation from Slice 1 is doing
+most of this work.
+
+If Ian hits a reorder that feels slow, the thing to do is measure THAT project
+rather than build the indicator on spec — and note that a percentage is still
+not available (`progress_scope` wraps only the generate endpoints), so the
+honest option remains an indeterminate "working".
+
+---
+
+*Original slice, kept for the record:*
 
 A busy indicator at the foot of the box while a resolve is in flight, so a
 heavy reorder reads as "working" rather than "frozen".

@@ -8,7 +8,7 @@
 
 import { api, subscribe } from "./api.js";
 import { CanvasEditor, mul, objToMat, matToObj } from "./canvas.js";
-import { initComposeTab, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, logDeleted, rerenderForView } from "./compose.js";
+import { initComposeTab, initLayersDock, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, logDeleted, rerenderForView } from "./compose.js";
 import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
 import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
@@ -523,6 +523,7 @@ function initTabs() {
   initPlotTab();
   initPensTab();
   initMenu(); // no-op after first call; the menu bar is static across project switches
+  initLayersDock(); // likewise — the dock is static markup, wired once
   initDrawMode(); // no-op after first call (returns early if already wired)
   initPenMode();  // no-op after first call (returns early if already wired)
   initBrushMode();

@@ -110,6 +110,7 @@
 .engraved,
 #tabs button,
 .panel > h2,
+#layers-dock-title,
 .panel h3,
 .preview-head h2,
 .seg button,
@@ -264,6 +265,53 @@ main {
   flex: 1; display: grid; grid-template-columns: 1fr var(--sidebar-w, 540px);
   gap: 0; min-height: 0;
 }
+
+/* ---- the layers dock ----------------------------------------------------
+   Photoshop's arrangement, and for Photoshop's reason: the layer list is
+   furniture, not a section of a scrolling page. It sits at the foot of the
+   sidebar, keeps its own height, and the tab body above it is what flexes —
+   so picking a different layer never costs a scroll past Generate and Import.
+   Only the SELECTION lives here; a layer's settings stay in Compose. */
+#layers-dock {
+  position: relative; flex: none;
+  display: flex; flex-direction: column; min-height: 0;
+  height: var(--layers-dock-h, 240px);
+  border-top: 1px solid var(--bench-edge);
+  background: var(--bench);
+  padding: 0 16px 10px;
+}
+#layers-dock-title {
+  display: flex; align-items: center; gap: 9px;
+  --engraved-size: 11px; --engraved-track: 2px;
+  color: var(--ink); margin: 12px 0 8px;
+  cursor: pointer; user-select: none; flex: none;
+}
+/* the same −/+ marker the panels use, so the device reads as one language */
+#layers-dock-title::before {
+  content: "−"; color: var(--bench-deep); background: var(--ink-soft);
+  font-weight: 700; letter-spacing: 0; font-size: var(--t-10, 10px); line-height: 14px;
+  width: 14px; height: 14px; text-align: center; flex: none;
+}
+#layers-dock-title:hover::before { background: var(--ink); }
+#layers-dock-title::after {
+  content: ""; flex: 1; height: 1px; background: var(--bench-edge);
+}
+#layers-dock-body { flex: 1; min-height: 0; overflow-y: auto; }
+
+/* collapsed: the title bar alone, and the tab body takes the room back */
+#layers-dock.collapsed { height: auto; }
+#layers-dock.collapsed #layers-dock-body { display: none; }
+#layers-dock.collapsed #layers-dock-title::before { content: "+"; background: var(--ink); }
+#layers-dock.collapsed #layers-dock-title { margin-bottom: 10px; }
+#layers-dock.collapsed #layers-dock-resize { display: none; }
+
+/* the grab strip, same shape as #sidebar-resize: a wide hit area over a
+   hairline, because a 1px target is a target you miss */
+#layers-dock-resize {
+  position: absolute; left: 0; right: 0; top: -5px; height: 10px;
+  cursor: row-resize; z-index: 5;
+}
+#layers-dock-resize:hover { background: var(--bench-edge); }
 
 /* ---- the bed (the persistent centre workspace) ---- */
 

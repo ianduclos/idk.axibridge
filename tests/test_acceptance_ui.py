@@ -869,6 +869,63 @@ def test_dragging_a_layer_reorders_it(ui):
     assert not ui.errors
 
 
+def test_the_layer_list_is_reachable_from_every_tab(ui):
+    """Ian's ask: selecting a layer should not cost a scroll past Generate and
+    Import. The list is furniture now — outside every tab body, present on all
+    four, and there is exactly ONE of it.
+
+    That last part is the whole risk. Two lists is the drift bug this repo
+    spent a day removing from the menus; the same mistake here would be a
+    layer list that disagrees with itself."""
+    for _ in range(3):
+        add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    reload_app(ui)
+    ui.wait_for_selector("#layer-list .layer-row", timeout=15_000)
+
+    assert ui.eval_on_selector_all("#layer-list", "els => els.length") == 1
+    assert ui.eval_on_selector("#layer-list", "el => !el.closest('.tab-body')"), \
+        "the list must not live inside a tab body"
+    assert ui.eval_on_selector("#btn-empty-layer", "el => !!el.closest('#tab-compose')"), \
+        "making a layer stays a Compose act"
+
+    for tab in ("compose", "plot", "pens", "settings"):
+        ui.click(f'#tabs button[data-tab="{tab}"]')
+        assert ui.is_visible("#layers-dock"), f"the dock vanished on {tab}"
+        assert ui.locator("#layer-list .layer-row").count() == 3
+
+    # selecting from a tab that is not Compose still selects
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.locator("#layer-list .layer-row .lname").first.click()
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#layer-list .layer-row.selected').length === 1",
+        timeout=10_000)
+    assert not ui.errors
+
+
+def test_the_layers_dock_remembers_how_you_left_it(ui):
+    """Collapse and height are per-machine preferences: they belong in
+    localStorage, never in the project, and they must survive a reload or the
+    dock is furniture you have to rearrange every time."""
+    add_layer(ui, "polygon", {"sides": 4, "radius": 20})
+    reload_app(ui)
+    ui.wait_for_selector("#layers-dock", timeout=15_000)
+
+    ui.click("#layers-dock-title")
+    ui.wait_for_function(
+        "() => document.querySelector('#layers-dock').classList.contains('collapsed')",
+        timeout=10_000)
+    assert not ui.is_visible("#layers-dock-body")
+
+    reload_app(ui)
+    ui.wait_for_selector("#layers-dock", timeout=15_000)
+    assert not ui.is_visible("#layers-dock-body"), "collapsed state was forgotten"
+
+    ui.click("#layers-dock-title")
+    ui.wait_for_selector("#layers-dock-body", timeout=10_000)
+    assert ui.is_visible("#layer-list"), "and it comes back with the list in it"
+    assert not ui.errors
+
+
 def test_no_console_errors_on_any_tab(ui):
     """A JS error on a tab you rarely open is a bug you find mid-plot."""
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})

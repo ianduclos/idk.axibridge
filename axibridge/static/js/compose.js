@@ -212,6 +212,10 @@ export function initComposeTab() {
       <div id="gen-progress-msg" class="hint" hidden></div>
       <div class="row" style="margin-top:8px">
         <button id="btn-generate" class="primary">＋ Create layer</button>
+        <!-- with the other create button, not with the list: making a layer is
+             a Compose act, the list is only where you pick one -->
+        <button id="btn-empty-layer"
+          title="blank layer the pen/brush/draw tools draw onto (a shape layer both pen and brush can add to and subtract from when those tools are active) — an explicit fresh target instead of appending to the last drawn layer">＋ empty</button>
         <button id="gen-latch" class="latch-chip" hidden
           title="the sliders above edit this layer live — click to select it"></button>
         <label class="hint" style="cursor:pointer;margin-left:auto"
@@ -250,15 +254,6 @@ export function initComposeTab() {
       </div>
       <div class="hint">tip: dropping an image or video on the canvas imports it too</div>
       <div id="asset-list"></div>
-    </div>
-    <div class="panel">
-      <h2>Layers</h2>
-      <div class="hint">Top of the list draws last and occludes what's below.</div>
-      <div class="row">
-        <button id="btn-empty-layer"
-          title="blank layer the pen/brush/draw tools draw onto (a shape layer both pen and brush can add to and subtract from when those tools are active) — an explicit fresh target instead of appending to the last drawn layer">＋ empty layer</button>
-      </div>
-      <div id="layer-list"></div>
     </div>
     <div class="panel" id="timeline-panel" hidden>
       <h2>Timeline <span class="hint">(scrubs every tween set to "follow timeline")</span></h2>
@@ -720,6 +715,64 @@ export function rerenderForView() {
 // looked like it simply never opened. `prompt()` never hit this because it is
 // modal and synchronous.
 let renaming = null;
+
+// ---- the layers dock ---------------------------------------------------------
+//
+// Collapse and height are per-machine preferences, not project data, so they
+// live in localStorage and never touch the project or undo. Idempotent: it is
+// wired once and survives every initTabs(), because the dock is static markup
+// in index.html rather than something a tab body rebuilds.
+
+const DOCK_H = "axb-layers-dock-h";
+const DOCK_COLLAPSED = "axb-layers-dock-collapsed";
+const DOCK_MIN = 110;          // below this the list shows nothing useful
+const TAB_BODY_MIN = 220;      // the tab above must stay usable
+
+function dockMax() {
+  const inspector = document.getElementById("inspector");
+  return Math.max(DOCK_MIN, (inspector?.clientHeight || 800) - TAB_BODY_MIN);
+}
+
+export function initLayersDock() {
+  const dock = $("layers-dock");
+  if (!dock || dock.dataset.dockInit) return;
+  dock.dataset.dockInit = "1";
+
+  if (localStorage.getItem(DOCK_COLLAPSED) === "1") dock.classList.add("collapsed");
+  const saved = Number(localStorage.getItem(DOCK_H));
+  if (saved) dock.style.setProperty("--layers-dock-h", `${saved}px`);
+
+  $("layers-dock-title").onclick = () => {
+    const collapsed = dock.classList.toggle("collapsed");
+    localStorage.setItem(DOCK_COLLAPSED, collapsed ? "1" : "0");
+  };
+
+  // drag the top edge. Pointer capture rather than document-level listeners:
+  // the pointer stays ours even when it leaves the 10px strip, which is what
+  // happens the moment you actually drag.
+  const grip = $("layers-dock-resize");
+  let start = null;
+  grip.addEventListener("pointerdown", (e) => {
+    start = { y: e.clientY, h: dock.getBoundingClientRect().height };
+    grip.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  grip.addEventListener("pointermove", (e) => {
+    if (!start) return;
+    // dragging UP makes it taller: the dock grows from its top edge
+    const h = Math.min(dockMax(), Math.max(DOCK_MIN, start.h - (e.clientY - start.y)));
+    dock.style.setProperty("--layers-dock-h", `${Math.round(h)}px`);
+  });
+  const end = (e) => {
+    if (!start) return;
+    start = null;
+    grip.releasePointerCapture?.(e.pointerId);
+    const h = Math.round(dock.getBoundingClientRect().height);
+    localStorage.setItem(DOCK_H, String(h));
+  };
+  grip.addEventListener("pointerup", end);
+  grip.addEventListener("pointercancel", end);
+}
 
 export function renderLayerList() {
   if (renaming) return;

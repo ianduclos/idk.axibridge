@@ -14,15 +14,17 @@ entries: 4
   DERIVED from `#menubar`'s markup (`axibridge/menu_spec.py`), merged into
   pywebview's own Edit/View, showing checkmarks and greying what it cannot do.
   Suite 727, 26 acceptance tests.
-- next: **build `docs/plans/layers-panel.md`** — Ian's Photoshop-style ask:
-  hoist the layer LIST (not its settings) into a persistent, collapsible,
-  resizable box at the foot of the sidebar, so selecting a layer stops costing
-  a scroll past Generate and Import. The plan is written to be read cold and
-  carries the three facts that matter: the seam already exists in the markup,
-  selection is already global, and drag-to-reorder already computes once after
-  the drop. Slice 3 of it (a busy indicator) is a MEASUREMENT first — time a
-  reorder on a heavy project with the occlusion cache in place, and drop the
-  slice if the gap is imperceptible.
+- next: **Ian eye-checks. `CHECKME.md` at the repo root is the list**, grouped
+  by how likely each thing is to be wrong (shell-only paths first — those are
+  verified only against fakes and need a full relaunch). Delete it when done.
+  `docs/plans/layers-panel.md` is BUILT: the layer list is now a persistent
+  collapsible/resizable dock at the foot of the sidebar, on all four tabs, one
+  list in the DOM, `＋ empty layer` left in Compose. Its third slice was
+  dropped on the measurement rather than built — reorder+resolve is 0.2-2.1 ms
+  across everything up to 100 layers / 72k points, so a progress indicator
+  would have been decoration. The caveat is written into the plan: I could not
+  reconstruct the 430 ms occluder-over-hatch case at a representative size, so
+  that is "could not construct a slow reorder", not "none exists".
 - blockers: none. Two decisions are flagged inside the plan for when there is
   something to look at (does the box scroll or grow; should the plot target
   follow the selection — probably not, plotting the wrong layer costs paper).

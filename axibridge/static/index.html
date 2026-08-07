@@ -170,6 +170,26 @@
     <div id="tab-plot" class="tab-body" hidden></div>
     <div id="tab-pens" class="tab-body" hidden></div>
     <div id="tab-settings" class="tab-body" hidden></div>
+
+    <!-- The layer list, outside the tab bodies on purpose: it is the
+         document's table of contents, and you need it whichever tab you are
+         in — the Plot tab's target picker and the Pens tab's assignment both
+         name layers you would otherwise have to leave the tab to see. It also
+         stops selecting a layer costing a scroll past Generate and Import,
+         which is what Ian asked for.
+
+         It lives in index.html rather than being appended by compose.js
+         because a tab body is rebuilt by innerHTML on every project load;
+         static markup is never rebuilt, so no init ordering can lose it.
+         Its SETTINGS stay in Compose — this is the selection box only. -->
+    <section id="layers-dock">
+      <div id="layers-dock-resize" title="drag to resize"></div>
+      <h2 id="layers-dock-title">Layers</h2>
+      <div id="layers-dock-body">
+        <div class="hint">Top of the list draws last and occludes what's below.</div>
+        <div id="layer-list"></div>
+      </div>
+    </section>
   </section>
 </main>
 
