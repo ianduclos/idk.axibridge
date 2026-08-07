@@ -234,6 +234,7 @@ export const actions = {
       const r = await api.get(`/api/plan?target=${encodeURIComponent(S.plotTarget)}${sheet}${staged}`);
       S.plan = r.job;
       canvas.setPlan(r.job);
+      updatePlayback();
       $("estimate").textContent =
         `est. ${fmtTime(r.job.total_duration)} · ${(r.job.pen_down_distance / 1000).toFixed(2)}m ink · ` +
         `${r.job.pen_lifts} lifts`;
@@ -241,7 +242,11 @@ export const actions = {
     } catch (e) {
       if (e.message?.includes("nothing") || e.message?.includes("unknown layer")) {
         $("estimate").textContent = "";
+        // S.plan was left stale here, which only ever fed a readout nobody
+        // re-read. It gates the playback strip now, so it has to be true.
+        S.plan = null;
         canvas.setPlan(null);
+        updatePlayback();
       } else { oops(e); }
     }
   }, 200),
@@ -427,6 +432,21 @@ for (const btn of document.querySelectorAll("#mode-toggle button")) {
 $("show-travel").onchange = () => { canvas.showTravel = $("show-travel").checked; canvas.render(); };
 $("show-order").onchange = () => { canvas.showOrder = $("show-order").checked; canvas.render(); };
 $("show-guide").onchange = () => { canvas.showGuide = $("show-guide").checked; canvas.render(); };
+// The playback strip shows only when there is a job to replay. The condition
+// is `moves.length`, not "a plan exists" and not "a timeline exists": it is
+// the same guard canvas.startAnimation() uses, so the strip can never offer a
+// play the canvas would decline. (The redesign plan said "a timeline or staged
+// series exists" — that gate is wrong for this control, which replays the
+// PLANNED JOB and is just as useful on a static drawing. Flagged, not silently
+// followed.)
+function updatePlayback() {
+  const strip = $("playback");
+  if (!strip) return;
+  const playable = !!S.plan?.moves?.length;
+  strip.hidden = !playable;
+  if (!playable && canvas.animating) canvas.stopAnimation();
+}
+
 $("zoom-fit").onclick = () => canvas.resetView();
 $("doc-preview-exit").onclick = () => actions.exitDocPreview();
 $("btn-animate").onclick = () => {

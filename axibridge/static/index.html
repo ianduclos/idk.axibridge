@@ -63,8 +63,6 @@
   <section id="canvas-area">
     <div id="canvas-toolbar">
       <button id="zoom-fit" title="Fit page">⛶</button>
-      <button id="btn-animate" title="Replay the planned job at speed">▶ Animate plot</button>
-      <label>×<input type="number" id="anim-speed" value="20" min="1" max="500" step="1"></label>
       <!-- tool icons: Lucide (ISC) — see THIRD-PARTY-NOTICES.md. Stroke style
            and stroke-width come from .tool-icon in style.css, in one place. -->
       <div class="seg" id="tool-toggle">
@@ -100,6 +98,15 @@
         <span>previewing: <span id="doc-preview-label"></span></span>
         <button id="doc-preview-exit" title="back to the live project">✕ back to project</button>
       </div>
+    </div>
+    <!-- Playback transport: it belongs under the drawing it replays, not in
+         the tool row. Hidden whenever the plan has no moves — an unusable
+         ▶ is worse than an absent one, and `startAnimation` guards on exactly
+         the same condition (canvas.js), so the strip cannot offer a play the
+         canvas would refuse. main.js's updatePlayback() owns the toggle. -->
+    <div id="playback" hidden>
+      <button id="btn-animate" title="Replay the planned job at speed">▶ Animate plot</button>
+      <label>speed ×<input type="number" id="anim-speed" value="20" min="1" max="500" step="1"></label>
     </div>
     <div id="canvas-status">
       <span id="sel-readout">nothing selected</span>

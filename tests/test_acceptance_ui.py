@@ -609,6 +609,66 @@ def test_the_toolbar_shows_only_the_active_tool_s_controls(ui):
     assert not ui.errors
 
 
+def test_playback_appears_only_when_there_is_a_job_to_replay(ui):
+    """Animate + speed left the tool row for a strip under the sheet it
+    replays, and it is absent when there is nothing to play.
+
+    The gate is `plan.moves.length` — the same condition
+    `canvas.startAnimation` guards on — so the strip can never offer a play the
+    canvas would decline. Asserted from both ends: an empty project, and a
+    project whose every layer has been hidden."""
+    reload_app(ui)
+    ui.wait_for_selector("#playback", state="attached", timeout=10_000)
+    assert ui.query_selector("#canvas-toolbar #btn-animate") is None, "left the toolbar"
+    assert not ui.is_visible("#playback"), "nothing to replay in an empty project"
+
+    add_layer(ui, "polygon", {"sides": 5, "radius": 30})
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#playback:not([hidden])", timeout=20_000)
+
+    ui.fill("#anim-speed", "1")          # ×20 finishes a pentagon before you can look
+    ui.click("#btn-animate")
+    ui.wait_for_function(
+        "() => document.querySelector('#btn-animate').textContent.includes('Stop')",
+        timeout=15_000)
+    ui.click("#btn-animate")
+    ui.wait_for_function(
+        "() => document.querySelector('#btn-animate').textContent.includes('Animate')",
+        timeout=15_000)
+
+    ui.eval_on_selector_all(".layer-row .eye", "els => els.forEach(e => e.click())")
+    ui.wait_for_function(
+        "() => document.querySelector('#playback')?.hidden === true", timeout=20_000)
+    assert not ui.errors
+
+
+def test_the_canvas_top_edge_does_not_move_when_the_window_resizes(ui):
+    """The reason the toolbar was emptied. It used to wrap to three rows, and
+    every row it wrapped to pushed the sheet down while you resized.
+
+    Measured, not asserted structurally: the toolbar's height and the canvas
+    well's top are read at each width. Stops at 900px — below that the header
+    itself wraps (a separate control, and by then the canvas is ~260px and
+    unusable), which is a known residual rather than something this hides."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 30})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    heights, tops = set(), set()
+    for width in (1600, 1400, 1200, 1100, 1000, 900):
+        ui.set_viewport_size({"width": width, "height": 900})
+        ui.wait_for_timeout(250)
+        heights.add(round(ui.eval_on_selector(
+            "#canvas-toolbar", "el => el.getBoundingClientRect().height")))
+        tops.add(round(ui.eval_on_selector(
+            "#canvas-wrap", "el => el.getBoundingClientRect().top")))
+
+    assert len(heights) == 1, f"the toolbar changed height: {sorted(heights)}"
+    assert len(tops) == 1, f"the canvas top edge moved: {sorted(tops)}"
+    assert not ui.errors
+
+
 def test_no_console_errors_on_any_tab(ui):
     """A JS error on a tab you rarely open is a bug you find mid-plot."""
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})
