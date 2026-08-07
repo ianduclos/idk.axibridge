@@ -13,7 +13,9 @@ entries: 4
   merged into the header with File/Canvas moved to the system menu bar, the
   in-app "axibridge" wordmark removed (the OS already says it twice), and the
   header made a drag region so the window still moves.
-- next: restart AxiBridge.app and eye-check the shell — whether the traffic
+- next: execute `docs/plans/ui-redesign.md` in a fresh session (it is written
+  to be loaded cold — settled decisions, measured facts, four slices with
+  checkpoints). Before that, restart AxiBridge.app and eye-check the shell — whether the traffic
   lights sit correctly in the header band (84px clearance and the 38px band
   are considered guesses, not measurements) and whether the Canvas menu reads
   right. Then decide what to take from the review and whether to merge the

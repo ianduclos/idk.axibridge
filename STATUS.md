@@ -3,12 +3,11 @@ project: idk.axibridge
 state: active
 updated: 2026-08-07
 machine: mac+pi
-summary: A full UI pass landed on the unmerged branch design/bench-and-bed (6 commits) — a new visual direction, a three-critic review with ranked proposals, and real fixes for slow quitting and the macOS title bar; 638 tests green, none of the UI eye-checked on the bench yet.
+summary: A full UI pass landed on the unmerged branch design/bench-and-bed (11 commits) — a new visual direction, a three-critic review with ranked proposals, and real fixes for slow quitting and the macOS title bar; 639 tests green; a four-slice redesign plan is written and agreed at docs/plans/ui-redesign.md, including the decision to adopt Vite+TypeScript.
 next:
-  - "Eye-check the app shell: restart AxiBridge.app and confirm the traffic lights sit in the header band and the Canvas menu reads right — the one thing not verifiable headless"
-  - "Decide which UI-review proposals to take (artifact linked in HANDOFF); the occlusion cache is the highest-value and needs a staleness design"
-  - "Merge or drop design/bench-and-bed — it is 6 commits ahead of main and everything since the collapse fix lives only there"
-  - "URGENT in ROADMAP: orientation coherence is opt-in, so text/glyphgram render vertical in portrait; 20 of 27 sources declare nothing"
+  - "Execute docs/plans/ui-redesign.md in a fresh session — starts by merging design/bench-and-bed to main, then correctness, tests, Vite+TS port, redesign"
+  - "Eye-check the app shell after a restart: title-bar band, double-click zoom, File-first menu"
+  - "Slice 1 blockers to measure, not guess: one undo history entry's real size, and whether the occlusion cache key can be made complete"
   - "Still open from July: bench eye-check of offset_fill + brush (see HANDOFF)"
 handoff_for: ian
 ---
