@@ -668,9 +668,39 @@ was not, and `depth_displace` needs a depth map. So:
    output carries what one frame cannot. This is a genuinely different tile
    from a source tile, where the output IS the answer.
 
+**Starring, and what it does to the dropdown.** Ian, same session: *"starred
+generators and effects are the ones shown on the dropdown."* This is better
+than the review's plan, which was to DELETE the two selects with the ⌘K
+launcher as the safety net that made deletion safe. Starring means the
+dropdown does not need deleting — it gets a better job, and the three ways in
+stop overlapping:
+
+| surface | for | scope |
+|---|---|---|
+| dropdown | the five you reach for constantly | your starred set |
+| gallery | discovery — "what have I got" | all 45, browsable |
+| ⌘K | recall by name, when you know it | all 45, typed |
+
+It also fixes the cold-start problem in the tag design above: **a star is a
+one-bit tag.** The tagging system pays off on day one without anyone having
+to invent a vocabulary first — and if starring turns out to be all Ian ever
+uses, free-text tags were correctly deferred rather than wrongly built.
+
+Two things that must be in it or it bites on a fresh install:
+
+* **An empty star set means SHOW EVERYTHING**, never show nothing. A new
+  install with an empty dropdown is broken, not minimal.
+* The dropdown needs a **"Browse all…"** row that opens the gallery, or you
+  are stranded the moment the module you want is not starred yet.
+
+Stars live where tags live — machine-level in `~/.axibridge/`, beside the pen
+library, surviving projects.
+
 **Build order:** gallery before ⌘K. They are two doors onto the same list, and
-the gallery's tags are what a launcher should search alongside names. Both
-exist to make deleting the two 27-item Compose `<select>` boxes safe.
+the gallery's tags are what a launcher should search alongside names. Note
+that starring changes the *reason* for ⌘K: it is no longer what makes deleting
+the selects safe (nothing is deleted now), it is the keyboard path for someone
+who already knows the module's name.
 
 **Not designed yet, deliberately:** where the gallery opens (modal, tab, or
 the Compose panel it replaces), and whether transforms — 4 of them, all in one
