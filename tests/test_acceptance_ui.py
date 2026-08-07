@@ -392,6 +392,28 @@ def test_view_toggle_changes_the_display_only(ui):
     assert not ui.errors
 
 
+def test_every_native_menu_item_hits_exactly_one_live_control(ui):
+    """The system menu bar is built from selectors parsed out of the markup —
+    so a selector that parses but matches nothing is a menu row that does
+    nothing, and only the app shell would ever show it.
+
+    This is the half `tests/test_menu_spec.py` cannot do: it checks the
+    markup's shape, this checks the shape against a running page."""
+    from axibridge.menu_spec import menu_spec
+
+    dead, ambiguous = [], []
+    for menu in menu_spec():
+        for item in menu.actions:
+            n = ui.eval_on_selector_all(item.selector, "els => els.length")
+            if n == 0:
+                dead.append(f"{menu.title} > {item.label} ({item.selector})")
+            elif n > 1:
+                ambiguous.append(f"{menu.title} > {item.label} matches {n}")
+    assert not dead, f"menu items addressing nothing: {dead}"
+    assert not ambiguous, f"menu items addressing more than one control: {ambiguous}"
+    assert not ui.errors
+
+
 def test_no_console_errors_on_any_tab(ui):
     """A JS error on a tab you rarely open is a bug you find mid-plot."""
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})

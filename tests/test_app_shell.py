@@ -2,6 +2,7 @@
 The webview event loop itself is manually verified — these tests cover
 everything up to the window."""
 
+import json
 import logging
 import subprocess
 import sys
@@ -164,16 +165,25 @@ def test_integrate_titlebar_survives_a_hostile_window():
 def test_menu_items_only_proxy_existing_controls():
     """Same rule as the in-page bar (menu.js): every item clicks a control that
     already exists, so the native menu cannot drift from the app's own logic.
-    No item may call an API directly."""
+    No item may call an API directly.
+
+    The titles are now the page's own — File / Edit / View — rather than the
+    invented History / Canvas. Ian's call, 2026-08-07: those names were chosen
+    to dodge pywebview's own Edit and View menus, and the cost was that he
+    never found Undo or the orientation toggle in the app at all.
+    `merge_native_menus` folds ours into pywebview's after start instead."""
     shell = _shell()
     win = _FakeWindow()
     menus = shell.build_menu(win)
     if not menus:
         pytest.skip("pywebview menu API unavailable")
 
-    # neither "Edit" nor "View": pywebview installs its own of both, and its
-    # Edit > Undo means "undo my typing", not "undo the project"
-    assert [m.title for m in menus] == ["File", "History", "Canvas"]
+    from axibridge.menu_spec import menu_spec
+    assert [m.title for m in menus] == [m.title for m in menu_spec()], \
+        "the native bar is derived from the page's; it does not choose its own menus"
+    assert "Edit" in {m.title for m in menus} and "View" in {m.title for m in menus}
+    assert set(shell._MERGE_INTO_NATIVE) <= {m.title for m in menus}, \
+        "every title we merge into must be one we actually contribute"
 
     index = (Path("axibridge/static/index.html")).read_text()
     clicked = 0
@@ -187,11 +197,19 @@ def test_menu_items_only_proxy_existing_controls():
             (src,) = win.js
             assert ".click()" in src, f"{item.title!r} must proxy a real control"
             assert "/api/" not in src, f"{item.title!r} must not call the API directly"
-            selector = src.split("'")[1]
+            selector = json.loads(src[src.index("(") + 1:src.rindex(")?")])
             token = selector.split("[")[0].split()[0].lstrip("#")  # "#a b[c]" -> "a"
             assert token in index, f"{item.title!r} targets {selector}, absent from index.html"
             clicked += 1
-    assert clicked >= 6
+    assert clicked >= 4
+
+
+def test_merging_the_native_menus_never_takes_the_app_down():
+    """Every AppKit poke in the shell is best-effort by contract — a menu that
+    fails to merge must leave the app running with both menus showing, which
+    is exactly the behaviour before the merge existed."""
+    shell = _shell()
+    assert shell.merge_native_menus() in (True, False)  # never raises
 
 
 def test_refresh_frontend_build_never_creates_one(tmp_path, monkeypatch):

@@ -11,9 +11,11 @@ Double-clicked via launch/AxiBridge.app (no Terminal). Lifecycle contract:
 * Closing is refused while a plot is running on an owned server — stop the
   job first. The server log is readable in the UI (Settings → Server log).
 * On macOS the window title bar is merged into the app's own header, and the
-  File/View menus are served from the real system menu bar. Both are
-  best-effort: if either fails the app still starts, with the standard title
-  bar and the in-page menu.
+  menus are served from the real system menu bar — DERIVED from the in-page
+  bar (`axibridge.menu_spec`), never written twice, and folded into
+  pywebview's own Edit/View so the two bars read the same. All best-effort:
+  if any of it fails the app still starts, with the standard title bar and
+  the in-page menu.
 
 Import-safe: no side effects at import time (unit tests import the helpers).
 """
@@ -171,10 +173,26 @@ def integrate_titlebar(window) -> bool:
 
 
 def build_menu(window):
-    """The system menu bar, on the same rule as the in-page one (menu.js):
-    every item proxy-clicks a control that already exists, so this can't drift
-    out of sync with the app's own logic. Returns [] if pywebview's menu API
-    isn't available.
+    """The system menu bar, DERIVED from the in-page one — see
+    `axibridge.menu_spec` for why it is derived rather than written.
+
+    This function no longer decides what is in the menu. It walks the spec
+    parsed out of `index.html` and turns each item into a proxy click on the
+    control the page already has, so the page stays the single implementation
+    and the two bars cannot differ in membership. Returns [] if pywebview's
+    menu API isn't available.
+
+    Two deliberate limits, both because pywebview's `MenuAction` carries
+    neither a shortcut nor a checkmark:
+
+    * **No native key equivalents.** The page already handles ⌘Z, and it
+      bails out when focus is in a text field (`main.js`, the INPUT/TEXTAREA
+      guard) so ⌘Z in the project-name box is still the system's text undo.
+      An NSMenuItem key equivalent fires regardless of focus and would take
+      that away, trading a correct behaviour for a decoration.
+    * **No native checkmarks.** A "check"/"radio" item acts correctly but
+      does not show its state natively yet. Nothing that NEEDS a visible
+      state should move into the menu until it does.
 
     The in-page bar stays for browser tabs, where a native menu doesn't exist;
     `mark_native_shell` hides it here so the two never show at once.
@@ -184,34 +202,77 @@ def build_menu(window):
     except Exception:
         return []
 
-    def click(selector: str):
-        # json-free single-quote selector: all of ours are simple ids/attrs
-        return lambda: window.evaluate_js(
-            f"document.querySelector('{selector}')?.click()")
+    sys.path.insert(0, str(REPO))
+    from axibridge.menu_spec import menu_spec
 
-    view = lambda v: click(f'#view-toggle button[data-view="{v}"]')  # noqa: E731
-    return [
-        Menu("File", [
-            MenuAction("Save", click("#btn-save")),
-            MenuSeparator(),
-            MenuAction("Download resolved SVG", click("#btn-svg")),
-        ]),
-        # NOT "Edit", for the same reason "View" below isn't: pywebview
-        # installs its own app/Edit/View menus, and theirs already has an
-        # Undo that means "undo my typing". Ours is the project's history, so
-        # it gets its own name rather than sitting confusingly beside it.
-        Menu("History", [
-            MenuAction("Undo", click("#btn-undo")),
-            MenuAction("Redo", click("#btn-redo")),
-        ]),
-        # NOT "View": pywebview installs its own app/Edit/View menus, and a
-        # second View sat next to theirs in the bar. This is the sheet's
-        # orientation, so name it for the thing it acts on.
-        Menu("Canvas", [
-            MenuAction("Portrait", view("portrait")),
-            MenuAction("Landscape", view("landscape")),
-        ]),
-    ]
+    def click(selector: str):
+        return lambda: window.evaluate_js(
+            f"document.querySelector({json.dumps(selector)})?.click()")
+
+    menus = []
+    for m in menu_spec():
+        items = [MenuSeparator() if i is None else MenuAction(i.label, click(i.selector))
+                 for i in m.items]
+        menus.append(Menu(m.title, items))
+    return menus
+
+
+#: menus we contribute that pywebview also builds itself. Ian's call
+#: (2026-08-07): ours merge INTO those rather than sitting beside them under
+#: invented names, so the system bar reads the same as the in-page bar.
+_MERGE_INTO_NATIVE = ("Edit", "View")
+
+
+def merge_native_menus() -> bool:
+    """Fold our Edit/View items into pywebview's own menus of those names.
+
+    pywebview builds an Edit (Cut/Copy/Paste/Select All) and a View (Enter
+    Full Screen) before appending any custom menu, so contributing menus with
+    those titles produces two of each. Rather than rename ours — which is
+    what put Undo under "History" and orientation under "Canvas", where Ian
+    never found them — the NSMenuItems are MOVED into pywebview's menus at the
+    top, above a separator, which is where macOS puts Undo and where an app's
+    own view options belong.
+
+    Moving the items rather than recreating them is what keeps them working:
+    they are the objects pywebview already wired to its post-start action
+    handler, and a hand-built NSMenuItem would need that wiring redone.
+
+    Best-effort and non-fatal, like every other AppKit poke here: on failure
+    the bar simply shows both menus, which is the previous behaviour.
+    """
+    try:
+        import AppKit
+
+        def apply() -> None:
+            main_menu = AppKit.NSApplication.sharedApplication().mainMenu()
+            if main_menu is None:
+                return
+            for title in _MERGE_INTO_NATIVE:
+                found = [i for i in range(main_menu.numberOfItems())
+                         if main_menu.itemAtIndex_(i).title() == title]
+                if len(found) < 2:
+                    continue  # pywebview changed, or we contribute nothing here
+                native, ours = main_menu.itemAtIndex_(found[0]), main_menu.itemAtIndex_(found[1])
+                target, source = native.submenu(), ours.submenu()
+                if target is None or source is None:
+                    continue
+                moved = 0
+                while source.numberOfItems():
+                    item = source.itemAtIndex_(0)
+                    item.retain()
+                    source.removeItemAtIndex_(0)
+                    target.insertItem_atIndex_(item, moved)
+                    item.release()
+                    moved += 1
+                if moved:
+                    target.insertItem_atIndex_(AppKit.NSMenuItem.separatorItem(), moved)
+                main_menu.removeItemAtIndex_(found[1])
+
+        AppKit.NSOperationQueue.mainQueue().addOperationWithBlock_(apply)
+        return True
+    except Exception:
+        return False
 
 
 def mark_native_shell(window) -> None:
@@ -318,6 +379,7 @@ def main() -> None:
 
     def on_shown():
         integrate_titlebar(window)
+        merge_native_menus()   # before the reorder: it removes menu items
         order_menu_file_first()
 
     def on_loaded():
