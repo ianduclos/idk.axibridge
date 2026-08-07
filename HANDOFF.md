@@ -18,15 +18,11 @@ entries: 4
   only when a timeline or staged series exists, (3) then `flex-wrap: nowrap`
   + a "»" overflow so the canvas top edge stops moving on resize. All three
   are page-only and fully testable headless. After that, the Machine menu.
-- blockers: **one real gap, and it is the same class as the checkmark work.**
-  A Machine menu item shows as ENABLED while the button it drives is disabled
-  — with no machine connected, "Pen up" looks available and does nothing (the
-  API answers 409 "not connected"). That is the menu lying about machine
-  truth, which is exactly what the menu rule exists to prevent. The machinery
-  to fix it already exists: `menu_spec.state_probe_js` reports
-  `{selector: bool}` and the shell sets checkmarks from it, so extend the
-  probe to report `disabled` too and call `setEnabled_` alongside
-  `setState_`. Do this before adding any more menu items.
+- blockers: none open. CLOSED 2026-08-07: menu items no longer lie about
+  availability — the probe reports `{on, enabled}` per item and the shell
+  greys what its control cannot do. Ian has NOT eye-checked that greying in
+  the app yet; it is the one thing here verified only against real AppKit
+  objects and a faked bridge.
   RESOLVED 2026-08-07: the destination question was delegated to Claude
   ("choose machine/settings yourself for each") and answered per panel — all
   five panels to Settings, only the pure actions to the menu. Reasons are in

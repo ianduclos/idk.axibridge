@@ -355,22 +355,42 @@ def find_menu_item(main_menu, menu_title_wanted: str, item_label: str):
 
 
 def set_menu_states(main_menu, states: dict, index: dict, on, off) -> int:
-    """Tick the native items the page says are on. Returns how many were set.
+    """Make the native items tell the truth: ticked if the page says on,
+    greyed if the control they drive is unavailable. Returns how many were set.
 
-    `states` is {selector: bool} straight from the page; `index` maps a
-    selector to the (menu, label) that addresses its native item. Both come
-    from `axibridge.menu_spec`, so what is ticked and what is clicked can
-    never be two different opinions.
+    `states` is ``{selector: {"on": bool|None, "enabled": bool}}`` straight
+    from the page; `index` maps a selector to the (menu, label) that addresses
+    its native item. Both come from `axibridge.menu_spec`, so what is ticked,
+    what is greyed and what is clicked can never be three different opinions.
+
+    `on` of None means the item has no state — an action. Its checkmark is
+    left alone rather than set to off, because "Go to origin" should not carry
+    a slot for a tick it can never have.
+
+    **AppKit gotcha, and it would have silently undone all of this:** an NSMenu
+    autoenables its items by default, deciding availability by asking the
+    responder chain to validate each item's action. Our items are blocks, which
+    validate as enabled, so every `setEnabled_(False)` here would be overwritten
+    the moment the menu opened. `setAutoenablesItems_(False)` on the containing
+    menu is what makes an explicit setting stick.
     """
     done = 0
-    for selector, is_on in states.items():
+    seen_menus = set()
+    for selector, report in states.items():
         where = index.get(selector)
-        if where is None:
+        if where is None or not isinstance(report, dict):
             continue
         item = find_menu_item(main_menu, *where)
         if item is None:
             continue
-        item.setState_(on if is_on else off)
+        parent = item.menu()
+        if parent is not None and id(parent) not in seen_menus:
+            parent.setAutoenablesItems_(False)   # or AppKit overrules us on open
+            seen_menus.add(id(parent))
+        is_on = report.get("on")
+        if is_on is not None:
+            item.setState_(on if is_on else off)
+        item.setEnabled_(bool(report.get("enabled", True)))
         done += 1
     return done
 

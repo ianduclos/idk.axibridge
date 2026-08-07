@@ -426,27 +426,41 @@ def test_the_generated_state_probe_runs_and_tells_the_truth(ui):
     wait_for_ink(ui)
 
     states = ui.evaluate(f"() => ({state_probe_js()})")
-    assert set(states) == set(item_index()), "the probe reports exactly the stateful items"
-    assert all(isinstance(v, bool) for v in states.values())
+    assert set(states) == set(item_index()), "the probe reports every menu item"
+    assert all(set(v) == {"on", "enabled"} for v in states.values())
 
     portrait = '#view-toggle button[data-view="portrait"]'
     landscape = '#view-toggle button[data-view="landscape"]'
 
     def group(states, prefix):
-        return sum(v for k, v in states.items() if k.startswith(prefix))
+        return sum(bool(v["on"]) for k, v in states.items() if k.startswith(prefix))
 
     # a radio group has exactly one on; the overlay checkboxes are free
     assert group(states, "#view-toggle") == 1, f"one orientation: {states}"
     assert group(states, "#mode-toggle") == 1, f"one render mode: {states}"
-    assert states["#show-guide"] is True, "paper guide ships on"
+    assert states["#show-guide"]["on"] is True, "paper guide ships on"
+    assert states["#btn-undo"]["on"] is None, "an action has no tick to report"
 
-    was = states[portrait]
+    # Availability is the half that makes the Machine menu honest: its buttons
+    # are disabled until the plotter is connected, and the menu must say so.
+    # Asserted against the LIVE elements rather than against an expected
+    # machine state — the server fixture is session-scoped, so whether
+    # anything is connected depends on which tests ran first, and a test that
+    # depends on that tests the order rather than the probe.
+    truth = ui.evaluate(
+        "(sels) => Object.fromEntries(sels.map(s =>"
+        " [s, !document.querySelector(s).disabled]))",
+        list(states))
+    assert {k: v["enabled"] for k, v in states.items()} == truth, \
+        "the probe's availability must be the elements' own"
+
+    was = states[portrait]["on"]
     ui.click('.menu[data-menu="view"] .menu-trigger')
     ui.click(landscape if was else portrait)
     ui.wait_for_timeout(600)
 
     after = ui.evaluate(f"() => ({state_probe_js()})")
-    assert after[portrait] != was, "the probe follows the control it names"
+    assert after[portrait]["on"] != was, "the probe follows the control it names"
     assert group(after, "#view-toggle") == 1
     assert not ui.errors
 
@@ -474,16 +488,16 @@ def test_the_page_reports_menu_state_to_the_shell(ui):
     pings = ui.evaluate("() => window.__pings")
     assert pings, "the page never told the shell anything — no ticks would ever appear"
     assert set(pings[0]) == set(item_index())
-    assert sum(v for k, v in pings[0].items() if k.startswith("#view-toggle")) == 1, \
-        f"exactly one orientation on: {pings[0]}"
+    assert sum(bool(v["on"]) for k, v in pings[0].items()
+               if k.startswith("#view-toggle")) == 1, f"one orientation on: {pings[0]}"
 
     portrait = '#view-toggle button[data-view="portrait"]'
-    was = pings[0][portrait]
+    was = pings[0][portrait]["on"]
     ui.click('.menu[data-menu="view"] .menu-trigger')
     ui.click('#view-toggle button[data-view="landscape"]' if was else portrait)
     ui.wait_for_function("() => window.__pings.length > 1", timeout=15_000)
 
-    assert ui.evaluate("() => window.__pings.at(-1)")[portrait] != was, \
+    assert ui.evaluate("() => window.__pings.at(-1)")[portrait]["on"] != was, \
         "the report followed the click"
     assert not ui.errors
 

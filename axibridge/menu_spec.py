@@ -230,32 +230,53 @@ def menu_spec(index_html: Path | None = None) -> list[MenuDef]:
 
 
 def stateful_items(spec: list[MenuDef] | None = None) -> list[tuple[MenuDef, MenuItem]]:
-    """Every item that has a state to show, with the menu it lives in."""
+    """Every item that has an on/off state to show, with the menu it lives in."""
     spec = spec if spec is not None else menu_spec()
     return [(m, i) for m in spec for i in m.actions if i.kind in STATEFUL]
 
 
+def all_items(spec: list[MenuDef] | None = None) -> list[tuple[MenuDef, MenuItem]]:
+    """Every item, with the menu it lives in.
+
+    Broader than `stateful_items` because AVAILABILITY is not the same thing
+    as state: an action has no tick to show but can certainly be unavailable,
+    and the Machine menu is entirely actions whose buttons are disabled until
+    the plotter is connected."""
+    spec = spec if spec is not None else menu_spec()
+    return [(m, i) for m in spec for i in m.actions]
+
+
 def state_probe_js(spec: list[MenuDef] | None = None) -> str:
-    """A JS expression evaluating to ``{selector: is_it_on}`` for every item.
+    """A JS expression evaluating to ``{selector: {on, enabled}}`` per item.
 
-    The app shell's system menu has to SHOW state (a ticked "Paper guide"),
-    and the page is the only thing that knows it. This generates the probe
-    rather than shipping a hand-written one in `menu.js`, for the same reason
-    the menu itself is derived: how an item's state is read follows from its
-    kind, and a second implementation in JS would be a second place to get
-    the mapping wrong.
+    The app shell's system menu has to tell the truth about two things: what
+    is ticked, and what is even available. `enabled` is not decoration — every
+    Machine item drives a button that is disabled until the plotter is
+    connected, so without it the menu offers "Pen up" to a machine that isn't
+    there and the click answers 409. A menu that looks available and does
+    nothing is exactly what the menu rule exists to prevent.
 
-    The page therefore only has to say *when* something changed; what to look
-    at, and where, comes from here.
+    Generated here rather than hand-written in `menu.js` for the same reason
+    the menu itself is derived: how an item is read follows from its kind, and
+    a second implementation in JS would be a second place to get it wrong. The
+    page only has to say *when* something changed.
+
+    `on` is null for an action — it has no state, and inventing one would put
+    a checkmark on "Go to origin".
     """
     parts = []
-    for _menu, item in stateful_items(spec):
-        # a real checkbox carries its own state; a radio wears the `.on` class
-        # main.js already maintains for the in-page menu
-        read = "!!el.checked" if item.kind == "check" else "el.classList.contains('on')"
+    for _menu, item in all_items(spec):
+        if item.kind == "check":
+            on = "!!el.checked"
+        elif item.kind == "radio":
+            on = "el.classList.contains('on')"
+        else:
+            on = "null"
+        # a label-wrapped checkbox is disabled via the input, which IS `el`
+        # here (the selector points at the input, not the label)
         sel = _js_string(item.selector)
         parts.append(f"(() => {{ const el = document.querySelector({sel});"
-                     f" return el ? [{sel}, {read}] : null; }})()")
+                     f" return el ? [{sel}, {{on: {on}, enabled: !el.disabled}}] : null; }})()")
     return "Object.fromEntries([" + ", ".join(parts) + "].filter(Boolean))"
 
 
@@ -269,5 +290,6 @@ def _js_string(text: str) -> str:
 
 def item_index(spec: list[MenuDef] | None = None) -> dict[str, tuple[str, str]]:
     """selector -> (menu title, item label), for pointing a native menu item
-    at the state the probe reports."""
-    return {i.selector: (m.title, i.label) for m, i in stateful_items(spec)}
+    at what the probe reports about it. Every item, not just the ticked ones —
+    availability applies to all of them."""
+    return {i.selector: (m.title, i.label) for m, i in all_items(spec)}

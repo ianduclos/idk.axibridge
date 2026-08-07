@@ -227,6 +227,12 @@ def test_merging_the_native_menus_never_takes_the_app_down():
 class _FakeMenu:
     def __init__(self, title="", items=None):
         self._title, self._items = title, list(items or [])
+        self.autoenables = True          # NSMenu's default, and the trap
+        for it in self._items:
+            it._parent = self
+
+    def setAutoenablesItems_(self, v):
+        self.autoenables = v
 
     def title(self):
         return self._title
@@ -251,6 +257,18 @@ class _FakeItem:
     #: what NSMenuItem.alloc().init() really leaves behind
     def __init__(self, title="NSMenuItem", submenu=None):
         self._title, self._submenu = title, submenu
+        self._parent = None
+        self.state = None
+        self.enabled = True
+
+    def menu(self):
+        return self._parent
+
+    def setState_(self, v):
+        self.state = v
+
+    def setEnabled_(self, v):
+        self.enabled = v
 
     def title(self):
         return self._title
@@ -357,27 +375,46 @@ def test_merge_against_real_appkit_menus():
     assert [str(view.itemAtIndex_(i).title()) for i in range(view.numberOfItems())] == \
         ["Portrait", "Landscape", "", "Enter Full Screen"]
 
-    # -- and the checkmarks, on the same real objects ----------------------
-    # A toggle in a menu that cannot show its state is worse than one in the
-    # toolbar, so this is the gate on moving any more controls into the menu.
+    # -- and the state, on the same real objects ---------------------------
+    # A toggle that cannot show its state, or an item that looks available
+    # while its button is disabled, is worse in a menu than in a panel.
     index = {"#sel-portrait": ("View", "Portrait"),
              "#sel-landscape": ("View", "Landscape")}
     on, off = AppKit.NSControlStateValueOn, AppKit.NSControlStateValueOff
+    rep = lambda o, e=True: {"on": o, "enabled": e}   # noqa: E731
 
     assert shell.set_menu_states(
-        main, {"#sel-portrait": True, "#sel-landscape": False}, index, on, off) == 2
+        main, {"#sel-portrait": rep(True), "#sel-landscape": rep(False)},
+        index, on, off) == 2
     assert view.itemAtIndex_(0).state() == on
     assert view.itemAtIndex_(1).state() == off
 
     # the tick must FOLLOW the page, not accumulate
-    shell.set_menu_states(main, {"#sel-portrait": False, "#sel-landscape": True},
+    shell.set_menu_states(main, {"#sel-portrait": rep(False), "#sel-landscape": rep(True)},
                           index, on, off)
     assert view.itemAtIndex_(0).state() == off
     assert view.itemAtIndex_(1).state() == on
 
+    # availability, and the autoenable trap that would silently undo it
+    shell.set_menu_states(main, {"#sel-portrait": rep(True, False)}, index, on, off)
+    assert view.itemAtIndex_(0).isEnabled() is False, "an unavailable item greys out"
+    assert view.autoenablesItems() is False, \
+        "AppKit would re-enable it on open unless autoenabling is off"
+    shell.set_menu_states(main, {"#sel-portrait": rep(True, True)}, index, on, off)
+    assert view.itemAtIndex_(0).isEnabled() is True, "and comes back"
+
+    # an action reports on=None: it must not be given a checkmark slot
+    act_index = {"#act": ("View", "Enter Full Screen")}
+    before = view.itemAtIndex_(3).state()
+    shell.set_menu_states(main, {"#act": rep(None, False)}, act_index, on, off)
+    assert view.itemAtIndex_(3).state() == before, "no tick invented for an action"
+    assert view.itemAtIndex_(3).isEnabled() is False, "but availability still applies"
+
     # a selector the page reports but the bar has no item for is ignored,
     # not an exception on the main thread
-    assert shell.set_menu_states(main, {"#gone": True}, index, on, off) == 0
+    assert shell.set_menu_states(main, {"#gone": rep(True)}, index, on, off) == 0
+    assert shell.set_menu_states(main, {"#sel-portrait": True}, index, on, off) == 0, \
+        "a bare bool is the OLD shape — ignored, never crashed on"
     assert shell.find_menu_item(main, "View", "Nope") is None
     assert shell.find_menu_item(main, "Nope", "Portrait") is None
 

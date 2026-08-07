@@ -130,14 +130,20 @@ def test_an_unaddressable_item_is_dropped_rather_than_faked():
 
 # -- state: what the native menu ticks -------------------------------------
 
-def test_only_items_with_a_state_are_probed():
-    """An action has nothing to show. Ticking one would invent state the app
-    does not have — the exact thing the menu rule forbids."""
-    from axibridge.menu_spec import item_index, stateful_items
+def test_an_action_is_probed_for_availability_but_never_for_a_tick():
+    """Two different things. An action has no state to show — giving "Go to
+    origin" a checkmark would invent state the app does not have — but it can
+    certainly be UNAVAILABLE, and every Machine item drives a button that is
+    disabled until the plotter is connected."""
+    from axibridge.menu_spec import all_items, item_index, stateful_items, state_probe_js
 
-    kinds = {i.kind for _m, i in stateful_items()}
-    assert kinds <= {"check", "radio"}
-    assert "#btn-undo" not in item_index(), "Undo is an action, not a toggle"
+    assert {i.kind for _m, i in stateful_items()} <= {"check", "radio"}
+    assert "#btn-undo" in item_index(), "actions are indexed — availability applies"
+    assert len(item_index()) == len(all_items()), "every item, not just the ticked ones"
+
+    js = state_probe_js()
+    assert "enabled: !el.disabled" in js
+    assert "on: null" in js, "an action reports no state rather than a false one"
 
 
 def test_the_probe_reads_a_checkbox_and_a_radio_differently():
