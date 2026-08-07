@@ -1,15 +1,15 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-08-05
+updated: 2026-08-07
 machine: mac+pi
-summary: The repo is PUBLIC on GitHub as of 2026-08-05 — Pi specifics were genericized out of the code into local config first and all 158 commits scanned for secrets; offset_fill + the brush tool remain the live work, 630 tests green.
+summary: A full UI pass landed on the unmerged branch design/bench-and-bed (6 commits) — a new visual direction, a three-critic review with ranked proposals, and real fixes for slow quitting and the macOS title bar; 638 tests green, none of the UI eye-checked on the bench yet.
 next:
-  - "Bench: plot offset_fill (ring spacing vs pen width is the thing only ink settles) and a brush mass with a fill stacked on it"
-  - "Tapered brush (radius from drawing speed) — the queued brush follow-up; per-point timestamps are already captured so it is a pure addition"
-  - "Delete the now-merged local feature branches (ui-round-0726, offset-fill, and the six older merged ones)"
-  - "App-shell polish, only if it still feels cheap after a week's use: window state, ⌘W, menu bar — small concrete items, NOT a toolchain (see the note below)"
-  - "Public-repo hygiene: machine-specific values live in ~/.axibridge/settings.json (host, axicli_path, notify_env) — keep them out of code defaults from now on"
+  - "Eye-check the app shell: restart AxiBridge.app and confirm the traffic lights sit in the header band and the Canvas menu reads right — the one thing not verifiable headless"
+  - "Decide which UI-review proposals to take (artifact linked in HANDOFF); the occlusion cache is the highest-value and needs a staleness design"
+  - "Merge or drop design/bench-and-bed — it is 6 commits ahead of main and everything since the collapse fix lives only there"
+  - "URGENT in ROADMAP: orientation coherence is opt-in, so text/glyphgram render vertical in portrait; 20 of 27 sources declare nothing"
+  - "Still open from July: bench eye-check of offset_fill + brush (see HANDOFF)"
 handoff_for: ian
 ---
 
