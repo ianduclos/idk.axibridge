@@ -631,7 +631,128 @@ export function rememberDetails(det, key, dflt = det.open) {
     localStorage.setItem(detailsKey(key), det.open ? "1" : "0"));
 }
 
+// ---- sliders: filled track + shift fine-tune --------------------------------
+//
+// One delegated implementation covers every range in the app — the ones
+// forms.js generates from a schema and the hand-written ones in plot.js —
+// so a new slider needs no wiring. Two jobs:
+//
+//   paint    the CSS custom property --fill drives the track's filled portion
+//            (a pure-CSS fill can't know the value).
+//   fine     holding shift while dragging or arrowing moves at a tenth of the
+//            normal increment. Bounded params on an open-loop machine are
+//            often tuned in fractions of a millimetre, and a 5px-wide sidebar
+//            slider can't resolve that by pointer alone.
+
+const rangeSpan = (el) => {
+  const span = Number(el.max) - Number(el.min);
+  return Number.isFinite(span) && span > 0 ? span : 1;
+};
+
+// The smallest increment worth making. A schema slider's track is continuous
+// (step="any") while its committed value is quantized, so forms.js stamps the
+// real quantum on data-fine-step — nudging by less than that is rounded away
+// the moment the value commits, which reads as "shift does nothing".
+const fineStep = (el) => {
+  const stamped = Number(el.dataset.fineStep);
+  if (Number.isFinite(stamped) && stamped > 0) return stamped;
+  const step = Number(el.step);
+  if (Number.isFinite(step) && step > 0) return step / 10;
+  return rangeSpan(el) / 1000;
+};
+
+function paintRange(el) {
+  const min = Number(el.min) || 0;
+  const max = Number(el.max);
+  if (!Number.isFinite(max) || max === min) return;
+  const pct = ((Number(el.value) - min) / (max - min)) * 100;
+  el.style.setProperty("--fill", `${Math.max(0, Math.min(100, pct))}%`);
+}
+
+function paintAllRanges(root = document) {
+  for (const el of root.querySelectorAll?.('input[type="range"]') || []) paintRange(el);
+}
+
+// value changed by any route (drag, arrows, or a form re-render writing .value)
+document.addEventListener("input", (e) => {
+  if (e.target?.type === "range") paintRange(e.target);
+}, true);
+
+// forms re-render constantly; repaint whatever ranges appear
+new MutationObserver((records) => {
+  for (const r of records) {
+    for (const node of r.addedNodes) {
+      if (node.nodeType !== 1) continue;
+      if (node.matches?.('input[type="range"]')) paintRange(node);
+      else paintAllRanges(node);
+    }
+  }
+}).observe(document.documentElement, { childList: true, subtree: true });
+
+// shift = fine. Setting .value directly bypasses the element's own listeners,
+// so dispatch input/change ourselves — forms.js commits on change, and its
+// oninput drives live preview.
+const emit = (el, type) => el.dispatchEvent(new Event(type, { bubbles: true }));
+
+function nudge(el, dir, inc) {
+  const min = Number(el.min), max = Number(el.max);
+  let v = Number(el.value) + dir * inc;
+  if (Number.isFinite(min)) v = Math.max(min, v);
+  if (Number.isFinite(max)) v = Math.min(max, v);
+  // trim float dust from repeated fractional adds (0.30000000000000004)
+  el.value = Number(v.toPrecision(12));
+  emit(el, "input");
+  emit(el, "change");
+}
+
+document.addEventListener("keydown", (e) => {
+  const el = e.target;
+  if (el?.type !== "range" || !e.shiftKey) return;
+  const dir = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[e.key];
+  if (!dir) return;
+  e.preventDefault();          // native shift+arrow is just a normal step
+  nudge(el, dir, fineStep(el));
+});
+
+// shift-drag: take over the pointer so the thumb doesn't jump to the click,
+// and map horizontal travel to a tenth of the track's normal range.
+document.addEventListener("pointerdown", (e) => {
+  const el = e.target;
+  if (el?.type !== "range" || !e.shiftKey || e.button !== 0) return;
+  const min = Number(el.min), max = Number(el.max);
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max === min) return;
+  e.preventDefault();
+  el.classList.add("fine");
+  el.focus();
+  const startX = e.clientX;
+  const startV = Number(el.value);
+  const perPx = ((max - min) / Math.max(1, el.getBoundingClientRect().width)) * 0.1;
+  const move = (ev) => {
+    const v = Math.max(min, Math.min(max, startV + (ev.clientX - startX) * perPx));
+    el.value = Number(v.toPrecision(12));
+    emit(el, "input");
+  };
+  const up = () => {
+    el.classList.remove("fine");
+    document.removeEventListener("pointermove", move);
+    document.removeEventListener("pointerup", up);
+    emit(el, "change");       // commit once, like a native drag release
+  };
+  document.addEventListener("pointermove", move);
+  document.addEventListener("pointerup", up);
+});
+
+// shift held (or released) while hovering — reflect the mode on the thumb
+for (const type of ["keydown", "keyup"]) {
+  document.addEventListener(type, (e) => {
+    if (e.key !== "Shift") return;
+    const el = document.activeElement;
+    if (el?.type === "range") el.classList.toggle("fine", e.shiftKey);
+  });
+}
+
 function applyPanelCollapse() {
+  paintAllRanges();
   document.querySelectorAll(".panel > h2").forEach((h2) => {
     const stored = localStorage.getItem(panelKey(h2));
     const collapsed = stored === null

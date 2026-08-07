@@ -3,20 +3,22 @@
    Two materials, not one grey. The BED is the sheet: warm paper under a lamp,
    the only light surface in the app, because it is the colour of the output.
    The BENCH is everything else: a machined instrument housing — matte warm
-   graphite, square corners, engraved labels, hairline structure.
+   graphite, engraved labels, hairline structure.
 
-   Colour rule: hue belongs to ink and to machine state, nothing else. The
-   chrome is achromatic on purpose. --live marks selection ("you are here"),
-   --ochre means moving, --rust means danger or origin, --moss means
-   connected. Everything that isn't one of those is grey, so the pen swatches
-   in the layer list — the one place colour is physically true — are the only
-   saturated thing in the sidebar.
+   Colour rule: the surfaces are grey; colour is spent only on ink, on
+   machine state, and on the primary path. --live marks selection, the active
+   toggle and the filled primary button; --ochre means moving; --rust means
+   danger or origin; --moss means connected. Nothing in the chrome is ever
+   lighter than the sheet — a white-faced control competes with the paper for
+   the eye, worst of all when the plot itself is monochrome. That leaves the
+   pen swatches, where colour is physically true, as the only saturated thing
+   in the sidebar.
 
-   Structure comes from the plotter's own vocabulary: the machine draws ＋
-   registration marks on grid sheets, so panels are registered areas (label +
-   hairline rule, no box) and the sheet well is cropped at opposite corners
-   the way you register paper. Cards were making every part of the app look
-   equally important.
+   Structure: a panel is a registered area (engraved label + hairline rule +
+   a −/+ marker), not a card — cards made every part of the app look equally
+   important. Hairline structure stays square; anything you press or type into
+   takes a 2-3px radius, because fully sharp controls read as unfinished at
+   button size. Depth is --lift and --recess, not borders.
 
    Roboto Mono throughout (vendored — works offline on the Pi). One face, three
    roles: engraved label, bench body, and readout. A second display face was
@@ -49,8 +51,13 @@
   --ink-soft: #8e877a;
 
   /* reserved — meaning only, never decoration */
-  --live: #7396ac;         /* selection / you-are-here */
+  --live: #7396ac;         /* selection / you-are-here / the primary path */
   --live-soft: #9eb2bf;
+  --live-fill: #35617c;    /* filled primary control — deliberately DARKER than
+                              the sheet (6.2:1) so a button never outshines the
+                              paper; 5.4:1 against --ink for its label */
+  --live-fill-hi: #3f6f8c;
+  --live-deep: #24455a;    /* the shaded edge under a filled control */
   --ochre: #c79c4a;        /* in motion, guides, warnings */
   --rust: #c0644c;         /* danger, origin, subtract */
   --moss: #8aa06e;         /* connected, ok */
@@ -62,6 +69,23 @@
   --line: var(--bench-edge);
   --accent: var(--live);
   --accent-soft: var(--live-soft);
+
+  /* Corners: hairline structure stays square, but anything you press or type
+     into gets a small radius — fully sharp controls read as unfinished at
+     button size. Not the old 5-6px; just enough to soften the corner. */
+  --r: 3px;
+  --r-sm: 2px;
+
+  /* Depth, kept subtle: raised things catch a little light on their top edge,
+     recessed things (inputs, wells, the log) sit in a shallow shadow. This is
+     what keeps the bench from reading as flat black. */
+  --lift: inset 0 1px 0 rgba(255, 250, 235, .045);
+  --recess: inset 0 1px 2px rgba(0, 0, 0, .38);
+
+  /* native controls (number spinners, selects, checkboxes) must render in
+     their dark form — the spinner arrows on the stamping field were dark-on
+     -dark and effectively invisible */
+  color-scheme: dark;
 
   font-size: 13px;
 }
@@ -98,7 +122,10 @@
 
 html, body { height: 100%; }
 body {
-  margin: 0; background: var(--bench); color: var(--ink);
+  margin: 0; color: var(--ink);
+  /* a very shallow top-to-bottom fall across the whole housing — no visible
+     banding, but the bench stops reading as one flat slab */
+  background: var(--bench) linear-gradient(179deg, #211f1c 0%, #1a1916 100%) fixed;
   font-family: "Roboto Mono", ui-monospace, monospace;
   line-height: 1.45;
   display: flex; flex-direction: column;
@@ -150,7 +177,7 @@ header h1 span { color: var(--ink-soft); }
 #menubar .menu-panel {
   display: none; flex-direction: column; gap: 1px;
   position: absolute; top: 100%; left: 0; margin-top: 5px; min-width: 190px;
-  background: var(--bench-deep); border: 1px solid var(--bench-edge); border-radius: 0;
+  background: var(--bench-deep); border: 1px solid var(--bench-edge); border-radius: var(--r);
   padding: 4px; z-index: 40; box-shadow: 0 10px 26px rgba(0,0,0,.5);
 }
 #menubar .menu.open .menu-panel { display: flex; }
@@ -161,7 +188,7 @@ header h1 span { color: var(--ink-soft); }
   text-decoration: none; white-space: nowrap;
 }
 #menubar .menu-item:hover,
-#menubar .menu-item:focus-visible { background: var(--ink); color: var(--bench-deep); outline: none; }
+#menubar .menu-item:focus-visible { background: var(--live); color: var(--bench-deep); outline: none; }
 #menubar .menu-check { width: 1em; opacity: 0; }
 #menubar .menu-item.checked .menu-check { opacity: 1; }
 
@@ -195,8 +222,9 @@ main {
    to the wrapper they marked nothing, since the sheet floats independently of
    it. A registration mark that doesn't register anything is decoration.) */
 #canvas-wrap {
-  flex: 1; min-height: 0; border: none; border-radius: 0;
+  flex: 1; min-height: 0; border: none; border-radius: var(--r);
   background: var(--bench-deep); position: relative; overflow: hidden;
+  box-shadow: var(--recess);
 }
 /* absolutely positioned so the SVG's intrinsic aspect ratio (from viewBox)
    can't inflate the flex layout — letterboxing happens inside the SVG */
@@ -234,7 +262,7 @@ main {
 #tooltip {
   position: fixed; z-index: 100; pointer-events: none;
   background: var(--bench-rise); color: var(--ink); border: 1px solid var(--bench-edge);
-  border-radius: 0; padding: 5px 9px; font-size: 11px; line-height: 1.4;
+  border-radius: var(--r-sm); padding: 5px 9px; font-size: 11px; line-height: 1.4;
   max-width: 320px; box-shadow: 0 3px 12px rgba(0,0,0,.5);
 }
 .bed-origin { fill: var(--rust); }
@@ -279,7 +307,7 @@ main {
 #tabs button:hover { color: var(--ink); }
 #tabs button.on {
   background: var(--bench); color: var(--ink);
-  box-shadow: inset 0 2px 0 var(--ink);
+  box-shadow: inset 0 2px 0 var(--live);
 }
 .tab-body { flex: 1; overflow-y: auto; padding: 14px 16px 24px; min-height: 0; }
 
@@ -328,7 +356,7 @@ main {
 
 .tag {
   font-size: 9.5px; background: var(--bench-deep); border: 1px solid var(--bench-edge);
-  padding: 0 5px; border-radius: 0; color: var(--ochre); letter-spacing: 0;
+  padding: 0 5px; border-radius: var(--r-sm); color: var(--ochre); letter-spacing: 0;
 }
 .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
 /* display:flex beats the UA's [hidden]{display:none} — restore it (the
@@ -343,48 +371,112 @@ main {
 
 button {
   background: var(--bench-rise); color: var(--ink); border: 1px solid var(--bench-edge);
-  border-radius: 0; padding: 4px 11px; cursor: pointer;
+  border-radius: var(--r); padding: 4px 11px; cursor: pointer;
   font-family: inherit; font-size: 12.5px;
+  box-shadow: var(--lift);
 }
 button:hover { border-color: var(--ink-soft); background: var(--bench-edge); }
-button:disabled { opacity: .3; cursor: default; border-color: var(--bench-edge); background: var(--bench-rise); }
-/* primary = high contrast, still achromatic. Colour is not how this app says
-   "important"; weight is. */
+button:active { box-shadow: var(--recess); }
+button:disabled { opacity: .3; cursor: default; border-color: var(--bench-edge); background: var(--bench-rise); box-shadow: none; }
+/* Primary is steel blue, not white. Paper is the output; a light-faced button
+   competes with the sheet for the eye, and hardest of all when the plot itself
+   is monochrome. Colour on a filled control reads as "the main path" without
+   ever being brighter than the drawing. Regular weight — bold at this size
+   shouts. */
 button.primary {
-  background: var(--ink); border-color: var(--ink); color: var(--bench-deep); font-weight: 700;
+  background: var(--live-fill); border-color: var(--live-fill); color: var(--ink);
+  font-weight: 400;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 1px 0 var(--live-deep);
 }
-button.primary:hover { background: #fff; border-color: #fff; }
-button.danger { background: transparent; border-color: var(--rust); color: var(--rust); }
+button.primary:hover { background: var(--live-fill-hi); border-color: var(--live-fill-hi); }
+button.primary:active { box-shadow: inset 0 1px 3px rgba(0,0,0,.3); }
+button.danger { background: transparent; border-color: var(--rust); color: var(--rust); box-shadow: none; }
 button.danger:hover { background: var(--rust); color: var(--bench-deep); border-color: var(--rust); }
-/* The Plot button, and only the Plot button, is the colour of paper: it is
-   the one control that turns the screen into a drawing. .big is unique to it. */
+/* Plot gets scale, not a different colour — it's the same primary path, taken
+   seriously. .big is unique to this button. */
 button.primary.big {
-  padding: 11px 24px; font-size: 13px; letter-spacing: 1.6px; text-transform: uppercase;
-  background: var(--sheet); border-color: var(--sheet); color: var(--sheet-ink);
-  box-shadow: 0 1px 0 rgba(0,0,0,.5);
+  padding: 11px 26px; font-size: 13px; letter-spacing: 1.8px; text-transform: uppercase;
+  border-radius: 4px;
 }
-button.primary.big:hover { background: #fff; border-color: #fff; }
-button.primary.big:disabled { background: var(--bench-rise); border-color: var(--bench-edge); color: var(--ink-soft); box-shadow: none; }
+button.primary.big:disabled {
+  background: var(--bench-rise); border-color: var(--bench-edge); color: var(--ink-soft);
+  box-shadow: none;
+}
 
 input, select, textarea {
   background: var(--bench-deep); color: var(--ink); border: 1px solid var(--bench-edge);
-  border-radius: 0; padding: 3px 7px; font-family: inherit; font-size: 12.5px;
-  max-width: 100%;
+  border-radius: var(--r-sm); padding: 3px 7px; font-family: inherit; font-size: 12.5px;
+  max-width: 100%; box-shadow: var(--recess);
 }
 input[type="number"] { font-variant-numeric: tabular-nums; }
+/* keep the spinner arrows permanently visible — on a dark field the
+   show-on-hover default is effectively a hidden control */
+input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
 input:hover, select:hover, textarea:hover { border-color: var(--ink-soft); }
-input[type="checkbox"] { accent-color: var(--live); }
-input[type="range"] { padding: 0; flex: 1; accent-color: var(--live); }
+input[type="checkbox"] { accent-color: var(--live); box-shadow: none; }
 input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 
-.seg { display: inline-flex; border: 1px solid var(--bench-edge); border-radius: 0; overflow: hidden; }
+/* ---- sliders --------------------------------------------------------------
+   A fader on an instrument: a shallow groove, the travelled part filled, and a
+   machined bar for the thumb. --fill is painted by main.js (paintRange) so the
+   filled portion tracks the value; it falls back to 0% before the first paint.
+   Shift-drag and shift-arrow fine-tune are wired there too. */
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  padding: 0; flex: 1; height: 18px; background: transparent;
+  border: none; box-shadow: none; cursor: pointer; min-width: 80px;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 999px;
+  background:
+    linear-gradient(90deg, var(--live) 0 var(--fill, 0%), transparent var(--fill, 0%) 100%),
+    var(--bench-deep);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.5);
+}
+input[type="range"]::-moz-range-track {
+  height: 4px; border-radius: 999px;
+  background:
+    linear-gradient(90deg, var(--live) 0 var(--fill, 0%), transparent var(--fill, 0%) 100%),
+    var(--bench-deep);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.5);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 7px; height: 15px; margin-top: -5.5px; border-radius: 2px;
+  background: var(--ink-soft); border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.55);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 7px; height: 15px; border-radius: 2px;
+  background: var(--ink-soft); border: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.55);
+}
+input[type="range"]:hover::-webkit-slider-thumb { background: var(--ink); }
+input[type="range"]:hover::-moz-range-thumb { background: var(--ink); }
+input[type="range"]:focus-visible { outline: none; }
+input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--live); }
+input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--live); }
+/* holding shift switches to fine-tune — the thumb narrows to say so */
+input[type="range"].fine::-webkit-slider-thumb { width: 4px; background: var(--live-soft); }
+input[type="range"].fine::-moz-range-thumb { width: 4px; background: var(--live-soft); }
+
+.seg {
+  display: inline-flex; border: 1px solid var(--bench-edge); border-radius: var(--r);
+  overflow: hidden; box-shadow: var(--lift);
+}
 .seg button {
-  border: none; border-radius: 0; background: transparent;
+  border: none; border-radius: 0; background: transparent; box-shadow: none;
   font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
   color: var(--ink-soft); padding: 5px 10px;
 }
 .seg button:hover { background: var(--bench-rise); color: var(--ink); }
-.seg button.on { background: var(--ink); color: var(--bench-deep); }
+/* A mode toggle is state, not an action: several are lit at once, so they get
+   weight and a marker rather than a filled face. Filled (white or blue) at
+   three-at-a-time pulled the eye away from the sheet. */
+.seg button.on {
+  background: var(--bench-rise); color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--live);
+}
 /* icon-bearing segments keep sentence case — the icon plus a word reads as a
    tool name, not a silkscreened setting */
 .seg button:has(.tool-icon) { text-transform: none; letter-spacing: .3px; font-size: 12px; font-weight: 400; }
@@ -404,6 +496,7 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .backend-card {
   border: none; border-left: 2px solid transparent; border-radius: 0;
   padding: 7px 10px; margin-bottom: 2px; cursor: pointer; background: var(--bench-rise);
+  border-radius: var(--r-sm); box-shadow: var(--lift);
 }
 .backend-card:hover { background: var(--bench-edge); }
 .backend-card.active { border-left-color: var(--live); background: var(--bench-rise); }
@@ -421,15 +514,15 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 /* logs */
 .log {
   font-size: 11px; background: var(--bench-deep); border: 1px solid var(--bench-edge);
-  border-radius: 0; padding: 6px 9px; height: 100px; overflow-y: auto;
-  white-space: pre-wrap; font-variant-numeric: tabular-nums;
+  border-radius: var(--r-sm); padding: 6px 9px; height: 100px; overflow-y: auto;
+  white-space: pre-wrap; font-variant-numeric: tabular-nums; box-shadow: var(--recess);
 }
 .log .tx { color: var(--live-soft); }
 .log .err { color: var(--rust); }
 
 .progress {
-  height: 6px; background: var(--bench-deep); border-radius: 0; overflow: hidden;
-  margin: 10px 0; border: 1px solid var(--bench-edge);
+  height: 6px; background: var(--bench-deep); border-radius: 999px; overflow: hidden;
+  margin: 10px 0; border: 1px solid var(--bench-edge); box-shadow: var(--recess);
 }
 /* progress is the machine moving — ochre, same as every other "in motion" cue */
 #progress-bar, #gen-progress-bar, #anim-preview-progress {
@@ -443,7 +536,7 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
 .modal-backdrop[hidden] { display: none; }
 .preview-modal {
   width: min(1180px, 96vw); max-height: 94vh; display: flex; flex-direction: column;
-  border: 1px solid var(--bench-edge); border-radius: 0; background: var(--bench);
+  border: 1px solid var(--bench-edge); border-radius: var(--r); background: var(--bench);
   box-shadow: 0 18px 52px rgba(0,0,0,.6); padding: 12px 14px;
 }
 .preview-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
@@ -531,6 +624,7 @@ details:not(.form-group) > summary .hint {
   border: none; border-left: 2px solid transparent; border-radius: 0;
   background: var(--bench-rise);
   padding: 5px 8px; margin: 2px 0; cursor: pointer; font-size: 12px;
+  border-radius: var(--r-sm); box-shadow: var(--lift);
   user-select: none; /* shift/cmd-click selects layers, not label text */
 }
 .layer-row:hover { background: var(--bench-edge); }
@@ -572,6 +666,7 @@ details:not(.form-group) > summary .hint {
   border: none; border-left: 2px solid transparent; border-radius: 0;
   background: var(--bench-rise);
   padding: 6px 9px; margin: 2px 0; cursor: pointer;
+  border-radius: var(--r-sm); box-shadow: var(--lift);
 }
 .pen-row:hover { background: var(--bench-edge); }
 .pen-row.selected { border-left-color: var(--live); background: var(--bench-edge); }
@@ -642,7 +737,7 @@ details:not(.form-group) > summary .hint {
 
 /* A/B capture-series toolbar segment */
 #ab-capture input { width: 3.4em; border: none; border-left: 1px solid var(--bench-edge); border-right: 1px solid var(--bench-edge); }
-#ab-capture button.on { background: var(--ink); color: var(--bench-deep); }
+#ab-capture button.on { background: var(--bench-rise); color: var(--ink); box-shadow: inset 0 -2px 0 var(--live); }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
