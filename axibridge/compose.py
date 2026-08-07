@@ -792,16 +792,31 @@ def flatten_to_document(
 ) -> PathDocument:
     """Resolved geometry → :class:`PathDocument` for the execution column.
 
-    ``target`` is ``"all"`` or a layer id ("plot this layer" = plot its
-    *resolved* geometry, clipped by whatever occludes it). ``pen_offsets``
+    ``target`` is ``"all"``, a layer id, or ``"pen:<pen_id>"`` — every layer
+    carrying that pen, which is how a multi-pen sheet is actually plotted:
+    load a pen, plot everything it draws, swap, repeat. Addressing it by pen
+    rather than by layer is the difference between one pass and remembering
+    which four of fifteen layers were blue. A layer target plots that layer's
+    *resolved* geometry, clipped by whatever occludes it; a pen target does
+    the same for each of its layers, in document order.
+
+    Deliberately NOT paired with a "done" ledger: a ledger records intent,
+    paper records truth, and a stale one is exactly what authorises replotting
+    over wet ink. What was SENT is already in the job log.
+
+    ``pen_offsets``
     maps layer id → that layer's pen nib offset; the pass is translated by
     the *negative* of it — the plot-time toolpath compensation that registers
     multi-pen passes on the same sheet. Per layer, because an "all" pass may
     mix pens.
     """
+    want_pen = target[4:] if target.startswith("pen:") else None
     out_layers: list[Layer] = []
     for i, layer in enumerate(project.layers):
-        if target != "all" and layer.id != target:
+        if want_pen is not None:
+            if (layer.pen_id or "") != want_pen:
+                continue
+        elif target != "all" and layer.id != target:
             continue
         if not layer.visible or layer.id not in resolved:
             continue

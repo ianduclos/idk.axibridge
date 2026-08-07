@@ -223,3 +223,78 @@ def test_zip_roundtrip(tmp_path):
     project, geometry, _, _, _, _ = project_io.load_project(out)
     assert len(project.layers) == 1
     assert geometry[project.layers[0].id]
+
+
+# -- pen-addressed plot targets --------------------------------------------
+
+def test_a_pen_target_plots_every_layer_carrying_that_pen():
+    """How a multi-pen sheet is really plotted: load a pen, plot everything it
+    draws, swap, repeat. By layer it means remembering which four of fifteen
+    were blue.
+
+    Deliberately not paired with a done-ledger: a ledger records intent, paper
+    records truth, and a stale one authorises replotting over wet ink."""
+    from axibridge.compose import CanvasLayer, LayerSource, Project, flatten_to_document
+    from axibridge.stores import Pen
+
+    def L(name, **kw):
+        return CanvasLayer(name=name, source=LayerSource(type="baked"), **kw)
+
+    project = Project(layers=[
+        L("a", pen_id="blue"),
+        L("b", pen_id="red"),
+        L("c", pen_id="blue"),
+    ])
+    resolved = {l.id: [Path(points=[(0.0, 0.0), (10.0, 10.0)])] for l in project.layers}
+    pens = {"blue": Pen(id="blue", name="Blue"), "red": Pen(id="red", name="Red")}
+
+    doc = flatten_to_document(project, resolved, pens, f"pen:blue")
+    assert [l.name for l in doc.layers] == ["a", "c"]
+
+    doc = flatten_to_document(project, resolved, pens, "pen:red")
+    assert [l.name for l in doc.layers] == ["b"]
+
+    # the other two target kinds are untouched
+    assert len(flatten_to_document(project, resolved, pens, "all").layers) == 3
+    one = project.layers[1].id
+    assert [l.name for l in flatten_to_document(project, resolved, pens, one).layers] == ["b"]
+
+
+def test_a_pen_target_skips_hidden_layers_and_unknown_pens():
+    """A hidden layer is not plotted by any target, and a pen nothing carries
+    yields an empty pass rather than everything — 'plot with the pen that
+    isn't there' must not silently become 'plot the lot'."""
+    from axibridge.compose import CanvasLayer, LayerSource, Project, flatten_to_document
+    from axibridge.stores import Pen
+
+    def L(name, **kw):
+        return CanvasLayer(name=name, source=LayerSource(type="baked"), **kw)
+
+    project = Project(layers=[
+        L("a", pen_id="blue"),
+        L("hidden", pen_id="blue", visible=False),
+    ])
+    resolved = {l.id: [Path(points=[(0.0, 0.0), (5.0, 5.0)])] for l in project.layers}
+    pens = {"blue": Pen(id="blue", name="Blue")}
+
+    assert [l.name for l in flatten_to_document(project, resolved, pens, "pen:blue").layers] \
+        == ["a"]
+    assert flatten_to_document(project, resolved, pens, "pen:nosuch").layers == []
+
+
+def test_a_layer_with_no_pen_is_not_swept_up_by_a_pen_target():
+    """`layer.pen_id` is None for an unassigned layer, and `"pen:"` with an
+    empty id must not match it — an empty string comparison that happened to
+    pass would put unpenned layers into every pass."""
+    from axibridge.compose import CanvasLayer, LayerSource, Project, flatten_to_document
+    from axibridge.stores import Pen
+
+    def L(name, **kw):
+        return CanvasLayer(name=name, source=LayerSource(type="baked"), **kw)
+
+    project = Project(layers=[L("none"), L("blue", pen_id="blue")])
+    resolved = {l.id: [Path(points=[(0.0, 0.0), (1.0, 1.0)])] for l in project.layers}
+    pens = {"blue": Pen(id="blue", name="Blue")}
+
+    assert [l.name for l in flatten_to_document(project, resolved, pens, "pen:blue").layers] \
+        == ["blue"]

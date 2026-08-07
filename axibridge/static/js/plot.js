@@ -1412,10 +1412,31 @@ async function refreshPorts() {
   } catch (e) { actions.oops(e); }
 }
 
+// Targets, in the order you actually reach for them: everything, then each
+// PEN, then each layer. Pen targets are how a multi-pen sheet is really
+// plotted — load a pen, plot everything it draws, swap, repeat — and doing
+// that by layer means remembering which four of fifteen layers were blue.
+// Only pens that some visible layer actually uses are offered; an empty pass
+// is a swap for nothing.
 function renderTargets() {
   const sel = $("plot-target");
   const prev = S.plotTarget;
   sel.innerHTML = '<option value="all">all layers</option>';
+
+  const counts = new Map();
+  for (const layer of S.state.project.layers) {
+    if (!layer.visible || !layer.pen_id) continue;
+    counts.set(layer.pen_id, (counts.get(layer.pen_id) || 0) + 1);
+  }
+  for (const pen of S.state.pens) {
+    const n = counts.get(pen.id);
+    if (!n) continue;
+    const o = document.createElement("option");
+    o.value = `pen:${pen.id}`;
+    o.textContent = `pen: ${pen.name} (${n} layer${n > 1 ? "s" : ""})`;
+    sel.appendChild(o);
+  }
+
   for (const layer of S.state.project.layers) {
     const o = document.createElement("option");
     o.value = layer.id;
@@ -1427,8 +1448,16 @@ function renderTargets() {
   renderTargetHint();
 }
 
+function penTarget(target = S.plotTarget) {
+  return target.startsWith("pen:")
+    ? S.state.pens.find((p) => p.id === target.slice(4)) || null
+    : null;
+}
+
 function targetLabel() {
   if (S.plotTarget === "all") return "all layers";
+  const pen = penTarget();
+  if (pen) return `pen ${pen.name}`;
   const l = S.state.project.layers.find((x) => x.id === S.plotTarget);
   return l ? l.name : S.plotTarget;
 }
@@ -1436,7 +1465,16 @@ function targetLabel() {
 function renderTargetHint() {
   const hint = $("target-pen-hint");
   if (S.plotTarget === "all") {
-    hint.textContent = "Manual multi-pen: pick a layer, plot, swap the pen, pick the next.";
+    hint.textContent = "Manual multi-pen: pick a pen, plot, swap the pen, pick the next.";
+    return;
+  }
+  const penned = penTarget();
+  if (penned) {
+    const layers = S.state.project.layers.filter(
+      (l) => l.visible && l.pen_id === penned.id).map((l) => l.name);
+    hint.textContent =
+      `Load pen: ${penned.name} (⌀${penned.barrel_diameter_mm}mm) — plots ${layers.length} ` +
+      `layer${layers.length > 1 ? "s" : ""}: ${layers.join(", ")}`;
     return;
   }
   const layer = S.state.project.layers.find((x) => x.id === S.plotTarget);
