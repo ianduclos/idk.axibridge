@@ -212,6 +212,106 @@ def test_merging_the_native_menus_never_takes_the_app_down():
     assert shell.merge_native_menus() in (True, False)  # never raises
 
 
+# -- the merge itself, against the menu shape pywebview really builds -------
+#
+# This models one detail that is the whole point: pywebview titles its OWN
+# Edit/View on the SUBMENU and leaves the NSMenuItem's title empty, while a
+# custom menu is titled on the ITEM. The first version of the merge read
+# item.title() only, matched ours, missed theirs, and silently did nothing —
+# the bar showed "File Edit View Edit View" and no test could see it.
+
+class _FakeMenu:
+    def __init__(self, title="", items=None):
+        self._title, self._items = title, list(items or [])
+
+    def title(self):
+        return self._title
+
+    def numberOfItems(self):
+        return len(self._items)
+
+    def itemAtIndex_(self, i):
+        return self._items[i]
+
+    def insertItem_atIndex_(self, item, i):
+        self._items.insert(i, item)
+
+    def removeItemAtIndex_(self, i):
+        del self._items[i]
+
+    def titles(self):
+        return [it.title() for it in self._items]
+
+
+class _FakeItem:
+    def __init__(self, title="", submenu=None):
+        self._title, self._submenu = title, submenu
+
+    def title(self):
+        return self._title
+
+    def submenu(self):
+        return self._submenu
+
+    def retain(self):
+        pass
+
+    def release(self):
+        pass
+
+
+def _bar():
+    """app | File | (pywebview Edit) | (pywebview View) | our Edit | our View"""
+    native_edit = _FakeMenu("Edit", [_FakeItem("Cut"), _FakeItem("Paste")])
+    native_view = _FakeMenu("View", [_FakeItem("Enter Full Screen")])
+    ours_edit = _FakeMenu("Edit", [_FakeItem("Undo"), _FakeItem("Redo")])
+    ours_view = _FakeMenu("View", [_FakeItem("Portrait"), _FakeItem("Landscape")])
+    main = _FakeMenu("", [
+        _FakeItem("AxiBridge", _FakeMenu()),
+        _FakeItem("File", _FakeMenu("File", [_FakeItem("Save")])),
+        _FakeItem("", native_edit),      # pywebview: title on the SUBMENU only
+        _FakeItem("", native_view),      # pywebview: title on the SUBMENU only
+        _FakeItem("Edit", ours_edit),    # ours: title on the ITEM
+        _FakeItem("View", ours_view),    # ours: title on the ITEM
+    ])
+    return main, native_edit, native_view
+
+
+def test_our_items_move_into_pywebviews_menus_and_the_duplicate_goes():
+    shell = _shell()
+    main, native_edit, native_view = _bar()
+
+    merged = shell.merge_menus_into_native(
+        main, ("Edit", "View"), lambda: _FakeItem("---"))
+
+    assert merged == ["Edit", "View"]
+    assert len(main._items) == 4, "the duplicate Edit and View are gone from the bar"
+    assert native_edit.titles() == ["Undo", "Redo", "---", "Cut", "Paste"], \
+        "ours land on top, above a separator, where macOS puts Undo"
+    assert native_view.titles() == ["Portrait", "Landscape", "---", "Enter Full Screen"]
+
+
+def test_the_title_comes_from_the_submenu_when_the_item_has_none():
+    """The exact lookup that failed: pywebview's menus are findable only
+    through their submenu's title."""
+    shell = _shell()
+    assert shell.menu_title(_FakeItem("", _FakeMenu("Edit"))) == "Edit"
+    assert shell.menu_title(_FakeItem("View", _FakeMenu("View"))) == "View"
+    assert shell.menu_title(_FakeItem("", None)) == ""
+
+
+def test_a_menu_with_no_counterpart_is_left_alone():
+    """If pywebview stops shipping an Edit menu, ours must survive as its own
+    menu rather than being dropped or merged into something arbitrary."""
+    shell = _shell()
+    ours = _FakeMenu("Edit", [_FakeItem("Undo")])
+    main = _FakeMenu("", [_FakeItem("AxiBridge", _FakeMenu()), _FakeItem("Edit", ours)])
+
+    assert shell.merge_menus_into_native(main, ("Edit",), lambda: _FakeItem("---")) == []
+    assert main.titles() == ["AxiBridge", "Edit"]
+    assert ours.titles() == ["Undo"]
+
+
 def test_refresh_frontend_build_never_creates_one(tmp_path, monkeypatch):
     """It keeps an existing build fresh; with no build it must leave the
     source alone, or a machine with no npm would be worse off than before

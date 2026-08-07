@@ -223,6 +223,57 @@ def build_menu(window):
 _MERGE_INTO_NATIVE = ("Edit", "View")
 
 
+def menu_title(item) -> str:
+    """The title macOS shows for a menu in the bar.
+
+    Not simply `item.title()`. pywebview builds its OWN Edit and View with
+    `NSMenuItem.alloc().init()` and titles only the SUBMENU
+    (cocoa.py `_add_edit_menu` / `_add_view_menu`), while custom menus get the
+    title on the ITEM (`_process_menu_items`). Reading the item alone
+    therefore finds ours and misses theirs — which is exactly how the first
+    merge silently did nothing and left `File Edit View Edit View` in the bar.
+    """
+    own = item.title()
+    if own:
+        return own
+    sub = item.submenu()
+    return sub.title() if sub is not None else ""
+
+
+def merge_menus_into_native(main_menu, titles, separator) -> list[str]:
+    """Move our items into the same-named menu that already exists, and drop
+    our now-empty one. Returns the titles actually merged.
+
+    Split out from `merge_native_menus` so it can be tested without AppKit:
+    the failure this code exists for is a *title lookup* on menu objects, and
+    no headless check catches that unless it models the shape pywebview really
+    builds. `tests/test_app_shell.py` now does.
+    """
+    merged = []
+    for title in titles:
+        found = [i for i in range(main_menu.numberOfItems())
+                 if menu_title(main_menu.itemAtIndex_(i)) == title]
+        if len(found) < 2:
+            continue  # pywebview changed, or we contribute nothing under this name
+        native, ours = main_menu.itemAtIndex_(found[0]), main_menu.itemAtIndex_(found[-1])
+        target, source = native.submenu(), ours.submenu()
+        if target is None or source is None or target is source:
+            continue
+        moved = 0
+        while source.numberOfItems():
+            item = source.itemAtIndex_(0)
+            item.retain()
+            source.removeItemAtIndex_(0)
+            target.insertItem_atIndex_(item, moved)
+            item.release()
+            moved += 1
+        if moved:
+            target.insertItem_atIndex_(separator(), moved)
+        main_menu.removeItemAtIndex_(found[-1])
+        merged.append(title)
+    return merged
+
+
 def merge_native_menus() -> bool:
     """Fold our Edit/View items into pywebview's own menus of those names.
 
@@ -248,26 +299,8 @@ def merge_native_menus() -> bool:
             main_menu = AppKit.NSApplication.sharedApplication().mainMenu()
             if main_menu is None:
                 return
-            for title in _MERGE_INTO_NATIVE:
-                found = [i for i in range(main_menu.numberOfItems())
-                         if main_menu.itemAtIndex_(i).title() == title]
-                if len(found) < 2:
-                    continue  # pywebview changed, or we contribute nothing here
-                native, ours = main_menu.itemAtIndex_(found[0]), main_menu.itemAtIndex_(found[1])
-                target, source = native.submenu(), ours.submenu()
-                if target is None or source is None:
-                    continue
-                moved = 0
-                while source.numberOfItems():
-                    item = source.itemAtIndex_(0)
-                    item.retain()
-                    source.removeItemAtIndex_(0)
-                    target.insertItem_atIndex_(item, moved)
-                    item.release()
-                    moved += 1
-                if moved:
-                    target.insertItem_atIndex_(AppKit.NSMenuItem.separatorItem(), moved)
-                main_menu.removeItemAtIndex_(found[1])
+            merge_menus_into_native(main_menu, _MERGE_INTO_NATIVE,
+                                    AppKit.NSMenuItem.separatorItem)
 
         AppKit.NSOperationQueue.mainQueue().addOperationWithBlock_(apply)
         return True
