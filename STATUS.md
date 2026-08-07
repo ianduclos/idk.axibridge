@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-08-07
 machine: mac+pi
-summary: A full UI pass landed on the unmerged branch design/bench-and-bed (11 commits) — a new visual direction, a three-critic review with ranked proposals, and real fixes for slow quitting and the macOS title bar; 639 tests green; a four-slice redesign plan is written and agreed at docs/plans/ui-redesign.md, including the decision to adopt Vite+TypeScript.
+summary: The UI pass is merged to main (Slice 0 of the redesign plan done) — a new visual direction, a three-critic review with ranked proposals, and real fixes for slow quitting and the macOS title bar; 639 tests green; a four-slice redesign plan is written and agreed at docs/plans/ui-redesign.md, including the decision to adopt Vite+TypeScript.
 next:
-  - "Execute docs/plans/ui-redesign.md in a fresh session — starts by merging design/bench-and-bed to main, then correctness, tests, Vite+TS port, redesign"
+  - "Execute docs/plans/ui-redesign.md from Slice 1 in a FRESH session — Slice 0 (merge) is done; next is correctness: occlusion cache, undo depth, orientation option B"
   - "Eye-check the app shell after a restart: title-bar band, double-click zoom, File-first menu"
   - "Slice 1 blockers to measure, not guess: one undo history entry's real size, and whether the occlusion cache key can be made complete"
   - "Still open from July: bench eye-check of offset_fill + brush (see HANDOFF)"
