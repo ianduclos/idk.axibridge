@@ -12,7 +12,8 @@ let editingId = null;
 export function initPensTab() {
   $("tab-pens").innerHTML = `
     <div class="panel">
-      <h2>Pen library <span class="hint">(global — your physical drawer)</span></h2>
+      <h2>Pen library</h2>
+      <div class="hint">Shared by every project — these are the pens in your drawer.</div>
       <div id="pen-list"></div>
       <div class="row"><button id="btn-pen-new" class="primary">＋ New pen</button></div>
     </div>
