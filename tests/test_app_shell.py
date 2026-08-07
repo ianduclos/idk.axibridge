@@ -357,30 +357,6 @@ def test_merge_against_real_appkit_menus():
     assert [str(view.itemAtIndex_(i).title()) for i in range(view.numberOfItems())] == \
         ["Portrait", "Landscape", "", "Enter Full Screen"]
 
-    # -- and the checkmarks, on the same real objects ----------------------
-    # A toggle in a menu that cannot show its state is worse than one in the
-    # toolbar, so this is the gate on moving any more controls into the menu.
-    index = {"#sel-portrait": ("View", "Portrait"),
-             "#sel-landscape": ("View", "Landscape")}
-    on, off = AppKit.NSControlStateValueOn, AppKit.NSControlStateValueOff
-
-    assert shell.set_menu_states(
-        main, {"#sel-portrait": True, "#sel-landscape": False}, index, on, off) == 2
-    assert view.itemAtIndex_(0).state() == on
-    assert view.itemAtIndex_(1).state() == off
-
-    # the tick must FOLLOW the page, not accumulate
-    shell.set_menu_states(main, {"#sel-portrait": False, "#sel-landscape": True},
-                          index, on, off)
-    assert view.itemAtIndex_(0).state() == off
-    assert view.itemAtIndex_(1).state() == on
-
-    # a selector the page reports but the bar has no item for is ignored,
-    # not an exception on the main thread
-    assert shell.set_menu_states(main, {"#gone": True}, index, on, off) == 0
-    assert shell.find_menu_item(main, "View", "Nope") is None
-    assert shell.find_menu_item(main, "Nope", "Portrait") is None
-
 
 def test_a_menu_with_no_counterpart_is_left_alone():
     """If pywebview stops shipping an Edit menu, ours must survive as its own

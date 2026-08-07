@@ -32,11 +32,6 @@ from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
 
-#: kinds that carry a visible state — the only ones worth probing or ticking.
-#: An "action" has nothing to show, and giving it a checkmark would invent
-#: state the app does not have.
-STATEFUL = ("check", "radio")
-
 #: attributes that distinguish one button in a radio group from its siblings.
 #: Explicit rather than "any data-*" so a decorative data attribute added
 #: later cannot silently become part of a selector.
@@ -208,47 +203,3 @@ def menu_spec(index_html: Path | None = None) -> list[MenuDef]:
     machine that has never run npm."""
     path = index_html or (Path(__file__).parent / "static" / "index.html")
     return parse_menubar(path.read_text(encoding="utf-8"))
-
-
-def stateful_items(spec: list[MenuDef] | None = None) -> list[tuple[MenuDef, MenuItem]]:
-    """Every item that has a state to show, with the menu it lives in."""
-    spec = spec if spec is not None else menu_spec()
-    return [(m, i) for m in spec for i in m.actions if i.kind in STATEFUL]
-
-
-def state_probe_js(spec: list[MenuDef] | None = None) -> str:
-    """A JS expression evaluating to ``{selector: is_it_on}`` for every item.
-
-    The app shell's system menu has to SHOW state (a ticked "Paper guide"),
-    and the page is the only thing that knows it. This generates the probe
-    rather than shipping a hand-written one in `menu.js`, for the same reason
-    the menu itself is derived: how an item's state is read follows from its
-    kind, and a second implementation in JS would be a second place to get
-    the mapping wrong.
-
-    The page therefore only has to say *when* something changed; what to look
-    at, and where, comes from here.
-    """
-    parts = []
-    for _menu, item in stateful_items(spec):
-        # a real checkbox carries its own state; a radio wears the `.on` class
-        # main.js already maintains for the in-page menu
-        read = "!!el.checked" if item.kind == "check" else "el.classList.contains('on')"
-        sel = _js_string(item.selector)
-        parts.append(f"(() => {{ const el = document.querySelector({sel});"
-                     f" return el ? [{sel}, {read}] : null; }})()")
-    return "Object.fromEntries([" + ", ".join(parts) + "].filter(Boolean))"
-
-
-def _js_string(text: str) -> str:
-    """A JS string literal. Selectors here are ours, but generating code from
-    data without quoting it is how a stray apostrophe becomes a syntax error
-    in a window you cannot open a console on."""
-    escaped = text.replace("\\", "\\\\").replace('"', '\\"')
-    return f'"{escaped}"'
-
-
-def item_index(spec: list[MenuDef] | None = None) -> dict[str, tuple[str, str]]:
-    """selector -> (menu title, item label), for pointing a native menu item
-    at the state the probe reports."""
-    return {i.selector: (m.title, i.label) for m, i in stateful_items(spec)}
