@@ -214,11 +214,15 @@ def test_merging_the_native_menus_never_takes_the_app_down():
 
 # -- the merge itself, against the menu shape pywebview really builds -------
 #
-# This models one detail that is the whole point: pywebview titles its OWN
-# Edit/View on the SUBMENU and leaves the NSMenuItem's title empty, while a
-# custom menu is titled on the ITEM. The first version of the merge read
-# item.title() only, matched ours, missed theirs, and silently did nothing —
-# the bar showed "File Edit View Edit View" and no test could see it.
+# The detail that is the whole point, and that two fix attempts died on:
+# pywebview titles its OWN Edit/View on the SUBMENU, and the wrapping
+# NSMenuItem keeps the default title `NSMenuItem` gives an item built with
+# plain `init` — the literal string "NSMenuItem", NOT the empty string. So
+# reading item.title() finds a truthy placeholder, and "fall back when the
+# title is empty" never fires. The fakes below carry that placeholder for
+# exactly that reason; a fake using "" would pass code that fails on the
+# real thing, which is what happened. `test_merge_against_real_appkit_menus`
+# closes the loop with actual NSMenu objects.
 
 class _FakeMenu:
     def __init__(self, title="", items=None):
@@ -244,7 +248,8 @@ class _FakeMenu:
 
 
 class _FakeItem:
-    def __init__(self, title="", submenu=None):
+    #: what NSMenuItem.alloc().init() really leaves behind
+    def __init__(self, title="NSMenuItem", submenu=None):
         self._title, self._submenu = title, submenu
 
     def title(self):
@@ -269,10 +274,10 @@ def _bar():
     main = _FakeMenu("", [
         _FakeItem("AxiBridge", _FakeMenu()),
         _FakeItem("File", _FakeMenu("File", [_FakeItem("Save")])),
-        _FakeItem("", native_edit),      # pywebview: title on the SUBMENU only
-        _FakeItem("", native_view),      # pywebview: title on the SUBMENU only
-        _FakeItem("Edit", ours_edit),    # ours: title on the ITEM
-        _FakeItem("View", ours_view),    # ours: title on the ITEM
+        _FakeItem(submenu=native_edit),  # pywebview: submenu titled, item is
+        _FakeItem(submenu=native_view),  # the "NSMenuItem" placeholder
+        _FakeItem("Edit", ours_edit),    # ours: both titled
+        _FakeItem("View", ours_view),
     ])
     return main, native_edit, native_view
 
@@ -291,13 +296,66 @@ def test_our_items_move_into_pywebviews_menus_and_the_duplicate_goes():
     assert native_view.titles() == ["Portrait", "Landscape", "---", "Enter Full Screen"]
 
 
-def test_the_title_comes_from_the_submenu_when_the_item_has_none():
-    """The exact lookup that failed: pywebview's menus are findable only
-    through their submenu's title."""
+def test_the_title_comes_from_the_submenu_not_the_item():
+    """The exact lookup that failed, twice. A menu in the bar shows its
+    SUBMENU's title, and pywebview's items carry the useless-but-truthy
+    "NSMenuItem" placeholder — so the item's title can never be trusted first,
+    and an emptiness check on it is not enough either."""
     shell = _shell()
-    assert shell.menu_title(_FakeItem("", _FakeMenu("Edit"))) == "Edit"
+    assert shell.menu_title(_FakeItem("NSMenuItem", _FakeMenu("Edit"))) == "Edit"
     assert shell.menu_title(_FakeItem("View", _FakeMenu("View"))) == "View"
-    assert shell.menu_title(_FakeItem("", None)) == ""
+    assert shell.menu_title(_FakeItem("File", None)) == "File"
+    assert shell.menu_title(_FakeItem("NSMenuItem", _FakeMenu(""))) == "NSMenuItem"
+
+
+def test_merge_against_real_appkit_menus():
+    """The fakes above encode what I believed about NSMenu; this builds the
+    real thing. Both prior fixes passed a model and failed the machine, so the
+    model is not allowed to be the last word.
+
+    Reproduces pywebview's construction exactly — its View then Edit inserted
+    at index 1 with only the submenu titled, our three appended with both
+    titled — and asserts the bar Ian sees afterwards."""
+    AppKit = pytest.importorskip("AppKit", reason="not macOS")
+    shell = _shell()
+
+    main = AppKit.NSMenu.alloc().init()
+    app_item = AppKit.NSMenuItem.alloc().init()
+    main.insertItem_atIndex_(app_item, 0)
+    app_item.setSubmenu_(AppKit.NSMenu.alloc().init())
+
+    def native(title, labels, index):
+        menu = AppKit.NSMenu.alloc().init()
+        menu.setTitle_(title)                 # submenu only, as pywebview does
+        item = AppKit.NSMenuItem.alloc().init()
+        item.setSubmenu_(menu)
+        main.insertItem_atIndex_(item, index)
+        for label in labels:
+            menu.addItemWithTitle_action_keyEquivalent_(label, None, "")
+        return menu
+
+    view = native("View", ["Enter Full Screen"], 1)
+    edit = native("Edit", ["Cut", "Copy", "Paste", "Select All"], 1)
+    for title, labels in [("File", ["Save"]), ("Edit", ["Undo", "Redo"]),
+                          ("View", ["Portrait", "Landscape"])]:
+        sub = AppKit.NSMenu.alloc().init()
+        sub.setTitle_(title)
+        item = AppKit.NSMenuItem.alloc().init()
+        item.setTitle_(title)                 # ours: item AND submenu titled
+        item.setSubmenu_(sub)
+        main.addItem_(item)
+        for label in labels:
+            sub.addItemWithTitle_action_keyEquivalent_(label, None, "")
+
+    assert shell.merge_menus_into_native(
+        main, ("Edit", "View"), AppKit.NSMenuItem.separatorItem) == ["Edit", "View"]
+
+    bar = [shell.menu_title(main.itemAtIndex_(i)) for i in range(main.numberOfItems())]
+    assert bar[1:] == ["Edit", "View", "File"], f"duplicates left in the bar: {bar}"
+    assert [str(edit.itemAtIndex_(i).title()) for i in range(edit.numberOfItems())] == \
+        ["Undo", "Redo", "", "Cut", "Copy", "Paste", "Select All"]
+    assert [str(view.itemAtIndex_(i).title()) for i in range(view.numberOfItems())] == \
+        ["Portrait", "Landscape", "", "Enter Full Screen"]
 
 
 def test_a_menu_with_no_counterpart_is_left_alone():

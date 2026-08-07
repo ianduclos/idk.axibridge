@@ -224,20 +224,27 @@ _MERGE_INTO_NATIVE = ("Edit", "View")
 
 
 def menu_title(item) -> str:
-    """The title macOS shows for a menu in the bar.
+    """The title macOS shows for a menu in the bar: the SUBMENU's, not the
+    item's.
 
-    Not simply `item.title()`. pywebview builds its OWN Edit and View with
-    `NSMenuItem.alloc().init()` and titles only the SUBMENU
-    (cocoa.py `_add_edit_menu` / `_add_view_menu`), while custom menus get the
-    title on the ITEM (`_process_menu_items`). Reading the item alone
-    therefore finds ours and misses theirs — which is exactly how the first
-    merge silently did nothing and left `File Edit View Edit View` in the bar.
+    Two attempts died on this. pywebview builds its own Edit and View with
+    `NSMenuItem.alloc().init()` and titles only the submenu (cocoa.py
+    `_add_edit_menu` / `_add_view_menu`), while custom menus are titled on
+    both. Reading `item.title()` found ours and missed theirs. Falling back to
+    the submenu only when the item's title was falsy missed them too — because
+    `NSMenuItem.alloc().init()` does not leave the title empty, it leaves the
+    literal string **"NSMenuItem"** (`init` is not the designated initialiser;
+    `initWithTitle:action:keyEquivalent:` is). A truthy-looking placeholder is
+    why both attempts failed silently and identically.
+
+    Preferring the submenu is not a workaround for that, it is the correct
+    reading: a menu in the bar displays its submenu's title, and for our own
+    menus both titles are set to the same string anyway.
     """
-    own = item.title()
-    if own:
-        return own
     sub = item.submenu()
-    return sub.title() if sub is not None else ""
+    if sub is not None and sub.title():
+        return sub.title()
+    return item.title() or ""
 
 
 def merge_menus_into_native(main_menu, titles, separator) -> list[str]:
