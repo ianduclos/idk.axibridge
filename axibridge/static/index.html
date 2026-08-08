@@ -106,7 +106,6 @@
   <!-- persistent centre canvas -->
   <section id="canvas-area">
     <div id="canvas-toolbar">
-      <button id="zoom-fit" title="Fit page">⛶</button>
       <!-- tool icons: Lucide (ISC) — see THIRD-PARTY-NOTICES.md. Stroke style
            and stroke-width come from .tool-icon in style.css, in one place. -->
       <div class="seg" id="tool-toggle">
@@ -133,6 +132,17 @@
       <button id="pen-commit" hidden disabled
               title="Finish the path you're drawing, as an open line (same as Enter). To close it into a shape instead, click back on the first anchor."><svg class="tool-icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Commit</button>
       <select id="brush-select" hidden title="Brush — applies to the active drawing layer"></select>
+      <!-- Zoom, parked at the right end of the row (Ian, 2026-08-08): a
+           readout you can type into, and fit-to-page beside it. 100% means
+           life size on the glass, which a browser cannot work out on its own —
+           Settings > Display holds the one-time ruler calibration, and the
+           title says so rather than leaving a number that quietly lies. -->
+      <div id="zoom-group">
+        <input type="number" id="zoom-pct" min="10" max="2000" step="1" value="100"
+               title="Zoom. 100% is life size on screen — calibrate it in Settings › Display">
+        <span class="zoom-unit">%</span>
+        <button id="zoom-fit" title="Fit page">⛶</button>
+      </div>
     </div>
     <div id="canvas-wrap">
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>

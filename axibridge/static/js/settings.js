@@ -5,6 +5,7 @@
 
 import { api } from "./api.js";
 import { renderForm } from "./forms.js";
+import { screenCal, setScreenCal, screenPxPerMm } from "./canvas.js";
 import { S, actions, rememberDetails } from "./main.js";
 
 const $ = (id) => document.getElementById(id);
@@ -55,6 +56,24 @@ export function initSettingsTab() {
     </div>
 
     <div class="panel">
+      <h2>Display <span class="hint">(this screen only)</span></h2>
+      <div class="hint">The zoom box's 100% means life size: a 50&nbsp;mm circle
+        measures 50&nbsp;mm against a ruler. A browser cannot measure your
+        monitor, so it falls back on the convention that an inch is 96 pixels —
+        which is out by a fifth or more on a Retina display. Hold a ruler across
+        the bar below and type what it actually reads.</div>
+      <div id="cal-bar" title="the app believes this is 100 mm"></div>
+      <div class="row">
+        <label>measures</label>
+        <input type="number" id="screen-cal-measured" step="0.5" min="10" max="400" style="width:5.5em">
+        <label>mm</label>
+        <button id="btn-screen-cal-apply">Apply</button>
+        <button id="btn-screen-cal-clear">Reset to nominal</button>
+      </div>
+      <div class="hint" id="screen-cal-state"></div>
+    </div>
+
+    <div class="panel">
       <h2>Server</h2>
       <div class="row"><button id="btn-restart">⟳ Restart server</button></div>
       <div class="hint">Re-executes the server process in place (picks up code changes).
@@ -65,6 +84,34 @@ export function initSettingsTab() {
         <pre id="server-log" class="server-log"></pre>
       </details>
     </div>`;
+
+  // -- screen calibration. Stored in localStorage by canvas.js: a display
+  // property belongs to the machine looking at it, not to the project or the
+  // server (the Pi's browser is a different screen).
+  const drawCalBar = () => {
+    const bar = $("cal-bar");
+    if (!bar) return;
+    bar.style.width = `${100 * screenPxPerMm()}px`;
+    const cal = screenCal();
+    $("screen-cal-state").textContent = cal === 1
+      ? "Nominal (96 px per inch, uncalibrated) — 100% is approximate."
+      : `Calibrated: ${(screenPxPerMm()).toFixed(3)} px per mm (${(cal * 96).toFixed(0)} px per inch).`;
+    $("screen-cal-measured").value = "";
+    $("screen-cal-measured").placeholder = "100";
+  };
+  $("btn-screen-cal-apply").onclick = () => {
+    const m = Number($("screen-cal-measured").value);
+    if (!Number.isFinite(m) || m <= 0) return;
+    // the bar is drawn as 100mm at the CURRENT factor; if it measures m, the
+    // factor was wrong by exactly 100/m.
+    if (!setScreenCal(screenCal() * (100 / m))) {
+      $("screen-cal-state").textContent = "That would put the screen off by more than 4x — check the reading.";
+      return;
+    }
+    drawCalBar();
+  };
+  $("btn-screen-cal-clear").onclick = () => { setScreenCal(1); drawCalBar(); };
+  drawCalBar();
 
   const restart = $("btn-restart");
   restart.onclick = async () => {

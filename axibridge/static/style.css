@@ -358,7 +358,25 @@ main {
    scrolls; the content still scrolls by wheel/trackpad */
 #canvas-toolbar::-webkit-scrollbar { height: 0; }
 #canvas-toolbar label { color: var(--ink-soft); font-size: 12px; display: flex; gap: 5px; align-items: center; }
+/* zoom lives at the far end of the row: the readout you type into, then fit.
+   `margin-left: auto` is the whole placement — the tools keep the left, and
+   the pen/brush bars that appear between them push nothing out of the corner. */
+#zoom-group { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+#zoom-pct { width: 4.4em; }
+.zoom-unit { color: var(--ink-soft); font-size: 12px; margin-left: -3px; }
 #canvas-toolbar input[type="number"] { width: 4.2em; }
+
+/* the screen-calibration ruler: a bar the app believes is 100mm wide, with end
+   caps to measure between. drawn in ink rather than chrome grey, because it is
+   an object to hold a ruler against, not a control. */
+#cal-bar {
+  position: relative; height: 20px; margin: 10px 0 4px;
+  border-left: 1px solid var(--ink); border-right: 1px solid var(--ink);
+}
+#cal-bar::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%;
+  border-top: 1px solid var(--ink-soft);
+}
 /* the well the sheet sits in: recessed and unbordered. The bed reads as a bed
    through material contrast — near-black well, paper sheet, real shadow — not
    through a frame. (Corner registration crops were tried here and cut: pinned

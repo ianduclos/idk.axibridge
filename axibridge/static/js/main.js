@@ -7,7 +7,7 @@
 // → SSE pushes machine status & job progress one-way.
 
 import { api, subscribe } from "./api.js";
-import { CanvasEditor, mul, objToMat, matToObj } from "./canvas.js";
+import { CanvasEditor, mul, objToMat, matToObj, screenPxPerMm } from "./canvas.js";
 import { initComposeTab, initLayersDock, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, logDeleted, rerenderForView } from "./compose.js";
 import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
 import { initPensTab, renderPensTab } from "./pens.js";
@@ -533,6 +533,40 @@ function updatePlayback() {
 }
 
 $("zoom-fit").onclick = () => canvas.resetView();
+
+// ---- the zoom readout -------------------------------------------------------
+//
+// 100% is life size on the glass (see screenPxPerMm in canvas.js). The box is
+// a readout AND an input: typing commits, and every route that changes the
+// view pushes back into it, so it can never disagree with the canvas.
+//
+// A plain resize listener is needed and is not the ResizeObserver this app
+// deliberately doesn't have: the viewBox is unchanged by a resize, so the
+// LAYOUT is right without any help — it is only the millimetres-per-pixel that
+// moved, i.e. the number in this box. Nothing re-fits.
+const zoomBox = $("zoom-pct");
+
+function syncZoomBox() {
+  if (!zoomBox || document.activeElement === zoomBox) return;  // don't fight a typist
+  zoomBox.value = String(Math.round(canvas.zoomPercent()));
+}
+
+if (zoomBox) {
+  const commitZoom = () => {
+    const pct = Number(zoomBox.value);
+    if (!Number.isFinite(pct) || pct <= 0) return syncZoomBox();
+    // setZoomPercent returns what it could actually reach — the view clamps at
+    // both ends, and a box reading 4000% over a canvas at 2000% is a lie.
+    zoomBox.value = String(Math.round(canvas.setZoomPercent(pct)));
+  };
+  zoomBox.onchange = commitZoom;
+  zoomBox.onkeydown = (e) => { if (e.key === "Enter") { commitZoom(); zoomBox.blur(); } };
+  zoomBox.onblur = syncZoomBox;
+  document.addEventListener("canvas-view-change", syncZoomBox);
+  document.addEventListener("screen-cal-change", syncZoomBox);
+  window.addEventListener("resize", syncZoomBox);
+  requestAnimationFrame(syncZoomBox);   // after first layout, or clientWidth is 0
+}
 $("doc-preview-exit").onclick = () => actions.exitDocPreview();
 $("btn-animate").onclick = () => {
   if (canvas.animating) {

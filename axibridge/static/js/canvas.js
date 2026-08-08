@@ -39,6 +39,37 @@ function el(tag, attrs = {}) {
 }
 
 const PAD = 8;
+
+// ---- screen scale: what "100%" means -----------------------------------------
+//
+// 100% is life size on the glass — a 50mm circle measures 50mm against a ruler.
+// A browser cannot measure your monitor, so the only automatic answer is the
+// CSS convention that an inch is 96 px. That convention is fiction on anything
+// modern: macOS picks a logical resolution for comfortable UI, which lands
+// around 110-130 CSS px per inch, so nominal 100% renders a fifth to a quarter
+// SMALL. Hence a calibration factor, measured once by holding a ruler to the
+// reference bar in Settings > Display and stored per browser — a display
+// property belongs to the machine looking at it, not to the project or to the
+// server (the Pi's browser is a different screen).
+const CSS_PX_PER_MM = 96 / 25.4;
+const CAL_KEY = "axibridge.screenCal";
+
+export function screenCal() {
+  const v = Number(localStorage.getItem(CAL_KEY));
+  // a factor outside this range is a typo or a corrupted store, not a monitor
+  return Number.isFinite(v) && v >= 0.25 && v <= 4 ? v : 1;
+}
+
+export function setScreenCal(v) {
+  if (!Number.isFinite(v) || v < 0.25 || v > 4) return false;
+  if (Math.abs(v - 1) < 1e-9) localStorage.removeItem(CAL_KEY);
+  else localStorage.setItem(CAL_KEY, String(v));
+  document.dispatchEvent(new CustomEvent("screen-cal-change"));
+  return true;
+}
+
+/** CSS px per millimetre at 100% zoom, calibration applied. */
+export function screenPxPerMm() { return CSS_PX_PER_MM * screenCal(); }
 const HANDLE = 2.6; // handle half-size in bed mm (visual)
 
 export class CanvasEditor {
@@ -151,11 +182,52 @@ export class CanvasEditor {
   _setViewBox(vb) {
     this._viewBox = this._clampViewBox(vb);
     this._applyViewBox();
+    this._notifyView();
   }
 
   resetView() {
     this._viewBox = this._baseViewBox();
     this._applyViewBox();
+    this._notifyView();
+  }
+
+  // The zoom readout is the only listener today. Fired per wheel tick, which
+  // is cheap — the handler reads two numbers and writes one input.
+  _notifyView() {
+    document.dispatchEvent(new CustomEvent("canvas-view-change"));
+  }
+
+  /** CSS px per millimetre as currently drawn. */
+  pxPerMm() {
+    const v = this._viewBox || this._baseViewBox();
+    const W = Math.max(this.svg.clientWidth, 1);
+    const H = Math.max(this.svg.clientHeight, 1);
+    // preserveAspectRatio defaults to "meet": the smaller ratio is the one
+    // that fits, and the other axis letterboxes.
+    return Math.min(W / v.w, H / v.h);
+  }
+
+  zoomPercent() { return (this.pxPerMm() / screenPxPerMm()) * 100; }
+
+  /** Zoom about the view's centre. Returns the percentage actually reached —
+   *  _clampViewBox may refuse the extremes, and the readout must not lie. */
+  setZoomPercent(pct) {
+    this._ensureViewBox();
+    const base = this._baseViewBox();
+    const aspect = base.h / base.w;
+    const W = Math.max(this.svg.clientWidth, 1);
+    const H = Math.max(this.svg.clientHeight, 1);
+    const target = (pct / 100) * screenPxPerMm();
+    if (!(target > 0)) return this.zoomPercent();
+    // _clampViewBox pins the box to the bed's aspect, so only its width is
+    // free: solve whichever axis is doing the fitting for the width that puts
+    // `target` px on a millimetre.
+    const w = Math.min(W, H / aspect) / target;
+    const h = w * aspect;
+    const v = this._viewBox;
+    const cx = v.x + v.w / 2, cy = v.y + v.h / 2;
+    this._setViewBox({ x: cx - w / 2, y: cy - h / 2, w, h });
+    return this.zoomPercent();
   }
 
   _zoomAt(anchor, factor, origin = this._viewBox) {
