@@ -275,7 +275,7 @@ export function initComposeTab() {
   // image-driven generators (any param with format:"asset") group separately
   const usesImage = (m) => Object.values(m.schema.properties || {}).some(
     (p) => (p.format || ((p.anyOf || []).find((a) => a.format) || {}).format) === "asset");
-  const optgroups = { false: group("Procedural"), true: group("📷 Image-driven") };
+  const optgroups = { false: group("Procedural"), true: group("Image-driven") };
   function group(label) {
     const g = document.createElement("optgroup");
     g.label = label;

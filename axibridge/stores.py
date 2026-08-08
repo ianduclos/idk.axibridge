@@ -84,13 +84,22 @@ class Settings(BaseModel):
     backend_params: dict[str, dict[str, Any]] = Field(default_factory=dict)
     #: soft-limit envelope (machine.SoftLimits dump) — survives restarts
     soft_limits: dict[str, Any] = Field(default_factory=dict)
-    # Estimator calibration (formerly constants buried in estimate.py).
-    max_speed_mm_s: float = Field(default=279.4, gt=0, title="Max XY speed (mm/s)")
-    max_accel_mm_s2: float = Field(default=4000.0, gt=0, title="Max acceleration (mm/s²)")
-    pen_swing_s: float = Field(default=0.15, ge=0, title="Servo full-swing time (s)")
-    projects_root: str = "~/AxidrawProjects"
-    host: str = "0.0.0.0"
-    port: int = 2942
+    # Estimator calibration (formerly constants buried in estimate.py) and
+    # server config. Both are set-once-per-machine, and the panel was a flat
+    # list of six unrelated fields — so they declare `group`, which forms.js
+    # renders as the same folding sub-section the layer panel uses. The
+    # grouping is a property of the FIELDS, stated once here, not a second
+    # layout description over in settings.js.
+    max_speed_mm_s: float = Field(default=279.4, gt=0, title="Max XY speed (mm/s)",
+                                  json_schema_extra={"group": "Estimator calibration"})
+    max_accel_mm_s2: float = Field(default=4000.0, gt=0, title="Max acceleration (mm/s²)",
+                                   json_schema_extra={"group": "Estimator calibration"})
+    pen_swing_s: float = Field(default=0.15, ge=0, title="Servo full-swing time (s)",
+                               json_schema_extra={"group": "Estimator calibration"})
+    projects_root: str = Field(default="~/AxidrawProjects",
+                               json_schema_extra={"group": "Server & paths"})
+    host: str = Field(default="0.0.0.0", json_schema_extra={"group": "Server & paths"})
+    port: int = Field(default=2942, json_schema_extra={"group": "Server & paths"})
     paper_presets: list[PaperPreset] = Field(default_factory=lambda: [
         PaperPreset(name="A4", width=210, height=297),
         PaperPreset(name="A5", width=148, height=210),

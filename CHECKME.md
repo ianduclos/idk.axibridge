@@ -80,6 +80,25 @@ been through it.
   0.5mm is the right default for plot time, and whether a filled shape with
   Smoothen on it still occludes cleanly.
 
+## Added 2026-08-08 (later) — zoom, folds, one fewer emoji
+
+- **Zoom moved to the right end of the tool row**, with a percentage box beside
+  fit-to-page. Type a number, or read what the wheel/pinch did.
+- **100% is life size — but only after you calibrate it.** A browser cannot
+  measure a monitor; it assumes 96 pixels to the inch, which is out by a fifth
+  or more on Retina. **Settings › Display** has a bar the app believes is
+  100&nbsp;mm: hold a ruler across it, type what it really reads, Apply. Until
+  you do, 100% is approximate and the panel says so. This is the one thing here
+  that genuinely needs you — I cannot do it from this end.
+- **Plot and Settings sub-sections fold now**, like the layer panel's. Pen
+  height test, Plot-pass optimisation and Plot stepper default closed (they are
+  secondary procedures); Quick A ⇄ B and From the tray default open (they are
+  the Staging panel's actual content). Machine settings went from six flat
+  fields to two groups — Estimator calibration, Server & paths. All remember.
+  Say if any of those defaults are backwards for how you work.
+- **The camera emoji is gone** from the generator dropdown — the group is just
+  "Image-driven" now.
+
 ## Known and deliberate
 
 - Below ~900px window width the canvas top edge shifts 10px. That is the

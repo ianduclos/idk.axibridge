@@ -268,7 +268,10 @@ export function renderSettingsTab() {
   for (const k of composite) delete schema.properties[k];
   settingsValues = { ...S.state.settings };
   for (const k of composite) delete settingsValues[k];
-  renderForm($("settings-form"), schema, settingsValues, () => {});
+  // stateKey makes the schema's field groups sticky across reloads — without
+  // it they collapse back every time the tab re-renders, which is worse than
+  // not folding at all.
+  renderForm($("settings-form"), schema, settingsValues, () => {}, { stateKey: "settings" });
 
   const g = S.state.project.guide;
   $("guide-w").value = g.width; $("guide-h").value = g.height;

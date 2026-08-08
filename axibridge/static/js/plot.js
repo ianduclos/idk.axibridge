@@ -39,12 +39,14 @@ const MACHINE_PANELS = `    <div class="panel">
         <button id="btn-origin-guide" title="Put the carriage on the paper guide corner first, then press">Origin = guide corner</button>
         <span class="hint">position: <span id="pos-readout">—</span></span>
       </div>
-      <h3>Pen height test <span class="hint">(live — tweak heights above, then:)</span></h3>
-      <div class="row">
-        <button id="btn-pen-cycle">Cycle ↓↑</button>
-        <button id="btn-test-stroke">Test stroke (20mm)</button>
-        <select id="save-heights-pen"><option value="">save heights to pen…</option></select>
-      </div>
+      <details class="ld-section" data-fold="pen-height">
+        <summary>Pen height test <span class="hint">(live — tweak heights above, then:)</span></summary>
+        <div class="row">
+          <button id="btn-pen-cycle">Cycle ↓↑</button>
+          <button id="btn-test-stroke">Test stroke (20mm)</button>
+          <select id="save-heights-pen"><option value="">save heights to pen…</option></select>
+        </div>
+      </details>
     </div>
 
     <div class="panel" id="panel-raw">
@@ -114,8 +116,10 @@ export function initPlotTab() {
       </div>
       <div class="progress"><div id="progress-bar"></div></div>
       <div id="job-log" class="log"></div>
-      <h3>Plot-pass optimisation <span class="hint">(applies to resolved geometry)</span></h3>
-      <div id="plotopt-form" class="form"></div>
+      <details class="ld-section" data-fold="plot-opt">
+        <summary>Plot-pass optimisation <span class="hint">(applies to resolved geometry)</span></summary>
+        <div id="plotopt-form" class="form"></div>
+      </details>
     </div>
 
     <div class="panel">
@@ -190,13 +194,15 @@ export function initPlotTab() {
         <a id="anim-export-link" download><button type="button">Export SVG frames (zip)</button></a>
       </div>
 
-      <h3>Plot stepper <span class="hint">(transient — plots the layout above, one pass at a time; never auto-plots)</span></h3>
-      <div class="row"><span id="anim-frame-label"></span></div>
-      <div class="row">
-        <button id="anim-plot-frame" class="primary">Plot frame</button>
-        <button id="anim-skip">Skip →</button>
-        <button id="anim-reset">Reset</button>
-      </div>
+      <details class="ld-section" data-fold="plot-stepper">
+        <summary>Plot stepper <span class="hint">(transient — one pass at a time; never auto-plots)</span></summary>
+        <div class="row"><span id="anim-frame-label"></span></div>
+        <div class="row">
+          <button id="anim-plot-frame" class="primary">Plot frame</button>
+          <button id="anim-skip">Skip →</button>
+          <button id="anim-reset">Reset</button>
+        </div>
+      </details>
     </div>
 
     <div class="panel">
@@ -208,30 +214,34 @@ export function initPlotTab() {
       </div>
       <div class="hint">grid layouts are captured from the Animation panel above (“Capture to tray”)</div>
 
-      <h3>Quick A ⇄ B <span class="hint">(captures the current output — no need to name a tray group)</span></h3>
-      <div class="row" id="ab-capture"
-           title="Capture the current output as A, change anything, capture B, then ⇄ generates a staged series interpolating A → B">
-        <div class="seg">
-          <button id="cap-a">A</button>
-          <button id="cap-b">B</button>
+      <details class="ld-section" data-fold="stage-ab" data-fold-open="1">
+        <summary>Quick A ⇄ B <span class="hint">(captures the current output — no tray group needed)</span></summary>
+        <div class="row" id="ab-capture"
+             title="Capture the current output as A, change anything, capture B, then ⇄ generates a staged series interpolating A → B">
+          <div class="seg">
+            <button id="cap-a">A</button>
+            <button id="cap-b">B</button>
+          </div>
+          <label>steps</label>
+          <input type="number" id="ab-steps" value="5" min="2" max="60" step="1"
+                 title="interpolation steps" style="width:4.5em">
+          <button id="ab-series" disabled>⇄ series</button>
         </div>
-        <label>steps</label>
-        <input type="number" id="ab-steps" value="5" min="2" max="60" step="1"
-               title="interpolation steps" style="width:4.5em">
-        <button id="ab-series" disabled>⇄ series</button>
-      </div>
+      </details>
 
-      <h3>From the tray</h3>
-      <div class="row">
-        <label>A</label><select id="stage-a" style="flex:1"></select>
-        <label>B</label><select id="stage-b" style="flex:1"></select>
-      </div>
-      <div class="row">
-        <label>steps</label><input type="number" id="stage-steps" min="2" max="60" step="1" value="5" style="width:4.5em">
-        <button id="stage-interp" class="primary">Generate batch</button>
-      </div>
-      <div class="hint">each step = one sheet; frames run across the sheet, steps run A→B between the two captures</div>
-      <div id="stage-list" class="stage-list"></div>
+      <details class="ld-section" data-fold="stage-tray" data-fold-open="1">
+        <summary>From the tray</summary>
+        <div class="row">
+          <label>A</label><select id="stage-a" style="flex:1"></select>
+          <label>B</label><select id="stage-b" style="flex:1"></select>
+        </div>
+        <div class="row">
+          <label>steps</label><input type="number" id="stage-steps" min="2" max="60" step="1" value="5" style="width:4.5em">
+          <button id="stage-interp" class="primary">Generate batch</button>
+        </div>
+        <div class="hint">each step = one sheet; frames run across the sheet, steps run A→B between the two captures</div>
+        <div id="stage-list" class="stage-list"></div>
+      </details>
     </div>
 
     <div id="anim-preview-modal" class="modal-backdrop" hidden>

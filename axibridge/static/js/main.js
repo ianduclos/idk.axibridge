@@ -614,6 +614,7 @@ function initTabs() {
   initBrushMode();
   renderLayerList();
   applyPanelCollapse();
+  applyFoldMemory();
 }
 
 // ---- tool mode broker (select / draw / pen) ----------------------------------
@@ -908,6 +909,21 @@ for (const type of ["keydown", "keyup"]) {
     const el = document.activeElement;
     if (el?.type === "range") el.classList.toggle("fine", e.shiftKey);
   });
+}
+
+// The <details> sub-sections inside a panel declare themselves in markup —
+// `data-fold="<key>"` and an optional `data-fold-open="1"` — and this wires
+// their remembered state, the same way applyPanelCollapse() does for panels.
+// Same reason as the menu bar: the markup is the definition, so a new section
+// in plot.js or settings.js needs no companion line of wiring to be sticky.
+// Idempotent: re-running after a re-render re-reads the store rather than
+// stacking a second toggle listener on an element that already had one.
+function applyFoldMemory(root = document) {
+  for (const det of root.querySelectorAll("details[data-fold]")) {
+    if (det.dataset.foldWired === "1") continue;
+    det.dataset.foldWired = "1";
+    rememberDetails(det, `fold:${det.dataset.fold}`, det.dataset.foldOpen === "1");
+  }
 }
 
 function applyPanelCollapse() {
