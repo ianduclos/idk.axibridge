@@ -64,9 +64,13 @@
                               paper; 5.4:1 against --ink for its label */
   --live-fill-hi: #3f6f8c;
   --live-deep: #24455a;    /* the shaded edge under a filled control */
-  --fader: #6f6859;        /* a fader's travelled groove — graphite, never
-                              --live: three sliders on screen all lit in the
-                              selection colour said "you are here" three times */
+  --fader: #456d84;        /* a fader's travelled groove. Tinted, not lit: the
+                              earlier all-graphite groove was too dead, but
+                              full --live on three sliders at once said "you
+                              are here" three times. This sits between
+                              --live-deep and --live-fill — clearly colour,
+                              clearly below selection. */
+  --fader-hot: #5c8ba6;    /* the groove of the fader under the hand */
   --ochre: #c79c4a;        /* in motion, guides, warnings */
   --rust: #c0644c;         /* danger, origin, subtract */
   --moss: #8aa06e;         /* connected, ok */
@@ -600,12 +604,14 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
    machine, and the thinnest thing on screen was one of the most consequential.
    12px groove, 14x24 machined thumb.
 
-   The fill is GRAPHITE, not --live. That was the real bug: --live means
-   selection, "you are here", and with three sliders on screen all three were
-   claiming it at once. Colour is spent on ink, machine state and the primary
-   path — a slider's own travel is none of those. The number field stays: on an
-   open-loop machine the typed millimetre is the contract, and a 400px groove
-   over 0-300mm is 0.75mm per pixel. */
+   The fill keeps its colour, at a lower level. Making it graphite to stop
+   three sliders all shouting --live overcorrected — it killed the one warm
+   signal on a panel of grey rows. The fix is level, not hue: --fader sits
+   between --live-deep and --live-fill, so a 12px groove carries about the
+   same amount of colour the old 4px --live hairline did, and hover lifts it
+   to --fader-hot so only the fader under your hand is fully lit. The number
+   field stays: on an open-loop machine the typed millimetre is the contract,
+   and a 400px groove over 0-300mm is 0.75mm per pixel. */
 input[type="range"] {
   -webkit-appearance: none; appearance: none;
   padding: 0; flex: 1; height: 26px; background: transparent;
@@ -625,25 +631,29 @@ input[type="range"]::-moz-range-track {
     var(--bench-deep);
   box-shadow: inset 0 1px 3px rgba(0,0,0,.55);
 }
-/* the cap: light on top, shadow under, a milled centre line — it should read
-   as a part you could grip, which is the whole difference between a slider
-   and a fader */
+/* the cap is FLAT — one solid value, a dark edge, no gradient and no cast
+   shadow. The moulded-plastic version read as a picture of a fader rather
+   than a control, and it was the only object in the app pretending to be lit
+   from somewhere; everything else here is matte. It stays 14x24 because the
+   size is what makes it grippable — that was never the gradient's doing. */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 14px; height: 24px; margin-top: -6px; border-radius: 3px;
-  background:
-    linear-gradient(180deg, #4a463e 0%, #35322c 52%, #2a2722 100%);
-  border: 1px solid #171512;
-  box-shadow: 0 1px 3px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,250,235,.13);
+  width: 14px; height: 24px; margin-top: -6px; border-radius: 2px;
+  background: var(--ink-soft);
+  border: 1px solid var(--bench-deep);
+  box-shadow: none;
 }
 input[type="range"]::-moz-range-thumb {
-  width: 14px; height: 24px; border-radius: 3px;
-  background: linear-gradient(180deg, #4a463e 0%, #35322c 52%, #2a2722 100%);
-  border: 1px solid #171512;
-  box-shadow: 0 1px 3px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,250,235,.13);
+  width: 14px; height: 24px; border-radius: 2px;
+  background: var(--ink-soft);
+  border: 1px solid var(--bench-deep);
+  box-shadow: none;
 }
-input[type="range"]:hover::-webkit-slider-thumb { border-color: var(--ink-soft); }
-input[type="range"]:hover::-moz-range-thumb { border-color: var(--ink-soft); }
+input[type="range"]:hover::-webkit-slider-thumb { background: var(--ink); }
+input[type="range"]:hover::-moz-range-thumb { background: var(--ink); }
+/* under the hand the travelled groove comes up — the value you are changing
+   is worth marking, one slider at a time */
+input[type="range"]:hover, input[type="range"]:active { --fader: var(--fader-hot); }
 input[type="range"]:focus-visible { outline: none; }
 input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--live); }
 input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--live); }
