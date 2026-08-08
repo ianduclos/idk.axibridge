@@ -1,8 +1,35 @@
 ---
 project: idk.axibridge
-updated: 2026-08-07
-entries: 4
+updated: 2026-08-08
+entries: 5
 ---
+
+### Eye-check: taller bed, finer sliders, Smoothen — opened 2026-08-08, owner: ian
+- done: three unrelated asks, all committed to main (`d74f357`), suite 743.
+  (1) ~20px of dead height above the canvas reclaimed by tightening the header
+  band and the paddings around the tool row — `#canvas-wrap` top 93 -> 75,
+  measured in both shell modes; no markup changed. (2) Shift fine-tune resolves
+  below the coarse step at last: `forms.js` now derives a `fine` quantum
+  (`step / 10`, 1 for integers) and quantizes to *that*, so a span > 20 field
+  commits tenths instead of whole millimetres and shift+arrow finally differs
+  from a plain arrow. Placement's four hand-written boxes got the same by hand.
+  (3) `effects/smoothen.py`, Catmull-Rom — interpolating, so it passes through
+  the points it was given; `relax` is the averaging behaviour, opt-in.
+- next: Ian looks at the **2026-08-08 section of `CHECKME.md`**. The three
+  questions only he can answer: is the tighter header still comfortable to
+  grab and drag the window by; are the 10x slower number-box arrows an
+  irritation (that is the one trade the finer quantum cost); and does Smoothen
+  at `resolution` 0.5mm cost too much plot time on a real sheet. Smoothen also
+  wants one filled shape under an occluder, on paper.
+- blockers: none.
+- context: `axibridge/effects/smoothen.py`'s module docstring carries the full
+  reasoning for interpolating over averaging. The fine-quantum change is the
+  comment block at `forms.js`'s `const fine = ...`. Two fine-tune gaps were
+  left on purpose and are NOT oversights: canvas guide drags still snap to
+  whole mm (`canvas.js`) and transform/pen-anchor handles have no fine
+  modifier at all — direct manipulation is a different problem from slider
+  resolution. The bigger space win (hoisting the tool row into the header
+  band, ~50px) was offered and declined this round; it is still there.
 
 ### Layers panel + eye-check of the finished Slice 4 — opened 2026-08-07, owner: ian
 - done: **Slice 4 of `docs/plans/ui-redesign.md` is complete, a through g.**

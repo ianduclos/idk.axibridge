@@ -1,4 +1,4 @@
-# Check when you're home — 2026-08-07
+# Check when you're home — 2026-08-07, added to 08-08
 
 Everything below passed its tests. None of it has passed *your eyes*, and the
 first group is the part no test here can reach. Delete this file once you've
@@ -50,6 +50,30 @@ been through it.
 - **Occlusion channels** are two A/B/C/D segmented groups instead of eight
   tickboxes.
 - **Plot tab** is five panels; the machine ones are in Settings now.
+
+## Added 2026-08-08 — the bed, the sliders, Smoothen
+
+- **The sheet is 20px taller.** The tool row sits right under the header band
+  now. Is the header still comfortable to grab and drag the window by? Does
+  double-clicking it still zoom? Those are the only two things the tighter
+  band could have cost.
+- **Shift fine-tune actually resolves now.** Grab any millimetre slider with a
+  wide range (page size, a radius, a length) and shift-drag it: the number
+  should move in tenths, not whole millimetres. Shift+arrow should move
+  visibly *less* than a plain arrow — that was the part that did nothing at
+  all before. The number boxes step ten times finer too, which is the one
+  trade: their own up/down arrows are slower now. Say if that irritates.
+- **Placement keeps decimals.** x/y to 0.01mm, scale to 0.001, rotation to
+  0.1°. Rotation could only ever be a whole degree before, and any finer angle
+  was thrown away by the panel merely re-rendering.
+- **New effect: Smoothen.** Stack it on anything visibly faceted — an imported
+  SVG curve, a boolean result, a generator that walks in straight steps. It
+  passes *through* your points and only invents the arc between them, so a
+  flattened circle should come back round rather than shrink. `Relax` above 0
+  is the opposite behaviour (it moves the points) — only reach for it if the
+  input is genuinely noisy. Two things worth watching: whether `resolution`
+  0.5mm is the right default for plot time, and whether a filled shape with
+  Smoothen on it still occludes cleanly.
 
 ## Known and deliberate
 

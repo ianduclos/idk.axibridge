@@ -1,18 +1,83 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-08-07
+updated: 2026-08-08
 machine: mac+pi
-summary: Slice 4 of the UI redesign is complete (a-g), the layer list is a persistent collapsible dock (Ian's Photoshop ask), and four more ideas were mined back out of the August multi-agent review — the free typography test that had been reverted as collateral, sliders rebuilt as faders, a lamp falloff replacing the page gradient, and the window title finally naming the project — the toolbar is one fixed row of tools, the View and Machine menus hold what left it, machine state and plot transport live in the always-visible status line, the Plot tab is down from ten panels to five, plotting can be addressed by pen, and the layer list drags to reorder and renames in place; the app shell's macOS menu is now derived from the page's own markup instead of hand-written beside it; 727 tests green.
+summary: Three small asks landed on top of the finished UI redesign — the bed reclaimed 20px of dead height above the canvas, shift fine-tune finally resolves below the coarse step (a derived fine quantum, one decimal further down, replacing the single value that was doing both jobs), and a Smoothen effect re-curves flattened geometry by Catmull-Rom rather than averaging it; 743 tests green.
 next:
-  - "Ian eye-checks — CHECKME.md at the repo root is the list, grouped by how likely each thing is to be wrong; the shell-only paths need a full relaunch and are verified only against fakes"
-  - "Brainstorm in flight: a generator/effect gallery with thumbnails and tags, for when the 45-module list outgrows two dropdowns — Ian asked for it light and for later"
-  - "ROADMAP: interrupted plot as a live generator — the design is settled (snapshot-input) and the cost measured (~64 B/point), so it is ready to build rather than ready to decide"
+  - "Ian eye-checks — CHECKME.md at the repo root is the list; the 08-08 section covers the taller bed, the finer sliders and Smoothen, and the shell-only paths above it still need a full relaunch"
+  - "Smoothen wants ink, not screens: is resolution 0.5mm the right default for plot time, and does a filled shape with it stacked still occlude cleanly"
+  - "Fine-tune has two gaps left on purpose: canvas guide drags still snap to whole mm, and transform/pen-anchor handles have no fine modifier at all — direct manipulation, a different problem from slider resolution"
+  - "Brainstorm in flight: a generator/effect gallery with thumbnails and tags, for when the 46-module list outgrows two dropdowns — Ian asked for it light and for later"
   - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16 to 19 wave, and the URGENT round (see HANDOFF)"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-08-08 (Opus 5): three small things — space, precision, a spline.**
+
+Unrelated asks, batched. 743 tests green, typecheck and build clean.
+
+- **~20px of dead height above the canvas, reclaimed.** The tool row sat 93px
+  down: a 44/42px header band that in the app shell is *empty on the left*
+  (the in-page menubar stands down for the system one, so only the traffic
+  lights and a right-aligned readout cluster occupy it), then 12px, the row,
+  then 10px. Now 40/38 + 4 + row + 5, and the segment buttons a pixel shorter.
+  `#canvas-wrap`'s top went 93 → 75, measured in headless chromium in both
+  shell modes. Nothing moved and no markup changed — the wrapper is `flex: 1`
+  with the SVG absolutely positioned inside it, so the drawn page grew on its
+  own, and the sheet is height-constrained in portrait so every pixel counts.
+  Ian's call was to tighten paddings rather than restructure; the alternative
+  (hoisting the tool row bodily into the header band, which the CSS comment at
+  `:root[data-shell="native"] header` already hints at) is still available and
+  worth about 50px. **The band stays at 38px deliberately:** `<header>` is the
+  only `pywebview-drag-region`, and double-click-to-zoom needs
+  `e.target === header`, so it needs real empty area to grab.
+- **Shift fine-tune was never the drag.** `main.js` already produced twelve
+  significant digits; `forms.js` crushed them straight back on both live
+  preview and commit. The cause was one value doing two jobs — `step` was the
+  coarse default *and* the finest a value could be — so on any field with a
+  span over 20 (most millimetre params) the committed resolution was whole
+  millimetres, and shift+arrow moved *exactly as far as a plain arrow*. That
+  is the "shift does nothing" Ian kept reporting. `step` now stays the coarse
+  default and a derived `fine` (`step / 10`, or 1 for integers — Pydantic
+  rejects a 0.1 on an int field) is what actually quantizes and what gets
+  stamped on `data-fine-step`. `main.js` needed no change; it reads the stamp.
+  The literal-comparison quantizer went too: decimals come from `log10(fine)`,
+  because an equality ladder mis-rounds silently the moment a rung is added.
+  Result — span ≤ 2 → 0.001, span ≤ 20 → 0.01, span > 20 → 0.1, int → 1;
+  verified live, a 10..400mm field shift-arrows 200 → 200.1.
+  Placement's four boxes are hand-written rather than schema-driven, so they
+  got the same treatment by hand, and their `toFixed()` calls were never
+  cosmetic: `commitPlacement` re-reads the boxes, so `toFixed(0)` meant a
+  rotation could only ever *be* a whole degree.
+- **`effects/smoothen.py` — Catmull-Rom, and the choice is the design.**
+  Visible faceting is flattened geometry, not the machine (settled 2026-07-31):
+  the vertices are honest samples and what is missing is the arc between them.
+  An interpolating spline puts that arc back without moving a point Ian
+  placed, so a flattened circle comes back *round* instead of shrinking toward
+  its centroid — the opposite of what the `[1,2,1]/4` kernels in `sources/`
+  do. That kernel is still there as `relax`, for input that is genuinely noisy
+  rather than merely sparse. Centripetal by default (no cusps), `resolution`
+  in paper mm per the resolve-order invariant, closed rings wrap so the seam
+  curves like anything else, open endpoints come back bit-identical, and
+  consecutive duplicates are dropped before parameterisation — a zero chord is
+  a division by zero and shapely emits them routinely. On a flattened octagon
+  it cuts radial error by 9×.
+
+**Debt noted, not paid:** the arc-length `_resample` walker now exists
+byte-identically in five effects (`coherent_jitter`, `freehand`, `eyelets`,
+`parasite_line`, `continue_strokes`) and again with a pressure channel in
+`sources/drawing.py`. `smoothen.py` stays self-contained rather than starting
+a sixth copy *or* a half-finished hoist — but the next effect that needs it
+should hoist the lot into one place first.
+
+**Ian has not eye-checked any of this** — `CHECKME.md` has a 2026-08-08
+section. All three are taste calls a passing suite says nothing about.
+
+---
+
 
 **Session 2026-08-07 (part 3, Opus 5): Slice 4 finished — 4c through 4g.**
 
