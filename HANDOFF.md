@@ -35,8 +35,7 @@ entries: 4
   `~/Library/Logs/axibridge-shell.log` FIRST, and route any new main-thread
   work through `axibridge_app.on_main()` — a block that returns a value kills
   the app. Editing `#menubar` in `index.html` now changes the macOS menu too.
-  Re-ask the jog question: Ian's ruling was to keep it, use it as a menu item,
-  then decide.
+  The jog question is ANSWERED (2026-08-08): out of the UI, endpoint kept.
 
 ### Bench eye-check: offset_fill + brush — opened 2026-07-27, owner: ian
 - done: both modules built, merged and screen-verified only — `offset_fill`

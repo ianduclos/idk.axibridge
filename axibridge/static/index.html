@@ -14,10 +14,28 @@
      Inert in a browser tab. -->
 <header class="pywebview-drag-region">
   <nav class="menubar" id="menubar">
+    <!-- File is the front door to project files. New / Import / Export are
+         FORWARDS (`data-target`) to the very buttons in Settings > Project, so
+         there is still one definition of each and the native macOS menu picks
+         them up with no Python change. The panel stays where it is; this is a
+         second doorway, not a second implementation.
+
+         Open is the one item that is not a forward, deliberately: forwarding
+         to #btn-proj-load would load whatever is selected in a dropdown you
+         cannot see, and menu_spec has no submenu concept to list projects in.
+         So it REVEALS the control instead — see #btn-file-open in main.js.
+         Don't "finish" it into a second loader. -->
     <div class="menu" data-menu="file">
       <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">File</button>
       <div class="menu-panel" role="menu">
-        <button id="btn-save" class="menu-item" title="Save project folder">Save</button>
+        <button class="menu-item" data-target="#btn-proj-new" type="button" title="Start an empty project">New</button>
+        <button id="btn-file-open" class="menu-item" type="button" title="Go to the project list in Settings">Open…</button>
+        <div class="menu-sep"></div>
+        <button id="btn-save" class="menu-item" title="Save project folder">Save<span class="menu-key">⌘S</span></button>
+        <button id="btn-save-as" class="menu-item" type="button" title="Save under a new name and work in that project from now on">Save As…<span class="menu-key">⇧⌘S</span></button>
+        <div class="menu-sep"></div>
+        <button class="menu-item" data-target="#btn-proj-import" type="button" title="Import a project .zip">Import .zip…</button>
+        <button class="menu-item" data-target="#btn-proj-export" type="button" title="Save, then download the project folder as a .zip">Export .zip</button>
         <a id="btn-svg" class="menu-item" href="/api/doc/all/svg" download title="Download the resolved geometry (what the pen draws) as SVG">Download SVG</a>
       </div>
     </div>
@@ -52,13 +70,19 @@
         <label class="menu-item" title="Dashed outline of the usable sheet area"><span class="menu-check">✓</span><input type="checkbox" id="show-guide" checked>Paper guide</label>
       </div>
     </div>
-    <!-- Machine: the ACTIONS out of the jog & pen panel, which now lives in
+    <!-- Machine: the ACTIONS out of the pen & origin panel, which lives in
          Settings. Actions only, per the menu rule — motion parameters and raw
          EBB are forms, soft limits belongs beside the millimetres it guards,
          and holder calibration is a procedure. Each item addresses the very
          button in that panel, so the menu cannot mean something different
-         from the panel. Jog is here on Ian's ruling (2026-08-07): keep it,
-         use it as a menu item, then decide whether it earns its place. -->
+         from the panel.
+
+         Jog was here for a day, on the ruling "use it as a menu item, then
+         decide whether it earns its place" (2026-08-07). It didn't (Ian,
+         2026-08-08): the four arrows and the step select are gone from the
+         UI. POST /api/machine/jog and the backend methods stay — pi_ssh dead
+         -reckons its position from jogs and has nothing else that writes it,
+         and the soft-limit refusal is tested through that endpoint. -->
     <div class="menu" data-menu="machine">
       <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">Machine</button>
       <div class="menu-panel" role="menu">
@@ -67,15 +91,13 @@
         <div class="menu-sep"></div>
         <button class="menu-item" data-target="#btn-goto-origin" type="button" title="Return the carriage to 0,0">Go to origin</button>
         <button class="menu-item" data-target="#btn-set-origin" type="button" title="Declare the current position 0,0">Set origin</button>
-        <div class="menu-sep"></div>
-        <button class="menu-item" data-target="#jog-up" type="button" title="Jog by the step size set in Settings › Jog &amp; pen">Jog up</button>
-        <button class="menu-item" data-target="#jog-down" type="button" title="Jog by the step size set in Settings › Jog &amp; pen">Jog down</button>
-        <button class="menu-item" data-target="#jog-left" type="button" title="Jog by the step size set in Settings › Jog &amp; pen">Jog left</button>
-        <button class="menu-item" data-target="#jog-right" type="button" title="Jog by the step size set in Settings › Jog &amp; pen">Jog right</button>
       </div>
     </div>
   </nav>
-  <input id="project-name" class="project-name" value="untitled" spellcheck="false">
+  <!-- A readout, not a control. It was an editable field, which made it the
+       only form control in the chrome bar; renaming now happens where the
+       rest of the file actions are, File > Save As. -->
+  <span id="project-name" class="project-name readout">untitled</span>
   <div id="status-pill" class="pill">connecting…</div>
   <div id="estimate" class="estimate"></div>
 </header>
@@ -171,16 +193,16 @@
     <div id="tab-pens" class="tab-body" hidden></div>
     <div id="tab-settings" class="tab-body" hidden></div>
 
-    <!-- The layer list, outside the tab bodies on purpose: it is the
-         document's table of contents, and you need it whichever tab you are
-         in — the Plot tab's target picker and the Pens tab's assignment both
-         name layers you would otherwise have to leave the tab to see. It also
-         stops selecting a layer costing a scroll past Generate and Import,
-         which is what Ian asked for.
+    <!-- The layer list. It belongs to the COMPOSE tab (Ian, 2026-08-08):
+         it was reachable from all four for a while, on the theory that the
+         Plot tab's target picker and the Pens tab's assignment both name
+         layers — but in use it just spent 240px of sidebar on three tabs
+         where you are not composing. main.js's tab switcher hides it.
 
-         It lives in index.html rather than being appended by compose.js
-         because a tab body is rebuilt by innerHTML on every project load;
-         static markup is never rebuilt, so no init ordering can lose it.
+         It still lives here in static markup, outside the tab bodies, rather
+         than being appended by compose.js: a tab body is rebuilt by innerHTML
+         on every project load, and static markup is never rebuilt, so no init
+         ordering can lose it and the resize/collapse state survives a switch.
          Its SETTINGS stay in Compose — this is the selection box only. -->
     <section id="layers-dock">
       <div id="layers-dock-resize" title="drag to resize"></div>

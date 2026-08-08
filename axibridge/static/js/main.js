@@ -141,7 +141,7 @@ export const actions = {
   debounce,
   canvas: () => canvas,
   setSeqProgress, // forms.js's inline sequence-asset upload rides the same gen-progress bar
-  // plot.js's jog/pen replies carry a position too; one writer for the strip
+  // plot.js's pen/goto replies carry a position too; one writer for the strip
   setMachineReadout: (...a) => setMachineReadout(...a),
 
   async refreshAll() {
@@ -335,8 +335,8 @@ async function commitPatch(id, patch) {
 // Machine truth that used to be reachable only by opening the Plot tab:
 // position, pen state, job progress and time remaining, plus Pause/Resume/
 // Stop. It shows whenever the machine is connected — position and pen state
-// are worth seeing while jogging, not only while plotting — and costs no
-// vertical space, because the status line was already there holding
+// are worth seeing while setting up a sheet, not only while plotting — and
+// costs no vertical space, because the status line was already there holding
 // "nothing selected".
 
 function setMachineReadout({ pos, penDown, progress, remaining } = {}) {
@@ -379,12 +379,15 @@ function renderHeader() {
   if (m.connected) cls = m.job_state === "idle" ? "ok" : "busy";
   pill.textContent = `${backend?.label || m.backend} · ${m.connected ? m.job_state : "disconnected"}`;
   pill.className = `pill ${cls}`;
-  $("project-name").value = S.state.project.name;
-  // give the native title bar a job: it and the in-page header both said
-  // "axibridge", 40px apart. A no-op in a browser tab.
+  $("project-name").textContent = S.state.project.name;
+  // give the title bar a job: it and the in-page header both said "axibridge",
+  // 40px apart. Both bars, because the app runs two ways — set_title is the
+  // pywebview window and a no-op in a browser tab, document.title is the
+  // browser tab and harmless in the shell.
   if (S.state.project.name !== lastTitled) {
     lastTitled = S.state.project.name;
     window.pywebview?.api?.set_title?.(lastTitled);
+    document.title = lastTitled ? `axibridge — ${lastTitled}` : "axibridge";
   }
   renderMachineStrip();
   // toolbar toggles reflect server state (view is saved in the project)
@@ -410,12 +413,6 @@ function fmtTime(s) {
 
 // ---- header controls ---------------------------------------------------------------
 
-$("project-name").onchange = async () => {
-  try {
-    await api.put("/api/project", { name: $("project-name").value });
-    S.state.project.name = $("project-name").value;
-  } catch (e) { oops(e); }
-};
 async function saveProject() {
   const btn = $("btn-save");
   try {
@@ -429,6 +426,46 @@ async function saveProject() {
   } catch (e) { oops(e); }
 }
 $("btn-save").onclick = saveProject;
+
+// Save As is also the RENAME: the header's name box used to be an editable
+// field and is a readout now, so this is the only way the project's name
+// changes. Server semantics match the name — `save {name}` renames the live
+// project and writes it to a new folder, leaving the old one on disk, so you
+// carry on working in the new one.
+async function saveProjectAs() {
+  const current = S.state?.project?.name || "untitled";
+  const name = prompt("Save project as:", current);
+  if (name === null) return;
+  const trimmed = name.trim();
+  if (!trimmed) return;
+  try {
+    // the server writes over an existing folder without asking; ask here,
+    // because the folder it would overwrite is somebody's saved work.
+    // /api/projects lists FOLDER names, so compare the folder this would
+    // write to — mirrors project_io.safe_name(), which owns the real rule.
+    const folder = trimmed.replace(/[^A-Za-z0-9._ #-]+/g, "_").trim() || "untitled";
+    if (folder !== current) {
+      const names = await api.get("/api/projects");
+      if (names.includes(folder) &&
+          !confirm(`"${folder}" already exists. Overwrite it?`)) return;
+    }
+    const r = await api.post("/api/project/save", { name: trimmed });
+    await actions.refreshAll();
+    log(`saved as: ${r.saved}`);
+  } catch (e) { oops(e); }
+}
+$("btn-save-as").onclick = saveProjectAs;
+
+// A REVEAL, not a loader. Loading needs you to pick from a list, and a menu
+// item that clicked #btn-proj-load would load whatever happened to be selected
+// in a dropdown you cannot see. So it takes you to the list. If you are
+// tempted to make this open a project directly, give it a real picker first.
+$("btn-file-open").onclick = () => {
+  document.querySelector('#tabs button[data-tab="settings"]')?.click();
+  const list = $("proj-list");
+  list?.scrollIntoView({ block: "center" });
+  list?.focus();
+};
 
 // ---- undo / redo -------------------------------------------------------------------
 //
@@ -517,6 +554,12 @@ for (const btn of document.querySelectorAll("#tabs button")) {
     for (const tab of ["compose", "plot", "pens", "settings"]) {
       $(`tab-${tab}`).hidden = tab !== btn.dataset.tab;
     }
+    // The dock belongs to Compose (Ian, 2026-08-08). It still lives in static
+    // markup outside the tab bodies — see index.html — because a tab body is
+    // rebuilt by innerHTML on every project load; only its VISIBILITY is tied
+    // to the tab. Hiding rather than moving also keeps its resize drag and
+    // collapse state intact across tab switches.
+    $("layers-dock").hidden = btn.dataset.tab !== "compose";
   };
 }
 
@@ -863,9 +906,9 @@ document.addEventListener("keydown", async (e) => {
   } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
     e.preventDefault();
     await (e.shiftKey ? redoStep() : undoStep());
-  } else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "s") {
+  } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
     e.preventDefault(); // the browser's save-page dialog is never what's wanted here
-    await saveProject();
+    await (e.shiftKey ? saveProjectAs() : saveProject());
   }
 });
 

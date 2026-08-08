@@ -10,7 +10,7 @@ been through it.
 
 - **Machine menu greying.** With nothing connected the whole Machine menu
   should be grey. Connect the simulator: pen up/down and the origin items
-  should come alive, jog too (the simulator advertises it). Verified only
+  should come alive (the simulator advertises them). Verified only
   against real AppKit objects and a faked bridge — never a real menu.
 - **Menu checkmarks.** View should tick your current orientation, render mode
   and whichever overlays are on, and the ticks should follow when you change
@@ -55,5 +55,7 @@ been through it.
 
 - Below ~900px window width the canvas top edge shifts 10px. That is the
   HEADER wrapping, not the toolbar, at a width where the canvas is ~260px.
-- Jog is a menu item now on your ruling — use it that way, then tell me
-  whether it earns its place.
+- Jog is out of the UI (your call, 2026-08-08): no arrow pad, no step select,
+  no Machine-menu items. `POST /api/machine/jog` and the backend methods stay,
+  so it is one markup block to put back. Check that Go to origin, Set origin
+  and Origin = guide corner still do what you need without it.

@@ -7,7 +7,6 @@ summary: Slice 4 of the UI redesign is complete (a-g), the layer list is a persi
 next:
   - "Ian eye-checks — CHECKME.md at the repo root is the list, grouped by how likely each thing is to be wrong; the shell-only paths need a full relaunch and are verified only against fakes"
   - "Brainstorm in flight: a generator/effect gallery with thumbnails and tags, for when the 45-module list outgrows two dropdowns — Ian asked for it light and for later"
-  - "Re-ask whether jog earns its place, now that it is a menu item (Ian's ruling: use it that way first, then decide)"
   - "ROADMAP: interrupted plot as a live generator — the design is settled (snapshot-input) and the cost measured (~64 B/point), so it is ready to build rather than ready to decide"
   - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16 to 19 wave, and the URGENT round (see HANDOFF)"
 handoff_for: ian
@@ -30,7 +29,7 @@ The redesign's own slice, done. 727 tests green, 26 acceptance tests.
   position, pen, progress, time left, and Pause/Resume/Stop moved there
   bodily. Fixes the bug the plan named — `remaining …` used to be written
   OVER the est/ink/lifts readout and never restored.
-- **The Plot tab is five panels, not ten.** Motion parameters, jog & pen, raw
+- **The Plot tab is five panels, not ten.** Motion parameters, pen & origin, raw
   EBB, soft limits and holder calibration went to Settings (which already
   owned calibration's reset button, so that control is reunited); only the
   pure actions became a **Machine menu**. Ian delegated the per-panel calls;

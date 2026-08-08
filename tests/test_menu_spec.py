@@ -181,7 +181,7 @@ def test_the_probe_survives_a_control_that_is_not_on_the_page_yet():
 
 
 def test_a_menu_item_may_name_a_control_that_lives_elsewhere():
-    """The Machine menu's Pen up IS the Pen up button in Settings › Jog & pen.
+    """The Machine menu's Pen up IS the Pen up button in Settings › Pen & origin.
 
     Without `data-target` the parser would fall through to the item's own id
     and the menu item would click itself — a control that appears to work and
@@ -191,9 +191,7 @@ def test_a_menu_item_may_name_a_control_that_lives_elsewhere():
     machine = next(m for m in menu_spec() if m.title == "Machine")
     assert [None if i is None else (i.label, i.selector) for i in machine.items] == [
         ("Pen up", "#btn-pen-up"), ("Pen down", "#btn-pen-down"), None,
-        ("Go to origin", "#btn-goto-origin"), ("Set origin", "#btn-set-origin"), None,
-        ("Jog up", "#jog-up"), ("Jog down", "#jog-down"),
-        ("Jog left", "#jog-left"), ("Jog right", "#jog-right"),
+        ("Go to origin", "#btn-goto-origin"), ("Set origin", "#btn-set-origin"),
     ]
     assert not any(i.selector.startswith("#menu-") for i in machine.actions), \
         "an item addressing itself would be a control that does nothing"

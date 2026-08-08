@@ -705,14 +705,14 @@ def test_the_machine_panels_left_the_plot_tab(ui):
     plot, settings = panels("tab-plot"), panels("tab-settings")
     assert len(plot) == 5, f"Plot should hold only plotting: {plot}"
     assert "Staging" in plot
-    for name in ("Motion parameters", "Jog & pen", "Raw EBB", "Soft limits",
+    for name in ("Motion parameters", "Pen & origin", "Raw EBB", "Soft limits",
                  "Holder calibration"):
         assert any(name in p for p in settings), f"{name} lost on the way: {settings}"
     assert not ui.errors
 
 
 def test_the_machine_menu_drives_the_real_controls(ui):
-    """Every Machine item names a button that lives in Settings › Jog & pen
+    """Every Machine item names a button that lives in Settings › Pen & origin
     (`data-target`), and clicking the item clicks that button.
 
     Without the forward it would click itself — a menu that appears to work and
@@ -724,19 +724,19 @@ def test_the_machine_menu_drives_the_real_controls(ui):
 
     ui.evaluate("""() => {
         window.__hit = [];
-        for (const id of ['btn-pen-up', 'jog-left']) {
+        for (const id of ['btn-pen-up', 'btn-goto-origin']) {
           const el = document.getElementById(id);
           el.disabled = false;
           el.addEventListener('click', (e) => { e.stopPropagation(); window.__hit.push(id); },
                               { capture: true });
         }
     }""")
-    for target in ("#btn-pen-up", "#jog-left"):
+    for target in ("#btn-pen-up", "#btn-goto-origin"):
         ui.click('.menu[data-menu="machine"] .menu-trigger')
         ui.click(f'.menu[data-menu="machine"] [data-target="{target}"]')
         ui.wait_for_timeout(200)
 
-    assert ui.evaluate("() => window.__hit") == ["btn-pen-up", "jog-left"]
+    assert ui.evaluate("() => window.__hit") == ["btn-pen-up", "btn-goto-origin"]
 
 
 def test_machine_state_is_visible_without_opening_a_tab(ui):
@@ -869,14 +869,15 @@ def test_dragging_a_layer_reorders_it(ui):
     assert not ui.errors
 
 
-def test_the_layer_list_is_reachable_from_every_tab(ui):
-    """Ian's ask: selecting a layer should not cost a scroll past Generate and
-    Import. The list is furniture now — outside every tab body, present on all
-    four, and there is exactly ONE of it.
+def test_the_layer_list_belongs_to_the_compose_tab(ui):
+    """The dock is Compose furniture (Ian, 2026-08-08): visible while you are
+    composing, out of the way on the three tabs where you are not. It was
+    reachable from all four for a while and that just cost 240px of sidebar.
 
-    That last part is the whole risk. Two lists is the drift bug this repo
-    spent a day removing from the menus; the same mistake here would be a
-    layer list that disagrees with itself."""
+    Two things it must NOT do while changing scope: live inside a tab body
+    (innerHTML rebuilds on project load would eat it), and exist twice. Two
+    lists is the drift bug this repo spent a day removing from the menus; the
+    same mistake here would be a layer list that disagrees with itself."""
     for _ in range(3):
         add_layer(ui, "polygon", {"sides": 5, "radius": 20})
     reload_app(ui)
@@ -888,13 +889,16 @@ def test_the_layer_list_is_reachable_from_every_tab(ui):
     assert ui.eval_on_selector("#btn-empty-layer", "el => !!el.closest('#tab-compose')"), \
         "making a layer stays a Compose act"
 
-    for tab in ("compose", "plot", "pens", "settings"):
-        ui.click(f'#tabs button[data-tab="{tab}"]')
-        assert ui.is_visible("#layers-dock"), f"the dock vanished on {tab}"
-        assert ui.locator("#layer-list .layer-row").count() == 3
+    assert ui.is_visible("#layers-dock"), "Compose is the default tab; the dock shows"
+    assert ui.locator("#layer-list .layer-row").count() == 3
 
-    # selecting from a tab that is not Compose still selects
-    ui.click('#tabs button[data-tab="plot"]')
+    for tab in ("plot", "pens", "settings"):
+        ui.click(f'#tabs button[data-tab="{tab}"]')
+        assert not ui.is_visible("#layers-dock"), f"the dock followed you to {tab}"
+
+    # and it comes back, with the list still in it and still selectable
+    ui.click('#tabs button[data-tab="compose"]')
+    assert ui.is_visible("#layers-dock")
     ui.locator("#layer-list .layer-row .lname").first.click()
     ui.wait_for_function(
         "() => document.querySelectorAll('#layer-list .layer-row.selected').length === 1",

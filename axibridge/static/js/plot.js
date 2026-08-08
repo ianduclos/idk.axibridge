@@ -1,4 +1,4 @@
-// Plot tab: backend selection (capability-advertised), connection, jog & pen,
+// Plot tab: backend selection (capability-advertised), connection, pen & origin,
 // motion params (schema-driven from the active backend), the manual multi-pen
 // plot flow (target selector: all / one layer), plot-pass optimisation, the
 // raw EBB trapdoor, soft limits, and the two calibration routines.
@@ -9,7 +9,7 @@ import { S, actions } from "./main.js";
 
 const $ = (id) => document.getElementById(id);
 
-// The machine panels — motion parameters, jog & pen, the raw EBB trapdoor,
+// The machine panels — motion parameters, pen & origin, the raw EBB trapdoor,
 // soft limits, holder calibration. They are built here because their handlers
 // are (initPlotTab binds every id below), but they are APPENDED TO THE
 // SETTINGS TAB: none of them is about running a plot, they are about the
@@ -20,30 +20,24 @@ const $ = (id) => document.getElementById(id);
 // Placement per panel, decided rather than defaulted: motion parameters and
 // raw EBB are forms and could never be menu items; soft limits keeps its
 // checkbox next to the millimetres it guards; holder calibration is a
-// three-step procedure with measurements. Only the pure ACTIONS in jog & pen
-// go to the Machine menu, which addresses these very buttons by id.
+// three-step procedure with measurements. Only the pure ACTIONS in pen &
+// origin go to the Machine menu, which addresses these very buttons by id.
 const MACHINE_PANELS = `    <div class="panel">
       <h2>Motion parameters <span class="tag" id="motion-backend-tag"></span></h2>
       <div id="motion-form" class="form"></div>
     </div>
 
-    <div class="panel" id="panel-jog">
-      <h2>Jog & pen</h2>
-      <div class="jog-grid">
-        <span></span><button id="jog-up" data-jog="0,-1">▲</button><span></span>
-        <button id="jog-left" data-jog="-1,0">◀</button><button id="btn-goto-origin" title="Go to origin">⌂</button><button id="jog-right" data-jog="1,0">▶</button>
-        <span></span><button id="jog-down" data-jog="0,1">▼</button><span></span>
-      </div>
-      <div class="row">
-        <label>step</label>
-        <select id="jog-step"><option>0.1</option><option>1</option><option selected>10</option><option>50</option></select>
-        <span class="hint">mm · position: <span id="pos-readout">—</span></span>
-      </div>
+    <div class="panel" id="panel-pen">
+      <h2>Pen & origin</h2>
       <div class="row">
         <button id="btn-pen-up">Pen up</button>
         <button id="btn-pen-down">Pen down</button>
+        <button id="btn-goto-origin" title="Return the carriage to 0,0">⌂ Go to origin</button>
+      </div>
+      <div class="row">
         <button id="btn-set-origin" title="Declare current position (0,0)">Set origin</button>
-        <button id="btn-origin-guide" title="Jog to the paper guide corner first, then press">Origin = guide corner</button>
+        <button id="btn-origin-guide" title="Put the carriage on the paper guide corner first, then press">Origin = guide corner</button>
+        <span class="hint">position: <span id="pos-readout">—</span></span>
       </div>
       <h3>Pen height test <span class="hint">(live — tweak heights above, then:)</span></h3>
       <div class="row">
@@ -488,24 +482,14 @@ export function initPlotTab() {
   refreshAnimPanel();
   renderStaging();
 
-  // ---- jog / pen
-  for (const b of document.querySelectorAll("[data-jog]")) {
-    b.onclick = async () => {
-      const [sx, sy] = b.dataset.jog.split(",").map(Number);
-      const step = Number($("jog-step").value);
-      try {
-        const r = await api.post("/api/machine/jog", { dx: sx * step, dy: sy * step });
-        setPos(r.position);
-      } catch (e) { actions.oops(e); }
-    };
-  }
+  // ---- pen / origin
   $("btn-goto-origin").onclick = () =>
     api.post("/api/machine/goto", { x: 0, y: 0 }).then((r) => setPos(r.position)).catch(actions.oops);
   $("btn-pen-up").onclick = () => api.post("/api/machine/pen", { down: false }).catch(actions.oops);
   $("btn-pen-down").onclick = () => api.post("/api/machine/pen", { down: true }).catch(actions.oops);
   $("btn-set-origin").onclick = () =>
     api.post("/api/machine/origin", { x: 0, y: 0 }).then(actions.refreshState).catch(actions.oops);
-  // jog the carriage to the physical corner of the taped sheet, then press:
+  // put the carriage on the physical corner of the taped sheet, then press:
   // the design frame binds so the guide rectangle IS the paper.
   $("btn-origin-guide").onclick = () => {
     const g = S.state.project.guide;
@@ -1378,7 +1362,9 @@ function renderBackends() {
     const caps = b.capabilities;
     const capTags = [
       caps.raw_ebb ? "<b>raw EBB</b>" : "no raw",
-      caps.jog ? "<b>jog</b>" : "no jog",
+      // `jog` is the capability name; what it buys you now that the arrow pad
+      // is gone is Go to origin, so the tag says what the user can actually do
+      caps.jog ? "<b>manual moves</b>" : "no manual moves",
       caps.pause_resume ? "<b>pause</b>" : "no pause",
       `progress: ${caps.progress_granularity}`,
     ].join(" · ");
@@ -1540,9 +1526,11 @@ export function applyCapabilities() {
   const connected = m.connected;
   const idle = m.job_state === "idle";
 
-  $("panel-jog").style.display = caps.jog || caps.pen_control ? "" : "none";
+  $("panel-pen").style.display = caps.pen_control || caps.set_origin ? "" : "none";
   $("panel-raw").style.display = caps.raw_ebb ? "" : "none";
-  for (const btn of document.querySelectorAll("[data-jog]")) btn.disabled = !(caps.jog && connected && idle);
+  // Go to origin is an absolute move, and `jog` is still the flag that says a
+  // backend will move the carriage between jobs — the jog ENDPOINT outlived
+  // its UI (2026-08-08), so the capability still means what it says.
   $("btn-goto-origin").disabled = !(caps.jog && connected && idle);
   $("btn-set-origin").disabled = $("btn-origin-guide").disabled = !(caps.set_origin && connected && idle);
   $("btn-pen-up").disabled = $("btn-pen-down").disabled = $("btn-pen-cycle").disabled =

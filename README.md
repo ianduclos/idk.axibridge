@@ -35,8 +35,8 @@ EBB console** sits underneath the planner. Why it's built this way:
   passes land registered across pen swaps. Guided wizard included.
 - **Three execution backends**, deliberately not feature-symmetric, each
   advertising capabilities so the UI never shows dead knobs:
-  **native** (pyaxidraw + plotink: full motion params, jog, raw EBB
-  trapdoor), **simulator** (whole app usable unplugged), **saxi** (thin CLI
+  **native** (pyaxidraw + plotink: full motion params, pen & origin, raw
+  EBB trapdoor), **simulator** (whole app usable unplugged), **saxi** (thin CLI
   hand-off to saxi's planner).
 - **Projects are folders** — a diff-able `project.json` plus the source
   SVGs; zip export/import. Pen library and machine settings (estimator
@@ -123,7 +123,7 @@ The alternative to a full Pi deployment: axibridge runs **on the
 workstation**, and the Pi is just an `axicli` runtime with the AxiDraw on
 USB. Select the **"AxiDraw via Pi (ssh)"** backend in the Plot tab — a plot
 exports the resolved geometry to SVG, scps it over Tailscale, and runs
-`axicli` remotely; pen toggle and jog ride the same pipe. Pi needs only:
+`axicli` remotely; the pen toggle rides the same pipe. Pi needs only:
 
 ```bash
 python3 -m venv ~/axibridge/.venv
@@ -151,7 +151,7 @@ best-effort raises the pen.
 2. **Pens**: add your pens — caliper the barrels. Assign one per layer.
 3. **Plot** (simulator first): pick a layer as target, Plot,
    pause/resume/stop, watch live position on the canvas. Then the native
-   backend: connect, jog, pen-height test with live sliders, plot for real.
+   backend: connect, pen-height test with live sliders, plot for real.
    Swap pen, next layer — passes register via the holder calibration
    (Plot tab wizard, once).
 4. **Raw EBB** (native): `QM`, `V`, `SM,1000,500,500`… replies surfaced.

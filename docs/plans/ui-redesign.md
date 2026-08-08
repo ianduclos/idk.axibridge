@@ -316,12 +316,16 @@ window · any change to the resolve order or the single-resolve invariant.
    a number, let him choose. Do not silently trade an annoyance for a stall.
 2. **Occlusion cache key completeness** — if in doubt, say so rather than ship
    a cache that can lie.
-3. **Does jog earn its place at all?** Ian: *"never used jog matter of fact,
-   not sure bout the utility."* The plan moves it to a menu rather than
-   deleting it — but if, once it's a menu item, it still goes untouched, raise
-   deleting it rather than carrying it forever. Do not delete it unilaterally:
-   pen up/down and go-to-origin inside that group may be the parts that
-   actually earn their keep.
+3. ~~**Does jog earn its place at all?**~~ **RESOLVED 2026-08-08: no.** Ian:
+   *"never used jog matter of fact, not sure bout the utility"* → *"remove jog
+   altogether"*. It went to a menu first, as this plan proposed, and stayed
+   untouched there. The arrow pad, the step select and the four menu items are
+   gone; the panel is "Pen & origin" now. The warning in this item was right
+   and was heeded — pen up/down, go-to-origin and set-origin are exactly the
+   parts that earned their keep, and they stayed. The jog ENDPOINT and the
+   backend methods stayed too: pi_ssh dead-reckons its position from jogs and
+   has nothing else that writes it, and the soft-limit refusal is tested
+   through that endpoint.
 
 ## Verification protocol (mandatory)
 

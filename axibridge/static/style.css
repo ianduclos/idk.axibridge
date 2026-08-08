@@ -71,6 +71,11 @@
                               --live-deep and --live-fill — clearly colour,
                               clearly below selection. */
   --fader-hot: #5c8ba6;    /* the groove of the fader under the hand */
+  --bench-tint: #201e1b;   /* a foldable section nested INSIDE a panel — one
+                              step up from --bench, well under --bench-rise.
+                              A tint, not a card: no border, no radius, no
+                              shadow, so it groups without competing with the
+                              panel that contains it. */
   --ochre: #c79c4a;        /* in motion, guides, warnings */
   --rust: #c0644c;         /* danger, origin, subtract */
   --moss: #8aa06e;         /* connected, ok */
@@ -186,23 +191,21 @@ header {
 /* No wordmark: the OS menu bar and the window already say "axibridge", and a
    third copy inside the app was the duplication Ian flagged. The project name
    is the identity that actually varies. */
-/* The project name is a title you can type in, not a form field. It was
-   drawn as one anyway: `.project-name` overrode the input rule's border and
-   background but not its `box-shadow: var(--recess)`, so an empty-looking
-   well sat in the header at rest — which is most of why the title reads as
-   not earning its place. Borderless and shadowless until you touch it. */
+/* The project name is a READOUT (2026-08-08). Successive passes tried to make
+   an <input> here not look like one — borderless, shadowless, transparent
+   until hover — and it still read as awkward, because the problem was never
+   the styling: a form control sitting in a bar that holds nothing else you
+   can type into. So it stopped being one. Renaming moved to File > Save As,
+   where the rest of the file actions are, and the name joined the readout
+   cluster at the right, which is where machine and document state already
+   live. `margin-left:auto` here (rather than on #status-pill) is what pulls
+   the whole cluster over — name, lamp, estimate as one group. */
 .project-name {
-  font-family: inherit; font-size: 13px; width: 14em;
-  background: transparent; border: 1px solid transparent; border-radius: 0;
-  padding: 3px 8px; color: var(--ink); box-shadow: none;
+  margin-left: auto;
+  font-family: inherit; font-size: 13px;
+  max-width: 18em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--ink-soft);
 }
-.project-name:hover, .project-name:focus {
-  border-color: var(--bench-edge); background: var(--bench-deep);
-  box-shadow: var(--recess);
-}
-/* the readout cluster: connection lamp + estimate are both machine state, so
-   they sit together at the right rather than stranded apart */
-#status-pill { margin-left: auto; }
 .estimate {
   color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: 12px;
 }
@@ -314,6 +317,10 @@ main {
 #layers-dock-title::after {
   content: ""; flex: 1; height: 1px; background: var(--bench-edge);
 }
+/* Third time this repo has hit it (see `.row[hidden]` and `.seg[hidden]`): a
+   rule that sets `display` outranks the UA's `[hidden] { display: none }`, so
+   the dock stayed on every tab while main.js dutifully set .hidden = true. */
+#layers-dock[hidden] { display: none; }
 #layers-dock-body { flex: 1; min-height: 0; overflow-y: auto; }
 
 /* collapsed: the title bar alone, and the tab body takes the room back */
@@ -728,9 +735,6 @@ input[type="range"].fine::-moz-range-thumb {
 .backend-card .caps { font-size: 10px; color: var(--ink-soft); margin-top: 2px; letter-spacing: .3px; }
 .backend-card .caps b { color: var(--moss); font-weight: 700; }
 
-/* jog */
-.jog-grid { display: grid; grid-template-columns: repeat(3, 42px); gap: 3px; justify-content: start; margin-bottom: 6px; }
-.jog-grid button { height: 34px; }
 
 /* logs */
 .log {
@@ -808,6 +812,22 @@ input[type="range"].fine::-moz-range-thumb {
 }
 .form .field:has(> .ctl > input[type="checkbox"]:only-child) > label { flex: none; }
 .form .field:has(> .ctl > input[type="checkbox"]:only-child) > .ctl { flex: none; }
+/* Sections of the layer panel (compose.js `ldSection`). The panel's own
+   sub-headings became disclosures, and they are marked by a TINT rather than
+   the indent-and-hairline the form groups use — the two levels have to stay
+   told apart, and the outer one is the one you fold. Still not a card: no
+   border, no radius, no shadow, and the tint is small enough that six of them
+   stacked read as bands of one surface, not as six competing objects. */
+.ld-section {
+  background: var(--bench-tint);
+  padding: 7px 10px 9px; margin: 8px 0;
+}
+.ld-section > summary { color: var(--ink-soft); font-weight: 700; }
+.ld-section[open] > summary { color: var(--ink); margin-bottom: 6px; }
+/* a form group nested in a section keeps its indent, and drops the tint's
+   left padding so its hairline lines up with the summary above it */
+.ld-section .form-group { margin-left: 1px; }
+
 .form-group {
   margin: 10px 0 4px; border: none; border-left: 1px solid var(--bench-edge);
   border-radius: 0; padding: 0 0 2px 10px;
@@ -932,7 +952,7 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
   main { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; }
   #inspector { border-left: none; border-top: 1px solid var(--bench-edge); }
   header { flex-wrap: wrap; gap: 10px; }
-  .project-name { width: 10em; }
+  .project-name { max-width: 10em; }
 }
 
 /* draw tool (draw.js): the in-progress stroke previewed on the canvas */

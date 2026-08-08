@@ -1108,6 +1108,24 @@ function fmtTime(s) {
 
 // ---- selected layer detail ---------------------------------------------------
 
+// One shape for every section of the layer panel. The <h3> headings became
+// <summary>, so each section is its own collapse level: the panel stacked six
+// of them — Placement, Frame displacement, Pen & occlusion, Effects,
+// Interpolation, Generator — with no way to fold any one down, and on a
+// generator with twenty params that is a long scroll to reach Placement.
+//
+// Open state is remembered by section NAME, not per layer. Which sections you
+// work in is a property of how you work, not of what happens to be selected,
+// and the panel is rebuilt wholesale on every change so nothing can live in
+// the DOM anyway. Default OPEN: this replaced six always-open headings, and
+// folding is the user's move to make, not ours.
+function ldSection(key) {
+  const det = document.createElement("details");
+  det.className = "ld-section";
+  rememberDetails(det, `ld:${key}`, true);
+  return det;
+}
+
 export function renderLayerDetail() {
   const panel = $("layer-detail-panel");
   const wrap = $("layer-detail");
@@ -1155,9 +1173,9 @@ export function renderLayerDetail() {
   const t = layer.transform;
   const sc = Math.hypot(t.a, t.b) || 1;
   const rot = Math.atan2(t.b, t.a) * 180 / Math.PI;
-  const place = document.createElement("div");
+  const place = ldSection("placement");
   place.innerHTML = `
-    <h3>Placement</h3>
+    <summary>Placement</summary>
     <div class="row">
       <label>x</label><input type="number" step="0.5" id="tf-x" value="${t.e.toFixed(1)}" style="width:5.5em">
       <label>y</label><input type="number" step="0.5" id="tf-y" value="${t.f.toFixed(1)}" style="width:5.5em">
@@ -1195,9 +1213,9 @@ export function renderLayerDetail() {
     const title = frames
       ? `time-shift this layer's clip by N frames of the ${frames}-frame clip — duplicates can trail, and animations lerp it A→B (+6 = six frames later in the clip)`
       : "time-shift this layer's clip (added to 'frame', clamped 0..1) — duplicates can trail, and animations lerp it A→B";
-    const foff = document.createElement("div");
+    const foff = ldSection("frame");
     foff.innerHTML = `
-      <h3>Frame displacement</h3>
+      <summary>Frame displacement</summary>
       <div class="row">
         <label>${label}</label>
         <input type="number" id="ld-frame-offset" step="${step}" min="${min}" max="${max}"
@@ -1232,9 +1250,9 @@ export function renderLayerDetail() {
   }
 
   // -- pen + occlusion
-  const occ = document.createElement("div");
+  const occ = ldSection("pen");
   occ.innerHTML = `
-    <h3>Pen & occlusion</h3>
+    <summary>Pen &amp; occlusion</summary>
     <div class="row">
       <label>pen</label>
       <select id="ld-pen"><option value="">— none —</option></select>
@@ -1302,10 +1320,10 @@ export function renderLayerDetail() {
   }
 
   // -- effect stack
-  const fx = document.createElement("div");
-  fx.innerHTML = `<h3>Effects <span class="hint">${layer.region
+  const fx = ldSection("effects");
+  fx.innerHTML = `<summary>Effects <span class="hint">${layer.region
       ? "(region: applied to the layers below, inside this silhouette)"
-      : "(paper-space, non-destructive)"}</span></h3>
+      : "(paper-space, non-destructive)"}</span></summary>
     <div class="row">
       <select id="fx-select"></select><button id="fx-add">＋ Add</button>
       <button id="fx-consolidate" title="Bake transform + effects into the source geometry (undoable; regenerate also reverts a generated layer)">⤓ Consolidate</button>
@@ -1422,8 +1440,8 @@ export function renderLayerDetail() {
   if (layer.source.type === "tween") {
     const p = layer.source.params || {};
     const nameOf = (id) => S.state.project.layers.find((l) => l.id === id)?.name || `${id} (missing!)`;
-    const tw = document.createElement("div");
-    tw.innerHTML = `<h3>Interpolation</h3>
+    const tw = ldSection("tween");
+    tw.innerHTML = `<summary>Interpolation</summary>
       <div class="hint">A: ${nameOf(p.a)} → B: ${nameOf(p.b)} — interpolates generator params,
       effect params and position/rotation/scale. Pen/drawing shapes morph anchor-by-anchor
       when A and B share structure (same point count — what "animate" gives). Edits to A/B
@@ -1584,8 +1602,8 @@ export function renderLayerDetail() {
     const mod = S.state.modules.sources.find((m) => m.id === layer.source.generator);
     if (mod) {
       const baked = layer.source.type === "baked";
-      const gen = document.createElement("div");
-      gen.innerHTML = `<h3>Generator: ${mod.label}${baked ? ' <span class="hint">(baked — regenerating discards the bake)</span>' : ""}</h3>
+      const gen = ldSection("generator");
+      gen.innerHTML = `<summary>Generator: ${mod.label}${baked ? ' <span class="hint">(baked — regenerating discards the bake)</span>' : ""}</summary>
         <div class="form" id="regen-form"></div>
         <button id="btn-regen" class="primary">Regenerate</button>`;
       wrap.appendChild(gen);
