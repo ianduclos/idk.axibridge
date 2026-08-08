@@ -368,8 +368,10 @@ main {
    is lit where the paper is and goes to shadow at the frame — recession by
    light rather than by a rule that suppresses every chrome surface uniformly
    by fiat. That rule is why nothing receded and everything demanded reading.
-   Centred at 45% height because the sheet sits high in the well once the
-   playback strip is showing. */
+   Centred at 45% rather than 50%: that began as compensation for the playback
+   strip pushing the sheet up, which it no longer does (the transport moved
+   into the status line, 2026-08-08). Kept as taste, not re-centred silently —
+   50% is a one-word change if the well ever reads bottom-heavy. */
 #canvas-wrap {
   flex: 1; min-height: 0; border: none; border-radius: var(--r);
   background:
@@ -395,17 +397,18 @@ main {
 #doc-preview-banner[hidden] { display: none; }
 #doc-preview-label { color: var(--live-soft); }
 #doc-preview-exit { padding: 1px 10px; font-size: 11.5px; }
-/* the playback strip: a transport, sitting under the sheet it replays. Reads
-   as part of the canvas well rather than as another toolbar — no face, no
-   border, just the controls and the same quiet ink as the status line below
-   it. Costs no vertical space when there is nothing to play. */
+/* the playback transport, at the right end of the status line. It used to be
+   its own strip under the sheet, which spent a whole row on two controls; it
+   reports on the drawing, and so does the line, so it joined it. Sized to the
+   line rather than to the toolbar — same button scale as #machine-state, so
+   Animate and Stop read as the same class of control. */
 #playback {
-  display: flex; align-items: center; gap: 10px;
-  padding-top: 8px;
+  display: flex; align-items: center; gap: 8px;
 }
 #playback[hidden] { display: none; }
-#playback label { color: var(--ink-soft); font-size: 12px; display: flex; align-items: center; gap: 4px; }
-#playback input[type="number"] { width: 4.2em; }
+#playback button { padding: 1px 9px; font-size: 11px; }
+#playback label { color: var(--ink-soft); font-size: 11px; display: flex; align-items: center; gap: 4px; }
+#playback input[type="number"] { width: 3.6em; padding: 1px 4px; font-size: 11px; }
 
 /* the machine strip lives inside the status line — same row, same quiet ink,
    no extra band. Buttons shrink to the line's scale so a persistent Stop does

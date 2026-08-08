@@ -66,6 +66,11 @@ been through it.
 - **Placement keeps decimals.** x/y to 0.01mm, scale to 0.001, rotation to
   0.1°. Rotation could only ever be a whole degree before, and any finer angle
   was thrown away by the panel merely re-rendering.
+- **Animate plot moved into the status line**, bottom-right corner of the
+  canvas pane, at the same button scale as Pause/Resume/Stop. It had its own
+  strip under the sheet spending a whole row on two controls; that row is gone,
+  so the sheet no longer jumps when a plan appears. Check the speed box is
+  still comfortable to hit at the smaller size.
 - **New effect: Smoothen.** Stack it on anything visibly faceted — an imported
   SVG curve, a boolean result, a generator that walks in straight steps. It
   passes *through* your points and only invents the arc between them, so a

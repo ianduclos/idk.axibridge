@@ -65,6 +65,14 @@ Unrelated asks, batched. 743 tests green, typecheck and build clean.
   consecutive duplicates are dropped before parameterisation — a zero chord is
   a division by zero and shapely emits them routinely. On a flattened octagon
   it cuts radial error by 9×.
+- **The playback transport joined the status line** (Ian, same session). It
+  had its own strip under the sheet, spending a whole row on two controls, and
+  it reports on the drawing exactly as the status line does. Now bottom-right
+  of the canvas pane at `#machine-state`'s button scale, so Animate and Stop
+  read as the same class of control. Placement is `#global-error`'s existing
+  `margin-left: auto` doing the work — it pushes itself and everything after
+  it right, so no second auto margin competes for the gap. Net: the sheet no
+  longer jumps down when a plan appears, and the status line grew 2px.
 
 **Debt noted, not paid:** the arc-length `_resample` walker now exists
 byte-identically in five effects (`coherent_jitter`, `freehand`, `eyelets`,
