@@ -1169,7 +1169,14 @@ export function renderLayerDetail() {
   $("detail-name").textContent = layer.name;
   wrap.innerHTML = "";
 
-  // -- placement numerics (decomposed from the matrix; re-composed on edit)
+  // -- placement numerics (decomposed from the matrix; re-composed on edit).
+  // These toFixed() calls are NOT cosmetic: commitPlacement re-reads the boxes
+  // and rebuilds the matrix from them, so whatever is displayed is what gets
+  // stored on the next edit. At toFixed(0) a rotation could only ever be a
+  // whole degree, and any finer angle was rounded away by the panel merely
+  // re-rendering. One decimal further down on each, matching forms.js's fine
+  // quantum. (These are hand-written, not schema-driven, so they get neither
+  // the fine-step stamp nor main.js's shift handling — that is range-only.)
   const t = layer.transform;
   const sc = Math.hypot(t.a, t.b) || 1;
   const rot = Math.atan2(t.b, t.a) * 180 / Math.PI;
@@ -1177,10 +1184,10 @@ export function renderLayerDetail() {
   place.innerHTML = `
     <summary>Placement</summary>
     <div class="row">
-      <label>x</label><input type="number" step="0.5" id="tf-x" value="${t.e.toFixed(1)}" style="width:5.5em">
-      <label>y</label><input type="number" step="0.5" id="tf-y" value="${t.f.toFixed(1)}" style="width:5.5em">
-      <label>scale</label><input type="number" step="0.05" id="tf-s" value="${sc.toFixed(2)}" style="width:5em">
-      <label>rot°</label><input type="number" step="1" id="tf-r" value="${rot.toFixed(0)}" style="width:5em">
+      <label>x</label><input type="number" step="0.1" id="tf-x" value="${t.e.toFixed(2)}" style="width:5.5em">
+      <label>y</label><input type="number" step="0.1" id="tf-y" value="${t.f.toFixed(2)}" style="width:5.5em">
+      <label>scale</label><input type="number" step="0.01" id="tf-s" value="${sc.toFixed(3)}" style="width:5em">
+      <label>rot°</label><input type="number" step="0.5" id="tf-r" value="${rot.toFixed(1)}" style="width:5em">
     </div>`;
   wrap.appendChild(place);
   const commitPlacement = () => {

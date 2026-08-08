@@ -184,7 +184,7 @@ body {
 
 header {
   display: flex; align-items: center; gap: 16px;
-  padding: 0 16px; min-height: 44px;
+  padding: 0 16px; min-height: 40px;
   border-bottom: 1px solid var(--bench-edge);
   background: var(--bench);
 }
@@ -218,7 +218,7 @@ header {
    applies: the in-page menu is the only menu there. */
 :root[data-shell="native"] header {
   padding-left: 84px;   /* close · minimise · zoom live here */
-  min-height: 42px;     /* the band the traffic lights sit in */
+  min-height: 38px;     /* the band the traffic lights sit in */
   border-bottom-color: transparent;  /* the band and the toolbar are one surface */
 }
 :root[data-shell="native"] #menubar { display: none; }
@@ -340,7 +340,7 @@ main {
 
 /* ---- the bed (the persistent centre workspace) ---- */
 
-#canvas-area { display: flex; flex-direction: column; min-width: 0; padding: 12px 16px 10px; }
+#canvas-area { display: flex; flex-direction: column; min-width: 0; padding: 4px 16px 8px; }
 /* One row, always. It used to wrap — and every row it wrapped to pushed the
    canvas top edge down, so the sheet moved while you resized the window. Now
    that the toolbar holds only tools (everything else went to the View menu,
@@ -351,7 +351,7 @@ main {
 #canvas-toolbar {
   display: flex; align-items: center; gap: 12px;
   flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
-  padding-bottom: 10px;
+  padding-bottom: 5px;
 }
 #canvas-toolbar > * { flex: none; }
 /* the scrollbar would be a rail across the chrome for a bar that rarely
@@ -687,7 +687,7 @@ input[type="range"].fine::-moz-range-thumb {
 .seg button {
   --engraved-track: 1.2px;
   border: none; border-radius: 0; background: transparent; box-shadow: none;
-  color: var(--ink-soft); padding: 5px 10px;
+  color: var(--ink-soft); padding: 4px 10px;
 }
 .seg button:hover { background: var(--bench-rise); color: var(--ink); }
 /* the occlusion channel groups: four one-letter segments, tight, because they

@@ -52,8 +52,8 @@ function fieldViewTransform(key, spec, values, schema) {
       return { mapTitle: (t) => t.replace(/\bWidth\b/, "Height") };
     }
     return {
-      show: (v) => Math.round(v * f * 10) / 10, // quantize DISPLAYED to 0.1mm
-      store: (v) => v / f,                       // store keeps full precision
+      show: (v) => Math.round(v * f * 100) / 100, // quantize DISPLAYED to 0.01mm
+      store: (v) => v / f,                        // store keeps full precision
       mapBounds: (min, max) => [min === undefined ? min : min * f, max === undefined ? max : max * f],
       step: 0.1,
     };
@@ -211,7 +211,16 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
       if (dmin !== undefined) num.min = dmin;
       if (dmax !== undefined) num.max = dmax;
       const step = vt?.step ?? (s.type === "integer" ? 1 : stepFor(min, max));
-      num.step = step;
+      // `step` is the COARSE quantum — the one that reads well as a default and
+      // that stepFor() derives from the field's span. It is not the finest a
+      // value may be: shift fine-tune exists precisely to go below it, and on a
+      // span > 20 field (most millimetre params) a coarse step of 1 meant every
+      // shift-drag was rounded straight back to whole millimetres. So the fine
+      // quantum is one decimal further down, and it is what everything below
+      // actually quantizes to. Integers stay at 1 — a 0.1 on an int field is
+      // rejected by Pydantic on commit — and the unbounded "any" passes through.
+      const fine = (s.type === "integer" || step === "any") ? step : step / 10;
+      num.step = fine;
       let range = null;
       if (dmin !== undefined && dmax !== undefined) {
         range = document.createElement("input");
@@ -227,9 +236,11 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
         // The track is continuous but the committed value is quantized (below),
         // so tell main.js's shift fine-tune what one quantum actually is —
         // nudging by less than this just gets rounded away on commit.
-        range.dataset.fineStep = step;
-        const quant = (v) => (step === 1 ? Math.round(v)
-          : Number(v.toFixed(step === 0.01 ? 2 : 1)));
+        range.dataset.fineStep = fine;
+        // decimals derived from the quantum, not compared against literals: an
+        // equality ladder silently mis-rounds the moment a new rung is added.
+        const dec = Number.isFinite(fine) ? Math.max(0, Math.ceil(-Math.log10(fine))) : 6;
+        const quant = (v) => Number(v.toFixed(dec));
         // live number readout while dragging; commit ONCE on release — a
         // mid-drag commit re-renders the panel and kills the drag. Forms
         // may pass opts.onLive(key, value) to observe mid-drag values (live
