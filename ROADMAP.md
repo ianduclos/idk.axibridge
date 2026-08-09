@@ -134,11 +134,27 @@ Cheapest-first:
     backs off by halves rather than ever costing a ring. It rounds CONVEX
     corners only, so concave structure survives all the way down (a star's
     centre becomes a flower, not a disc — the honest result, not a shortfall).
-    **Still open**: a continuous *spiral*.
-    One unbroken stroke only exists for a hole-free component that never
-    splits before it dies (a topological disk that stays a disk); anywhere
-    else the pen must lift, which is the `connect_strokes` problem again —
-    build it on top of the rings, not instead of them.
+    ~~**Still open**: a continuous *spiral*.~~ — **shipped 2026-08-09** as
+    `effects/offset_fill_v2.py`, a SIBLING of `offset_fill` (v1 untouched and
+    still stacked separately; `spiral=False` reproduces it path for path).
+    Built on top of the rings exactly as this entry asked: a level *forest*
+    links each component to what it erodes into, and a spiral runs down every
+    maximal hole-free single-child chain, rings taking over wherever one
+    splits or carries a hole. A dying limb's medial tail becomes the spiral's
+    last turn instead of a pen lift. A 120mm square at 1mm spacing goes from
+    61 strokes to 1. The subtlety worth carrying forward: laps hold their
+    spacing by drifting in LOCKSTEP, and the innermost lap has nothing to
+    drift toward, so a full-drift blend slides the lap above onto it —
+    `blend` caps the drift and buys `(1 − blend) × spacing` of separation.
+    Two other cavalier-contours ideas landed with it: **tolerance** (mm)
+    replaced the scale-blind `smooth` segment count, and an **arc-native
+    offset engine** (`effects/_arcpoly.py`, bulge polylines) sits behind
+    `engine="arc"`, OFF by default. It decouples output vertex density from
+    input density — a 1440-gon import fills at the same accuracy for a
+    twentieth of the vertices — but a wrong prune is permanent wrong ink, so
+    flipping the default wants a much wider differential corpus
+    (`tests/test_arcpoly.py`) and a hardware check first. It is contained
+    evidence for the IPR-arc question below, not an answer to it.
   - *Dash / stitch*: cut paths into dashes (gap, phase) for texture.
   - *Lens / attractor warp*: radial push/pull with falloff about a point —
     the hand-placed complement to the depth map.
