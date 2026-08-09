@@ -1,6 +1,6 @@
 ---
 project: idk.axibridge
-updated: 2026-08-08
+updated: 2026-08-09
 entries: 5
 ---
 
@@ -64,7 +64,7 @@ entries: 5
   the app. Editing `#menubar` in `index.html` now changes the macOS menu too.
   The jog question is ANSWERED (2026-08-08): out of the UI, endpoint kept.
 
-### Bench eye-check: offset_fill + brush — opened 2026-07-27, owner: ian
+### Bench eye-check: offset_fill (+ v2) + brush — opened 2026-07-27, updated 2026-08-09, owner: ian
 - done: both modules built, merged and screen-verified only — `offset_fill`
   via rendered PNG sweeps across square/circle/donut/dumbbell/star/L/two-holes
   and a `round_center` 0→1 grid; `brush` via Playwright against the real UI
@@ -77,9 +77,19 @@ entries: 5
   `offset_fill` stacked on it — the module docstring claims rings suit a
   painted mass better than hatching does, which is an aesthetic bet, not a
   tested fact.
+  Added 2026-08-09: **`offset_fill_v2`** ships beside v1 (v1 untouched) and
+  plots the same fill as ONE continuous spiral — 61 strokes becomes 1 on a
+  120mm square at 1mm spacing. It needs the same ink test and two of its own:
+  (5) does an unbroken spiral read better on paper than concentric rings, or
+  does the seam show; (6) is `blend` 0.5 the right default — it trades seam
+  visibility against how close consecutive turns run, and the bound is
+  `(1 - blend) x spacing`. Ian called it "good enough for my use" on screen;
+  none of it has been plotted.
 - blockers: none.
-- context: `axibridge/effects/offset_fill.py` and `axibridge/sources/brush.py`
-  module docstrings carry the full reasoning; ROADMAP "Offset rings" and 0c.
+- context: `axibridge/effects/offset_fill.py`, `offset_fill_v2.py` and
+  `axibridge/sources/brush.py` module docstrings carry the full reasoning —
+  v2's `_spiral` has the lockstep/drift argument, `_arcpoly.py` has the
+  arc-engine one and why it is not the default. ROADMAP "Offset rings" and 0c.
 
 ### Bench eye-check of the 07-16→19 wave — opened 2026-07-19, owner: ian
 - done: generator v2 (misremembered scribble masses + tone dial, glyphgram

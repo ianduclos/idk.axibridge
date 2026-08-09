@@ -1,20 +1,101 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-08-08
+updated: 2026-08-09
 machine: mac+pi
-summary: Three small asks landed on top of the finished UI redesign — the bed reclaimed 20px of dead height above the canvas, shift fine-tune finally resolves below the coarse step (a derived fine quantum, one decimal further down, replacing the single value that was doing both jobs), and a Smoothen effect re-curves flattened geometry by Catmull-Rom rather than averaging it; 743 tests green.
+summary: Offset fill gained a v2 sibling that plots as one continuous spiral instead of sixty concentric rings, with tolerance-driven flattening and an arc-native offset engine kept off by default; 789 tests green and v1 untouched.
 next:
-  - "Ian eye-checks — CHECKME.md at the repo root is the list; the 08-08 section covers the taller bed, the finer sliders and Smoothen, and the shell-only paths above it still need a full relaunch"
-  - "Smoothen wants ink, not screens: is resolution 0.5mm the right default for plot time, and does a filled shape with it stacked still occlude cleanly"
-  - "Fine-tune has two gaps left on purpose: canvas guide drags still snap to whole mm, and transform/pen-anchor handles have no fine modifier at all — direct manipulation, a different problem from slider resolution"
-  - "Brainstorm in flight: a generator/effect gallery with thumbnails and tags, for when the 46-module list outgrows two dropdowns — Ian asked for it light and for later"
+  - "Put ink on paper for offset_fill_v2 — the spiral is screen-verified only: does one unbroken stroke actually read better than rings, and is blend 0.5 the right default seam"
+  - "Decide nothing yet about engine=arc: it agrees with shapely across the differential corpus but is 2-4x slower and non-default on purpose (a wrong prune is permanent ink, not a crash)"
+  - "Ian eye-checks still stacked in CHECKME.md — the 08-08 group (taller bed, finer sliders, Smoothen) and the shell-only paths above it need a full relaunch"
+  - "The 08-08 UI trio (playback transport into the status line, zoom to the toolbar tail, folding Plot/Settings sub-sections) landed after the last wrapup and has had no eye-check"
   - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16 to 19 wave, and the URGENT round (see HANDOFF)"
 handoff_for: ian
 ---
-
 # idk.axibridge — status
 
+**Session 2026-08-09 (Opus 5): offset fill v2 — one spiral instead of sixty rings.**
+
+Prompted by reading [cavalier-contours-js](https://github.com/msurguy/cavalier-contours-js),
+a TypeScript port of the Rust `cavalier_contours` crate, and comparing it
+against our `offset_fill`. The library itself is unusable here — JavaScript,
+against server-side geometry behind the single-resolve invariant, on a Pi with
+no Node — so nothing was vendored. Four of its ideas were.
+
+Measurement first, and it reframed the job. Ours was already fast (3–10 ms for
+a full-bed fill) and already correct about topology. What it was bad at was
+**pen lifts**: a 120 mm square at 1 mm spacing plots as *61 separate strokes*,
+sixty of which are travel between rings a millimetre apart. And `smooth` was
+scale-blind — 8 segments per quarter is 0.005 mm of chord error at a 1 mm
+radius and 0.53 mm at 110 mm.
+
+`effects/offset_fill_v2.py` is a **sibling**, not a replacement. v1 and its
+275-line test file are untouched, and `spiral=False` reproduces it path for
+path — a test asserts it, and the rest of the file leans on that control arm.
+
+- **The spiral** (ROADMAP's named open item, now struck). A level *forest*
+  links each component to what it erodes into; a spiral runs down every
+  maximal hole-free single-child chain, and rings take over wherever one
+  splits or carries a hole — built *on top of* the rings, as that entry asked.
+  A dying limb's medial tail becomes the spiral's last turn instead of a lift.
+  61 strokes → 1.
+- **`tolerance` (mm) replaced `smooth`.** The segment count is derived per
+  call from the radius actually being offset, so it means one thing at every
+  scale.
+- **eps triple** (`pos_eq_eps`, `offset_dist_eps`, `slice_join_eps`), in the
+  collapsed Fine-tuning group, each saying which engine it serves.
+- **`effects/_arcpoly.py`** — a bulge-polyline offsetter behind
+  `engine="arc"`, **off by default**.
+
+**The subtlety worth carrying forward**, because it cost a rebuild and is
+written up in `_spiral`: laps hold their spacing by drifting in LOCKSTEP, and
+the innermost lap has nothing to drift toward, so a full-drift blend slides the
+lap above right onto it. Capping the drift at `blend` bounds parallel
+separation at `(1 − blend) × spacing`. It is invisible on a square or a star,
+whose inner laps are short; it is 31% of the stroke as doubled ink on a C at
+blend 1.0, because a long thin shape's contours barely shorten as they erode.
+Default 0.5. (An earlier draft of that docstring claimed the bound held
+*everywhere* — it does not: at the seam a lap necessarily returns near its own
+start before hopping, which is what a seam is.)
+
+**The arc engine**, and why it is not the default. It decouples output vertex
+density from input density — at a matched 0.05 mm tolerance a traced circle
+fills in ~380 vertices whether the import was a 96-gon or a 1440-gon, against
+776 → 7569 for shapely, which inherits whatever the source polyline had. It
+also holds 10 µm over ten repeated 1 mm offsets, and declines to emit the
+area-0.0 ring shapely hands back for a shape that has just vanished. But it is
+2–4× slower on the preview path, and a wrong prune is permanent wrong ink
+rather than a crash. `tests/test_arcpoly.py` gates it: a differential test
+against shapely across seven shapes, plus a test asserting the default, so
+flipping it is a deliberate act that wants a wider corpus and a hardware check.
+
+Five silent bugs on the way there, each now a named test — a reflex arc's
+centre on the wrong side of its chord; a fitter that turned squares into
+circles (four corners are concyclic, so a vertex-only deviation test finds them
+a perfect fit); an uncapped greedy fit eating a circle in one 356° bite; mitre
+joins laying down a backwards spike because a mitre trims *both* sides; and a
+prune comparing flattened geometry against an exact distance, which rejected
+every valid offset and kept the slivers.
+
+One pinned weak spot: in the last millimetre before a shape collapses the raw
+offset crosses itself repeatedly and the noding invents faces whose total area
+*grows* with depth. The symmetric distance test does not catch them (a mitre
+spike legitimately sits further than |d| away), so the invariant is enforced a
+level up in `_forest`, where the previous level is in hand — verified monotone
+across six shapes at four spacings.
+
+Verified: 789 tests green. **Not** verified: nothing was run in the app or put
+on paper. See `CHECKME.md`.
+
+Also inherited, unrecorded until now: three UI commits landed on 2026-08-08
+after the last wrapup — the playback transport joining the status line
+(`4ffecda`), zoom moving to the toolbar's right end with 100% meaning life size
+(`608341b`), and Plot/Settings sub-sections folding via `data-fold` markup
+(`4bb2ec9`). None has had an eye-check.
+
+---
+
+## Earlier sessions
 **Session 2026-08-08 (Opus 5): three small things — space, precision, a spline.**
 
 Unrelated asks, batched. 743 tests green, typecheck and build clean.

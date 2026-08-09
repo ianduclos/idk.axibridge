@@ -1,4 +1,4 @@
-# Check when you're home — 2026-08-07, added to 08-08
+# Check when you're home — 2026-08-07, added to 08-08 and 08-09
 
 Everything below passed its tests. None of it has passed *your eyes*, and the
 first group is the part no test here can reach. Delete this file once you've
@@ -107,3 +107,31 @@ been through it.
   no Machine-menu items. `POST /api/machine/jog` and the backend methods stay,
   so it is one markup block to put back. Check that Go to origin, Set origin
   and Origin = guide corner still do what you need without it.
+
+## 2026-08-09 — offset fill v2 (the spiral)
+
+Screen and tests only; nothing plotted. You waved it through as "good enough
+for my use", so none of this blocks anything — it is here because ink settles
+questions a render cannot.
+
+- **Stack "Offset fill (v2)" on a filled shape** and check the Plot tab
+  reports **one stroke** where plain Offset fill reports ~60. That is the whole
+  point of the module; if it says otherwise something is wrong.
+- **Scrub `Seam blend` 0 → 1.** At 0 you get plain rings joined by one radial
+  step (a visible seam — the square's diagonal). At 0.5, the default, a real
+  spiral. Past 0.5 consecutive turns run closer than half the spacing, and at
+  1.0 the innermost two touch — on a long thin shape (a C, a bar) that is a
+  lot of doubled ink. **The question for you: is 0.5 the right default, or do
+  you want the smoother spiral and the darker centre?**
+- **On paper**: does one unbroken stroke actually read better than concentric
+  rings, or does the continuous inward drift show as a spiral where you wanted
+  contours? This is aesthetic and only you can call it.
+- **Engine → `arc`** (Fine tuning). It should look identical to `shapely` on
+  everything; it is off by default because a wrong prune is permanent ink, not
+  a crash, and it is 2–4× slower on preview. If you ever see it disagree
+  visibly with the shapely engine, that is a bug worth reporting — the
+  differential test says they agree across seven shapes.
+- **Known and NOT new**: an annulus whose wall pinches at exactly a ring depth
+  shatters into a dotted circle. Plain `offset_fill` does the same — it is a
+  knife-edge coincidence of geometry and spacing, not a v2 regression. Nudge
+  the spacing.
