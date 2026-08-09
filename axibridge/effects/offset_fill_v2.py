@@ -96,6 +96,13 @@ class OffsetFillV2Params(BaseModel):
     max_rings: int = Field(default=24, ge=1, le=200, title="Max rings",
                            description="Hard cap — a large shape at a fine "
                                        "spacing is a lot of geometry")
+    engine: Literal["shapely", "arc"] = Field(
+        default="shapely", title="Engine",
+        description="How the rings are computed. Shapely erodes the area (the "
+                    "proven path); arc fits the outline to real arcs and offsets "
+                    "them exactly, which keeps circles round instead of faceted. "
+                    "Arc is newer \u2014 check the result before plotting it",
+    )
     join_style: Literal["mitre", "round", "bevel"] = Field(
         default="mitre", title="Corners",
         description="How rings turn at a concave corner: mitre keeps the "
@@ -145,6 +152,22 @@ class OffsetFillV2Params(BaseModel):
                                          "segments. Unlike a segment count this "
                                          "means the same thing at every radius",
                              json_schema_extra={"group": "Fine tuning"})
+    pos_eq_eps: float = Field(
+        default=1e-5, ge=1e-9, le=1e-2, title="Point epsilon (mm)",
+        description="Below this two points are the same point. Raise it if "
+                    "traced artwork arrives with near-duplicate vertices",
+        json_schema_extra={"group": "Fine tuning"})
+    offset_dist_eps: float = Field(
+        default=1e-4, ge=1e-9, le=1e-2, title="Offset epsilon (mm)",
+        description="Slack in the test that throws away the invalid parts of an "
+                    "offset curve. Arc engine only — the shapely engine gets "
+                    "this for free from the erosion",
+        json_schema_extra={"group": "Fine tuning"})
+    slice_join_eps: float = Field(
+        default=1e-4, ge=1e-9, le=1e-2, title="Join epsilon (mm)",
+        description="How far apart two ends of an offset curve may sit and "
+                    "still be joined into one loop. Arc engine only",
+        json_schema_extra={"group": "Fine tuning"})
 
 
 #: hard ceiling on segments per quarter circle. At 110 mm radius a 0.005 mm
@@ -190,6 +213,51 @@ def _polygons(geom) -> list[Polygon]:
     return [g for g in parts if isinstance(g, Polygon) and not g.is_empty]
 
 
+def _arc_erode(geom, distance: float, params: OffsetFillV2Params):
+    """`_erode`, done in arc space — see `_arcpoly`.
+
+    Each ring is fitted to arcs, offset exactly, pruned, and flattened once at
+    the end. Orientation carries the meaning: `orient(…, 1.0)` gives a CCW
+    exterior and CW holes, and "left of travel" is into the material for both,
+    so one positive distance erodes the shape and grows its holes at the same
+    time. Holes are offset independently of the exterior and reconciled by a
+    difference, which is what lets a hole grow through the outside or into
+    another one without either offset having to know about the other.
+    """
+    from . import _arcpoly
+
+    out = []
+    for poly in _polygons(geom):
+        poly = orient(poly, 1.0)
+        parts = _arc_rings(poly.exterior, distance, params)
+        if not parts:
+            continue
+        shape = unary_union(parts)
+        holes = [h for ring in poly.interiors
+                 for h in _arc_rings(ring, distance, params)]
+        if holes:
+            shape = shape.difference(unary_union(holes))
+        out.extend(_polygons(shape))
+    return unary_union(out) if out else Polygon()
+
+
+def _arc_rings(ring, distance: float, params: OffsetFillV2Params) -> list[Polygon]:
+    """One ring offset `distance` to the left of its travel, as polygons."""
+    from . import _arcpoly
+
+    if distance == 0.0:
+        return [Polygon(ring)]
+    fitted = _arcpoly.fit_contour([(x, y) for x, y in ring.coords], params.tolerance)
+    out = []
+    for loop in _arcpoly.offset_contour(fitted, distance, params.tolerance,
+                                        params.offset_dist_eps, params.slice_join_eps):
+        poly = Polygon(_arcpoly.flatten(loop, params.tolerance))
+        if not poly.is_valid:
+            poly = poly.buffer(0)
+        out.extend(_polygons(poly))
+    return out
+
+
 def _level(region, depth: float, params: OffsetFillV2Params) -> list[Polygon]:
     """The components at `depth`, with `round_center` applied.
 
@@ -209,16 +277,21 @@ def _level(region, depth: float, params: OffsetFillV2Params) -> list[Polygon]:
     backs off by halves until the ring exists. Rounding is a finish, and it may
     not cost the fill a ring it would otherwise have drawn.
     """
+    erode = _arc_erode if params.engine == "arc" else _erode
     if params.round_center <= 0.0:
-        return _polygons(_erode(region, depth, params))
+        return _polygons(erode(region, depth, params))
     r = params.round_center * depth
     while r > _MIN_ROUND_R:
-        eroded = _erode(region, depth + r, params)
+        eroded = erode(region, depth + r, params)
         if not eroded.is_empty:
+            # the opening's dilation is the same operation run outward, which
+            # under the arc engine is a negative offset rather than a buffer
+            if params.engine == "arc":
+                return _polygons(_arc_erode(eroded, -r, params))
             return _polygons(eroded.buffer(r, quad_segs=_quad_segs(r, params.tolerance),
                                            join_style="round"))
         r /= 2
-    return _polygons(_erode(region, depth, params))
+    return _polygons(erode(region, depth, params))
 
 
 def _rings(poly: Polygon, params: OffsetFillV2Params) -> list[list[Pt]]:
@@ -312,13 +385,42 @@ def _forest(region, params: OffsetFillV2Params) -> list[list[_Node]]:
     """
     levels: list[list[_Node]] = [[_Node(poly, 0) for poly in _polygons(region)]]
     for k in range(1, params.max_rings + 1):
-        nodes = [_Node(poly, k) for poly in _level(region, k * params.spacing, params)]
+        deeper = _level(region, k * params.spacing, params)
+        deeper = _monotone(deeper, levels[-1], params)
+        nodes = [_Node(poly, k) for poly in deeper]
         for parent in levels[-1]:
             parent.children = [n for n in nodes if n.poly.intersects(parent.poly)]
         if not nodes:
             break
         levels.append(nodes)
     return levels
+
+
+def _monotone(deeper: list[Polygon], above: list[_Node],
+              params: OffsetFillV2Params) -> list[Polygon]:
+    """Clip a level to the one above it. Erosion cannot grow.
+
+    A no-op for the shapely engine, which gets this from GEOS, and skipped
+    entirely there so it costs nothing. The arc engine needs it: right at the
+    depth a shape collapses, its raw offset crosses itself many times over and
+    the noding invents faces in the tangle. Those faces pass the "at least |d|
+    from the source" test honestly — near a star's centre there IS clearance —
+    so the only thing that catches them is the invariant they violate, which is
+    that the area at depth k+1 was 4 mm² when the area at depth k was 1.9 mm².
+
+    The previous level is the natural place to enforce it and the only place it
+    is cheap, because `_forest` is already holding it.
+    """
+    if params.engine != "arc" or params.round_center > 0.0 or not deeper:
+        return deeper
+    if not above:
+        return []
+    ceiling = unary_union([n.poly for n in above])
+    out: list[Polygon] = []
+    for poly in deeper:
+        clipped = poly.intersection(ceiling)
+        out.extend(g for g in _polygons(clipped) if g.area > params.tolerance ** 2)
+    return out
 
 
 def _chain(node: _Node) -> list[_Node]:
@@ -471,7 +573,8 @@ def _clean(pts: list[Pt], params: OffsetFillV2Params) -> list[Pt]:
     """Drop repeated points, then thin the stroke the way a ring is thinned."""
     out: list[Pt] = []
     for p in pts:
-        if not out or abs(p[0] - out[-1][0]) > _EPS_U or abs(p[1] - out[-1][1]) > _EPS_U:
+        eps = params.pos_eq_eps
+        if not out or abs(p[0] - out[-1][0]) > eps or abs(p[1] - out[-1][1]) > eps:
             out.append(p)
     if len(out) < 2:
         return []
