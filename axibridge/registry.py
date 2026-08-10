@@ -109,6 +109,12 @@ class SourceModule(ABC):
     #:                 layer creation.
     orientation: Literal["none", "param", "geometry"] | None = None
 
+    #: Determinism escape hatch: ``gencache.generate_cached`` skips the memo
+    #: entirely when this is False. Every built-in source is pure (same
+    #: params -> same geometry) so the default is True; a future source that
+    #: samples real-world state (e.g. sensor data) would flip it.
+    cacheable: bool = True
+
     @abstractmethod
     def generate(self, params: BaseModel) -> PathDocument:
         """Build and return a new document. Must not mutate shared state."""

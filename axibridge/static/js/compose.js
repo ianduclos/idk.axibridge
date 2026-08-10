@@ -133,7 +133,10 @@ const scrub = {
     this.pending = false;
     this.inflight = true;
     try {
-      await actions.refreshResolved();
+      // per-tick: geometry only. plan_job()/flatten_to_document() per layer
+      // is too expensive to pay on every slider frame; the change handler
+      // below runs one full refresh (stats+plan) on release.
+      await actions.refreshResolved(undefined, { plan: false, stats: false });
     } catch (e) {
       actions.oops(e);
     } finally {
@@ -401,6 +404,9 @@ export function initComposeTab() {
       $("master-t-val").textContent = `t = ${v.toFixed(3)}`;
       scrub.request(v);
     };
+    // Drag release: one full refresh (stats + plan) so the estimate and the
+    // travel overlay recover from the plan/stats-skipping ticks above.
+    mt.onchange = () => actions.refreshResolved();
   }
   renderTimeline();
 }

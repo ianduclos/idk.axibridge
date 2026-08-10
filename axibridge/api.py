@@ -25,7 +25,7 @@ from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import calibration, compose, depth_pro, logbuf, project_io, svg_io
+from . import calibration, compose, depth_pro, gencache, logbuf, project_io, svg_io
 from .assets import SEQUENCE_FRAME_RE, asset_store, safe_asset_name
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
@@ -303,7 +303,9 @@ def preview_generator(body: GenerateBody) -> dict[str, Any]:
         raise _fail(e, 404)
     try:
         with progress_scope(_gen_progress_sink()):
-            doc = src.generate(src.Params(**body.params))
+            # runs outside the session lock (a debounced slider hits this on
+            # every move) — gencache has its own lock, so this is safe.
+            doc = gencache.generate_cached(src, body.params)
     except Exception as e:
         raise _fail(e, 400)
     paths = [p for layer in doc.layers for p in layer.paths]
@@ -903,6 +905,7 @@ def reorder_layers(body: OrderBody) -> dict[str, Any]:
 @router.get("/compose/resolved")
 def get_resolved(
     t: float | None = Query(default=None, ge=0.0, le=1.0),
+    stats: bool = Query(default=True),
 ) -> dict[str, Any]:
     """Per-layer RESOLVED geometry (post transform+effects+occlusion) plus
     per-layer stats and time estimates. This is what the canvas renders —
@@ -911,25 +914,33 @@ def get_resolved(
     ``t`` (0..1) is the ephemeral master-timeline scrub: it drives every tween
     with ``follow_master`` set, live, without touching the stored project.
     Out-of-range values 422 (FastAPI bounds). Stats/estimates below reflect the
-    scrubbed geometry because they read from the same ``resolved`` map."""
+    scrubbed geometry because they read from the same ``resolved`` map.
+
+    ``stats=False`` skips the per-layer ``flatten_to_document`` + ``plan_job``
+    pass (est_s/pen_down_distance come back ``None``) — the timeline scrubs
+    through this on every tick and doesn't need per-frame timing, only the
+    geometry. ``paths`` is byte-identical either way."""
     try:
         resolved = session.resolved(master_t=t)
     except Exception as e:
         raise _fail(e, 400)
     pens = session.pens()
-    params = _estimator_params(manager.active_id)
-    consts = _consts()
+    params = _estimator_params(manager.active_id) if stats else None
+    consts = _consts() if stats else None
     layers_out = []
     for layer in session.project.layers:
         paths = resolved.get(layer.id, []) if layer.visible else []
         pen = pens.get(layer.pen_id or "")
-        pen_down = sum(p.length() for p in paths)
-        est = 0.0
-        if paths:
-            doc = compose.flatten_to_document(
-                session.project, {layer.id: paths}, pens, target=layer.id
-            )
-            est = plan_job(doc, params, consts=consts).total_duration
+        pen_down: float | None = None
+        est: float | None = None
+        if stats:
+            pen_down = sum(p.length() for p in paths)
+            est = 0.0
+            if paths:
+                doc = compose.flatten_to_document(
+                    session.project, {layer.id: paths}, pens, target=layer.id
+                )
+                est = plan_job(doc, params, consts=consts).total_duration
         # region layers resolve to nothing (never plotted) but the canvas
         # still needs their silhouette to select/drag — display-only paths
         display = paths
@@ -1665,6 +1676,7 @@ def new_project() -> dict[str, Any]:
     session._clip_cache.clear()
     session.clear_history()
     asset_store.replace_all({})
+    gencache.clear()
     return _project_payload()
 
 
@@ -1722,6 +1734,7 @@ def load_project(body: LoadBody) -> dict[str, Any]:
     session._clip_cache.clear()
     session.restore_history(history)
     asset_store.replace_all(assets)
+    gencache.clear()
     return _project_payload()
 
 
@@ -1763,4 +1776,5 @@ async def import_project(file: UploadFile) -> dict[str, Any]:
     session._clip_cache.clear()
     session.restore_history(history)
     asset_store.replace_all(assets)
+    gencache.clear()
     return _project_payload()

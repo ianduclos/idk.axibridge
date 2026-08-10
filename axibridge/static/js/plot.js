@@ -1109,7 +1109,7 @@ const previewScrub = {
     const t = animT(anim.i);
     S.masterT = t;
     try {
-      await actions.refreshResolved(t, { plan: false });
+      await actions.refreshResolved(t, { plan: false, stats: false });
     } catch (e) {
       stopPreview();
       actions.oops(e);

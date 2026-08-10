@@ -19,7 +19,7 @@ import threading
 from collections import OrderedDict, deque
 from typing import Any
 
-from . import compose, tween
+from . import compose, gencache, tween
 from .compose import (
     Affine,
     CanvasLayer,
@@ -505,7 +505,7 @@ class Session:
 
     def add_generated_layer(self, generator_id: str, params: dict[str, Any]) -> CanvasLayer:
         src = get_source(generator_id)
-        doc = src.generate(src.Params(**params))
+        doc = gencache.generate_cached(src, params)
         paths = [p for layer in doc.layers for p in layer.paths]
         layer = CanvasLayer(
             name=src.label,
@@ -532,7 +532,7 @@ class Session:
             if params is not None:
                 layer.source.params = params
             src = get_source(layer.source.generator)
-            doc = src.generate(src.Params(**self._effective_gen_params(layer)))
+            doc = gencache.generate_cached(src, self._effective_gen_params(layer))
             self.source_geometry[layer.id] = [p for lyr in doc.layers for p in lyr.paths]
             layer.source.type = "generator"  # a baked layer returns to live output
             layer.source.file = None  # snapshot is stale; rewritten on save
@@ -575,7 +575,7 @@ class Session:
                     "only pen, brush and shape layers take shape ops "
                     f"(this layer is {gen or layer.source.type})")
             src = get_source("shape")
-            validated = src.Params(**new_params)  # raises before any mutation
+            src.Params(**new_params)  # raises before any mutation
             self._checkpoint()
             layer.source.type = "generator"
             layer.source.generator = "shape"
@@ -583,7 +583,10 @@ class Session:
             layer.source.params = new_params
             if gen != "shape":
                 layer.name = src.label
-            doc = src.generate(validated)
+            # re-validates internally (gencache validates first, always) —
+            # cheap and keeps generate_cached's contract uniform; the raw
+            # dict (not the pre-validated model) is what the cache key needs.
+            doc = gencache.generate_cached(src, new_params)
             self.source_geometry[layer.id] = [p for lyr in doc.layers for p in lyr.paths]
             self._shaped_cache.pop(layer_id, None)
             return layer
@@ -678,7 +681,7 @@ class Session:
                     and updated.source.generator
                     and "frame" in get_source(updated.source.generator).Params.model_fields):
                 src = get_source(updated.source.generator)
-                doc = src.generate(src.Params(**self._effective_gen_params(updated)))
+                doc = gencache.generate_cached(src, self._effective_gen_params(updated))
                 self.source_geometry[updated.id] = [p for lyr in doc.layers for p in lyr.paths]
                 self._shaped_cache.pop(updated.id, None)
             return updated
@@ -1621,7 +1624,7 @@ class Session:
             out_layer.source.file = None
             try:
                 src = get_source(la.source.generator)
-                doc = src.generate(src.Params(**self._effective_gen_params(out_layer)))
+                doc = gencache.generate_cached(src, self._effective_gen_params(out_layer))
                 return out_layer, [p for lyr in doc.layers for p in lyr.paths]
             except Exception as e:
                 warnings.append(f"{la.name}: generator interpolation failed ({e}); stepped at midpoint")
@@ -1975,7 +1978,7 @@ class Session:
         for spec in LINEART_STACK_PRESETS[flavor]:
             params = {"image": image, "rotate": rotate, "width": width, **spec["params"]}
             src = get_source(spec["generator"])
-            doc = src.generate(src.Params(**params))
+            doc = gencache.generate_cached(src, params)
             paths = [p for lyr in doc.layers for p in lyr.paths]
             generated.append((
                 spec, params, paths,
@@ -2165,7 +2168,7 @@ class Session:
                 overrides[layer.id] = hit[1]  # same object -> shaped cache re-hits
                 continue
             try:
-                doc = gen.generate(gen.Params(**self._effective_gen_params(layer, master_t)))
+                doc = gencache.generate_cached(gen, self._effective_gen_params(layer, master_t))
                 paths = [p for lyr in doc.layers for p in lyr.paths]
             except Exception:
                 continue  # fall back to stored base geometry for this layer

@@ -199,7 +199,8 @@ export const actions = {
     // preview — drop it and its banner rather than fight over the canvas.
     if (S.docPreview) clearDocPreviewState();
     S.masterT = master_t;
-    const q = master_t == null ? "" : `?t=${encodeURIComponent(master_t)}`;
+    let q = master_t == null ? "" : `?t=${encodeURIComponent(master_t)}`;
+    if (opts.stats === false) q += q ? "&stats=false" : "?stats=false";
     S.resolved = await api.get(`/api/compose/resolved${q}`);
     canvas.setData({ layers: S.resolved.layers, images: mapGhosts() });
     renderLayerList();

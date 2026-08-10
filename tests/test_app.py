@@ -87,6 +87,44 @@ def test_layer_lifecycle_and_resolved(client):
     assert len(client.get("/api/project").json()["layers"]) == 1
 
 
+def test_resolved_stats_opt_out(client):
+    """?stats=false skips flatten_to_document/plan_job (est_s/pen_down_distance
+    come back None) but leaves ``paths`` byte-identical — the timeline scrub
+    hits this on every tick and only needs geometry."""
+    r = client.post("/api/layers/generate",
+                    json={"module": "lissajous", "params": {"size": 100, "points_per_turn": 256}})
+    liss_id = r.json()["id"]
+    r = client.post("/api/layers/generate",
+                    json={"module": "polygon", "params": {"sides": 6, "radius": 25, "filled": True}})
+    hex_id = r.json()["id"]
+    client.patch(f"/api/layers/{hex_id}", json={
+        "occluder": True,
+        "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 30, "f": 30},
+    })
+
+    with_stats = client.get("/api/compose/resolved").json()
+    without_stats = client.get("/api/compose/resolved?stats=false").json()
+
+    with_by_id = {l["id"]: l for l in with_stats["layers"]}
+    without_by_id = {l["id"]: l for l in without_stats["layers"]}
+    assert set(with_by_id) == set(without_by_id)
+    for lid, layer in with_by_id.items():
+        other = without_by_id[lid]
+        assert other["paths"] == layer["paths"]
+        assert other["stats"]["paths"] == layer["stats"]["paths"]
+        assert other["stats"]["points"] == layer["stats"]["points"]
+        assert other["stats"]["est_s"] is None
+        assert other["stats"]["pen_down_distance"] is None
+    assert with_by_id[liss_id]["stats"]["est_s"] > 0  # sanity: the with-stats side is real
+
+    # the scrub-t query composes with stats=false too
+    r = client.get(f"/api/compose/resolved?t=0.25&stats=false")
+    assert r.status_code == 200
+    for layer in r.json()["layers"]:
+        assert layer["stats"]["est_s"] is None
+        assert layer["stats"]["pen_down_distance"] is None
+
+
 def test_master_timeline_scrub_endpoint(client):
     a = client.post("/api/layers/generate",
                     json={"module": "polygon", "params": {"sides": 6, "radius": 15}}).json()

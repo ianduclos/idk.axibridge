@@ -63,6 +63,11 @@ class AssetStore:
         #: sequence prefix ("clip#") -> sorted concrete frame names; derived
         #: from ``self._data`` keys by ``_reindex`` (held under the lock).
         self._seq: dict[str, list[str]] = {}
+        #: monotonic counter, bumped under the lock by ``put``/``replace_all``.
+        #: ``gencache`` folds this into its cache key so any asset change
+        #: (upload, project load/new) implicitly orphans stale memo entries —
+        #: no explicit invalidation call needed anywhere that touches assets.
+        self._version = 0
 
     def _reindex(self) -> None:
         """Rebuild the sequence prefix index from the current keys. Cheap
@@ -83,7 +88,15 @@ class AssetStore:
             self._gray = {k: v for k, v in self._gray.items() if k[0] != name}
             self._alpha = {k: v for k, v in self._alpha.items() if k[0] != name}
             self._reindex()
+            self._version += 1
         return name
+
+    def version(self) -> int:
+        """Monotonic counter, bumped by ``put``/``replace_all``. Folded into
+        ``gencache``'s cache key so asset changes implicitly invalidate any
+        cached generate() result that read the old bytes."""
+        with self._lock:
+            return self._version
 
     def names(self) -> list[str]:
         with self._lock:
@@ -159,6 +172,7 @@ class AssetStore:
             self._gray.clear()
             self._alpha.clear()
             self._reindex()
+            self._version += 1
 
     def alpha(
         self,

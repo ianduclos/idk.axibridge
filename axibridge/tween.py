@@ -73,6 +73,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from .compose import Affine, CanvasLayer, EffectStep, Project, _layer_seed, guide_page as _guide_page, transform_paths
+from .gencache import generate_cached
 from .model import Path
 from .registry import EffectContext, get_effect, get_source
 
@@ -482,7 +483,7 @@ def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
         off = ega[2] + (egb[2] - ega[2]) * t
         if (off or ega[2] or egb[2]) and "frame" in src.Params.model_fields:
             params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + off))
-        doc = src.generate(src.Params(**params))
+        doc = generate_cached(src, params)
         return [p for lyr in doc.layers for p in lyr.paths]
     # structural mode: pointwise lerp (validated to match)
     return lerp_paths(geo_a, geo_b, t)
