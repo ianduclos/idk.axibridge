@@ -1,0 +1,211 @@
+"""Numerical engine for the Fast Marching Topo image source.
+
+The Fast Marching Method solves ``|grad(T)| * F = 1`` from one seed, where
+``F`` is a positive per-pixel speed.  The source wrapper turns image luma into
+``F``; this module owns only the travel-time solve and conversion of that map
+to iso-lines.
+
+The heap update is adapted from Roland Blok's FastMarchingTopoPlot
+(https://github.com/rolandblok/FastMarchingTopoPlot, Unlicense).  Contour
+extraction uses contourpy's compiled marching-squares implementation: tracing
+hundreds of levels by scanning an 800 px image in Python would otherwise cost
+more than the Fast Marching solve itself.
+"""
+
+from __future__ import annotations
+
+import heapq
+import math
+from collections.abc import Callable
+
+import contourpy
+import numpy as np
+
+Progress = Callable[[float], None]
+Line = list[tuple[float, float]]
+
+
+def travel_time(
+    speed: np.ndarray,
+    seed_x: int,
+    seed_y: int,
+    progress: Progress | None = None,
+) -> np.ndarray:
+    """Solve the first-order upwind Eikonal equation on a 4-neighbour grid.
+
+    ``speed`` is a 2-D array with positive values for reachable pixels.  Zero
+    or negative values remain unreachable (``inf`` in the result).  The seed
+    is clamped to the grid.  Fixed input always produces bit-identical output.
+    """
+    field = np.asarray(speed, dtype=np.float64)
+    if field.ndim != 2:
+        raise ValueError("speed must be a 2-D array")
+    h, w = field.shape
+    if h == 0 or w == 0:
+        return np.full((h, w), np.inf, dtype=np.float64)
+
+    sx = min(max(int(seed_x), 0), w - 1)
+    sy = min(max(int(seed_y), 0), h - 1)
+    n = w * h
+    speeds = field.ravel().tolist()
+    times = [math.inf] * n
+    frozen = bytearray(n)
+    seed = sy * w + sx
+    times[seed] = 0.0
+    heap: list[tuple[float, int]] = [(0.0, seed)]
+    done = 0
+    report_every = max(n // 100, 1)
+
+    while heap:
+        _, idx = heapq.heappop(heap)
+        if frozen[idx]:
+            continue
+        frozen[idx] = 1
+        done += 1
+        if progress is not None and (done == n or done % report_every == 0):
+            progress(done / n)
+
+        iy, ix = divmod(idx, w)
+        for nidx in (
+            idx - w if iy > 0 else -1,
+            idx + w if iy + 1 < h else -1,
+            idx - 1 if ix > 0 else -1,
+            idx + 1 if ix + 1 < w else -1,
+        ):
+            if nidx < 0 or frozen[nidx]:
+                continue
+            speed_here = speeds[nidx]
+            if speed_here <= 0.0 or not math.isfinite(speed_here):
+                continue
+
+            ny, nx = divmod(nidx, w)
+            tx = math.inf
+            ty = math.inf
+            if nx > 0 and frozen[nidx - 1]:
+                tx = times[nidx - 1]
+            if nx + 1 < w and frozen[nidx + 1]:
+                tx = min(tx, times[nidx + 1])
+            if ny > 0 and frozen[nidx - w]:
+                ty = times[nidx - w]
+            if ny + 1 < h and frozen[nidx + w]:
+                ty = min(ty, times[nidx + w])
+
+            step = 1.0 / speed_here
+            if not math.isfinite(tx):
+                new_time = ty + step
+            elif not math.isfinite(ty):
+                new_time = tx + step
+            else:
+                disc = 2.0 * step * step - (tx - ty) ** 2
+                new_time = (
+                    0.5 * (tx + ty + math.sqrt(disc))
+                    if disc >= 0.0
+                    else min(tx, ty) + step
+                )
+
+            if new_time < times[nidx]:
+                times[nidx] = new_time
+                heapq.heappush(heap, (new_time, nidx))
+
+    return np.asarray(times, dtype=np.float64).reshape((h, w))
+
+
+def iso_contours(
+    time_map: np.ndarray,
+    count: int,
+    progress: Progress | None = None,
+) -> list[Line]:
+    """Extract ``count`` evenly spaced travel-time iso-lines.
+
+    Levels exclude both extrema, matching the upstream generator.  Lines that
+    meet the image edge remain open; closed interior rings repeat their first
+    point exactly at the end, which keeps the path model's closure semantics
+    honest even though these are stroke-only paths.
+    """
+    values = np.asarray(time_map, dtype=np.float64)
+    if values.ndim != 2 or values.size == 0:
+        return []
+    finite = values[np.isfinite(values)]
+    if finite.size == 0:
+        return []
+    low = float(finite.min())
+    high = float(finite.max())
+    if high <= low:
+        return []
+
+    number = max(int(count), 2)
+    levels = np.linspace(low, high, number + 2, dtype=np.float64)[1:-1]
+    generator = contourpy.contour_generator(
+        z=values,
+        name="serial",
+        corner_mask=False,
+        line_type="Separate",
+    )
+    lines: list[Line] = []
+    for i, level in enumerate(levels):
+        for raw in generator.lines(float(level)):
+            if len(raw) < 2:
+                continue
+            line = [(float(x), float(y)) for x, y in raw]
+            if len(line) >= 3 and np.array_equal(raw[0], raw[-1]):
+                line[-1] = line[0]
+            lines.append(line)
+        if progress is not None:
+            progress((i + 1) / number)
+    return lines
+
+
+def clip_to_alpha(
+    lines: list[Line],
+    alpha: np.ndarray,
+    threshold: float = 0.5,
+) -> list[Line]:
+    """Split contour lines wherever the nearest alpha sample is transparent.
+
+    Closed rings are rotated to begin in transparent space before splitting;
+    without that, an opaque run crossing the arbitrary first/last vertex would
+    become two pen strokes.  Fully opaque rings keep their exact closure.
+    """
+    mask = np.asarray(alpha, dtype=np.float64)
+    if mask.ndim != 2 or mask.size == 0:
+        return []
+    h, w = mask.shape
+
+    def opaque(point: tuple[float, float]) -> bool:
+        x, y = point
+        xi = min(w - 1, max(0, int(round(x))))
+        yi = min(h - 1, max(0, int(round(y))))
+        return bool(mask[yi, xi] >= threshold)
+
+    output: list[Line] = []
+    for original in lines:
+        if len(original) < 2:
+            continue
+        line = original
+        closed = len(line) >= 3 and line[0] == line[-1]
+        flags = [opaque(pt) for pt in line]
+        if all(flags):
+            output.append(list(line))
+            continue
+        if not any(flags):
+            continue
+        if closed:
+            # Drop the repeated endpoint, rotate to a transparent sample, and
+            # put that sample at both ends so no opaque run crosses the seam.
+            body = line[:-1]
+            body_flags = flags[:-1]
+            cut = next(i for i, on in enumerate(body_flags) if not on)
+            body = body[cut:] + body[:cut]
+            line = body + [body[0]]
+
+        segment: Line = []
+        for point in line:
+            if opaque(point):
+                segment.append(point)
+            else:
+                if len(segment) >= 2:
+                    output.append(segment)
+                segment = []
+        if len(segment) >= 2:
+            output.append(segment)
+    return output

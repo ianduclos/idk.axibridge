@@ -1,10 +1,11 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-08-09
+updated: 2026-08-10
 machine: mac+pi
-summary: Offset fill gained a v2 sibling that plots as one continuous spiral instead of sixty concentric rings, with tolerance-driven flattening and an arc-native offset engine kept off by default; 789 tests green and v1 untouched.
+summary: Fast marching topo is now an image-driven generator — seeded Eikonal travel time turns brightness into contour spacing, with native asset/tone/alpha controls; 800 tests green and default 800px generation measured 1.3s.
 next:
+  - "Eye-check Fast marching topo on a real photo and a transparent PNG — defaults are numerically verified but not taste- or paper-verified (see HANDOFF/CHECKME)"
   - "Put ink on paper for offset_fill_v2 — the spiral is screen-verified only: does one unbroken stroke actually read better than rings, and is blend 0.5 the right default seam"
   - "Decide nothing yet about engine=arc: it agrees with shapely across the differential corpus but is 2-4x slower and non-default on purpose (a wrong prune is permanent ink, not a crash)"
   - "Ian eye-checks still stacked in CHECKME.md — the 08-08 group (taller bed, finer sliders, Smoothen) and the shell-only paths above it need a full relaunch"
@@ -13,6 +14,32 @@ next:
 handoff_for: ian
 ---
 # idk.axibridge — status
+
+**Session 2026-08-10 (Codex): Fast Marching Topo, native adaptation.**
+
+Ian pointed at Roland Blok's `FastMarchingTopoPlot` and chose a native
+axibridge adaptation over a literal browser-control port. The algorithm is
+intact: brightness becomes wave speed, a heap-based Fast Marching solve
+computes seeded Eikonal travel time, and evenly spaced iso-times become
+topographic stroke contours. Dark pixels slow the front and compress the
+lines; bright pixels spread them. `_fast_marching.py` owns the numerical
+engine; `fast_marching_topo.py` is the registered image source.
+
+Native means the shared 800px working canvas rather than percent-of-original,
+`resolution` 0.25×..2×, blur in paper mm, the common brightness/contrast/
+gamma/levels pipeline, rotation/frame/show-map behavior, normalized seed X/Y,
+and alpha clipping on by default. `asset_store.alpha(..., size=)` now resamples
+the crop mask to the exact working grid, and `_pixelgen.luma_grid` now admits
+sub-1× resolution for expensive generators. Contour extraction is compiled
+marching squares through an explicit `contourpy` dependency; the upstream
+Unlicense provenance is in both new module docstrings.
+
+Eleven focused tests pin the Eikonal field, slow-region density, unreachable
+pixels, deterministic contours, seed/invert changes, exact closure, resized
+alpha clipping, bounds/schema/orientation and monotone progress. Full suite:
+**800 passed**, typecheck clean. A default 800px 1200×800 gradient source took
+**1.3s**, producing 232 paths / 127,695 points. Not yet judged in the app or on
+paper; the concrete check is in `CHECKME.md` and `HANDOFF.md`.
 
 **Session 2026-08-09 (Opus 5): offset fill v2 — one spiral instead of sixty rings.**
 

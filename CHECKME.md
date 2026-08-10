@@ -1,4 +1,4 @@
-# Check when you're home — 2026-08-07, added to 08-08 and 08-09
+# Check when you're home — 2026-08-07, added to 08-08, 08-09 and 08-10
 
 Everything below passed its tests. None of it has passed *your eyes*, and the
 first group is the part no test here can reach. Delete this file once you've
@@ -98,6 +98,21 @@ been through it.
   Say if any of those defaults are backwards for how you work.
 - **The camera emoji is gone** from the generator dropdown — the group is just
   "Image-driven" now.
+
+## Added 2026-08-10 — Fast marching topo
+
+- Add **Fast marching topo** with a real tonal portrait. Dark areas should
+  compress the topographic rings into detail; bright areas should let them
+  breathe. Do the defaults (200 contours, speed offset 0.1) give a useful
+  first result, or just an impressive thicket?
+- Move Center X/Y away from the middle. Does the expanding-wave origin feel
+  like a compositional control, or is it too hidden/technical to predict?
+- Try a transparent PNG with **Clip transparent areas** on. The contours must
+  stop at the silhouette; watch specifically for tiny clipped fragments that
+  would cost a pen lift without contributing a mark.
+- Default 800px generation measured 1.3s and about 128k points on a gradient.
+  Try Resolution 0.5× and 2× on the same image: does the quality/time tradeoff
+  feel honest, and does plot-pass Simplify tame 1× without visibly changing it?
 
 ## Known and deliberate
 

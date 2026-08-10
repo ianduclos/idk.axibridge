@@ -55,8 +55,11 @@ class AssetStore:
             tuple[str, float, int, tuple[int, int] | None],
             tuple[list[list[float]], int, int],
         ] = {}
-        #: (name, rotate) -> alpha rows, or None for images without alpha
-        self._alpha: dict[tuple[str, int], list[list[float]] | None] = {}
+        #: (name, rotate, size) -> alpha rows, or None for images without alpha
+        self._alpha: dict[
+            tuple[str, int, tuple[int, int] | None],
+            list[list[float]] | None,
+        ] = {}
         #: sequence prefix ("clip#") -> sorted concrete frame names; derived
         #: from ``self._data`` keys by ``_reindex`` (held under the lock).
         self._seq: dict[str, list[str]] = {}
@@ -157,11 +160,16 @@ class AssetStore:
             self._alpha.clear()
             self._reindex()
 
-    def alpha(self, name: str, rotate: int = 0) -> list[list[float]] | None:
+    def alpha(
+        self,
+        name: str,
+        rotate: int = 0,
+        size: tuple[int, int] | None = None,
+    ) -> list[list[float]] | None:
         """Alpha channel as rows in [0,1], or None if absent/opaque. Same
-        dimensions as ``grayscale`` at the same rotation; unblurred — it's a
-        hard crop mask."""
-        key = (name, rotate % 360)
+        dimensions as ``grayscale`` at the same rotation and size; unblurred
+        apart from image resampling — it's a hard crop mask."""
+        key = (name, rotate % 360, size)
         with self._lock:
             if key in self._alpha:
                 return self._alpha[key]
@@ -172,6 +180,10 @@ class AssetStore:
         rows = None
         if "A" in img.getbands():
             a = img.getchannel("A")
+            if size is not None and a.size != size:
+                from PIL import Image
+
+                a = a.resize(size, Image.Resampling.LANCZOS)
             w, h = a.size
             px = a.tobytes()  # mode "L": one byte per pixel, row-major
             if min(px) < 255:  # an all-opaque alpha is no mask at all

@@ -1,8 +1,27 @@
 ---
 project: idk.axibridge
-updated: 2026-08-09
-entries: 5
+updated: 2026-08-10
+entries: 6
 ---
+
+### Eye-check: Fast marching topo — opened 2026-08-10, owner: ian
+- done: `fast_marching_topo` ships as a native image-driven generator: seeded
+  Eikonal/Fast Marching travel time, compiled marching-squares iso-lines,
+  shared image tone/frame/rotation controls, mm smoothing, 0.25×..2×
+  resolution and transparent-PNG clipping. Default 800px generation measured
+  1.3s on Mac; eleven focused tests plus the full suite are green (800).
+- next: try one real tonal portrait and one transparent PNG in the app. Check
+  whether 200 contours / speed offset 0.1 are useful defaults, whether moving
+  the seed reads as an intentional compositional control, and whether alpha
+  clipping leaves objectionable short pen strokes at the silhouette. Put one
+  result on paper only if the screen result earns it; plot-pass simplify is
+  available if the default ~128k-point output is too literal.
+- blockers: none.
+- context: `axibridge/sources/fast_marching_topo.py` is params/plumbing;
+  `_fast_marching.py` is the solver/tracer; `tests/test_fast_marching_topo.py`
+  pins the contract. ROADMAP keeps the older direct N-brightness-threshold
+  contours idea open because it is a different field, not an unfinished part
+  of this generator.
 
 ### Eye-check: taller bed, finer sliders, Smoothen — opened 2026-08-08, owner: ian
 - done: three unrelated asks, all committed to main (`d74f357`), suite 743.

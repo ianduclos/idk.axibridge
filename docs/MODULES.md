@@ -64,16 +64,17 @@ Three more `json_schema_extra` tags with frontend meaning:
   plotted.
 
 Generators with a `format:"asset"` param are listed under the
-"📷 Image-driven" optgroup in the Add-layer picker automatically.
+"Image-driven" optgroup in the Add-layer picker automatically.
 
 Image-driven modules read pixels through `assets.asset_store`:
-`grayscale(name, blur_px)` (cached per blur radius — derive `blur_px` from a
-`smoothing` mm param × image px / placed mm width) and `alpha(name)`
-(unblurred crop mask, `None` when absent). Shared brightness/contrast/gamma/
-levels behavior lives in `image_processing.py`; apply it to grayscale samples,
-not alpha masks. If the named asset is missing, **pass through / return empty,
-don't raise** in effects (a stored project must still resolve); generators
-may raise a helpful `ValueError`.
+`grayscale(name, blur_px, rotate, size)` (cached per blur radius and optional
+working size — derive `blur_px` from a `smoothing` mm param × image px / placed
+mm width) and `alpha(name, rotate, size)` (matching resampled, unblurred crop
+mask; `None` when absent). Shared brightness/contrast/gamma/levels behavior
+lives in `image_processing.py`; apply it to grayscale samples, not alpha masks.
+If the named asset is missing, **pass through / return empty, don't raise** in
+effects (a stored project must still resolve); generators may raise a helpful
+`ValueError`.
 
 ## Writing a Source (generator)
 
@@ -109,7 +110,9 @@ Contract:
   `sources/_pixelgen.PixelGenParams` (image/rotate/width/show_map + the
   collapsed Image processing group), sample darkness 0–255 through
   `ImageSampler`, and return via `pixel_doc(...)` — it scales the fixed
-  800-px working canvas to the `width` mm placement. Copy `sources/subline.py`.
+  800-px working canvas to the `width` mm placement. `luma_grid(..., scale=)`
+  accepts a bounded 0.25×..2× quality multiplier for generators whose cost
+  needs an explicit speed/detail tradeoff. Copy `sources/subline.py`.
 - **Geometry-as-params sources** (the canvas-tool family — draw mode, and
   the pen/brush tools it precedes): the param model carries CAPTURED
   geometry directly — a hidden `strokes`/`anchors` list, already in

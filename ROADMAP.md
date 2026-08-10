@@ -166,6 +166,17 @@ Cheapest-first:
 - **Image contours generator**: reuse `image_threshold`'s marching squares
   at N thresholds → nested contour rings (topographic shading). Most of the
   code already exists; it is the natural sibling of threshold + hatch.
+  **Related, but deliberately not the same item:** `fast_marching_topo`
+  shipped 2026-08-10 as an image-driven source adapted from Roland Blok's
+  FastMarchingTopoPlot. It solves a seeded Eikonal travel-time field where
+  bright pixels propagate quickly and dark pixels slowly, then traces evenly
+  spaced iso-times — so tone changes contour *spacing* around one expanding
+  wavefront. The direct N-brightness-threshold version above remains open:
+  it would follow image luminance itself and has no seed or propagation model.
+  Fast marching uses the shared 800px canvas, 0.25×..2× resolution, mm blur,
+  shared tone controls, frame assets and alpha clipping; default-size measured
+  1.3s on Mac. Engine/source split: `sources/_fast_marching.py` and
+  `sources/fast_marching_topo.py`; upstream is Unlicensed and credited there.
 - **Generator quality-of-life** (deferred by choice June 2026, when the ten
   plotterfun ports landed; the progress bar + grouped picker shipped then,
   and live param preview followed — `/api/generators/preview` + the dashed

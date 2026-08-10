@@ -16,6 +16,8 @@ dependencies = [
     "pydantic>=2.6",
     "pyserial>=3.5",
     "vpype>=1.14",
+    # fast-marching topo source: compiled marching-squares contour extraction
+    "contourpy>=1.2",
     # imported directly (not just via vpype): occlusion engine + SVG reader
     "shapely>=2.0",
     "svgelements>=1.9",
