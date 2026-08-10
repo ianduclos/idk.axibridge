@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import heapq
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 import contourpy
 import numpy as np
@@ -31,11 +31,30 @@ def travel_time(
     seed_y: int,
     progress: Progress | None = None,
 ) -> np.ndarray:
-    """Solve the first-order upwind Eikonal equation on a 4-neighbour grid.
+    """Solve the first-order upwind Eikonal equation on a 4-neighbour grid
+    from a single seed. Delegates to :func:`travel_time_multi` — kept as a
+    thin wrapper (not a copy) so the two paths cannot drift; output stays
+    bit-identical to the pre-multi-seed implementation.
+    """
+    return travel_time_multi(speed, [(seed_x, seed_y)], progress)
+
+
+def travel_time_multi(
+    speed: np.ndarray,
+    seeds: Iterable[tuple[int, int]],
+    progress: Progress | None = None,
+) -> np.ndarray:
+    """Solve the first-order upwind Eikonal equation on a 4-neighbour grid
+    from multiple seeds at once.
 
     ``speed`` is a 2-D array with positive values for reachable pixels.  Zero
-    or negative values remain unreachable (``inf`` in the result).  The seed
-    is clamped to the grid.  Fixed input always produces bit-identical output.
+    or negative values remain unreachable (``inf`` in the result).  Every
+    seed is clamped to the grid and starts at ``T=0`` in the same heap, so
+    the result is the pointwise minimum of the independent single-seed
+    solves — computed in one pass instead of one per seed.  Out-of-range or
+    duplicate seeds collapse harmlessly.  Fixed input always produces
+    bit-identical output (tie-breaks are by flat index, not insertion order,
+    since heap entries are ``(time, idx)`` and indices are unique).
     """
     field = np.asarray(speed, dtype=np.float64)
     if field.ndim != 2:
@@ -44,15 +63,22 @@ def travel_time(
     if h == 0 or w == 0:
         return np.full((h, w), np.inf, dtype=np.float64)
 
-    sx = min(max(int(seed_x), 0), w - 1)
-    sy = min(max(int(seed_y), 0), h - 1)
     n = w * h
     speeds = field.ravel().tolist()
     times = [math.inf] * n
     frozen = bytearray(n)
-    seed = sy * w + sx
-    times[seed] = 0.0
-    heap: list[tuple[float, int]] = [(0.0, seed)]
+    heap: list[tuple[float, int]] = []
+    seen_idx: set[int] = set()
+    for seed_x, seed_y in seeds:
+        sx = min(max(int(seed_x), 0), w - 1)
+        sy = min(max(int(seed_y), 0), h - 1)
+        idx = sy * w + sx
+        if idx in seen_idx:
+            continue
+        seen_idx.add(idx)
+        times[idx] = 0.0
+        heap.append((0.0, idx))
+    heapq.heapify(heap)
     done = 0
     report_every = max(n // 100, 1)
 
@@ -110,17 +136,20 @@ def travel_time(
     return np.asarray(times, dtype=np.float64).reshape((h, w))
 
 
-def iso_contours(
+def iso_contour_levels(
     time_map: np.ndarray,
     count: int,
     progress: Progress | None = None,
-) -> list[Line]:
-    """Extract ``count`` evenly spaced travel-time iso-lines.
+) -> list[list[Line]]:
+    """Extract ``count`` evenly spaced travel-time iso-lines, grouped by
+    level in arrival-time order (one inner list per level).
 
     Levels exclude both extrema, matching the upstream generator.  Lines that
     meet the image edge remain open; closed interior rings repeat their first
     point exactly at the end, which keeps the path model's closure semantics
-    honest even though these are stroke-only paths.
+    honest even though these are stroke-only paths. ``iso_contours`` flattens
+    this same grouping; callers that need per-level structure (boundary
+    threading) use this directly instead of re-deriving it.
     """
     values = np.asarray(time_map, dtype=np.float64)
     if values.ndim != 2 or values.size == 0:
@@ -141,17 +170,35 @@ def iso_contours(
         corner_mask=False,
         line_type="Separate",
     )
-    lines: list[Line] = []
+    result: list[list[Line]] = []
     for i, level in enumerate(levels):
+        level_lines: list[Line] = []
         for raw in generator.lines(float(level)):
             if len(raw) < 2:
                 continue
             line = [(float(x), float(y)) for x, y in raw]
             if len(line) >= 3 and np.array_equal(raw[0], raw[-1]):
                 line[-1] = line[0]
-            lines.append(line)
+            level_lines.append(line)
+        result.append(level_lines)
         if progress is not None:
             progress((i + 1) / number)
+    return result
+
+
+def iso_contours(
+    time_map: np.ndarray,
+    count: int,
+    progress: Progress | None = None,
+) -> list[Line]:
+    """Extract ``count`` evenly spaced travel-time iso-lines as a flat list.
+
+    Delegates to :func:`iso_contour_levels` and flattens in the same order,
+    so output stays bit-identical to the pre-grouping implementation.
+    """
+    lines: list[Line] = []
+    for level_lines in iso_contour_levels(time_map, count, progress):
+        lines.extend(level_lines)
     return lines
 
 
