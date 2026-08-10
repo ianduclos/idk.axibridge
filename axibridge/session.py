@@ -17,7 +17,7 @@ import math
 import random
 import threading
 from collections import OrderedDict, deque
-from typing import Any
+from typing import Any, NamedTuple
 
 from . import compose, gencache, tween
 from .compose import (
@@ -58,6 +58,60 @@ from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
 UNDO_DEPTH = 50  # Ian's call, 2026-08-07, off the measurement above
 #: ~65 MB of retained path points at ~130 bytes each.
 UNDO_GEOMETRY_BUDGET_POINTS = 500_000
+
+#: Points retained by the tween + clip-follow caches TOGETHER (same ~130 B per
+#: point calibration as the undo budget). Both caches hold one entry per
+#: (layer, master value) visited, so an animated project fills them by
+#: scrubbing; the budget is what stops a long scrub from retaining every frame
+#: of every layer for the life of the session. Eviction is RANDOM, for the same
+#: reason ``gencache`` gives: playback is cyclic, and LRU at capacity evicts
+#: precisely the frame about to be reused.
+TWEEN_CACHE_BUDGET_POINTS = 3_000_000
+
+
+class _TweenEntry(NamedTuple):
+    """One materialised tween, for one content key.
+
+    ``refs`` is the load-bearing field: the cache key embeds ``id()`` of each
+    endpoint's geometry list, and a key whose object has been collected can be
+    matched by an unrelated list that recycled the id — a silently wrong hit.
+    Holding the lists keeps every id in the key belonging to a live object, the
+    same discipline ``compose._ClipEntry`` and ``_ShapedEntry`` follow."""
+
+    paths: list[Path]
+    refs: tuple
+    points: int
+
+
+class _ClipFollowEntry(NamedTuple):
+    """One clip-advanced generator result. The key is pure content (params +
+    frame offset + master value), so there is no id() to keep alive."""
+
+    paths: list[Path]
+    points: int
+
+
+def _evict_tween_caches(
+    caches: tuple[dict[str, "OrderedDict[str, Any]"], ...],
+    protect: tuple[int, str, str],
+) -> None:
+    """Random-evict across the tween and clip caches (one shared budget) until
+    the point total fits. ``protect`` is ``(cache index, layer id, key)`` — the
+    entry just inserted, which must survive its own insert."""
+    budget = int(TWEEN_CACHE_BUDGET_POINTS * gencache.cache_budget_multiplier())
+    total = sum(e.points for cache in caches for m in cache.values() for e in m.values())
+    while total > budget:
+        candidates = [(i, layer_id, key)
+                      for i, cache in enumerate(caches)
+                      for layer_id, m in cache.items()
+                      for key in m
+                      if (i, layer_id, key) != protect]
+        if not candidates:
+            return
+        i, layer_id, key = random.choice(candidates)
+        total -= caches[i][layer_id].pop(key).points
+        if not caches[i][layer_id]:
+            del caches[i][layer_id]
 
 
 def _nudge_onto(coords: list[float], extent: float) -> float:
@@ -180,7 +234,9 @@ class Session:
         self.svg_files: dict[str, str] = {}
         #: project-relative staging/<id>.svg -> frozen staged document.
         self.staging_documents: dict[str, PathDocument] = {}
-        self._shaped_cache: dict[str, tuple[str, list[Path]]] = {}
+        #: layer id -> {shape key: entry}, recency-ordered. Multi-entry so a
+        #: scrub that returns to a frame re-hits (see compose._ShapedEntry).
+        self._shaped_cache: dict[str, "OrderedDict[str, compose._ShapedEntry]"] = {}
         #: occlusion-stage memo (the expensive one). Content-keyed on geometry
         #: identity + the occluder properties, so it needs no invalidation —
         #: see ``compose.OcclusionCache`` for why the key is complete.
@@ -207,14 +263,15 @@ class Session:
         #: same key collapse into ONE undo entry (live slider runs on a latched
         #: layer), so undo returns to the state before the run started.
         self._coalesce_key: tuple | None = None
-        #: tween layer id -> (content key, materialised paths)
-        self._tween_cache: dict[str, tuple[str, list[Path]]] = {}
-        #: frame-follow generator layer id -> (content key, clip-advanced paths).
+        #: tween layer id -> {content key: entry}, recency-ordered. One entry
+        #: per master value visited, so scrubbing back to a frame re-hits.
+        self._tween_cache: dict[str, "OrderedDict[str, _TweenEntry]"] = {}
+        #: frame-follow generator layer id -> {content key: entry}.
         #: An EPHEMERAL scrub overlay: computed only when resolving with a
         #: master_t, never written into ``source_geometry`` (the user's stored
         #: geometry stays byte-identical under a scrub). Keyed on content, so a
         #: cache hit hands back the SAME list object and the shaped cache re-hits.
-        self._clip_cache: dict[str, tuple[str, list[Path]]] = {}
+        self._clip_cache: dict[str, "OrderedDict[str, _ClipFollowEntry]"] = {}
         #: grid-sheet frame caches, valid between project mutations only
         #: (cleared on every checkpoint/undo/history event). Keyed by
         #: (t, pens-signature, assets-signature) — pens and assets can change
@@ -2163,16 +2220,22 @@ class Session:
             key = json.dumps(
                 {"p": src.params, "off": layer.frame_offset, "mt": master_t},
                 sort_keys=True)
-            hit = self._clip_cache.get(layer.id)
-            if hit is not None and hit[0] == key:
-                overrides[layer.id] = hit[1]  # same object -> shaped cache re-hits
+            layer_map = self._clip_cache.get(layer.id)
+            hit = layer_map.get(key) if layer_map is not None else None
+            if hit is not None:
+                layer_map.move_to_end(key)
+                overrides[layer.id] = hit.paths  # same object -> shaped cache re-hits
                 continue
             try:
                 doc = gencache.generate_cached(gen, self._effective_gen_params(layer, master_t))
                 paths = [p for lyr in doc.layers for p in lyr.paths]
             except Exception:
                 continue  # fall back to stored base geometry for this layer
-            self._clip_cache[layer.id] = (key, paths)
+            if layer_map is None:
+                layer_map = self._clip_cache[layer.id] = OrderedDict()
+            layer_map[key] = _ClipFollowEntry(paths, sum(len(p.points) for p in paths))
+            layer_map.move_to_end(key)
+            _evict_tween_caches((self._tween_cache, self._clip_cache), (1, layer.id, key))
             overrides[layer.id] = paths
         return overrides
 
@@ -2222,14 +2285,21 @@ class Session:
                     local = 0.0 if mt < wf else 1.0
                 override_t = tween.map_time_curve(local, params.get("time_curve", "linear"))
             refs = []
+            #: the endpoint geometry lists whose id() the key embeds — the
+            #: entry holds them so no collected list's id can be recycled into
+            #: a false hit (see _TweenEntry)
+            ref_objects: list[list[Path]] = []
             for rid in params.get("a"), params.get("b"):
                 try:
                     ref = self.project.layer(rid)
+                    ref_geo = read_geo.get(ref.id)
+                    if ref_geo is not None:
+                        ref_objects.append(ref_geo)
                     refs.append({
                         "src": ref.source.model_dump(),
                         "tf": ref.transform.model_dump(),
                         "fx": [s.model_dump() for s in ref.effects],
-                        "geo": id(read_geo.get(ref.id)),
+                        "geo": id(ref_geo),
                         "fo": ref.frame_offset,
                         "ff": ref.frame_follow,
                     })
@@ -2238,14 +2308,24 @@ class Session:
             key = json.dumps(
                 {"refs": refs, "p": params, "mt": override_t, "master": clamped_master},
                 sort_keys=True)
-            hit = self._tween_cache.get(layer.id)
-            if hit is not None and hit[0] == key:
+            layer_map = self._tween_cache.get(layer.id)
+            hit = layer_map.get(key) if layer_map is not None else None
+            if hit is not None:
+                layer_map.move_to_end(key)
+                # the SAME list object every time this key comes round, which
+                # is what lets compose's id(src)-keyed shaped cache re-hit
+                self.source_geometry[layer.id] = hit.paths
                 if geo is not None:
-                    geo[layer.id] = hit[1]
+                    geo[layer.id] = hit.paths
                 continue
             paths = tween.materialize(
                 layer, self.project, read_geo, override_t, clamped_master)
-            self._tween_cache[layer.id] = (key, paths)
+            if layer_map is None:
+                layer_map = self._tween_cache[layer.id] = OrderedDict()
+            layer_map[key] = _TweenEntry(paths, tuple(ref_objects),
+                                         sum(len(p.points) for p in paths))
+            layer_map.move_to_end(key)
+            _evict_tween_caches((self._tween_cache, self._clip_cache), (0, layer.id, key))
             self.source_geometry[layer.id] = paths  # replaced wholesale, never mutated
             if geo is not None:
                 geo[layer.id] = paths

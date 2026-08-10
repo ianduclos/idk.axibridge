@@ -139,6 +139,31 @@ gap: a visible **region** layer replaces the shaped geometry of everything
 below it on every resolve, so those layers miss the cache every time — slow,
 never wrong.
 
+**Many frames, not one (2026-08-11).** Every per-layer cache in the resolve
+path — the session's `_shaped_cache`, `_tween_cache` and `_clip_cache`, and
+all three maps inside `OcclusionCache` — held ONE slot per layer with the
+master-timeline value folded into the key, so an animated project evicted
+frame *t* the moment frame *t′* was resolved: scrubbing back, or looping,
+recomputed everything. They are now multi-entry, bounded by point/coordinate
+budgets (all scaled by `AXIBRIDGE_CACHE_BUDGET`, the same env multiplier
+`gencache` reads) instead of by "one". `OcclusionCache.end()` accordingly
+prunes only entries belonging to layers that no longer exist, then evicts to
+budget — it no longer drops whatever the current resolve did not touch.
+Eviction is **random** for the tween/clip pair (playback is cyclic; LRU at
+capacity evicts precisely the frame about to be reused — `gencache`'s
+argument) and **LRU** for the shaped and occlusion caches, where scrub
+locality dominates. The chain only pays off because each layer hands back the
+*same object*: a tween cache hit returns the same paths list, which keeps the
+`id(src)`-keyed shape key stable, which returns the same shaped list, which
+keeps the `id(shaped)`-keyed mask and clip keys stable. Multi-entry also makes
+the strong-reference rule above load-bearing rather than incidental — with one
+slot per layer a stale id was overwritten before it could lie, so every entry
+whose key embeds an `id()` now pins that object explicitly (`_ShapedEntry.src`,
+`_TweenEntry.refs`, `_MaskEntry.shaped`, `_ClipEntry.subject`/`refs`,
+`_UnionEntry.refs`). `tests/test_scrub_caches.py` pins both halves: cached
+resolves equal cold ones frame by frame, and a revisited warm frame builds no
+mask, runs no clip, shapes nothing and generates nothing.
+
 ### Pens & diameter-driven registration
 
 The pen library is **global** (`~/.axibridge/pens.json` — the physical

@@ -34,8 +34,10 @@ masks, so the compositor talks to shapely directly.
 from __future__ import annotations
 
 import hashlib
+import itertools
 import json
 import uuid
+from collections import OrderedDict
 from typing import Any, Literal, NamedTuple
 
 from pydantic import BaseModel, Field, model_validator
@@ -44,6 +46,7 @@ from shapely.geometry import LineString, Point as ShPoint, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
+from .gencache import cache_budget_multiplier
 from .model import Layer, Path, PathDocument, is_closed
 from .registry import EffectContext, get_effect
 from .stores import Pen
@@ -555,6 +558,62 @@ def line_diameter_for(layer: CanvasLayer, pens: dict[str, Pen]) -> float:
 # layer under a visible region with a fresh list each resolve, so those layers
 # (and anything they occlude) legitimately miss every time. That is slow, not
 # wrong.
+#
+# ANIMATION (2026-08-11): every entry used to be pruned unless the CURRENT
+# resolve touched it, which made the cache a one-frame memo — scrubbing back to
+# a frame, or looping, rebuilt every mask and every clip. The cache now keeps
+# entries across resolves and bounds itself with budgets instead: ``end()``
+# drops only what belongs to layers that no longer exist, then evicts LRU until
+# the budgets hold. LRU (not the random policy ``gencache`` uses) because
+# scrubbing has strong local recency — neighbouring frames are revisited far
+# more than a cyclic full-timeline replay of shapely masks.
+
+
+#: Points of clip RESULT geometry retained across resolves (~130 B/point).
+OCCLUSION_CLIP_BUDGET_POINTS = 3_000_000
+#: Shapely coordinates retained across resolves, masks and unions together —
+#: counted once per entry at insert (walking a MultiPolygon is not free).
+OCCLUSION_MASK_BUDGET_COORDS = 2_000_000
+
+#: Global recency stamp. Masks and unions live in two dicts but share one
+#: budget, so picking the least-recently-used of the pair needs a comparable
+#: clock; each dict stays recency-ordered (``move_to_end`` on hit) so only the
+#: two heads are ever compared.
+_occ_seq = itertools.count()
+
+
+def _geom_coords(geom: BaseGeometry | None) -> int:
+    """Shapely coordinate count: exterior + interior rings, recursively for
+    multi-part geometries. The budget unit for masks and unions."""
+    if geom is None or geom.is_empty:
+        return 0
+    parts = getattr(geom, "geoms", None)
+    if parts is not None:
+        return sum(_geom_coords(g) for g in parts)
+    exterior = getattr(geom, "exterior", None)
+    if exterior is not None:
+        return len(exterior.coords) + sum(len(r.coords) for r in geom.interiors)
+    return len(getattr(geom, "coords", ()))
+
+
+def _path_points(paths: list[Path]) -> int:
+    return sum(len(p.points) for p in paths)
+
+
+def _sig_layer_ids(sig: tuple) -> set[str]:
+    """Every layer id named anywhere in a (possibly nested) union signature.
+    Signatures are tuples of ``(layer_id, id(shaped), diameter, margin)`` items,
+    themselves nested one level for a multi-channel union, plus the ``"|"``
+    marker — the only strings are layer ids and that marker."""
+    out: set[str] = set()
+    stack: list[Any] = [sig]
+    while stack:
+        el = stack.pop()
+        if isinstance(el, tuple):
+            stack.extend(el)
+        elif isinstance(el, str) and el != "|":
+            out.add(el)
+    return out
 
 
 class _Channel(NamedTuple):
@@ -570,23 +629,39 @@ class _Channel(NamedTuple):
 
 
 class _ClipEntry(NamedTuple):
-    key: tuple
     subject: list[Path]     # keeps the clipped layer's shaped list alive
-    refs: tuple             # keeps every occluder list named in ``key`` alive
+    refs: tuple             # keeps every occluder list named in the key alive
     result: list[Path]
+    points: int
+
+
+class _MaskEntry(NamedTuple):
+    shaped: list[Path]      # keeps the list whose id() is in the key alive
+    mask: BaseGeometry | None
+    coords: int
+    seq: int
+
+
+class _UnionEntry(NamedTuple):
+    refs: tuple             # keeps every list named in the signature alive
+    mask: BaseGeometry
+    coords: int
+    seq: int
 
 
 class OcclusionCache:
     """Session-owned memo for the occlusion stage. Content-keyed, so it needs
-    no explicit invalidation — see the safety argument above. ``resolve_project``
-    prunes whatever it did not touch, which bounds the memory."""
+    no explicit invalidation — see the safety argument above. Entries survive
+    across resolves (a scrub revisits frames); ``end()`` drops whatever belongs
+    to deleted layers and then evicts LRU down to the budgets."""
 
     def __init__(self) -> None:
-        self._masks: dict[tuple, tuple[list[Path], BaseGeometry | None]] = {}
-        self._unions: dict[tuple, tuple[tuple, BaseGeometry]] = {}
-        self._clips: dict[str, _ClipEntry] = {}
-        self._touched_masks: set[tuple] = set()
-        self._touched_unions: set[tuple] = set()
+        #: (layer_id, id(shaped), diameter, margin) -> mask
+        self._masks: "OrderedDict[tuple, _MaskEntry]" = OrderedDict()
+        #: union signature -> merged mask
+        self._unions: "OrderedDict[tuple, _UnionEntry]" = OrderedDict()
+        #: (layer_id, (id(subject), occluder sig)) -> clip result
+        self._clips: "OrderedDict[tuple[str, tuple], _ClipEntry]" = OrderedDict()
 
     def clear(self) -> None:
         self._masks.clear()
@@ -595,49 +670,140 @@ class OcclusionCache:
 
     # -- one resolve ------------------------------------------------------
     def begin(self) -> None:
-        self._touched_masks.clear()
-        self._touched_unions.clear()
+        """Resolve boundary. Nothing to reset any more — recency is tracked
+        per entry — but the call marks the span for future bookkeeping."""
 
     def end(self, live_layer_ids: set[str]) -> None:
-        self._masks = {k: v for k, v in self._masks.items() if k in self._touched_masks}
-        self._unions = {k: v for k, v in self._unions.items() if k in self._touched_unions}
-        self._clips = {k: v for k, v in self._clips.items() if k in live_layer_ids}
+        """Drop entries for layers that no longer exist, then enforce the
+        budgets. NOT "drop what this resolve did not touch": that is exactly
+        what made the cache single-frame."""
+        for key in [k for k in self._clips if k[0] not in live_layer_ids]:
+            del self._clips[key]
+        for key in [k for k in self._masks if k[0] not in live_layer_ids]:
+            del self._masks[key]
+        for key in [k for k in self._unions
+                    if not _sig_layer_ids(k) <= live_layer_ids]:
+            del self._unions[key]
+        self._evict()
+
+    def _evict(self) -> None:
+        clip_budget = int(OCCLUSION_CLIP_BUDGET_POINTS * cache_budget_multiplier())
+        total = sum(e.points for e in self._clips.values())
+        while total > clip_budget and self._clips:
+            _k, victim = self._clips.popitem(last=False)  # LRU
+            total -= victim.points
+        mask_budget = int(OCCLUSION_MASK_BUDGET_COORDS * cache_budget_multiplier())
+        total = (sum(e.coords for e in self._masks.values())
+                 + sum(e.coords for e in self._unions.values()))
+        while total > mask_budget and (self._masks or self._unions):
+            # least recently used of the two dicts' heads — one shared budget
+            m = next(iter(self._masks.values()), None)
+            u = next(iter(self._unions.values()), None)
+            if u is None or (m is not None and m.seq < u.seq):
+                _k, victim = self._masks.popitem(last=False)
+            else:
+                _k, victim = self._unions.popitem(last=False)
+            total -= victim.coords
 
     def mask(self, layer: CanvasLayer, shaped: list[Path],
              diameter: float, margin: float) -> BaseGeometry | None:
         key = (layer.id, id(shaped), diameter, margin)
-        self._touched_masks.add(key)
         hit = self._masks.get(key)
-        if hit is not None and hit[0] is shaped:
-            return hit[1]
+        if hit is not None and hit.shaped is shaped:
+            self._masks[key] = hit._replace(seq=next(_occ_seq))
+            self._masks.move_to_end(key)
+            return hit.mask
         built = build_mask(shaped, diameter, margin)
-        self._masks[key] = (shaped, built)
+        self._masks[key] = _MaskEntry(shaped, built, _geom_coords(built), next(_occ_seq))
+        self._masks.move_to_end(key)
         return built
 
     def union(self, sig: tuple, refs: tuple, geoms: list[BaseGeometry]) -> BaseGeometry:
-        self._touched_unions.add(sig)
         hit = self._unions.get(sig)
         if hit is not None:
-            return hit[1]
+            self._unions[sig] = hit._replace(seq=next(_occ_seq))
+            self._unions.move_to_end(sig)
+            return hit.mask
         merged = unary_union(geoms)
-        self._unions[sig] = (refs, merged)
+        self._unions[sig] = _UnionEntry(refs, merged, _geom_coords(merged), next(_occ_seq))
+        self._unions.move_to_end(sig)
         return merged
 
     def clipped(self, layer_id: str, key: tuple, subject: list[Path],
                 refs: tuple, mask: BaseGeometry) -> list[Path]:
-        hit = self._clips.get(layer_id)
-        if hit is not None and hit.key == key and hit.subject is subject:
+        entry_key = (layer_id, key)
+        hit = self._clips.get(entry_key)
+        if hit is not None and hit.subject is subject:
+            self._clips.move_to_end(entry_key)
             return hit.result
         result = clip_paths(subject, mask)
-        self._clips[layer_id] = _ClipEntry(key, subject, refs, result)
+        self._clips[entry_key] = _ClipEntry(
+            subject, refs, result, _path_points(result))
+        self._clips.move_to_end(entry_key)
         return result
+
+
+#: Points of shaped geometry retained across resolves, all layers together.
+#: The entries also pin their SOURCE lists (see ``_ShapedEntry``), so the real
+#: retention is roughly twice this; 3M points is ~0.4 GB at 130 B/point on a
+#: pathological project and a few MB on a normal one.
+SHAPED_CACHE_BUDGET_POINTS = 3_000_000
+
+_shaped_seq = itertools.count()
+
+#: Stand-in for "this layer has no source geometry". ONE shared object rather
+#: than a fresh ``[]`` per resolve so its id is stable: the shape key hashes
+#: ``id(src)``, and a fresh empty list every frame would mint a new cache entry
+#: every frame (harmless when the cache held one slot per layer, an unbounded
+#: trickle now that it holds many). Never mutated — nothing in the resolve path
+#: writes into a source list.
+_NO_SOURCE: list[Path] = []
+
+
+class _ShapedEntry(NamedTuple):
+    """One (layer, shape key) result.
+
+    ``src`` is the strong reference that makes the key sound: ``_shape_key``
+    hashes ``id(src)``, and a dropped source list could otherwise be collected
+    and have its id recycled by a different list — a silently wrong hit. Same
+    discipline as ``_ClipEntry``/``_MaskEntry``.
+
+    ``seq`` is a global recency stamp: entries are bucketed per layer, so
+    least-recently-used across all layers needs a comparable clock."""
+
+    shaped: list[Path]
+    src: list[Path]
+    points: int
+    seq: int
+
+
+def _evict_shaped(cache: dict[str, "OrderedDict[str, _ShapedEntry]"],
+                  protect: tuple[str, str]) -> None:
+    """LRU-evict across every layer's entries until the point budget holds.
+    Each layer's map is recency-ordered, so only the heads compete."""
+    budget = int(SHAPED_CACHE_BUDGET_POINTS * cache_budget_multiplier())
+    total = sum(e.points for m in cache.values() for e in m.values())
+    while total > budget:
+        oldest: tuple[int, str, str] | None = None
+        for layer_id, m in cache.items():
+            head = next(iter(m.items()), None)    # this layer's LRU entry
+            if head is None or (layer_id, head[0]) == protect:
+                continue
+            if oldest is None or head[1].seq < oldest[0]:
+                oldest = (head[1].seq, layer_id, head[0])
+        if oldest is None:
+            return
+        _seq, layer_id, key = oldest
+        total -= cache[layer_id].pop(key).points
+        if not cache[layer_id]:
+            del cache[layer_id]
 
 
 def resolve_project(
     project: Project,
     source_geometry: dict[str, list[Path]],
     pens: dict[str, Pen],
-    shaped_cache: dict[str, tuple[str, list[Path]]] | None = None,
+    shaped_cache: dict[str, "OrderedDict[str, _ShapedEntry]"] | None = None,
     occlusion_cache: "OcclusionCache | None" = None,
 ) -> dict[str, list[Path]]:
     """Resolve every visible layer. Returns ``{layer_id: resolved paths}``.
@@ -660,15 +826,26 @@ def resolve_project(
     for layer in project.layers:
         if not layer.visible or layer.region:
             continue
-        src = source_geometry.get(layer.id, [])
+        src = source_geometry.get(layer.id, _NO_SOURCE)
         if shaped_cache is not None:
             key = _shape_key(layer, src, page)
-            hit = shaped_cache.get(layer.id)
-            if hit is not None and hit[0] == key:
-                shaped[layer.id] = hit[1]
+            layer_map = shaped_cache.get(layer.id)
+            if layer_map is None:
+                layer_map = shaped_cache[layer.id] = OrderedDict()
+            hit = layer_map.get(key)
+            if hit is not None and hit.src is src:
+                # SAME list object back, never a copy: occlusion keys on
+                # id(shaped), so stable identity across frames is what lets the
+                # occlusion memo hit on a revisited frame.
+                layer_map[key] = hit._replace(seq=next(_shaped_seq))
+                layer_map.move_to_end(key)
+                shaped[layer.id] = hit.shaped
                 continue
-            shaped[layer.id] = shape_layer(layer, src, page)
-            shaped_cache[layer.id] = (key, shaped[layer.id])
+            out = shape_layer(layer, src, page)
+            shaped[layer.id] = out
+            layer_map[key] = _ShapedEntry(out, src, _path_points(out), next(_shaped_seq))
+            layer_map.move_to_end(key)
+            _evict_shaped(shaped_cache, (layer.id, key))
         else:
             shaped[layer.id] = shape_layer(layer, src, page)
 
