@@ -41,6 +41,12 @@ occult = ["vpype-occult>=0.4"]
 #   .venv/bin/python -m playwright install chromium
 # Without either, that module skips — the Pi stays backend-only.
 dev = ["pytest>=8", "httpx>=0.27", "playwright>=1.44"]
+# Optional compiled accelerator for the Fast Marching Topo solve
+# (axibridge/sources/_fast_marching.py). The pure-Python heap solver is
+# always available and is the tested reference — this is a speed-only
+# upgrade, never required. Deliberately excluded from the Pi's normal
+# install so a machine with no compiler toolchain still works unaided.
+fast = ["scikit-fmm>=2024"]
 
 [project.scripts]
 axibridge = "axibridge.__main__:main"

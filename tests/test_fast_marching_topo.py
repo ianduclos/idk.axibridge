@@ -68,6 +68,15 @@ def test_alpha_clipping_splits_lines_and_preserves_opaque_closed_ring():
 
 
 @pytest.fixture(autouse=True)
+def pin_python_solver(monkeypatch):
+    # These tests pin exact geometry (cardinal-exact travel times, hand
+    # verified iso-contours) against the pure-Python heap solver — that is
+    # the tested reference. Force it regardless of whether scikit-fmm
+    # happens to be installed in the test environment.
+    monkeypatch.setattr(fmm, "USE_SKFMM", False)
+
+
+@pytest.fixture(autouse=True)
 def small_working_canvas(monkeypatch):
     monkeypatch.setattr(_pixelgen, "WORK_W", 72)
     monkeypatch.setattr(_pixelgen, "MAX_H", 144)

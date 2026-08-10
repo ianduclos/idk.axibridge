@@ -10,6 +10,35 @@ The heap update is adapted from Roland Blok's FastMarchingTopoPlot
 extraction uses contourpy's compiled marching-squares implementation: tracing
 hundreds of levels by scanning an 800 px image in Python would otherwise cost
 more than the Fast Marching solve itself.
+
+Solver selection: the travel-time solve itself (``travel_time_multi``) can
+run on two backends. The pure-Python heap solver above is always available
+and is the *tested reference* — every geometry-pinning test in
+tests/test_fast_marching_topo.py and tests/test_fast_marching_contours.py
+forces it via ``USE_SKFMM = False`` so results stay pinned to hand-verified
+values regardless of what's installed. scikit-fmm (``import skfmm``) is an
+OPTIONAL compiled accelerator — roughly an order of magnitude faster on
+large grids (benchmarked ~12x on 800x1124) — used automatically when
+importable (``USE_SKFMM`` defaults to ``skfmm is not None``). It is
+deliberately NOT a hard dependency: the Pi has no compiler toolchain
+pre-provisioned for it, and the pure-Python path must keep the Pi working
+unaided. Install it with ``.venv/bin/pip install scikit-fmm`` (PyPI, has
+wheels for common platforms) or via the ``fast`` extra
+(``pip install axibridge[fast]``); call :func:`solver_name` to see which
+backend actually ran.
+
+skfmm/our-solver agreement, seed placement (empirically verified, see the
+comment on ``_travel_time_multi_skfmm``): skfmm's sub-cell-accurate
+initialization places the T=0 level set half a grid cell beyond the seed
+pixel center rather than in it, so raw skfmm output equals ours minus a
+constant 0.5 everywhere except at the seed cells themselves; we add 0.5
+back and then force seed cells to exactly 0 to restore our contract. With
+that correction, and ``order=1`` (matching the fallback's own first-order
+upwind scheme rather than skfmm's default order=2, which tracked worse),
+the two solvers agree with a smooth speed field to within a small fraction
+of a grid cell away from the seed edge itself — see
+test_fast_marching_contours.py's skfmm-agreement test for the measured
+tolerance.
 """
 
 from __future__ import annotations
@@ -21,8 +50,25 @@ from collections.abc import Callable, Iterable
 import contourpy
 import numpy as np
 
+try:
+    import skfmm
+except ImportError:  # pragma: no cover - exercised on machines without it
+    skfmm = None
+
+# Runtime switch: True when scikit-fmm is importable. Tests that pin exact
+# geometry monkeypatch this to False to force the pure-Python reference path
+# regardless of what's installed in the test environment.
+USE_SKFMM = skfmm is not None
+
 Progress = Callable[[float], None]
 Line = list[tuple[float, float]]
+
+
+def solver_name() -> str:
+    """Which travel-time backend is currently active: "skfmm" (compiled,
+    optional) or "python" (pure-Python heap, always available). Lets callers
+    and logs surface which one ran without reaching into module internals."""
+    return "skfmm" if USE_SKFMM else "python"
 
 
 def travel_time(
@@ -63,6 +109,75 @@ def travel_time_multi(
     if h == 0 or w == 0:
         return np.full((h, w), np.inf, dtype=np.float64)
 
+    if USE_SKFMM and skfmm is not None:
+        return _travel_time_multi_skfmm(field, seeds, progress)
+    return _travel_time_multi_python(field, seeds, progress)
+
+
+def _travel_time_multi_skfmm(
+    field: np.ndarray,
+    seeds: Iterable[tuple[int, int]],
+    progress: Progress | None,
+) -> np.ndarray:
+    """scikit-fmm-backed solve — see the module docstring for how the seed
+    placement / order choice were determined. A single compiled call, so
+    progress is reported only before (0.0) and after (1.0); the pure-Python
+    path keeps its per-cell incremental reporting.
+    """
+    h, w = field.shape
+
+    if progress is not None:
+        progress(0.0)
+
+    seed_mask = np.zeros((h, w), dtype=bool)
+    for seed_x, seed_y in seeds:
+        sx = min(max(int(seed_x), 0), w - 1)
+        sy = min(max(int(seed_y), 0), h - 1)
+        seed_mask[sy, sx] = True
+
+    if not seed_mask.any():
+        return np.full((h, w), np.inf, dtype=np.float64)
+
+    # Our contract: speed <= 0 or non-finite -> unreachable (inf), regardless
+    # of what skfmm does with a zero/degenerate speed. Exclude those cells
+    # from the domain via a masked phi (skfmm supports masked arrays) so
+    # they come back masked, which we then fill as inf. A seed is always
+    # reachable at T=0 even if the underlying pixel's own speed is bad (the
+    # pure-Python solver never reads a seed's own speed either — only its
+    # neighbours' — so a seed never needs to be masked out).
+    bad_speed = ~np.isfinite(field) | (field <= 0.0)
+    domain_mask = bad_speed & ~seed_mask
+    safe_speed = np.where(bad_speed, 1.0, field)
+
+    phi = np.ma.MaskedArray(np.ones((h, w), dtype=np.float64), mask=domain_mask)
+    phi[seed_mask] = -1.0
+
+    raw = skfmm.travel_time(phi, safe_speed, order=1)
+
+    # skfmm's sub-cell-accurate initialization places the T=0 level set half
+    # a grid cell beyond the seed pixel center: verified empirically by
+    # seeding a uniform-speed edge row, where skfmm's raw output comes back
+    # 0.5, 0.5, 1.5, 2.5, ... against the pure-Python solver's 0, 1, 2, 3,
+    # ... — i.e. raw skfmm output equals ours minus a constant 0.5
+    # everywhere except at the seed cells. Adding 0.5 back and then forcing
+    # the seed cells to exactly 0 restores our "T=0 at seeds" contract.
+    times = np.ma.filled(raw, np.inf).astype(np.float64) + 0.5
+    times[seed_mask] = 0.0
+    times[domain_mask] = np.inf
+
+    if progress is not None:
+        progress(1.0)
+    return times
+
+
+def _travel_time_multi_python(
+    field: np.ndarray,
+    seeds: Iterable[tuple[int, int]],
+    progress: Progress | None,
+) -> np.ndarray:
+    """Pure-Python heap solve — the always-available fallback and the tested
+    reference implementation. Byte-identical to the pre-skfmm code."""
+    h, w = field.shape
     n = w * h
     speeds = field.ravel().tolist()
     times = [math.inf] * n

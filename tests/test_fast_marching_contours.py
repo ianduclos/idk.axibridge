@@ -47,6 +47,66 @@ def test_travel_time_multi_dedupes_and_clamps_out_of_range_seeds():
     assert np.isfinite(times).all()
 
 
+# -- engine: optional skfmm acceleration -----------------------------------
+
+
+def test_solver_name_reports_python_when_use_skfmm_false(monkeypatch):
+    monkeypatch.setattr(fmm, "USE_SKFMM", False)
+    assert fmm.solver_name() == "python"
+
+
+def test_skfmm_matches_python_solver_on_a_smooth_field(monkeypatch):
+    """skfmm is a different discretization (sub-cell-accurate level-set
+    initialization vs our first-order upwind heap solve), so exact agreement
+    isn't the bar — see the module docstring for how the constant seed-offset
+    was found and corrected. What must hold is that, away from the seed
+    edge, the two solvers land close together on a smooth field.
+
+    Deviation is concentrated at the seed row and its immediate neighbour
+    (that's exactly where the two solvers' seed-initialization schemes
+    differ most): excluding the first two rows, empirical measurement on
+    this field gave a max deviation of ~0.27 and a mean of ~0.04 grid-time
+    units; the assertions below use roughly 1.5x that as headroom rather
+    than the exact measured numbers, so the test isn't brittle to harmless
+    floating point/BLAS variation across machines.
+    """
+    pytest.importorskip("skfmm")
+    h, w = 64, 64
+    xs = np.linspace(0.0, 1.0, w)
+    ys = np.linspace(0.0, 1.0, h)
+    x, y = np.meshgrid(xs, ys)
+    speed = 0.3 + 0.7 * (0.5 + 0.5 * np.sin(3 * x) * np.cos(2 * y))
+    seeds = [(sx, 0) for sx in range(w)]
+
+    monkeypatch.setattr(fmm, "USE_SKFMM", False)
+    python_times = fmm.travel_time_multi(speed, seeds)
+    monkeypatch.setattr(fmm, "USE_SKFMM", True)
+    skfmm_times = fmm.travel_time_multi(speed, seeds)
+
+    assert fmm.solver_name() == "skfmm"
+    diff = np.abs(skfmm_times - python_times)[2:, :]  # away from the seed edge
+    assert diff.max() < 0.4
+    assert diff.mean() < 0.08
+
+
+def test_skfmm_and_python_agree_a_speed_zero_wall_is_unreachable_in_both(monkeypatch):
+    h, w = 20, 20
+    speed = np.ones((h, w))
+    speed[:, 10] = 0.0  # a wall splitting the grid in two
+    seeds = [(2, 2)]  # seed on the near (left) side of the wall
+
+    monkeypatch.setattr(fmm, "USE_SKFMM", False)
+    python_times = fmm.travel_time_multi(speed, seeds)
+    assert np.isfinite(python_times[:, :10]).all()
+    assert np.isinf(python_times[:, 10:]).all()
+
+    pytest.importorskip("skfmm")
+    monkeypatch.setattr(fmm, "USE_SKFMM", True)
+    skfmm_times = fmm.travel_time_multi(speed, seeds)
+    assert np.isfinite(skfmm_times[:, :10]).all()
+    assert np.isinf(skfmm_times[:, 10:]).all()
+
+
 # -- engine: per-level contours --------------------------------------------
 
 
@@ -150,6 +210,14 @@ def test_thread_boundary_collapses_uniform_field_into_one_alternating_trail():
 
 
 # -- source module: fixtures ------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def pin_python_solver(monkeypatch):
+    # These tests pin exact geometry against the pure-Python heap solver —
+    # that is the tested reference. Force it regardless of whether
+    # scikit-fmm happens to be installed in the test environment.
+    monkeypatch.setattr(fmm, "USE_SKFMM", False)
 
 
 @pytest.fixture(autouse=True)
