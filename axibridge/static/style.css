@@ -493,6 +493,11 @@ main {
    since it's naming the same fact the banner does. */
 .view-label { color: var(--live-soft); }
 .view-label:empty { display: none; }
+/* the pass queue's running/holding line — same collapse-when-empty idiom.
+   `.holding` is the between-passes prompt (swap a pen), which is the one
+   state in the whole strip that wants the user to DO something. */
+.queue-status:empty { display: none; }
+.queue-status.holding { color: var(--ochre); }
 
 /* in-SVG styling. Lengths here are USER UNITS (mm), not px — the sheet's
    shadow scales with the zoom, which is what you want: it stays a sheet
@@ -631,6 +636,11 @@ button {
 button:hover { border-color: var(--ink-soft); background: var(--bench-edge); }
 button:active { box-shadow: var(--recess); }
 button:disabled { opacity: .3; cursor: default; border-color: var(--bench-edge); background: var(--bench-rise); box-shadow: none; }
+/* A disabled <select>/<input> read almost identically to a live one, which
+   matters the moment a control is switched off to MEAN something — the plot
+   target picker greys out on a sheet/tray view because the passes carry their
+   own pens (docs/plans/timeline-v2.md §2c). Same fade as a dead button. */
+select:disabled, input:disabled { opacity: .4; cursor: default; }
 /* Primary is steel blue, not white. Paper is the output; a light-faced button
    competes with the sheet for the eye, and hardest of all when the plot itself
    is monochrome. Colour on a filled control reads as "the main path" without

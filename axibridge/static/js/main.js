@@ -9,7 +9,8 @@
 import { api, subscribe } from "./api.js";
 import { CanvasEditor, mul, objToMat, matToObj, screenPxPerMm } from "./canvas.js";
 import { initComposeTab, initLayersDock, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, logDeleted, rerenderForView } from "./compose.js";
-import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
+import { initPlotTab, renderPlotTab, applyCapabilities, renderPlotViewControls,
+         cancelPlotQueue } from "./plot.js";
 import { initTimelineBar, clearFetchedFrames } from "./timeline.js";
 import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
@@ -74,11 +75,15 @@ function clearDocPreviewState() {
 // special); kind "sheet" → the live grid-sheet preview; kind "tray" → a
 // frozen staged sheet. Format matches Ian's ruling verbatim: "live · sheet
 // n/N" / 'tray "name" · sheet n/N'.
+// docs/plans/timeline-v2.md §2c "Plot flow": ▶ Plot obeys this label, so the
+// plot controls that depend on which view is up (the greyed target picker, the
+// stated-target line, the button's own meaning) are re-rendered from the SAME
+// call that writes the label — one read of S.docPreview, never two.
 function renderViewLabel() {
   const el = $("view-label");
   if (!el) return;
   const dp = S.docPreview;
-  if (!dp) { el.textContent = ""; return; }
+  if (!dp) { el.textContent = ""; renderPlotViewControls(); return; }
   if (dp.kind === "tray") {
     el.textContent = `tray "${dp.trayName || "?"}" · sheet ${dp.sheetIndex}/${dp.sheetCount}`;
   } else if (dp.kind === "sheet") {
@@ -86,6 +91,7 @@ function renderViewLabel() {
   } else {
     el.textContent = dp.label || "";
   }
+  renderPlotViewControls();
 }
 
 function debounce(fn, ms) {
@@ -1070,6 +1076,9 @@ function onJobEvent(ev) {
       break;
     case "stopped":
       log("■ stopped");
+      // a stop from anywhere ends the guided pass queue — no queue state
+      // survives a stop (docs/plans/timeline-v2.md §2c "Plot flow")
+      cancelPlotQueue();
       break;
     case "error":
       log(`✗ ${ev.message}`, "err");

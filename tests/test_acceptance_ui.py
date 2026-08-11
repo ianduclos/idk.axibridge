@@ -1859,3 +1859,296 @@ def test_rebake_updates_a_trays_geometry_and_is_disabled_for_batch_groups(ui):
     assert batch_btn.is_disabled()
     assert "derived from other captures" in (batch_btn.get_attribute("title") or "")
     assert not ui.errors
+
+
+# -- plot flow: ▶ Plot obeys the view label + the guided pass queue ----------
+# docs/plans/timeline-v2.md §2c "Plot flow" (ruled 2026-08-11). These assert
+# WHAT GOES TO THE MACHINE — the POST /api/plot/start bodies the UI actually
+# sends — because that is the only honest way to test a routing change on a
+# tool that puts ink on paper. Nothing here reaches into how the routing is
+# implemented; it reads the request the plotter would have executed.
+
+
+def _plot_calls(page) -> list[dict]:
+    """Start recording every POST /api/plot/start body this page sends."""
+    calls: list[dict] = []
+
+    def on_request(req):
+        if req.method == "POST" and req.url.endswith("/api/plot/start"):
+            try:
+                calls.append(json.loads(req.post_data or "{}"))
+            except Exception:
+                calls.append({})
+
+    page.on("request", on_request)
+    return calls
+
+
+def _wait_calls(page, calls: list, n: int, timeout_ms: int = 25_000) -> None:
+    """Poll through the driver (never a bare sleep — sync-playwright only
+    dispatches events while it is inside an API call)."""
+    waited = 0
+    while len(calls) < n and waited < timeout_ms:
+        page.wait_for_timeout(50)
+        waited += 50
+    assert len(calls) >= n, f"expected {n} plot calls, saw {len(calls)}: {calls}"
+
+
+def _connect_simulator(page) -> None:
+    """Plot tab open, simulator connected, Plot live. Idempotent: the server
+    is session-scoped, so it may already be connected from an earlier test."""
+    page.click('#tabs button[data-tab="plot"]')
+    page.wait_for_selector("#btn-plot", timeout=10_000)
+    if page.locator("#btn-plot").is_disabled():
+        page.click("#btn-connect")
+    page.wait_for_function(
+        "() => !document.querySelector('#btn-plot').disabled", timeout=20_000)
+
+
+def _two_pen_project(page) -> None:
+    """Two layers on two pens — the shape every multi-pass case needs. Pens are
+    machine-level (they outlive /api/project/new), so fixed ids keep repeated
+    upserts from breeding duplicates across tests."""
+    _post(f"{page.base}/api/pens", {"id": "qpen-red", "name": "Queue Red", "color": "#c0392b"})
+    _post(f"{page.base}/api/pens", {"id": "qpen-blue", "name": "Queue Blue", "color": "#2980b9"})
+    a = add_layer(page, "polygon", {"sides": 5, "radius": 20})
+    b = add_layer(page, "polygon", {"sides": 3, "radius": 30})
+    _patch(f"{page.base}/api/layers/{a}", {"pen_id": "qpen-red"})
+    _patch(f"{page.base}/api/layers/{b}", {"pen_id": "qpen-blue"})
+
+
+def _idle_machine(page) -> None:
+    """Leave the shared machine idle for the next test."""
+    _post(f"{page.base}/api/plot/stop", {"return_home": False})
+    page.wait_for_function(
+        "() => document.querySelector('#status-pill').textContent.includes('idle')",
+        timeout=20_000)
+
+
+def test_plot_from_the_plain_live_view_is_unchanged(ui):
+    """The whole routing change must be invisible on the ordinary live view:
+    one job for the picked target, target picker live, no pass queue — even
+    with two pens in the project (target 'all' has always plotted every pen in
+    a single job and deliberately still does)."""
+    _two_pen_project(ui)
+    _connect_simulator(ui)
+    assert ui.locator("#plot-target").is_enabled()
+    assert ui.eval_on_selector("#plot-view-target", "el => el.textContent") == ""
+
+    calls = _plot_calls(ui)
+    ui.click("#btn-plot")
+    _wait_calls(ui, calls, 1)
+    assert calls[0] == {"target": "all"}, calls
+    assert ui.eval_on_selector("#plot-queue-status", "el => el.textContent") == ""
+    _idle_machine(ui)
+    assert len(calls) == 1, f"a plain live plot is one job, never a queue: {calls}"
+    assert not ui.errors
+
+
+def test_plot_obeys_the_view_label_and_fires_the_tray_sheets_first_pass(ui):
+    """With a tray sheet on the canvas, ▶ Plot plots THAT sheet — its first pen
+    pass — not the live project. The view label is the contract."""
+    _two_pen_project(ui)
+    group = _post(f"{ui.base}/api/staging/capture",
+                  {"kind": "plot", "target": "all", "name": "two pens"})["group"]
+    assert len(group["sheets"][0]["passes"]) == 2, "setup: the tray sheet needs two passes"
+    reload_app(ui)
+    _connect_simulator(ui)
+    ui.wait_for_selector(".stage-group", timeout=10_000)
+    sheet_id = group["sheets"][0]["id"]
+    ui.click(f'[data-stage-preview="{group["id"]}:{sheet_id}"]')
+    ui.wait_for_function(
+        "() => (document.getElementById('view-label')?.textContent || '').includes('two pens')",
+        timeout=10_000)
+    # 5: what will plot is stated in words before the press
+    assert "2 passes" in ui.eval_on_selector("#plot-view-target", "el => el.textContent")
+    assert 'tray "two pens"' in ui.eval_on_selector("#plot-view-target", "el => el.textContent")
+
+    calls = _plot_calls(ui)
+    ui.click("#btn-plot")
+    _wait_calls(ui, calls, 1)
+    assert "staged" in calls[0], f"a tray view must plot the tray sheet: {calls}"
+    assert calls[0]["staged"]["group_id"] == group["id"]
+    assert calls[0]["staged"]["sheet_id"] == sheet_id
+    assert calls[0]["staged"]["pen_id"] == group["sheets"][0]["passes"][0]["pen_id"]
+    _idle_machine(ui)
+    assert not ui.errors
+
+
+def test_plot_on_the_live_sheet_view_plots_that_sheets_passes(ui):
+    """Same contract, other view: while the canvas shows the LIVE grid sheet,
+    ▶ Plot plots that page's pen passes (a `sheet=` job), not the plain
+    target."""
+    _two_pen_project(ui)
+    _connect_simulator(ui)
+    _open_anim_stepper(ui)
+    _set_grid(ui, 2, 1)
+    ui.wait_for_function(
+        "() => (document.getElementById('view-label')?.textContent || '') === 'live · sheet 1/4'",
+        timeout=10_000)
+
+    calls = _plot_calls(ui)
+    ui.click("#btn-plot")
+    _wait_calls(ui, calls, 1)
+    assert "sheet" in calls[0], f"a live sheet view must plot the sheet: {calls}"
+    assert calls[0]["sheet"]["cols"] == 2 and calls[0]["sheet"]["rows"] == 1
+    assert calls[0]["sheet"]["page"] == 0
+    assert calls[0]["sheet"]["pen_id"] in ("qpen-red", "qpen-blue")
+    _idle_machine(ui)
+    assert not ui.errors
+
+
+def test_the_pass_queue_holds_for_a_pen_swap_then_continue_fires_the_next_pass(ui):
+    """The guided queue: one press starts pass 1; when it finishes the machine
+    HOLDS and the status line names the pen to swap in; the Plot button becomes
+    the continue and fires pass 2. Nothing auto-advances."""
+    _two_pen_project(ui)
+    group = _post(f"{ui.base}/api/staging/capture",
+                  {"kind": "plot", "target": "all", "name": "swap me"})["group"]
+    passes = group["sheets"][0]["passes"]
+    reload_app(ui)
+    _connect_simulator(ui)
+    ui.wait_for_selector(".stage-group", timeout=10_000)
+    ui.click(f'[data-stage-preview="{group["id"]}:{group["sheets"][0]["id"]}"]')
+    ui.wait_for_function(
+        "() => (document.getElementById('view-label')?.textContent || '').includes('swap me')",
+        timeout=10_000)
+
+    calls = _plot_calls(ui)
+    ui.click("#btn-plot")
+    _wait_calls(ui, calls, 1)
+
+    # pass 1 finishes -> hold, with the NEXT pen named in the always-visible
+    # status line and on the button itself
+    ui.wait_for_function(
+        "(pen) => (document.getElementById('plot-queue-status')?.textContent || '')"
+        ".includes(`swap to ${pen}`)",
+        arg=passes[1]["name"], timeout=30_000)
+    assert "1/2" in ui.eval_on_selector("#plot-queue-status", "el => el.textContent")
+    assert passes[1]["name"] in ui.eval_on_selector("#btn-plot", "el => el.textContent")
+    assert len(calls) == 1, f"the queue must not auto-advance: {calls}"
+    _shoot(ui, "pass_queue_swap_prompt.png")
+
+    ui.wait_for_function("() => !document.querySelector('#btn-plot').disabled", timeout=20_000)
+    ui.click("#btn-plot")
+    _wait_calls(ui, calls, 2)
+    assert calls[1]["staged"]["pen_id"] == passes[1]["pen_id"], calls
+    # last pass done -> the queue is over, nothing left holding
+    ui.wait_for_function(
+        "() => (document.getElementById('plot-queue-status')?.textContent || '') === ''",
+        timeout=30_000)
+    assert ui.eval_on_selector("#btn-plot", "el => el.textContent").strip() == "Plot"
+    _idle_machine(ui)
+    assert not ui.errors
+
+
+def test_stop_mid_queue_clears_the_queue(ui):
+    """Existing Stop semantics, extended by exactly one rule: no queue state
+    survives a stop. After stopping, the button is Plot again and pressing it
+    starts pass 1 — never pass 2 of a ghost queue."""
+    _two_pen_project(ui)
+    group = _post(f"{ui.base}/api/staging/capture",
+                  {"kind": "plot", "target": "all", "name": "stop me"})["group"]
+    first_pen = group["sheets"][0]["passes"][0]["pen_id"]
+    # slow the simulator right down so pass 1 is still running when Stop lands
+    _put(f"{ui.base}/api/params/simulator", {"time_scale": 0.5})
+    try:
+        reload_app(ui)
+        _connect_simulator(ui)
+        ui.wait_for_selector(".stage-group", timeout=10_000)
+        ui.click(f'[data-stage-preview="{group["id"]}:{group["sheets"][0]["id"]}"]')
+        ui.wait_for_function(
+            "() => (document.getElementById('view-label')?.textContent || '').includes('stop me')",
+            timeout=10_000)
+
+        calls = _plot_calls(ui)
+        ui.click("#btn-plot")
+        _wait_calls(ui, calls, 1)
+        ui.wait_for_function(
+            "() => (document.getElementById('plot-queue-status')?.textContent || '')"
+            ".includes('plotting')", timeout=20_000)
+
+        ui.click("#btn-stop")
+        ui.wait_for_function(
+            "() => (document.getElementById('plot-queue-status')?.textContent || '') === ''",
+            timeout=30_000)
+        assert ui.eval_on_selector("#btn-plot", "el => el.textContent").strip() == "Plot"
+
+        # and the next press starts over at pass 1, not at the abandoned pass 2
+        ui.wait_for_function("() => !document.querySelector('#btn-plot').disabled", timeout=30_000)
+        ui.click("#btn-plot")
+        _wait_calls(ui, calls, 2)
+        assert calls[1]["staged"]["pen_id"] == first_pen, calls
+        ui.click("#btn-stop")
+    finally:
+        _put(f"{ui.base}/api/params/simulator", {"time_scale": 10.0})
+        _idle_machine(ui)
+    assert not ui.errors
+
+
+def test_a_held_queue_can_be_abandoned_with_stop(ui):
+    """A hold sits on an IDLE machine, and Stop is normally dead while idle —
+    so without this the only exit from a pen-swap hold would be plotting the
+    rest of it. Stop stays live for as long as a queue does."""
+    _two_pen_project(ui)
+    group = _post(f"{ui.base}/api/staging/capture",
+                  {"kind": "plot", "target": "all", "name": "abandon me"})["group"]
+    first_pen = group["sheets"][0]["passes"][0]["pen_id"]
+    reload_app(ui)
+    _connect_simulator(ui)
+    ui.wait_for_selector(".stage-group", timeout=10_000)
+    ui.click(f'[data-stage-preview="{group["id"]}:{group["sheets"][0]["id"]}"]')
+    ui.wait_for_function(
+        "() => (document.getElementById('view-label')?.textContent || '').includes('abandon me')",
+        timeout=10_000)
+
+    calls = _plot_calls(ui)
+    ui.click("#btn-plot")
+    _wait_calls(ui, calls, 1)
+    ui.wait_for_function(
+        "() => (document.getElementById('plot-queue-status')?.textContent || '')"
+        ".includes('swap to')", timeout=30_000)
+    assert ui.locator("#btn-stop").is_enabled(), "a held queue must stay abandonable"
+
+    ui.click("#btn-stop")
+    ui.wait_for_function(
+        "() => (document.getElementById('plot-queue-status')?.textContent || '') === ''",
+        timeout=20_000)
+    assert ui.locator("#btn-stop").is_disabled(), "queue gone, machine idle: Stop is dead again"
+    # the abandoned pass 2 is not resumed by the next press — it starts over
+    ui.click("#btn-plot")
+    _wait_calls(ui, calls, 2)
+    assert calls[1]["staged"]["pen_id"] == first_pen, calls
+    _idle_machine(ui)
+    assert not ui.errors
+
+
+def test_target_picker_greys_out_on_sheet_and_tray_views(ui):
+    """4: the all/layer/pen picker belongs to the plain live view. On a sheet
+    or tray view the passes carry their own pens, and the picker says so."""
+    _two_pen_project(ui)
+    group = _post(f"{ui.base}/api/staging/capture",
+                  {"kind": "plot", "target": "all", "name": "picker tray"})["group"]
+    reload_app(ui)
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.wait_for_selector(".stage-group", timeout=10_000)
+    assert ui.locator("#plot-target").is_enabled(), "plain live view: the picker applies"
+
+    ui.click(f'[data-stage-preview="{group["id"]}:{group["sheets"][0]["id"]}"]')
+    ui.wait_for_function(
+        "() => document.querySelector('#plot-target').disabled === true", timeout=10_000)
+    assert ui.locator("#plot-target").get_attribute("title") == "sheet passes carry their pens"
+    ui.locator("#plot-target").scroll_into_view_if_needed()
+    _shoot(ui, "pass_queue_greyed_target_picker.png")
+
+    # back to the live project — and it comes back
+    ui.click("#doc-preview-exit")
+    ui.wait_for_function(
+        "() => document.querySelector('#plot-target').disabled === false", timeout=10_000)
+
+    # the live SHEET view greys it too (same rule, other view)
+    _open_anim_stepper(ui)
+    _set_grid(ui, 2, 1)
+    ui.wait_for_function(
+        "() => document.querySelector('#plot-target').disabled === true", timeout=10_000)
+    assert not ui.errors

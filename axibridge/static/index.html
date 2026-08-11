@@ -220,6 +220,13 @@
            shows funnels through showDocPreview/clearDocPreviewState, the
            same two functions that already own the banner. -->
       <span id="view-label" class="readout view-label"></span>
+      <!-- Guided pass queue (docs/plans/timeline-v2.md §2c "Plot flow"): while
+           ▶ Plot is walking a sheet's pen passes, this says which pass is
+           running and — between passes, while the machine holds — which pen to
+           swap in before pressing continue. It sits beside #view-label on
+           purpose: the label says what will plot, this says how far through it
+           is, and both are readable from any tab. plot.js owns it. -->
+      <span id="plot-queue-status" class="readout queue-status"></span>
       <span id="plan-warnings" class="warn"></span>
       <div id="machine-state" hidden>
         <span id="job-progress" class="readout"></span>

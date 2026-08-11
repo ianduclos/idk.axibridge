@@ -124,6 +124,13 @@ export function initPlotTab() {
         <select id="plot-target" style="flex:1"></select>
       </div>
       <div class="hint" id="target-pen-hint"></div>
+      <!-- What ▶ Plot will actually put on paper, stated in words, whenever
+           that is NOT the plain live project (docs/plans/timeline-v2.md §2c
+           "Plot flow"). Plot obeys the canvas view label, so on a sheet/tray
+           view it plots what you are looking at rather than the live target —
+           the mitigation Ian asked for is visibility, not a confirm dialog,
+           so this line names the sheet and its pass count before the press. -->
+      <div class="hint" id="plot-view-target"></div>
       <div class="row" style="justify-content:center; margin-top:6px">
         <button id="btn-plot" class="primary big">Plot</button>
         <span class="hint">pause and stop live in the status line under the sheet</span>
@@ -308,13 +315,16 @@ export function initPlotTab() {
     actions.refreshPlan();
     renderTargetHint();
   };
-  $("btn-plot").onclick = () =>
-    api.post("/api/plot/start", { target: S.plotTarget })
-      .then(() => actions.log(`▶ plot started (${targetLabel()})`))
-      .catch(actions.oops);
+  $("btn-plot").onclick = () => plotPressed();
   $("btn-pause").onclick = () => api.post("/api/plot/pause").catch(actions.oops);
   $("btn-resume").onclick = () => api.post("/api/plot/resume").catch(actions.oops);
-  $("btn-stop").onclick = () => api.post("/api/plot/stop", { return_home: true }).catch(actions.oops);
+  // Stop is the queue's cancel too: no queue state survives a stop, so the
+  // next ▶ Plot starts from whatever the view says, never from a half-walked
+  // pass list (docs/plans/timeline-v2.md §2c "Plot flow").
+  $("btn-stop").onclick = () => {
+    cancelPlotQueue();
+    api.post("/api/plot/stop", { return_home: true }).catch(actions.oops);
+  };
 
   // ---- interrupted plot: bake a random pen-down slice of the whole plot
   let interruptManual = false;  // sliders untouched = the seed rolls start/stop
@@ -751,6 +761,261 @@ const stage = {
 // close needed").
 const plottedThisSession = new Set();
 const plottedKey = (groupId, sheetId, penId) => `${groupId}:${sheetId}:${penId}`;
+
+// ---- ▶ Plot obeys the view label + the guided pass queue ---------------------
+// docs/plans/timeline-v2.md §2c "Plot flow" (ruled 2026-08-11).
+//
+// ROUTING. The button plots exactly what the canvas shows, and the decision
+// reads the SAME state the canvas status label reads — `S.docPreview`, whose
+// only writers are main.js's showDocPreview/clearDocPreviewState. There is no
+// second record of "which view is up", so the button cannot disagree with the
+// label. Three cases, and only three, because docPreview has only three:
+//   null            → the plain live project: today's behaviour, byte for byte,
+//                     including the all/layer/pen target picker.
+//   kind "sheet"    → the live grid-sheet preview: that page's pen passes.
+//   kind "tray"     → a frozen staged sheet: that sheet's pen passes.
+// The payloads are the EXISTING per-pass plot calls (`sheet=` / `staged=` on
+// POST /api/plot/start) — this is client-side sequencing over calls the tray
+// buttons and the stepper already made. No new geometry path, no server change.
+//
+// QUEUE. Multi-pass work needs a pen swap between passes, so the queue holds
+// instead of auto-advancing:
+//   idle --press--> plotting(0) --job goes idle--> waiting(0)  [N > 1]
+//   waiting(k) --press--> plotting(k+1) --…--> waiting(k+1) … --> idle  [last]
+// A start error, or Stop, drops straight back to idle with the passes cleared:
+// nothing auto-advances past a failure, and no queue survives a stop.
+// Completion is detected exactly the way the Animation stepper already does it
+// (applyCapabilities, SSE-driven): saw-busy-then-idle. `wasBusy` is also set
+// from the start call's own reply, which closes the race where a job finishes
+// between the POST and the first status event.
+const plotQueue = {
+  passes: [],       // [{penName, body, mark?}] — body is the /api/plot/start payload
+  i: 0,             // pass currently plotting (or the one just finished, while waiting)
+  state: "idle",    // "idle" | "plotting" | "waiting"
+  wasBusy: false,   // this pass's job was seen running
+  desc: "",         // "tray \"x\" · sheet 2/4 · 3 passes"
+};
+
+const queueActive = () => plotQueue.state !== "idle";
+
+// The tray sheet the canvas is showing, or null. S.stagedPlan is written in
+// the same breath as the "tray" docPreview (previewStaged), so this is a
+// lookup, not a second opinion about what is on screen.
+function previewedTraySheet() {
+  const groups = S.state?.project?.staging || [];
+  const group = groups.find((g) => g.id === S.stagedPlan?.group_id);
+  if (!group) return null;
+  const sheet = group.sheets?.find((s) => s.id === S.stagedPlan?.sheet_id) || group.sheets?.[0];
+  return sheet ? { group, sheet } : null;
+}
+
+// How many passes the current view will plot — pass-count only, from state
+// already in hand, for the pre-flight line. The queue itself re-derives its
+// passes at press time (viewPlotQueue) rather than trusting this.
+function viewPassCount() {
+  const dp = S.docPreview;
+  if (!dp) return 0;
+  if (dp.kind === "tray") return previewedTraySheet()?.sheet.passes?.length || 0;
+  if (dp.kind === "sheet") return anim.passes.length;
+  return 0;
+}
+
+// "tray \"x\" · sheet 2/4 · 3 passes" — built from the same docPreview fields
+// renderViewLabel prints, so the stated target and the label agree by
+// construction.
+function viewTargetDesc() {
+  const dp = S.docPreview;
+  if (!dp) return null;
+  const n = viewPassCount();
+  const where = dp.kind === "tray"
+    ? `tray "${dp.trayName || "?"}" · sheet ${dp.sheetIndex}/${dp.sheetCount}`
+    : dp.kind === "sheet"
+      ? `live · sheet ${dp.sheetIndex}/${dp.sheetCount}`
+      : dp.label || "preview";
+  return `${where} · ${n} pass${n === 1 ? "" : "es"}`;
+}
+
+// Build the pass list for whatever the canvas is showing. Returns null ONLY
+// for the plain live view (which is not a queue — it stays a single job); any
+// other view returns a (possibly empty) pass list, and an empty one is refused
+// out loud rather than quietly falling back to plotting the live project.
+// Falling back would be the one failure this whole change exists to prevent:
+// the canvas showing one thing while the machine draws another.
+async function viewPlotQueue() {
+  const dp = S.docPreview;
+  if (!dp) return null;
+  if (dp.kind === "tray") {
+    const found = previewedTraySheet();
+    if (!found) return { passes: [], desc: viewTargetDesc() };
+    const { group, sheet } = found;
+    const passes = (sheet.passes || []).map((p) => ({
+      penName: p.name || "no pen",
+      body: { staged: { group_id: group.id, sheet_id: sheet.id, pen_id: p.pen_id || "" } },
+      // same session mark the per-pass tray buttons set (P6)
+      mark: () => plottedThisSession.add(plottedKey(group.id, sheet.id, p.pen_id || "")),
+    }));
+    return { passes, desc: viewTargetDesc() };
+  }
+  if (dp.kind === "sheet") {
+    // Re-fetch the page's passes rather than trust the cached list: the panel
+    // may have moved page or layout since the stepper last looked.
+    await refreshSheetInfo();
+    const passes = anim.passes.map((p) => ({
+      penName: p.name || "no pen",
+      body: { sheet: currentSheetSpec({ pen_id: p.pen_id || "" }) },
+    }));
+    return { passes, desc: viewTargetDesc() };
+  }
+  return { passes: [], desc: viewTargetDesc() };
+}
+
+// The ▶ Plot press. Three jobs in one handler, and that is the point: one
+// button, one meaning ("plot what I'm looking at"), whatever is on screen.
+async function plotPressed() {
+  if (plotQueue.state === "plotting") return;          // button is disabled anyway
+  if (plotQueue.state === "waiting") {                  // the button IS the continue
+    await startQueuePass(plotQueue.i + 1);
+    return;
+  }
+  let q = null;
+  try {
+    q = await viewPlotQueue();
+  } catch (e) { actions.oops(e); return; }
+  if (!q) {
+    // Plain live view — unchanged: one job for the picked target, multi-pen or
+    // not. (target="all" has always plotted every pen in a single pass; that
+    // is deliberately NOT turned into a queue here.)
+    try {
+      await api.post("/api/plot/start", { target: S.plotTarget });
+      actions.log(`▶ plot started (${targetLabel()})`);
+    } catch (e) { actions.oops(e); }
+    return;
+  }
+  if (!q.passes.length) {
+    actions.oops(new Error(`${q.desc} — no pen passes to plot`));
+    return;
+  }
+  plotQueue.passes = q.passes;
+  plotQueue.desc = q.desc;
+  await startQueuePass(0);
+}
+
+async function startQueuePass(i) {
+  const p = plotQueue.passes[i];
+  if (!p) { finishPlotQueue(); return; }
+  plotQueue.i = i;
+  plotQueue.state = "plotting";
+  plotQueue.wasBusy = false;
+  renderPlotViewControls();
+  try {
+    const status = await api.post("/api/plot/start", p.body);
+    // the reply already says the job is running — don't depend on catching a
+    // status event for a job that may be over before one arrives
+    if (status && status.job_state && status.job_state !== "idle") plotQueue.wasBusy = true;
+    if (p.mark) { p.mark(); renderStaging(); }
+    actions.log(`▶ ${plotQueue.desc} — pass ${i + 1}/${plotQueue.passes.length} (${p.penName})`);
+  } catch (e) {
+    // an error stops the queue where it stands, with the error visible; the
+    // per-pass tray buttons remain the way to resume out of order
+    cancelPlotQueue();
+    actions.oops(e);
+  }
+  renderPlotViewControls();
+}
+
+function finishPlotQueue() {
+  const n = plotQueue.passes.length;
+  const desc = plotQueue.desc;
+  plotQueue.passes = [];
+  plotQueue.i = 0;
+  plotQueue.state = "idle";
+  plotQueue.wasBusy = false;
+  plotQueue.desc = "";
+  if (n) actions.log(`✓ ${desc} — all ${n} pass${n === 1 ? "" : "es"} plotted`);
+  renderPlotViewControls();
+}
+
+// Drop the queue without claiming it finished. Called by Stop (and by the SSE
+// "stopped" job event, so a stop from anywhere clears it).
+export function cancelPlotQueue() {
+  if (!queueActive()) return;
+  actions.log(`■ pass queue cancelled at pass ${plotQueue.i + 1}/${plotQueue.passes.length}`);
+  plotQueue.passes = [];
+  plotQueue.i = 0;
+  plotQueue.state = "idle";
+  plotQueue.wasBusy = false;
+  plotQueue.desc = "";
+  renderPlotViewControls();
+}
+
+// ONE renderer for everything that depends on "what will Plot do right now":
+// the target picker's enabled state, the stated-target line under the button,
+// the button's own label, and the always-visible queue line in the status
+// strip. Exported so main.js's renderViewLabel — the other half of the same
+// fact — can call it the moment the view changes.
+export function renderPlotViewControls() {
+  const sel = $("plot-target");
+  if (!sel) return;                       // plot tab not built yet
+  const dp = S.docPreview;
+  const onSheetView = dp?.kind === "sheet" || dp?.kind === "tray";
+  const n = plotQueue.passes.length;
+  const cur = plotQueue.passes[plotQueue.i];
+  const next = plotQueue.passes[plotQueue.i + 1];
+
+  // 4: the all/layer/pen picker applies to the plain live view only.
+  sel.disabled = onSheetView;
+  sel.title = onSheetView ? "sheet passes carry their pens" : "";
+  const penHint = $("target-pen-hint");
+  if (penHint) {
+    if (onSheetView) penHint.textContent = "sheet passes carry their pens — the target picker doesn't apply here";
+    else renderTargetHint();
+  }
+
+  // the queue line: plotting / holding for a pen swap / nothing
+  const line = $("plot-queue-status");
+  let queueText = "";
+  let holding = false;
+  if (plotQueue.state === "plotting" && cur) {
+    queueText = `pass ${plotQueue.i + 1}/${n} — ${cur.penName} — plotting…`;
+  } else if (plotQueue.state === "waiting" && next) {
+    queueText = `pass ${plotQueue.i + 1}/${n} done — swap to ${next.penName}, then ▶ continue`;
+    holding = true;
+  }
+  if (line) {
+    line.textContent = queueText;
+    line.classList.toggle("holding", holding);
+  }
+
+  // 5: state what will plot, whenever that is not the plain live project
+  const stated = $("plot-view-target");
+  if (stated) {
+    stated.textContent = queueText
+      ? `${plotQueue.desc} — ${queueText}`
+      : onSheetView ? `▶ Plot will plot: ${viewTargetDesc()}` : "";
+    stated.classList.toggle("warn", holding);
+  }
+
+  const btn = $("btn-plot");
+  if (btn) {
+    btn.textContent = holding ? `▶ continue — swap to ${next.penName}` : "Plot";
+    btn.title = holding
+      ? `pass ${plotQueue.i + 2} of ${n}: load ${next.penName}, then press to continue`
+      : onSheetView ? `plots what the canvas shows: ${viewTargetDesc()}` : "";
+  }
+
+  // Stop is the queue's abandon as well as the job's. A HELD queue sits on an
+  // idle machine — that is the point, it is waiting for a pen swap — and the
+  // plain "disabled while idle" rule would leave the only exit from a hold
+  // being "plot the rest of it". The stop call is a no-op server-side with no
+  // job running, so this buys the escape hatch with no second control and no
+  // motion. Owned here, not in applyCapabilities, so it is decided AFTER the
+  // queue has advanced (whether the queue is still active is the question).
+  const stop = $("btn-stop");
+  if (stop) {
+    const jobIdle = (S.state?.machine?.job_state || "idle") === "idle";
+    stop.disabled = jobIdle && !queueActive();
+  }
+}
 
 // Grid-shaped tray group: a multi-sheet capture born from one Animation-
 // panel setup (kind "sheet") or a batch interpolated from two such captures
@@ -1944,6 +2209,8 @@ export function applyCapabilities() {
   $("btn-connect").classList.toggle("primary", !connected);
   $("btn-pause").disabled = !(caps.pause_resume && m.job_state === "plotting");
   $("btn-resume").disabled = !(m.job_state === "paused");
+  // base rule; renderPlotViewControls (below, after the queue has advanced)
+  // has the final word, because a HELD queue keeps Stop live on an idle machine
   $("btn-stop").disabled = idle;
   $("port-select").disabled = $("ports-refresh").disabled = !caps.requires_serial_port;
   $("backend-notes").textContent = caps.notes || "";
@@ -1974,6 +2241,20 @@ export function applyCapabilities() {
       }
     }
   }
+
+  // pass queue: same saw-busy-then-idle rule, but it HOLDS between passes
+  // instead of just unlocking a button — the machine is idle and the status
+  // line asks for a pen swap until ▶ continue is pressed. Never auto-advances.
+  if (plotQueue.state === "plotting") {
+    if (!idle) {
+      plotQueue.wasBusy = true;
+    } else if (plotQueue.wasBusy) {
+      plotQueue.wasBusy = false;
+      if (plotQueue.i + 1 < plotQueue.passes.length) plotQueue.state = "waiting";
+      else finishPlotQueue();
+    }
+  }
+  renderPlotViewControls();
   renderAnimStepper();
 }
 
