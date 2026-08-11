@@ -801,6 +801,10 @@ input[type="range"].fine::-moz-range-thumb {
   display: block; max-width: 100%; max-height: min(68vh, 760px);
   background: var(--sheet); object-fit: contain;
   box-shadow: 0 3px 18px rgba(0,0,0,.5);
+  /* wheel-zoom/drag-pan (plot.js initRasterZoomPan) drives transform inline;
+     transform-origin stays centered so zoom feels like it's zooming INTO the
+     sheet rather than dragging it off-corner */
+  transform-origin: center center;
 }
 .stage-list { display: grid; gap: 10px; margin-top: 10px; }
 .stage-group {

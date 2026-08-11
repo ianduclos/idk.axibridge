@@ -229,6 +229,96 @@ def test_animation_preview_png(client):
     assert client.get("/api/animation/preview.png?width_px=100").status_code == 422
 
 
+def test_animation_preview_png_scale_param(client):
+    from io import BytesIO
+
+    from PIL import Image
+
+    client.post("/api/layers/generate",
+                json={"module": "polygon", "params": {"sides": 6, "radius": 15}})
+
+    r = client.get("/api/animation/preview.png?t=0&width_px=300&scale=2")
+    assert r.status_code == 200
+    img = Image.open(BytesIO(r.content))
+    # default view is portrait (rotated 270): eff width 300*2=600 becomes the
+    # long edge, height_px = round(218*600/300) = 436 the short edge
+    assert img.size == (436, 600)
+
+    # bounded server-side to 1..4x
+    assert client.get("/api/animation/preview.png?scale=0.5").status_code == 422
+    assert client.get("/api/animation/preview.png?scale=5").status_code == 422
+
+
+def _animated_layer(client):
+    layer = client.post("/api/layers/generate",
+                        json={"module": "polygon", "params": {"sides": 6, "radius": 15}}).json()
+    tw = client.post(f"/api/layers/{layer['id']}/animate").json()
+    b_id = tw["source"]["params"]["b"]
+    client.patch(f"/api/layers/{b_id}", json={
+        "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 40}})
+    return layer
+
+
+def test_export_animation_gif(client):
+    from io import BytesIO
+
+    from PIL import Image
+
+    _animated_layer(client)
+
+    r = client.get("/api/animation/export.gif?frames=4&t_from=0&t_to=1&fps=8&width_px=240")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "image/gif"
+    assert r.content[:6] == b"GIF89a"
+    assert r.headers["content-disposition"].endswith('.gif"')
+    img = Image.open(BytesIO(r.content))
+    assert img.n_frames == 4  # no palindrome: exactly the requested frame count
+
+    # palindrome A,B,C,D -> A,B,C,D,C,B — doubled minus the two endpoints
+    r = client.get("/api/animation/export.gif?frames=4&t_from=0&t_to=1&width_px=240&palindrome=true")
+    assert r.status_code == 200
+    img = Image.open(BytesIO(r.content))
+    assert img.n_frames == 6
+
+    # frame bounds mirror export.zip's
+    assert client.get("/api/animation/export.gif?frames=1").status_code == 422
+    assert client.get("/api/animation/export.gif?frames=241").status_code == 422
+
+
+def test_export_animation_gif_empty_project_400(client):
+    assert client.get("/api/animation/export.gif?frames=3").status_code == 400
+
+
+def test_export_animation_mp4_501_without_ffmpeg(client, monkeypatch):
+    from axibridge import api as api_module
+
+    monkeypatch.setattr(api_module.shutil, "which", lambda name: None)
+    _animated_layer(client)
+    r = client.get("/api/animation/export.mp4?frames=3")
+    assert r.status_code == 501
+    assert "ffmpeg" in r.json()["detail"].lower()
+
+
+def test_export_animation_mp4_happy_path(client):
+    import shutil as real_shutil
+
+    if real_shutil.which("ffmpeg") is None:
+        pytest.skip("ffmpeg not installed on this machine")
+
+    _animated_layer(client)
+    r = client.get("/api/animation/export.mp4?frames=3&fps=8&width_px=240")
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "video/mp4"
+    assert r.headers["content-disposition"].endswith('.mp4"')
+    assert len(r.content) > 100
+    assert b"ftyp" in r.content[:32]  # a real MP4 box header
+
+
+def test_state_reports_ffmpeg_availability(client):
+    st = client.get("/api/state").json()
+    assert isinstance(st["ffmpeg_available"], bool)
+
+
 def test_plot_start_with_master_t_scrubs_geometry(client):
     layer = client.post("/api/layers/generate",
                         json={"module": "polygon", "params": {"sides": 6, "radius": 15}}).json()

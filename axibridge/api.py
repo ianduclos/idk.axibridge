@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import io
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -72,6 +74,9 @@ def get_state() -> dict[str, Any]:
         "project_dir": session.project_dir,
         "assets": asset_store.info(),
         "bed": {"width": compose.BED_WIDTH, "height": compose.BED_HEIGHT},
+        # a machine-level install (ffmpeg), not a Python dependency — the render
+        # popup's MP4 export button disables itself with this as its reason when false
+        "ffmpeg_available": shutil.which("ffmpeg") is not None,
         # schemas the frontend renders forms from (same mechanism as modules)
         "schemas": {
             "plot_options": PlotOptions.model_json_schema(),
@@ -1163,22 +1168,26 @@ def sheet_info(
     return {"sheets": n_pages, "page": page, "cells": cells, "passes": passes}
 
 
-@router.get("/animation/preview.png")
-def animation_preview_png(
-    t: float = Query(default=0.0, ge=0.0, le=1.0),
-    width_px: int = Query(default=1200, ge=240, le=2400),
-) -> Response:
-    """Raster preview frame for popup playback. Geometry still comes from the
-    single resolved path; this endpoint only draws that resolved geometry into
-    a cached-friendly bitmap so playback can swap images instead of re-solving
-    and re-DOMing vectors every frame."""
+def _render_animation_frame(t: float, width_px: int, scale: float = 1.0) -> tuple[Any, bool]:
+    """Raster render of the master timeline at ``t`` — the ONE bitmap path
+    shared by preview.png and the GIF/MP4 sequence exporters below, so export
+    pixels are byte-for-byte what the popup already showed, modulo re-encoding.
+    Geometry still comes from the single resolve path (``session.resolved``).
+
+    ``width_px`` is the base output width in px (bed-width-relative); ``scale``
+    is an additional resolution multiplier (bounded by callers, typically
+    1-4x) for zoomed-in / higher-DPI renders — separate from the fixed 2x
+    antialiasing supersample, which is always on. Returns ``(image, any_geometry)``
+    so exporters can 400 on a project that resolves to nothing, without a
+    second resolve pass."""
     from PIL import Image, ImageColor, ImageDraw
 
     aa = 2
-    scale = width_px / compose.BED_WIDTH
-    height_px = max(1, int(round(compose.BED_HEIGHT * scale)))
-    draw_scale = scale * aa
-    img = Image.new("RGB", (width_px * aa, height_px * aa), "#faf7ef")
+    eff_width_px = max(1, int(round(width_px * scale)))
+    px_per_mm = eff_width_px / compose.BED_WIDTH
+    height_px = max(1, int(round(compose.BED_HEIGHT * px_per_mm)))
+    draw_scale = px_per_mm * aa
+    img = Image.new("RGB", (eff_width_px * aa, height_px * aa), "#faf7ef")
     draw = ImageDraw.Draw(img, "RGBA")
 
     def rgba(color: str, opacity: float) -> tuple[int, int, int, int]:
@@ -1188,17 +1197,16 @@ def animation_preview_png(
             r, g, b = ImageColor.getrgb(compose.INK)
         return (r, g, b, int(max(0.0, min(1.0, opacity)) * 255))
 
-    try:
-        resolved = session.resolved(master_t=t)
-    except Exception as e:
-        raise _fail(e, 400)
+    resolved = session.resolved(master_t=t)
     pens = session.pens()
+    any_geometry = False
     for layer in session.project.layers:
         if not layer.visible:
             continue
         paths = resolved.get(layer.id, [])
         if not paths:
             continue
+        any_geometry = True
         pen = pens.get(layer.pen_id or "")
         color = rgba(pen.color if pen else compose.INK, pen.opacity if pen else 1.0)
         width = max(1, int(round((pen.line_diameter_mm if pen else compose.DEFAULT_LINE_DIAMETER_MM) * draw_scale)))
@@ -1208,13 +1216,152 @@ def animation_preview_png(
             pts = [(x * draw_scale, y * draw_scale) for x, y in path.points]
             draw.line(pts, fill=color, width=width, joint="curve")
 
-    img = img.resize((width_px, height_px), Image.Resampling.LANCZOS)
+    img = img.resize((eff_width_px, height_px), Image.Resampling.LANCZOS)
     if session.project.view == "portrait":
         img = img.transpose(Image.Transpose.ROTATE_270)
+    return img, any_geometry
+
+
+def _frame_times(frames: int, t_from: float, t_to: float, palindrome: bool) -> list[float]:
+    """Sample times for a ``frames``-long sequence over [t_from, t_to]. With
+    ``palindrome``, append the reversed middle (excluding both endpoints) so
+    A→D→A plays without doubling either end — e.g. 4 frames [A,B,C,D] becomes
+    [A,B,C,D,C,B]."""
+    times = [t_from + (t_to - t_from) * i / (frames - 1) if frames > 1 else t_from
+             for i in range(frames)]
+    if palindrome and frames > 2:
+        times = times + times[-2:0:-1]
+    return times
+
+
+def _render_frame_sequence(
+    frames: int, t_from: float, t_to: float, width_px: int, scale: float, palindrome: bool,
+) -> tuple[list[Any], bool]:
+    """Render a whole exportable sequence through :func:`_render_animation_frame`
+    — the single per-frame render path shared with preview.png. Returns
+    ``(images, any_geometry)``."""
+    times = _frame_times(frames, t_from, t_to, palindrome)
+    rendered = [_render_animation_frame(t, width_px, scale) for t in times]
+    return [img for img, _ in rendered], any(g for _, g in rendered)
+
+
+@router.get("/animation/preview.png")
+def animation_preview_png(
+    t: float = Query(default=0.0, ge=0.0, le=1.0),
+    width_px: int = Query(default=1200, ge=240, le=2400),
+    scale: float = Query(default=1.0, ge=1.0, le=4.0),
+) -> Response:
+    """Raster preview frame for popup playback — see :func:`_render_animation_frame`.
+    ``scale`` renders at a higher effective resolution (zoomed-in / high-DPI
+    popup views); it costs render time roughly quadratically, which is why it's
+    bounded to 4x."""
+    try:
+        img, _ = _render_animation_frame(t, width_px, scale)
+    except Exception as e:
+        raise _fail(e, 400)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG", optimize=True)
     return Response(content=buf.getvalue(), media_type="image/png")
+
+
+_EXPORT_SEQ_WIDTH_PX = 900  # smaller than preview's default 1200 — sequences carry many frames
+
+
+@router.get("/animation/export.gif")
+def export_animation_gif(
+    frames: int = Query(ge=2, le=240),
+    t_from: float = Query(default=0.0, ge=0.0, le=1.0),
+    t_to: float = Query(default=1.0, ge=0.0, le=1.0),
+    fps: int = Query(default=8, ge=1, le=24),
+    width_px: int = Query(default=_EXPORT_SEQ_WIDTH_PX, ge=240, le=2400),
+    scale: float = Query(default=1.0, ge=1.0, le=4.0),
+    palindrome: bool = Query(default=False),
+) -> Response:
+    """Animated-GIF sequence export — same per-frame render path as preview.png
+    (:func:`_render_frame_sequence`), so this is a pure re-encode of what the
+    popup already shows. ``palindrome`` mirrors the popup's ping-pong toggle
+    (see :func:`_frame_times`); ``fps`` should come from the popup's existing
+    fps control, not a second value. PIL writes the animation directly — no
+    extra dependency."""
+    try:
+        images, any_geometry = _render_frame_sequence(frames, t_from, t_to, width_px, scale, palindrome)
+    except Exception as e:
+        raise _fail(e, 400)
+    if not any_geometry:
+        raise HTTPException(status_code=400, detail="project resolves to no geometry — nothing to export")
+
+    buf = io.BytesIO()
+    duration_ms = max(1, round(1000 / fps))
+    images[0].save(
+        buf, format="GIF", save_all=True, append_images=images[1:],
+        duration=duration_ms, loop=0, disposal=2,
+    )
+    name = project_io.safe_name(session.project.name)
+    filename = f"{name}_{len(images)}f_{fps}fps.gif"
+    return Response(
+        content=buf.getvalue(), media_type="image/gif",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/animation/export.mp4")
+def export_animation_mp4(
+    frames: int = Query(ge=2, le=240),
+    t_from: float = Query(default=0.0, ge=0.0, le=1.0),
+    t_to: float = Query(default=1.0, ge=0.0, le=1.0),
+    fps: int = Query(default=8, ge=1, le=24),
+    width_px: int = Query(default=_EXPORT_SEQ_WIDTH_PX, ge=240, le=2400),
+    scale: float = Query(default=1.0, ge=1.0, le=4.0),
+    palindrome: bool = Query(default=False),
+) -> Response:
+    """H.264 MP4 sequence export via an ``ffmpeg`` subprocess over the same
+    rendered frames as export.gif/preview.png — checked at request time
+    (``shutil.which``, no bundled/pip video dependency) since ffmpeg is a
+    machine-level install, not every axibridge host has one (e.g. a bare Pi).
+    501s with an install hint when it's missing; the frontend mirrors that
+    reason on the disabled MP4 button rather than guessing."""
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        raise HTTPException(
+            status_code=501,
+            detail="ffmpeg not found on this machine — install it (e.g. `brew install ffmpeg` "
+                   "or `apt install ffmpeg`) or use the GIF export instead",
+        )
+    try:
+        images, any_geometry = _render_frame_sequence(frames, t_from, t_to, width_px, scale, palindrome)
+    except Exception as e:
+        raise _fail(e, 400)
+    if not any_geometry:
+        raise HTTPException(status_code=400, detail="project resolves to no geometry — nothing to export")
+
+    from PIL import ImageOps
+
+    w, h = images[0].size
+    pad_r, pad_b = w % 2, h % 2
+    if pad_r or pad_b:  # H.264 yuv420p needs even dimensions — pad, don't crop away content
+        images = [ImageOps.expand(img, border=(0, 0, pad_r, pad_b), fill="#faf7ef") for img in images]
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = FsPath(tmp)
+        for i, img in enumerate(images):
+            img.save(tmp_path / f"frame_{i:05d}.png")
+        out_path = tmp_path / "out.mp4"
+        cmd = [
+            ffmpeg, "-y", "-framerate", str(fps), "-i", str(tmp_path / "frame_%05d.png"),
+            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(out_path),
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode != 0 or not out_path.exists():
+            raise HTTPException(status_code=500, detail=f"ffmpeg failed: {proc.stderr[-2000:]}")
+        data = out_path.read_bytes()
+
+    name = project_io.safe_name(session.project.name)
+    filename = f"{name}_{len(images)}f_{fps}fps.mp4"
+    return Response(
+        content=data, media_type="video/mp4",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # -- staging tray ---------------------------------------------------------------

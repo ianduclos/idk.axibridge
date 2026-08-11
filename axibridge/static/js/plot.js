@@ -266,6 +266,23 @@ export function initPlotTab() {
           <button id="anim-preview-popup-next">Frame →</button>
           <span id="anim-preview-popup-label" class="hint"></span>
         </div>
+        <div class="row">
+          <label class="hint" style="cursor:pointer"
+                 title="playback and export both ping-pong A→D→A without doubling either end">
+            <input type="checkbox" id="anim-preview-palindrome"> palindrome</label>
+          <label>resolution</label>
+          <select id="anim-preview-scale" title="render resolution — higher costs more time per frame">
+            <option value="1">1×</option>
+            <option value="2">2×</option>
+            <option value="3">3×</option>
+            <option value="4">4×</option>
+          </select>
+          <span class="hint">scroll to zoom the image, drag to pan, double-click to reset</span>
+        </div>
+        <div class="row">
+          <a id="anim-preview-export-gif" download><button type="button">Export GIF</button></a>
+          <a id="anim-preview-export-mp4" download><button type="button" id="anim-preview-mp4-btn">Export MP4</button></a>
+        </div>
         <div class="progress"><div id="anim-preview-progress"></div></div>
       </div>
     </div>
@@ -488,6 +505,20 @@ export function initPlotTab() {
     stopRasterPlayback();
     showRasterFrame((anim.popupI + 1) % Math.max(anim.previewFrames.length, 1));
   };
+  $("anim-preview-palindrome").checked = anim.palindrome;
+  $("anim-preview-palindrome").onchange = () => {
+    anim.palindrome = $("anim-preview-palindrome").checked;
+    // ping-pong order changed under an active playback loop — resync position
+    // to wherever the current frame actually sits in the new order
+    if (anim.popupPlaying) startRasterPlayback();
+    updateRasterExportLinks();
+  };
+  $("anim-preview-scale").value = String(anim.scale);
+  $("anim-preview-scale").onchange = () => {
+    anim.scale = Math.max(1, Math.min(4, Math.round(Number($("anim-preview-scale").value)) || 1));
+    updateRasterExportLinks();
+  };
+  initRasterZoomPan();
   $("stage-capture-plot").onclick = () => captureStaged("plot");
   $("stage-capture-frame").onclick = () => captureStaged("frame");
   // append, never assign: initSettingsTab has already written its own body.
@@ -662,8 +693,14 @@ const anim = {
   i: 0, sheet: 0, pass: 0, passes: [], nPages: 1,
   fps: 8, loop: true,
   previewFrames: [], previewAbort: null, renderingPreview: false,
-  popupI: 0, popupPlaying: false, popupTimer: null,
+  popupI: 0, popupPos: 0, popupPlaying: false, popupTimer: null,
   previewing: false, plotting: false, wasBusy: false,
+  // render-popup upgrades (E6): palindrome playback/export order, render
+  // resolution multiplier (server-bounded 1-4x — see /api/animation/preview.png),
+  // and CSS-transform zoom/pan state for the popup's <img> (view only — never
+  // touches canvas.js's zoom machinery, which is a different coordinate space).
+  palindrome: false, scale: 1,
+  zoom: 1, panX: 0, panY: 0,
 };
 const stage = {
   selectedGroup: null,
@@ -1166,6 +1203,99 @@ function setRasterProgress(done, total) {
   if (bar) bar.style.width = total ? `${Math.round(100 * done / total)}%` : "0%";
 }
 
+// Playback/export frame order: plain 0..n-1, or — with the palindrome toggle
+// — that plus the reversed middle (A,B,C,D → A,B,C,D,C,B), matching the
+// server's export.gif/.mp4 ordering exactly (see _frame_times in api.py) so
+// what plays in the popup is what gets exported.
+function playOrder() {
+  const n = anim.previewFrames.length;
+  const forward = Array.from({ length: n }, (_, i) => i);
+  if (!anim.palindrome || n <= 2) return forward;
+  const back = [];
+  for (let i = n - 2; i >= 1; i--) back.push(i);
+  return forward.concat(back);
+}
+
+// Keep the popup's GIF/MP4 export links pointed at the exact settings the
+// popup is currently showing (frame range, fps, resolution, palindrome) —
+// same source of truth as updateExportLink() for the SVG zip.
+function updateRasterExportLinks() {
+  const params = `frames=${anim.n}&t_from=${anim.tFrom}&t_to=${anim.tTo}` +
+    `&fps=${anim.fps}&scale=${anim.scale}&palindrome=${anim.palindrome}`;
+  const gif = $("anim-preview-export-gif");
+  if (gif) gif.href = `/api/animation/export.gif?${params}`;
+  const mp4 = $("anim-preview-export-mp4");
+  if (mp4) mp4.href = `/api/animation/export.mp4?${params}`;
+}
+
+// The MP4 button disables itself with the server's own reason (ffmpeg is a
+// machine-level install, not every axibridge host has one — see
+// /api/state's ffmpeg_available) rather than failing silently on click.
+function syncMp4ExportAvailability() {
+  const btn = $("anim-preview-mp4-btn");
+  const link = $("anim-preview-export-mp4");
+  if (!btn || !link || !S.state) return;
+  const available = S.state.ffmpeg_available !== false;
+  const reason = "ffmpeg not found on this machine — install it (brew/apt), or use Export GIF instead";
+  btn.disabled = !available;
+  btn.title = link.title = available ? "" : reason;
+  link.onclick = available ? null : (e) => e.preventDefault();
+}
+
+function applyZoomTransform() {
+  const img = $("anim-preview-img");
+  if (!img) return;
+  img.style.transform = `translate(${anim.panX}px, ${anim.panY}px) scale(${anim.zoom})`;
+  img.style.cursor = anim.zoom > 1 ? "grab" : "";
+}
+
+function resetRasterZoom() {
+  anim.zoom = 1;
+  anim.panX = 0;
+  anim.panY = 0;
+  applyZoomTransform();
+}
+
+// Small CSS-transform pan/zoom on the popup <img> — deliberately NOT the
+// canvas.js zoom machinery (different coordinate space: this is a raster
+// bitmap view, not the mm-space vector canvas). Wheel zooms (clamped 1-4x,
+// same ceiling as the render-resolution control since a display zoom past
+// the render's own supersample just shows blur, not detail); dragging pans
+// only once zoomed in; double-click resets.
+function initRasterZoomPan() {
+  const stageEl = $("anim-preview-stage");
+  if (!stageEl) return;
+  let dragging = false;
+  let dragStart = null;
+  stageEl.addEventListener("wheel", (e) => {
+    if (!anim.previewFrames.length) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.2 : -0.2;
+    anim.zoom = Math.max(1, Math.min(4, +(anim.zoom + delta).toFixed(2)));
+    if (anim.zoom === 1) { anim.panX = 0; anim.panY = 0; }
+    applyZoomTransform();
+  }, { passive: false });
+  stageEl.addEventListener("mousedown", (e) => {
+    if (anim.zoom <= 1) return;
+    dragging = true;
+    dragStart = { x: e.clientX - anim.panX, y: e.clientY - anim.panY };
+    stageEl.style.cursor = "grabbing";
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    anim.panX = e.clientX - dragStart.x;
+    anim.panY = e.clientY - dragStart.y;
+    applyZoomTransform();
+  });
+  window.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+    stageEl.style.cursor = anim.zoom > 1 ? "grab" : "";
+  });
+  stageEl.addEventListener("dblclick", () => resetRasterZoom());
+  applyZoomTransform();
+}
+
 function renderRasterControls(message = "") {
   const modal = $("anim-preview-modal");
   if (!modal || modal.hidden) return;
@@ -1210,6 +1340,8 @@ function renderRasterControls(message = "") {
       ? `frame ${anim.popupI + 1}/${anim.previewFrames.length} · t=${anim.previewFrames[anim.popupI].t.toFixed(3)}`
       : message;
   }
+  updateRasterExportLinks();
+  syncMp4ExportAvailability();
   renderAnimPreview();
 }
 
@@ -1231,18 +1363,29 @@ function stopRasterPlayback() {
   renderRasterControls();
 }
 
+// Plain playback steps popupI directly; palindrome playback walks a position
+// through playOrder() instead (ping-pong: A,B,C,D,C,B,…) — see playOrder()
+// for why the same order has to match the server's export ordering.
 function startRasterPlayback() {
   if (!anim.previewFrames.length) return;
   anim.popupPlaying = true;
+  const order = playOrder();
+  const fromOrder = order.indexOf(anim.popupI);
+  anim.popupPos = fromOrder >= 0 ? fromOrder : 0;
   renderRasterControls();
   const tick = () => {
     if (!anim.popupPlaying) return;
-    const next = anim.popupI + 1;
-    if (next >= anim.previewFrames.length && !anim.loop) {
-      stopRasterPlayback();
-      return;
+    const ord = playOrder();
+    let nextPos = anim.popupPos + 1;
+    if (nextPos >= ord.length) {
+      if (!anim.loop) {
+        stopRasterPlayback();
+        return;
+      }
+      nextPos = 0;
     }
-    showRasterFrame(next < anim.previewFrames.length ? next : 0);
+    anim.popupPos = nextPos;
+    showRasterFrame(ord[nextPos]);
     anim.popupTimer = setTimeout(tick, 1000 / anim.fps);
   };
   anim.popupTimer = setTimeout(tick, 1000 / anim.fps);
@@ -1254,6 +1397,7 @@ function closeRasterPreview() {
   anim.renderingPreview = false;
   stopRasterPlayback();
   clearRasterFrames();
+  resetRasterZoom();
   const modal = $("anim-preview-modal");
   if (modal) modal.hidden = true;
   setRasterProgress(0, 0);
@@ -1282,21 +1426,30 @@ async function renderRasterPreview() {
     for (let i = 0; i < anim.n; i++) {
       if (controller.signal.aborted) return;
       const t = animT(i);
-      renderRasterControls(`rendering frame ${i + 1}/${anim.n}`);
-      const url = `/api/animation/preview.png?t=${encodeURIComponent(t)}&width_px=1200`;
+      const costNote = anim.scale > 1 ? ` @${anim.scale}×` : "";
+      renderRasterControls(`rendering frame ${i + 1}/${anim.n}${costNote}`);
+      const url = `/api/animation/preview.png?t=${encodeURIComponent(t)}&width_px=1200&scale=${anim.scale}`;
       const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
-      newFrames.push({ url: URL.createObjectURL(blob), t });
+      const frame = { url: URL.createObjectURL(blob), t };
+      newFrames.push(frame);
       setRasterProgress(i + 1, anim.n);
       if (!anim.previewFrames.length && newFrames.length === 1) {
         // first-ever render (no old set to keep showing): alias the scratch
-        // buffer as the live set so frame 0 shows the moment it lands and the
-        // remaining progress renders as the badge overlay, not a blank stage
+        // buffer as the live set so the remaining progress renders as the
+        // badge overlay (renderRasterControls above), not a blank stage
         anim.previewFrames = newFrames;
         anim.popupI = 0;
-        showRasterFrame(0);
       }
+      // Last-rendered frame stays visible throughout the loop (never a blank
+      // or spinner-only state): paint whatever just landed straight onto the
+      // stage. On a RE-render this runs ahead of the eventual swap below —
+      // anim.previewFrames/popupI still point at the OLD, still-valid set
+      // (so an abort mid-render leaves it untouched), but the pixels on
+      // screen already show the newest completed frame.
+      const stageImg = $("anim-preview-img");
+      if (stageImg) { stageImg.src = frame.url; stageImg.hidden = false; }
     }
     if (anim.previewFrames !== newFrames) swapRasterFrames(newFrames);
     swapped = true;
@@ -1565,6 +1718,7 @@ export function applyCapabilities() {
   $("btn-stop").disabled = idle;
   $("port-select").disabled = $("ports-refresh").disabled = !caps.requires_serial_port;
   $("backend-notes").textContent = caps.notes || "";
+  syncMp4ExportAvailability();  // ffmpeg is a machine-level install, not a job capability
   // reflect server-side connections too (auto-connect at startup)
   const info = m.connect_info || {};
   if (connected && info.firmware) {
