@@ -1,43 +1,43 @@
 ---
 project: idk.axibridge
 updated: 2026-08-11
-entries: 7
+entries: 8
 ---
 
-### Next batch: timeline v2, staging UX, six small fixes — opened 2026-08-11, owner: claude-hub
-- done: nothing yet — this entry is the plan for the session that picks it up.
-  Orchestration is design/build split (Sonnet builds, Opus designs, Fable
-  reviews/commits), same shape as the 08-10→11 round that just landed.
-- next: work the list below. The two design docs come FIRST, before any
-  timeline/staging code — Opus drafts, Fable reviews before Sonnet builds
-  against them.
-  - **E1** schematic view lines: 0.2mm default, changeable in settings.
-  - **E2** Settings gets a menu-bar tab with Restart server, removed from the
-    in-screen settings module.
-  - **E3** motion parameters module reordered to sit right after paper guide.
-  - **E4** generator param edits update the canvas live, the way effect edits
-    already do.
-  - **E5** keyframe sublayers: matching collapse state and preserved scroll
-    position across an A/B switch, plus a small optional UX pass in the same
-    spirit.
-  - **E6** render popup: palindrome option, higher-res zoomable renders,
-    mp4/gif sequence export.
-  - **A1** timeline rethink — design doc FIRST at `docs/plans/timeline-v2.md`
-    (Opus drafting): chains A>B>C>D as windowed-tween sugar, a bottom
-    auto-hiding timeline bar, jump buttons, a frame-grid-quantized slider
-    aligned to the new scrub caches (`gencache.py` + the four per-layer
-    caches from the 08-10→11 round), client-side cached-frame ticks, video
-    A>D via clip-follow composition.
-  - **A2** staging/batching UX (same doc): start plotting from sheet N
-    intuitively; tray-to-tray transitions reserved for A>B animations.
-  - **X1** meta/harness review by Fable.
-  - **X2** a low-key general improvements pass.
-- blockers: none. A1/A2 are blocked on their own design doc existing first —
-  don't build timeline/staging code against an unwritten spec.
-- context: prior round's perf work (`axibridge/gencache.py`, the four
-  per-layer caches) is what A1's frame-grid slider is meant to align with —
-  read that before designing the new slider. No `docs/plans/timeline-v2.md`
-  exists yet as of this entry.
+### Docs-upkeep pass — opened 2026-08-11, owner: claude-hub
+- done: nothing yet — this entry is the plan for the session that picks it up,
+  which runs immediately after this wrapup.
+- next: Opus reads the E-batch/timeline-v2/staging round (STATUS.md's top
+  entry, `docs/plans/timeline-v2.md`) and freshens whatever docs it touched —
+  ARCHITECTURE.md's resolve-order/plot-flow description if the view-bound
+  ▶ Plot semantics or crop-replaces-framing change reads stale there,
+  `docs/MODULES.md` if chain/staging module shape changed the authoring
+  story, ROADMAP.md to close the timeline-v2 line item and log the parked
+  ideas (per-param copy/paste, dynamic trays, project-starts-in-a-tray,
+  ＋keyframe jump-to-new-key).
+- blockers: none.
+- context: `docs/plans/timeline-v2.md` is the round's contract (Ian's Q1-Q7
+  rulings + §2b/§2c + the plot-flow ruling); STATUS.md's top entry lists what
+  actually shipped, which is the thing to check docs against.
+
+### Bench + hardware check: E-batch, timeline v2, staging/plot rework — opened 2026-08-11, owner: ian
+- done: ~15 commits, suite 843 → 947, all simulator/headless-verified only —
+  nothing in this round has had Ian's eyes or real hardware on it yet.
+- next:
+  - **Bench eye-check** everything in CHECKME.md's new 2026-08-11 section
+    (chains, the bottom timeline bar, trays, sheet crop modes, the render
+    popup, the E1-E6 fixes) — delete that section once cleared.
+  - **Hardware pass on the multi-pen swap queue**: run one real multi-pen
+    sheet, confirm "swap to pen, then ▶ continue" holds pen state correctly
+    mid-job and that Stop actually clears the queue rather than leaving it
+    primed. Nothing about this has touched a real AxiDraw yet.
+  - **One bench look at whether held-queue-survives-view-change is right** —
+    the plot-flow ruling made it deliberate, not an oversight, but it's
+    exactly the kind of call that wants a real "did that surprise me" check.
+- blockers: none.
+- context: `docs/plans/timeline-v2.md`'s plot-flow ruling section for why the
+  queue behaves this way; `axibridge/static/js/plot.js` for the queue itself;
+  CHECKME.md for the full eye-check list.
 
 ### Eye-check: Fast marching topo — opened 2026-08-10, owner: ian
 - done: `fast_marching_topo` ships as a native image-driven generator: seeded

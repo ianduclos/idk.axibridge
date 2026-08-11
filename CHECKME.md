@@ -150,3 +150,48 @@ questions a render cannot.
   shatters into a dotted circle. Plain `offset_fill` does the same — it is a
   knife-edge coincidence of geometry and spacing, not a v2 regression. Nudge
   the spacing.
+
+## Added 2026-08-11 — E-batch, timeline v2, staging/plot rework
+
+Full record in `docs/plans/timeline-v2.md` and STATUS.md's top entry.
+Simulator/headless-verified only — nothing below has had your eyes on it.
+
+- **Chains**: build an A>B>C>D as one tween layer. Confirm it reads and edits
+  as a single layer, not four; give each segment its own easing and check the
+  keyframe list plus right-click Copy/Paste state feel natural. Try
+  add/remove/reorder on an endpoint and watch the cascade.
+- **Bottom timeline bar**: auto-hides — does it get in the way or vanish when
+  you want it? Frame steppers, checkpoint jumps, the popup button. Drag the
+  slider: it should snap to the frame grid, ⇧ should escape the snap, and
+  ticks should mark frames already cached.
+- **Render popup**: palindrome option, higher-res zoomable renders, GIF/MP4
+  export. The ffmpeg PATH bug is fixed (Finder launches never saw brew's
+  PATH) — confirm export actually works from the built app, not just `npm run
+  dev`.
+- **Trays**: the always-visible view label (live · sheet n/N vs. a tray's
+  "×"), a sticky live-sheet view (param edits should re-render the sheet in
+  place, not fall back to live), ↻ re-bake-from-live, click-to-select trays.
+- **Sheets**: crop (`timeline` | `full`) replaces the old per-frame
+  center-recompute framing entirely — motion should now survive baking where
+  it used to freeze. Rows×cols only; a general rotation heuristic replaced
+  the framing-specific one. If an old project used `framing`, confirm it
+  still loads sanely even though new bakes won't produce that key.
+- **▶ Plot obeys the view label now** — this is a semantic change from
+  before (it used to always plot the live canvas). Plot from a sheet view and
+  confirm it plots what's on screen, not the underlying live layers.
+- **Multi-pen sheets run as a guided pass queue**: hold + "swap to pen, then
+  ▶ continue". **Not hardware-verified** — this needs a real multi-pen sheet
+  on the actual AxiDraw, not just the simulator. Also confirm Stop clears the
+  queue rather than leaving it primed for a phantom continue.
+- **E1-E6 small fixes**: schematic line width (0.2mm default, changeable in
+  Settings); Settings menu owning Restart server; motion params sitting right
+  after the paper guide; generator param edits updating the canvas live the
+  way effect edits do; keyframe sublayers keeping collapse/scroll state
+  across an A/B switch; the render popup upgrades above.
+- **Final-sweep items to sanity check**: a chain fence on interpolation
+  (video pairs should still blend — only chains are fenced); A→blends→B
+  sheet groups should interpolate as one group; a narrow-tween warning should
+  appear where expected; per-sheet and total plot-time should show in the
+  layout summary; closing the popup should re-sync the timeline; pasting
+  somewhere it can't apply should show a skip notice rather than silently
+  doing nothing.

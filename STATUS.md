@@ -3,16 +3,78 @@ project: idk.axibridge
 state: active
 updated: 2026-08-11
 machine: mac+pi
-summary: Fast-marching contour tracing shipped (Ian — "this is golden"), then a scrub/animation performance pass fixed a >10s/frame sentinel project down to sub-millisecond on cache hit; a design/build batch (timeline v2, staging UX, six small UI fixes) starts next.
+summary: The E-batch, timeline v2 (chains, bottom bar, frame-grid scrub), and the staging/plot rework shipped in one ~15-commit round (843 → 947 passed); an Opus docs-upkeep pass runs next, then Ian's bench eye-check of the whole round.
 next:
-  - "New batch starting: Opus drafts docs/plans/timeline-v2.md (windowed-tween chains, auto-hiding bar, frame-grid slider, video A>D) and the staging/batching UX doc alongside it — see HANDOFF"
-  - "Sonnet builds the six small fixes (E1-E6: schematic line width setting, Settings menu-bar tab, motion-params ordering, live generator preview, keyframe sublayer UX, render-popup upgrades) — see HANDOFF"
-  - "Note AXIBRIDGE_CACHE_BUDGET=0.25 in the Pi runbook — the new caches default to a budget sized for the Mac"
-  - "Ian eye-checks still stacked in CHECKME.md — the 08-08 shell-only group needs a full relaunch; delete the file once cleared"
-  - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16 to 19 wave, and the URGENT round (see HANDOFF)"
+  - "Opus docs-upkeep pass runs right after this wrapup — see HANDOFF"
+  - "Ian eye-checks the whole round — CHECKME.md's 2026-08-11 section; hardware pass on the multi-pen swap queue is separate and unverified beyond the simulator"
+  - "Parked ideas from timeline-v2 (per-param copy/paste, dynamic trays, project-starts-in-a-tray, +keyframe jump-to-new-key, held-queue-survives-view-change) are in ROADMAP / HANDOFF, not scheduled"
+  - "Still open from before this round: bench eye-checks of offset_fill + brush, the 07-16 to 19 wave, and the URGENT round (see HANDOFF)"
 handoff_for: ian
 ---
 # idk.axibridge — status
+
+**Session 2026-08-11 continued (Fable 5 orchestrating Sonnet/Opus): the E-batch, timeline v2, and the staging/plot rework.**
+
+~15 commits, suite 843 → 947 passed. Continues straight from the previous
+wrapup's "new batch starting" entry — that batch is now COMPLETE.
+
+- **E-batch** (all bench-checked asks from Ian): schematic line width setting;
+  Settings menu owns Restart server; motion params moved under the paper
+  guide; live generator param editing with coalesced undo; keyframe sublayers
+  share collapse/scroll state across an A/B switch; render popup gained
+  palindrome, higher-res zoomable renders, and GIF/MP4 export.
+- **`docs/plans/timeline-v2.md`** (Opus design doc, Ian ruled on Q1-Q7 plus
+  second rulings §2b/§2c plus a plot-flow ruling) is the round's contract and
+  reads as its own record — start there for the reasoning behind any of the
+  below.
+- **Chains**: A>B>C>D collapses into ONE tween layer (keys capped at 24),
+  each segment carries its own easing (pingpong stays a layer-global),
+  endpoints snap for seed fidelity, and endpoints can be added/removed/
+  reordered with a full cascade. Chain UI: a keyframe list plus right-click
+  Copy/Paste state; per-param copy/paste was scoped out and parked in
+  ROADMAP.
+- **Bottom timeline bar**: auto-hides, frame steppers, checkpoint jumps, a
+  popup button; the slider snaps to the frame grid (⇧ escapes the snap),
+  ticks mark cached frames, and the active range shades.
+- **Popup fixes**, including the ffmpeg PATH bug: a Finder-launched app
+  bundle never sees the shell's brew PATH, so `_find_ffmpeg` now checks
+  well-known install locations directly, and the launch script installs
+  ffmpeg when it's missing entirely.
+- **Trays**: an always-visible view label (live · sheet n/N vs. a tray's own
+  "×" mark), a sticky live-sheet view so param edits re-render the sheet in
+  place, a ↻ re-bake-from-live action (one undo entry), click-to-select
+  trays.
+- **Sheets**: crop (`timeline` | `full`) replaces framing entirely — the old
+  per-frame center mode is DELETED, and motion now survives baking instead
+  of being frozen out by it. Sheets are rows×cols only now; a general
+  rotation heuristic replaced the old framing-specific one. Legacy `framing`
+  keys still load, they just no longer drive new bakes.
+- **Plot flow**: ▶ Plot now obeys the current view label rather than always
+  plotting the live canvas — a **semantic change** worth knowing if anything
+  external assumed the old behavior. Multi-pen sheets run as a guided pass
+  queue (hold + "swap to pen, then ▶ continue"); Stop clears the queue; the
+  target picker greys out on sheet/tray views. **Not hardware-verified** —
+  simulator and headless only.
+- **Final sweep**: a chain fence on interpolation (video pairs still blend
+  fine, chains don't try to); A→blends→B now groups sheet interpolation
+  correctly; a narrow-tween warning; per-sheet and total plot-time surfaced
+  in the layout summary; closing the popup re-syncs the timeline; a
+  paste-skip notice when a paste can't apply.
+
+**Boundary changes** (recorded in the cross-project feed): new API endpoints
+for chain keyframe add/remove/reorder, staging rebake, and
+`animation export.gif` / `export.mp4`; crop replaces framing in sheet/capture
+formats (legacy `framing` keys still load); `plot.js`'s ▶ Plot semantic
+change above; ffmpeg is now a launch-installed dependency, not an assumed one.
+
+**Not done / explicitly deferred**: hardware verification of the pen-swap
+queue; Ian's bench eye-check of the whole round (CHECKME.md's new
+2026-08-11 section); per-param copy/paste, dynamic trays,
+project-starts-in-a-tray, a +keyframe jump-to-new-key affordance, and
+whether held-queue-survives-view-change is the right call — all parked, not
+scheduled. An Opus docs-upkeep pass runs immediately after this wrapup.
+
+---
 
 **Session 2026-08-10→11 (Fable 5 orchestrating Sonnet/Opus): fast-marching contours, then a scrub/animation performance pass.**
 
