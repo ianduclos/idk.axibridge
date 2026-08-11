@@ -1602,6 +1602,18 @@ def _open_anim_stepper(ui) -> None:
     ui.wait_for_selector("#anim-plot-frame", state="visible", timeout=10_000)
 
 
+def _set_grid(ui, cols, rows) -> None:
+    """Fill the cols/rows number inputs directly — the 1/2/4/8/16 preset
+    buttons (#anim-presets) were removed 2026-08-11 in favour of the two
+    bounded inputs already backing them (docs/plans/timeline-v2.md §2c
+    "Sheet grid"). fill() alone doesn't reliably fire the onchange handler
+    the panel relies on, so dispatch it explicitly (same pattern as the
+    t-from/t-to fills above)."""
+    ui.fill("#anim-cols", str(cols))
+    ui.fill("#anim-rows", str(rows))
+    ui.locator("#anim-rows").dispatch_event("change")
+
+
 def test_start_from_sheet_updates_stepper_label_and_canvas_preview(ui):
     """Punch a sheet number into the stepper and press Start here: the label
     jumps straight to it (no more pressing Skip N times) and the canvas
@@ -1611,7 +1623,7 @@ def test_start_from_sheet_updates_stepper_label_and_canvas_preview(ui):
 
     # default 8 frames over a 2×1 grid -> 4 sheets, so sheet 3 is reachable
     # and distinct from sheet 1.
-    ui.click('#anim-presets [data-grid="2,1"]')
+    _set_grid(ui, 2, 1)
     ui.wait_for_function(
         "() => document.getElementById('anim-start-sheet-n').textContent === '4'",
         timeout=10_000)
@@ -1654,7 +1666,7 @@ def test_reset_returns_to_chosen_start_not_zero_and_true_beginning_is_separate(u
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})
     _open_anim_stepper(ui)
 
-    ui.click('#anim-presets [data-grid="2,1"]')
+    _set_grid(ui, 2, 1)
     ui.wait_for_function(
         "() => document.getElementById('anim-start-sheet-n').textContent === '4'",
         timeout=10_000)
@@ -1724,7 +1736,7 @@ def test_view_label_names_what_the_canvas_shows_across_view_switches(ui):
     assert ui.eval_on_selector("#view-label", "el => el.textContent") == ""
 
     _open_anim_stepper(ui)
-    ui.click('#anim-presets [data-grid="2,1"]')
+    _set_grid(ui, 2, 1)
     ui.wait_for_function(
         "() => (document.getElementById('view-label')?.textContent || '') === 'live · sheet 1/4'",
         timeout=10_000)
@@ -1756,7 +1768,7 @@ def test_live_sheet_view_stays_sticky_across_a_param_edit(ui):
     add_layer(ui, "polygon", {"sides": 5, "radius": 20})
     reload_app(ui)
     _open_anim_stepper(ui)
-    ui.click('#anim-presets [data-grid="2,1"]')
+    _set_grid(ui, 2, 1)
     ui.wait_for_function(
         "() => (document.getElementById('view-label')?.textContent || '').includes('sheet 1/4')",
         timeout=10_000)
@@ -1765,7 +1777,7 @@ def test_live_sheet_view_stays_sticky_across_a_param_edit(ui):
     ui.click('#tabs button[data-tab="compose"]')
     select_layer(ui)
     ui.wait_for_selector("#regen-form", timeout=10_000)
-    # sides (field 0), not radius: this sheet uses "fixed" framing, which
+    # sides (field 0), not radius: this sheet uses "timeline" crop, which
     # fits the (single, unanimated) shape's shared window to each cell — a
     # uniform radius change re-normalizes away to the same rendered points,
     # a red herring here. Changing the point count is unambiguous.

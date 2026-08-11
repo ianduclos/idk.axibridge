@@ -219,9 +219,11 @@ LINEART_STACK_PRESETS: dict[str, list[dict[str, Any]]] = {
 }
 
 
-#: grid shapes (cols, rows) whose cells are portrait on a landscape sheet —
-#: ``_grid_place`` flips the scene 90° inside them to use the paper
-_ROTATED_GRIDS = {(2, 1), (4, 2)}
+#: valid ``crop`` modes for grid-sheet placement (2026-08-11, Ian's ruling —
+#: docs/plans/timeline-v2.md §2c "Baking crop"). NO per-frame mode: the old
+#: "center" behaviour (each frame recentred on its own bbox) cancelled
+#: translation and is removed entirely, not merely deprecated.
+_CROP_MODES = ("timeline", "full")
 
 
 class Session:
@@ -1160,29 +1162,41 @@ class Session:
     def _grid_place(
         self, ts: list[float], cols: int, rows: int, margin_mm: float,
         master_scale_ts: list[float] | None = None,
-        framing: str = "center",
+        crop: str = "timeline",
     ) -> list[dict[str, list[Path]]]:
         """Lay each master-timeline sample ``ts[i]`` into cell i of a cols×rows
         grid on the paper guide, keeping PER-LAYER geometry (not flattened) so
-        callers can group by pen. One SHARED scale across every frame — derived
-        from the union bounding box over ``master_scale_ts`` (defaults to
-        ``ts``); the sheet callers pass the FULL animation's ts so frame k is
-        the same size on every page. Cells are row-major. Geometry is the
+        callers can group by pen. Cells are row-major. Geometry is the
         VISIBLE, resolved (post-occlusion) paths, so a cell is exactly what the
         canvas/plotter show at that t.
 
-        ``framing``:
-        * ``"center"`` — each frame centred in its cell by its OWN bbox. Right
-          for parameter sweeps; but pure translation animations largely cancel
-          (each cell re-centres the moving subject).
-        * ``"fixed"`` — every frame shares ONE window (the union bbox), like a
-          locked-off camera: motion stays motion across the flipbook.
+        ``crop`` (2026-08-11 ruling, docs/plans/timeline-v2.md §2c "Baking
+        crop" — NO per-frame mode; the old "center each frame on its own
+        bbox" behaviour cancelled relative motion and was removed entirely):
+        * ``"timeline"`` (default) — ONE bbox unioned across every frame in
+          ``master_scale_ts`` (defaults to ``ts``), applied identically —
+          same scale, same centre — to every frame: a locked-off camera, so
+          relative movement between frames survives.
+        * ``"full"`` — no crop: every frame keeps the full page/guide bounds,
+          scaled and centred on the PAGE rather than on content, so negative
+          space is preserved and a frame's position within the page reads the
+          same in its cell.
+
+        Orientation (rotate frames 90° inside their cells when that fits
+        better) is decided ONCE per call, from cell aspect vs. the fit box's
+        aspect — not per frame — by comparing the scale each orientation
+        would achieve and keeping the larger. Replaces the old hardcoded
+        ``_ROTATED_GRIDS`` lookup (2×1, 4×2 only) with the general case.
 
         Resolves go through the per-frame caches (``_frame_lru`` geometry,
         ``_frame_bbox`` bounds), cleared on any project mutation — so stepping
         pages/passes of an unchanged project stops re-resolving the whole
-        animation. Read-only: no checkpoint, no user source_geometry writes.
-        Call under ``self._lock``."""
+        animation. The ``"timeline"`` union bbox reuses the same
+        ``_frame_bbox`` cache (via ``frame_bbox`` below), so it costs nothing
+        extra on a warm page. Read-only: no checkpoint, no user
+        source_geometry writes. Call under ``self._lock``."""
+        if crop not in _CROP_MODES:
+            raise ValueError(f"crop must be one of {_CROP_MODES}")
         sig = self._frame_sig()
 
         def frame_key(t: float) -> tuple:
@@ -1215,16 +1229,13 @@ class Session:
                 visible_geo(t)
             return self._frame_bbox[key]
 
-        # shared scale from bboxes only — cached across pages/passes
+        # shared bboxes only — cached across pages/passes. Kept for BOTH crop
+        # modes (not just "timeline"): it is also the emptiness guard below,
+        # and it costs nothing extra since visible_geo() populates the same
+        # _frame_bbox cache every caller already warms.
         boxes = [b for t in (master_scale_ts or ts) if (b := frame_bbox(t)) is not None]
         if not boxes:
             raise RuntimeError("nothing to place (no visible geometry across the frame range)")
-        uminx = min(b[0] for b in boxes)
-        uminy = min(b[1] for b in boxes)
-        umaxx = max(b[2] for b in boxes)
-        umaxy = max(b[3] for b in boxes)
-        bw = max(umaxx - uminx, 1e-6)
-        bh = max(umaxy - uminy, 1e-6)
 
         sheet_x, sheet_y, sheet_w, sheet_h = self._sheet_rect()
         cell_w = sheet_w / cols - 2 * margin_mm
@@ -1232,14 +1243,29 @@ class Session:
         if cell_w <= 0 or cell_h <= 0:
             raise RuntimeError("margin too large for this grid on the current paper guide")
 
-        # 2-up and 8-up leave portrait cells on a landscape sheet — flip the
-        # scene 90° inside each cell (scale computed against the swapped
-        # bbox) so a landscape animation covers the paper instead of
-        # letterboxing. Keyed on grid SHAPE, not the preset button, so
-        # hand-entered 2×1 / 4×2 behaves the same.
-        rotate = (cols, rows) in _ROTATED_GRIDS
-        fit_w, fit_h = (bh, bw) if rotate else (bw, bh)
-        scale = min(cell_w / fit_w, cell_h / fit_h)  # shared: no per-frame size jitter
+        if crop == "full":
+            # no crop: fit/centre on the PAGE, not on content — every frame
+            # keeps the whole guide rect, so negative space and each frame's
+            # true position on the page survive into its cell.
+            fit_w, fit_h = sheet_w, sheet_h
+            fcx, fcy = sheet_x + sheet_w / 2, sheet_y + sheet_h / 2
+        else:
+            uminx = min(b[0] for b in boxes)
+            uminy = min(b[1] for b in boxes)
+            umaxx = max(b[2] for b in boxes)
+            umaxy = max(b[3] for b in boxes)
+            fit_w = max(umaxx - uminx, 1e-6)
+            fit_h = max(umaxy - uminy, 1e-6)
+            fcx, fcy = (uminx + umaxx) / 2, (uminy + umaxy) / 2
+
+        # Orientation, decided ONCE for the whole bake (not per frame): try
+        # both ways up and keep whichever gives the bigger scale. Generalises
+        # the old (cols, rows)-keyed lookup table (2×1, 4×2 only) to any
+        # grid shape, including hand-entered ones.
+        scale_upright = min(cell_w / fit_w, cell_h / fit_h)
+        scale_rotated = min(cell_w / fit_h, cell_h / fit_w)
+        rotate = scale_rotated > scale_upright
+        scale = scale_rotated if rotate else scale_upright  # shared: no per-frame size jitter
 
         placed_frames: list[dict[str, list[Path]]] = []
         for i, t in enumerate(ts):
@@ -1247,12 +1273,6 @@ class Session:
             row, col = divmod(i, cols)  # row-major, left-to-right, top-to-bottom
             cx = sheet_x + (col + 0.5) * (sheet_w / cols)
             cy = sheet_y + (row + 0.5) * (sheet_h / rows)
-            if framing == "fixed":
-                fcx, fcy = (uminx + umaxx) / 2, (uminy + umaxy) / 2
-            else:
-                box = frame_bbox(t)
-                fcx = (box[0] + box[2]) / 2 if box else 0.0
-                fcy = (box[1] + box[3]) / 2 if box else 0.0
             if rotate:
                 aff = Affine(a=0.0, b=scale, c=-scale, d=0.0,
                              e=cx + scale * fcy, f=cy - scale * fcx)
@@ -1285,7 +1305,7 @@ class Session:
         self, cols: int, rows: int, frames: int,
         t_from: float, t_to: float, margin_mm: float, page: int,
         pen_id: str | None = None,
-        framing: str = "center", marks: bool = False,
+        crop: str = "timeline", marks: bool = False,
     ) -> PathDocument:
         """One physical sheet of the flip-book, assembled at plot time — NO
         project mutation, no checkpoint (it is pure assembly; the tray capture
@@ -1295,7 +1315,7 @@ class Session:
         cols×rows grid, chunked ``cols*rows`` cells per page; ``page`` (0-based)
         selects the chunk, the last of which may be partial. The scale is shared
         across ALL frames (every page) so frame k is the same size wherever it
-        lands — flipbook-consistent.
+        lands — flipbook-consistent. See :meth:`_grid_place` for ``crop``.
 
         The document is grouped BY PEN: one doc layer per pen worn by a
         contributing layer, plus a ``""`` "no pen" group, each carrying every
@@ -1305,7 +1325,8 @@ class Session:
         factor. ``pen_id`` restricts the document to one pen group — a single
         plot pass (``""`` selects the no-pen group); ``None`` returns every
         group (export / plan). Call the result through :meth:`_optimize` when
-        plotting (crop applies to sheets too — that is correct)."""
+        plotting (the PLOT-PASS crop rectangle — a different, unrelated
+        "crop" — applies to sheets too; that is correct)."""
         if not (1 <= cols <= 12 and 1 <= rows <= 12):
             raise ValueError("cols and rows must each be 1..12")
         if not (2 <= frames <= 240):
@@ -1318,7 +1339,7 @@ class Session:
         with self._lock:
             groups, n_pages = self._sheet_groups(
                 cols, rows, frames, t_from, t_to, margin_mm, page, pen_id,
-                framing=framing, marks=marks)
+                crop=crop, marks=marks)
             pens = self.pens()
             out_layers = [
                 Layer(
@@ -1338,7 +1359,7 @@ class Session:
         self, cols: int, rows: int, frames: int,
         t_from: float, t_to: float, margin_mm: float, page: int,
         pen_id: str | None,
-        framing: str = "center", marks: bool = False,
+        crop: str = "timeline", marks: bool = False,
     ) -> tuple[list[tuple[str, list[Path]]], int]:
         """The by-pen assembly behind :meth:`sheet_document` and
         :meth:`sheet_passes`: places the page's frames, groups their geometry by
@@ -1360,7 +1381,7 @@ class Session:
         ]
         chunk = all_ts[page * per_page: (page + 1) * per_page]
         placed = self._grid_place(chunk, cols, rows, margin_mm,
-                                  master_scale_ts=all_ts, framing=framing)
+                                  master_scale_ts=all_ts, crop=crop)
 
         pen_offsets = self._pen_offsets()
         layer_pen = {l.id: (l.pen_id or "") for l in self.project.layers}
@@ -1499,6 +1520,22 @@ class Session:
                 rank.setdefault(layer.pen_id or "", i)
         return sorted(rank, key=lambda p: rank.get(p, 1 << 30))
 
+    @staticmethod
+    def _crop_from_format(fmt: dict[str, Any]) -> str:
+        """Read a stored sheet-format dict's crop mode, with a legacy path:
+        captures/formats saved before 2026-08-11 carry ``"framing"``
+        (``"fixed"``/``"center"``), not ``"crop"``. Old bytes are frozen and
+        never rewritten (they stay exactly as baked — see §2c "Trays"), but a
+        RE-bake (rebake/relayout, both explicitly re-render against live or
+        current state) must still produce something, so both legacy values
+        map to ``"timeline"`` — the closer of the two ("fixed" IS today's
+        "timeline"; "center" is the banned per-frame mode, and "timeline" is
+        the safe default now that it no longer exists)."""
+        crop = fmt.get("crop")
+        if crop in _CROP_MODES:
+            return crop
+        return "timeline"
+
     def _documents_for_format(self, fmt: dict[str, Any]) -> list[PathDocument]:
         kind = fmt.get("kind")
         if kind == "sheet":
@@ -1514,7 +1551,7 @@ class Session:
                     float(fmt.get("margin_mm", 5.0)),
                     page,
                     pen_id=None,
-                    framing=str(fmt.get("framing", "center")),
+                    crop=self._crop_from_format(fmt),
                     marks=bool(fmt.get("marks", False)),
                 )
                 for page in range(pages)
@@ -1604,7 +1641,7 @@ class Session:
         t_from: float = 0.0,
         t_to: float = 1.0,
         margin_mm: float = 5.0,
-        framing: str = "center",
+        crop: str = "timeline",
         marks: bool = False,
     ) -> CaptureGroup:
         with self._lock:
@@ -1617,14 +1654,14 @@ class Session:
                     raise ValueError("margin_mm must be 0..30")
                 if not (0.0 <= t_from <= 1.0 and 0.0 <= t_to <= 1.0):
                     raise ValueError("t_from/t_to must be 0..1")
-                if framing not in ("center", "fixed"):
-                    raise ValueError("framing must be center or fixed")
+                if crop not in _CROP_MODES:
+                    raise ValueError(f"crop must be one of {_CROP_MODES}")
                 fmt = {
                     "kind": "sheet", "target": "all",
                     "cols": cols, "rows": rows, "frames": frames,
                     "pages": self.sheet_pages(frames, cols, rows),
                     "t_from": t_from, "t_to": t_to, "margin_mm": margin_mm,
-                    "framing": framing, "marks": marks,
+                    "crop": crop, "marks": marks,
                 }
             elif kind == "frame":
                 mt = 0.0 if master_t is None else master_t
@@ -1988,7 +2025,7 @@ class Session:
     def _captures_compatible(a: CaptureGroup, b: CaptureGroup) -> None:
         """Raise ValueError unless A and B can interpolate: same kind, and for
         sheet captures the same essential shape (cols/rows/frames/t range).
-        Presentation-only format fields — margin_mm, framing, marks — may
+        Presentation-only format fields — margin_mm, crop, marks — may
         differ; the batch inherits A's values with the rest of ``a.format``."""
         if a.kind != b.kind:
             raise ValueError(f"capture kinds do not match ({a.kind} vs {b.kind})")
@@ -2070,7 +2107,7 @@ class Session:
 
     def relayout_capture(
         self, group_id: str, cols: int, rows: int,
-        margin_mm: float | None = None, framing: str | None = None,
+        margin_mm: float | None = None, crop: str | None = None,
         marks: bool | None = None,
     ) -> CaptureGroup:
         """Re-render a captured animation at a new grid — a NEW group; the
@@ -2082,23 +2119,25 @@ class Session:
             raise ValueError("cols and rows must each be 1..12")
         if margin_mm is not None and not (0.0 <= margin_mm <= 30.0):
             raise ValueError("margin_mm must be 0..30")
-        if framing is not None and framing not in ("center", "fixed"):
-            raise ValueError("framing must be center or fixed")
+        if crop is not None and crop not in _CROP_MODES:
+            raise ValueError(f"crop must be one of {_CROP_MODES}")
         with self._lock:
             group = self._find_capture(group_id)
             source_kind = group.format.get("source_kind") if group.kind == "batch" else group.kind
             if source_kind != "sheet":
                 raise ValueError(
                     f"re-layout applies to grid-sheet captures only, not {group.kind!r}")
-            # new sheet-format: keep the timeline shape, swap the grid
+            # new sheet-format: keep the timeline shape, swap the grid. Drop
+            # any stale legacy "framing" key so it can't shadow an explicit
+            # new "crop" (_crop_from_format prefers "crop" either way, but
+            # this keeps a re-laid group's format clean going forward).
             fmt = {k: v for k, v in group.format.items()
-                   if k not in ("kind", "source_kind", "variants")}
+                   if k not in ("kind", "source_kind", "variants", "framing")}
             fmt["kind"] = "sheet"
             fmt["cols"], fmt["rows"] = cols, rows
             if margin_mm is not None:
                 fmt["margin_mm"] = margin_mm
-            if framing is not None:
-                fmt["framing"] = framing
+            fmt["crop"] = crop if crop is not None else self._crop_from_format(group.format)
             if marks is not None:
                 fmt["marks"] = marks
             fmt["pages"] = self.sheet_pages(int(fmt["frames"]), cols, rows)

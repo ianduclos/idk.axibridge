@@ -1162,7 +1162,7 @@ def export_animation_frames(
     cols: int | None = Query(default=None, ge=1, le=12),
     rows: int | None = Query(default=None, ge=1, le=12),
     margin_mm: float = Query(default=5.0, ge=0.0, le=30.0),
-    framing: Literal["center", "fixed"] = Query(default="center"),
+    crop: Literal["timeline", "full"] = Query(default="timeline"),
     marks: bool = Query(default=False),
 ) -> Response:
     """SVG-sequence export: samples the master timeline ``frames`` times over
@@ -1182,7 +1182,7 @@ def export_animation_frames(
                 try:
                     doc = session.sheet_document(
                         cols, rows, frames, t_from, t_to, margin_mm, page,
-                        pen_id=None, framing=framing, marks=marks)
+                        pen_id=None, crop=crop, marks=marks)
                 except (ValueError, IndexError, RuntimeError) as e:
                     raise HTTPException(status_code=400, detail=str(e))
                 if any(layer.paths for layer in doc.layers):
@@ -1456,7 +1456,7 @@ class StagingCaptureBody(BaseModel):
     t_from: float = Field(default=0.0, ge=0.0, le=1.0)
     t_to: float = Field(default=1.0, ge=0.0, le=1.0)
     margin_mm: float = Field(default=5.0, ge=0.0, le=30.0)
-    framing: Literal["center", "fixed"] = "center"
+    crop: Literal["timeline", "full"] = "timeline"
     marks: bool = False
 
 
@@ -1474,7 +1474,7 @@ def capture_to_staging(body: StagingCaptureBody) -> dict[str, Any]:
             t_from=body.t_from,
             t_to=body.t_to,
             margin_mm=body.margin_mm,
-            framing=body.framing,
+            crop=body.crop,
             marks=body.marks,
         )
     except (KeyError, ValueError) as e:
@@ -1565,7 +1565,7 @@ class RelayoutCaptureBody(BaseModel):
     cols: int = Field(ge=1, le=12)
     rows: int = Field(ge=1, le=12)
     margin_mm: float | None = Field(default=None, ge=0.0, le=30.0)
-    framing: Literal["center", "fixed"] | None = None
+    crop: Literal["timeline", "full"] | None = None
     marks: bool | None = None
 
 
@@ -1578,7 +1578,7 @@ def relayout_capture_group(group_id: str, body: RelayoutCaptureBody) -> dict[str
     try:
         group = session.relayout_capture(
             group_id, body.cols, body.rows,
-            margin_mm=body.margin_mm, framing=body.framing, marks=body.marks,
+            margin_mm=body.margin_mm, crop=body.crop, marks=body.marks,
         )
     except KeyError as e:
         raise _fail(e, 404)
@@ -1674,9 +1674,11 @@ class SheetSpec(BaseModel):
     margin_mm: float = Field(default=5.0, ge=0.0, le=30.0)
     page: int = Field(default=0, ge=0, le=239)
     pen_id: str | None = None
-    #: "center" = each frame centred by its own bbox (parameter sweeps);
-    #: "fixed" = one shared window, so translation reads as motion (flipbooks)
-    framing: Literal["center", "fixed"] = "center"
+    #: "timeline" (default) = one bbox unioned across every frame, applied
+    #: identically to every frame — relative motion survives (flipbooks);
+    #: "full" = no crop, every frame keeps the whole page (negative space
+    #: preserved). NO per-frame mode — see Session._grid_place.
+    crop: Literal["timeline", "full"] = "timeline"
     #: registration crosshairs at the grid intersections, on the first pass
     marks: bool = False
 
@@ -1685,7 +1687,7 @@ def _sheet_document(spec: SheetSpec) -> Any:
     return session.sheet_document(
         spec.cols, spec.rows, spec.frames, spec.t_from, spec.t_to,
         spec.margin_mm, spec.page, spec.pen_id,
-        framing=spec.framing, marks=spec.marks,
+        crop=spec.crop, marks=spec.marks,
     )
 
 

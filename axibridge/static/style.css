@@ -1137,10 +1137,6 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 .subtracting .pen-pending-path, .subtracting .pen-rubber-band { stroke: var(--rust); }
 .pen-pending-anchor { fill: var(--live); stroke: none; }
 
-/* grid-sheet layout presets (plot.js animation panel) */
-.anim-presets { display: inline-flex; gap: 2px; }
-.anim-presets button { padding: 2px 9px; font-size: 11.5px; font-variant-numeric: tabular-nums; }
-
 /* A/B capture-series toolbar segment */
 #ab-capture input { width: 3.4em; border: none; border-left: 1px solid var(--bench-edge); border-right: 1px solid var(--bench-edge); }
 #ab-capture button.on { background: var(--bench-rise); color: var(--ink); box-shadow: inset 0 -2px 0 var(--live); }

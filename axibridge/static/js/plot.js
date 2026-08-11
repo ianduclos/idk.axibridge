@@ -172,22 +172,15 @@ export function initPlotTab() {
       <div class="hint">for one clip-frame per rendered frame, set frames = the clip's length</div>
       <div class="row">
         <label>layout</label>
-        <span id="anim-presets" class="anim-presets">
-          <button type="button" data-grid="1,1" title="one frame per sheet">1</button>
-          <button type="button" data-grid="2,1" title="two A5-ish halves, scene flipped 90°">2</button>
-          <button type="button" data-grid="2,2" title="quads">4</button>
-          <button type="button" data-grid="4,2" title="eight, scene flipped 90°">8</button>
-          <button type="button" data-grid="4,4" title="4×4 flipbook page">16</button>
-        </span>
         <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1" style="width:4em">
         <label>rows</label><input type="number" id="anim-rows" min="1" max="12" step="1" style="width:4em">
         <label>margin</label><input type="number" id="anim-sheet-margin" min="0" max="30" step="0.5" style="width:5em">
       </div>
       <div class="row">
-        <label>framing</label>
-        <select id="anim-framing" title="fixed = one shared window, motion stays motion; center = each frame centred by its own bounds (parameter sweeps)">
-          <option value="fixed">fixed window (flipbook)</option>
-          <option value="center">centre each frame (sweep)</option>
+        <label>crop</label>
+        <select id="anim-crop" title="timeline = one shared window across every frame, so relative motion survives (the default); full = no crop, every frame keeps the whole page (negative space preserved)">
+          <option value="timeline">timeline (motion survives)</option>
+          <option value="full">full page (no crop)</option>
         </select>
         <label class="hint" style="cursor:pointer" title="small ＋ marks at the grid intersections, plotted with the first pass">
           <input type="checkbox" id="anim-marks"> crosshairs</label>
@@ -204,8 +197,8 @@ export function initPlotTab() {
       <div class="row"><span id="anim-preview-label"></span></div>
       <div class="row">
         <button id="anim-capture" class="primary"
-          title="Freeze this layout into the staging tray: per-pass geometry + a source snapshot. Tray sheets preview, plot, export, and interpolate (A ⇄ B) — the durable path.">
-          Capture to tray</button>
+          title="Bake this layout into the tray: rows×cols frames per sheet, ⌈frames/cells⌉ sheets in ONE group, orientation auto-decided (rotated 90° inside each cell when that fits better). Tray sheets preview, plot, export, and interpolate (A ⇄ B) — the durable path.">
+          Bake sheet</button>
         <a id="anim-export-link" download><button type="button">Export SVG frames (zip)</button></a>
       </div>
 
@@ -243,7 +236,7 @@ export function initPlotTab() {
         <button id="stage-capture-frame">Capture frame</button>
         <a id="stage-export-link" href="/api/staging/export.zip" download><button type="button">Export tray</button></a>
       </div>
-      <div class="hint">grid layouts are captured from the Animation panel above (“Capture to tray”)</div>
+      <div class="hint">grid layouts are captured from the Animation panel above (“Bake sheet”)</div>
 
       <details class="ld-section" data-fold="stage-ab" data-fold-open="1">
         <summary>Quick A ⇄ B <span class="hint">(captures the current output — no tray group needed)</span></summary>
@@ -374,7 +367,7 @@ export function initPlotTab() {
   $("anim-cols").value = anim.cols;
   $("anim-rows").value = anim.rows;
   $("anim-sheet-margin").value = anim.margin;
-  $("anim-framing").value = anim.framing;
+  $("anim-crop").value = anim.crop;
   $("anim-marks").checked = anim.marks;
   $("anim-preview-fps").value = anim.fps;
   $("anim-preview-loop").checked = anim.loop;
@@ -386,7 +379,7 @@ export function initPlotTab() {
     anim.cols = Math.max(1, Math.min(12, Math.round(Number($("anim-cols").value) || 1)));
     anim.rows = Math.max(1, Math.min(12, Math.round(Number($("anim-rows").value) || 1)));
     anim.margin = Math.max(0, Math.min(30, Number($("anim-sheet-margin").value) || 0));
-    anim.framing = $("anim-framing").value === "center" ? "center" : "fixed";
+    anim.crop = $("anim-crop").value === "full" ? "full" : "timeline";
     anim.marks = $("anim-marks").checked;
     anim.i = Math.min(anim.i, anim.n - 1);
     anim.nPages = sheetPages();
@@ -397,7 +390,7 @@ export function initPlotTab() {
     let href = `/api/animation/export.zip?frames=${anim.n}&t_from=${anim.tFrom}&t_to=${anim.tTo}`;
     if (gridCells() > 1) {
       href += `&cols=${anim.cols}&rows=${anim.rows}&margin_mm=${anim.margin}` +
-              `&framing=${anim.framing}&marks=${anim.marks}`;
+              `&crop=${anim.crop}&marks=${anim.marks}`;
     }
     $("anim-export-link").href = href;
     const btn = $("anim-export-link").querySelector("button");
@@ -418,18 +411,10 @@ export function initPlotTab() {
     await refreshAnimPanel();
   };
   for (const id of ["anim-frames", "anim-t-from", "anim-t-to", "anim-sheet-margin",
-                    "anim-framing", "anim-marks"])
+                    "anim-crop", "anim-marks"])
     $(id).onchange = refreshAnimPanel;
   for (const id of ["anim-cols", "anim-rows"])
     $(id).onchange = gridChanged;
-  for (const b of document.querySelectorAll("#anim-presets [data-grid]")) {
-    b.onclick = async () => {
-      const [c, r] = b.dataset.grid.split(",").map(Number);
-      $("anim-cols").value = c;
-      $("anim-rows").value = r;
-      await gridChanged();
-    };
-  }
   $("anim-preview-fps").onchange = () => {
     anim.fps = Math.max(1, Math.min(24, Math.round(Number($("anim-preview-fps").value) || 8)));
     $("anim-preview-fps").value = anim.fps;
@@ -728,12 +713,12 @@ function bindAbCapture() {
 // cols*rows == 1: the classic one-frame-per-sheet stepper (i = frame index).
 // cols*rows > 1: the two-axis grid stepper — `sheet` (physical page) × `pass`
 // (pen pass on that page, from sheet_info); `passes` holds the current page's
-// [{pen_id, name, color}]. One layout (cols/rows/margin/framing/marks) feeds
-// the preview, the stepper, "Capture to tray" AND the export link — a single
+// [{pen_id, name, color}]. One layout (cols/rows/margin/crop/marks) feeds
+// the preview, the stepper, "Bake sheet" AND the export link — a single
 // source of truth. All sequencing is browser-side.
 const anim = {
   n: 8, tFrom: 0, tTo: 1, margin: 5, cols: 1, rows: 1,
-  framing: "fixed", marks: false,
+  crop: "timeline", marks: false,
   i: 0, sheet: 0, pass: 0, passes: [], nPages: 1,
   // S6 — the chosen "start here" (P5): what Reset returns to. 0/0 until the
   // user picks a start explicitly; ⤒1 always means true 0/0 regardless.
@@ -784,7 +769,7 @@ function sheetPages() {
 function currentSheetSpec(extra = {}) {
   return { cols: anim.cols, rows: anim.rows, frames: anim.n,
            t_from: anim.tFrom, t_to: anim.tTo, margin_mm: anim.margin,
-           framing: anim.framing, marks: anim.marks,
+           crop: anim.crop, marks: anim.marks,
            page: anim.sheet, ...extra };
 }
 
@@ -886,9 +871,9 @@ async function captureStaged(kind) {
       body.t_from = anim.tFrom;
       body.t_to = anim.tTo;
       body.margin_mm = anim.margin;
-      body.framing = anim.framing;
+      body.crop = anim.crop;
       body.marks = anim.marks;
-      body.name = `${anim.n}f · ${anim.cols}×${anim.rows} · ${anim.framing}`;
+      body.name = `${anim.n}f · ${anim.cols}×${anim.rows} · ${anim.crop}`;
     }
     const r = await api.post("/api/staging/capture", body);
     await actions.refreshProject();
@@ -1095,7 +1080,7 @@ function renderStaging() {
     return;
   }
   // P9 delivered here: groupLabel() surfaces the capture's actual shape
-  // (frames · cols×rows · framing, or the source kind for a batch) instead of
+  // (frames · cols×rows · crop, or the source kind for a batch) instead of
   // the raw g.kind + count — it was already built (for the A/B pickers) and
   // just unused in this list. P6 amendment: a group born from one animation/
   // grid setup (isGridGroup) gets a distinct "animation set" tag + accent so
@@ -1258,7 +1243,7 @@ function pullAnimControls() {
   anim.cols = Math.max(1, Math.min(12, Math.round(Number($("anim-cols").value) || 1)));
   anim.rows = Math.max(1, Math.min(12, Math.round(Number($("anim-rows").value) || 1)));
   anim.margin = Math.max(0, Math.min(30, Number($("anim-sheet-margin").value) || 0));
-  anim.framing = $("anim-framing")?.value === "center" ? "center" : "fixed";
+  anim.crop = $("anim-crop")?.value === "full" ? "full" : "timeline";
   anim.marks = Boolean($("anim-marks")?.checked);
   anim.fps = Math.max(1, Math.min(24, Math.round(Number($("anim-preview-fps")?.value) || anim.fps || 8)));
   anim.loop = Boolean($("anim-preview-loop")?.checked);

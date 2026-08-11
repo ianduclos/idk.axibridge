@@ -95,20 +95,20 @@ def test_incompatible_capture_formats_are_rejected():
 
 
 def test_interpolate_allows_presentation_only_format_differences():
-    """margin_mm / framing / marks are presentation, not shape — a pair that
+    """margin_mm / crop / marks are presentation, not shape — a pair that
     differs only there interpolates, and the batch inherits A's values."""
     layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
     a = session.capture_to_staging(kind="sheet", name="A", cols=2, rows=2, frames=6,
-                                   margin_mm=5.0, framing="fixed")
+                                   margin_mm=5.0, crop="timeline")
     session.regenerate_layer(layer.id, {"sides": 6, "radius": 30})
     b = session.capture_to_staging(kind="sheet", name="B", cols=2, rows=2, frames=6,
-                                   margin_mm=12.0, framing="center", marks=True)
+                                   margin_mm=12.0, crop="full", marks=True)
 
     batch = session.interpolate_captures(a.id, b.id, steps=3)
 
     assert batch.name == "A ⇄ B · 3 steps"  # default name carries the step count
     assert batch.format["margin_mm"] == 5.0
-    assert batch.format["framing"] == "fixed"
+    assert batch.format["crop"] == "timeline"
     assert len(batch.sheets) == 6  # 3 steps × 2 pages (6 frames at 2×2)
 
 

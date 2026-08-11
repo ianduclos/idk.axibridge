@@ -117,6 +117,22 @@ def test_grid_place_rotates_two_up_and_eight_up():
     assert box[2] - box[0] > box[3] - box[1]
 
 
+def test_grid_place_rotation_generalises_beyond_the_old_lookup():
+    """Orientation used to be a hardcoded lookup of exactly (2,1)/(4,2)
+    (_ROTATED_GRIDS). It is now decided per-bake by comparing achieved
+    scale in each orientation (docs/plans/timeline-v2.md §2c "Sheet grid"),
+    so a shape that was never in that table — 3×1 — must still rotate when
+    the cell is strongly portrait and the content is landscape."""
+    _wide_scene()
+    g = session.project.guide
+
+    rotated = session._grid_place([0.0], cols=3, rows=1, margin_mm=5.0)
+    box = _bbox(rotated[0])
+    assert box[3] - box[1] > box[2] - box[0]  # portrait footprint: rotated
+    cell_w = g.width / 3
+    assert g.x <= box[0] and box[2] <= g.x + cell_w
+
+
 def test_grid_place_rotation_covers_more_paper():
     _wide_scene()
     g = session.project.guide
