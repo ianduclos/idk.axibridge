@@ -23,6 +23,9 @@ timers fire without a session.
   + pyaxidraw from `https://cdn.evilmadscientist.com/dl/ad/public/AxiDraw_API.zip`).
   Suite runs green and hardware-free: `.venv/bin/python -m pytest -q`.
   Gotcha: starlette's test client needs `httpx2` on this box.
+  Do NOT install the `[fast]` extra (scikit-fmm) here — the pure-Python
+  solver is the fallback by design. If the Pi ever serves axibridge, run it
+  with `AXIBRIDGE_CACHE_BUDGET=0.25` (8 GB RAM vs the Mac's 32).
 - Git identity is set locally (`ianduclos (idkpi)`), so commits made on the
   Pi are attributable.
 - **Distinct from `~/axibridge`** — that older dir holds the axicli venv the

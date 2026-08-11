@@ -18,7 +18,9 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
 
 - The venv at `.venv/` is the pinned interpreter — it has `pyaxidraw`
   installed (NOT on PyPI; see `launch/axibridge.command` for the install URL).
-  Never "fix" an import error by switching interpreters.
+  Never "fix" an import error by switching interpreters. The `[fast]` extra
+  (`scikit-fmm`) is installed here but optional everywhere: the pure-Python
+  Eikonal solver is the tested reference and the Pi runs without it.
 - **Frontend: edit `axibridge/static/**` — that is still the source.** The
   server serves the BUILT output (`axibridge/static_dist/`, from
   `npm run build`) when it exists and the SOURCE when it doesn't. One rule,
@@ -63,6 +65,7 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
 | Image assets (depth maps, `clip#NNNN` frame sequences) | `axibridge/assets.py` |
 | Module registry (Source / Effect / Transform) | `axibridge/registry.py` |
 | Layer interpolation (tween layers, param/affine lerp; the master timeline scrubs `follow_master` tweens via `session.resolved(master_t=…)`) | `axibridge/tween.py` |
+| Content-keyed `generate()` memo; all cache budgets scale with the `AXIBRIDGE_CACHE_BUDGET` env float (default 1.0; 0.25 on the Pi). Multi-frame tween/shaped/occlusion caches: ARCHITECTURE.md "Caching" | `axibridge/gencache.py` |
 | Generators / effects / plot-pass ops | `axibridge/sources/` `effects/` `transforms/` |
 | Backends (native / simulator / saxi) + port arbitration | `axibridge/backends/`, `machine.py` |
 | Pen library & machine settings (global JSON stores) | `axibridge/stores.py` |
@@ -140,7 +143,7 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
   Motors need the barrel-jack PSU; without it axicli "plots" silently with
   nothing moving — useful for dry runs, confusing if unexpected.
 
-## Current handoff (July 2026)
+## Current handoff (August 2026)
 
 - Read `STATUS.md` (state) and `HANDOFF.md` (mid-flight work) first — the
   wrapup skill keeps them current; this section only holds durable

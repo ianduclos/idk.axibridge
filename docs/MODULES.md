@@ -174,7 +174,11 @@ The contract, and why each clause exists:
   user; don't undo it by scaling your own output.
 - **Be pure.** Return new `Path` objects; never mutate inputs. The
   compositor caches and re-runs stacks freely; the before/after of a toggle
-  depends on the input surviving.
+  depends on the input surviving. Since 2026-08-11 purity + determinism are
+  also what make `gencache.generate_cached` legal — source outputs are
+  memoized content-keyed and returned by reference. A deliberately
+  nondeterministic source must set `cacheable = False` on its class
+  (`registry.SourceModule`) or the memo will freeze its first roll.
 - **Preserve `filled` and closure.** Carry `filled=path.filled` through, and
   if a path arrived closed (first == last), return it closed — occlusion
   masks are built from your output. Use `Path.is_closed` / `model.is_closed`
