@@ -328,22 +328,40 @@ def blend_generator_params(la: CanvasLayer, lb: CanvasLayer, t: float) -> dict[s
     return out
 
 
+def map_window(master_t: float, window_from: float = 0.0, window_to: float = 1.0) -> float:
+    """Map a raw (clamped) master-timeline value into a tween's local window,
+    linearly: hold 0 before ``window_from``, ramp 0..1 inside the window, hold
+    1 after ``window_to``. A degenerate window (``window_to <= window_from``)
+    steps at the collapsed point rather than dividing by zero.
+
+    Deliberately a step DISTINCT from :func:`map_time_curve` — not fused into
+    one function — so a caller can pick a segment / local position from the
+    window-mapped value before deciding how (or whether) to curve it. This is
+    what let session.py's ``_materialize_tweens`` and this module's
+    :func:`resolve_local_t` stop duplicating the same window formula (the
+    2026-07-19 unification lesson, generalised in the 2026-08 S1 pass); it is
+    also the seam a future chain's per-segment easing (S2) slots into: window-
+    map first to find which segment the master value falls in, curve second,
+    per segment, without re-deriving this math a third time."""
+    mt = min(1.0, max(0.0, master_t))
+    if window_to > window_from:
+        return min(1.0, max(0.0, (mt - window_from) / (window_to - window_from)))
+    return 0.0 if mt < window_from else 1.0  # degenerate window: step A -> B
+
+
 def resolve_local_t(params: dict[str, Any], master_t: float | None = None) -> float:
     """A tween's effective morph ``t``. With ``follow_master`` set and a master
-    value supplied, map it through the ``[window_from, window_to]`` window and
-    time curve exactly as the timeline does; otherwise the static stored ``t``.
+    value supplied, map it through the ``[window_from, window_to]`` window
+    (:func:`map_window`) and then the time curve (:func:`map_time_curve`)
+    exactly as the timeline does; otherwise the static stored ``t``.
 
-    Mirrors the window/curve mapping in ``session._materialize_tweens`` so a
-    *nested* tween samples its endpoints at the same ``t`` a top-level scrub
+    The single window+curve helper shared by ``session._materialize_tweens``
+    and this module's :func:`effective_generator` (nested-tween sampling), so
+    a *nested* tween samples its endpoints at the same ``t`` a top-level scrub
     would — the two paths must not drift (the 2026-07-19 unification lesson)."""
     if master_t is not None and params.get("follow_master"):
-        mt = min(1.0, max(0.0, master_t))
-        wf = params.get("window_from", 0.0)
-        wt = params.get("window_to", 1.0)
-        if wt > wf:
-            local = min(1.0, max(0.0, (mt - wf) / (wt - wf)))
-        else:  # degenerate window: step A -> B at the collapsed point
-            local = 0.0 if mt < wf else 1.0
+        local = map_window(master_t, params.get("window_from", 0.0),
+                            params.get("window_to", 1.0))
         return map_time_curve(local, params.get("time_curve", "linear"))
     return params.get("t", 0.5)
 

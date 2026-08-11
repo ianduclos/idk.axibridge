@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 import random
+import re
 import threading
 from collections import OrderedDict, deque
 from typing import Any, NamedTuple
@@ -778,12 +779,32 @@ class Session:
         return ordered
 
     @staticmethod
-    def _tween_refs(layer: CanvasLayer) -> tuple[Any, Any]:
+    def _tween_refs(layer: CanvasLayer) -> list[Any]:
+        """Every layer id a tween references, in order — ``[a, b]`` today, and
+        (from S2 on) ``keys`` for a chain, so this is the ONE place that knows
+        how many refs a tween has. Every caller must treat the result as a
+        variable-length sequence (membership / iteration), never unpack a
+        fixed 2-tuple — a chain with mid keyframes would silently dangle
+        wherever that assumption survived (see F3 in
+        docs/plans/timeline-v2.md)."""
         p = layer.source.params or {}
-        return p.get("a"), p.get("b")
+        keys = p.get("keys")
+        if keys:
+            return list(keys)
+        return [p.get("a"), p.get("b")]
+
+    #: an Animate-created keyframe's name always carries a " ▸ <LETTER>"
+    #: SUFFIX (A, B, and — from S2 on — C, D, … for chain mid-keys), always
+    #: appended at the very end (``f"{original_name} ▸ B"``, never embedded
+    #: mid-string). Anchoring on ``$`` — rather than the old substring test —
+    #: is what makes this a genuine suffix pattern per F3/S1, and it is what
+    #: lets ``_animation_keyframes_for`` recognise a chain's hidden keyframes
+    #: once they exist; zero behaviour change today, since every name this
+    #: app ever produces already puts the suffix last.
+    _KEYFRAME_SUFFIX_RE = re.compile(r" ▸ [A-Z]$")
 
     def _animation_keyframes_for(self, tween_layer: CanvasLayer) -> list[CanvasLayer]:
-        """Hidden A/B layers created by Animate, not visible manual tween refs."""
+        """Hidden Animate-created keyframe layers, not visible manual tween refs."""
         if tween_layer.source.type != "tween":
             return []
         refs: list[CanvasLayer] = []
@@ -794,7 +815,7 @@ class Session:
                 return []
         if len(refs) != 2:
             return []
-        if all((not l.visible) and (" ▸ A" in l.name or " ▸ B" in l.name) for l in refs):
+        if all((not l.visible) and self._KEYFRAME_SUFFIX_RE.search(l.name) for l in refs):
             return refs
         return []
 
@@ -830,8 +851,7 @@ class Session:
                     for tw in self._tweens():
                         if tw.id in doomed:
                             continue
-                        a, b = self._tween_refs(tw)
-                        if a in doomed or b in doomed:
+                        if any(r in doomed for r in self._tween_refs(tw)):
                             doomed.add(tw.id)
                             changed = True
                     # (b) hidden layers referenced by a doomed tween and by no
@@ -842,8 +862,7 @@ class Session:
                             continue
                         by_doomed = by_surviving = False
                         for tw in self._tweens():
-                            a, b = self._tween_refs(tw)
-                            if layer.id in (a, b):
+                            if layer.id in self._tween_refs(tw):
                                 if tw.id in doomed:
                                     by_doomed = True
                                 else:
@@ -862,7 +881,8 @@ class Session:
                 for tw in self._tweens():
                     if tw.id not in direct:  # only DIRECT tween deletions
                         continue
-                    a_ref, _ = self._tween_refs(tw)
+                    tw_refs = self._tween_refs(tw)
+                    a_ref = tw_refs[0] if tw_refs else None  # first key only ("A")
                     if a_ref in direct:
                         continue  # the user deleted A itself too — honour that
                     try:
@@ -884,8 +904,7 @@ class Session:
                 for tw in self._tweens():
                     if tw.id in doomed:
                         continue
-                    a, b = self._tween_refs(tw)
-                    if a in doomed or b in doomed:
+                    if any(r in doomed for r in self._tween_refs(tw)):
                         raise RuntimeError(
                             f"layer is referenced by interpolation layer {tw.name!r} — "
                             "delete that first (or together)"
@@ -2273,23 +2292,17 @@ class Session:
             params = layer.source.params or {}
             override_t: float | None = None
             if master_t is not None and params.get("follow_master"):
-                mt = clamped_master
-                # map the master timeline into this tween's local t through the
-                # window: hold A before ``window_from``, animate inside, hold B
-                # after ``window_to``.
-                wf = params.get("window_from", 0.0)
-                wt = params.get("window_to", 1.0)
-                if wt > wf:
-                    local = min(1.0, max(0.0, (mt - wf) / (wt - wf)))
-                else:  # degenerate window: step A -> B at the collapsed point
-                    local = 0.0 if mt < wf else 1.0
-                override_t = tween.map_time_curve(local, params.get("time_curve", "linear"))
+                # window+curve mapping: the ONE helper in tween.py, also used
+                # by effective_generator's nested-tween sampling — see
+                # tween.resolve_local_t's docstring for why this must not
+                # drift into a second copy of the formula.
+                override_t = tween.resolve_local_t(params, clamped_master)
             refs = []
             #: the endpoint geometry lists whose id() the key embeds — the
             #: entry holds them so no collected list's id can be recycled into
             #: a false hit (see _TweenEntry)
             ref_objects: list[list[Path]] = []
-            for rid in params.get("a"), params.get("b"):
+            for rid in self._tween_refs(layer):
                 try:
                     ref = self.project.layer(rid)
                     ref_geo = read_geo.get(ref.id)

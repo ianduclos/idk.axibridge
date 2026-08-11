@@ -228,6 +228,33 @@ def test_every_id_key_pins_its_object(animated):
             "a union signature names unpinned occluders")
 
 
+def test_cascade_delete_after_scrub_unaffected_by_refs_generalisation(animated):
+    """S1 (2026-08-11) generalised ``Session._tween_refs`` from a fixed
+    2-tuple to an ordered list, threaded through the cascade-delete rules
+    (a)/(b) and the un-animate restore (F3's table). Pin that a real
+    animate-created A/B tween still cascades and un-animates exactly as
+    before, even with a warm, multi-entry tween cache from scrubbing."""
+    low, high, tw = animated
+    for master_t in (0.0, 0.3, 0.7):
+        session.resolved(master_t=master_t)
+    assert len(session._tween_cache.get(tw.id, {})) > 1  # warm, multi-entry
+
+    a_id, b_id = tw.source.params["a"], tw.source.params["b"]
+    session._history.clear()
+
+    deleted = session.delete_layer(tw.id)  # DIRECT tween delete -> un-animate
+    assert set(deleted) == {b_id, tw.id}
+    survivors = {l.id for l in session.project.layers}
+    assert a_id in survivors and tw.id not in survivors and b_id not in survivors
+    a_layer = session.project.layer(a_id)
+    assert a_layer.visible and not a_layer.name.endswith(" ▸ A")
+
+    assert session.undo()  # one undo restores the whole group
+    assert not session.project.layer(a_id).visible
+    assert session.project.layer(a_id).name.endswith(" ▸ A")
+    assert session.project.layer(tw.id).visible
+
+
 # -- 5. eviction ---------------------------------------------------------------
 
 

@@ -454,6 +454,86 @@ def test_master_t_cache_invalidates_then_hits():
     assert session.source_geometry[tw.id] is g_high
 
 
+def test_tween_cache_key_reproduces_pre_s1_formula_bit_for_bit():
+    """S1 (2026-08-11) generalised ``_tween_refs`` to return a list (instead
+    of a fixed 2-tuple) and routed the window+curve mapping through
+    ``tween.resolve_local_t`` instead of ``_materialize_tweens`` computing it
+    inline. Neither refactor may move the cache key's bytes: pin it against
+    the pre-refactor formula, reproduced by hand from the params/geometry the
+    session actually holds after a real resolve."""
+    import json
+
+    a, b, tw = _follow_pair()
+    session.set_tween_params(
+        tw.id, {"window_from": 0.25, "window_to": 0.75, "time_curve": "cosine"})
+    master_t = 0.4
+    session.resolved(master_t=master_t)
+
+    cache = session._tween_cache[tw.id]
+    assert len(cache) == 1
+    actual_key = next(iter(cache.keys()))
+
+    # -- hand-reproduction of the PRE-S1 formula (params.get("a")/("b")
+    # hardcoded; window+curve computed inline rather than via resolve_local_t)
+    clamped_master = min(1.0, max(0.0, master_t))
+    params = session.project.layer(tw.id).source.params
+    wf, wt = params["window_from"], params["window_to"]
+    local = min(1.0, max(0.0, (clamped_master - wf) / (wt - wf)))
+    expected_override_t = map_time_curve(local, params["time_curve"])
+
+    expected_refs = []
+    for rid in params["a"], params["b"]:
+        ref = session.project.layer(rid)
+        ref_geo = session.source_geometry.get(ref.id)
+        expected_refs.append({
+            "src": ref.source.model_dump(),
+            "tf": ref.transform.model_dump(),
+            "fx": [s.model_dump() for s in ref.effects],
+            "geo": id(ref_geo),
+            "fo": ref.frame_offset,
+            "ff": ref.frame_follow,
+        })
+    expected_key = json.dumps(
+        {"refs": expected_refs, "p": params, "mt": expected_override_t,
+         "master": clamped_master},
+        sort_keys=True)
+    assert actual_key == expected_key
+
+
+def test_tween_refs_returns_ordered_list_not_fixed_tuple():
+    """Every F3 call site treats ``_tween_refs`` generically now (iteration /
+    membership / ``refs[0]``), never unpacking a fixed 2-tuple — so it is
+    safe for a future chain's ``keys`` to widen it past two. Today (no
+    ``keys`` field yet) the list is always exactly ``[a, b]``, in order."""
+    a, b, tw = _follow_pair()
+    refs = session._tween_refs(session.project.layer(tw.id))
+    assert isinstance(refs, list)
+    assert refs == [a.id, b.id]
+
+
+def test_animation_keyframes_suffix_pattern_matches_pre_s1_membership_test():
+    """Generalised from an exact ``' ▸ A'``/``' ▸ B'`` membership test to a
+    suffix PATTERN (S1), so a future chain's ``' ▸ C'``, ``' ▸ D'`` ...
+    mid-keyframes are recognised too — with zero behaviour change for
+    today's real Animate-created A/B keyframes."""
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
+    tw = session.animate_layer(layer.id)
+    a_id, b_id = tw.source.params["a"], tw.source.params["b"]
+    a_layer, b_layer = session.project.layer(a_id), session.project.layer(b_id)
+    assert a_layer.name.endswith(" ▸ A") and not a_layer.visible
+    assert b_layer.name.endswith(" ▸ B") and not b_layer.visible
+
+    # the real A/B case still resolves exactly as the old membership test did
+    assert session._animation_keyframes_for(tw) == [a_layer, b_layer]
+
+    # the pattern itself now recognises any single-letter suffix, ready for a
+    # future chain's C/D/... mid-keys, while staying a true SUFFIX match
+    assert session._KEYFRAME_SUFFIX_RE.search("Foo ▸ C")
+    assert session._KEYFRAME_SUFFIX_RE.search("Foo ▸ A")
+    assert not session._KEYFRAME_SUFFIX_RE.search("Foo ▸ AB")  # not a suffix
+    assert not session._KEYFRAME_SUFFIX_RE.search("Foo (no suffix)")
+
+
 def test_animate_layer_wires_up_a_b_tween():
     layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
     original_name = layer.name
