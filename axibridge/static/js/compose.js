@@ -115,6 +115,54 @@ function note(msg) {
   if (el) el.textContent = msg;
 }
 
+// ---- live generator regenerate (bench latch AND an existing layer's own
+// generator params) ------------------------------------------------------
+//
+// A slider release on a generator param must do more than ghost a preview —
+// it has to actually regenerate the layer, the way an effect param commit
+// already PATCHes for real. `schedule()` debounces that (300ms, same
+// quantum as the old bench-only `applyLatched`) and folds the whole run
+// into ONE undo entry via `coalesce: true` (server-side key: `("regen",
+// layer_id)`, session.py). `now()` is the explicit-button path: run
+// immediately, own undo entry (coalesce: false) by default.
+//
+// Single-flight regardless of caller: only one regenerate in flight at a
+// time, the latest params always win — a fast slider run never queues a
+// request per tick, and a slow generator (fast_marching_contours ~1.5-2.5s)
+// can't be raced by a second call landing mid-resolve. Same in-flight-guard
+// shape as `preview`/`scrub` above.
+const liveRegen = {
+  timer: null, inflight: false, pending: null, // pending = {layerId, params, coalesce, btn} | null
+  schedule(layerId, params) {
+    this.pending = { layerId, params, coalesce: true, btn: null };
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this._run(), 300);
+  },
+  now(layerId, params, btn = null, coalesce = false) {
+    clearTimeout(this.timer);
+    this.pending = { layerId, params, coalesce, btn };
+    this._run();
+  },
+  async _run() {
+    if (this.inflight || !this.pending) return;
+    const { layerId, params, coalesce, btn } = this.pending;
+    this.pending = null;
+    this.inflight = true;
+    genBusy(true, btn); // reuses the existing gen-progress bar — SSE already streams for regenerate
+    try {
+      await api.post(`/api/layers/${layerId}/regenerate`, { params: { ...params }, coalesce });
+      preview.clear();
+      await actions.refreshProject();
+      await actions.refreshResolved();
+    } catch (e) { actions.oops(e); }
+    finally {
+      genBusy(false, btn);
+      this.inflight = false;
+      if (this.pending) this._run(); // params moved meanwhile: run once more
+    }
+  },
+};
+
 // ---- master timeline scrub ---------------------------------------------------
 //
 // One /compose/resolved?t= request in flight at a time; the latest slider value
@@ -632,24 +680,11 @@ function renderBenchAction() {
 }
 
 // slider release while latched: regenerate the layer with the new params.
-// coalesce=true folds the whole slider run into ONE undo entry server-side.
-// (hand-rolled debounce: `actions` isn't initialized at module-eval time —
-// compose.js evaluates before main.js in their import cycle)
-let applyTimer = null;
+// Thin wrapper over `liveRegen` above (which owns the debounce + coalesce +
+// single-flight guard now — this used to hand-roll all three).
 function applyLatched() {
-  clearTimeout(applyTimer);
-  applyTimer = setTimeout(async () => {
-    const layer = latchedLayer();
-    if (!layer) return;
-    genBusy(true, null); // progress bar only — no button to repurpose per tweak
-    try {
-      await api.post(`/api/layers/${layer.id}/regenerate`, { params: { ...genParams }, coalesce: true });
-      preview.clear();
-      await actions.refreshProject();
-      await actions.refreshResolved();
-    } catch (e) { actions.oops(e); }
-    finally { genBusy(false, null); }
-  }, 300);
+  const layer = latchedLayer();
+  if (layer) liveRegen.schedule(layer.id, genParams);
 }
 
 // dashed ghost for the bench form: in the layer's frame while latched
@@ -1132,6 +1167,65 @@ function ldSection(key) {
   return det;
 }
 
+// -- keyframe A/B family: shared collapse state + scroll position ------------
+//
+// An "⏱ Animate"-created A/B pair are two different layer ids that read as
+// ONE editable thing to Ian — flipping A -> B should feel like turning a
+// card, not re-navigating a fresh layer. `familyKey` returns a stable id
+// (the owning tween's) for a layer that is genuinely one of those keyframes
+// — hidden, named "... ▸ A"/"... ▸ B", and paired with a sibling that is too
+// (the same test renderLayerList uses to decide whether a tween is an
+// animate group, kept in sync by hand rather than shared code — see the
+// KNOWN COLLISION note on renderLayerList/the layer-list region above).
+// Anything else (a standalone layer, or the two ends of a plain ⇄
+// interpolation, which are ordinary visible layers) falls back to its own
+// id, so nothing changes for the common case.
+function familyKey(layer) {
+  if (!layer) return layer;
+  if (layer.visible || !/▸\s*[AB]$/.test(layer.name || "")) return layer.id;
+  const layers = S.state?.project?.layers || [];
+  const tween = layers.find((l) => l.source.type === "tween"
+    && [l.source.params?.a, l.source.params?.b].includes(layer.id));
+  if (!tween) return layer.id;
+  const kids = [tween.source.params?.a, tween.source.params?.b].filter(Boolean);
+  const isAnimateGroup = kids.length === 2 && kids.every((id) => {
+    const kid = layers.find((c) => c.id === id);
+    return kid && !kid.visible && /▸\s*[AB]$/.test(kid.name || "");
+  });
+  return isAnimateGroup ? `family:${tween.id}` : layer.id;
+}
+
+// #tab-compose is the scrollable ancestor (`.tab-body { overflow-y: auto }`)
+// — rebuilding `#layer-detail`'s innerHTML on a selection change does not by
+// itself reset or restore its scrollTop, so a same-family A<->B switch has
+// to do that explicitly. Session-only (no localStorage): a scroll offset
+// doesn't need to survive a reload the way collapse state does.
+let lastDetailLayerId = null;
+let lastDetailFamily = null;
+const familyScroll = new Map(); // family key -> #tab-compose.scrollTop
+
+// Selecting an animate keyframe also auto-jumps the master timeline
+// (jumpTimelineToKeyframe, above), which kicks off its OWN async resolve
+// refresh that rebuilds `#layer-detail` again a beat later and would
+// otherwise clamp scrollTop back to 0 mid-flight, before the browser ever
+// paints our restored value. A MutationObserver reapplies the target on
+// every rebuild while armed, rather than guessing at a timeout; it detaches
+// the moment selection moves off this layer, or after 2s as a safety net —
+// so it can never fight the user's later, real scrolling during ordinary
+// edits on the layer they switched to.
+let familyRestoreObserver = null;
+function armFamilyRestore(tabBody, wrapEl, layerId, target) {
+  familyRestoreObserver?.disconnect();
+  tabBody.scrollTop = target;
+  const stop = () => { familyRestoreObserver?.disconnect(); familyRestoreObserver = null; };
+  const safety = setTimeout(stop, 2000);
+  familyRestoreObserver = new MutationObserver(() => {
+    if (lastDetailLayerId !== layerId) { clearTimeout(safety); stop(); return; }
+    tabBody.scrollTop = target;
+  });
+  familyRestoreObserver.observe(wrapEl, { childList: true });
+}
+
 export function renderLayerDetail() {
   const panel = $("layer-detail-panel");
   const wrap = $("layer-detail");
@@ -1171,6 +1265,26 @@ export function renderLayerDetail() {
     panel.hidden = true;
     return;
   }
+
+  // E5: an A<->B switch within the same animate family restores the outgoing
+  // scroll position once this layer's DOM is built below — the collapse
+  // state itself already matches because the generator/effects forms below
+  // key their <details> groups off familyKey(layer), not layer.id. Guarded
+  // on an actual layer CHANGE (not every re-render of the layer you're
+  // already on, which happens constantly from unrelated edits). MUST read
+  // scrollTop before `wrap.innerHTML = ""` below — that clears the OUTGOING
+  // layer's content, which shrinks #tab-compose and clamps its scrollTop to
+  // 0 before a post-hoc read would ever see the real value.
+  const tabBody = $("tab-compose");
+  const thisFamily = familyKey(layer);
+  const sameFamilySwitch = !!(lastDetailLayerId && lastDetailLayerId !== layer.id
+    && thisFamily === lastDetailFamily);
+  if (lastDetailLayerId && lastDetailLayerId !== layer.id && tabBody) {
+    familyScroll.set(lastDetailFamily, tabBody.scrollTop);
+  }
+  lastDetailLayerId = layer.id;
+  lastDetailFamily = thisFamily;
+
   panel.hidden = false;
   $("detail-name").textContent = layer.name;
   wrap.innerHTML = "";
@@ -1374,7 +1488,7 @@ export function renderLayerDetail() {
   fx.querySelector("#fx-add").onclick = () => {
     const mod = S.state.modules.effects.find((m) => m.id === fxSel.value);
     if (!mod) return;
-    expandedSteps.add(`${layer.id}:${layer.effects.length}`); // open the new step
+    expandedSteps.add(`${familyKey(layer)}:${layer.effects.length}`); // open the new step
     const params = { ...mod.defaults };
     // portrait view: same viewRotate/viewAngle default remap as generators —
     // image-driven effects (depth maps) default to what reads upright.
@@ -1385,7 +1499,10 @@ export function renderLayerDetail() {
   const steps = fx.querySelector("#fx-steps");
   layer.effects.forEach((step, i) => {
     const mod = S.state.modules.effects.find((m) => m.id === step.effect);
-    const key = `${layer.id}:${i}`;
+    // E5: keyed off the FAMILY (tween + its A/B keyframes), not this layer's
+    // own id, so an A<->B switch shows the same steps expanded — see
+    // familyKey() above.
+    const key = `${familyKey(layer)}:${i}`;
     const open = expandedSteps.has(key);
     const div = document.createElement("div");
     div.className = "step" + (step.enabled ? "" : " disabled");
@@ -1425,7 +1542,7 @@ export function renderLayerDetail() {
       renderForm(form, mod.schema, values, () => {
         preview.clear();
         commitEffects(layer, i, { params: values });
-      }, { onLive: sched, stateKey: `fx:${layer.id}:${i}` });
+      }, { onLive: sched, stateKey: `fx:${familyKey(layer)}:${i}` });
       div.appendChild(form);
       // A pen belongs to a LAYER, so hatching with a different pen from the
       // outline it fills means two layers. One click builds that pair.
@@ -1621,23 +1738,27 @@ export function renderLayerDetail() {
         <button id="btn-regen" class="primary">Regenerate</button>`;
       wrap.appendChild(gen);
       const values = { ...mod.defaults, ...(layer.source.params || {}) };
-      // live preview ghosts the would-be geometry in the layer's frame;
-      // Regenerate commits it (one undo checkpoint, not one per slider move)
+      // drag = ghost the candidate geometry in the layer's frame (read-only,
+      // server never touches the project); release = clear the ghost and
+      // regenerate for real, same as effect params already do — coalesced,
+      // so a whole slider run is one undo entry (E4: parity with effects).
       const sched = () => preview.schedule(
         genPreviewReq(layer.id, layer.source.generator, { ...values }, objToMat(layer.transform)));
-      renderForm(gen.querySelector("#regen-form"), mod.schema, values, sched, { onLive: sched, stateKey: `gen:${layer.id}` });
+      const commit = () => { preview.clear(); liveRegen.schedule(layer.id, values); };
+      renderForm(gen.querySelector("#regen-form"), mod.schema, values, commit, { onLive: sched, stateKey: `gen:${familyKey(layer)}` });
       const regenBtn = gen.querySelector("#btn-regen");
-      regenBtn.onclick = async () => {
-        genBusy(true, regenBtn);
-        try {
-          await api.post(`/api/layers/${layer.id}/regenerate`, { params: values });
-          preview.clear();
-          await actions.refreshProject();
-          await actions.refreshResolved();
-        } catch (e) { actions.oops(e); }
-        finally { genBusy(false, regenBtn); }
-      };
+      // explicit click: run now (no 300ms debounce), own undo entry — routed
+      // through the same single-flight guard so it can't race a pending
+      // auto-apply from a slider release moments earlier.
+      regenBtn.onclick = () => liveRegen.now(layer.id, values, regenBtn, false);
     }
+  }
+
+  // E5: restore the scroll position the OUTGOING layer of this same family
+  // left behind — after every section above has appended, so the panel is
+  // at its full height for this layer before we set scrollTop.
+  if (sameFamilySwitch && tabBody && familyScroll.has(thisFamily)) {
+    armFamilyRestore(tabBody, wrap, layer.id, familyScroll.get(thisFamily));
   }
 }
 

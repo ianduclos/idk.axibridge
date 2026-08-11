@@ -82,6 +82,14 @@ def _post(url: str, payload: dict | None = None):
         return json.loads(r.read())
 
 
+def _patch(url: str, payload: dict):
+    body = json.dumps(payload).encode()
+    req = urllib.request.Request(url, data=body, method="PATCH",
+                                 headers={"content-type": "application/json"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.loads(r.read())
+
+
 @pytest.fixture(scope="session")
 def server(frontend_mode):
     """A real axibridge on a temp port, with its own config dir — never the
@@ -195,6 +203,17 @@ def select_layer(page, index: int = 0) -> None:
         "() => document.querySelectorAll('#layer-detail [id]').length > 0", timeout=10_000)
 
 
+def select_layer_named(page, text: str) -> None:
+    """Like select_layer, but by row text — for keyframe sublayers
+    ('… ▸ A' / '… ▸ B'), which aren't at a fixed list index."""
+    row = page.locator("#layer-list .layer-row", has_text=text)
+    if "selected" not in (row.get_attribute("class") or ""):
+        row.locator(".lname").click()
+    page.wait_for_selector("#layer-detail-panel:not([hidden])", timeout=10_000)
+    page.wait_for_function(
+        "() => document.querySelectorAll('#layer-detail [id]').length > 0", timeout=10_000)
+
+
 def canvas_ink(page) -> str:
     """What is actually drawn: every path's `d`, in order."""
     return page.eval_on_selector_all(
@@ -295,6 +314,55 @@ def test_edit_a_param_on_a_layer_loaded_from_a_project(ui):
         ".map(e => e.getAttribute('d') || '').join('|') !== old",
         arg=["#canvas path", before], timeout=20_000)
     assert rows(ui) == 1
+    assert not ui.errors
+
+
+def test_dragging_a_generator_slider_repaints_live_and_lands_one_undo_entry(ui):
+    """E4: generator params on an EXISTING (non-latched) layer must update the
+    canvas live the way effect params already do — no #btn-regen click in
+    this test at all — and the whole multi-release drag run coalesces into
+    ONE undo entry, exactly like the bench latch."""
+    add_layer(ui, "polygon", {"sides": 3, "radius": 20, "filled": True})
+    reload_app(ui)
+    ui.wait_for_selector("#layer-list .layer-row", timeout=15_000)
+    before = wait_for_ink(ui)
+    select_layer(ui)
+    ui.wait_for_selector("#regen-form", timeout=10_000)
+
+    def drag(target):
+        # a few 'input' frames (ghost only) then one 'change' (release, the
+        # real regenerate) — what forms.js's range control actually fires
+        # while the mouse is down and then let go.
+        slider = ui.locator('#regen-form input[type="range"]').nth(1)  # radius
+        for v in range(30, target, 15):
+            slider.evaluate(
+                "(el, v) => { el.value = v; el.dispatchEvent(new Event('input', {bubbles: true})); }", v)
+        slider.evaluate(
+            "(el, v) => { el.value = v; el.dispatchEvent(new Event('change', {bubbles: true})); }", target)
+
+    drag(60)
+    ui.wait_for_function(
+        "([sel, old]) => Array.from(document.querySelectorAll(sel))"
+        ".map(e => e.getAttribute('d') || '').join('|') !== old",
+        arg=["#canvas path", before], timeout=20_000)
+    assert rows(ui) == 1, "auto-apply regenerates the layer, never adds one"
+    mid = canvas_ink(ui)
+
+    # a second, separate drag/release in the same editing session — the
+    # coalesce key folds this into the SAME undo entry as the first drag
+    drag(120)
+    ui.wait_for_function(
+        "([sel, old]) => Array.from(document.querySelectorAll(sel))"
+        ".map(e => e.getAttribute('d') || '').join('|') !== old",
+        arg=["#canvas path", mid], timeout=20_000)
+
+    # ONE undo restores all the way back to the pre-drag radius (20), not to
+    # the first drag's intermediate 60 — proof the whole run is one entry.
+    ui.click('.menu[data-menu="edit"] .menu-trigger')
+    ui.click("#btn-undo")
+    ui.wait_for_function(
+        "() => { const n = document.querySelectorAll('#regen-form input[type=\"number\"]')[1];"
+        " return n && Number(n.value) === 20; }", timeout=10_000)
     assert not ui.errors
 
 
@@ -927,6 +995,45 @@ def test_the_layers_dock_remembers_how_you_left_it(ui):
     ui.click("#layers-dock-title")
     ui.wait_for_selector("#layers-dock-body", timeout=10_000)
     assert ui.is_visible("#layer-list"), "and it comes back with the list in it"
+    assert not ui.errors
+
+
+def test_keyframe_sublayers_share_collapse_state_and_scroll_on_ab_switch(ui):
+    """E5: an "⏱ Animate" A/B pair reads as ONE editable thing — expand a
+    param subsection and scroll on A, switch to B, and both must already
+    match. Sets the same effect on the layer BEFORE animating so A and B
+    start with an identical effects list at the same index (the family-keyed
+    state — compose.js's familyKey() — is exercised the same way either
+    keyframe is picked first)."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20, "filled": True})
+    effect_mod = next(m for m in _get(f"{ui.base}/api/state")["modules"]["effects"]
+                       if m["id"] == "smoothen")
+    _patch(f"{ui.base}/api/layers/{layer_id}",
+           {"effects": [{"effect": "smoothen", "enabled": True, "params": effect_mod["defaults"]}]})
+    _post(f"{ui.base}/api/layers/{layer_id}/animate")
+    reload_app(ui)
+    ui.wait_for_selector("#layer-list .layer-row", timeout=15_000)
+
+    select_layer_named(ui, "▸ A")
+    ui.wait_for_selector("#fx-steps .step", timeout=10_000)
+    ui.locator("#fx-steps .step .name").first.click()  # expand the smoothen step
+    ui.wait_for_selector("#fx-steps .form-group summary", timeout=10_000)
+    ui.locator("#fx-steps .form-group summary").first.click()  # expand "Fine tuning"
+    ui.wait_for_function(
+        "() => document.querySelector('#fx-steps .form-group')?.open === true", timeout=5_000)
+
+    ui.evaluate("() => { document.getElementById('tab-compose').scrollTop = 600; }")
+    scroll_pos = ui.evaluate("() => document.getElementById('tab-compose').scrollTop")
+    assert scroll_pos > 0, "the panel isn't tall enough to scroll — test doesn't prove anything"
+
+    select_layer_named(ui, "▸ B")
+    ui.wait_for_selector("#fx-steps .step", timeout=10_000)
+    # same family, different layer id: both must already match — no clicks
+    ui.wait_for_function(
+        "() => document.querySelector('#fx-steps .form-group')?.open === true", timeout=5_000)
+    ui.wait_for_function(
+        "(want) => document.getElementById('tab-compose').scrollTop === want",
+        arg=scroll_pos, timeout=5_000)
     assert not ui.errors
 
 
