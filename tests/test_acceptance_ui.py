@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -1205,6 +1206,182 @@ _SHOT_DIR = Path("/private/tmp/claude-501/-Users-ianduclos--SecondBrain-02-Areas
 def _shoot(page, name: str) -> None:
     _SHOT_DIR.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(_SHOT_DIR / name))
+
+
+# -- render popup (docs/plans/timeline-v2.md §2c, 2026-08-11 bench fixes) ----
+
+def test_render_popup_opens_from_the_compose_tab(ui):
+    """THE acceptance case for the §2c popup fix: the popup used to live
+    inside the Plot tab's own DOM (built into `#tab-plot`'s innerHTML by
+    initPlotTab), so it only ever showed while that tab was active — `hidden`
+    on a tab body computes to `display:none` on every descendant, which took
+    a `position:fixed` modal down with it. It's now static top-level markup
+    in index.html, and the timeline bar's Render-popup button (#tl-render,
+    live on every tab once anything follows the master timeline) must open
+    it regardless of which tab is showing — Compose is the tab Ian actually
+    hit it from on the bench."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+
+    assert ui.locator("#tabs button.on").inner_text().lower() == "compose", \
+        "Compose is the default tab — the acceptance case starts here"
+    assert ui.locator("#tab-compose").is_visible()
+
+    ui.click("#tl-render")
+    ui.wait_for_selector("#anim-preview-modal:not([hidden])", timeout=10_000)
+    assert ui.is_visible("#anim-preview-modal"), \
+        "the render popup must open over the Compose tab, not just the Plot tab"
+    # underneath, Compose is still the active tab — the popup is an overlay
+    # on top of it, not a tab switch
+    assert ui.locator("#tabs button.on").inner_text().lower() == "compose"
+
+    ui.wait_for_function(
+        "() => !document.getElementById('anim-preview-img').hidden", timeout=30_000)
+    _shoot(ui, "render-popup-over-compose-tab.png")
+
+    ui.click("#anim-preview-close")
+    ui.wait_for_function(
+        "() => document.getElementById('anim-preview-modal').hidden", timeout=5_000)
+    assert not ui.errors
+
+
+def test_render_popup_resolution_change_rerenders_and_labels_actual_size(ui):
+    """2026-08-11 ruling: picking a resolution must re-render (not just wait
+    for the next manual click) and the label must state the ACTUAL on-screen
+    resolution — the exact decoded pixel size of the PNG that came back, not
+    a recomputed guess — so going 1x -> 2x must exactly double both the
+    label's width and height. Doesn't assume landscape vs portrait (the
+    default project view is portrait, which rotates the render 90°): it
+    reads whatever pair of numbers the label prints and checks the ratio."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+
+    ui.click("#tl-render")
+    ui.wait_for_selector("#anim-preview-modal:not([hidden])", timeout=10_000)
+    ui.wait_for_function(
+        "() => !document.getElementById('anim-preview-img').hidden", timeout=30_000)
+    label_1x = ui.locator("#anim-preview-popup-label").text_content()
+    m1 = re.search(r"(\d+)\D(\d+) @1×", label_1x)
+    assert m1, f"expected a WxH @1× resolution readout, got: {label_1x!r}"
+    w1, h1 = int(m1.group(1)), int(m1.group(2))
+
+    ui.select_option("#anim-preview-scale", "2")
+    ui.wait_for_function(
+        "(prev) => document.getElementById('anim-preview-popup-label')"
+        ".textContent !== prev",
+        arg=label_1x, timeout=30_000)
+    label_2x = ui.locator("#anim-preview-popup-label").text_content()
+    m2 = re.search(r"(\d+)\D(\d+) @2×", label_2x)
+    assert m2, f"expected a WxH @2× resolution readout, got: {label_2x!r}"
+    w2, h2 = int(m2.group(1)), int(m2.group(2))
+    assert (w2, h2) == (w1 * 2, h1 * 2), (label_1x, label_2x)
+    assert not ui.errors
+
+
+def test_render_popup_fps_is_independent_of_the_animation_panel_fps(ui):
+    """§2c: fps moved INTO the popup (drives popup playback + GIF/MP4 export)
+    as its own field, separate from the Animation panel's #anim-preview-fps
+    (which still drives in-canvas Live play speed). Changing one must not
+    move the other, and the popup's own control must be the one that lands
+    in the export links."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.wait_for_selector("#anim-panel", timeout=10_000)
+    if "collapsed" in (ui.locator("#anim-panel").get_attribute("class") or ""):
+        ui.click("#anim-panel > h2")  # collapsed by default (data-collapse-default)
+    ui.wait_for_selector("#anim-preview-fps", timeout=10_000)
+    live_fps_before = ui.locator("#anim-preview-fps").input_value()
+
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+    ui.click("#tl-render")
+    ui.wait_for_selector("#anim-preview-modal:not([hidden])", timeout=10_000)
+    ui.wait_for_selector("#anim-preview-popup-fps", timeout=10_000)
+
+    ui.fill("#anim-preview-popup-fps", "3")
+    ui.locator("#anim-preview-popup-fps").dispatch_event("change")
+    ui.wait_for_function(
+        "() => document.getElementById('anim-preview-export-gif').href.includes('fps=3')",
+        timeout=10_000)
+
+    assert ui.locator("#anim-preview-fps").input_value() == live_fps_before, \
+        "the Animation panel's Live-play fps must not move with the popup's"
+    assert not ui.errors
+
+
+def test_render_popup_pan_tracks_the_cursor_1_to_1_at_1x_2x_and_4x(ui):
+    """2026-08-11 bench report: "the CSS-transform pan doesn't compensate for
+    zoom scale — drags feel wrong at high zoom." The fix put `scale()`
+    outer and `translate()` inner (applyZoomTransform, plot.js) and divides
+    the on-screen mouse delta by the current zoom before folding it into
+    panX/panY, which now live in that pre-scale coordinate system — so a
+    given screen-pixel drag must move the rendered image by the SAME number
+    of screen pixels regardless of zoom. Reads the inline `style.transform`
+    string plot.js writes (not rendered geometry, which would drag in
+    Playwright/OS scroll-position noise) so the assertion is exact rather
+    than pixel-fuzzy."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+    ui.click("#tl-render")
+    ui.wait_for_selector("#anim-preview-modal:not([hidden])", timeout=10_000)
+    ui.wait_for_function(
+        "() => !document.getElementById('anim-preview-img').hidden", timeout=30_000)
+
+    stage = ui.locator("#anim-preview-stage").bounding_box()
+    cx, cy = stage["x"] + stage["width"] / 2, stage["y"] + stage["height"] / 2
+
+    def pan_xy():
+        t = ui.evaluate("() => document.getElementById('anim-preview-img').style.transform")
+        m = re.search(r"translate\(([-\d.]+)px, ([-\d.]+)px\)", t)
+        assert m, t
+        return float(m.group(1)), float(m.group(2))
+
+    for ticks, want_zoom in ((5, 2), (15, 4)):  # +0.2 per tick from 1.0
+        # double-click resets zoom=1, pan=0,0 before each level
+        ui.mouse.move(cx, cy)
+        ui.mouse.dblclick(cx, cy)
+        ui.wait_for_function(
+            "() => document.getElementById('anim-preview-img').style.transform.includes('scale(1)')",
+            timeout=5_000)
+        for _ in range(ticks):
+            ui.locator("#anim-preview-stage").dispatch_event(
+                "wheel", {"deltaY": -100, "bubbles": True, "cancelable": True})
+        ui.wait_for_function(
+            "(z) => document.getElementById('anim-preview-img').style.transform"
+            f".includes(`scale(${{z}})`)",
+            arg=want_zoom, timeout=5_000)
+
+        pan_before = pan_xy()
+        dx, dy = 40, -25
+        ui.mouse.move(cx, cy)
+        ui.mouse.down()
+        # single hop, not `steps=N`: multi-step moves only fired ONE
+        # intermediate mousemove in this Playwright/Chromium combo (verified
+        # with a throwaway debug script) rather than N, which read as a
+        # pan-math bug here but was a test-harness artifact, not the app's.
+        ui.mouse.move(cx + dx, cy + dy)
+        ui.mouse.up()
+        pan_after = pan_xy()
+
+        # the pre-scale translate delta, scaled back UP by zoom, must equal
+        # the literal screen-pixel drag — i.e. the image tracked the cursor
+        # 1:1 in screen space at this zoom level.
+        screen_dx = (pan_after[0] - pan_before[0]) * want_zoom
+        screen_dy = (pan_after[1] - pan_before[1]) * want_zoom
+        assert abs(screen_dx - dx) < 1.0, (want_zoom, screen_dx, dx)
+        assert abs(screen_dy - dy) < 1.0, (want_zoom, screen_dy, dy)
+    assert not ui.errors
 
 
 def test_chain_keyframe_list_appears_and_selecting_a_key_moves_the_timeline(ui):

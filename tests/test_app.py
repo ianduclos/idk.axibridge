@@ -292,11 +292,45 @@ def test_export_animation_gif_empty_project_400(client):
 def test_export_animation_mp4_501_without_ffmpeg(client, monkeypatch):
     from axibridge import api as api_module
 
+    # Truly absent everywhere _find_ffmpeg looks: PATH empty AND no
+    # well-known Homebrew location — without clearing the latter too, this
+    # would pass on Ian's own machine (which has ffmpeg at
+    # /opt/homebrew/bin/ffmpeg) and the 501 assertion below would fail.
     monkeypatch.setattr(api_module.shutil, "which", lambda name: None)
+    monkeypatch.setattr(api_module, "_FFMPEG_WELL_KNOWN", ())
     _animated_layer(client)
     r = client.get("/api/animation/export.mp4?frames=3")
     assert r.status_code == 501
     assert "ffmpeg" in r.json()["detail"].lower()
+
+
+def test_find_ffmpeg_falls_back_to_well_known_location(tmp_path, monkeypatch):
+    """THE BUG (2026-08-11 bench check): a Finder-launched app bundle doesn't
+    inherit the brew PATH, so shutil.which("ffmpeg") comes back empty even
+    though ffmpeg is genuinely brew-installed. _find_ffmpeg must still find
+    it via the well-known Homebrew locations."""
+    from axibridge import api as api_module
+
+    fake = tmp_path / "ffmpeg"
+    fake.write_text("#!/bin/sh\necho fake\n")
+    fake.chmod(0o755)
+    monkeypatch.setattr(api_module.shutil, "which", lambda name: None)
+    monkeypatch.setattr(api_module, "_FFMPEG_WELL_KNOWN", (str(fake),))
+    assert api_module._find_ffmpeg() == str(fake)
+
+
+def test_state_ffmpeg_available_true_via_well_known_location(client, tmp_path, monkeypatch):
+    """/api/state's ffmpeg_available must reflect the same robust check —
+    PATH empty, binary only at a well-known location, still True."""
+    from axibridge import api as api_module
+
+    fake = tmp_path / "ffmpeg"
+    fake.write_text("#!/bin/sh\necho fake\n")
+    fake.chmod(0o755)
+    monkeypatch.setattr(api_module.shutil, "which", lambda name: None)
+    monkeypatch.setattr(api_module, "_FFMPEG_WELL_KNOWN", (str(fake),))
+    st = client.get("/api/state").json()
+    assert st["ffmpeg_available"] is True
 
 
 def test_export_animation_mp4_happy_path(client):

@@ -268,6 +268,61 @@
   </section>
 </main>
 
+<!-- Render popup (animation preview / GIF / MP4). Static top-level markup,
+     a sibling of <header>/<main> rather than appended inside the Plot tab's
+     body (Ian, 2026-08-11 bench check): `.modal-backdrop` is `position:fixed`
+     and would already cover the viewport from anywhere, but a tab body gets
+     `hidden` on switch, and `hidden` computes to `display:none` on every
+     descendant — so a modal built inside #tab-plot silently vanished the
+     moment you left the Plot tab. Living here, outside every tab body, means
+     the timeline bar's "Render popup" button (#tl-render) opens it from
+     Compose/Pens/Settings too, same as #layers-dock and #timeline-bar stay
+     wired across tab switches and project reloads. plot.js still owns every
+     control inside it — it only stopped owning the markup's location. -->
+<div id="anim-preview-modal" class="modal-backdrop" hidden>
+  <div class="preview-modal">
+    <div class="preview-head">
+      <h2>Animation preview</h2>
+      <button id="anim-preview-close">Close</button>
+    </div>
+    <div id="anim-preview-stage" class="preview-stage" style="position:relative">
+      <img id="anim-preview-img" alt="">
+      <div id="anim-preview-empty" class="hint">rendering…</div>
+    </div>
+    <div class="row">
+      <button id="anim-preview-popup-toggle" class="primary">Play</button>
+      <button id="anim-preview-popup-prev">← Frame</button>
+      <button id="anim-preview-popup-next">Frame →</button>
+      <span id="anim-preview-popup-label" class="hint"></span>
+    </div>
+    <div class="row">
+      <label class="hint" style="cursor:pointer"
+             title="playback and export both ping-pong A→D→A without doubling either end">
+        <input type="checkbox" id="anim-preview-palindrome"> palindrome</label>
+      <label>resolution</label>
+      <select id="anim-preview-scale" title="render resolution — higher costs more time per frame; changing this re-renders">
+        <option value="1">1×</option>
+        <option value="2">2×</option>
+        <option value="3">3×</option>
+        <option value="4">4×</option>
+      </select>
+      <!-- fps here drives POPUP playback + GIF/MP4 export only — a separate
+           field (anim.popupFps) from the Animation panel's own #anim-preview-fps,
+           which still sets the in-canvas Live play speed (Ian, 2026-08-11:
+           "if the Animation panel still needs it for live playback speed,
+           keep that one and give the popup its own" — it does, via
+           schedulePreviewNext in plot.js, so both controls stay). -->
+      <label>fps</label><input type="number" id="anim-preview-popup-fps" min="1" max="24" step="1" style="width:4em">
+      <span class="hint">scroll to zoom the image, drag to pan, double-click to reset</span>
+    </div>
+    <div class="row">
+      <a id="anim-preview-export-gif" download><button type="button">Export GIF</button></a>
+      <a id="anim-preview-export-mp4" download><button type="button" id="anim-preview-mp4-btn">Export MP4</button></a>
+    </div>
+    <div class="progress"><div id="anim-preview-progress"></div></div>
+  </div>
+</div>
+
 <script type="module" src="/js/main.js"></script>
 </body>
 </html>

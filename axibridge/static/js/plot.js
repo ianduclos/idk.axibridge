@@ -189,7 +189,8 @@ export function initPlotTab() {
         <button id="anim-preview-render" class="primary">Render popup</button>
         <button id="anim-preview-toggle">Live play</button>
         <button id="anim-preview-step">Frame →</button>
-        <label>fps</label><input type="number" id="anim-preview-fps" min="1" max="24" step="1" style="width:4em">
+        <label title="in-canvas Live play speed only — the render popup has its own fps for playback/export">live fps</label>
+        <input type="number" id="anim-preview-fps" min="1" max="24" step="1" style="width:4em">
         <label class="hint" style="cursor:pointer"><input type="checkbox" id="anim-preview-loop"> loop</label>
       </div>
       <div class="row"><span id="anim-preview-label"></span></div>
@@ -266,44 +267,15 @@ export function initPlotTab() {
       </details>
     </div>
 
-    <div id="anim-preview-modal" class="modal-backdrop" hidden>
-      <div class="preview-modal">
-        <div class="preview-head">
-          <h2>Animation preview</h2>
-          <button id="anim-preview-close">Close</button>
-        </div>
-        <div id="anim-preview-stage" class="preview-stage" style="position:relative">
-          <img id="anim-preview-img" alt="">
-          <div id="anim-preview-empty" class="hint">rendering…</div>
-        </div>
-        <div class="row">
-          <button id="anim-preview-popup-toggle" class="primary">Play</button>
-          <button id="anim-preview-popup-prev">← Frame</button>
-          <button id="anim-preview-popup-next">Frame →</button>
-          <span id="anim-preview-popup-label" class="hint"></span>
-        </div>
-        <div class="row">
-          <label class="hint" style="cursor:pointer"
-                 title="playback and export both ping-pong A→D→A without doubling either end">
-            <input type="checkbox" id="anim-preview-palindrome"> palindrome</label>
-          <label>resolution</label>
-          <select id="anim-preview-scale" title="render resolution — higher costs more time per frame">
-            <option value="1">1×</option>
-            <option value="2">2×</option>
-            <option value="3">3×</option>
-            <option value="4">4×</option>
-          </select>
-          <span class="hint">scroll to zoom the image, drag to pan, double-click to reset</span>
-        </div>
-        <div class="row">
-          <a id="anim-preview-export-gif" download><button type="button">Export GIF</button></a>
-          <a id="anim-preview-export-mp4" download><button type="button" id="anim-preview-mp4-btn">Export MP4</button></a>
-        </div>
-        <div class="progress"><div id="anim-preview-progress"></div></div>
-      </div>
-    </div>
-
 `;
+  // #anim-preview-modal (the render popup) is NOT built here — it's static
+  // top-level markup in index.html now (Ian, 2026-08-11 bench check: it must
+  // open from any tab, and a tab body that goes `hidden` on switch takes
+  // every descendant with it, including a `position:fixed` modal). The
+  // wiring below still addresses it by id; `initRasterZoomPan()` guards
+  // itself against re-registering listeners on the now-persistent element
+  // (see its own comment) since this whole function re-runs on every
+  // project load.
 
 
   // ---- backends / connection
@@ -563,6 +535,17 @@ export function initPlotTab() {
   $("anim-preview-scale").value = String(anim.scale);
   $("anim-preview-scale").onchange = () => {
     anim.scale = Math.max(1, Math.min(4, Math.round(Number($("anim-preview-scale").value)) || 1));
+    // 2026-08-11 ruling: a resolution change re-renders, it doesn't just wait
+    // for the next manual "Render popup" press — the whole point of picking
+    // a resolution is seeing it. renderRasterPreview() re-fetches every
+    // frame at the new scale and its own flow already calls
+    // updateRasterExportLinks() once the set lands.
+    renderRasterPreview();
+  };
+  $("anim-preview-popup-fps").value = String(anim.popupFps);
+  $("anim-preview-popup-fps").onchange = () => {
+    anim.popupFps = Math.max(1, Math.min(24, Math.round(Number($("anim-preview-popup-fps").value)) || 8));
+    $("anim-preview-popup-fps").value = String(anim.popupFps);
     updateRasterExportLinks();
   };
   initRasterZoomPan();
@@ -750,6 +733,12 @@ const anim = {
   // and CSS-transform zoom/pan state for the popup's <img> (view only — never
   // touches canvas.js's zoom machinery, which is a different coordinate space).
   palindrome: false, scale: 1,
+  // popupFps is the render popup's OWN fps (playback + GIF/MP4 export) —
+  // deliberately split from `fps` above (2026-08-11, Ian): that field still
+  // drives the Animation panel's in-canvas Live play (schedulePreviewNext),
+  // a different consumer with different needs, so one shared field would
+  // fight itself the moment either control moved independently.
+  popupFps: 8,
   zoom: 1, panX: 0, panY: 0,
 };
 const stage = {
@@ -1319,7 +1308,7 @@ function playOrder() {
 // same source of truth as updateExportLink() for the SVG zip.
 function updateRasterExportLinks() {
   const params = `frames=${anim.n}&t_from=${anim.tFrom}&t_to=${anim.tTo}` +
-    `&fps=${anim.fps}&scale=${anim.scale}&palindrome=${anim.palindrome}`;
+    `&fps=${anim.popupFps}&scale=${anim.scale}&palindrome=${anim.palindrome}`;
   const gif = $("anim-preview-export-gif");
   if (gif) gif.href = `/api/animation/export.gif?${params}`;
   const mp4 = $("anim-preview-export-mp4");
@@ -1340,10 +1329,20 @@ function syncMp4ExportAvailability() {
   link.onclick = available ? null : (e) => e.preventDefault();
 }
 
+// scale() OUTER, translate() INNER (2026-08-11 fix — was the reverse): with
+// `translate() scale()`, CSS composes translate in the element's own
+// POST-scale coordinate system, so panX/panY are screen pixels regardless of
+// zoom and the image visibly drifts slower than the cursor at high zoom —
+// exactly Ian's "pan feels finicky" bench report. With `scale() translate()`,
+// translate is expressed in the PRE-scale (local) coordinate system, so a
+// given panX now moves the rendered pixel by `zoom * panX` on screen — which
+// is why the drag handler below divides the mouse delta by anim.zoom before
+// accumulating it into panX/panY: that conversion is what makes 1 mouse
+// pixel move the image by exactly 1 screen pixel at any zoom level.
 function applyZoomTransform() {
   const img = $("anim-preview-img");
   if (!img) return;
-  img.style.transform = `translate(${anim.panX}px, ${anim.panY}px) scale(${anim.zoom})`;
+  img.style.transform = `scale(${anim.zoom}) translate(${anim.panX}px, ${anim.panY}px)`;
   img.style.cursor = anim.zoom > 1 ? "grab" : "";
 }
 
@@ -1360,9 +1359,18 @@ function resetRasterZoom() {
 // same ceiling as the render-resolution control since a display zoom past
 // the render's own supersample just shows blur, not detail); dragging pans
 // only once zoomed in; double-click resets.
+//
+// Guarded (stageEl.dataset.zoomPanInit) because #anim-preview-stage is now
+// static top-level markup (index.html, moved 2026-08-11) instead of being
+// rebuilt inside #tab-plot's innerHTML every project load — without the
+// guard, every initPlotTab() call would pile on another set of `wheel`/
+// `mousedown`/`dblclick` listeners on the same persistent element (and
+// another `mousemove`/`mouseup` pair on `window`), each firing once per
+// prior project load. Same idiom as timeline.js's `bar.dataset.tlInit`.
 function initRasterZoomPan() {
   const stageEl = $("anim-preview-stage");
-  if (!stageEl) return;
+  if (!stageEl || stageEl.dataset.zoomPanInit) return;
+  stageEl.dataset.zoomPanInit = "1";
   let dragging = false;
   let dragStart = null;
   stageEl.addEventListener("wheel", (e) => {
@@ -1376,13 +1384,24 @@ function initRasterZoomPan() {
   stageEl.addEventListener("mousedown", (e) => {
     if (anim.zoom <= 1) return;
     dragging = true;
-    dragStart = { x: e.clientX - anim.panX, y: e.clientY - anim.panY };
+    // Screen-space anchor only — panX/panY are now in the PRE-scale
+    // coordinate system (see applyZoomTransform's comment), so the delta
+    // gets divided by anim.zoom below rather than folded in here.
+    dragStart = { x: e.clientX, y: e.clientY, panX: anim.panX, panY: anim.panY };
     stageEl.style.cursor = "grabbing";
   });
   window.addEventListener("mousemove", (e) => {
     if (!dragging) return;
-    anim.panX = e.clientX - dragStart.x;
-    anim.panY = e.clientY - dragStart.y;
+    // The fix (2026-08-11, Ian's bench report — "pan doesn't compensate for
+    // zoom, drags feel wrong at high zoom"): divide the on-screen mouse
+    // delta by the current zoom before accumulating it into panX/panY, which
+    // now live in the pre-scale coordinate system. Undivided, the same mouse
+    // delta produced the same panX at any zoom, so the rendered image moved
+    // `zoom` times as many screen pixels as the cursor — the drag ran away
+    // from the pointer at 2x/4x. Dividing makes 1 screen px of drag move the
+    // image by exactly 1 screen px, at 1x/2x/4x alike.
+    anim.panX = dragStart.panX + (e.clientX - dragStart.x) / anim.zoom;
+    anim.panY = dragStart.panY + (e.clientY - dragStart.y) / anim.zoom;
     applyZoomTransform();
   });
   window.addEventListener("mouseup", () => {
@@ -1434,8 +1453,14 @@ function renderRasterControls(message = "") {
   if (prev) prev.disabled = anim.renderingPreview || !hasFrames;
   if (next) next.disabled = anim.renderingPreview || !hasFrames;
   if (label) {
+    // States the ACTUAL on-screen resolution (2026-08-11 ruling), not just
+    // the scale multiplier: `frame.w`/`frame.h` are the decoded pixel
+    // dimensions of the PNG that came back for this exact frame (see
+    // renderRasterPreview), so "1800×2400 @2×" is what the machine really
+    // rendered, immune to any rounding between width_px and scale.
+    const f = anim.previewFrames[anim.popupI];
     label.textContent = hasFrames
-      ? `frame ${anim.popupI + 1}/${anim.previewFrames.length} · t=${anim.previewFrames[anim.popupI].t.toFixed(3)}`
+      ? `frame ${anim.popupI + 1}/${anim.previewFrames.length} · t=${f.t.toFixed(3)} · ${f.w}×${f.h} @${f.scale}×`
       : message;
   }
   updateRasterExportLinks();
@@ -1484,9 +1509,9 @@ function startRasterPlayback() {
     }
     anim.popupPos = nextPos;
     showRasterFrame(ord[nextPos]);
-    anim.popupTimer = setTimeout(tick, 1000 / anim.fps);
+    anim.popupTimer = setTimeout(tick, 1000 / anim.popupFps);
   };
-  anim.popupTimer = setTimeout(tick, 1000 / anim.fps);
+  anim.popupTimer = setTimeout(tick, 1000 / anim.popupFps);
 }
 
 function closeRasterPreview() {
@@ -1530,7 +1555,13 @@ export async function renderRasterPreview() {
       const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
-      const frame = { url: URL.createObjectURL(blob), t };
+      // Decode dimensions now so the popup label can state the ACTUAL
+      // on-screen resolution ("1800×2400 @2×") rather than recomputing the
+      // server's width_px/scale/bed-aspect math a second time in JS — this
+      // is the exact PNG the machine rendered, read back, not a guess.
+      const bitmap = await createImageBitmap(blob);
+      const frame = { url: URL.createObjectURL(blob), t, w: bitmap.width, h: bitmap.height, scale: anim.scale };
+      bitmap.close?.();
       newFrames.push(frame);
       setRasterProgress(i + 1, anim.n);
       if (!anim.previewFrames.length && newFrames.length === 1) {

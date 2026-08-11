@@ -40,6 +40,31 @@ from .tween import TweenParams
 
 router = APIRouter(prefix="/api")
 
+# Homebrew's two install prefixes (Apple Silicon, Intel) — checked when
+# shutil.which comes back empty. THE BUG (2026-08-11, Ian's bench check):
+# Finder launches the app bundle with a bare login-shell PATH that never
+# sourced .zshrc/.zprofile, so `which ffmpeg` fails even with ffmpeg genuinely
+# brew-installed — the app said "no ffmpeg" on a machine that had it. A
+# Terminal-launched dev server doesn't hit this (its shell already sourced
+# brew's PATH export), which is why it's easy to miss in normal testing.
+_FFMPEG_WELL_KNOWN: tuple[str, ...] = ("/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg")
+
+
+def _find_ffmpeg() -> str | None:
+    """Resolve an ffmpeg binary: PATH first, then the well-known Homebrew
+    locations above. Returns the resolved path (never just a bool) so the
+    one caller that actually shells out (export_animation_mp4) uses the
+    exact binary this function found, rather than re-deriving it and
+    risking the two disagreeing."""
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    for candidate in _FFMPEG_WELL_KNOWN:
+        path = FsPath(candidate)
+        if path.is_file() and os.access(path, os.X_OK):
+            return str(path)
+    return None
+
 
 def _fail(exc: Exception, code: int = 409) -> HTTPException:
     return HTTPException(status_code=code, detail=str(exc))
@@ -75,8 +100,11 @@ def get_state() -> dict[str, Any]:
         "assets": asset_store.info(),
         "bed": {"width": compose.BED_WIDTH, "height": compose.BED_HEIGHT},
         # a machine-level install (ffmpeg), not a Python dependency — the render
-        # popup's MP4 export button disables itself with this as its reason when false
-        "ffmpeg_available": shutil.which("ffmpeg") is not None,
+        # popup's MP4 export button disables itself with this as its reason when
+        # false. _find_ffmpeg() (not a bare shutil.which) so a Finder-launched
+        # app bundle with no brew PATH still reports true when ffmpeg is
+        # genuinely installed at a well-known Homebrew location.
+        "ffmpeg_available": _find_ffmpeg() is not None,
         # schemas the frontend renders forms from (same mechanism as modules)
         "schemas": {
             "plot_options": PlotOptions.model_json_schema(),
@@ -1362,11 +1390,11 @@ def export_animation_mp4(
 ) -> Response:
     """H.264 MP4 sequence export via an ``ffmpeg`` subprocess over the same
     rendered frames as export.gif/preview.png — checked at request time
-    (``shutil.which``, no bundled/pip video dependency) since ffmpeg is a
+    (``_find_ffmpeg``, no bundled/pip video dependency) since ffmpeg is a
     machine-level install, not every axibridge host has one (e.g. a bare Pi).
     501s with an install hint when it's missing; the frontend mirrors that
     reason on the disabled MP4 button rather than guessing."""
-    ffmpeg = shutil.which("ffmpeg")
+    ffmpeg = _find_ffmpeg()
     if not ffmpeg:
         raise HTTPException(
             status_code=501,
