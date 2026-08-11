@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field
 
 from ..model import Layer, Path, PathDocument
 from ..registry import SourceModule, register_source
-from .pen import _flatten_cubic
+from ._fontglyph import glyph_contours
 
 _FONT_DIR = FsPath(__file__).parent.parent / "fonts" / "stick"
 
@@ -84,68 +84,6 @@ def _stick_font(font_id: str):
     return TTFont(_FONT_DIR / _STICK_FILES[font_id])
 
 
-def _flatten_quad(p0, q, p2, tol):
-    """Degree-elevate the quadratic to a cubic, then reuse pen.py's adaptive
-    de Casteljau flattener. Returns points AFTER p0, ending at p2."""
-    c1 = (p0[0] + (q[0] - p0[0]) * 2 / 3, p0[1] + (q[1] - p0[1]) * 2 / 3)
-    c2 = (p2[0] + (q[0] - p2[0]) * 2 / 3, p2[1] + (q[1] - p2[1]) * 2 / 3)
-    return _flatten_cubic(p0, c1, c2, p2, tol)
-
-
-def _glyph_contours(glyph, tol: float) -> list[list[tuple[float, float]]]:
-    """A glyph's contours as polylines in font units (y up). Handles
-    moveTo/lineTo/closePath directly and qCurveTo with TrueType's implied
-    on-curve midpoints between consecutive off-curve points."""
-    from fontTools.pens.recordingPen import RecordingPen
-    pen = RecordingPen()
-    glyph.draw(pen)
-    contours: list[list[tuple[float, float]]] = []
-    cur: list[tuple[float, float]] = []
-    start = (0.0, 0.0)
-    pos = (0.0, 0.0)
-    for op, args in pen.value:
-        pts = [(float(x), float(y)) for x, y in args if x is not None]
-        if op == "moveTo":
-            if cur:
-                contours.append(cur)
-            cur = [pts[0]]
-            start = pos = pts[0]
-        elif op == "lineTo":
-            cur.extend(pts)
-            pos = pts[-1]
-        elif op == "qCurveTo":
-            # RecordingPen gives None as the final point when the contour
-            # closes through a curve — the endpoint is the contour start
-            raw = list(args)
-            if raw and raw[-1] is None:
-                raw[-1] = start
-            qpts = [(float(x), float(y)) for x, y in raw]
-            # qpts[:-1] are off-curve controls, qpts[-1] the on-curve end.
-            # TrueType implies an on-curve midpoint between consecutive
-            # off-curve controls.
-            controls = qpts[:-1]
-            if not controls:
-                pos = qpts[-1]
-                continue
-            ends = [((q[0] + controls[i + 1][0]) / 2,
-                     (q[1] + controls[i + 1][1]) / 2)
-                    for i, q in enumerate(controls[:-1])]
-            ends.append(qpts[-1])
-            for q, end in zip(controls, ends):
-                cur.extend(_flatten_quad(pos, q, end, tol))
-                pos = end
-        elif op in ("closePath", "endPath"):
-            if op == "closePath" and cur and cur[-1] != start:
-                cur.append(start)
-            if cur:
-                contours.append(cur)
-            cur = []
-            pos = start
-    if cur:
-        contours.append(cur)
-    return contours
-
-
 def _dedupe_segments(contours: list[list[tuple[float, float]]]
                      ) -> list[list[tuple[float, float]]]:
     """Drop segments whose exact reverse already appeared (stick fonts trace
@@ -189,7 +127,7 @@ def _stick_line(text: str, font_id: str, size: float, tracking: float,
         if name is None:
             x += 0.5 * size  # missing glyph: blank advance, no mark
             continue
-        contours = _glyph_contours(glyphs[name], tol)
+        contours = glyph_contours(glyphs[name], tol, glyphs)
         if dedupe:
             contours = _dedupe_segments(contours)
         for contour in contours:

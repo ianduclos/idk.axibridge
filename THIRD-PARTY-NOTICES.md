@@ -72,3 +72,20 @@ states they may be used and shared freely. They are vendored here (rather
 than referenced from a user font folder) so the text generator works
 identically on every machine, including the Pi.
 
+## Recursive variable font — SIL Open Font License 1.1
+
+`axibridge/fonts/variable/Recursive-Variable.ttf` is the Recursive variable
+font by The Recursive Project Authors (Arrow Type / Google Fonts),
+`google/fonts` repo, `ofl/recursive/`. It carries five variation axes
+(`wght`, `slnt`, `MONO`, `CASL`, `CRSV`); the filled-outline text generator
+(`axibridge/sources/text_fill.py`) exposes the first four as sliders. Full
+license text vendored alongside it at `axibridge/fonts/variable/OFL.txt`:
+
+```
+Copyright 2020 The Recursive Project Authors (https://github.com/arrowtype/recursive)
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+```
+
