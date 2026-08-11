@@ -86,6 +86,39 @@ def test_animation_project_round_trips(client):
     assert r.status_code == 200, r.text
 
 
+def test_keyframe_chain_round_trips(client):
+    """A chain is a ``keys`` list on an ordinary tween layer, so it must
+    survive save/load with its ORDER intact (the spacing is derived from it)
+    and resolve identically afterwards — including at a mid-chain scrub, the
+    one place a lost mid key would show."""
+    lay = client.post("/api/layers/generate", json={
+        "module": "polygon", "params": {"sides": 6, "radius": 15}}).json()
+    tw = client.post(f"/api/layers/{lay['id']}/animate").json()
+    keys = [client.post(f"/api/layers/{tw['id']}/chain/keyframe").json()["id"]
+            for _ in range(2)]
+    chain = client.get("/api/project").json()
+    keys = [l for l in chain["layers"] if l["id"] == tw["id"]][0]["source"]["params"]["keys"]
+    assert len(keys) == 4
+    for kid, radius in zip(keys, (15, 30, 45, 60)):
+        client.post(f"/api/layers/{kid}/regenerate",
+                    json={"params": {"sides": 6, "radius": radius}})
+
+    before = {t: client.get(f"/api/compose/resolved?t={t}").json()["layers"]
+              for t in (0.0, 1 / 3, 0.5, 1.0)}
+
+    client.post("/api/project/save", json={"name": "chain roundtrip"})
+    client.post("/api/project/new")
+    assert client.post("/api/project/load", json={"name": "chain roundtrip"}).status_code == 200
+
+    proj = client.get("/api/project").json()
+    params = [l for l in proj["layers"] if l["id"] == tw["id"]][0]["source"]["params"]
+    assert params["keys"] == keys                       # order preserved
+    assert params["a"] == keys[0] and params["b"] == keys[-1]
+    for t, snapshot in before.items():
+        after = client.get(f"/api/compose/resolved?t={t}").json()["layers"]
+        assert [l["paths"] for l in after] == [l["paths"] for l in snapshot], f"t={t}"
+
+
 def test_save_prunes_zombie_assets(client):
     """A re-imported, shorter sequence must not resurrect its old tail frames
     through save+load — load reads every file in assets/, so save must prune

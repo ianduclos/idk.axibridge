@@ -49,6 +49,15 @@ The contract that makes it sturdy:
   either updates the morph. If a reference goes missing or incompatible the
   tween resolves to empty (never crashes a stored project); deleting a
   referenced layer is refused server-side unless the tween goes with it.
+* **Keyframe chains (A▸B▸C▸D)** — a tween may carry an ordered ``keys`` list
+  instead of just a pair. It is still ONE layer with one effect stack, one pen
+  and one occlusion setting; what changes is only the POSITION mapping. A
+  global position ``u ∈ [0,1]`` is reduced to ``(segment, local t)`` with
+  ISOMETRIC spacing (segment *k* spans ``[k/(N-1), (k+1)/(N-1)]``, derived
+  never stored, so inserting a key re-spaces the whole chain), and the
+  existing *pair* machinery runs on that segment's two endpoints. Two keys is
+  definitionally the classic A/B tween and takes the classic path unchanged.
+  Easing is PER SEGMENT (Ian, 2026-08-11, Q2) — see :func:`chain_segment`.
 * **Stamp positions are time-invariant** — a ``sweep > 1`` (stamped) tween
   places its copies at fixed positions strictly BETWEEN A and B
   (``i/(sweep+1)`` for ``i`` in ``1..sweep``, never coincident with either
@@ -70,7 +79,7 @@ import logging
 import math
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from .compose import Affine, CanvasLayer, EffectStep, Project, _layer_seed, guide_page as _guide_page, transform_paths
 from .gencache import generate_cached
@@ -85,9 +94,21 @@ log = logging.getLogger(__name__)
 _logged_failures: set[tuple[str, str]] = set()
 
 
+#: A chain may not grow without bound: every key is a real (hidden) layer that
+#: is generated and blended on the resolve path, and the whole ladder is
+#: re-derived on every scrub tick. 24 is "more stops than any pose-to-pose
+#: animation on this machine needs" and keeps the single-letter name suffix
+#: (" ▸ A" … " ▸ X") inside the alphabet.
+MAX_CHAIN_KEYS = 24
+
+
 class TweenParams(BaseModel):
     a: str = Field(title="Layer A")
     b: str = Field(title="Layer B")
+    keys: list[str] = Field(
+        default_factory=list, max_length=MAX_CHAIN_KEYS, title="Keyframes",
+        description="Ordered keyframe layer ids (A▸B▸C…). Empty = the classic "
+                    "A/B pair; when set, 'a' and 'b' mirror keys[0]/keys[-1].")
     t: float = Field(default=0.5, ge=0.0, le=1.0, title="t (A → B)")
     sweep: int = Field(default=1, ge=1, le=60, title="Sweep copies",
                        description="1 = single tween at t; more = in-betweens "
@@ -108,6 +129,38 @@ class TweenParams(BaseModel):
         default=1.0, ge=0.0, le=1.0, title="Window to",
         description="Maps the master timeline into this tween's local t: animate "
                     "inside the window, hold B for master_t past this point.")
+
+    @model_validator(mode="after")
+    def _sync_chain_endpoints(self) -> "TweenParams":
+        """``a``/``b`` are MAINTAINED as ``keys[0]``/``keys[-1]`` so every
+        pre-chain reader (the tray blend, ``effective_generator``'s classic
+        branch, the UI's A/B buttons, a stored project loaded by an older
+        build) still sees a coherent pair — the chain is an extension of the
+        pair, never a second kind of object. A one-key or duplicated-key chain
+        is rejected outright rather than stored: ``keys`` is brand new, so no
+        saved project can carry a bad list, and a duplicate key would resolve
+        to a silent empty segment ("pick two different layers")."""
+        if self.keys:
+            if len(self.keys) < 2:
+                raise ValueError("a keyframe chain needs at least 2 keys")
+            if len(set(self.keys)) != len(self.keys):
+                raise ValueError("a keyframe chain cannot repeat a layer")
+            self.a = self.keys[0]
+            self.b = self.keys[-1]
+        return self
+
+
+def chain_key_ids(params: dict[str, Any] | TweenParams) -> list[str]:
+    """The chain's ordered keyframe ids, or ``[]`` when this is a plain pair.
+
+    THE definition of "is this a chain": three or more keys. Two keys IS the
+    classic A/B tween — ``a``/``b`` already name them and the pair machinery
+    is bit-for-bit the same computation — so a 2-key ``keys`` list stays on
+    the classic path rather than through a second (identical-by-construction)
+    mapping. That is what makes "a 2-key chain is byte-identical to today's
+    A/B tween" true by construction and not by luck."""
+    keys = params.keys if isinstance(params, TweenParams) else (params.get("keys") or [])
+    return list(keys) if len(keys) > 2 else []
 
 
 # -- scalar / dict lerp -----------------------------------------------------
@@ -207,6 +260,74 @@ def map_time_curve(local_t: float, curve: str = "linear") -> float:
     if curve == "cosine_pingpong":
         return 0.5 - 0.5 * math.cos(2 * math.pi * t)
     return t
+
+
+#: Curves whose meaning is the SHAPE OF MOTION BETWEEN TWO KEYS. On a chain
+#: these apply to each segment's LOCAL t, so the motion settles on every
+#: keyframe and pushes off again — pose-to-pose animation (Ian's Q2 ruling,
+#: 2026-08-11, deliberately against the plan's "global" recommendation).
+#: ``linear`` is listed for completeness: it is the identity either way.
+SEGMENT_CURVES = frozenset({"linear", "cosine"})
+
+#: Curves whose meaning is GLOBAL — a statement about the whole motion that
+#: has no sensible per-segment reading. ``cosine_pingpong`` says "out and back
+#: over this timeline"; bouncing inside every segment would turn a 4-key chain
+#: into three separate round trips and never reach D at all. These map the
+#: global ``u`` FIRST, and the (already curved) result is then segment-mapped
+#: linearly — so a 3-key chain reads A at u=0, C at u=0.5, A again at u=1.
+GLOBAL_CURVES = frozenset({"cosine_pingpong"})
+
+#: Keyframe-boundary snap, in units of the segment ladder (``u * (N-1)``).
+#: ``k/(N-1) * (N-1)`` is not always exactly ``k`` in binary floating point,
+#: and "nearly 1.0" is not endpoint fidelity: ``lerp_params`` gates its exact
+#: seed reproduction on ``t <= 0.0`` / ``t >= 1.0``, so a position of
+#: 0.9999999999999998 would silently roll a per-frame seed instead of
+#: reproducing the key. 1e-9 of a segment is far below any visible motion.
+_KEY_SNAP = 1e-9
+
+
+def chain_segment(u: float, n_keys: int, curve: str = "linear") -> tuple[int, float]:
+    """Reduce a chain's GLOBAL position ``u`` to ``(segment index, local t)``.
+
+    Isometric spacing: with ``N`` keys there are ``N-1`` segments and segment
+    ``k`` spans ``u ∈ [k/(N-1), (k+1)/(N-1)]``. Nothing is stored — adding or
+    removing a key re-spaces the entire chain for free, which is the whole
+    reason Ian asked for isometric rather than per-key windows.
+
+    The curve is applied on ONE of two sides of the segment split, decided by
+    :data:`SEGMENT_CURVES` / :data:`GLOBAL_CURVES`:
+
+    * a shape-of-motion curve (``cosine``) eases each segment's own ``local
+      t`` — the chain settles at every keyframe;
+    * a globally-meaningful curve (``cosine_pingpong``) maps ``u`` first and
+      the result is segment-mapped linearly — A→…→Z→…→A over the whole
+      timeline, exactly as it means on a pair.
+
+    An unknown curve is treated as a segment curve (``map_time_curve`` falls
+    back to linear anyway). Callers pass ``"linear"`` for positions that were
+    never master-driven — a sweep ladder, a stored ``t`` — because the time
+    curve has only ever applied to the master timeline.
+    """
+    n_seg = max(1, n_keys - 1)
+    g = min(1.0, max(0.0, u))
+    if curve in GLOBAL_CURVES:
+        g = map_time_curve(g, curve)
+    if n_seg == 1:
+        # a pair: the mapping is the identity, and multiplying by 1 / snapping
+        # could only perturb a value the classic path passes through untouched
+        return 0, (g if curve in GLOBAL_CURVES else map_time_curve(g, curve))
+    pos = g * n_seg
+    nearest = round(pos)
+    if abs(pos - nearest) < _KEY_SNAP:
+        pos = float(nearest)  # land exactly ON the keyframe (see _KEY_SNAP)
+    seg = int(math.floor(pos))
+    if seg >= n_seg:
+        seg, local = n_seg - 1, 1.0
+    else:
+        local = pos - seg
+    if curve not in GLOBAL_CURVES:
+        local = map_time_curve(local, curve)
+    return seg, local
 
 
 def structures_match(ga: list[Path], gb: list[Path]) -> bool:
@@ -350,7 +471,7 @@ def map_window(master_t: float, window_from: float = 0.0, window_to: float = 1.0
 
 
 def resolve_local_t(params: dict[str, Any], master_t: float | None = None) -> float:
-    """A tween's effective morph ``t``. With ``follow_master`` set and a master
+    """A tween's effective POSITION. With ``follow_master`` set and a master
     value supplied, map it through the ``[window_from, window_to]`` window
     (:func:`map_window`) and then the time curve (:func:`map_time_curve`)
     exactly as the timeline does; otherwise the static stored ``t``.
@@ -358,12 +479,33 @@ def resolve_local_t(params: dict[str, Any], master_t: float | None = None) -> fl
     The single window+curve helper shared by ``session._materialize_tweens``
     and this module's :func:`effective_generator` (nested-tween sampling), so
     a *nested* tween samples its endpoints at the same ``t`` a top-level scrub
-    would — the two paths must not drift (the 2026-07-19 unification lesson)."""
+    would — the two paths must not drift (the 2026-07-19 unification lesson).
+
+    **On a chain the returned value is the GLOBAL position ``u``, window-
+    mapped but NOT curved.** A chain's easing is per segment (Q2), so the
+    curve cannot be applied before the segment is known; :func:`chain_segment`
+    owns it, and both consumers (``materialize`` and ``effective_generator``)
+    go through that one function. For a pair the two orderings coincide
+    exactly — one segment, ``local t == u`` — which is why nothing about the
+    classic path moves."""
     if master_t is not None and params.get("follow_master"):
         local = map_window(master_t, params.get("window_from", 0.0),
                             params.get("window_to", 1.0))
+        if chain_key_ids(params):
+            return local  # curve deferred to chain_segment, per segment
         return map_time_curve(local, params.get("time_curve", "linear"))
     return params.get("t", 0.5)
+
+
+def master_driven_curve(params: dict[str, Any], master_t: float | None) -> str:
+    """The curve that actually applies to a chain position: the stored
+    ``time_curve`` when the master timeline is driving this tween, else
+    ``"linear"``. The time curve has ALWAYS been a master-timeline mapping —
+    a stored ``t`` and a sweep ladder are raw positions and were never curved
+    (``materialize``'s ``ts``) — so a chain must not start curving them, or a
+    2-key chain would stop matching the pair it is supposed to generalise."""
+    return (params.get("time_curve", "linear")
+            if (master_t is not None and params.get("follow_master")) else "linear")
 
 
 def effective_generator(
@@ -391,8 +533,22 @@ def effective_generator(
     if src.type == "tween":
         try:
             p = TweenParams(**(src.params or {}))
-            la = project.layer(p.a)  # type: ignore[union-attr]
-            lb = project.layer(p.b)  # type: ignore[union-attr]
+            params = src.params or {}
+            keys = chain_key_ids(p)
+            if keys:
+                # chain: reduce to the ACTIVE SEGMENT's pair, so a chain can be
+                # an endpoint of another tween exactly as a pair can — the
+                # nesting rule ("both sides reduce to one generator") is
+                # unchanged, it just asks the segment that is live right now.
+                seg, ti = chain_segment(
+                    resolve_local_t(params, master_t), len(keys),
+                    master_driven_curve(params, master_t))
+                la = project.layer(keys[seg])  # type: ignore[union-attr]
+                lb = project.layer(keys[seg + 1])  # type: ignore[union-attr]
+            else:
+                la = project.layer(p.a)  # type: ignore[union-attr]
+                lb = project.layer(p.b)  # type: ignore[union-attr]
+                ti = resolve_local_t(params, master_t)
         except Exception:
             return None
         ega = effective_generator(la, project, master_t, _depth + 1)
@@ -400,7 +556,6 @@ def effective_generator(
         if ega is None or egb is None or ega[0] != egb[0]:
             return None
         gen = ega[0]
-        ti = resolve_local_t(src.params or {}, master_t)
         defaults = get_source(gen).Params().model_dump()
         params = lerp_params(ega[1], egb[1], ti, defaults)
         off = ega[2] + (egb[2] - ega[2]) * ti
@@ -467,6 +622,25 @@ def check_compatible(
                 "the same generator")
     return ("layers are not interpolatable: need the same generator on both, "
             "or identical path structure (use 'duplicate layer')")
+
+
+def check_chain_compatible(
+    layers: list[CanvasLayer], geos: list[list[Path]],
+    project: Project | None = None,
+) -> str | None:
+    """None if every CONSECUTIVE pair in a keyframe chain can tween; otherwise
+    the human-readable reason, prefixed with the failing pair's names (with
+    three keys and one bad hop, "which two?" is the whole question). A 2-layer
+    list is exactly :func:`check_compatible` and returns its bare reason, so a
+    pair's message is unchanged. Compatibility is a pairwise property here on
+    purpose: a chain never blends non-adjacent keys."""
+    for i in range(len(layers) - 1):
+        reason = check_compatible(layers[i], layers[i + 1], geos[i], geos[i + 1], project)
+        if reason is not None:
+            if len(layers) == 2:
+                return reason
+            return f"{layers[i].name} ▸ {layers[i + 1].name}: {reason}"
+    return None
 
 
 def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
@@ -537,22 +711,39 @@ def materialize(
     ``master_t`` is the RAW clamped master-timeline value (distinct from the
     window-mapped ``override_t``): passed straight through to
     ``_source_paths_at``, it advances the CLIP CONTENT of any endpoint that
-    opted into ``frame_follow`` — the ladder samples later frames in place."""
+    opted into ``frame_follow`` — the ladder samples later frames in place.
+
+    **On a chain** (3+ ``keys``) the positions above are read as GLOBAL ``u``
+    values and each is reduced to ``(segment, local t)`` by
+    :func:`chain_segment` before the identical pair machinery runs on that
+    segment's two keyframes. Both readings of ``sweep`` survive intact: the
+    ladder still stamps at fixed, time-invariant positions, they simply spread
+    across the WHOLE motion (A…D) instead of one pair."""
     try:
         p = TweenParams(**(layer.source.params or {}))
-        la = project.layer(p.a)
-        lb = project.layer(p.b)
-        geo_a = source_geometry.get(la.id, [])
-        geo_b = source_geometry.get(lb.id, [])
-        if check_compatible(la, lb, geo_a, geo_b, project) is not None:
+        stored = layer.source.params or {}
+        keys = chain_key_ids(p)
+        layers = [project.layer(k) for k in (keys or [p.a, p.b])]
+        geos = [source_geometry.get(l.id, []) for l in layers]
+        if check_chain_compatible(layers, geos, project) is not None:
             return []
+        # the curve applies to a MASTER-DRIVEN position only — never to a stored
+        # ``t`` or a sweep ladder (those were never curved) — and on the classic
+        # path the session has already applied it (resolve_local_t), so it is
+        # consumed here exclusively by the chain mapping.
+        curve = "linear"
         if p.sweep <= 1:
-            ts = [override_t if override_t is not None else p.t]
+            us = [override_t if override_t is not None else p.t]
+            if override_t is not None:
+                curve = master_driven_curve(stored, master_t)
         else:
             # exclusive in-betweens: evenly spaced strictly between the endpoints
-            ts = [i / (p.sweep + 1) for i in range(1, p.sweep + 1)]
+            us = [i / (p.sweep + 1) for i in range(1, p.sweep + 1)]
         out: list[Path] = []
-        for t in ts:
+        for u in us:
+            seg, t = chain_segment(u, len(layers), curve) if keys else (0, u)
+            la, lb = layers[seg], layers[seg + 1]
+            geo_a, geo_b = geos[seg], geos[seg + 1]
             paths = _source_paths_at(la, lb, geo_a, geo_b, t, master_t, project)
             placed = transform_paths(paths, lerp_affine(la.transform, lb.transform, t))
             ctx = EffectContext(

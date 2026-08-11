@@ -821,6 +821,51 @@ def put_tween_params(layer_id: str, values: dict[str, Any]) -> dict[str, Any]:
         raise _fail(e, 422)
 
 
+@router.post("/layers/{layer_id}/chain/keyframe")
+def add_chain_keyframe(layer_id: str) -> dict[str, Any]:
+    """Append a keyframe to an interpolation layer, growing A/B into a chain
+    (A▸B▸C…). The new key duplicates the LAST one — hidden, letter-suffixed —
+    so the animation is unchanged until it is edited. Creates a layer, hence
+    its own endpoint rather than a ``keys`` value on PUT .../tween.
+
+    409 when the layer is not a tween or the chain is already at its bound."""
+    try:
+        return session.add_chain_keyframe(layer_id).model_dump()
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 409)
+
+
+@router.delete("/layers/{layer_id}/chain/keyframe/{key_layer_id}")
+def remove_chain_keyframe(layer_id: str, key_layer_id: str) -> dict[str, Any]:
+    """Drop one keyframe from a chain (deleting the hidden layer with it).
+    Refused at two keys — that is a plain A/B tween; delete the tween itself
+    to un-animate."""
+    try:
+        return session.remove_chain_keyframe(layer_id, key_layer_id).model_dump()
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 409)
+
+
+class ChainOrderBody(BaseModel):
+    order: list[str]
+
+
+@router.put("/layers/{layer_id}/chain/order")
+def reorder_chain_keyframes(layer_id: str, body: ChainOrderBody) -> dict[str, Any]:
+    """Re-order a chain's keyframes — the same ids, a new order (segments and
+    their isometric spacing follow from the list)."""
+    try:
+        return session.reorder_chain_keyframes(layer_id, body.order).model_dump()
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 422)
+
+
 @router.post("/layers/{layer_id}/explode")
 def explode_tween(layer_id: str) -> dict[str, Any]:
     """Split a tween's sweep into individual baked layers."""

@@ -780,10 +780,11 @@ class Session:
 
     @staticmethod
     def _tween_refs(layer: CanvasLayer) -> list[Any]:
-        """Every layer id a tween references, in order — ``[a, b]`` today, and
-        (from S2 on) ``keys`` for a chain, so this is the ONE place that knows
-        how many refs a tween has. Every caller must treat the result as a
-        variable-length sequence (membership / iteration), never unpack a
+        """Every layer id a tween references, in order — ``[a, b]`` for a
+        pair, the whole ``keys`` list for a chain (S2), so this is the ONE
+        place that knows how many refs a tween has. Every caller must treat
+        the result as a variable-length sequence (membership / iteration),
+        never unpack a
         fixed 2-tuple — a chain with mid keyframes would silently dangle
         wherever that assumption survived (see F3 in
         docs/plans/timeline-v2.md)."""
@@ -804,7 +805,12 @@ class Session:
     _KEYFRAME_SUFFIX_RE = re.compile(r" ▸ [A-Z]$")
 
     def _animation_keyframes_for(self, tween_layer: CanvasLayer) -> list[CanvasLayer]:
-        """Hidden Animate-created keyframe layers, not visible manual tween refs."""
+        """Hidden Animate-created keyframe layers, not visible manual tween refs.
+
+        Length-agnostic since S2: a CHAIN's mid-keys are Animate-created
+        keyframes too, so dragging the tween moves the whole group (all N
+        keyframes) exactly as it moves A and B on a pair — the visible tween
+        stays the one handle for the animation."""
         if tween_layer.source.type != "tween":
             return []
         refs: list[CanvasLayer] = []
@@ -813,7 +819,7 @@ class Session:
                 refs.append(self.project.layer(ref_id))
             except KeyError:
                 return []
-        if len(refs) != 2:
+        if len(refs) < 2:
             return []
         if all((not l.visible) and self._KEYFRAME_SUFFIX_RE.search(l.name) for l in refs):
             return refs
@@ -972,8 +978,130 @@ class Session:
                 raise RuntimeError("not an interpolation layer")
             current = dict(layer.source.params or {})
             merged = tween.TweenParams(**{**current, **values})  # validates bounds
+            if "keys" in values:
+                # a chain rides the ordinary params merge, so this is the ONE
+                # place a keys list can arrive from outside: every id must name
+                # a real layer, and none may be the tween itself (a self-
+                # reference is a cycle the resolve path would have to unwind
+                # every tick). Bounds/uniqueness/endpoint sync are TweenParams'.
+                self._validate_chain_keys(layer, merged.keys)
             self._checkpoint()
             layer.source.params = merged.model_dump()
+            return layer
+
+    def _validate_chain_keys(self, tween_layer: CanvasLayer, keys: list[str]) -> None:
+        for kid in keys:
+            if kid == tween_layer.id:
+                raise RuntimeError("an interpolation layer cannot be its own keyframe")
+            self.project.layer(kid)  # KeyError -> 404 at the API edge
+
+    def _chain_keys(self, layer: CanvasLayer) -> list[str]:
+        """This tween's keyframe ids as a chain would see them: the stored
+        ``keys`` when set, else the implicit ``[a, b]`` pair — so the chain
+        verbs below work on a plain A/B animation without a "convert to chain"
+        step (Q6: chains grow out of the existing Animate flow)."""
+        if layer.source.type != "tween":
+            raise RuntimeError("not an interpolation layer")
+        return [r for r in self._tween_refs(layer) if isinstance(r, str)]
+
+    def _set_chain_keys(self, layer: CanvasLayer, keys: list[str]) -> None:
+        """Store a chain's key list (caller holds the lock and has already
+        checkpointed). A chain that falls back to two keys is stored as a plain
+        pair (``keys = []``): the classic form is fully reversible, and every
+        pre-chain reader — including an older build loading the saved project —
+        sees exactly the A/B tween it understands."""
+        params = dict(layer.source.params or {})
+        params["keys"] = list(keys) if len(keys) > 2 else []
+        params["a"], params["b"] = keys[0], keys[-1]
+        layer.source.params = tween.TweenParams(**params).model_dump()
+        self._tween_cache.pop(layer.id, None)
+
+    def add_chain_keyframe(self, layer_id: str) -> CanvasLayer:
+        """Append a keyframe to a tween, turning A/B into a chain (A▸B▸C…).
+
+        Per Ian's Q6 ruling the new key DUPLICATES THE LAST one, so the
+        appended segment starts static: the animation looks identical the
+        moment this returns and endpoint fidelity is preserved (duplicating
+        the FIRST key would make the tail snap back). The duplicate is hidden
+        and named with the next letter suffix, exactly like Animate's A/B, so
+        the cascade-delete rules collect it with its tween.
+
+        One checkpoint, no coalescing — adding a checkpoint is a discrete act,
+        not a latched drag."""
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            keys = self._chain_keys(layer)
+            if len(keys) >= tween.MAX_CHAIN_KEYS:
+                raise RuntimeError(
+                    f"a keyframe chain holds at most {tween.MAX_CHAIN_KEYS} keyframes")
+            last = self.project.layer(keys[-1])
+            self._checkpoint()
+
+            data = last.model_dump()
+            del data["id"]  # CanvasLayer mints a fresh one
+            base = self._KEYFRAME_SUFFIX_RE.sub("", last.name)
+            data["name"] = f"{base} ▸ {chr(ord('A') + len(keys))}"
+            data["visible"] = False
+            new_key = CanvasLayer(**data)
+            new_key.source.file = None  # snapshot belongs to the original
+            # below every existing keyframe, so the layer dock reads
+            # tween / A / B / C top-down (the list displays bottom->top reversed)
+            idx = min(self.project.layers.index(self.project.layer(k)) for k in keys)
+            self.project.layers.insert(idx, new_key)
+            # geometry lists are shared by reference and replaced wholesale,
+            # never mutated in place (module purity) — the same thing
+            # animate_layer does for keyframe B
+            self.source_geometry[new_key.id] = self.source_geometry.get(last.id, [])
+            self._set_chain_keys(layer, [*keys, new_key.id])
+            return new_key
+
+    def remove_chain_keyframe(self, layer_id: str, key_layer_id: str) -> CanvasLayer:
+        """Drop one keyframe from a chain, returning the tween.
+
+        The chain re-spaces itself (spacing is derived from the key count, not
+        stored), and a chain that falls back to two keys becomes a plain A/B
+        tween again. The removed layer is deleted along with it when it is a
+        hidden keyframe no surviving tween still references — the same rule
+        the delete cascade uses; a VISIBLE layer (a manual tween's own source)
+        is only unlinked, never destroyed. One checkpoint."""
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            keys = self._chain_keys(layer)
+            if key_layer_id not in keys:
+                raise KeyError(f"not a keyframe of this interpolation layer: {key_layer_id}")
+            if len(keys) <= 2:
+                raise RuntimeError(
+                    "an interpolation layer needs two keyframes — delete the "
+                    "layer itself to un-animate")
+            remaining = [k for k in keys if k != key_layer_id]
+            self._checkpoint()
+            self._set_chain_keys(layer, remaining)
+            try:
+                orphan = self.project.layer(key_layer_id)
+            except KeyError:
+                return layer
+            still_referenced = any(
+                key_layer_id in self._tween_refs(tw) for tw in self._tweens())
+            if not orphan.visible and not still_referenced:
+                self.project.layers.remove(orphan)
+                self.source_geometry.pop(orphan.id, None)
+                self._shaped_cache.pop(orphan.id, None)
+                self._tween_cache.pop(orphan.id, None)
+                self._clip_cache.pop(orphan.id, None)
+            return layer
+
+    def reorder_chain_keyframes(self, layer_id: str, ordered_ids: list[str]) -> CanvasLayer:
+        """Re-order a chain's keyframes (the same set, a new order). The
+        segments and their isometric spacing follow from the list, so this is
+        the only "move a keyframe in time" verb there is. One checkpoint."""
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            keys = self._chain_keys(layer)
+            if sorted(ordered_ids) != sorted(keys):
+                raise ValueError(
+                    "order must contain exactly this interpolation layer's keyframes")
+            self._checkpoint()
+            self._set_chain_keys(layer, list(ordered_ids))
             return layer
 
     def explode_tween(self, layer_id: str) -> list[CanvasLayer]:
