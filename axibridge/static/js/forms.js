@@ -165,6 +165,42 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
       };
       ctl.appendChild(up);
       ctl.appendChild(file);
+    } else if (spec.format === "font" || s.format === "font") {
+      // bundled + system-discovered fonts (system_fonts.py), grouped so the
+      // one guaranteed-available bundled font doesn't get lost in ~1000
+      // system faces. Upload (drag in a font file) lands in a later pass —
+      // for now this is a picker over what's already on the machine.
+      const sel = document.createElement("select");
+      const fonts = S.state?.fonts || [];
+      const bundled = fonts.filter((f) => f.source === "bundled");
+      const system = fonts.filter((f) => f.source !== "bundled");
+      const addOptions = (parent, list) => {
+        for (const f of list) {
+          const o = document.createElement("option");
+          o.value = f.id; o.textContent = f.label;
+          if (f.id === val) o.selected = true;
+          parent.appendChild(o);
+        }
+      };
+      if (bundled.length) {
+        const g = document.createElement("optgroup");
+        g.label = "Bundled";
+        addOptions(g, bundled);
+        sel.appendChild(g);
+      }
+      if (system.length) {
+        const g = document.createElement("optgroup");
+        g.label = "System";
+        addOptions(g, system);
+        sel.appendChild(g);
+      }
+      if (val && !fonts.some((f) => f.id === val)) { // font went missing: show it, don't silently drop
+        const o = document.createElement("option");
+        o.value = val; o.textContent = `${val} (missing)`; o.selected = true;
+        sel.appendChild(o);
+      }
+      sel.onchange = () => set(sel.value);
+      ctl.appendChild(sel);
     } else if (s.enum) {
       const sel = document.createElement("select");
       const rotateDisplayOrder = portrait && spec.viewRotate ? s.enum : null;

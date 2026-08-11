@@ -27,7 +27,7 @@ from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import calibration, compose, depth_pro, gencache, logbuf, project_io, svg_io
+from . import calibration, compose, depth_pro, gencache, logbuf, project_io, svg_io, system_fonts
 from .assets import SEQUENCE_FRAME_RE, asset_store, safe_asset_name
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
@@ -98,6 +98,7 @@ def get_state() -> dict[str, Any]:
         "settings": settings_store.settings.model_dump(),
         "project_dir": session.project_dir,
         "assets": asset_store.info(),
+        "fonts": _fonts_payload(),
         "bed": {"width": compose.BED_WIDTH, "height": compose.BED_HEIGHT},
         # a machine-level install (ffmpeg), not a Python dependency — the render
         # popup's MP4 export button disables itself with this as its reason when
@@ -653,6 +654,19 @@ async def upload_sequence(
 @router.get("/assets")
 def list_assets() -> dict[str, Any]:
     return {"assets": asset_store.info()}
+
+
+def _fonts_payload() -> list[dict[str, str]]:
+    """Bundled + system-discovered fonts for `format: "font"` picker fields
+    (text_fill.py's `font` param). One generic lookup regardless of how many
+    source modules bundle a font — see system_fonts.register_bundled."""
+    return [{"id": f.id, "label": f.label, "source": f.source}
+           for f in system_fonts.catalogue()]
+
+
+@router.get("/fonts")
+def list_fonts() -> dict[str, Any]:
+    return {"fonts": _fonts_payload()}
 
 
 def _asset_param_fields(schema: dict[str, Any]) -> list[str]:

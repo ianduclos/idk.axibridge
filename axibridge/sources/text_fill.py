@@ -11,7 +11,14 @@ One font ships in-repo: Recursive (OFL, `google/fonts`), a variable font
 whose weight/slant/mono/casual axes are exposed as sliders. Each slider is
 a no-op if the loaded font doesn't declare that axis tag (`_fontglyph.
 instantiate` drops unknown tags silently) — the same four fields stay safe
-once `font` widens to system-discovered or drag-in fonts in a later phase.
+on any font, including the ones this reaches for next: `font` also accepts
+a system-discovered face id (`system_fonts.catalogue()`), so real
+Helvetica/Arial/Times New Roman render here where actually installed —
+they're proprietary (Monotype/Linotype) and this repo can't bundle them,
+so finding real copies on the machine is the only path to them, rather
+than shipping open metric-compatible substitutes under those names.
+Unresolvable ids (a system font since uninstalled) fall back to the
+bundled font rather than raising — a saved project should still open.
 
 Layout mirrors text.py: lines split on `\\n`, stacked at `size ×
 line_spacing`, glyphs advance by the font's own (instance-correct) hmtx
@@ -24,19 +31,23 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path as FsPath
-from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from .. import system_fonts
 from ..model import Layer, Path, PathDocument
 from ..registry import SourceModule, register_source
 from . import _fontglyph as fg
 
 _VARIABLE_DIR = FsPath(__file__).parent.parent / "fonts" / "variable"
 
-#: font id -> bundled file. Widens to system-discovered + uploaded fonts
-#: in a later phase; only the bundled variable font for now.
-_FONT_FILES = {"recursive": _VARIABLE_DIR / "Recursive-Variable.ttf"}
+_DEFAULT_FONT = "recursive"
+
+# Contributed to the shared system_fonts catalogue (not a private mapping
+# here) so /api/fonts stays one generic lookup regardless of how many
+# source modules end up bundling a font — see system_fonts.register_bundled.
+system_fonts.register_bundled(
+    _DEFAULT_FONT, "Recursive (variable)", _VARIABLE_DIR / "Recursive-Variable.ttf")
 
 _MAX_CHARS = 2000  # bounded params: unbounded text reaches an open-loop machine
 
@@ -47,7 +58,8 @@ class TextFillParams(BaseModel):
         description="Newlines start a new line; empty = empty layer",
         json_schema_extra={"format": "textarea"},
     )
-    font: Literal["recursive"] = Field(default="recursive", title="Font")
+    font: str = Field(default=_DEFAULT_FONT, title="Font",
+                      json_schema_extra={"format": "font"})
     size: float = Field(default=10.0, ge=1.0, le=100.0, title="Size (mm)",
                         description="Em height of the glyphs on the sheet")
     line_spacing: float = Field(default=1.2, ge=0.5, le=3.0, title="Line spacing ×")
@@ -83,9 +95,19 @@ class TextFillParams(BaseModel):
 # -- font loading + instancing -----------------------------------------------
 
 
-@lru_cache(maxsize=len(_FONT_FILES))
-def _base_font(font_id: str):
-    return fg.load_font_file(_FONT_FILES[font_id])
+@lru_cache(maxsize=64)
+def _load_font(path: str, font_number: int):
+    return fg.load_font_file(path, font_number)
+
+
+def _resolve_font(font_id: str):
+    """A TTFont for `font_id`, looked up in the shared catalogue (bundled or
+    system-discovered — see system_fonts.py). Falls back to the default
+    bundled font rather than raising: a project saved with a since-
+    uninstalled system font should still open, just with different glyphs,
+    not a broken layer."""
+    face = system_fonts.find(font_id) or system_fonts.find(_DEFAULT_FONT)
+    return _load_font(face.path, face.font_number)
 
 
 def _axes(p: TextFillParams) -> dict[str, float]:
@@ -99,7 +121,7 @@ def _line(text: str, font_id: str, size: float, tracking: float, tol_mm: float,
          axes: dict[str, float]) -> list[list[tuple[float, float]]]:
     """One line of filled-outline text as machine-frame closed rings
     (y DOWN), starting at x=0 with the baseline at y=0."""
-    font = fg.instantiate(_base_font(font_id), font_id, axes)
+    font = fg.instantiate(_resolve_font(font_id), font_id, axes)
     scale = size / font["head"].unitsPerEm
     tol_fu = tol_mm / scale if scale else tol_mm  # flatten in font units, label in mm
     cmap = font.getBestCmap()
