@@ -1,11 +1,14 @@
 // Settings tab: machine-level configuration (estimator calibration, holder
 // vector, projects root, host/port) and project file operations
 // (new / load / export / import). The paper guide size lives here too since
-// paper presets are machine-level.
+// paper presets are machine-level. Its `#panel-paper-guide` id also gives
+// plot.js's motion-parameters panel a fixed point to insert itself after
+// (see plot.js's `initPlotTab`). Restart server no longer has a panel here —
+// it moved bodily to the Settings menu in `#menubar`; only its handler stays.
 
 import { api } from "./api.js";
 import { renderForm } from "./forms.js";
-import { screenCal, setScreenCal, screenPxPerMm } from "./canvas.js";
+import { screenCal, setScreenCal, screenPxPerMm, schematicWidth, setSchematicWidth } from "./canvas.js";
 import { S, actions, rememberDetails } from "./main.js";
 
 const $ = (id) => document.getElementById(id);
@@ -30,7 +33,7 @@ export function initSettingsTab() {
       <div class="hint" id="proj-dir-hint"></div>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="panel-paper-guide">
       <h2>Paper guide</h2>
       <div class="row">
         <select id="paper-preset"></select>
@@ -71,14 +74,17 @@ export function initSettingsTab() {
         <button id="btn-screen-cal-clear">Reset to nominal</button>
       </div>
       <div class="hint" id="screen-cal-state"></div>
+      <div class="row">
+        <label>schematic line width</label>
+        <input type="number" id="schematic-width" step="0.05" min="0.05" max="5" style="width:5.5em">
+        <label>mm</label>
+      </div>
+      <div class="hint">How thick Schematic-mode hairlines draw on THIS screen
+        (View &gt; Schematic) — a display property, not a plotting one.</div>
     </div>
 
     <div class="panel">
-      <h2>Server</h2>
-      <div class="row"><button id="btn-restart">⟳ Restart server</button></div>
-      <div class="hint">Re-executes the server process in place (picks up code changes).
-        Unsaved project changes are lost — save first. Refused while plotting.
-        The page reconnects by itself.</div>
+      <h2>Server <span class="hint">log</span></h2>
       <details id="server-log-details">
         <summary>Server log <span class="hint">(last 500 lines — the app window has no terminal)</span></summary>
         <pre id="server-log" class="server-log"></pre>
@@ -113,6 +119,21 @@ export function initSettingsTab() {
   $("btn-screen-cal-clear").onclick = () => { setScreenCal(1); drawCalBar(); };
   drawCalBar();
 
+  // schematic hairline width — same "this screen only" localStorage home as
+  // screen calibration above (canvas.js), not the server settings store.
+  const schWidth = $("schematic-width");
+  schWidth.value = schematicWidth();
+  schWidth.onchange = () => {
+    const v = Number(schWidth.value);
+    if (!setSchematicWidth(v)) { schWidth.value = schematicWidth(); return; }
+    actions.canvas().render();
+  };
+
+  // Restart server: the button itself lives in the Settings MENU now
+  // (index.html #menubar), not in this tab — Ian's explicit ask, 2026-08-11.
+  // Its handler stays here because settings.js already owns machine-adjacent
+  // server actions; the id lookup works unchanged since the menu bar is
+  // static markup, present before initSettingsTab ever runs.
   const restart = $("btn-restart");
   restart.onclick = async () => {
     if (!restart.dataset.armed) { // two-click arm, same pattern as layer delete

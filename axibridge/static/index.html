@@ -93,6 +93,22 @@
         <button class="menu-item" data-target="#btn-set-origin" type="button" title="Declare the current position 0,0">Set origin</button>
       </div>
     </div>
+    <!-- Settings: app/server-level actions, not machine motion. Restart
+         server used to be a button+hint panel in the Settings TAB; Ian wants
+         it out of that tab entirely (2026-08-11), not just doubly-doored like
+         Machine's items above. So unlike Machine (which forwards via
+         data-target to a button that stays visible in its own panel), this
+         button has no other home — its only address is here, the same shape
+         as File's Save/Save As or Edit's Undo/Redo: a real control with its
+         own id, wired directly by settings.js. menu_spec picks it up via the
+         plain `id` branch, same as those. -->
+    <div class="menu" data-menu="settings">
+      <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">Settings</button>
+      <div class="menu-panel" role="menu">
+        <button id="btn-restart" class="menu-item" type="button"
+                title="Re-executes the server process in place (picks up code changes). Unsaved project changes are lost — save first. Refused while plotting. The page reconnects by itself.">⟳ Restart server</button>
+      </div>
+    </div>
   </nav>
   <!-- A readout, not a control. It was an editable field, which made it the
        only form control in the chrome bar; renaming now happens where the

@@ -22,12 +22,18 @@ const $ = (id) => document.getElementById(id);
 // checkbox next to the millimetres it guards; holder calibration is a
 // three-step procedure with measurements. Only the pure ACTIONS in pen &
 // origin go to the Machine menu, which addresses these very buttons by id.
-const MACHINE_PANELS = `    <div class="panel">
+//
+// Motion parameters is split out of MACHINE_PANELS (2026-08-11, Ian): it
+// belongs right after Paper guide, not at the tail of the tab, so it is
+// inserted separately after `#panel-paper-guide` (settings.js) instead of
+// being appended with the rest — same handlers, same `initPlotTab`, just a
+// different insertion point.
+const MOTION_PANEL = `    <div class="panel">
       <h2>Motion parameters <span class="tag" id="motion-backend-tag"></span></h2>
       <div id="motion-form" class="form"></div>
-    </div>
+    </div>`;
 
-    <div class="panel" id="panel-pen">
+const MACHINE_PANELS = `    <div class="panel" id="panel-pen">
       <h2>Pen & origin</h2>
       <div class="row">
         <button id="btn-pen-up">Pen up</button>
@@ -484,7 +490,10 @@ export function initPlotTab() {
   };
   $("stage-capture-plot").onclick = () => captureStaged("plot");
   $("stage-capture-frame").onclick = () => captureStaged("frame");
-  // append, never assign: initSettingsTab has already written its own body
+  // append, never assign: initSettingsTab has already written its own body.
+  // Motion parameters goes right after Paper guide (Ian, 2026-08-11); the
+  // rest tail the settings tab as before.
+  $("panel-paper-guide").insertAdjacentHTML("afterend", MOTION_PANEL);
   $("tab-settings").insertAdjacentHTML("beforeend", MACHINE_PANELS);
 
   $("stage-interp").onclick = () => interpolateStaged();

@@ -44,7 +44,7 @@ def test_every_menu_item_in_the_markup_is_addressable():
 
 
 def test_the_menus_are_the_ones_the_page_shows():
-    assert [m.title for m in menu_spec()] == ["File", "Edit", "View", "Machine"]
+    assert [m.title for m in menu_spec()] == ["File", "Edit", "View", "Machine", "Settings"]
 
 
 def test_undo_and_redo_are_in_edit_and_carry_their_shortcut():
@@ -201,6 +201,18 @@ def test_data_target_wins_over_the_items_own_id():
     (menu,) = _one_menu(
         '<button class="menu-item" id="menu-thing" data-target="#real-thing">Thing</button>')
     assert menu.actions == (MenuItem("Thing", "#real-thing", "action", None),)
+
+
+def test_the_settings_menu_owns_restart_server():
+    """Restart server moved out of the Settings TAB entirely (Ian, 2026-08-11)
+    — unlike Machine's items above (which forward via `data-target` to a
+    button that stays visible in its own panel), this button has no other
+    home, so it is addressed by its own id: the same shape as File's Save or
+    Edit's Undo/Redo, not the Machine-menu forwarding shape."""
+    settings = next(m for m in menu_spec() if m.title == "Settings")
+    assert settings.actions == (
+        MenuItem("⟳ Restart server", "#btn-restart", "action", None),
+    )
 
 
 def test_the_machine_menu_carries_no_forms():

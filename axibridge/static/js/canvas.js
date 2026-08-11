@@ -70,6 +70,30 @@ export function setScreenCal(v) {
 
 /** CSS px per millimetre at 100% zoom, calibration applied. */
 export function screenPxPerMm() { return CSS_PX_PER_MM * screenCal(); }
+
+// ---- schematic hairline width: also a screen property, same reasoning as
+// screenCal above — it is how thick the "read the structure" mode draws on
+// THIS glass, not a geometry or plotting parameter, so it lives in
+// localStorage next to the calibration rather than in the server's
+// settings.json (Settings > Display, "this screen only"). Paper mm: it is a
+// stroke-width inside the same view-transformed <g> as ink mode's
+// line_diameter_mm, so it scales with zoom exactly like a pen stroke would.
+const SCHEMATIC_WIDTH_KEY = "axibridge.schematicWidth";
+const SCHEMATIC_WIDTH_DEFAULT = 0.2;
+
+export function schematicWidth() {
+  const v = Number(localStorage.getItem(SCHEMATIC_WIDTH_KEY));
+  // outside this range is a typo, not an intentional hairline
+  return Number.isFinite(v) && v > 0 && v <= 5 ? v : SCHEMATIC_WIDTH_DEFAULT;
+}
+
+export function setSchematicWidth(v) {
+  if (!Number.isFinite(v) || v <= 0 || v > 5) return false;
+  if (Math.abs(v - SCHEMATIC_WIDTH_DEFAULT) < 1e-9) localStorage.removeItem(SCHEMATIC_WIDTH_KEY);
+  else localStorage.setItem(SCHEMATIC_WIDTH_KEY, String(v));
+  return true;
+}
+
 const HANDLE = 2.6; // handle half-size in bed mm (visual)
 
 export class CanvasEditor {
@@ -320,7 +344,7 @@ export class CanvasEditor {
           path.setAttribute("stroke-width", layer.line_diameter_mm);
           path.setAttribute("stroke-opacity", layer.opacity);
         } else {
-          path.setAttribute("stroke-width", 0.35);
+          path.setAttribute("stroke-width", schematicWidth());
           if (this.showOrder) {
             path.setAttribute("stroke-opacity",
               (0.15 + 0.85 * (globalIdx / Math.max(totalPaths - 1, 1))).toFixed(3));
