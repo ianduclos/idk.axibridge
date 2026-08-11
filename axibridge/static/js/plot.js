@@ -203,10 +203,26 @@ export function initPlotTab() {
       <details class="ld-section" data-fold="plot-stepper">
         <summary>Plot stepper <span class="hint">(transient — one pass at a time; never auto-plots)</span></summary>
         <div class="row"><span id="anim-frame-label"></span></div>
+        <div class="row" id="anim-start-frame-row">
+          <label>frame</label>
+          <input type="number" id="anim-start-frame" min="1" step="1" style="width:5em">
+          <span class="hint">of <span id="anim-start-frame-n">…</span></span>
+          <button id="anim-start-frame-go"
+            title="jump the stepper to this frame and set it as your Reset point">Start here</button>
+        </div>
+        <div class="row" id="anim-start-sheet-row">
+          <label>sheet</label>
+          <input type="number" id="anim-start-sheet" min="1" step="1" style="width:5em">
+          <span class="hint">of <span id="anim-start-sheet-n">…</span></span>
+          <button id="anim-start-sheet-go"
+            title="jump the stepper to this sheet and set it as your Reset point">Start here</button>
+        </div>
         <div class="row">
           <button id="anim-plot-frame" class="primary">Plot frame</button>
           <button id="anim-skip">Skip →</button>
           <button id="anim-reset">Reset</button>
+          <button id="anim-reset-true"
+            title="the true beginning — sheet 1 / frame 1, ignoring any chosen start">⤒ 1</button>
         </div>
       </details>
     </div>
@@ -449,13 +465,44 @@ export function initPlotTab() {
   // the plan overlay previews the page only while the panel is expanded (B3)
   $("anim-panel").addEventListener("panel-toggle", syncSheetPlan);
 
-  $("anim-reset").onclick = () => {
+  // S6 — start from sheet/frame N: sets anim.sheet/anim.i and remembers it as
+  // the Reset point (P5), then re-fetches pass info + syncs the plan overlay
+  // exactly as stepSheetPass() already does after a sheet change.
+  $("anim-start-frame-go").onclick = () => {
+    stopPreview();
+    const n1 = Math.max(1, Math.min(anim.n, Math.round(Number($("anim-start-frame").value) || 1)));
+    anim.i = anim.startI = n1 - 1;
+    renderAnimStepper();
+    previewScrub.request(anim.i);
+  };
+  $("anim-start-sheet-go").onclick = async () => {
+    const n1 = Math.max(1, Math.min(anim.nPages, Math.round(Number($("anim-start-sheet").value) || 1)));
+    anim.sheet = anim.startSheet = n1 - 1;
+    anim.pass = 0;
+    await refreshSheetInfo();
+    syncSheetPlan();
+  };
+  // P5: Reset returns to the CHOSEN start (default 0/0 if none was ever set),
+  // never to zero out from under a from-sheet-7 run — a separate ⤒1 control
+  // covers the true beginning. Both re-fetch sheet info since the target page
+  // may not be the one whose pass list is currently cached.
+  $("anim-reset").onclick = async () => {
+    stopPreview();
+    anim.i = Math.min(anim.startI || 0, Math.max(0, anim.n - 1));
+    anim.sheet = Math.min(anim.startSheet || 0, Math.max(0, anim.nPages - 1));
+    anim.pass = 0;
+    anim.plotting = false; anim.wasBusy = false;
+    await refreshSheetInfo();
+    previewScrub.request(anim.i);
+    if (gridCells() > 1) syncSheetPlan();
+  };
+  $("anim-reset-true").onclick = async () => {
     stopPreview();
     anim.i = 0; anim.sheet = 0; anim.pass = 0;
     anim.plotting = false; anim.wasBusy = false;
-    renderAnimStepper();
+    await refreshSheetInfo();
     previewScrub.request(anim.i);
-    if (gridCells() > 1) syncSheetPlan();  // back to page 0
+    if (gridCells() > 1) syncSheetPlan();
   };
   $("anim-skip").onclick = () => {
     stopPreview();
@@ -691,6 +738,9 @@ const anim = {
   n: 8, tFrom: 0, tTo: 1, margin: 5, cols: 1, rows: 1,
   framing: "fixed", marks: false,
   i: 0, sheet: 0, pass: 0, passes: [], nPages: 1,
+  // S6 — the chosen "start here" (P5): what Reset returns to. 0/0 until the
+  // user picks a start explicitly; ⤒1 always means true 0/0 regardless.
+  startI: 0, startSheet: 0,
   fps: 8, loop: true,
   previewFrames: [], previewAbort: null, renderingPreview: false,
   popupI: 0, popupPos: 0, popupPlaying: false, popupTimer: null,
@@ -706,6 +756,22 @@ const stage = {
   selectedGroup: null,
   selectedSheet: null,
 };
+// P6 — plotted-this-session marks: a client-side, unpersisted record of
+// (group, sheet, pass) fired via plotStaged, so after a pen swap it's
+// visible at a glance which of N staged sheets is still ahead. Cleared on
+// reload by design (no persistence — Ian: "no persistence across project
+// close needed").
+const plottedThisSession = new Set();
+const plottedKey = (groupId, sheetId, penId) => `${groupId}:${sheetId}:${penId}`;
+
+// Grid-shaped tray group: a multi-sheet capture born from one Animation-
+// panel setup (kind "sheet") or a batch interpolated from two such captures
+// (kind "batch" with format.source_kind "sheet") — as opposed to a single
+// loose plot/frame capture. Shared by relayoutRow's cols/rows availability
+// check and renderStaging's P6-amendment visual grouping.
+function isGridGroup(g) {
+  return g.kind === "sheet" || (g.kind === "batch" && g.format?.source_kind === "sheet");
+}
 
 function gridDims() { return [anim.cols, anim.rows]; }
 function gridCells() { return anim.cols * anim.rows; }
@@ -859,6 +925,8 @@ async function previewStaged(groupId, sheetId) {
 async function plotStaged(groupId, sheetId, penId) {
   try {
     await api.post("/api/plot/start", { staged: { group_id: groupId, sheet_id: sheetId, pen_id: penId } });
+    plottedThisSession.add(plottedKey(groupId, sheetId, penId));
+    renderStaging();  // P6: dim/check this pass immediately, no reload needed
     actions.log(`▶ plotting staged sheet pass (${penId || "no pen"})`);
   } catch (e) { actions.oops(e); }
 }
@@ -925,8 +993,7 @@ async function moveStaged(groupId, dir) {
 // batch whose source was a sheet). Renders nothing otherwise — frame/plot
 // captures have no cols/rows to change (the server refuses them too).
 function relayoutRow(g) {
-  const isGrid = g.kind === "sheet" || (g.kind === "batch" && g.format?.source_kind === "sheet");
-  if (!isGrid || stage.selectedGroup !== g.id) return "";
+  if (!isGridGroup(g) || stage.selectedGroup !== g.id) return "";
   const f = g.format || {};
   return `
     <div class="row stage-relayout">
@@ -967,11 +1034,19 @@ function renderStaging() {
     list.innerHTML = `<div class="hint">No staged captures yet.</div>`;
     return;
   }
-  list.innerHTML = groups.map((g) => `
-    <div class="stage-group">
+  // P9 delivered here: groupLabel() surfaces the capture's actual shape
+  // (frames · cols×rows · framing, or the source kind for a batch) instead of
+  // the raw g.kind + count — it was already built (for the A/B pickers) and
+  // just unused in this list. P6 amendment: a group born from one animation/
+  // grid setup (isGridGroup) gets a distinct "animation set" tag + accent so
+  // it reads apart from a standalone loose capture at a glance.
+  list.innerHTML = groups.map((g) => {
+    const gridGroup = isGridGroup(g);
+    return `
+    <div class="stage-group${gridGroup ? " stage-group-anim" : ""}">
       <div class="stage-head">
-        <strong>${esc(g.name)}</strong>
-        <span class="hint">${esc(g.kind)} · ${(g.sheets || []).length} sheet${(g.sheets || []).length === 1 ? "" : "s"}</span>
+        <strong>${esc(groupLabel(g))}</strong>
+        ${gridGroup ? `<span class="tag" title="captured from one animation/grid setup — these sheets belong together">animation set</span>` : ""}
         <button data-stage-rename="${esc(g.id)}">Rename</button>
         <button data-stage-up="${esc(g.id)}">↑</button>
         <button data-stage-down="${esc(g.id)}">↓</button>
@@ -981,18 +1056,28 @@ function renderStaging() {
       </div>
       ${(g.warnings || []).length ? `<div class="hint warn">${esc(g.warnings.join("; "))}</div>` : ""}
       ${relayoutRow(g)}
-      ${(g.sheets || []).map((s) => `
-        <div class="stage-sheet ${stage.selectedGroup === g.id && stage.selectedSheet === s.id ? "on" : ""}">
+      ${(g.sheets || []).map((s) => {
+        const passes = s.passes || [];
+        // P6: dim/check sheets (and their individual passes) already plotted
+        // this session — client-side only, never persisted (Ian's ruling).
+        const allDone = passes.length > 0 &&
+          passes.every((p) => plottedThisSession.has(plottedKey(g.id, s.id, p.pen_id)));
+        return `
+        <div class="stage-sheet ${stage.selectedGroup === g.id && stage.selectedSheet === s.id ? "on" : ""}${allDone ? " all-done" : ""}">
           <button data-stage-preview="${esc(g.id)}:${esc(s.id)}">Preview ${esc(s.name)}</button>
           <button data-stage-insert="${esc(g.id)}:${esc(s.id)}"
             title="bake this sheet into editable project layers (one per pen pass), hiding the current layers — the way to hand-edit a rendered grid">Insert as layers</button>
-          ${(s.passes || []).map((p) =>
-            `<button data-stage-plot="${esc(g.id)}:${esc(s.id)}:${esc(p.pen_id)}">${esc(p.name)} · ${p.paths} paths</button>`
-          ).join("")}
+          ${passes.map((p) => {
+            const done = plottedThisSession.has(plottedKey(g.id, s.id, p.pen_id));
+            return `<button class="${done ? "plotted" : ""}" data-stage-plot="${esc(g.id)}:${esc(s.id)}:${esc(p.pen_id)}"
+              title="${done ? "already plotted this session" : ""}">${done ? "✓ " : ""}${esc(p.name)} · ${p.paths} paths</button>`;
+          }).join("")}
         </div>
-      `).join("")}
+      `;
+      }).join("")}
     </div>
-  `).join("");
+  `;
+  }).join("");
   list.querySelectorAll("[data-stage-preview]").forEach((b) => b.onclick = () => {
     const [g, s] = b.dataset.stagePreview.split(":");
     previewStaged(g, s);
@@ -1495,6 +1580,9 @@ function renderAnimStepper() {
   if (!label) return;
   const btn = $("anim-plot-frame");
   const skip = $("anim-skip");
+  const resetBtn = $("anim-reset");
+  const startFrameRow = $("anim-start-frame-row");
+  const startSheetRow = $("anim-start-sheet-row");
   const basePlotDisabled = $("btn-plot") ? $("btn-plot").disabled : true;
 
   if (gridCells() <= 1) {
@@ -1504,8 +1592,21 @@ function renderAnimStepper() {
       btn.disabled = anim.plotting || basePlotDisabled;
     }
     if (skip) { skip.textContent = "Skip →"; skip.disabled = anim.plotting || anim.i >= anim.n - 1; }
+    // S6/P5: the "start from frame N" affordance and Reset's tooltip naming
+    // the chosen start (never let Reset read as "back to zero" unlabelled).
+    if (startFrameRow) startFrameRow.hidden = false;
+    if (startSheetRow) startSheetRow.hidden = true;
+    if ($("anim-start-frame-n")) $("anim-start-frame-n").textContent = String(anim.n);
+    if ($("anim-start-frame")) $("anim-start-frame").max = String(anim.n);
+    if (resetBtn) resetBtn.title = `back to your chosen start (frame ${(anim.startI || 0) + 1})`;
     return;
   }
+
+  if (startFrameRow) startFrameRow.hidden = true;
+  if (startSheetRow) startSheetRow.hidden = false;
+  if ($("anim-start-sheet-n")) $("anim-start-sheet-n").textContent = String(anim.nPages);
+  if ($("anim-start-sheet")) $("anim-start-sheet").max = String(anim.nPages);
+  if (resetBtn) resetBtn.title = `back to your chosen start (sheet ${(anim.startSheet || 0) + 1})`;
 
   const nPasses = anim.passes.length;
   const p = anim.passes[anim.pass];

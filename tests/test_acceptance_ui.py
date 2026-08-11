@@ -1193,3 +1193,214 @@ def test_timeline_bar_checkpoint_buttons_degrade_to_none_then_appear_for_a_chain
     ui.wait_for_selector("#tl-checkpoints:not([hidden]) button", timeout=10_000)
     assert ui.locator("#tl-checkpoints button").count() == 3, "3 keys → 3 checkpoint buttons"
     assert not ui.errors
+
+
+# -- S3: chain UI in the layer detail -----------------------------------------
+# docs/plans/timeline-v2.md S3. Screenshots land in the scratchpad dir this
+# session used for temp files, named after the test that took them.
+_SHOT_DIR = Path("/private/tmp/claude-501/-Users-ianduclos--SecondBrain-02-Areas--Coding-idk-axibridge"
+                  "/104f5af6-cb90-4e9e-adfd-fafc78733d09/scratchpad")
+
+
+def _shoot(page, name: str) -> None:
+    _SHOT_DIR.mkdir(parents=True, exist_ok=True)
+    page.screenshot(path=str(_SHOT_DIR / name))
+
+
+def test_chain_keyframe_list_appears_and_selecting_a_key_moves_the_timeline(ui):
+    """S3, build item 1: the ONLY way a chain is born is the "＋ keyframe"
+    button on a plain A/B animation (Q6a) — clicking it twice must grow the
+    classic two-button form into a 3-row keyframe list, in place (selection
+    stays on the tween, not the new duplicate — the list you just grew is
+    what you look at next). Picking the third row must jump the master
+    timeline the same way the classic edit A/B buttons already do."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    ui.locator("#layer-list .layer-row.tween-row").first.click()
+    ui.wait_for_selector("#tw-explode", timeout=10_000)  # the Interpolation section rendered
+    assert ui.locator(".kf-row").count() == 0, "a plain A/B tween keeps the classic two-button form"
+    assert ui.locator("#layer-detail button", has_text="edit A").count() == 1
+    assert ui.locator("#layer-detail button", has_text="edit B").count() == 1
+
+    ui.locator("#layer-detail button", has_text="＋ keyframe").first.click()
+    ui.wait_for_function("() => document.querySelectorAll('.kf-row').length === 3", timeout=10_000)
+    assert ui.locator(".kf-row").count() == 3, "one row per keyframe once it's a chain"
+    _shoot(ui, "s3-keyframe-list.png")
+
+    t_before = ui.locator("#tl-t-val").text_content()
+    ui.locator(".kf-row .kf-select").nth(2).click()
+    ui.wait_for_function(
+        "(prev) => document.getElementById('tl-t-val').textContent !== prev",
+        arg=t_before, timeout=10_000)
+    assert not ui.errors
+
+
+def test_keyframe_copy_paste_state_via_context_menu(ui):
+    """Q6 ruling: right-click a keyframe row for Copy state / Paste state
+    (whole-checkpoint: generator params, effects, placement — per-parameter
+    copy/paste is deferred, not built here). Copy from the first keyframe
+    (radius 20), paste onto the third (which duplicated the second, radius
+    80) and assert — via the API, what the project actually holds — that the
+    third keyframe's generator params now match the first's."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    ui.locator("#layer-list .layer-row.tween-row").first.click()
+    ui.wait_for_selector("#tw-explode", timeout=10_000)
+    ui.locator("#layer-detail button", has_text="＋ keyframe").first.click()
+    ui.wait_for_function("() => document.querySelectorAll('.kf-row').length === 3", timeout=10_000)
+
+    rows = ui.locator(".kf-row .kf-select")
+    rows.nth(0).click(button="right")
+    ui.wait_for_selector(".ctx-menu", timeout=5_000)
+    _shoot(ui, "s3-context-menu.png")
+    ui.locator(".ctx-menu-item", has_text="Copy state").click()
+    ui.wait_for_selector(".ctx-menu", state="detached", timeout=5_000)
+
+    rows.nth(2).click(button="right")
+    ui.wait_for_selector(".ctx-menu", timeout=5_000)
+    paste_item = ui.locator(".ctx-menu-item", has_text="Paste state")
+    assert paste_item.is_enabled(), "clipboard was populated by the Copy state click above"
+    paste_item.click()
+    ui.wait_for_selector(".ctx-menu", state="detached", timeout=5_000)
+
+    project = _get(f"{ui.base}/api/project")
+    tw = next(l for l in project["layers"] if l["source"]["type"] == "tween")
+    keys = tw["source"]["params"]["keys"]
+    assert len(keys) == 3
+    a = next(l for l in project["layers"] if l["id"] == keys[0])
+    c = next(l for l in project["layers"] if l["id"] == keys[2])
+    assert a["source"]["params"]["radius"] == 20
+    assert c["source"]["params"]["radius"] == 20, \
+        "paste onto C must apply A's generator params (radius), not keep C's own"
+    assert c["source"]["params"]["sides"] == a["source"]["params"]["sides"]
+    assert not ui.errors
+
+
+# -- S6: start-from-sheet, Reset-vs-true-beginning, plotted-this-session ------
+# docs/plans/timeline-v2.md §S6/P5/P6. Plot stepper markup lives inside the
+# Animation panel (collapsed by default: click its <h2>) and the "Plot
+# stepper" <details> (collapsed by default: click its <summary>) — both must
+# be opened before their contents are interactable, same rule that governs
+# every other <details data-fold> section in this tab.
+
+def _open_anim_stepper(ui) -> None:
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.click("#anim-panel > h2")
+    ui.wait_for_selector("#anim-cols", state="visible", timeout=10_000)
+    ui.click('details[data-fold="plot-stepper"] summary')
+    ui.wait_for_selector("#anim-plot-frame", state="visible", timeout=10_000)
+
+
+def test_start_from_sheet_updates_stepper_label_and_canvas_preview(ui):
+    """Punch a sheet number into the stepper and press Start here: the label
+    jumps straight to it (no more pressing Skip N times) and the canvas
+    preview banner (sheetPreviewLabel) names the same sheet."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    _open_anim_stepper(ui)
+
+    # default 8 frames over a 2×1 grid -> 4 sheets, so sheet 3 is reachable
+    # and distinct from sheet 1.
+    ui.click('#anim-presets [data-grid="2,1"]')
+    ui.wait_for_function(
+        "() => document.getElementById('anim-start-sheet-n').textContent === '4'",
+        timeout=10_000)
+    assert ui.is_visible("#anim-start-sheet-row")
+    assert not ui.is_visible("#anim-start-frame-row")
+
+    ui.fill("#anim-start-sheet", "3")
+    ui.click("#anim-start-sheet-go")
+    ui.wait_for_function(
+        "() => (document.getElementById('anim-frame-label')?.textContent || '').startsWith('sheet 3/4')",
+        timeout=10_000)
+
+    ui.wait_for_function(
+        "() => (document.getElementById('doc-preview-label')?.textContent || '').includes('sheet 3/4')",
+        timeout=10_000)
+    assert not ui.errors
+
+
+def test_start_from_frame_updates_the_single_frame_stepper(ui):
+    """Same affordance, single-frame stepper (gridCells() <= 1): the frame
+    box + Start here jumps the stepper directly to frame N."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    _open_anim_stepper(ui)
+    assert ui.is_visible("#anim-start-frame-row")
+    assert not ui.is_visible("#anim-start-sheet-row")
+
+    ui.fill("#anim-start-frame", "5")
+    ui.click("#anim-start-frame-go")
+    ui.wait_for_function(
+        "() => (document.getElementById('anim-frame-label')?.textContent || '').startsWith('frame 5 of')",
+        timeout=10_000)
+    assert not ui.errors
+
+
+def test_reset_returns_to_chosen_start_not_zero_and_true_beginning_is_separate(ui):
+    """P5: Reset must mean 'back to where I chose to start', never a silent
+    'back to sheet 0' mid-run — a from-sheet-7 plotter reaching for Reset
+    should not accidentally re-cost sheet 1. The distinct ⤒1 control is the
+    only thing that reaches the true beginning."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    _open_anim_stepper(ui)
+
+    ui.click('#anim-presets [data-grid="2,1"]')
+    ui.wait_for_function(
+        "() => document.getElementById('anim-start-sheet-n').textContent === '4'",
+        timeout=10_000)
+
+    ui.fill("#anim-start-sheet", "3")
+    ui.click("#anim-start-sheet-go")
+    ui.wait_for_function(
+        "() => (document.getElementById('anim-frame-label')?.textContent || '').startsWith('sheet 3/4')",
+        timeout=10_000)
+
+    # advance away from the chosen start, then Reset — must land back on 3
+    ui.click("#anim-skip")
+    ui.wait_for_function(
+        "() => !(document.getElementById('anim-frame-label')?.textContent || '').startsWith('sheet 3/4')",
+        timeout=10_000)
+    ui.click("#anim-reset")
+    ui.wait_for_function(
+        "() => (document.getElementById('anim-frame-label')?.textContent || '').startsWith('sheet 3/4')",
+        timeout=10_000)
+
+    # only the true-beginning control reaches sheet 1
+    ui.click("#anim-reset-true")
+    ui.wait_for_function(
+        "() => (document.getElementById('anim-frame-label')?.textContent || '').startsWith('sheet 1/4')",
+        timeout=10_000)
+    assert not ui.errors
+
+
+def test_tray_groups_born_from_one_animation_setup_read_apart_from_loose_captures(ui):
+    """P6 amendment: a multi-sheet grid capture (kind 'sheet') reads as one
+    animation-derived group, visually distinct from a standalone loose
+    capture (kind 'plot') — and P9 lands as a side effect: the group header
+    shows groupLabel()'s richer text instead of the bare kind + count."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    _post(f"{ui.base}/api/staging/capture",
+          {"kind": "sheet", "target": "all", "cols": 2, "rows": 1, "frames": 4,
+           "name": "4f · 2×1 · fixed"})
+    _post(f"{ui.base}/api/staging/capture",
+          {"kind": "plot", "target": "all", "name": "loose plot"})
+    reload_app(ui)
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.wait_for_selector(".stage-group", timeout=10_000)
+
+    assert ui.locator(".stage-group").count() == 2
+    anim_groups = ui.locator(".stage-group.stage-group-anim")
+    assert anim_groups.count() == 1, "only the sheet capture should read as an animation set"
+    assert "animation set" in anim_groups.locator(".stage-head .tag").text_content()
+    # P9, delivered en passant: the header text is groupLabel()'s name ·
+    # detail · sheet-count, not the old bare "sheet · 2 sheets".
+    assert "sheet" in anim_groups.locator(".stage-head strong").text_content()
+
+    loose = ui.locator(".stage-group", has_text="loose plot")
+    assert "stage-group-anim" not in (loose.get_attribute("class") or "")
+    assert not ui.errors

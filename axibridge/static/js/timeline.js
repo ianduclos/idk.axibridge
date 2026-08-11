@@ -72,33 +72,46 @@ async function jumpTo(t) {
   try { await actions.refreshResolved(t); } catch (e) { actions.oops(e); }
 }
 
-// Selecting a keyframe (the A or B sublayer of a follow_master tween) jumps
-// the master timeline to where that keyframe shows, so clicking "▸ B" to
-// edit it also previews it in the animation. A → the window's start, B → its
-// end (the linear/cosine default; a ping-pong tween reaches B mid-window, so
-// we leave those be rather than guess — scrub manually). No-op for a layer
-// that isn't a following tween's keyframe, or when the bar is hidden.
+// This tween's keyframe ids (S1's `keys`-or-[a,b] normalization, mirrored
+// frontend-side — session.py's `_chain_keys` is the backend twin, compose.js
+// has its own copy as `chainKeyIds` for the same reason: no shared module
+// between the two, so both read the same two fields the same way) mapped to
+// the master-timeline t each one sits at — isometrically spaced, mapped
+// through the tween's own window. Declines (returns []) for a curve that
+// reaches an interior key mid-window rather than at a fixed t (a ping-pong
+// tween reaches B mid-window; only linear/cosine land every key at a fixed
+// point in the window).
+function chainKeyPositions(p) {
+  if (p.time_curve && p.time_curve !== "linear" && p.time_curve !== "cosine") return [];
+  const keys = (Array.isArray(p.keys) && p.keys.length > 2) ? p.keys : [p.a, p.b].filter(Boolean);
+  if (keys.length < 2) return [];
+  const wf = p.window_from ?? 0, wt = p.window_to ?? 1;
+  return keys.map((id, k) => ({ id, k, t: wf + (wt - wf) * (k / (keys.length - 1)) }));
+}
+
+// Selecting a keyframe (any key of a follow_master tween — the classic A/B,
+// or any key of a chain grown past it) jumps the master timeline to where
+// that keyframe shows, so clicking it to edit also previews it in the
+// animation. No-op for a layer that isn't a following tween's keyframe, or
+// when the bar is hidden.
 export function jumpTimelineToKeyframe(layerId) {
   if ($("timeline-bar")?.hidden) return;
   for (const l of S.state?.project?.layers || []) {
     if (l.source.type !== "tween") continue;
     const p = l.source.params || {};
-    if (!p.follow_master || (p.time_curve && p.time_curve !== "linear" && p.time_curve !== "cosine")) continue;
-    let target = null;
-    if (p.a === layerId) target = p.window_from ?? 0;
-    else if (p.b === layerId) target = p.window_to ?? 1;
-    if (target === null) continue;
-    jumpTo(target);
+    if (!p.follow_master) continue;
+    const pos = chainKeyPositions(p).find((k) => k.id === layerId);
+    if (!pos) continue;
+    jumpTo(pos.t);
     return;
   }
 }
 
-// A chain's checkpoints (TweenParams.keys — landing alongside this slice,
-// see docs/plans/timeline-v2.md S2): one jump button per key, when a
-// following tween carries more than the classic two. Degrades to nothing for
-// today's plain A/B tweens (no `keys`, or `keys.length <= 2`), and for a
-// mid-chain ping-pong for the same reason jumpTimelineToKeyframe declines
-// one — B lands mid-window, not at a fixed t, so there's no honest target.
+// A chain's checkpoints (TweenParams.keys, S2): one jump button per key,
+// when a following tween carries more than the classic two. Degrades to
+// nothing for today's plain A/B tweens (no `keys`, or `keys.length <= 2` —
+// the bar's own start/end buttons already cover those) and for a mid-chain
+// ping-pong, same reason jumpTimelineToKeyframe declines one.
 function chainCheckpoints() {
   const layers = S.state?.project?.layers || [];
   for (const l of layers) {
@@ -107,12 +120,11 @@ function chainCheckpoints() {
     if (!p.follow_master) continue;
     const keys = Array.isArray(p.keys) ? p.keys : [];
     if (keys.length <= 2) continue;
-    if (p.time_curve === "cosine_pingpong") continue;
-    const wf = p.window_from ?? 0, wt = p.window_to ?? 1;
-    return keys.map((id, k) => ({
-      id, k,
-      t: wf + (wt - wf) * (k / (keys.length - 1)),
-      name: layers.find((x) => x.id === id)?.name || `key ${k + 1}`,
+    const positions = chainKeyPositions(p);
+    if (!positions.length) continue;
+    return positions.map((pos) => ({
+      ...pos,
+      name: layers.find((x) => x.id === pos.id)?.name || `key ${pos.k + 1}`,
     }));
   }
   return [];

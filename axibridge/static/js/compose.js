@@ -712,6 +712,17 @@ export function initLayersDock() {
   grip.addEventListener("pointercancel", end);
 }
 
+// A chain's keyframe ids in the order they play — the stored `keys` list
+// once a tween has grown past two (S2's TweenParams.keys, normalized to []
+// at exactly two), else the implicit [a, b] pair. Mirrors
+// Session._chain_keys (session.py) so the frontend's idea of "this tween's
+// keyframes" never drifts from the backend's, the same reason S1 pulled the
+// backend's own two-refs-only readers up to "all refs".
+function chainKeyIds(params) {
+  const p = params || {};
+  return (Array.isArray(p.keys) && p.keys.length > 2) ? p.keys : [p.a, p.b].filter(Boolean);
+}
+
 export function renderLayerList() {
   if (renaming) return;
   const wrap = $("layer-list");
@@ -725,11 +736,11 @@ export function renderLayerList() {
   for (const l of layers) {
     if (l.source.type !== "tween") continue;
     const p = l.source.params || {};
-    const kids = [p.a, p.b].filter(Boolean);
+    const kids = chainKeyIds(p);
     childrenByTween.set(l.id, kids);
-    const isAnimateGroup = kids.length === 2 && kids.every((id) => {
+    const isAnimateGroup = kids.length >= 2 && kids.every((id) => {
       const kid = layers.find((candidate) => candidate.id === id);
-      return kid && !kid.visible && /▸\s*[AB]$/.test(kid.name || "");
+      return kid && !kid.visible && /▸\s*[A-Z]$/.test(kid.name || "");
     });
     if (isAnimateGroup) {
       animateTweens.add(l.id);
@@ -746,7 +757,7 @@ export function renderLayerList() {
     const childIds = childrenByTween.get(layer.id) || [];
     const isAnimateTween = animateTweens.has(layer.id);
     const isAnimateKeyframe = keyframeOwner.has(layer.id)
-      && (!layer.visible || /▸\s*[AB]$/.test(layer.name || ""));
+      && (!layer.visible || /▸\s*[A-Z]$/.test(layer.name || ""));
     row.className = [
       "layer-row",
       isTween ? "tween-row" : "",
@@ -1064,32 +1075,293 @@ function ldSection(key) {
   return det;
 }
 
-// -- keyframe A/B family: shared collapse state + scroll position ------------
+// -- keyframe A/B/C… family: shared collapse state + scroll position --------
 //
-// An "⏱ Animate"-created A/B pair are two different layer ids that read as
-// ONE editable thing to Ian — flipping A -> B should feel like turning a
-// card, not re-navigating a fresh layer. `familyKey` returns a stable id
-// (the owning tween's) for a layer that is genuinely one of those keyframes
-// — hidden, named "... ▸ A"/"... ▸ B", and paired with a sibling that is too
-// (the same test renderLayerList uses to decide whether a tween is an
-// animate group, kept in sync by hand rather than shared code — see the
-// KNOWN COLLISION note on renderLayerList/the layer-list region above).
-// Anything else (a standalone layer, or the two ends of a plain ⇄
-// interpolation, which are ordinary visible layers) falls back to its own
-// id, so nothing changes for the common case.
+// An "⏱ Animate"-created A/B pair (or a chain grown past it, A▸B▸C…) are
+// several different layer ids that read as ONE editable thing to Ian —
+// flipping between keyframes should feel like turning a card, not
+// re-navigating a fresh layer. `familyKey` returns a stable id (the owning
+// tween's) for a layer that is genuinely one of those keyframes — hidden,
+// named "... ▸ <LETTER>", and grouped with siblings that are too (the same
+// test renderLayerList uses to decide whether a tween is an animate group,
+// kept in sync by hand rather than shared code — see the KNOWN COLLISION
+// note on renderLayerList/the layer-list region above; both now route
+// through chainKeyIds() so a chain's mid keyframes get the family too, not
+// just the two ends). Anything else (a standalone layer, or the two ends of
+// a plain ⇄ interpolation, which are ordinary visible layers) falls back to
+// its own id, so nothing changes for the common case.
 function familyKey(layer) {
   if (!layer) return layer;
-  if (layer.visible || !/▸\s*[AB]$/.test(layer.name || "")) return layer.id;
+  if (layer.visible || !/▸\s*[A-Z]$/.test(layer.name || "")) return layer.id;
   const layers = S.state?.project?.layers || [];
   const tween = layers.find((l) => l.source.type === "tween"
-    && [l.source.params?.a, l.source.params?.b].includes(layer.id));
+    && chainKeyIds(l.source.params).includes(layer.id));
   if (!tween) return layer.id;
-  const kids = [tween.source.params?.a, tween.source.params?.b].filter(Boolean);
-  const isAnimateGroup = kids.length === 2 && kids.every((id) => {
+  const kids = chainKeyIds(tween.source.params);
+  const isAnimateGroup = kids.length >= 2 && kids.every((id) => {
     const kid = layers.find((c) => c.id === id);
-    return kid && !kid.visible && /▸\s*[AB]$/.test(kid.name || "");
+    return kid && !kid.visible && /▸\s*[A-Z]$/.test(kid.name || "");
   });
   return isAnimateGroup ? `family:${tween.id}` : layer.id;
+}
+
+// -- keyframe list + right-click Copy/Paste state (S3, Q6 ruling) -----------
+//
+// The chain's own list of checkpoints, rendered in the tween's Interpolation
+// section (replacing "edit A"/"edit B" once the tween is a chain — the
+// classic two-button form stays for plain A/B). "＋ keyframe" is the ONLY
+// way a chain is born (Q6a): it duplicates the last key, so the animation is
+// unchanged the instant it lands. Reorder is drag-and-drop, same idiom as
+// the layer dock's makeDraggable/dropLayer above, deliberately NOT sharing
+// that code — the layer dock reorders DRAW order across the whole project;
+// this reorders one chain's TIME order, a different axis entirely, and
+// conflating them would let a chain drag land on a keyframe of a different
+// tween.
+let kfDragging = null;
+
+function attachKeyframeDrag(row, keyId, tweenLayerId) {
+  row.draggable = true;
+  row.addEventListener("dragstart", (e) => {
+    kfDragging = keyId;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", keyId); // Firefox needs a payload
+    row.classList.add("dragging");
+  });
+  row.addEventListener("dragend", () => {
+    kfDragging = null;
+    row.classList.remove("dragging");
+    for (const r of row.parentElement?.querySelectorAll(".kf-row") || [])
+      r.classList.remove("drop-above", "drop-below");
+  });
+  row.addEventListener("dragover", (e) => {
+    if (!kfDragging || kfDragging === keyId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const box = row.getBoundingClientRect();
+    const above = e.clientY < box.top + box.height / 2;
+    row.classList.toggle("drop-above", above);
+    row.classList.toggle("drop-below", !above);
+  });
+  row.addEventListener("dragleave", () => row.classList.remove("drop-above", "drop-below"));
+  row.addEventListener("drop", async (e) => {
+    if (!kfDragging || kfDragging === keyId) return;
+    e.preventDefault();
+    const box = row.getBoundingClientRect();
+    const above = e.clientY < box.top + box.height / 2;
+    const movedId = kfDragging;
+    kfDragging = null;
+    await reorderChainKeyframes(tweenLayerId, movedId, keyId, above);
+  });
+}
+
+async function reorderChainKeyframes(tweenLayerId, movedId, targetId, above) {
+  try {
+    const layer = S.state.project.layers.find((l) => l.id === tweenLayerId);
+    if (!layer) return;
+    const order = chainKeyIds(layer.source.params);
+    const from = order.indexOf(movedId);
+    if (from >= 0) order.splice(from, 1);
+    const at = order.indexOf(targetId);
+    if (at < 0) return;
+    order.splice(above ? at : at + 1, 0, movedId);
+    await api.put(`/api/layers/${tweenLayerId}/chain/order`, { order });
+    await actions.refreshProject();
+    await actions.refreshResolved();
+  } catch (e) { actions.oops(e); }
+}
+
+async function addChainKeyframe(tweenLayerId) {
+  try {
+    await api.post(`/api/layers/${tweenLayerId}/chain/keyframe`);
+    await actions.refreshProject();
+    await actions.refreshResolved();
+    // selection deliberately stays on the tween: the list this just grew is
+    // what you look at next, not the duplicate itself (unlike the layer
+    // dock's ⧉ duplicate, which does jump — that copy has nothing else
+    // pointing at it, this one is a row in the list you're already looking at)
+  } catch (e) { actions.oops(e); }
+}
+
+// Copy/paste is client-side and whole-checkpoint (Q6: per-parameter
+// copy/paste is deferred to ROADMAP, not built here) — generator params,
+// effects stack, transform. It is NOT one atomic act server-side: params
+// ride /regenerate, effects+transform ride one PATCH, so a paste onto a
+// generator-matching target is TWO undo entries (one if the generator
+// differs, since params are skipped rather than guessed at — see the
+// pasteKeyframeState comment below).
+let kfClipboard = null;
+
+function copyKeyframeState(layer) {
+  kfClipboard = {
+    name: layer.name,
+    generator: layer.source.generator || null,
+    sourceType: layer.source.type,
+    params: layer.source.params ? { ...layer.source.params } : null,
+    effects: JSON.parse(JSON.stringify(layer.effects || [])),
+    transform: { ...layer.transform },
+  };
+  actions.log(`copied state from "${layer.name}"`);
+}
+
+async function pasteKeyframeState(targetLayerId) {
+  if (!kfClipboard) return;
+  const target = S.state.project.layers.find((l) => l.id === targetLayerId);
+  if (!target) return;
+  try {
+    // Generator params only transfer when both keyframes run the SAME
+    // generator — regenerate() re-runs the TARGET's own generator with new
+    // params, it does not (and cannot, via this endpoint) switch which
+    // generator a layer uses. A mismatch skips the params silently rather
+    // than sending a foreign param set into an unrelated schema.
+    if (kfClipboard.generator && target.source.generator === kfClipboard.generator
+        && ["generator", "baked"].includes(target.source.type)) {
+      await api.post(`/api/layers/${targetLayerId}/regenerate`, { params: { ...kfClipboard.params } });
+    }
+    await api.patch(`/api/layers/${targetLayerId}`, {
+      effects: kfClipboard.effects,
+      transform: kfClipboard.transform,
+    });
+    await actions.refreshProject();
+    await actions.refreshResolved();
+    actions.log(`pasted state from "${kfClipboard.name}" onto "${target.name}"`);
+  } catch (e) { actions.oops(e); }
+}
+
+let ctxMenuEl = null;
+function closeCtxMenu() {
+  ctxMenuEl?.remove();
+  ctxMenuEl = null;
+}
+
+// Minimal custom dropdown at the cursor — styled like #menubar's
+// .menu-panel/.menu-item (style.css) but a standalone fixed-position popup,
+// not part of the menu bar itself (menu.js owns only #menubar). Dismissed on
+// click-away or Escape; no native contextmenu anywhere else is hijacked.
+function openKeyframeContextMenu(e, layerId) {
+  e.preventDefault();
+  e.stopPropagation();
+  closeCtxMenu();
+  const layer = S.state.project.layers.find((l) => l.id === layerId);
+  if (!layer) return;
+  const menu = document.createElement("div");
+  menu.className = "ctx-menu";
+  menu.style.left = `${e.clientX}px`;
+  menu.style.top = `${e.clientY}px`;
+
+  const copyItem = document.createElement("button");
+  copyItem.className = "ctx-menu-item";
+  copyItem.textContent = "Copy state";
+  copyItem.title = "copies generator params, effects and placement/transform";
+  copyItem.onclick = () => { copyKeyframeState(layer); closeCtxMenu(); };
+
+  const pasteItem = document.createElement("button");
+  pasteItem.className = "ctx-menu-item";
+  pasteItem.textContent = "Paste state";
+  pasteItem.disabled = !kfClipboard;
+  pasteItem.title = kfClipboard
+    ? `apply "${kfClipboard.name}"'s generator params, effects and placement to "${layer.name}"`
+    : "copy a keyframe's state first";
+  pasteItem.onclick = () => { pasteKeyframeState(layerId); closeCtxMenu(); };
+
+  menu.append(copyItem, pasteItem);
+  document.body.appendChild(menu);
+  ctxMenuEl = menu;
+  // one frame later: the click that opened this menu (contextmenu on some
+  // browsers also fires a synthetic click) must not immediately close it
+  requestAnimationFrame(() => {
+    document.addEventListener("click", closeCtxMenu, { once: true });
+    document.addEventListener("contextmenu", closeCtxMenu, { once: true });
+  });
+  document.addEventListener("keydown", function onEsc(ev) {
+    if (ev.key !== "Escape") return;
+    closeCtxMenu();
+    document.removeEventListener("keydown", onEsc);
+  });
+}
+
+// The classic two-button form (plain A/B, `keys.length` at its 2-endpoint
+// default) — unchanged in spirit from pre-S3, plus the right-click menu and
+// the "＋ keyframe" button that is THE way a chain is born (Q6a).
+function renderClassicKeyframes(container, layer, p, nameOf) {
+  container.innerHTML = "";
+  const row = document.createElement("div");
+  row.className = "row";
+  const editA = document.createElement("button");
+  editA.title = `select keyframe A (${nameOf(p.a)})`;
+  editA.textContent = "edit A";
+  editA.onclick = () => { actions.setSelection([p.a]); jumpTimelineToKeyframe(p.a); };
+  editA.oncontextmenu = (e) => openKeyframeContextMenu(e, p.a);
+  const editB = document.createElement("button");
+  editB.title = `select keyframe B (${nameOf(p.b)})`;
+  editB.textContent = "edit B";
+  editB.onclick = () => { actions.setSelection([p.b]); jumpTimelineToKeyframe(p.b); };
+  editB.oncontextmenu = (e) => openKeyframeContextMenu(e, p.b);
+  row.append(editA, editB);
+  container.appendChild(row);
+
+  const addRow = document.createElement("div");
+  addRow.className = "row";
+  const add = document.createElement("button");
+  add.textContent = "＋ keyframe";
+  add.title = "append a keyframe (duplicates B; grows A/B into a chain)";
+  add.onclick = () => addChainKeyframe(layer.id);
+  addRow.appendChild(add);
+  container.appendChild(addRow);
+}
+
+// The chain form (`keys.length > 2`): one row per keyframe — select (same
+// action as edit A/B: select + jump the timeline), drag to reorder (chain
+// TIME order, re-spacing isometrically), remove (refused at two keys, same
+// rule the backend enforces — the button just explains why up front instead
+// of a 409 no one reads).
+function renderKeyframeList(container, layer, keys, nameOf) {
+  container.innerHTML = "";
+  const list = document.createElement("div");
+  list.className = "kf-list";
+  keys.forEach((id, k) => {
+    const row = document.createElement("div");
+    row.className = "kf-row";
+
+    const select = document.createElement("button");
+    select.className = "kf-select";
+    select.innerHTML = `<span class="kf-index">${k + 1}</span>${nameOf(id)}`;
+    select.title = `select keyframe ${k + 1} of ${keys.length} (${nameOf(id)}) — right-click to copy/paste state`;
+    select.onclick = () => { actions.setSelection([id]); jumpTimelineToKeyframe(id); };
+    select.oncontextmenu = (e) => openKeyframeContextMenu(e, id);
+
+    const canRemove = keys.length > 2;
+    const remove = document.createElement("button");
+    remove.textContent = "✕";
+    remove.disabled = !canRemove;
+    remove.title = canRemove
+      ? `remove keyframe ${k + 1} (${nameOf(id)})`
+      : "an interpolation layer needs at least two keyframes — delete the layer itself to un-animate";
+    remove.onclick = async () => {
+      try {
+        await api.del(`/api/layers/${layer.id}/chain/keyframe/${id}`);
+        await actions.refreshProject();
+        await actions.refreshResolved();
+      } catch (e) { actions.oops(e); }
+    };
+
+    row.append(select, remove);
+    attachKeyframeDrag(row, id, layer.id);
+    list.appendChild(row);
+  });
+  container.appendChild(list);
+
+  const addRow = document.createElement("div");
+  addRow.className = "row";
+  const add = document.createElement("button");
+  add.textContent = "＋ keyframe";
+  const atMax = keys.length >= 24; // tween.MAX_CHAIN_KEYS — mirrored here only for the disabled reason, not enforced client-side (the 409 still guards it)
+  add.disabled = atMax;
+  add.title = atMax
+    ? "a keyframe chain holds at most 24 keyframes"
+    : "append a keyframe (duplicates the last one)";
+  add.onclick = () => addChainKeyframe(layer.id);
+  addRow.appendChild(add);
+  container.appendChild(addRow);
 }
 
 // #tab-compose is the scrollable ancestor (`.tab-body { overflow-y: auto }`)
@@ -1467,13 +1739,21 @@ export function renderLayerDetail() {
   if (layer.source.type === "tween") {
     const p = layer.source.params || {};
     const nameOf = (id) => S.state.project.layers.find((l) => l.id === id)?.name || `${id} (missing!)`;
+    const keys = chainKeyIds(p);
+    const isChain = keys.length > 2;
+    const chainHint = isChain
+      ? `A chain of ${keys.length} keyframes (${keys.map(nameOf).join(" → ")}) — interpolates
+        generator params, effect params and position/rotation/scale between each consecutive
+        pair. Pen/drawing shapes morph anchor-by-anchor where neighbours share structure. Edits
+        to any keyframe update live.`
+      : `A: ${nameOf(p.a)} → B: ${nameOf(p.b)} — interpolates generator params,
+        effect params and position/rotation/scale. Pen/drawing shapes morph anchor-by-anchor
+        when A and B share structure (same point count — what "animate" gives). Edits to A/B
+        update live. Non-blendable differences (seeds, toggles, mismatched stacks/structure)
+        jump at t = 0.5.`;
     const tw = ldSection("tween");
     tw.innerHTML = `<summary>Interpolation</summary>
-      <div class="hint">A: ${nameOf(p.a)} → B: ${nameOf(p.b)} — interpolates generator params,
-      effect params and position/rotation/scale. Pen/drawing shapes morph anchor-by-anchor
-      when A and B share structure (same point count — what "animate" gives). Edits to A/B
-      update live. Non-blendable differences (seeds, toggles, mismatched stacks/structure)
-      jump at t = 0.5.</div>
+      <div class="hint">${chainHint}</div>
       <div class="form" id="tw-form"></div>
       <details id="tw-stamping" class="form-group" ${p.sweep > 1 ? "open" : ""}>
         <summary>Stamping (sweep)</summary>
@@ -1514,9 +1794,8 @@ export function renderLayerDetail() {
           </div>
         </details>
       </details>
+      <div id="tw-keyframes"></div>
       <div class="row">
-        <button id="tw-edit-a" title="select keyframe A (${nameOf(p.a)})">edit A</button>
-        <button id="tw-edit-b" title="select keyframe B (${nameOf(p.b)})">edit B</button>
         <button id="tw-explode"
           title="bake each sweep step into its own layer (pen/occlusion editable per step); the tween stays, hidden">÷ Split into layers</button>
       </div>`;
@@ -1525,19 +1804,35 @@ export function renderLayerDetail() {
     // attributes above are only the first-time default (sweep/follow-driven)
     for (const id of ["tw-stamping", "tw-timeline", "tw-advanced"])
       rememberDetails(tw.querySelector(`#${id}`), id);
-    tw.querySelector("#tw-edit-a").onclick = () => actions.setSelection([p.a]);
-    tw.querySelector("#tw-edit-b").onclick = () => actions.setSelection([p.b]);
+    // S3: a chain (keys.length > 2) gets a keyframe list — select/reorder/
+    // remove, plus the "＋ keyframe" button that is the ONLY way a chain is
+    // born (Q6a, grows out of the plain A/B form rather than a separate
+    // "make a chain" verb). A plain A/B tween keeps the classic two buttons.
+    const kfContainer = tw.querySelector("#tw-keyframes");
+    if (isChain) renderKeyframeList(kfContainer, layer, keys, nameOf);
+    else renderClassicKeyframes(kfContainer, layer, p, nameOf);
 
     // -- the auto-rendered form now carries only `t`; sweep/window are plain
     // bound inputs below, committed through the same debounced PUT merge
     const schema = JSON.parse(JSON.stringify(S.state.schemas.tween));
     delete schema.properties.a;
     delete schema.properties.b;
+    delete schema.properties.keys;          // list-valued — the keyframe list above IS its editor;
+                                             // forms.js has no array control (would fall through to a text input)
     delete schema.properties.follow_master; // rendered under "Timeline", not a form field
     delete schema.properties.time_curve;    // rendered under "Timeline", not a form field
     delete schema.properties.window_from;   // rendered under "Timeline", not a form field
     delete schema.properties.window_to;
     delete schema.properties.sweep;         // rendered under "Stamping (sweep)", not a form field
+    // on a chain `t` is the GLOBAL position across every segment, not a
+    // single A→B blend — the schema's own title ("t (A → B)") would lie
+    if (isChain && schema.properties.t) {
+      schema.properties.t = {
+        ...schema.properties.t,
+        title: "position",
+        description: "global position across the whole chain (0 = first keyframe, 1 = last)",
+      };
+    }
     const values = { t: p.t ?? 0.5, sweep: p.sweep ?? 1 };
     const commit = actions.debounce(async () => {
       try {
