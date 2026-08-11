@@ -182,11 +182,25 @@ manual multi-pen unit of work).
 
 ### Plotting — manual multi-pen
 
-A selector (all / one layer) and a Plot button; swap pen, pick next layer,
-plot again. No queue, no automation — no homing means the human owns paper
-registration, and the tool's job is to make each pass land registered
-(resolved geometry + pen compensation) rather than to pretend it can
-choreograph pen swaps. Plot-pass **optimisation** (linemerge/linesort/
+A selector (all / one layer / one pen) and a Plot button; swap pen, pick next
+layer, plot again. No homing means the human owns paper registration, and the
+tool's job is to make each pass land registered (resolved geometry + pen
+compensation) rather than to pretend it can choreograph pen swaps.
+
+**▶ Plot obeys the view label (2026-08-11)** — a deliberate semantic change.
+Plot routes off the same state the canvas's view label prints, so it plots
+exactly what is on screen: the live frame, the live sheet, or the selected
+tray sheet. The live view is unchanged; on a sheet or tray view the target
+picker greys out ("sheet passes carry their pens"), and zero passes refuses
+out loud rather than silently falling back to the live project. Multi-pen
+sheets run as a **guided pass queue** — client-side sequencing over the same
+per-pass calls, holding between passes with "swap to <pen>, then ▶ continue",
+cleared by an error or by Stop (which stays live during a hold so a half-run
+can be abandoned). Still no automation: the queue asks, waits, and the human
+swaps. The trade Ian accepted is that Plot means "what's on screen" rather
+than "the live project", with the adjacent label as the mitigation.
+
+Plot-pass **optimisation** (linemerge/linesort/
 reloop/simplify, vpype-backed) runs on the resolved geometry of each pass —
 it replaced v1's user-arranged pipeline because creative reshaping moved
 into per-layer effect stacks, leaving optimisation as a property of the
@@ -244,25 +258,53 @@ generator provenance, so *regenerate* explicitly reverts the bake).
 Motion has two independent instruments, and neither adds a second geometry
 path — both flow through `session.resolved(master_t=…)`.
 
-**Canvas tween (per-layer, live)** — a `tween` layer (`tween.py`) morphs one
-sibling pair A→B: generator params, effect params, and decomposed transform
-lerp continuously; non-blendable fields (seeds, bools, mismatched stacks) step
-at t=0.5 to keep the endpoints exact. `follow_master` binds its `t` to the
-master timeline (`?t=` on `/compose/resolved`); `sweep > 1` stamps fixed
-in-betweens; `frame_follow` on a clip layer advances a frame-sequence asset as
-the timeline scrubs. Windows and the pingpong curve are advanced sub-knobs
-(folded away in the UI), not separate systems.
+**Canvas tween (per-layer, live)** — a `tween` layer (`tween.py`) morphs an
+ordered list of sibling keyframes: generator params, effect params, and
+decomposed transform lerp continuously; non-blendable fields (seeds, bools,
+mismatched stacks) step at t=0.5 to keep the endpoints exact. `follow_master`
+binds its `t` to the master timeline (`?t=` on `/compose/resolved`);
+`sweep > 1` stamps fixed in-betweens; `frame_follow` on a clip layer advances
+a frame-sequence asset as the timeline scrubs. Windows and the pingpong curve
+are advanced sub-knobs (folded away in the UI), not separate systems.
+
+**Keyframe chains (2026-08-11)** generalise that pair to N without a second
+code path. `TweenParams.keys` (≤ 24; empty ⇒ the classic A/B, and a chain
+shrinking to two normalises back to empty) is reduced *inside*
+`tween.materialize` / `effective_generator`: a global `u` maps to
+`(segment, local t)` at isometric spacing — `[k/(N-1), (k+1)/(N-1)]`, derived
+rather than stored — and the existing pair machinery runs on that segment's
+two endpoints. The session is unchanged on the resolve path, because the value
+it already computes (window+curve-mapped master) is simply read as `u`. Easing
+is **per segment**, so motion settles at every checkpoint; curves whose meaning
+is global (`cosine_pingpong`) stay global. Two consequences worth stating: the
+effect stack, transform, pen and occlusion flags are the *layer's* — they
+always were — so nothing is per-segment except the pair being blended; and the
+snap that makes `u = k/(N-1)` reproduce key `k` exactly is load-bearing beyond
+fidelity, since seed reproduction is gated on an exact 0/1 and float error
+would otherwise roll per-frame seeds silently. Chains are *not* sugar over N−1
+windowed tweens: outside its window a tween holds its endpoint and keeps
+drawing, and hiding the inactive ones would make visibility a function of
+`master_t` — the one thing a scrub may not write (`docs/plans/timeline-v2.md`
+F1/F2).
 
 **Tray A⇄B (whole-project, the variant axis)** — the staging tray
 (`session.py`, `CaptureGroup`/`StagedSheet`) freezes a rendered output — a
 grid sheet, a frame, a plot — as per-pass SVG geometry plus a *source
 snapshot* (the whole project state). `interpolate_captures` blends two
-same-kind captures' snapshots across N steps → one staged sheet per step. So
+same-kind captures' snapshots across N steps → one staged sheet per step; for
+*sheet* captures the result is one group holding A's and B's own states as its
+endpoints with the blends between them (2026-08-11), which is the 2D frame
+matrix Ian means — frames along one axis, parameters along the other. Captures
+containing a keyframe chain are refused by name (video pairs still blend), so
+the tray's blend core never has to learn chains. So
 a grid capture already runs the animation's own timeline *across* each sheet
 (frames in cells), and interpolating two of them adds a second, orthogonal
 axis: the same A→B morph re-rendered as it drifts from variant A to variant B
 — the XY instrument. `relayout_capture` re-paginates a capture (or re-runs a
-batch from its sources) at a new grid without recapturing.
+batch from its sources) at a new grid without recapturing. Trays stay
+**frozen** by design; ↻ re-bake (2026-08-11) is the escape — one checkpointed
+act re-running a group's own format against live state under the same group
+id, so undo restores the previous bake byte-for-byte.
 
 Both instruments share **one per-layer blend core** (2026-07-19): the
 "given two versions of a layer, produce the in-between" semantics —

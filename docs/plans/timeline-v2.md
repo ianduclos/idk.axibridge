@@ -7,6 +7,12 @@ below are argued from the code but are still judgment calls, and every place
 where the choice is Ian's is marked **OPEN QUESTION** with a recommendation
 rather than settled.
 
+**CLOSED 2026-08-11 — the whole build order shipped** (`4cebea7` → `e1dee75`,
+suite 843 → 947). Slice headers below carry their commit; **§6 is the closing
+ledger** — read it for what landed, what was superseded on the way, and what
+is deliberately still open. §§1-5 are left as written, i.e. as the argument
+that produced the round, not as a description of the code today.
+
 Covers HANDOFF's **A1** (timeline/animation rethink) and **A2**
 (staging/printing/batching intuitiveness) in one document, because they share
 one piece of state — "which frame / which sheet am I on" — and designing them
@@ -592,7 +598,7 @@ frame that was on screen. One line in `closeRasterPreview`
 Slices are sized for one agent run each, with the file set they touch so an
 orchestrator can parallelise safely. Dependencies are hard unless stated.
 
-### S1 — ref plumbing + one window-mapping helper (backend, no behaviour change)
+### S1 — ref plumbing + one window-mapping helper (backend, no behaviour change) — **SHIPPED** `46ecbfe`
 
 Groundwork. Nothing user-visible.
 
@@ -611,7 +617,7 @@ Groundwork. Nothing user-visible.
 cache key and cascade behaviour are identical before/after
 (`tests/test_tween.py`, `tests/test_scrub_caches.py`).
 
-### S2 — chain data model + materialisation (backend)
+### S2 — chain data model + materialisation (backend) — **SHIPPED** `b071eb6`
 
 Depends on S1. The core.
 
@@ -649,7 +655,7 @@ Depends on S1. The core.
 - a mid-key edit invalidates the tween cache (extend
   `tests/test_scrub_caches.py`).
 
-### S3 — chain UI in the layer detail (frontend)
+### S3 — chain UI in the layer detail (frontend) — **SHIPPED** `14006a1`
 
 Depends on S2's API. **Sequence with E5** — same DOM region.
 
@@ -667,7 +673,7 @@ Depends on S2's API. **Sequence with E5** — same DOM region.
 keyframe, assert three keyframe entries and that selecting the third moves
 the timeline readout. Assert what the user sees, never how it is built.
 
-### S4 — the timeline bar (frontend, structural)
+### S4 — the timeline bar (frontend, structural) — **SHIPPED** `086c365`
 
 Independent of S1–S3 (works with today's A/B tweens; gains checkpoint jumps
 once S2/S3 land).
@@ -680,8 +686,12 @@ once S2/S3 land).
   `hasFollow` (`compose.js:188-190`); rehome the hint per P4.
 - Jump buttons at both ends; per-checkpoint buttons when the project has a
   chain.
-- Per Q7(b), play/pause + frame-step in the bar, driving `plot.js`'s existing
-  `previewScrub` (`plot.js:1090-1122`) — do **not** re-implement playback.
+- ~~Per Q7(b), play/pause + frame-step in the bar, driving `plot.js`'s existing
+  `previewScrub` (`plot.js:1090-1122`) — do **not** re-implement playback.~~
+  **Superseded by §2b's Q7 → (a), amended**: the bar got frame steppers,
+  checkpoint jumps and a popup button; **play stayed in the Animation panel**.
+  The "don't re-implement playback" half still held — the bar's steppers move
+  `master-t`, they do not run a loop.
 
 *Files:* `axibridge/static/index.html`, `static/js/timeline.js` (new),
 `static/js/compose.js`, `static/js/main.js`, `static/css/style.css`, plus a
@@ -691,7 +701,7 @@ small named export from `static/js/plot.js`.
 project PATCH (assert the project's `updated`/params are unchanged after a
 scrub).
 
-### S5 — frame-grid quantization + cached-frame ticks (frontend)
+### S5 — frame-grid quantization + cached-frame ticks (frontend) — **SHIPPED** `5529abd`
 
 Depends on S4.
 
@@ -713,7 +723,7 @@ recording only), `static/js/main.js`.
 the readout lands on the grid values (`t = 0.143` for frame 2 of 8) and that
 arrow-key stepping matches the panel's `Frame →`.
 
-### S6 — start from sheet N (frontend, small, fully parallel)
+### S6 — start from sheet N (frontend, small, fully parallel) — **SHIPPED** `14006a1`
 
 Independent of everything above.
 
@@ -730,7 +740,7 @@ Independent of everything above.
 `sheet 3/…` and the canvas preview banner names sheet 3
 (`sheetPreviewLabel`, `plot.js:698-700`).
 
-### S7 — the tray A>B fence (backend + client mirror)
+### S7 — the tray A>B fence (backend + client mirror) — **SHIPPED** `e1dee75`
 
 Depends on S2 (needs a chain to refuse).
 
@@ -743,9 +753,10 @@ Depends on S2 (needs a chain to refuse).
 *Tests:* a chain-bearing capture pair is refused with a message naming the
 layer; an A/B pair and (per Q5b) a video frame pair still interpolate.
 
-### S8 — approved UX proposals
+### S8 — approved UX proposals — **SHIPPED** `14006a1`, `30e7043`, `e1dee75`
 
 Whatever survives §3, itemised then. Keep as separate small commits.
+(All ten were accepted; the per-proposal landing is in §6's table.)
 
 ### Parallel-safety map
 
@@ -763,7 +774,11 @@ Safe concurrency: **S1→S2 sequential**; **S4 concurrent with S1/S2**;
 **S6 concurrent with everything**; S3 after S2 and sequenced against E5;
 S5 after S4; S7 after S2.
 
-**Known collisions with the concurrent batch:**
+## 5. Known collisions with the concurrent batch
+
+(F6 and Q7 both point here; it was an unnumbered block until the closing pass
+gave it its heading.)
+
 - **E5** (keyframe sublayer UX) and **S3** both edit the tween section of
   `compose.js` (`compose.js:1452-1598`). Sequence them; do not run both.
 - **E6** (render popup: palindrome, hi-res, mp4/gif) owns
@@ -774,6 +789,116 @@ S5 after S4; S7 after S2.
   every line E6 is editing.
 - **E4** (live generator preview) touches `compose.js`'s generator section,
   not the tween section. No conflict expected.
+
+---
+
+## 6. Closing ledger (2026-08-11) — what shipped, what changed, what stayed open
+
+Written at the end of the round the doc specified, so this file reads as a
+complete record without the conversation around it. Everything below landed on
+`main` between `4cebea7` and `e1dee75`; the suite went 843 → **947 passed**.
+Nothing in the round has had Ian's eyes or a real AxiDraw on it — see
+"Deliberately open" and `CHECKME.md`'s 2026-08-11 section.
+
+### 6a. Build order
+
+| Slice | Commit | Landed as specified? |
+|---|---|---|
+| S1 ref plumbing | `46ecbfe` | Yes. `_tween_refs` returns an ordered list; the window/curve math composes as `map_time_curve(map_window(…))` in one place — deliberately kept as **two** steps so per-segment easing could slot in at S2 without a third extraction. Zero behaviour change, pinned by a test that reproduces the pre-refactor cache-key formula byte-for-byte. |
+| S2 chain model | `b071eb6` | Yes, plus one finding: the endpoint snap is load-bearing beyond fidelity. `lerp_params` gates seed reproduction on an **exact** 0/1, so un-snapped float error at `k/(N-1)` would have rolled per-frame seeds silently. A chain that shrinks back to two keys normalises to `keys=[]`, so an older build still reads the project. 39 new tests. |
+| S3 chain UI | `14006a1` | Yes. Numbered keyframe list, drag to reorder, ✕ refuses at two keys, `＋ keyframe` is how chains are born, right-click Copy/Paste state. Known wart, noted rather than hacked around: a same-generator paste lands params+effects+transform as **two** undo entries. |
+| S4 timeline bar | `086c365` | Yes, minus the Q7(b) play button (superseded — see 6c). `static/js/timeline.js` is new and owns the bar; the scrub object moved **verbatim** from `compose.js` with its no-PATCH discipline intact. Hidden = zero height, canvas top unmoved. |
+| S5 quantization | `5529abd` | Yes. `frameGrid()` is the accessor F6 argued for; snapping is phase-locked beyond `[tFrom,tTo]` per Q4(a); ⇧ escapes; ticks brighten once a frame is fetched **this session** and clear on `refreshProject`. The comment says out loud that a tick is a hint, not a guarantee — the server evicts under a point budget. |
+| S6 start from sheet N | `14006a1` | Yes, with P5's Reset change and P6's marks in the same commit. |
+| S7 tray fence | `e1dee75` | Yes, at Q5's **narrow** reading: chains are refused **by name**, video pairs keep blending. The wiring detail worth keeping: the refusal needs a `has_chain` stamp recorded at capture-store time, because snapshots never ride the wire to the client. |
+| S8 proposals | `14006a1`, `30e7043`, `e1dee75` | All ten, see 6b. |
+
+### 6b. Proposals P1–P10 — all ten accepted, all ten landed
+
+| | Landed as | Commit |
+|---|---|---|
+| P1 | A truthful tooltip on `▶ Animate plot` rather than the proposed `▶ 3/24` counter — it is the app's only other `▶`, and words disambiguate better than a number. | `e1dee75` |
+| P2 | A hint naming **how many frames** would make a narrow tween visible. | `e1dee75` |
+| P3 | Layout summary prices this sheet **and** the whole run (§2b's addition). | `e1dee75` |
+| P4 | The "nothing follows the timeline yet" hint rehomed onto the tween's own Timeline fold when `#timeline-panel` left the Compose tab. | `086c365` |
+| P5 | Reset returns to the chosen start, tooltip says so, separate `⤒ 1` for the true beginning. | `14006a1` |
+| P6 | Staged passes plotted this session strike through (client-side, no persistence). | `14006a1` |
+| P7 | Cross-reference hint under the tray's A/B pickers. | `30e7043` |
+| P8 | `interpolateBlocker`'s reason renders under the ⇄ row instead of hiding in a `title`. | `e1dee75` |
+| P9 | Delivered en passant with S6 — the richer `groupLabel` is used in the tray list, and animation-born sheet groups carry an ochre edge (§2b's P6 addition). | `14006a1` |
+| P10 | Closing the popup leaves the master timeline on the frame that was on screen. | `e1dee75` |
+
+### 6c. Rulings §2b / §2c / plot-flow — and the two supersessions
+
+- **Q1 (a)** `TweenParams.keys` — shipped, ≤ 24 keys, `a`/`b` maintained as the
+  ends. **Q2 per-segment easing** — shipped, with globally-meaningful curves
+  (`cosine_pingpong`) held global via a named frozenset rather than a special
+  case at the call site. **Q3 (b)**, **Q4 (a)**, **Q5 narrow**, **Q6 (a)** —
+  all shipped as ruled.
+- **Q7 → (a), amended, supersedes S4's Q7(b) bullet.** The bar carries scrub,
+  jump-to-ends, checkpoint jumps, frame steppers and a Render-popup button;
+  **play stayed in the Animation panel**. S4's bullet is struck in place above.
+- **The framing → crop rename** (`7f2e2e8`) is the round's other supersession,
+  and it reaches past this doc. `framing = center | fixed` became
+  `crop = timeline | full`: `timeline` is the old `fixed` (ONE bbox unioned
+  across all frames, so relative motion is preserved), `full` keeps the page
+  rect and its negative space, and the per-frame `center` mode — which
+  *cancelled* pure-translation animation, and had been documented as a feature
+  in ROADMAP's "Sheets workflow v2" since 2026-07-10 — is **deleted**, not
+  renamed. Legacy formats load through `_crop_from_format` (either key;
+  `center` maps to `timeline`). Two things went with it: the 1/2/4/8/16
+  presets left the UI (rows×cols already covered them), and the
+  grid-orientation rule generalised from a hardcoded shape lookup to
+  "whichever of upright/rotated achieves the larger scale". `Capture to tray`
+  is now `Bake sheet` — it always was the bake. Any earlier text in this file
+  that says `fixed` (P9's `"24f · 4×2 · fixed"` capture name, for one) predates
+  the rename.
+- **Trays stay frozen** (§2c): the view label, the sticky live sheet view and
+  ↻ re-bake-from-live shipped in `30e7043`. Re-bake is one checkpointed
+  `Session` act re-running the group's own format against live state under the
+  **same group id**, so undo restores the old bake byte-for-byte; batch groups
+  refuse with a visible reason.
+- **Plot flow** (`f030acd`): `▶ Plot` routes off `S.docPreview` — the same
+  state the view label prints — so what you see is what plots. Multi-pen
+  sheets run as a client-side queue over the existing per-pass calls; Stop
+  stays live during a hold so a half-run can be abandoned; zero passes refuses
+  out loud rather than silently falling back to the live project. Seven
+  acceptance tests assert the actual `/api/plot/start` bodies. **This is a
+  semantic change** — Plot used to mean "the live canvas" unconditionally.
+
+### 6d. Deliberately open
+
+Not oversights. Each is either waiting on a bench/hardware look or was parked
+by ruling.
+
+1. **Hardware pass on the multi-pen pen-swap queue.** Simulator and headless
+   only. The two questions a real machine answers: does the hold keep pen
+   state correctly mid-job, and does Stop actually clear the queue rather than
+   leave it primed for a phantom continue. Tracked in `HANDOFF.md`.
+2. **Held-queue-survives-view-change is a deliberate choice, not a settled
+   one.** Changing the view during a hold does not drop the queue. That is the
+   plot-flow ruling's "what you see is what plots" taken literally, and it is
+   exactly the kind of call that wants one real "did that surprise me" at the
+   bench before it hardens.
+3. **`＋ keyframe`: should the timeline jump to the new key?** It duplicates
+   the previous checkpoint (Q6), so the new key is initially identical to its
+   neighbour and jumping there shows no change — which is an argument both
+   ways. Left as-is (no jump) pending a bench opinion.
+4. **Per-parameter copy/paste between checkpoints** — ruled deferred in §2b's
+   Q6 and now carried in ROADMAP ("Deferred — per-parameter copy/paste between
+   chain checkpoints") with the revisit criterion. Whole-checkpoint Copy/Paste
+   is what shipped.
+5. **Dynamic (auto-refreshing) trays and "project starts in a tray"** — parked
+   by §2c, not planned. The sticky live sheet view is the affordance that was
+   meant to remove most of the wanting.
+6. **Q1(c), first-class layer grouping**, remains open exactly as argued: (a)
+   does not foreclose it, because a grouping UI can present the same `keys`
+   list later. ROADMAP's "keyframe lists vs layer pairs vs named channels" note
+   is annotated accordingly rather than closed.
+7. **F4's consequence stands unaddressed on purpose**: a chain over
+   *non-generator* sources takes the structural/pointwise route and therefore
+   gets **no clip advance**. Existing behaviour, not a regression, and the
+   answer to "why did my video chain freeze".
 
 ---
 

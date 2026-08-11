@@ -4,17 +4,29 @@ updated: 2026-08-11
 entries: 8
 ---
 
-### Docs-upkeep pass — opened 2026-08-11, owner: claude-hub
-- done: nothing yet — this entry is the plan for the session that picks it up,
-  which runs immediately after this wrapup.
-- next: Opus reads the E-batch/timeline-v2/staging round (STATUS.md's top
-  entry, `docs/plans/timeline-v2.md`) and freshens whatever docs it touched —
-  ARCHITECTURE.md's resolve-order/plot-flow description if the view-bound
-  ▶ Plot semantics or crop-replaces-framing change reads stale there,
-  `docs/MODULES.md` if chain/staging module shape changed the authoring
-  story, ROADMAP.md to close the timeline-v2 line item and log the parked
-  ideas (per-param copy/paste, dynamic trays, project-starts-in-a-tray,
-  ＋keyframe jump-to-new-key).
+### Docs-upkeep pass — opened 2026-08-11, owner: claude-hub — **DONE 2026-08-11**
+- done: the pass ran (Opus, docs only — no code, no tests, suite untouched at
+  947). `docs/plans/timeline-v2.md` is CLOSED: every build-order slice is
+  annotated SHIPPED with its commit and a new **§6 closing ledger** records
+  the slices, all ten proposals, the two supersessions (S4's Q7(b) play
+  button; framing → crop) and what stayed deliberately open. ROADMAP gained an
+  **"Animation v2 — SHIPPED 2026-08-11"** section (chains, the bar, the
+  staging/plot rework, plus the 08-10→11 perf round and
+  `fast_marching_contours`, neither of which had been recorded), and the
+  entries this round resolved are struck/annotated in place: ">2 keyframes /
+  keyframe lists vs layer pairs" (answered — a keys list; grouping still
+  open), `framing` under Sheets workflow v2, the 1/2/4/16 presets, the
+  GIF/video "convenience only" line, multidimensional sheet variants,
+  plot-cursor persistence and staging browser ergonomics. ARCHITECTURE.md:
+  the tween description generalises past two endpoints, chains get their own
+  paragraph, "Plotting — manual multi-pen" records the view-bound ▶ Plot and
+  the guided pass queue, and the tray paragraph records A→blends→B groups,
+  the chain fence and ↻ re-bake. CLAUDE.md: `timeline.js` in the table,
+  chains named on the `tween.py` row, one new ▶-Plot-semantics invariant.
+- next: nothing — this entry is closed; the orchestrator reviews and commits.
+  `docs/MODULES.md` was checked and deliberately left alone: chains live
+  inside `tween.py` and the crop rename is a sheet format, so neither changes
+  the module-authoring story.
 - blockers: none.
 - context: `docs/plans/timeline-v2.md` is the round's contract (Ian's Q1-Q7
   rulings + §2b/§2c + the plot-flow ruling); STATUS.md's top entry lists what

@@ -64,7 +64,7 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
 | One open project + the resolve pipeline + undo history | `axibridge/session.py` |
 | Image assets (depth maps, `clip#NNNN` frame sequences) | `axibridge/assets.py` |
 | Module registry (Source / Effect / Transform) | `axibridge/registry.py` |
-| Layer interpolation (tween layers, param/affine lerp; the master timeline scrubs `follow_master` tweens via `session.resolved(master_t=…)`) | `axibridge/tween.py` |
+| Layer interpolation (tween layers, param/affine lerp; keyframe chains — `TweenParams.keys`, one layer, isometric segments, per-segment easing; the master timeline scrubs `follow_master` tweens via `session.resolved(master_t=…)`) | `axibridge/tween.py` |
 | Content-keyed `generate()` memo; all cache budgets scale with the `AXIBRIDGE_CACHE_BUDGET` env float (default 1.0; 0.25 on the Pi). Multi-frame tween/shaped/occlusion caches: ARCHITECTURE.md "Caching" | `axibridge/gencache.py` |
 | Generators / effects / plot-pass ops | `axibridge/sources/` `effects/` `transforms/` |
 | Backends (native / simulator / saxi) + port arbitration | `axibridge/backends/`, `machine.py` |
@@ -74,12 +74,18 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
 | HTTP API | `axibridge/api.py` |
 | Menu bar — ONE definition: the macOS menu is parsed out of `#menubar`'s markup | `axibridge/menu_spec.py`, `static/js/menu.js`, `launch/axibridge_app.py` |
 | Canvas editor / tabs | `axibridge/static/js/canvas.js`, `compose.js`, `plot.js`, … |
+| Bottom timeline bar (scrub, frame snap, checkpoint jumps) — owns the master-`t` scrub; it must never PATCH the project | `axibridge/static/js/timeline.js` |
 
 ## Conventions & invariants (break these and the tool lies)
 
 - **Single resolve path**: preview, estimates, and plotting all flow through
   `session.resolved*()` → `compose.resolve_project()`. Never add a second
   geometry path to the plotter.
+- **▶ Plot plots what the canvas shows** (2026-08-11, a deliberate semantic
+  change): routing reads the same state the view label prints — live frame,
+  live sheet, or selected tray sheet — and multi-pen sheets run as a guided
+  pass queue. Don't add a second route to `/api/plot/start` that assumes the
+  live project; the label is the contract.
 - Resolve order is `occlusion(regions(effects(transform(source))))` —
   effects run in paper space (mm params stay mm at any layer scale); region
   layers then clip+effect everything below them, post-effect/pre-occlusion,

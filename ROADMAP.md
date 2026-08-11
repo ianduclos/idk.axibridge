@@ -3,12 +3,12 @@
 Loose, ordered by conviction. Each item says *why*, so a future session (or
 a smaller model) can judge whether the reasoning still holds before acting.
 Rules of engagement for any of it: the resolve invariant and the module
-contracts (ARCHITECTURE.md, docs/MODULES.md) are not negotiable; UI changes
-must keep the zero-build ES-module setup — meaning no compiler/bundler in the
-edit-reload loop, NOT "no tooling at all"; vendored single-file libraries and
-`// @ts-check`+JSDoc are already in-bounds (see CLAUDE.md, ARCHITECTURE.md
-"Stack"). A real bundler/compiler is a separate, larger, still-undecided call
-— see "Far / undecided — UI revamp" below. Every numeric param stays bounded.
+contracts (ARCHITECTURE.md, docs/MODULES.md) are not negotiable; the frontend
+source stays plain ES modules in `axibridge/static/` served buildless on a
+machine with no npm, with Vite/TypeScript as an additive layer on top (the
+zero-build *invariant* was retired 2026-08-07 — see "Far / undecided — UI
+revamp", RESOLVED, for what was adopted and what it cost; the source-fallback
+rule in CLAUDE.md is what still carries the Pi). Every numeric param stays bounded.
 Loose generator brainstorms (uncanny/Cohen-line direction, plus how the
 involved ones should meet the UI) live in `docs/IDEAS-generators.md`.
 
@@ -177,6 +177,20 @@ Cheapest-first:
   shared tone controls, frame assets and alpha clipping; default-size measured
   1.3s on Mac. Engine/source split: `sources/_fast_marching.py` and
   `sources/fast_marching_topo.py`; upstream is Unlicensed and credited there.
+  **Its sibling `fast_marching_contours` shipped 2026-08-11** (`4c99f2b`) on
+  the same engine and is a different picture again: it seeds a whole image
+  EDGE at once, so the front starts as a straight line and *bends* as it
+  crosses the image — successive contours are parallel-ish sweeps across the
+  sheet rather than concentric rings, dense where the image is dark. The
+  original part is the boundary-threading stage (`sources/_fm_threading.py`):
+  where geometry permits, one continuous line threads level after level along
+  the frame edge instead of lifting the pen every contour — 200 loose contours
+  become a handful of serpentine pen-down trails. Multi-seed solving and
+  per-level contour grouping are new in `_fast_marching.py` for it. The speed
+  mapping matches padcrafting/ContourTool's documented approach (algorithm
+  reference only, no code taken); ContourTool seeds a point and has no
+  threading. 24 tests. Ian on the result: **"this is golden"** — taste-
+  verified, not merely numerically.
 - **Generator quality-of-life** (deferred by choice June 2026, when the ten
   plotterfun ports landed; the progress bar + grouped picker shipped then,
   and live param preview followed — `/api/generators/preview` + the dashed
@@ -439,6 +453,17 @@ the 2026-07-10 session (summary here so it survives).
   `"center"` re-centres each frame by its own bbox (parameter sweeps; pure
   translation animations cancel!), `"fixed"` uses one shared window so
   motion stays motion. UI defaults to fixed.
+  **Superseded 2026-08-11** (`7f2e2e8`, timeline-v2 §2c): `framing` became
+  **`crop = timeline | full`**. `timeline` is the old `fixed` (one bbox
+  unioned across all frames, so relative motion is preserved) and is the
+  default; `full` keeps the untouched page rect and its negative space. The
+  per-frame `center` mode is **deleted**, not renamed — Ian's ruling, because
+  "cancels a pure translation" is a bug wearing a feature's clothes and it was
+  the thing freezing motion out of every bake. Legacy formats still load
+  (`_crop_from_format` reads either key; `center` maps to `timeline`), they
+  just no longer drive new bakes. Grid orientation generalised with it, from a
+  hardcoded shape lookup to whichever of upright/rotated achieves the larger
+  scale.
 - ~~Crosshair marks~~ — **shipped 2026-07-10**: `marks=` on the sheet spec —
   ＋ registration crosses at every grid intersection, prepended to the FIRST
   pen pass (plot once per page), clamped to the bed.
@@ -449,9 +474,11 @@ the 2026-07-10 session (summary here so it survives).
   unchanged project now resolves each frame exactly once (was
   O(frames × pages × passes)).
 - ~~One layout block in the UI~~ — **shipped 2026-07-10**: cols/rows +
-  presets (1/2/4/16) + margin + framing + crosshairs feed the preview,
-  stepper, "Capture to tray" AND the export link; the separate contact-sheet
-  block is gone; a summary line says what the layout means physically.
+  ~~presets (1/2/4/16)~~ + margin + ~~framing~~ crop + crosshairs feed the
+  preview, stepper, ~~"Capture to tray"~~ **"Bake sheet"** AND the export
+  link; the separate contact-sheet block is gone; a summary line says what
+  the layout means physically (and, since 2026-08-11, what this sheet and the
+  whole run cost in plot time).
   Capture-first is the stated primary path (tray sheets interp A ⇄ B).
   (Also fixed: module-level `captureStaged` called a closure-scoped helper —
   every staging-capture button was a ReferenceError.)
@@ -472,9 +499,16 @@ Still open, priority order (details in the session analysis):
   core, never re-fork it.
 - **Plot-cursor persistence**: the stepper's page/pass lives in browser JS
   and dies on reload; persist alongside staging (non-undoable) so a
-  multi-hour flipbook survives a restart.
+  multi-hour flipbook survives a restart. *Still open, but much cheaper to
+  survive since 2026-08-11*: `start here` inputs on the sheet and frame
+  steppers make recovery one typed number instead of eighteen `Skip pass →`
+  presses, and Reset now returns to that chosen start (a separate `⤒ 1` goes
+  to the true beginning).
 - **Staging browser ergonomics**: batches make the tray list long — a grid
-  browser with thumbnails.
+  browser with thumbnails. *Partly eased 2026-08-11*: group headers carry the
+  richer layout label and click to select, animation-born sheet groups are
+  visually distinct (ochre edge), and passes plotted this session strike
+  through (client-side only, no persistence). Thumbnails are still the ask.
 - ~~A/B capture series ergonomics~~ — **shipped 2026-07-10**: A · B · ⇄
   buttons in the canvas toolbar — capture the whole current output as A,
   change anything, capture B, generate an n-step interpolated staged series
@@ -490,6 +524,10 @@ Still open, priority order (details in the session analysis):
   workbench itself was removed July 2026, see item 0 above).
 
 ## Animation — **SHIPPED July 2026** (v1: linear A→B over a master timeline)
+
+**v2 (chains, the bottom bar, the staging/plot rework) is its own section
+below** — this one is kept as the v1 record, with its deferred list annotated
+where v2 answered an item.
 
 Everything rides on the tween machinery; the master timeline `t` is an
 ephemeral argument threaded through the single resolve path (never a second
@@ -514,7 +552,9 @@ geometry path, never a checkpoint). What landed:
   then supersamples/downsamples and rotates to match the displayed page
   orientation.
 - **Grid sheets** — **shipped July 2026**: plot many timeline frames per
-  physical sheet (1/2/4/16 per page) without the destructive bake.
+  physical sheet (~~1/2/4/16 per page~~ — rows × cols only since 2026-08-11;
+  the presets left the UI because the two boxes already covered them) without
+  the destructive bake.
   `session.sheet_document` is transient plot-time assembly — no project
   mutation, one shared scale across ALL sheets (flipbook-consistent),
   grouped BY PEN so each sheet plots as one pass per pen (nib offset applied
@@ -564,17 +604,30 @@ Deferred, roughly in order of pull:
 - **Multidimensional video / sheet variants, v2** — user idea July 2026:
   staging/batch interpolation now covers the first manual workflow: capture A,
   change parameters, capture B with the same format, then generate staged
-  interpolated batches. The open question is a richer 2D authoring surface
+  interpolated batches. **Partly advanced 2026-08-11**: interpolating two
+  *sheet* captures now yields ONE group holding A's and B's own snapshot
+  states as endpoints with the blends between them (`e1dee75`), which is
+  Ian's 2D frame-matrix reading — the same frames run along one axis, the
+  parameters blend along the other. Same code path serves relayout, so
+  re-gridding keeps the grouping. The open question is a richer 2D authoring surface
   where timeline `u` is frame/clip time and variant `v` is a second parameter
   dimension with better browsing, naming, and traversal controls. Do not add
   a second global master timeline casually; keep any automation as temporary
   sampling over the existing resolver (`session.resolved(master_t=u)` /
   `sheet_document`) and preserve pen grouping, preview/export/estimate
   agreement, and undo sanity.
-- **Easing curves beyond ping-pong / >2 keyframes** — a dope-sheet or
+- ~~**Easing curves beyond ping-pong / >2 keyframes** — a dope-sheet or
   keyframe list would deepen animation further. The data model question
   (keyframe lists vs. layer pairs vs. named channels) is the real cost, so
-  keep it behind the smaller interpolation-mode experiment.
+  keep it behind the smaller interpolation-mode experiment.~~ — **answered
+  2026-08-11** by keyframe chains (see "Animation v2" below): the data model
+  is a **keyframe list**, `TweenParams.keys`, on the existing tween layer —
+  not layer pairs, not named channels. Easing is per segment. What is *not*
+  answered is the third option in that sentence, first-class **grouping** in
+  the layer list (timeline-v2's Q1(c)): a chain is still N sibling layers plus
+  one tween, and a real parent/child node in `compose.py` + the dock + the
+  save format remains a round on its own. `keys` does not foreclose it — a
+  grouping UI would present the same list.
 - ~~Per-tween t-mapping~~ — **shipped July 2026** as timeline windows
   (`window_from`/`window_to` on TweenParams: hold A, animate, hold B).
   Same round added cascade delete for animation groups, sequence-import
@@ -586,12 +639,150 @@ Deferred, roughly in order of pull:
   bakes one layer per pen pass (the standalone `bake_contact_sheet`, which
   flattened one layer per frame, was removed 2026-07-12).
 - ~~GIF/PNG preview render~~ — **shipped July 2026** as the raster popup PNG
-  frame cache. A server-side GIF/video export would be convenience only.
+  frame cache. ~~A server-side GIF/video export would be convenience only.~~ —
+  that convenience shipped 2026-08-11 (`29a4dfd`): `animation/export.gif`
+  (PIL, always available) and `export.mp4` (system ffmpeg, clean 501 and a
+  disabled button with a reason when absent), off ONE shared frame renderer
+  that also feeds `preview.png`. ffmpeg is now a declared, launch-installed
+  dependency — see "Animation v2" for the PATH bug that made it look missing.
 - Per-frame fades via pen pressure / multipass density (motion trails).
   ~~Registration marks for multi-sheet alignment~~ — shipped 2026-07-10 for
   grid sheets (crosshairs on the sheet spec); still open for plain
   multi-pass single-frame plots if ever wanted.
 - Colour separation (above) intersects: per-frame AND per-pen matrices.
+
+## Animation v2 — **SHIPPED 2026-08-11** (chains, the bar, the staging/plot rework)
+
+One ~15-commit round, `4cebea7` → `e1dee75`, suite 843 → **947**. The design
+doc `docs/plans/timeline-v2.md` is the contract (findings F1-F9, Ian's rulings
+Q1-Q7 + §2b/§2c + the plot-flow ruling) and carries its own closing ledger in
+§6 — read that for the reasoning behind any line here. **None of this has had
+Ian's eyes or a real AxiDraw on it yet** (`CHECKME.md`, 2026-08-11).
+
+- **Enabling round first — animation performance** (`9649d8d`, `fb959d5`,
+  `966debf`, 2026-08-10→11), because half of what follows was unaffordable in
+  July. A sentinel project scrubbing at >10 s/frame had four causes and got
+  four fixes: a `stats=false` opt-out on `GET /api/compose/resolved` (the
+  slider passes `plan:false, stats:false` while dragging and does a full
+  refresh on release; the stray per-tick `/api/plan` is gone);
+  `axibridge/gencache.py`, a content-keyed memo on `generate()` itself, keyed
+  on generator id + canonicalised params + asset version; every per-layer
+  cache (tween, clip-follow, shaped, occlusion) taken from ONE slot to a
+  budget-bounded multi-entry map, each entry pinning the `id()`-keyed objects
+  its key names; and an optional `skfmm` Eikonal solver behind the `[fast]`
+  extra, with the pure-Python solver staying the tested reference and what the
+  Pi runs. **Eviction is random, not LRU**, for the caches playback cycles
+  through — at capacity LRU evicts precisely the frame about to be reused
+  (`gencache.py`'s docstring has the argument). Cold frame >10 s → ~2.5 s, a
+  revisited frame sub-millisecond. `tests/test_scrub_caches.py`,
+  ARCHITECTURE.md "Many frames, not one".
+- **Keyframe chains** (`46ecbfe`, `b071eb6`, `14006a1`). A>B>C>D is **one
+  tween layer** carrying `TweenParams.keys` (≤ 24; empty ⇒ the classic A/B
+  pair, and a chain shrinking back to two normalises to empty so an older
+  build still reads the project). A global `u` reduces to `(segment, local t)`
+  with isometric spacing — derived, never stored, so inserting or deleting a
+  key re-spaces the whole chain with no windows to maintain. Easing is **per
+  segment** (Ian's ruling, against the doc's recommendation: motion settles at
+  every checkpoint, pose-to-pose), with globally-meaningful curves
+  (`cosine_pingpong`) held global via a named frozenset. Occlusion, effects,
+  pen and transform are the *layer's* — they were always the layer's — so
+  nothing is per-segment except the pair being blended, and `sweep`
+  generalises for free into a ladder across the whole motion. Endpoint snap at
+  `k/(N-1)` is load-bearing beyond fidelity: `lerp_params` gates seed
+  reproduction on an exact 0/1, so float error would have rolled per-frame
+  seeds silently. UI is a numbered keyframe list with drag-reorder and
+  right-click **Copy/Paste state** (whole checkpoint; per-parameter is
+  deferred, below). Why not sugar over N windowed tweens: outside its window a
+  tween *holds its endpoint and keeps drawing*, so N−1 segments would put N−1
+  copies on the sheet, and making visibility a function of `master_t` breaks
+  the scrubbing-never-mutates invariant. The probe that settled it is the
+  doc's Appendix A.
+- **The bottom timeline bar** (`086c365`, `5529abd`) — new
+  `static/js/timeline.js`, mounted between the canvas and the status line,
+  visible only when something actually follows the master timeline and zero
+  height otherwise. Scrub (moved verbatim from `compose.js`, its no-PATCH
+  discipline intact), jump-to-ends, frame steppers, one jump button per chain
+  checkpoint, and a Render-popup button; play stayed in the Animation panel.
+  The slider **snaps to the frame grid** (⇧ escapes to continuous, arrows step
+  frames, phase-locked outside `[t from, t to]`), which is the payoff of the
+  perf round: a continuous slider produced a fresh float per pixel of travel
+  and so missed every cache, while playback of the same animation was nearly
+  free — snapping makes scrubbing and playback share keys. Ticks mark grid
+  frames and brighten once fetched this session; the code says out loud that a
+  tick is a hint, not a guarantee, because the server evicts under a point
+  budget.
+- **Render popup** (`29a4dfd`, `b995752`): palindrome, 1-4× zoomable renders
+  with true-to-zoom pan, GIF/MP4 export off one shared frame renderer, and
+  every completed frame painting immediately instead of freezing on frame 0.
+  It is top-level markup now, so it opens over any tab. **The ffmpeg finding
+  is the durable one**: a Finder-launched app bundle never inherits the
+  shell's brew PATH, so `_find_ffmpeg()` checks the well-known install
+  locations directly and returns the resolved path used by both `/api/state`
+  and the export — Ian *had* ffmpeg and the app said he did not. The launch
+  script installs it only when genuinely absent; no embedded binary.
+- **Staging: the live project does the work trays were being asked to do**
+  (`30e7043`). Trays stay **frozen** by ruling. What changed instead: an
+  always-visible view label naming what the canvas shows (live · sheet n/N vs
+  a tray's own mark) written by the only two writers of that state, so it
+  cannot lie; a **sticky live sheet view** — editing a param re-renders the
+  sheet in place instead of dropping to a single frame (affordable only
+  because of the caches); ↻ **re-bake from live** on any frozen tray, one
+  checkpointed act re-running the group's own format under the same group id
+  so undo restores the old bake byte-for-byte; and click-to-select tray
+  headers. A stored auto-refreshing tray and "project starts in a tray" are
+  **parked, not planned**.
+- **Sheets: crop replaces framing** (`7f2e2e8`) — see the struck entry under
+  "Sheets workflow v2" above for the full story. `crop = timeline | full`,
+  the per-frame `center` mode deleted, motion survives baking, rows × cols
+  only, "Capture to tray" renamed **"Bake sheet"** because it always was the
+  bake.
+- **▶ Plot obeys the view label** (`f030acd`) — **a semantic change**. Routing
+  reads the same state the label prints, so what you see is what plots: the
+  live view is unchanged (one `target=all` job, asserted), sheet and tray
+  views fire their own passes, and zero passes refuses out loud rather than
+  falling back to the live project. Multi-pen sheets run as a **guided pass
+  queue**: one press starts pass 1, the status line reports "pass k/N —
+  <pen>", and the machine holds between passes with "swap to <pen>, then ▶
+  continue". Stop stays live during a hold so a half-run can be abandoned;
+  the tray's per-pass buttons remain the out-of-order escape hatch; the
+  all/layer/pen target picker greys out on sheet/tray views ("sheet passes
+  carry their pens"). Seven acceptance tests assert the actual
+  `/api/plot/start` bodies. **Not hardware-verified** — simulator and headless
+  only, and the pen-swap hold is exactly what a real machine has to judge.
+- **Tray A⇄B fence** (`e1dee75`): interpolation refuses keyframe chains **by
+  name** and keeps working for video pairs (Ian's narrow reading — the strict
+  one would have deleted working behaviour). Nothing was deleted to build the
+  fence; what it buys is that `_captures_compatible`, `_interpolate_layer`,
+  `relayout_capture` and the client mirror never have to learn chains.
+- **The small round** that came with it: an honest tooltip on ▶ Animate plot
+  (the app's only other ▶), a hint naming how many frames make a narrow tween
+  visible, per-sheet and whole-run plot-time in the layout summary, closing
+  the popup leaving the timeline on the frame that was on screen, a visible
+  reason under the ⇄ row instead of a hidden `title`, `start here` inputs with
+  an honest Reset, and struck-through marks on passes plotted this session.
+  Plus the E-batch this round opened with (`4cebea7`, `8a4ffb8`): schematic
+  hairline width as a screen property, a Settings **menu** owning Restart
+  server, motion params under the paper guide, live generator param editing
+  with a coalesced-undo drag, and keyframe sublayers sharing collapse/scroll
+  state across an A/B flip.
+
+**Parked by ruling, not forgotten** (the full argument for each is in the
+plan's §6d): per-parameter copy/paste between checkpoints (its own section
+below); a stored **auto-refreshing tray** and **"project starts in a tray"**;
+whether `＋ keyframe` should **jump the timeline to the new key** (it
+duplicates the previous checkpoint, so there is nothing to see there yet —
+which argues both ways, and wants a bench opinion); and first-class layer
+**grouping** for a chain (timeline-v2 Q1(c), see the struck ">2 keyframes"
+item above). Awaiting a bench/hardware look rather than a decision: the
+multi-pen swap queue on a real machine, and whether a held queue *should*
+survive a view change — that one is a deliberate reading of "what you see is
+what plots", not an oversight.
+
+**Boundary changes** worth knowing outside this repo: new endpoints for chain
+keyframe add/remove/reorder, staging rebake, and `animation export.gif` /
+`export.mp4`; `crop` replaces `framing` in sheet and capture formats (legacy
+keys still load); ▶ Plot's semantics; ffmpeg is now a launch-installed
+dependency rather than an assumed one.
 
 ## Mid term — interpolation (the layer-variant idea) — **SHIPPED June 2026**
 
@@ -625,8 +816,9 @@ then **interpolate between the two**. This does *not* need a node graph:
 ## Deferred — per-parameter copy/paste between chain checkpoints
 
 Ruled 2026-08-11 alongside timeline v2 (docs/plans/timeline-v2.md §2b, Q6):
-the checkpoint right-click menu ships with whole-checkpoint Copy/Paste
-state only. The finer version — copying a SINGLE parameter (or one param
+the checkpoint right-click menu shipped (`14006a1`) with whole-checkpoint
+Copy/Paste state only — params, effects and placement in one act, with a
+visible notice when a paste can't apply across generators. The finer version — copying a SINGLE parameter (or one param
 group) from checkpoint A onto checkpoint C — is wanted but deferred: it
 grows the menu a submenu per param group and needs a param-path addressing
 scheme. Revisit once chains are in daily use and the whole-checkpoint verb
