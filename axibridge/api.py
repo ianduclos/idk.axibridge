@@ -438,6 +438,21 @@ async def upload_asset(file: UploadFile) -> dict[str, Any]:
     return {"name": name, "assets": asset_store.info()}
 
 
+@router.post("/assets/font")
+async def upload_font_asset(file: UploadFile) -> dict[str, Any]:
+    """A dropped-in font file (TTF/OTF/TTC) — same store as images, but
+    validated via fontTools instead of PIL. Referenced by name from
+    text_fill.py's `font` param, same as an image asset is from `image`."""
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="empty file")
+    name = asset_store.put(file.filename or "font.ttf", data)
+    if asset_store.font_label(name) is None:
+        asset_store.replace_all({k: v for k, v in asset_store.all().items() if k != name})
+        raise HTTPException(status_code=400, detail="not a valid font file")
+    return {"name": name, "fonts": _fonts_payload()}
+
+
 class DepthProAssetBody(BaseModel):
     image: str = Field(..., min_length=1)
     frame: float = Field(default=0.0, ge=0.0, le=1.0)
@@ -657,11 +672,15 @@ def list_assets() -> dict[str, Any]:
 
 
 def _fonts_payload() -> list[dict[str, str]]:
-    """Bundled + system-discovered fonts for `format: "font"` picker fields
-    (text_fill.py's `font` param). One generic lookup regardless of how many
-    source modules bundle a font — see system_fonts.register_bundled."""
-    return [{"id": f.id, "label": f.label, "source": f.source}
-           for f in system_fonts.catalogue()]
+    """Bundled + system-discovered + uploaded fonts for `format: "font"`
+    picker fields (text_fill.py's `font` param). One generic lookup
+    regardless of how many source modules bundle a font — see
+    system_fonts.register_bundled — or how a font got onto the machine."""
+    fonts = [{"id": f.id, "label": f.label, "source": f.source}
+            for f in system_fonts.catalogue()]
+    fonts += [{"id": name, "label": label, "source": "uploaded"}
+             for name, label in asset_store.font_names()]
+    return fonts
 
 
 @router.get("/fonts")
@@ -670,16 +689,19 @@ def list_fonts() -> dict[str, Any]:
 
 
 def _asset_param_fields(schema: dict[str, Any]) -> list[str]:
-    """Field names in a module's Params JSON Schema that hold an asset
-    reference (``format == "asset"``, possibly nested in an ``anyOf`` for an
-    optional field) — mirrors the frontend's own detection (compose.js /
-    forms.js), so any current or future image-driven module is covered
-    without hardcoding field names like ``image``."""
+    """Field names in a module's Params JSON Schema that hold an asset-store
+    reference — ``format == "asset"`` (images) or ``"font"`` (a font may
+    name an uploaded asset OR a bundled/system id that was never in the
+    store at all; harmless either way, ``clear_assets`` only ever deletes
+    actual store keys) — possibly nested in an ``anyOf`` for an optional
+    field. Mirrors the frontend's own detection (compose.js / forms.js), so
+    any current or future asset-backed module is covered without
+    hardcoding field names like ``image``."""
     fields = []
     for name, spec in (schema.get("properties") or {}).items():
         fmt = spec.get("format") or next(
             (a.get("format") for a in spec.get("anyOf", []) if a.get("format")), None)
-        if fmt == "asset":
+        if fmt in ("asset", "font"):
             fields.append(name)
     return fields
 

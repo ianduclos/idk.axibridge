@@ -63,6 +63,13 @@ class AssetStore:
         #: sequence prefix ("clip#") -> sorted concrete frame names; derived
         #: from ``self._data`` keys by ``_reindex`` (held under the lock).
         self._seq: dict[str, list[str]] = {}
+        #: name -> font family label if the bytes parse as a font, else None.
+        #: No separate "kind" is stored anywhere: an asset's kind is just
+        #: whichever decoder accepts its bytes (PIL for images, fontTools
+        #: here), the same idea as ``grayscale`` returning None for
+        #: non-images — so save/load round-trips never need to carry a kind
+        #: alongside the bytes. Cached like ``_gray``/``_alpha``.
+        self._font_label: dict[str, str | None] = {}
         #: monotonic counter, bumped under the lock by ``put``/``replace_all``.
         #: ``gencache`` folds this into its cache key so any asset change
         #: (upload, project load/new) implicitly orphans stale memo entries —
@@ -87,6 +94,7 @@ class AssetStore:
             self._data[name] = data
             self._gray = {k: v for k, v in self._gray.items() if k[0] != name}
             self._alpha = {k: v for k, v in self._alpha.items() if k[0] != name}
+            self._font_label.pop(name, None)
             self._reindex()
             self._version += 1
         return name
@@ -136,7 +144,10 @@ class AssetStore:
         overlays and effects derive aspect ratios without decoding pixels.
         Frame sequences collapse to ONE entry (name = the ``clip#`` prefix,
         ``frames`` = count, dimensions from the first frame); the individual
-        frames never appear on their own. Plain assets carry ``frames`` = 1."""
+        frames never appear on their own. Plain assets carry ``frames`` = 1.
+        Non-image assets sharing the store (fonts) fail the decode and are
+        skipped here — same idea as ``font_names`` skipping images, the
+        other way round."""
         with self._lock:
             seq = {k: list(v) for k, v in self._seq.items()}
             plain = sorted(set(self._data) - {n for fr in seq.values() for n in fr})
@@ -144,7 +155,10 @@ class AssetStore:
         out = []
         for kind, name in sorted(entries, key=lambda e: e[1]):
             rep = seq[name][0] if kind == "seq" else name
-            g = self.grayscale(rep)  # takes the lock itself — not held here
+            try:
+                g = self.grayscale(rep)  # takes the lock itself — not held here
+            except Exception:
+                g = None
             if g is not None:
                 out.append({
                     "name": name,
@@ -171,8 +185,45 @@ class AssetStore:
             self._data = dict(assets)
             self._gray.clear()
             self._alpha.clear()
+            self._font_label.clear()
             self._reindex()
             self._version += 1
+
+    def font_label(self, name: str) -> str | None:
+        """The font's family name if ``name``'s bytes parse as a font
+        (TTF/OTF/TTC), else None — an image asset simply fails the parse and
+        gets None, the same decoding-as-validation ``grayscale`` already
+        does the other way around."""
+        with self._lock:
+            if name in self._font_label:
+                return self._font_label[name]
+            data = self._data.get(name)
+        label = None
+        if data is not None:
+            try:
+                from fontTools.ttLib import TTFont  # lazy: keep server start fast
+
+                font = TTFont(io.BytesIO(data), lazy=True, fontNumber=0)
+                nm = font.get("name")
+                label = (nm.getDebugName(1) if nm else None) or name
+            except Exception:
+                label = None
+        with self._lock:
+            self._font_label[name] = label
+        return label
+
+    def font_names(self) -> list[tuple[str, str]]:
+        """[(asset name, font label)] for every stored asset that is
+        actually a font — image assets are naturally excluded, they fail
+        the parse in ``font_label``."""
+        with self._lock:
+            names = list(self._data)
+        out = []
+        for n in names:
+            label = self.font_label(n)
+            if label is not None:
+                out.append((n, label))
+        return out
 
     def alpha(
         self,

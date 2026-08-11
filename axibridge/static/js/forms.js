@@ -166,41 +166,60 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
       ctl.appendChild(up);
       ctl.appendChild(file);
     } else if (spec.format === "font" || s.format === "font") {
-      // bundled + system-discovered fonts (system_fonts.py), grouped so the
-      // one guaranteed-available bundled font doesn't get lost in ~1000
-      // system faces. Upload (drag in a font file) lands in a later pass —
-      // for now this is a picker over what's already on the machine.
+      // bundled + system-discovered + uploaded fonts (system_fonts.py /
+      // asset_store.font_names()), grouped so the one guaranteed-available
+      // bundled font doesn't get lost in ~1000 system faces.
       const sel = document.createElement("select");
-      const fonts = S.state?.fonts || [];
-      const bundled = fonts.filter((f) => f.source === "bundled");
-      const system = fonts.filter((f) => f.source !== "bundled");
-      const addOptions = (parent, list) => {
-        for (const f of list) {
+      const fill = (selected) => {
+        sel.innerHTML = "";
+        const fonts = S.state?.fonts || [];
+        const groupOf = { bundled: "Bundled", uploaded: "Uploaded", system: "System" };
+        for (const [src, label] of Object.entries(groupOf)) {
+          const list = fonts.filter((f) => f.source === src);
+          if (!list.length) continue;
+          const g = document.createElement("optgroup");
+          g.label = label;
+          for (const f of list) {
+            const o = document.createElement("option");
+            o.value = f.id; o.textContent = f.label;
+            if (f.id === selected) o.selected = true;
+            g.appendChild(o);
+          }
+          sel.appendChild(g);
+        }
+        if (selected && !fonts.some((f) => f.id === selected)) { // font went missing: show it, don't silently drop
           const o = document.createElement("option");
-          o.value = f.id; o.textContent = f.label;
-          if (f.id === val) o.selected = true;
-          parent.appendChild(o);
+          o.value = selected; o.textContent = `${selected} (missing)`; o.selected = true;
+          sel.appendChild(o);
         }
       };
-      if (bundled.length) {
-        const g = document.createElement("optgroup");
-        g.label = "Bundled";
-        addOptions(g, bundled);
-        sel.appendChild(g);
-      }
-      if (system.length) {
-        const g = document.createElement("optgroup");
-        g.label = "System";
-        addOptions(g, system);
-        sel.appendChild(g);
-      }
-      if (val && !fonts.some((f) => f.id === val)) { // font went missing: show it, don't silently drop
-        const o = document.createElement("option");
-        o.value = val; o.textContent = `${val} (missing)`; o.selected = true;
-        sel.appendChild(o);
-      }
+      fill(val);
       sel.onchange = () => set(sel.value);
       ctl.appendChild(sel);
+      // inline upload: a dropped-in font lands in the dropdown (and gets
+      // picked) immediately, same shape as the asset picker's upload button
+      const file = document.createElement("input");
+      file.type = "file";
+      file.accept = ".ttf,.otf,.ttc,font/ttf,font/otf,font/collection";
+      file.hidden = true;
+      const up = document.createElement("button");
+      up.textContent = "⤒"; up.title = "upload a font file (.ttf/.otf/.ttc)";
+      up.onclick = (e) => { e.preventDefault(); file.click(); };
+      file.onchange = async () => {
+        const f = file.files[0];
+        if (!f) return;
+        try {
+          const fd = new FormData();
+          fd.append("file", f);
+          const r = await api.upload("/api/assets/font", fd);
+          S.state.fonts = r.fonts;
+          fill(r.name);
+          set(r.name);
+        } catch (err) { actions.oops(err); }
+        file.value = "";
+      };
+      ctl.appendChild(up);
+      ctl.appendChild(file);
     } else if (s.enum) {
       const sel = document.createElement("select");
       const rotateDisplayOrder = portrait && spec.viewRotate ? s.enum : null;

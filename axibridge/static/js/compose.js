@@ -383,8 +383,19 @@ async function uploadAssetFiles(files, { frames, start, every } = {}, busyEl = n
   } finally { if (isSequence) genBusy(false, busyEl); }
 }
 
-// Drop an image/video anywhere on the canvas: import it as an asset and, if
-// the bench generator is image-driven, point the form at it right away.
+async function uploadFontFile(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+  const r = await api.upload("/api/assets/font", fd);
+  S.state.fonts = r.fonts;
+  return r;
+}
+
+// Drop an image/video/font anywhere on the canvas: import it as an asset
+// and, if the bench generator has a matching field, point the form at it
+// right away. Images bind to the conventional "image" field name (every
+// image-driven module uses it); fonts have no such single convention, so
+// that half scans the schema for whichever field is tagged format:"font".
 function initCanvasDrop() {
   const wrap = document.getElementById("canvas-wrap");
   if (!wrap) return;
@@ -399,18 +410,36 @@ function initCanvasDrop() {
     wrap.classList.remove("dropping");
     if (!hasFiles(e)) return;
     e.preventDefault();
-    const files = [...e.dataTransfer.files].filter((f) =>
+    const dropped = [...e.dataTransfer.files];
+    const fontFiles = dropped.filter((f) =>
+      /\.(ttf|otf|ttc)$/i.test(f.name) || /^font\//.test(f.type));
+    const mediaFiles = dropped.filter((f) =>
       /^(image|video)\//.test(f.type) || /\.(png|jpe?g|mp4|mov|webm|mkv|avi|m4v)$/i.test(f.name));
-    if (!files.length) return actions.oops(new Error("drop a PNG/JPEG image or a video"));
+    if (!fontFiles.length && !mediaFiles.length) {
+      return actions.oops(new Error("drop a PNG/JPEG image, a video, or a font file (.ttf/.otf/.ttc)"));
+    }
+    const m = S.state.modules.sources.find((x) => x.id === $("gen-select").value);
     try {
-      const r = await uploadAssetFiles(files);
-      actions.log(`asset added: ${r.name}`);
-      const m = S.state.modules.sources.find((x) => x.id === $("gen-select").value);
-      if (m && "image" in (m.schema.properties || {})) {
-        genParams.image = r.name;
-        const sched = bindGenForm(m); // re-render: the asset dropdown shows the pick
-        sched();
-        if (latch) applyLatched();
+      if (fontFiles.length) {
+        const r = await uploadFontFile(fontFiles[0]);
+        actions.log(`font added: ${r.name}`);
+        const key = Object.entries(m?.schema.properties || {}).find(([, v]) => v.format === "font")?.[0];
+        if (key) {
+          genParams[key] = r.name;
+          const sched = bindGenForm(m); // re-render: the font dropdown shows the pick
+          sched();
+          if (latch) applyLatched();
+        }
+      }
+      if (mediaFiles.length) {
+        const r = await uploadAssetFiles(mediaFiles);
+        actions.log(`asset added: ${r.name}`);
+        if (m && "image" in (m.schema.properties || {})) {
+          genParams.image = r.name;
+          const sched = bindGenForm(m); // re-render: the asset dropdown shows the pick
+          sched();
+          if (latch) applyLatched();
+        }
       }
     } catch (err) { actions.oops(err); }
   });

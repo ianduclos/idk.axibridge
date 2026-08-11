@@ -17,8 +17,12 @@ Helvetica/Arial/Times New Roman render here where actually installed —
 they're proprietary (Monotype/Linotype) and this repo can't bundle them,
 so finding real copies on the machine is the only path to them, rather
 than shipping open metric-compatible substitutes under those names.
-Unresolvable ids (a system font since uninstalled) fall back to the
-bundled font rather than raising — a saved project should still open.
+Dropping a font file onto the canvas (or the Font field's upload button)
+lands it in the same asset store images use, keyed by filename; `font`
+accepts that name too, resolved through fontTools straight off the stored
+bytes. Unresolvable ids (a system font since uninstalled, an uploaded font
+since removed) fall back to the bundled font rather than raising — a saved
+project should still open, just with different glyphs, not a broken layer.
 
 Layout mirrors text.py: lines split on `\\n`, stacked at `size ×
 line_spacing`, glyphs advance by the font's own (instance-correct) hmtx
@@ -35,6 +39,7 @@ from pathlib import Path as FsPath
 from pydantic import BaseModel, Field
 
 from .. import system_fonts
+from ..assets import asset_store
 from ..model import Layer, Path, PathDocument
 from ..registry import SourceModule, register_source
 from . import _fontglyph as fg
@@ -100,14 +105,33 @@ def _load_font(path: str, font_number: int):
     return fg.load_font_file(path, font_number)
 
 
-def _resolve_font(font_id: str):
-    """A TTFont for `font_id`, looked up in the shared catalogue (bundled or
-    system-discovered — see system_fonts.py). Falls back to the default
-    bundled font rather than raising: a project saved with a since-
-    uninstalled system font should still open, just with different glyphs,
-    not a broken layer."""
-    face = system_fonts.find(font_id) or system_fonts.find(_DEFAULT_FONT)
-    return _load_font(face.path, face.font_number)
+@lru_cache(maxsize=16)
+def _load_uploaded_font(name: str, asset_version: int):
+    """`asset_version` (asset_store.version()) in the cache key, not the
+    bytes themselves: a re-upload under the same name must reload, and
+    hashing a whole font file on every lookup just to build a cache key
+    would defeat the point of caching it."""
+    return fg.load_font_bytes(asset_store.get(name))
+
+
+def _resolve_font(font_id: str) -> tuple[object, str]:
+    """A (TTFont, cache_key) pair for `font_id` — bundled, system-
+    discovered, or a dropped-in upload, checked in that order. Falls back
+    to the default bundled font rather than raising: a project saved with a
+    since-removed system or uploaded font should still open, just with
+    different glyphs, not a broken layer.
+
+    `cache_key` folds in `asset_store.version()` for an uploaded font — a
+    re-upload under the same filename must bust `_fontglyph.instantiate`'s
+    per-axis cache too, not just `_load_uploaded_font`'s."""
+    face = system_fonts.find(font_id)
+    if face is not None:
+        return _load_font(face.path, face.font_number), font_id
+    if asset_store.font_label(font_id) is not None:
+        version = asset_store.version()
+        return _load_uploaded_font(font_id, version), f"{font_id}@{version}"
+    default = system_fonts.find(_DEFAULT_FONT)
+    return _load_font(default.path, default.font_number), _DEFAULT_FONT
 
 
 def _axes(p: TextFillParams) -> dict[str, float]:
@@ -121,7 +145,8 @@ def _line(text: str, font_id: str, size: float, tracking: float, tol_mm: float,
          axes: dict[str, float]) -> list[list[tuple[float, float]]]:
     """One line of filled-outline text as machine-frame closed rings
     (y DOWN), starting at x=0 with the baseline at y=0."""
-    font = fg.instantiate(_resolve_font(font_id), font_id, axes)
+    base_font, font_key = _resolve_font(font_id)
+    font = fg.instantiate(base_font, font_key, axes)
     scale = size / font["head"].unitsPerEm
     tol_fu = tol_mm / scale if scale else tol_mm  # flatten in font units, label in mm
     cmap = font.getBestCmap()
