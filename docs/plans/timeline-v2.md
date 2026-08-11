@@ -467,6 +467,40 @@ the collision with E6** (the render popup work) and see §5.
 
 ---
 
+## 2c. Ian's second rulings (2026-08-11, after the first bench check)
+
+Popup (bench findings): opens from ANY tab (top-level overlay, not
+Plot-tab DOM); resolution change triggers a re-render and the label states
+the actual on-screen resolution; fps moves INTO the popup; pan must
+compensate for zoom scale (currently finicky). ffmpeg becomes a declared
+dependency: detection must search well-known locations
+(/opt/homebrew/bin, /usr/local/bin) because a Finder-launched app bundle
+does not inherit the brew PATH — Ian HAS ffmpeg and the app said he
+didn't; that is the bug. Launch script brew-installs when genuinely
+absent; UI states status plainly. No embedded binary.
+
+Baking crop: crop mode = **timeline** (default — ONE bbox unioned across
+all frames, so relative motion between frames is preserved) or **full
+frame** (no crop, negative space kept, always within page bounds). NO
+per-frame mode — today's per-frame recentering kills motion and is ruled
+out entirely.
+
+Trays: stay FROZEN. The "dynamic tray" feeling comes from the live
+project instead: (7a) an always-visible label saying what the canvas
+shows — live · sheet n/N vs tray "name" · sheet n/N; (8a) the live sheet
+view is STICKY — a param edit re-renders the sheet view in place instead
+of dropping to single-frame (the caches make this affordable); (9a) every
+frozen tray gains a one-click "re-bake from live". A stored auto-
+refreshing tray and "project starts in a tray" are PARKED, not planned.
+
+Sheet grid: replace the 1/2/4/8/16 presets with rows × columns + a
+**Bake sheet** button that auto-decides frame orientation (rotate if the
+cell aspect fits better) and, when frames exceed cells, produces
+⌈frames/cells⌉ sheets straight into a tray. Plot targets the currently
+selected tray (one selection, one target, what you see is what plots).
+
+---
+
 ## 3. Proposals — animation & staging UX
 
 Cheap-to-veto bullets. Each names the friction it fixes and cites the code.
