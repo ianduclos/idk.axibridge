@@ -499,6 +499,18 @@ cell aspect fits better) and, when frames exceed cells, produces
 ⌈frames/cells⌉ sheets straight into a tray. Plot targets the currently
 selected tray (one selection, one target, what you see is what plots).
 
+Plot flow (ruled 2026-08-11, after the tray round): **▶ Plot obeys the
+view label** — it plots exactly what the canvas shows (live frame, live
+sheet, or selected tray sheet); the label is the contract. Multi-pen
+plots run as a **guided pass queue**: one press starts pass 1, the status
+line reports "pass k/N — <pen>", and between passes the machine holds
+with "swap to <pen>, then continue". The tray's per-pass buttons stay as
+the out-of-order escape hatch; the all/layer/pen target picker applies
+only to the plain live view and greys out on sheet/tray views ("sheet
+passes carry their pens"). Known trade, accepted: Plot means
+"what's on screen", not "the live project" — the adjacent view label is
+the mitigation.
+
 ---
 
 ## 3. Proposals — animation & staging UX
