@@ -1,19 +1,65 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-08-10
+updated: 2026-08-11
 machine: mac+pi
-summary: Fast marching topo is now an image-driven generator — seeded Eikonal travel time turns brightness into contour spacing, with native asset/tone/alpha controls; 800 tests green and default 800px generation measured 1.3s.
+summary: Fast-marching contour tracing shipped (Ian — "this is golden"), then a scrub/animation performance pass fixed a >10s/frame sentinel project down to sub-millisecond on cache hit; a design/build batch (timeline v2, staging UX, six small UI fixes) starts next.
 next:
-  - "Eye-check Fast marching topo on a real photo and a transparent PNG — defaults are numerically verified but not taste- or paper-verified (see HANDOFF/CHECKME)"
-  - "Put ink on paper for offset_fill_v2 — the spiral is screen-verified only: does one unbroken stroke actually read better than rings, and is blend 0.5 the right default seam"
-  - "Decide nothing yet about engine=arc: it agrees with shapely across the differential corpus but is 2-4x slower and non-default on purpose (a wrong prune is permanent ink, not a crash)"
-  - "Ian eye-checks still stacked in CHECKME.md — the 08-08 group (taller bed, finer sliders, Smoothen) and the shell-only paths above it need a full relaunch"
-  - "The 08-08 UI trio (playback transport into the status line, zoom to the toolbar tail, folding Plot/Settings sub-sections) landed after the last wrapup and has had no eye-check"
+  - "New batch starting: Opus drafts docs/plans/timeline-v2.md (windowed-tween chains, auto-hiding bar, frame-grid slider, video A>D) and the staging/batching UX doc alongside it — see HANDOFF"
+  - "Sonnet builds the six small fixes (E1-E6: schematic line width setting, Settings menu-bar tab, motion-params ordering, live generator preview, keyframe sublayer UX, render-popup upgrades) — see HANDOFF"
+  - "Note AXIBRIDGE_CACHE_BUDGET=0.25 in the Pi runbook — the new caches default to a budget sized for the Mac"
+  - "Ian eye-checks still stacked in CHECKME.md — the 08-08 shell-only group needs a full relaunch; delete the file once cleared"
   - "Still open from July: bench eye-checks of offset_fill + brush, the 07-16 to 19 wave, and the URGENT round (see HANDOFF)"
 handoff_for: ian
 ---
 # idk.axibridge — status
+
+**Session 2026-08-10→11 (Fable 5 orchestrating Sonnet/Opus): fast-marching contours, then a scrub/animation performance pass.**
+
+Two rounds, both verified by Ian.
+
+**Round 1 — `fast_marching_contours` source** (`4c99f2b`). Edge-seeded
+Eikonal isochrones with an original boundary-threading stage, reverse-engineered
+from reference SVGs (padcrafting/ContourTool establishes the speed mapping
+only — it has no threading and seeds points). Turns 200 loose contours into a
+handful of serpentine pen-down trails joined along the frame perimeter. 24
+tests. Ian: **"this is golden"** — taste-verified, not just numerically.
+
+**Round 2 — animation/multi-layer performance** (`9649d8d`, `fb959d5`,
+`966debf`). Diagnosed a sentinel project scrubbing at >10s/frame: param-route
+tweens re-ran generators on every frame, every per-layer cache held one slot
+keyed on `master_t` (so scrubbing never hit), an occluder sitting on top
+re-clipped everything below it, `plan_job` estimates ran per frame, and a
+stray `/api/plan` fired per slider tick. Four fixes:
+1. `stats=false` opt-out on `GET /api/compose/resolved`; the slider now
+   passes `plan:false, stats:false` while dragging and does a full refresh on
+   release.
+2. `axibridge/gencache.py` — a content-keyed memo on `generate()` itself
+   (key: generator id + canonicalized params + `asset_store.version()`),
+   random eviction (LRU is the wrong policy for cyclic scrub/loop access —
+   see the module docstring), point-budget-bounded, sized by the new
+   `AXIBRIDGE_CACHE_BUDGET` env multiplier.
+3. All four per-layer caches (tween, clip-follow, shaped, occlusion) went
+   from one slot to a budget-bounded multi-entry map, each entry holding
+   strong references to pin the `id()`-keyed objects it names
+   (`tests/test_scrub_caches.py`).
+4. Optional `skfmm` Eikonal solver behind the `[fast]` extra
+   (`scikit-fmm>=2024`, installed on the Mac venv) — the pure-Python solver
+   stays the tested reference and is what the Pi runs, unaffected.
+
+Measured on the real sentinel project: cold frame >10s → ~2.5s, a revisited
+frame → sub-millisecond. Suite: 843 passed, 1 skipped. Ian confirmed the run
+a success in-app.
+
+**New batch starting, not yet built** — see `HANDOFF.md` for the full spec.
+Six small UI fixes (schematic line width, a Settings menu-bar tab, motion
+params reordered, live generator preview, keyframe sublayer polish, render
+popup upgrades) plus two design docs Opus is drafting first
+(`docs/plans/timeline-v2.md` for a windowed-tween timeline rethink, and a
+staging/batching UX doc), plus a meta/harness review and a general
+low-key improvements pass.
+
+---
 
 **Session 2026-08-10 (Codex): Fast Marching Topo, native adaptation.**
 

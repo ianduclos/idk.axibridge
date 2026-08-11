@@ -1,8 +1,43 @@
 ---
 project: idk.axibridge
-updated: 2026-08-10
-entries: 6
+updated: 2026-08-11
+entries: 7
 ---
+
+### Next batch: timeline v2, staging UX, six small fixes — opened 2026-08-11, owner: claude-hub
+- done: nothing yet — this entry is the plan for the session that picks it up.
+  Orchestration is design/build split (Sonnet builds, Opus designs, Fable
+  reviews/commits), same shape as the 08-10→11 round that just landed.
+- next: work the list below. The two design docs come FIRST, before any
+  timeline/staging code — Opus drafts, Fable reviews before Sonnet builds
+  against them.
+  - **E1** schematic view lines: 0.2mm default, changeable in settings.
+  - **E2** Settings gets a menu-bar tab with Restart server, removed from the
+    in-screen settings module.
+  - **E3** motion parameters module reordered to sit right after paper guide.
+  - **E4** generator param edits update the canvas live, the way effect edits
+    already do.
+  - **E5** keyframe sublayers: matching collapse state and preserved scroll
+    position across an A/B switch, plus a small optional UX pass in the same
+    spirit.
+  - **E6** render popup: palindrome option, higher-res zoomable renders,
+    mp4/gif sequence export.
+  - **A1** timeline rethink — design doc FIRST at `docs/plans/timeline-v2.md`
+    (Opus drafting): chains A>B>C>D as windowed-tween sugar, a bottom
+    auto-hiding timeline bar, jump buttons, a frame-grid-quantized slider
+    aligned to the new scrub caches (`gencache.py` + the four per-layer
+    caches from the 08-10→11 round), client-side cached-frame ticks, video
+    A>D via clip-follow composition.
+  - **A2** staging/batching UX (same doc): start plotting from sheet N
+    intuitively; tray-to-tray transitions reserved for A>B animations.
+  - **X1** meta/harness review by Fable.
+  - **X2** a low-key general improvements pass.
+- blockers: none. A1/A2 are blocked on their own design doc existing first —
+  don't build timeline/staging code against an unwritten spec.
+- context: prior round's perf work (`axibridge/gencache.py`, the four
+  per-layer caches) is what A1's frame-grid slider is meant to align with —
+  read that before designing the new slider. No `docs/plans/timeline-v2.md`
+  exists yet as of this entry.
 
 ### Eye-check: Fast marching topo — opened 2026-08-10, owner: ian
 - done: `fast_marching_topo` ships as a native image-driven generator: seeded
