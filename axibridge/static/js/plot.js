@@ -13,7 +13,7 @@ import { S, actions } from "./main.js";
 // below) — safe here the same way main.js<->timeline.js already is: every
 // use is inside a function body, called long after both modules finished
 // evaluating, never at module-top-level.
-import { recordFetchedFrame, renderTimelineBar } from "./timeline.js";
+import { recordFetchedFrame, renderTimelineBar, jumpTo } from "./timeline.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -177,6 +177,10 @@ export function initPlotTab() {
         <label>t to</label><input type="number" id="anim-t-to" min="0" max="1" step="0.01" style="width:5.5em">
       </div>
       <div class="hint">for one clip-frame per rendered frame, set frames = the clip's length</div>
+      <!-- P2: a follow_master tween whose window is narrower than one frame
+           step can be skipped entirely by every output (export/sheets/popup
+           all sample the same grid) — a mystifying blank sheet otherwise. -->
+      <div class="hint warn" id="anim-narrow-tween-hint" hidden></div>
       <div class="row">
         <label>layout</label>
         <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1" style="width:4em">
@@ -275,6 +279,9 @@ export function initPlotTab() {
           <label>steps</label><input type="number" id="stage-steps" min="2" max="60" step="1" value="5" style="width:4.5em">
           <button id="stage-interp" class="primary">Generate batch</button>
         </div>
+        <!-- P8: interpolateBlocker's reason, visible — it was already
+             computed and sat invisibly in the button's title. -->
+        <div class="hint warn" id="stage-interp-hint" hidden></div>
         <div class="hint">each step = one sheet; frames run across the sheet, steps run A→B between the two captures</div>
         <div id="stage-list" class="stage-list"></div>
       </details>
@@ -395,6 +402,7 @@ export function initPlotTab() {
     anim.nPages = sheetPages();
     anim.sheet = Math.min(anim.sheet, anim.nPages - 1);
     renderAnimPreview();
+    renderNarrowTweenHint(); // P2 — frames/t-from/t-to just moved the grid step
   };
   const updateExportLink = () => {
     let href = `/api/animation/export.zip?frames=${anim.n}&t_from=${anim.tFrom}&t_to=${anim.tTo}`;
@@ -1093,11 +1101,24 @@ function pickerLabel(g) {
 // Client mirror of session._captures_compatible (plus the snapshot rule):
 // returns the reason A/B can't interpolate, or null when they can. Pure —
 // drives the ⇄ button's disabled state/title, the server re-validates.
+//
+// S7 (docs/plans/timeline-v2.md Q5, narrow ruling — "refuse chains only",
+// video keeps blending): a capture's SNAPSHOT never rides the wire ("heavy
+// source state never rides the wire" — every /api/staging payload excludes
+// it), so this can't scan layers itself the way the server's
+// _captures_compatible does. Session._store_capture_group stamps
+// format.has_chain / format.chain_layer at capture time instead — the one
+// place every stored group (capture, batch, relayout, rebake) passes
+// through, so this reads the same bit the server will re-check.
 function interpolateBlocker(ga, gb) {
   if (!ga || !gb) return "pick two captures";
   if (ga.id === gb.id) return "pick two different captures";
   if (ga.kind === "batch" || gb.kind === "batch") return "batch captures carry no source snapshot";
   if (ga.kind !== gb.kind) return `capture kinds differ (${ga.kind} vs ${gb.kind})`;
+  if (ga.format?.has_chain || gb.format?.has_chain) {
+    const name = ga.format?.has_chain ? ga.format?.chain_layer : gb.format?.chain_layer;
+    return `"${name}" is a keyframe chain — chains don't tray-to-tray (video still does)`;
+  }
   if (ga.kind === "sheet") {
     for (const k of ["cols", "rows", "frames", "t_from", "t_to"]) {
       if ((ga.format || {})[k] !== (gb.format || {})[k]) {
@@ -1108,6 +1129,10 @@ function interpolateBlocker(ga, gb) {
   return null;
 }
 
+// P8: the blocker's reason was only ever a button title, invisible on the
+// way past. `updateInterpButton` now also writes it into the hint line
+// under the row (added markup: #stage-interp-hint) so the ⇄ button explains
+// itself before the click, not just on hover.
 function updateInterpButton() {
   const btn = $("stage-interp");
   if (!btn) return;
@@ -1117,6 +1142,11 @@ function updateInterpButton() {
   const why = interpolateBlocker(ga, gb);
   btn.disabled = !!why;
   btn.title = why || "n sheets stepping A→B between the two captures";
+  const hint = $("stage-interp-hint");
+  if (hint) {
+    hint.hidden = !why;
+    hint.textContent = why || "";
+  }
 }
 
 async function captureStaged(kind) {
@@ -1427,6 +1457,45 @@ function renderStaging() {
   });
 }
 
+// P2 (docs/plans/timeline-v2.md): a follow_master tween whose window is
+// narrower than one frame step ((tTo-tFrom)/(n-1)) can land BETWEEN two
+// sampled frames and never get drawn on any output — export, sheets and the
+// render popup all sample the same grid (F6). Reads windows straight off the
+// project's layers (no server round trip: this is the same data the layer
+// dock already has in S.state). M is the smallest frame count that would put
+// a grid step on or inside the narrowest offending window.
+function narrowTweenWarning() {
+  if (anim.n <= 1) return null;
+  const span = anim.tTo - anim.tFrom;
+  const step = span / (anim.n - 1);
+  if (!(step > 0)) return null;
+  const layers = S.state?.project?.layers || [];
+  const narrow = [];
+  for (const l of layers) {
+    if (l.source.type !== "tween") continue;
+    const p = l.source.params || {};
+    if (!p.follow_master) continue;
+    const wf = p.window_from ?? 0, wt = p.window_to ?? 1;
+    if (wt - wf < step) narrow.push(wt - wf);
+  }
+  if (!narrow.length) return null;
+  const minWindow = Math.min(...narrow);
+  const m = minWindow > 0 ? Math.ceil(span / minWindow) + 1 : null;
+  const n = narrow.length;
+  return m
+    ? `${n} tween${n === 1 ? "" : "s"} narrower than one frame — raise frames to ≥ ${m}`
+    : `${n} tween${n === 1 ? "" : "s"} narrower than one frame — window has zero width, ` +
+      `unreachable at any frame count`;
+}
+
+function renderNarrowTweenHint() {
+  const el = $("anim-narrow-tween-hint");
+  if (!el) return;
+  const msg = narrowTweenWarning();
+  el.hidden = !msg;
+  el.textContent = msg || "";
+}
+
 // Re-fetch the current sheet's ordered pen passes (they differ per page).
 async function refreshSheetInfo() {
   if (gridCells() <= 1) {
@@ -1453,20 +1522,86 @@ async function refreshSheetInfo() {
   renderAnimStepper();
 }
 
+// P3: how much the layout costs, not just how many sheets it is. One
+// /api/plan call per page (the same call the plan overlay already makes for
+// the current page, `api.py`'s GET /plan?sheet=), summed for the total. Kept
+// under a layout-signature cache so re-rendering the panel (every unrelated
+// keystroke touches renderLayoutSummary indirectly) doesn't refire N HTTP
+// calls per render — only a genuine layout change or invalidateLayoutCost()
+// (wired into main.js's refreshProject, so any project mutation counts)
+// throws it away. "Cheap, conservative" on purpose: a param edit that
+// doesn't touch the layout still invalidates on the next refreshProject,
+// which is more often than strictly necessary but never stale for long.
+let layoutCostCache = null; // { key, perSheetS: number[] } | { key, pending: true }
+let lastLayoutInfo = null; // re-render target once an async cost fetch lands
+
+function layoutCostKey() {
+  return JSON.stringify([anim.n, anim.tFrom, anim.tTo, anim.cols, anim.rows,
+                          anim.margin, anim.crop, anim.marks]);
+}
+
+export function invalidateLayoutCost() {
+  layoutCostCache = null;
+}
+
+async function ensureLayoutCost() {
+  const key = layoutCostKey();
+  if (layoutCostCache?.key === key) return; // cached (settled or already in flight)
+  layoutCostCache = { key, pending: true };
+  const pages = sheetPages();
+  const perSheetS = [];
+  try {
+    for (let page = 0; page < pages; page++) {
+      const spec = currentSheetSpec({ page });
+      const r = await api.get(`/api/plan?sheet=${encodeURIComponent(JSON.stringify(spec))}`);
+      perSheetS.push(r.job.total_duration);
+    }
+  } catch (e) {
+    // Cache the FAILURE under this key too (nothing to plot, a transient
+    // error, …) — otherwise every render that can't show a number retries
+    // immediately, which is the exact per-render refire this cache exists to
+    // avoid. A genuine layout change (new key) or invalidateLayoutCost()
+    // (project mutation) is what earns a retry.
+    layoutCostCache = { key, perSheetS: null };
+    return;
+  }
+  if (layoutCostKey() !== key) return; // layout moved again while this was in flight; drop it
+  layoutCostCache = { key, perSheetS };
+  renderLayoutSummary(lastLayoutInfo); // the number just landed — show it
+}
+
 // One line that says what the layout MEANS physically, before anything plots.
 function renderLayoutSummary(info) {
   const el = $("anim-layout-summary");
   if (!el) return;
+  lastLayoutInfo = info;
   if (gridCells() <= 1) {
     el.textContent = `${anim.n} frames → ${anim.n} single-frame plots (stepper below)`;
     return;
   }
   const pages = info ? info.sheets : sheetPages();
   const passes = info && info.passes ? info.passes.map((p) => p.name).join(", ") : "…";
-  el.textContent =
+  let text =
     `${anim.n} frames → ${pages} sheet${pages === 1 ? "" : "s"} of ${anim.cols}×${anim.rows}` +
     ` · page ${Math.min(anim.sheet, pages - 1) + 1}: ${passes}` +
     (anim.marks ? " · ✚ crosshairs on first pass" : "");
+  const key = layoutCostKey();
+  if (layoutCostCache?.key === key && layoutCostCache.perSheetS) {
+    const perSheetS = layoutCostCache.perSheetS;
+    const cur = perSheetS[Math.min(anim.sheet, perSheetS.length - 1)];
+    const total = perSheetS.reduce((a, b) => a + b, 0);
+    text += ` · this sheet ~${fmtTime(cur)} · ~${fmtTime(total)} total`;
+  } else {
+    text += " · est. …";
+    ensureLayoutCost(); // fire-and-forget: renderLayoutSummary runs again when it lands
+  }
+  el.textContent = text;
+}
+
+function fmtTime(s) {
+  if (!isFinite(s)) return "—";
+  const m = Math.floor(s / 60);
+  return m >= 1 ? `${m}m ${Math.round(s % 60)}s` : `${s.toFixed(1)}s`;
 }
 
 // Advance one pen pass; at the last pass of a sheet, roll to the next sheet
@@ -1863,6 +1998,15 @@ function startRasterPlayback() {
 }
 
 function closeRasterPreview() {
+  // P10 (docs/plans/timeline-v2.md): the popup and the bar shouldn't disagree
+  // about "which frame" once the popup stops owning the screen. anim.popupI
+  // is already a real forward-grid frame index (0..previewFrames.length-1)
+  // even during palindrome playback — playOrder() walks POSITIONS through
+  // the reversed tail, but showRasterFrame always resolves those back to an
+  // index into previewFrames itself, which only ever holds the forward n
+  // frames — so no separate clamp is needed here, just read it before the
+  // teardown below clears it.
+  const lastT = anim.previewFrames[anim.popupI]?.t;
   anim.previewAbort?.abort();
   anim.previewAbort = null;
   anim.renderingPreview = false;
@@ -1873,6 +2017,7 @@ function closeRasterPreview() {
   if (modal) modal.hidden = true;
   setRasterProgress(0, 0);
   renderAnimPreview();
+  if (lastT != null) jumpTo(lastT); // leave the master timeline on the frame that was on screen
 }
 
 export async function renderRasterPreview() {
@@ -2016,6 +2161,7 @@ export function renderPlotTab() {
   renderCalibration();
   applyCapabilities();
   renderAnimPreview();
+  renderNarrowTweenHint(); // P2 — a tween's window can have changed elsewhere (Compose tab)
   renderStaging();
 }
 

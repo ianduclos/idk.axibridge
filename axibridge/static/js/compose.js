@@ -1211,10 +1211,15 @@ async function pasteKeyframeState(targetLayerId) {
     // Generator params only transfer when both keyframes run the SAME
     // generator — regenerate() re-runs the TARGET's own generator with new
     // params, it does not (and cannot, via this endpoint) switch which
-    // generator a layer uses. A mismatch skips the params silently rather
-    // than sending a foreign param set into an unrelated schema.
-    if (kfClipboard.generator && target.source.generator === kfClipboard.generator
-        && ["generator", "baked"].includes(target.source.type)) {
+    // generator a layer uses. A mismatch skips the params rather than
+    // sending a foreign param set into an unrelated schema — logged below
+    // (S3 paste-skip note) instead of failing silently, since effects+
+    // transform still apply and would otherwise look like the whole paste
+    // landed.
+    const sameGenerator = Boolean(kfClipboard.generator)
+      && target.source.generator === kfClipboard.generator
+      && ["generator", "baked"].includes(target.source.type);
+    if (sameGenerator) {
       await api.post(`/api/layers/${targetLayerId}/regenerate`, { params: { ...kfClipboard.params } });
     }
     await api.patch(`/api/layers/${targetLayerId}`, {
@@ -1224,6 +1229,9 @@ async function pasteKeyframeState(targetLayerId) {
     await actions.refreshProject();
     await actions.refreshResolved();
     actions.log(`pasted state from "${kfClipboard.name}" onto "${target.name}"`);
+    if (kfClipboard.generator && !sameGenerator) {
+      actions.log(`"${target.name}" runs a different generator — generator params skipped, effects+placement applied`);
+    }
   } catch (e) { actions.oops(e); }
 }
 

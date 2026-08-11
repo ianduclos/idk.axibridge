@@ -2152,3 +2152,115 @@ def test_target_picker_greys_out_on_sheet_and_tray_views(ui):
     ui.wait_for_function(
         "() => document.querySelector('#plot-target').disabled === true", timeout=10_000)
     assert not ui.errors
+
+
+# -- final sweep (docs/plans/timeline-v2.md S7, P2, P8, P10) -----------------
+
+def test_narrow_tween_warning_appears_and_clears_with_frame_count(ui):
+    """P2: a follow_master tween whose window is narrower than one frame
+    step can be skipped by every output (export/sheets/popup sample the same
+    grid) — the hint under the frame count turns that from a mystifying
+    blank sheet into a number to raise. It must also clear once frames is
+    raised past the number it names."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    project = _get(f"{ui.base}/api/project")
+    tw = next(l for l in project["layers"] if l["source"]["type"] == "tween")
+    # default 8-frame grid over 0..1 steps at 1/7 ≈ 0.143 — this window
+    # (width 0.01) is well inside one step, so it can fall between samples.
+    _put(f"{ui.base}/api/layers/{tw['id']}/tween",
+         {"window_from": 0.50, "window_to": 0.51})
+    reload_app(ui)
+    wait_for_ink(ui)
+    _open_anim_stepper(ui)
+
+    ui.wait_for_selector("#anim-narrow-tween-hint:not([hidden])", timeout=10_000)
+    text = ui.locator("#anim-narrow-tween-hint").text_content()
+    assert "narrower than one frame" in text
+    m = re.search(r"raise frames to ≥ (\d+)", text)
+    assert m, f"expected an M in the hint, got: {text!r}"
+    _shoot(ui, "p2-narrow-tween-warning.png")
+
+    # M frames puts a grid step exactly on the window's width — no longer
+    # narrower than it — and the hint clears
+    ui.fill("#anim-frames", m.group(1))
+    ui.locator("#anim-frames").dispatch_event("change")
+    ui.wait_for_function(
+        "() => document.getElementById('anim-narrow-tween-hint').hidden === true",
+        timeout=10_000)
+    assert not ui.errors
+
+
+def test_interpolate_blocker_reason_is_visible_before_the_click(ui):
+    """P8: interpolateBlocker's reason was already computed but sat
+    invisibly in the button's title — it now also renders as a hint line
+    under the A/B row. Exercised via the S7 chain fence (Q5 narrow ruling:
+    chains refuse, video still blends) so one screenshot covers both."""
+    layer_id = add_layer(ui, "polygon", {"sides": 6, "radius": 15})
+    animate_and_follow(ui, layer_id, b_radius=40)
+    project = _get(f"{ui.base}/api/project")
+    tw = next(l for l in project["layers"] if l["source"]["type"] == "tween")
+    _post(f"{ui.base}/api/layers/{tw['id']}/chain/keyframe")  # A/B -> a 3-key chain
+    _post(f"{ui.base}/api/staging/capture", {"kind": "plot", "name": "capA"})
+    _post(f"{ui.base}/api/staging/capture", {"kind": "plot", "name": "capB"})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.wait_for_selector("#stage-a", state="visible", timeout=10_000)
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#stage-a option').length >= 2", timeout=10_000)
+    ui.evaluate("""() => {
+      const pick = (id, text) => {
+        const sel = document.getElementById(id);
+        const opt = [...sel.options].find((o) => o.textContent.includes(text));
+        sel.value = opt.value;
+        sel.dispatchEvent(new Event('change', {bubbles: true}));
+      };
+      pick('stage-a', 'capA');
+      pick('stage-b', 'capB');
+    }""")
+
+    ui.wait_for_selector("#stage-interp-hint:not([hidden])", timeout=10_000)
+    text = ui.locator("#stage-interp-hint").text_content()
+    assert "keyframe chain" in text
+    assert ui.is_disabled("#stage-interp")
+    ui.locator("#stage-interp-hint").scroll_into_view_if_needed()
+    _shoot(ui, "p8-interpolate-blocker-visible.png")
+    assert not ui.errors
+
+
+def test_render_popup_close_leaves_master_timeline_on_the_shown_frame(ui):
+    """P10: the popup and the bar shouldn't disagree about "which frame" once
+    the popup stops owning the screen — closing it must leave the master
+    timeline reading the exact frame that was on screen, not wherever it
+    happened to be before the popup opened."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+
+    ui.click("#tl-render")
+    ui.wait_for_selector("#anim-preview-modal:not([hidden])", timeout=10_000)
+    ui.wait_for_function(
+        "() => !document.getElementById('anim-preview-popup-next').disabled", timeout=30_000)
+
+    # step to a frame — this also stops the auto-started playback (P10 cares
+    # about a STILL frame, not a moving target), so whatever frame it lands
+    # on is deterministic from here.
+    ui.click("#anim-preview-popup-next")
+    ui.click("#anim-preview-popup-next")
+    label = ui.locator("#anim-preview-popup-label").text_content()
+    m = re.search(r"t=(\d\.\d+)", label)
+    assert m, f"expected a t= readout in the popup label, got: {label!r}"
+    shown_t = f"t = {m.group(1)}"
+
+    ui.click("#anim-preview-close")
+    ui.wait_for_function(
+        "() => document.getElementById('anim-preview-modal').hidden", timeout=5_000)
+    ui.wait_for_function(
+        "(want) => document.getElementById('tl-t-val').textContent === want",
+        arg=shown_t, timeout=10_000)
+    _shoot(ui, "p10-popup-close-master-readout.png")
+    assert not ui.errors

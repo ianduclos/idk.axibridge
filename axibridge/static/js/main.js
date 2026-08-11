@@ -10,7 +10,7 @@ import { api, subscribe } from "./api.js";
 import { CanvasEditor, mul, objToMat, matToObj, screenPxPerMm } from "./canvas.js";
 import { initComposeTab, initLayersDock, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, logDeleted, rerenderForView } from "./compose.js";
 import { initPlotTab, renderPlotTab, applyCapabilities, renderPlotViewControls,
-         cancelPlotQueue } from "./plot.js";
+         cancelPlotQueue, invalidateLayoutCost } from "./plot.js";
 import { initTimelineBar, clearFetchedFrames } from "./timeline.js";
 import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
@@ -207,6 +207,10 @@ export const actions = {
     // cheapest honest hook to invalidate the timeline bar's fetched-frame
     // ticks, since any of those can change what geometry lives at a given t.
     clearFetchedFrames();
+    // P3: same hook, for the layout summary's cached per-sheet/total plot
+    // time — a mutation can change what a sheet costs even when the layout
+    // itself (frames/cols/rows/…) didn't move.
+    invalidateLayoutCost();
     if (S.stagedPlan) {
       const group = (S.state.project.staging || []).find((g) => g.id === S.stagedPlan.group_id);
       const sheet = group?.sheets?.find((s) => !S.stagedPlan.sheet_id || s.id === S.stagedPlan.sheet_id);

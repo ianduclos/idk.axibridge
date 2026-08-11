@@ -249,9 +249,18 @@
 
            Placement is #global-error's `margin-left: auto` doing the work: it
            pushes itself AND everything after it to the right, so these two land
-           in the corner without a second auto margin competing for the gap. -->
+           in the corner without a second auto margin competing for the gap.
+
+           P1 (docs/plans/timeline-v2.md): the only OTHER ▶ in the app is the
+           #timeline-bar (S4) — which, per Ian's Q7 ruling, has no play button
+           at all, only scrub/jump/step, so there is no second control this one
+           could be mistaken for. The wording below says what it actually does
+           (canvas.startAnimation: an in-place pen-marker replay of the current
+           PLAN, sped up — it never touches the serial port) and what it is
+           NOT (the master-timeline scrub in the bar below the sheet). -->
       <div id="playback" hidden>
-        <button id="btn-animate" title="Replay the planned job at speed">▶ Animate plot</button>
+        <button id="btn-animate"
+          title="Preview only — retraces the current plan on screen at sped-up time, pen never moves. Not the timeline scrub below the sheet, and not a plot.">▶ Animate plot</button>
         <label>speed ×<input type="number" id="anim-speed" value="20" min="1" max="500" step="1"></label>
       </div>
     </div>

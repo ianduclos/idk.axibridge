@@ -1603,6 +1603,20 @@ class Session:
         source_capture_ids: list[str] | None = None,
         warnings: list[str] | None = None,
     ) -> CaptureGroup:
+        # S7 client mirror (P8/interpolateBlocker): the snapshot itself never
+        # rides the wire ("heavy source state never rides the wire" — every
+        # group payload excludes it), so the ONE bit the frontend needs to
+        # reproduce _captures_compatible's chain refusal has to travel some
+        # other way. Stamped here, the single place every stored group
+        # (capture, batch, relayout, rebake) passes through, so it can never
+        # drift from what _captures_compatible actually sees.
+        if snapshot is not None:
+            chain_layer = next(
+                (l.name for l in snapshot.layers
+                 if l.source.type == "tween" and tween.chain_key_ids(l.source.params or {})),
+                None,
+            )
+            fmt = {**fmt, "has_chain": chain_layer is not None, "chain_layer": chain_layer}
         group = CaptureGroup(
             name=name,
             kind=kind,
@@ -2026,7 +2040,17 @@ class Session:
         """Raise ValueError unless A and B can interpolate: same kind, and for
         sheet captures the same essential shape (cols/rows/frames/t range).
         Presentation-only format fields — margin_mm, crop, marks — may
-        differ; the batch inherits A's values with the rest of ``a.format``."""
+        differ; the batch inherits A's values with the rest of ``a.format``.
+
+        S7 (docs/plans/timeline-v2.md Q5, narrow ruling): refuse when either
+        capture's snapshot carries a keyframe CHAIN — a tween whose ``keys``
+        holds more than two entries; ``tween.chain_key_ids`` is THE
+        definition (F9's four growths this fence avoids: the tray blend
+        lerps ``TweenParams`` field-wise, which has no meaning for a list of
+        3+ refs). Video/frame captures are deliberately untouched: a
+        ``kind="frame"`` capture already froze one clip frame before it ever
+        reaches here, so two of those still blend (Ian: "refuse chains
+        only")."""
         if a.kind != b.kind:
             raise ValueError(f"capture kinds do not match ({a.kind} vs {b.kind})")
         if a.kind == "sheet":
@@ -2035,6 +2059,17 @@ class Session:
                     raise ValueError(
                         f"sheet layouts do not match: {key} differs "
                         f"({a.format.get(key)} vs {b.format.get(key)})")
+        for snap in (a.snapshot, b.snapshot):
+            if snap is None:
+                continue
+            for layer in snap.layers:
+                if layer.source.type != "tween":
+                    continue
+                if tween.chain_key_ids(layer.source.params or {}):
+                    raise ValueError(
+                        f"cannot interpolate: {layer.name!r} is a keyframe chain "
+                        "(tray-to-tray transitions are reserved for simple A/B "
+                        "animations — video keeps blending)")
 
     def _interpolate_batch_docs(
         self, a: CaptureGroup, b: CaptureGroup, steps: int, fmt: dict[str, Any],
@@ -2059,6 +2094,47 @@ class Session:
                 pass_ids.append(step_pass_ids[j] if j < len(step_pass_ids) else [])
         return docs, pass_ids, warnings
 
+    def _interpolate_sheet_group_docs(
+        self, a: CaptureGroup, b: CaptureGroup, steps: int, fmt: dict[str, Any],
+        name: str,
+    ) -> tuple[list[PathDocument], list[list[str]], list[str]]:
+        """Q5 amendment (docs/plans/timeline-v2.md §2b — Ian's "2D frame
+        matrix"): interpolating two SHEET captures produces one group shaped
+        A → blends → B, not a plain step ladder. The frame axis (t_from..t_to
+        across each sheet) stays A's/B's own; the blend steps are the second
+        axis. The group's first pages are A's OWN state re-rendered at
+        ``fmt`` (not a t=0 approximation — exact by construction, since
+        that's what "A's state at fmt" means), the last are B's, and the
+        interior is the same per-step blend :meth:`_interpolate_batch_docs`
+        computes, trimmed to the open interval so the endpoints aren't
+        rendered twice. Total sheet count is unchanged from the old plain
+        ladder (``steps`` × pages-per-capture) — only how the two end steps
+        are produced changed."""
+        if a.snapshot is None or b.snapshot is None:
+            raise ValueError("both captures need source snapshots")
+        a_project, a_geo, a_svg = self._snapshot_state(a.snapshot)
+        b_project, b_geo, b_svg = self._snapshot_state(b.snapshot)
+        a_docs, a_pass_ids = self._documents_with_temp_state(a_project, a_geo, a_svg, fmt)
+        b_docs, b_pass_ids = self._documents_with_temp_state(b_project, b_geo, b_svg, fmt)
+        for i, doc in enumerate(a_docs):
+            doc.source = f"{a.name} sheet {i + 1}/{len(a_docs)}"
+        for i, doc in enumerate(b_docs):
+            doc.source = f"{b.name} sheet {i + 1}/{len(b_docs)}"
+        warnings: list[str] = []
+        mid_docs: list[PathDocument] = []
+        mid_pass_ids: list[list[str]] = []
+        for i in range(1, steps - 1):
+            t = i / (steps - 1)
+            project, geo, svg_files, ww = self._interpolate_snapshots(a.snapshot, b.snapshot, t)
+            warnings.extend(ww)
+            step_docs, step_pass_ids = self._documents_with_temp_state(project, geo, svg_files, fmt)
+            for j, doc in enumerate(step_docs):
+                doc.source = f"{name} step {i + 1}/{steps} sheet {j + 1}"
+                mid_docs.append(doc)
+                mid_pass_ids.append(step_pass_ids[j] if j < len(step_pass_ids) else [])
+        return (a_docs + mid_docs + b_docs, a_pass_ids + mid_pass_ids + b_pass_ids,
+                sorted(set(warnings)))
+
     def interpolate_captures(
         self, a_id: str, b_id: str, steps: int, name: str | None = None
     ) -> CaptureGroup:
@@ -2069,8 +2145,13 @@ class Session:
             b = self._find_capture(b_id)
             self._captures_compatible(a, b)
             label = name or f"{a.name} ⇄ {b.name} · {steps} steps"
-            docs, pass_ids, warnings = self._interpolate_batch_docs(
-                a, b, steps, a.format, name or "interpolated batch")
+            batch_name = name or "interpolated batch"
+            if a.kind == "sheet":
+                docs, pass_ids, warnings = self._interpolate_sheet_group_docs(
+                    a, b, steps, a.format, batch_name)
+            else:
+                docs, pass_ids, warnings = self._interpolate_batch_docs(
+                    a, b, steps, a.format, batch_name)
             self._checkpoint()
             fmt = {**a.format, "kind": "batch", "source_kind": a.format.get("kind"), "variants": steps}
             return self._store_capture_group(
@@ -2152,7 +2233,11 @@ class Session:
                 a, b = sources
                 steps = int(group.format.get("variants", 2))
                 name = f"{group.name} · re-laid {cols}×{rows}"
-                docs, pass_ids, warnings = self._interpolate_batch_docs(a, b, steps, fmt, name)
+                # source_kind is always "sheet" here (validated above), so this
+                # is always the grouped A→blends→B shape (Q5 amendment) —
+                # re-rendered at the NEW grid, not literal copies of the old
+                # sheets, which is the entire point of a re-layout.
+                docs, pass_ids, warnings = self._interpolate_sheet_group_docs(a, b, steps, fmt, name)
                 self._checkpoint()
                 return self._store_capture_group(
                     name=name,

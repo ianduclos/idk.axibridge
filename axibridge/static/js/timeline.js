@@ -148,10 +148,13 @@ function setFrameReadout(i, n) {
   if (el) el.textContent = `frame ${i + 1}/${n}`;
 }
 
-// A discrete jump (both ends, a checkpoint, a keyframe pick) isn't a drag —
-// there's no mouseup to run a deferred full refresh, so it asks for
-// stats+plan right away instead of riding `scrub` above.
-async function jumpTo(t) {
+// A discrete jump (both ends, a checkpoint, a keyframe pick, or the render
+// popup closing on P10) isn't a drag — there's no mouseup to run a deferred
+// full refresh, so it asks for stats+plan right away instead of riding
+// `scrub` above. Exported for plot.js's closeRasterPreview (P10) — same
+// already-circular import shape this module has with plot.js the other way
+// (frameGrid/stepFrame/renderRasterPreview), not a new pattern.
+export async function jumpTo(t) {
   t = Math.max(0, Math.min(1, t));
   const el = $("tl-scrub");
   if (el) el.value = String(t);

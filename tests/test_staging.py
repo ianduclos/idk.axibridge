@@ -1,6 +1,7 @@
 """Capture-based staging tray and batch interpolation."""
 
 import json
+import re
 import time
 import zipfile
 from io import BytesIO
@@ -92,6 +93,116 @@ def test_incompatible_capture_formats_are_rejected():
 
     with pytest.raises(ValueError, match=r"kinds do not match \(plot vs frame\)"):
         session.interpolate_captures(plot.id, frame.id, steps=3)
+
+
+def _chain(radii, sides=6):
+    """An animated polygon grown to ``len(radii)`` keyframes — same helper as
+    tests/test_chain.py's, duplicated rather than imported (test modules stay
+    independent, same reason chainKeyIds is duplicated per-file in the
+    frontend)."""
+    layer = session.add_generated_layer("polygon", {"sides": sides, "radius": radii[0]})
+    tw = session.animate_layer(layer.id)
+    while len(session._chain_keys(session.project.layer(tw.id))) < len(radii):
+        session.add_chain_keyframe(tw.id)
+    keys = session._chain_keys(session.project.layer(tw.id))
+    for kid, radius in zip(keys, radii):
+        session.regenerate_layer(kid, {"sides": sides, "radius": radius})
+    session.set_tween_params(tw.id, {"follow_master": True})
+    return session.project.layer(tw.id)
+
+
+def test_interpolate_refuses_chain_bearing_capture():
+    """S7 fence (docs/plans/timeline-v2.md Q5, narrow ruling): a capture
+    whose snapshot carries a 3+-key chain refuses to interpolate, naming the
+    offending layer — even when only ONE of the two captures has it."""
+    chain = _chain([10, 30, 50])
+    a = session.capture_to_staging(kind="plot", name="A")  # snapshot carries the chain
+    session.regenerate_layer(session._chain_keys(chain)[0], {"sides": 6, "radius": 12})
+    b = session.capture_to_staging(kind="plot", name="B")  # also carries it — same chain layer
+
+    with pytest.raises(ValueError, match=r"keyframe chain"):
+        session.interpolate_captures(a.id, b.id, steps=3)
+    # the message names the actual offending layer, not a generic refusal
+    with pytest.raises(ValueError, match=re.escape(chain.name)):
+        session.interpolate_captures(a.id, b.id, steps=3)
+
+
+def test_interpolate_refuses_chain_even_when_only_b_has_it():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
+    a = session.capture_to_staging(kind="plot", name="A")  # plain, no chain
+    session.regenerate_layer(layer.id, {"sides": 6, "radius": 40})
+    _chain([15, 45, 75])
+    b = session.capture_to_staging(kind="plot", name="B")  # now carries a chain
+
+    with pytest.raises(ValueError, match=r"keyframe chain"):
+        session.interpolate_captures(a.id, b.id, steps=3)
+
+
+def test_interpolate_frame_capture_pair_still_works():
+    """Q5's narrow ruling: video keeps tray-blending. A `kind="frame"`
+    capture already froze one clip frame before the fence ever runs, so two
+    of those interpolate exactly as before the S7 change."""
+    layer = session.add_generated_layer("polygon", {"sides": 5, "radius": 12})
+    a = session.capture_to_staging(kind="frame", name="A", master_t=0.0)
+    session.regenerate_layer(layer.id, {"sides": 5, "radius": 36})
+    b = session.capture_to_staging(kind="frame", name="B", master_t=0.0)
+
+    batch = session.interpolate_captures(a.id, b.id, steps=3)
+    assert batch.kind == "batch"
+    assert len(batch.sheets) == 3
+    w0 = _doc_width(session.staged_document(batch.id, batch.sheets[0].id))
+    w2 = _doc_width(session.staged_document(batch.id, batch.sheets[2].id))
+    assert w0 < w2
+
+
+def test_interpolate_sheet_captures_produce_grouped_set():
+    """Q5 amendment (Ian's "2D frame matrix"): two SHEET captures produce ONE
+    group shaped A → blends → B — the first pages are A's OWN state, the
+    last are B's, and only the interior is the blended ladder. Total sheet
+    count is unchanged from the old plain-ladder shape (steps × pages)."""
+    session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
+    mover = session.add_generated_layer("polygon", {"sides": 3, "radius": 8})
+    a = session.capture_to_staging(kind="sheet", name="A", cols=2, rows=2, frames=6)
+    session.update_layer(mover.id, {"transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 0}})
+    b = session.capture_to_staging(kind="sheet", name="B", cols=2, rows=2, frames=6)
+
+    batch = session.interpolate_captures(a.id, b.id, steps=3, name="matrix")
+
+    assert len(batch.sheets) == 6  # 2 pages (A) + 2 pages (1 mid step) + 2 pages (B)
+    docs = [session.staged_document(batch.id, s.id) for s in batch.sheets]
+    # ordered A → blends → B: the .source labels this module already stamps
+    assert docs[0].source.startswith("A sheet") and docs[1].source.startswith("A sheet")
+    assert "step" in docs[2].source and "step" in docs[3].source
+    assert docs[4].source.startswith("B sheet") and docs[5].source.startswith("B sheet")
+    # endpoint copies are A's/B's own state, not a t=0/t=1 approximation:
+    # exact byte-for-byte match against each capture's own frozen sheets
+    assert _doc_signature(docs[0]) == _doc_signature(session.staged_document(a.id, a.sheets[0].id))
+    assert _doc_signature(docs[1]) == _doc_signature(session.staged_document(a.id, a.sheets[1].id))
+    assert _doc_signature(docs[4]) == _doc_signature(session.staged_document(b.id, b.sheets[0].id))
+    assert _doc_signature(docs[5]) == _doc_signature(session.staged_document(b.id, b.sheets[1].id))
+    # the mover's translation makes A's first frame and B's first frame differ
+    assert _doc_signature(docs[0]) != _doc_signature(docs[4])
+
+
+def test_relayout_of_grouped_sheet_batch_stays_grouped():
+    """The re-layout path (a different render, at a NEW grid) gets the same
+    A → blends → B shape — re-derived at the new grid, not literal copies of
+    the old sheets, which is the entire point of a re-layout."""
+    session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
+    mover = session.add_generated_layer("polygon", {"sides": 3, "radius": 8})
+    a = session.capture_to_staging(kind="sheet", name="A", cols=2, rows=2, frames=6)
+    session.update_layer(mover.id, {"transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 60, "f": 0}})
+    b = session.capture_to_staging(kind="sheet", name="B", cols=2, rows=2, frames=6)
+    batch = session.interpolate_captures(a.id, b.id, steps=3)
+
+    re = session.relayout_capture(batch.id, 1, 1)
+
+    assert re.format["cols"] == 1 and re.format["variants"] == 3
+    assert len(re.sheets) == 18  # 3 steps × 6 pages (1×1 grid, 6 frames)
+    docs = [session.staged_document(re.id, s.id) for s in re.sheets]
+    assert docs[0].source.startswith("A sheet")
+    assert "step" in docs[6].source
+    assert docs[12].source.startswith("B sheet")
 
 
 def test_interpolate_allows_presentation_only_format_differences():
