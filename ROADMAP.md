@@ -622,6 +622,16 @@ then **interpolate between the two**. This does *not* need a node graph:
 - This is the best candidate for "before v3": it delivers the node-graph
   payoff (variation as a first-class object) with zero model rewrite.
 
+## Deferred — per-parameter copy/paste between chain checkpoints
+
+Ruled 2026-08-11 alongside timeline v2 (docs/plans/timeline-v2.md §2b, Q6):
+the checkpoint right-click menu ships with whole-checkpoint Copy/Paste
+state only. The finer version — copying a SINGLE parameter (or one param
+group) from checkpoint A onto checkpoint C — is wanted but deferred: it
+grows the menu a submenu per param group and needs a param-path addressing
+scheme. Revisit once chains are in daily use and the whole-checkpoint verb
+has proven which granularity is actually reached for.
+
 ## Far / undecided — AI-assisted inputs
 
 Very down the line, deliberately after the manual pipeline is comfortable:

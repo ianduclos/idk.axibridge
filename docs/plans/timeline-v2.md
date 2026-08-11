@@ -435,6 +435,38 @@ the collision with E6** (the render popup work) and see §5.
 
 ---
 
+## 2b. Ian's rulings (2026-08-11) — these override the recommendations above
+
+- **Q1 → (a).** `TweenParams.keys` on the existing tween layer.
+- **Q2 → per segment** (against the recommendation, deliberately): easing
+  applies between each pair of keys, so motion settles at every checkpoint —
+  pose-to-pose. Implementation note: apply the curve to each segment's local
+  t; a curve that only makes sense over the whole motion (`cosine_pingpong`)
+  keeps its global meaning — don't bounce inside a segment.
+- **Q3 → (b).** Snap to the frame grid; ⇧ escapes to continuous.
+- **Q4 → (a).** Bar spans 0..1, ticks on the grid, the active range shaded.
+- **Q5 → refuse chains only** (video keeps tray-blending). AND a clarified
+  original intent that AMENDS S7/S8: interpolating two loose sheet captures
+  should produce a **sheet group à la P6 that contains copies of the two
+  source sheets plus the blends** — Ian's mental model is a 2D frame matrix:
+  the video frames in sheet A are the same frames in sheet B; *parameters*
+  are what blend across the second axis.
+- **Q6 → (a)**, duplicating the previous checkpoint's settings. Plus: a
+  right-click menu on a checkpoint with **Copy state / Paste state**
+  (whole-checkpoint: generator params, effects, placement). Per-parameter
+  copy/paste is deferred to ROADMAP, not built now.
+- **Q7 → (a), amended**: the bar gets scrub + jump-to-ends +
+  jump-to-checkpoints + **next/previous frame steppers** + **a button that
+  opens the render popup**. Play stays in the Animation panel. (S4's Q7(b)
+  line below is superseded by this.)
+- **Proposals: all ten accepted.** P3 additionally shows a total across all
+  sheets. P6 additionally groups sheets born from one animation setup,
+  visually distinct from standalone sheets. P10 additionally: while the
+  popup renders a sequence, the most recently finished frame stays on
+  screen (this part belongs to E6).
+
+---
+
 ## 3. Proposals — animation & staging UX
 
 Cheap-to-veto bullets. Each names the friction it fixes and cites the code.
