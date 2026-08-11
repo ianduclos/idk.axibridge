@@ -442,6 +442,24 @@ main {
 #machine-state .readout:empty { display: none; }
 #pen-state.warn { color: var(--ochre); }
 
+/* The bottom timeline bar (S4, docs/plans/timeline-v2.md): scrub +
+   jump-to-ends + jump-to-checkpoints + frame steppers + the render-popup
+   button. Sized to the status line below it, not the toolbar above — same
+   button scale as #playback/#machine-state, so it reads as part of that
+   transport family rather than a fifth toolbar row. */
+#timeline-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 2px; color: var(--ink-soft); font-size: 12px;
+}
+#timeline-bar[hidden] { display: none; } /* [hidden] loses to a display rule below it in the cascade — see #layers-dock[hidden] */
+#timeline-bar button { padding: 1px 9px; font-size: 11px; }
+#tl-scrub { flex: 1; }
+#tl-t-val, #tl-frame-val { min-width: 5em; font-size: 11px; font-variant-numeric: tabular-nums; }
+#tl-frame-val:empty { display: none; }
+#tl-checkpoints { display: flex; gap: 4px; }
+#tl-checkpoints[hidden] { display: none; }
+#tl-checkpoints button { padding: 0 6px; font-size: 10px; }
+
 #canvas-status {
   display: flex; gap: 18px; padding-top: 8px;
   color: var(--ink-soft); font-size: 12px; min-height: 1.6em;

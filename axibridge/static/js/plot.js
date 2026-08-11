@@ -1105,6 +1105,19 @@ function nextFrameIndex() {
   return next < anim.n ? next : 0;
 }
 
+// S4 (docs/plans/timeline-v2.md): the timeline bar's prev/next-frame
+// steppers reuse this exact frame-grid stepping — pullAnimControls() for
+// n/tFrom/tTo, previewScrub for the same no-PATCH partial refresh
+// `Frame →` already uses — rather than a second copy of the math (F6).
+// Clamped at the ends, not wrapped: the bar has its own jump-to-start/end.
+export function stepFrame(delta) {
+  pullAnimControls();
+  stopPreview();
+  anim.i = Math.max(0, Math.min(anim.n - 1, anim.i + delta));
+  previewScrub.request(anim.i);
+  return { i: anim.i, n: anim.n, t: animT(anim.i) };
+}
+
 function startPreview() {
   anim.previewing = true;
   renderAnimPreview();
@@ -1404,7 +1417,7 @@ function closeRasterPreview() {
   renderAnimPreview();
 }
 
-async function renderRasterPreview() {
+export async function renderRasterPreview() {
   pullAnimControls();
   stopPreview();
   stopRasterPlayback();

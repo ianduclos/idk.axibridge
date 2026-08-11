@@ -169,6 +169,26 @@
         <button id="doc-preview-exit" title="back to the live project">✕ back to project</button>
       </div>
     </div>
+    <!-- The bottom timeline bar: scrub + jump-to-ends + jump-to-checkpoints +
+         next/previous frame steppers + a button that opens the render popup.
+         Play/pause stays in the Plot tab's Animation panel (Ian's Q7 ruling,
+         docs/plans/timeline-v2.md §2b) — this bar only POSITIONS the master
+         timeline, never plays it. timeline.js owns it; static markup here
+         (not appended by a tab body) so it survives project reloads the same
+         way #layers-dock does. Hidden — zero height — whenever nothing in the
+         project follows the timeline (renderTimelineBar's strict predicate),
+         so a static project's canvas keeps every pixel. -->
+    <div id="timeline-bar" hidden>
+      <button id="tl-start" title="jump to start (t = 0)">⇤</button>
+      <button id="tl-prev" title="previous frame">← Frame</button>
+      <button id="tl-next" title="next frame">Frame →</button>
+      <button id="tl-end" title="jump to end (t = 1)">⇥</button>
+      <input type="range" id="tl-scrub" min="0" max="1" step="0.001" value="0">
+      <span class="hint" id="tl-t-val">t = 0.000</span>
+      <span class="hint" id="tl-frame-val"></span>
+      <div id="tl-checkpoints" hidden></div>
+      <button id="tl-render" title="open the render popup (frames, resolution, GIF/MP4 export)">Render popup</button>
+    </div>
     <!-- The status line is the one strip that is always on screen and does
          not care which tab you are in, so machine truth lives here rather
          than in a panel you have to go and find. Costs no vertical space: the

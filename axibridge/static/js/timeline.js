@@ -1,0 +1,201 @@
+// The bottom timeline bar: scrub + jump-to-ends + jump-to-checkpoints +
+// next/previous frame steppers + a button that opens the render popup. Lives
+// between #canvas-wrap and #canvas-status (index.html) — the strip that
+// already reports on the drawing, so a strip that positions it belongs
+// beside it.
+//
+// Play/pause deliberately stays in the Plot tab's Animation panel (Ian's Q7
+// ruling, docs/plans/timeline-v2.md §2b — supersedes that doc's S4 bullet
+// putting playback here). This bar only POSITIONS the master timeline.
+//
+// Visible only when the project has anything that follows it — the strict
+// predicate below (a `follow_master` tween, or any `frame_follow` layer) —
+// so a static project never pays for a control it can't use. Static markup
+// in index.html, not appended by a tab body, so it survives project
+// reloads the same way #layers-dock does.
+
+import { S, actions } from "./main.js";
+import { stepFrame, renderRasterPreview } from "./plot.js";
+
+const $ = (id) => document.getElementById(id);
+
+// ---- master timeline scrub ---------------------------------------------------
+//
+// One /compose/resolved?t= request in flight at a time; the latest slider
+// value always wins (coalesce, no timer). Moved verbatim from compose.js,
+// where it drove the old Compose-tab #timeline-panel — same no-PATCH
+// discipline: pure UI state, never touches the project or undo history.
+const scrub = {
+  inflight: false, pending: false,
+  request(v) {
+    S.masterT = v;  // shared: every refreshResolved() now stays on this frame
+    this.pending = true;
+    if (!this.inflight) this._run();
+  },
+  async _run() {
+    if (!this.pending) return;
+    this.pending = false;
+    this.inflight = true;
+    try {
+      // per-tick: geometry only. plan_job()/flatten_to_document() per layer
+      // is too expensive to pay on every slider frame; the change handler
+      // wired in initTimelineBar() runs one full refresh (stats+plan) on
+      // release.
+      await actions.refreshResolved(undefined, { plan: false, stats: false });
+    } catch (e) {
+      actions.oops(e);
+    } finally {
+      this.inflight = false;
+      if (this.pending) this._run();  // moved meanwhile: run once more
+    }
+  },
+};
+
+function setReadout(t) {
+  const val = $("tl-t-val");
+  if (val) val.textContent = `t = ${Number(t).toFixed(3)}`;
+}
+
+function setFrameReadout(i, n) {
+  const el = $("tl-frame-val");
+  if (el) el.textContent = `frame ${i + 1}/${n}`;
+}
+
+// A discrete jump (both ends, a checkpoint, a keyframe pick) isn't a drag —
+// there's no mouseup to run a deferred full refresh, so it asks for
+// stats+plan right away instead of riding `scrub` above.
+async function jumpTo(t) {
+  t = Math.max(0, Math.min(1, t));
+  const el = $("tl-scrub");
+  if (el) el.value = String(t);
+  setReadout(t);
+  try { await actions.refreshResolved(t); } catch (e) { actions.oops(e); }
+}
+
+// Selecting a keyframe (the A or B sublayer of a follow_master tween) jumps
+// the master timeline to where that keyframe shows, so clicking "▸ B" to
+// edit it also previews it in the animation. A → the window's start, B → its
+// end (the linear/cosine default; a ping-pong tween reaches B mid-window, so
+// we leave those be rather than guess — scrub manually). No-op for a layer
+// that isn't a following tween's keyframe, or when the bar is hidden.
+export function jumpTimelineToKeyframe(layerId) {
+  if ($("timeline-bar")?.hidden) return;
+  for (const l of S.state?.project?.layers || []) {
+    if (l.source.type !== "tween") continue;
+    const p = l.source.params || {};
+    if (!p.follow_master || (p.time_curve && p.time_curve !== "linear" && p.time_curve !== "cosine")) continue;
+    let target = null;
+    if (p.a === layerId) target = p.window_from ?? 0;
+    else if (p.b === layerId) target = p.window_to ?? 1;
+    if (target === null) continue;
+    jumpTo(target);
+    return;
+  }
+}
+
+// A chain's checkpoints (TweenParams.keys — landing alongside this slice,
+// see docs/plans/timeline-v2.md S2): one jump button per key, when a
+// following tween carries more than the classic two. Degrades to nothing for
+// today's plain A/B tweens (no `keys`, or `keys.length <= 2`), and for a
+// mid-chain ping-pong for the same reason jumpTimelineToKeyframe declines
+// one — B lands mid-window, not at a fixed t, so there's no honest target.
+function chainCheckpoints() {
+  const layers = S.state?.project?.layers || [];
+  for (const l of layers) {
+    if (l.source.type !== "tween") continue;
+    const p = l.source.params || {};
+    if (!p.follow_master) continue;
+    const keys = Array.isArray(p.keys) ? p.keys : [];
+    if (keys.length <= 2) continue;
+    if (p.time_curve === "cosine_pingpong") continue;
+    const wf = p.window_from ?? 0, wt = p.window_to ?? 1;
+    return keys.map((id, k) => ({
+      id, k,
+      t: wf + (wt - wf) * (k / (keys.length - 1)),
+      name: layers.find((x) => x.id === id)?.name || `key ${k + 1}`,
+    }));
+  }
+  return [];
+}
+
+function renderCheckpoints() {
+  const wrap = $("tl-checkpoints");
+  if (!wrap) return;
+  const points = chainCheckpoints();
+  wrap.hidden = points.length === 0;
+  wrap.innerHTML = "";
+  for (const pt of points) {
+    const b = document.createElement("button");
+    b.textContent = String(pt.k + 1);
+    b.title = `jump to checkpoint ${pt.k + 1}: ${pt.name} (t=${pt.t.toFixed(3)})`;
+    b.onclick = () => jumpTo(pt.t);
+    wrap.appendChild(b);
+  }
+}
+
+// Show the bar when there's anything for it to drive: a follow_master tween,
+// or a frame_follow clip layer — the strict predicate (F5 in
+// docs/plans/timeline-v2.md; the old #timeline-panel used a looser one that
+// also counted a tween not yet following, driving a nudge hint — that hint
+// is rehomed onto the tween's own Timeline fold now, see compose.js).
+//
+// Also resyncs the scrub position/readout from S.masterT, unless the slider
+// itself currently holds focus (a drag in progress) — same "don't fight a
+// typist" idiom main.js's zoom box uses.
+export function renderTimelineBar() {
+  const bar = $("timeline-bar");
+  if (!bar) return;
+  const layers = S.state?.project?.layers || [];
+  const hasFollow = layers.some(
+    (l) => (l.source.type === "tween" && (l.source.params || {}).follow_master)
+        || l.frame_follow);
+  bar.hidden = !hasFollow;
+  if (!hasFollow) return;
+  const el = $("tl-scrub");
+  const t = S.masterT ?? 0;
+  if (el && document.activeElement !== el) el.value = String(t);
+  setReadout(t);
+  renderCheckpoints();
+}
+
+// Wired once (idempotent, like main.js's initLayersDock): the bar is static
+// markup in index.html, not rebuilt by a tab body, so it survives project
+// reloads without re-registering handlers.
+export function initTimelineBar() {
+  const bar = $("timeline-bar");
+  if (!bar || bar.dataset.tlInit) return;
+  bar.dataset.tlInit = "1";
+
+  const el = $("tl-scrub");
+  el.oninput = () => {
+    const v = Number(el.value);
+    setReadout(v);
+    scrub.request(v);
+  };
+  // Drag release: one full refresh (stats + plan) so the estimate and the
+  // travel overlay recover from the plan/stats-skipping ticks above — same
+  // pattern the old #master-t slider used.
+  el.onchange = () => actions.refreshResolved();
+
+  $("tl-start").onclick = () => jumpTo(0);
+  $("tl-end").onclick = () => jumpTo(1);
+
+  // Frame steppers reuse plot.js's own frame-grid math (F6: an exported
+  // accessor rather than a second copy of animT/pullAnimControls). Clamped
+  // at the ends rather than wrapping (plot.js's own "Frame →" wraps) — this
+  // bar already has explicit jump-to-start/end buttons for that.
+  $("tl-prev").onclick = () => {
+    const { i, n, t } = stepFrame(-1);
+    setFrameReadout(i, n);
+    setReadout(t);
+  };
+  $("tl-next").onclick = () => {
+    const { i, n, t } = stepFrame(1);
+    setFrameReadout(i, n);
+    setReadout(t);
+  };
+
+  $("tl-render").onclick = () => { renderRasterPreview(); };
+
+  renderTimelineBar();
+}

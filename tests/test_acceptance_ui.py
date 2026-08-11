@@ -90,6 +90,14 @@ def _patch(url: str, payload: dict):
         return json.loads(r.read())
 
 
+def _put(url: str, payload: dict):
+    body = json.dumps(payload).encode()
+    req = urllib.request.Request(url, data=body, method="PUT",
+                                 headers={"content-type": "application/json"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.loads(r.read())
+
+
 @pytest.fixture(scope="session")
 def server(frontend_mode):
     """A real axibridge on a temp port, with its own config dir — never the
@@ -227,6 +235,31 @@ def wait_for_ink(page) -> str:
     page.wait_for_function(
         "() => document.querySelectorAll('#canvas path').length > 0", timeout=20_000)
     return canvas_ink(page)
+
+
+def animate_and_follow(page, layer_id: str, b_radius: float = 60) -> None:
+    """Turn a plain layer into a follow_master A/B animation whose two
+    keyframes actually differ (B's radius moves), so scrubbing has visible
+    geometry to prove it changed. Setup via the API, not the UI — the UI is
+    the thing under test."""
+    _post(f"{page.base}/api/layers/{layer_id}/animate")
+    project = _get(f"{page.base}/api/project")
+    tw = next(l for l in project["layers"] if l["source"]["type"] == "tween")
+    b_id = tw["source"]["params"]["b"]
+    _post(f"{page.base}/api/layers/{b_id}/regenerate",
+          {"params": {"sides": 5, "radius": b_radius}, "coalesce": False})
+    _put(f"{page.base}/api/layers/{tw['id']}/tween", {"follow_master": True})
+
+
+def timeline_bar_scrub_to(page, t: float) -> None:
+    """Drag the bar's scrub track to `t` the way a user would: set the
+    range input's value and fire the same events the browser fires on a
+    real drag (input while moving, change on release)."""
+    page.eval_on_selector(
+        "#tl-scrub",
+        "(el, t) => { el.value = String(t); "
+        "el.dispatchEvent(new Event('input', {bubbles: true})); }",
+        t)
 
 
 # -- what is actually under test ------------------------------------------
@@ -1047,3 +1080,116 @@ def test_no_console_errors_on_any_tab(ui):
         ui.wait_for_timeout(700)
         assert ui.locator(f"#tab-{tab}").is_visible(), f"{tab} tab must render"
     assert not ui.errors, f"console errors: {ui.errors[:5]}"
+
+
+# -- S4: the bottom timeline bar --------------------------------------------
+
+def test_timeline_bar_absent_on_a_fresh_static_project(ui):
+    """A project nothing follows gets no bar — hidden (zero height), not just
+    empty, so a static drawing never pays for a control it can't use."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 30})
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar", state="attached", timeout=10_000)
+    assert not ui.is_visible("#timeline-bar"), "bar shows for a project nothing follows"
+    assert not ui.errors
+
+
+def test_timeline_bar_appears_once_a_tween_follows_the_master_timeline(ui):
+    """The strict predicate (F5): the bar tracks `follow_master`, in both
+    directions — ⏱ Animate defaults a fresh tween to following (so the bar
+    is there right away), and unchecking it must hide the bar again."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    _post(f"{ui.base}/api/layers/{layer_id}/animate")
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+    assert ui.is_visible("#timeline-bar"), "⏱ Animate follows the timeline by default"
+
+    project = _get(f"{ui.base}/api/project")
+    tw = next(l for l in project["layers"] if l["source"]["type"] == "tween")
+    _put(f"{ui.base}/api/layers/{tw['id']}/tween", {"follow_master": False})
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar", state="attached", timeout=10_000)
+    assert not ui.is_visible("#timeline-bar"), "unchecking follow timeline must hide the bar"
+
+    _put(f"{ui.base}/api/layers/{tw['id']}/tween", {"follow_master": True})
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+    assert ui.is_visible("#timeline-bar")
+    assert not ui.errors
+
+
+def test_timeline_bar_scrub_changes_geometry_without_patching_the_project(ui):
+    """Dragging the bar's scrub track re-resolves the canvas (A/B actually
+    differ, so t=0 and t=1 must draw differently) while never writing the
+    project — the same no-PATCH discipline the old Compose-tab slider had."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+
+    timeline_bar_scrub_to(ui, 0)
+    ui.wait_for_timeout(300)
+    ink_start = wait_for_ink(ui)
+    project_before = _get(f"{ui.base}/api/project")
+
+    timeline_bar_scrub_to(ui, 1)
+    ui.wait_for_function(
+        "(prev) => { const cur = [...document.querySelectorAll('#canvas path')]"
+        ".map(e => e.getAttribute('d') || '').join('|'); "
+        "return cur.length > 0 && cur !== prev; }",
+        arg=ink_start, timeout=10_000)
+
+    project_after = _get(f"{ui.base}/api/project")
+    assert project_after == project_before, "scrubbing must never write the project (no PATCH)"
+    assert not ui.errors
+
+
+def test_timeline_bar_frame_steppers_step_the_readout(ui):
+    """Next/previous frame reuse plot.js's own frame grid (F6) — clicking
+    them must move the bar's own readout, not just the Animation panel's."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+
+    ui.click("#tl-next")
+    ui.wait_for_function(
+        "() => document.getElementById('tl-frame-val').textContent.startsWith('frame 2/')",
+        timeout=10_000)
+    ui.click("#tl-next")
+    ui.wait_for_function(
+        "() => document.getElementById('tl-frame-val').textContent.startsWith('frame 3/')",
+        timeout=10_000)
+    ui.click("#tl-prev")
+    ui.wait_for_function(
+        "() => document.getElementById('tl-frame-val').textContent.startsWith('frame 2/')",
+        timeout=10_000)
+    assert not ui.errors
+
+
+def test_timeline_bar_checkpoint_buttons_degrade_to_none_then_appear_for_a_chain(ui):
+    """A classic A/B tween (no `keys`, or `keys` at its 2-endpoint default)
+    gets no checkpoint buttons — the bar degrades to just the two ends.
+    Growing the tween into a 3-key chain (POST .../chain/keyframe) must make
+    exactly one jump button per key appear."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+    assert not ui.is_visible("#tl-checkpoints"), "a plain A/B tween has no checkpoints to jump to"
+
+    project = _get(f"{ui.base}/api/project")
+    tw = next(l for l in project["layers"] if l["source"]["type"] == "tween")
+    _post(f"{ui.base}/api/layers/{tw['id']}/chain/keyframe")
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#tl-checkpoints:not([hidden]) button", timeout=10_000)
+    assert ui.locator("#tl-checkpoints button").count() == 3, "3 keys → 3 checkpoint buttons"
+    assert not ui.errors

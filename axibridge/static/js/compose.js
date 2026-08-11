@@ -7,6 +7,7 @@ import { renderForm } from "./forms.js";
 import { S, actions, rememberDetails } from "./main.js";
 import { mul, translate, rotate, scale, matToObj, objToMat } from "./canvas.js";
 import { applyViewDefaults } from "./viewmap.js";
+import { renderTimelineBar, jumpTimelineToKeyframe } from "./timeline.js";
 
 const $ = (id) => document.getElementById(id);
 let genParams = {};
@@ -163,83 +164,6 @@ const liveRegen = {
   },
 };
 
-// ---- master timeline scrub ---------------------------------------------------
-//
-// One /compose/resolved?t= request in flight at a time; the latest slider value
-// always wins (coalesce, no timer) — same in-flight-guard shape as the live
-// preview above. Pure UI state: never PATCHes, never touches undo/history.
-
-const scrub = {
-  inflight: false, pending: false,
-  request(v) {
-    S.masterT = v;  // shared: every refreshResolved() now stays on this frame
-    this.pending = true;
-    if (!this.inflight) this._run();
-  },
-  async _run() {
-    if (!this.pending) return;
-    this.pending = false;
-    this.inflight = true;
-    try {
-      // per-tick: geometry only. plan_job()/flatten_to_document() per layer
-      // is too expensive to pay on every slider frame; the change handler
-      // below runs one full refresh (stats+plan) on release.
-      await actions.refreshResolved(undefined, { plan: false, stats: false });
-    } catch (e) {
-      actions.oops(e);
-    } finally {
-      this.inflight = false;
-      if (this.pending) this._run();  // moved meanwhile: run once more
-    }
-  },
-};
-
-// Selecting a keyframe (the A or B sublayer of a follow_master tween) jumps
-// the master timeline to where that keyframe shows, so clicking "▸ B" to edit
-// it also previews it in the animation. A → the window's start, B → its end
-// (the linear/cosine default; a ping-pong tween reaches B mid-window, so we
-// leave those be rather than guess — scrub manually). No-op for a layer that
-// isn't a following tween's keyframe, or when the timeline panel is hidden.
-function jumpTimelineToKeyframe(layerId) {
-  const slider = $("master-t");
-  if (!slider || $("timeline-panel")?.hidden) return;
-  for (const l of S.state?.project?.layers || []) {
-    if (l.source.type !== "tween") continue;
-    const p = l.source.params || {};
-    if (!p.follow_master || (p.time_curve && p.time_curve !== "linear" && p.time_curve !== "cosine")) continue;
-    let target = null;
-    if (p.a === layerId) target = p.window_from ?? 0;
-    else if (p.b === layerId) target = p.window_to ?? 1;
-    if (target === null) continue;
-    slider.value = target;
-    const val = $("master-t-val");
-    if (val) val.textContent = `t = ${Number(target).toFixed(3)}`;
-    scrub.request(target);
-    return;
-  }
-}
-
-// Show the timeline panel when there's anything for it to drive: a tween
-// layer (whether or not it follows yet) or a frame-clip source (sequence
-// asset name ends "#"). Inside, a hint nudges the "follow timeline" opt-in
-// when the panel is showing but nothing actually follows the scrubber yet.
-export function renderTimeline() {
-  const panel = $("timeline-panel");
-  if (!panel) return;
-  const layers = S.state?.project?.layers || [];
-  const hasTween = layers.some((l) => l.source.type === "tween");
-  const hasFrameClip = layers.some((l) => {
-    const img = (l.source.params || {}).image;
-    return typeof img === "string" && img.endsWith("#");
-  });
-  panel.hidden = !(hasTween || hasFrameClip);
-  const hasFollow = layers.some(
-    (l) => (l.source.type === "tween" && (l.source.params || {}).follow_master)
-        || l.frame_follow);
-  const hint = $("timeline-hint");
-  if (hint) hint.hidden = panel.hidden || hasFollow;
-}
-
 const genPreviewReq = (key, module, params, transform = null) => ({
   key, url: "/api/generators/preview", body: { module, params }, transform,
 });
@@ -305,17 +229,6 @@ export function initComposeTab() {
       </div>
       <div class="hint">tip: dropping an image or video on the canvas imports it too</div>
       <div id="asset-list"></div>
-    </div>
-    <div class="panel" id="timeline-panel" hidden>
-      <h2>Timeline <span class="hint">(scrubs every tween set to "follow timeline")</span></h2>
-      <div class="row">
-        <input type="range" id="master-t" min="0" max="1" step="0.001" value="0" style="flex:1">
-        <span class="hint" id="master-t-val" style="min-width:5em">t = 0.000</span>
-      </div>
-      <div class="hint">Live scrub only — not saved to the project.</div>
-      <div class="hint" id="timeline-hint" hidden>nothing follows the timeline yet — check
-        "clip follows timeline" on a clip layer, ⏱ Animate a layer, or check "Follow
-        timeline" on an interpolation layer</div>
     </div>
     <div class="panel" id="layer-detail-panel" hidden>
       <h2>Layer: <span id="detail-name"></span></h2>
@@ -441,22 +354,6 @@ export function initComposeTab() {
   };
   renderAssetList();
   refreshDepthProStatus();
-
-  const mt = $("master-t");
-  if (mt) {
-    const cur = S.masterT ?? 0;
-    mt.value = String(cur);
-    $("master-t-val").textContent = `t = ${cur.toFixed(3)}`;
-    mt.oninput = () => {
-      const v = Number(mt.value);
-      $("master-t-val").textContent = `t = ${v.toFixed(3)}`;
-      scrub.request(v);
-    };
-    // Drag release: one full refresh (stats + plan) so the estimate and the
-    // travel overlay recover from the plan/stats-skipping ticks above.
-    mt.onchange = () => actions.refreshResolved();
-  }
-  renderTimeline();
 }
 
 // One upload path for the panel button and the canvas drop: several files or
@@ -993,7 +890,7 @@ export function renderLayerList() {
     wrap.appendChild(row);
   });
   renderBenchAction(); // latch chip follows renames; a deleted latch target clears
-  renderTimeline();
+  renderTimelineBar();
   renderLayerDetail();
 }
 
@@ -1205,7 +1102,7 @@ let lastDetailFamily = null;
 const familyScroll = new Map(); // family key -> #tab-compose.scrollTop
 
 // Selecting an animate keyframe also auto-jumps the master timeline
-// (jumpTimelineToKeyframe, above), which kicks off its OWN async resolve
+// (jumpTimelineToKeyframe, timeline.js), which kicks off its OWN async resolve
 // refresh that rebuilds `#layer-detail` again a beat later and would
 // otherwise clamp scrollTop back to 0 mid-flight, before the browser ever
 // paints our restored value. A MutationObserver reapplies the target on
@@ -1370,7 +1267,7 @@ export function renderLayerDetail() {
           await api.patch(`/api/layers/${layer.id}`, { frame_follow: followBox.checked });
           await actions.refreshProject();
           await actions.refreshResolved();
-          renderTimeline(); // the panel counts following clips as scrub-able
+          renderTimelineBar(); // the bar counts following clips as scrub-able
         } catch (err) { actions.oops(err); }
       };
     }
@@ -1596,6 +1493,9 @@ export function renderLayerDetail() {
           title="the master timeline scrubber (and later frame rendering) drives this tween's t">
           <input type="checkbox" id="tw-follow"> Follow timeline
         </label>
+        <div class="hint" id="tw-follow-hint" hidden>nothing follows the timeline yet — check
+          this box (or check "clip follows timeline" on a frame-sequence layer) to make the
+          bottom timeline bar scrub this animation</div>
         <details id="tw-advanced" class="form-group">
           <summary>advanced timing</summary>
           <div class="row" id="tw-curve-row">
@@ -1673,12 +1573,15 @@ export function renderLayerDetail() {
     advanced.hidden = !follow.checked;
     advanced.open = (p.time_curve && p.time_curve !== "linear")
       || (p.window_from ?? 0) !== 0 || (p.window_to ?? 1) !== 1;
+    const followHint = tw.querySelector("#tw-follow-hint"); // P4: rehomed from the old
+    if (followHint) followHint.hidden = follow.checked;     // Compose-tab timeline panel
     follow.onchange = async () => {
       advanced.hidden = !follow.checked;
+      if (followHint) followHint.hidden = follow.checked;
       try {
         layer.source.params = { ...layer.source.params, follow_master: follow.checked };
         await api.put(`/api/layers/${layer.id}/tween`, { follow_master: follow.checked });
-        renderTimeline(); // panel visibility follows the opt-in set
+        renderTimelineBar(); // bar visibility follows the opt-in set
       } catch (e) { actions.oops(e); }
     };
     const winFrom = tw.querySelector("#tw-window-from");
