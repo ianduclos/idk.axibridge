@@ -124,8 +124,10 @@ const scrub = {
       // per-tick: geometry only. plan_job()/flatten_to_document() per layer
       // is too expensive to pay on every slider frame; the change handler
       // wired in initTimelineBar() runs one full refresh (stats+plan) on
-      // release.
-      await actions.refreshResolved(undefined, { plan: false, stats: false });
+      // release. scrub:true — per Ian's ruling (§2c "Trays"), a timeline
+      // interaction may still switch out of a live sheet preview, unlike an
+      // ordinary param edit (8a's stickiness is for edits, not scrubbing).
+      await actions.refreshResolved(undefined, { plan: false, stats: false, scrub: true });
       recordFetchedFrame(frameIndex); // S5: this bar's own scrub completion
     } catch (e) {
       actions.oops(e);
@@ -154,7 +156,7 @@ async function jumpTo(t) {
   const el = $("tl-scrub");
   if (el) el.value = String(t);
   setReadout(t);
-  try { await actions.refreshResolved(t); } catch (e) { actions.oops(e); }
+  try { await actions.refreshResolved(t, { scrub: true }); } catch (e) { actions.oops(e); }
 }
 
 // This tween's keyframe ids (S1's `keys`-or-[a,b] normalization, mirrored
@@ -283,7 +285,7 @@ export function initTimelineBar() {
   // Drag release: one full refresh (stats + plan) so the estimate and the
   // travel overlay recover from the plan/stats-skipping ticks above — same
   // pattern the old #master-t slider used.
-  el.onchange = () => actions.refreshResolved();
+  el.onchange = () => actions.refreshResolved(undefined, { scrub: true });
 
   // Arrow keys step one frame (Q3(b)) when the bar's own slider has focus —
   // plain, not ⇧+arrow, which main.js's global fine-nudge already owns for

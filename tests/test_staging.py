@@ -188,6 +188,60 @@ def test_relayout_refuses_non_grid_kinds():
         session.relayout_capture(plot.id, 2, 2)
 
 
+def test_rebake_replaces_sheets_from_live_state_same_group_id():
+    """9a: re-bake re-runs the capture (same kind/format) against the CURRENT
+    project, replacing the group's sheets in place — id and name survive,
+    only the geometry (and sheet ids, since they're freshly minted) change."""
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 12})
+    group = session.capture_to_staging(kind="plot", name="live tray")
+    old_sheet_id = group.sheets[0].id
+    old_file = group.sheets[0].file
+    before = _doc_signature(session.staged_document(group.id, old_sheet_id))
+
+    session.regenerate_layer(layer.id, {"sides": 6, "radius": 40})
+    rebaked = session.rebake_capture_group(group.id)
+
+    assert rebaked.id == group.id
+    assert rebaked.name == "live tray"
+    assert rebaked.sheets[0].id != old_sheet_id  # freshly minted sheet
+    after = _doc_signature(session.staged_document(rebaked.id, rebaked.sheets[0].id))
+    assert after != before
+    assert after == _doc_signature(session.plot_document("all"))  # matches live state
+    # the replaced group is what session now knows as this id
+    assert session._find_capture(group.id) is rebaked
+    # the old sheet's bytes are gone from staging_documents (no leak)
+    assert old_file not in session.staging_documents
+
+
+def test_rebake_undo_restores_prior_bake():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 12})
+    group = session.capture_to_staging(kind="plot", name="live tray")
+    old_sheet_id = group.sheets[0].id
+    before = _doc_signature(session.staged_document(group.id, old_sheet_id))
+
+    session.regenerate_layer(layer.id, {"sides": 6, "radius": 40})
+    session.rebake_capture_group(group.id)
+
+    assert session.undo()
+    restored = session._find_capture(group.id)
+    assert restored.sheets[0].id == old_sheet_id
+    assert _doc_signature(session.staged_document(restored.id, old_sheet_id)) == before
+
+
+def test_rebake_refuses_batch_captures():
+    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 10})
+    a = session.capture_to_staging(kind="sheet", name="A", cols=2, rows=2, frames=4)
+    session.regenerate_layer(layer.id, {"sides": 6, "radius": 30})
+    b = session.capture_to_staging(kind="sheet", name="B", cols=2, rows=2, frames=4)
+    batch = session.interpolate_captures(a.id, b.id, steps=3)
+
+    assert session.rebake_blocked(batch) is not None
+    with pytest.raises(ValueError, match="derived from OTHER captures"):
+        session.rebake_capture_group(batch.id)
+    # sheet/frame/plot captures are unblocked
+    assert session.rebake_blocked(a) is None
+
+
 def test_insert_staged_sheet_as_layers_and_undo():
     layer = session.add_generated_layer("polygon", {"sides": 5, "radius": 15})
     group = session.capture_to_staging(kind="plot", name="editable escape hatch")
@@ -321,6 +375,34 @@ def test_relayout_api_endpoint(client):
                        json={"cols": 1, "rows": 1}).status_code == 404
     assert client.post(f"/api/staging/groups/{cap['id']}/relayout",
                        json={"cols": 0, "rows": 1}).status_code == 422  # pydantic bounds
+
+
+def test_rebake_api_endpoint(client):
+    gen = client.post("/api/layers/generate",
+                      json={"module": "polygon", "params": {"sides": 6, "radius": 15}}).json()
+    cap = client.post("/api/staging/capture", json={"kind": "plot", "name": "api tray"}).json()["group"]
+    old_sheet_id = cap["sheets"][0]["id"]
+
+    client.post(f"/api/layers/{gen['id']}/regenerate", json={"params": {"sides": 6, "radius": 40}})
+    r = client.post(f"/api/staging/groups/{cap['id']}/rebake")
+    assert r.status_code == 200, r.text
+    g = r.json()["group"]
+    assert g["id"] == cap["id"] and g["name"] == "api tray"
+    assert g["sheets"][0]["id"] != old_sheet_id
+    assert "snapshot" not in g  # heavy source state never rides the wire
+
+    assert client.post("/api/staging/groups/nope/rebake").status_code == 404
+
+    # a batch (A⇄B) group refuses — derived from other captures, not live state
+    a = client.post("/api/staging/capture",
+                    json={"kind": "sheet", "name": "A2", "cols": 2, "rows": 2, "frames": 4}).json()["group"]
+    b = client.post("/api/staging/capture",
+                    json={"kind": "sheet", "name": "B2", "cols": 2, "rows": 2, "frames": 4}).json()["group"]
+    batch = client.post("/api/staging/interpolate",
+                        json={"a": a["id"], "b": b["id"], "steps": 2}).json()["group"]
+    refused = client.post(f"/api/staging/groups/{batch['id']}/rebake")
+    assert refused.status_code == 400
+    assert "derived from OTHER captures" in refused.json()["detail"]
 
 
 def test_staging_api_plan_export_and_plot(client):

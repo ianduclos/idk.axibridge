@@ -1709,3 +1709,141 @@ def test_tray_groups_born_from_one_animation_setup_read_apart_from_loose_capture
     loose = ui.locator(".stage-group", has_text="loose plot")
     assert "stage-group-anim" not in (loose.get_attribute("class") or "")
     assert not ui.errors
+
+
+# -- tray round (docs/plans/timeline-v2.md §2c "Trays") ----------------------
+
+def test_view_label_names_what_the_canvas_shows_across_view_switches(ui):
+    """7a: an always-visible label says what the canvas currently shows —
+    nothing for the ordinary single-frame live view, "live · sheet n/N" for
+    the live grid-sheet preview, 'tray "name" · sheet n/N' for a frozen
+    staged sheet — driven by the SAME S.docPreview every view-changing path
+    (sheet preview, tray preview, the exit-to-live banner button) already
+    writes, so it can't say something the canvas doesn't back up."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    assert ui.eval_on_selector("#view-label", "el => el.textContent") == ""
+
+    _open_anim_stepper(ui)
+    ui.click('#anim-presets [data-grid="2,1"]')
+    ui.wait_for_function(
+        "() => (document.getElementById('view-label')?.textContent || '') === 'live · sheet 1/4'",
+        timeout=10_000)
+
+    group = _post(f"{ui.base}/api/staging/capture", {"kind": "plot", "name": "frozen"})["group"]
+    reload_app(ui)
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.wait_for_selector(".stage-group", timeout=10_000)
+    ui.click(f'[data-stage-preview="{group["id"]}:{group["sheets"][0]["id"]}"]')
+    ui.wait_for_function(
+        "() => (document.getElementById('view-label')?.textContent || '').includes('frozen')",
+        timeout=10_000)
+    assert "tray" in ui.eval_on_selector("#view-label", "el => el.textContent")
+    assert "sheet 1/1" in ui.eval_on_selector("#view-label", "el => el.textContent")
+
+    ui.click("#doc-preview-exit")
+    ui.wait_for_function(
+        "() => (document.getElementById('view-label')?.textContent || '') === ''",
+        timeout=10_000)
+    assert not ui.errors
+
+
+def test_live_sheet_view_stays_sticky_across_a_param_edit(ui):
+    """8a: editing a layer param while the canvas shows the LIVE grid-sheet
+    preview used to drop the canvas back to single-frame (Ian's bench
+    report); it must re-render the sheet in place instead. A staged/tray
+    preview is a different story — those stay non-sticky (9a's re-bake is
+    the only way to update one), covered separately."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    reload_app(ui)
+    _open_anim_stepper(ui)
+    ui.click('#anim-presets [data-grid="2,1"]')
+    ui.wait_for_function(
+        "() => (document.getElementById('view-label')?.textContent || '').includes('sheet 1/4')",
+        timeout=10_000)
+    before = wait_for_ink(ui)
+
+    ui.click('#tabs button[data-tab="compose"]')
+    select_layer(ui)
+    ui.wait_for_selector("#regen-form", timeout=10_000)
+    # sides (field 0), not radius: this sheet uses "fixed" framing, which
+    # fits the (single, unanimated) shape's shared window to each cell — a
+    # uniform radius change re-normalizes away to the same rendered points,
+    # a red herring here. Changing the point count is unambiguous.
+    field = ui.locator('#regen-form input[type="number"]').nth(0)
+    field.fill(str(int(field.input_value() or 5) + 3))
+    field.press("Enter")
+    ui.click("#btn-regen")
+
+    ui.wait_for_function(
+        "([sel, old]) => Array.from(document.querySelectorAll(sel))"
+        ".map(e => e.getAttribute('d') || '').join('|') !== old",
+        arg=["#canvas path", before], timeout=20_000)
+    # the edit round-tripped (ink changed) AND the sheet view is still up —
+    # this is exactly the bug: it used to snap back to single-frame here.
+    assert "sheet 1/4" in ui.eval_on_selector("#view-label", "el => el.textContent")
+    assert ui.eval_on_selector("#doc-preview-banner", "el => el.hidden") is False
+    assert not ui.errors
+
+
+def test_selecting_a_tray_group_shows_selection_state_and_previews_it(ui):
+    """Item 4 ("Sheet grid": plot targets the currently selected tray):
+    clicking a group's header — not one of its buttons — selects it, with a
+    visible selection state, and previews it (canvas + 7a's label), the same
+    effect a sheet's own Preview button already had."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    _post(f"{ui.base}/api/staging/capture", {"kind": "plot", "name": "tray A"})
+    b = _post(f"{ui.base}/api/staging/capture", {"kind": "plot", "name": "tray B"})["group"]
+    reload_app(ui)
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.wait_for_selector(".stage-group", timeout=10_000)
+    assert ui.locator(".stage-group.selected").count() == 0
+
+    ui.click(f'[data-stage-select="{b["id"]}"] strong')
+    ui.wait_for_selector(".stage-group.selected", timeout=10_000)
+    assert "tray B" in ui.locator(".stage-group.selected").text_content()
+    assert ui.locator(".stage-group.selected").count() == 1
+    ui.wait_for_function(
+        "() => (document.getElementById('view-label')?.textContent || '').includes('tray B')",
+        timeout=10_000)
+    assert not ui.errors
+
+
+def test_rebake_updates_a_trays_geometry_and_is_disabled_for_batch_groups(ui):
+    """9a: a frozen tray's re-bake button re-runs its capture against the
+    CURRENT project, replacing its sheets in place — and is disabled, with a
+    reason tooltip, for a "batch" (A⇄B interpolated) group, which is derived
+    from two OTHER captures' frozen snapshots, not the live project."""
+    layer_id = add_layer(ui, "polygon", {"sides": 6, "radius": 15})
+    group = _post(f"{ui.base}/api/staging/capture", {"kind": "plot", "name": "live tray"})["group"]
+    reload_app(ui)
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.wait_for_selector(".stage-group", timeout=10_000)
+
+    btn = ui.locator(f'[data-stage-rebake="{group["id"]}"]')
+    assert btn.is_enabled()
+    old_sheet_key = ui.eval_on_selector(
+        f'[data-stage-select="{group["id"]}"]',
+        "h => h.closest('.stage-group').querySelector('[data-stage-preview]').dataset.stagePreview")
+
+    _post(f"{ui.base}/api/layers/{layer_id}/regenerate", {"params": {"sides": 6, "radius": 55}})
+    btn.click()
+    ui.wait_for_function(
+        "([gid, old]) => { const h = document.querySelector(`[data-stage-select=\"${gid}\"]`);"
+        " const b = h && h.closest('.stage-group').querySelector('[data-stage-preview]');"
+        " return b && b.dataset.stagePreview !== old; }",
+        arg=[group["id"], old_sheet_key], timeout=10_000)
+
+    # a batch group is a different capture kind — refused, disabled, explained
+    a = _post(f"{ui.base}/api/staging/capture",
+              {"kind": "sheet", "name": "sA", "cols": 2, "rows": 1, "frames": 4})["group"]
+    b2 = _post(f"{ui.base}/api/staging/capture",
+              {"kind": "sheet", "name": "sB", "cols": 2, "rows": 1, "frames": 4})["group"]
+    batch = _post(f"{ui.base}/api/staging/interpolate",
+                  {"a": a["id"], "b": b2["id"], "steps": 2})["group"]
+    reload_app(ui)
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.wait_for_selector(".stage-group", timeout=10_000)
+    batch_btn = ui.locator(f'[data-stage-rebake="{batch["id"]}"]')
+    assert batch_btn.is_disabled()
+    assert "derived from other captures" in (batch_btn.get_attribute("title") or "")
+    assert not ui.errors

@@ -487,6 +487,12 @@ main {
 }
 .warn { color: var(--ochre); }
 #global-error { color: var(--rust); margin-left: auto; }
+/* 7a: empty (ordinary live single-frame) collapses — same idiom as
+   #machine-state .readout:empty — so it costs no width when there's nothing
+   to say. Non-empty gets the --live accent, matching #doc-preview-label,
+   since it's naming the same fact the banner does. */
+.view-label { color: var(--live-soft); }
+.view-label:empty { display: none; }
 
 /* in-SVG styling. Lengths here are USER UNITS (mm), not px — the sheet's
    shadow scales with the zoom, which is what you want: it stays a sheet
@@ -852,8 +858,13 @@ input[type="range"].fine::-moz-range-thumb {
 .stage-head, .stage-sheet {
   display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
 }
-.stage-head { margin-bottom: 6px; }
+.stage-head { margin-bottom: 6px; cursor: pointer; }
 .stage-head strong { margin-right: auto; }
+/* item 4: clicking a group header selects it (the buttons inside stay their
+   own click targets — no cursor change needed, they already read as
+   controls). Wins over the animation-set accent below since it's the more
+   specific, currently-true state — "what you see is what plots". */
+.stage-group.selected { border-left: 2px solid var(--live); background: var(--bench-rise); }
 .stage-sheet {
   padding: 5px 0; border-top: 1px solid var(--bench-edge);
 }

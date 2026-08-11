@@ -210,6 +210,16 @@
          tab — starting a job is a deliberate act, stopping one is not. -->
     <div id="canvas-status">
       <span id="sel-readout">nothing selected</span>
+      <!-- 7a (docs/plans/timeline-v2.md §2c "Trays"): always-visible — what
+           the canvas shows right now: "live · sheet n/N" (the live grid-sheet
+           preview, S.docPreview.kind==="sheet"), 'tray "name" · sheet n/N'
+           (a frozen staged sheet, kind==="tray"), or empty for the ordinary
+           single-frame live view. ONE renderer (main.js's renderViewLabel)
+           reads S.docPreview so this can't drift from the doc-preview banner
+           or the canvas geometry — every path that changes what the canvas
+           shows funnels through showDocPreview/clearDocPreviewState, the
+           same two functions that already own the banner. -->
+      <span id="view-label" class="readout view-label"></span>
       <span id="plan-warnings" class="warn"></span>
       <div id="machine-state" hidden>
         <span id="job-progress" class="readout"></span>

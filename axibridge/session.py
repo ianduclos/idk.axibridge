@@ -1699,6 +1699,64 @@ class Session:
                                     for g in self.project.staging]
             return renamed
 
+    #: capture kinds `_documents_for_format` can rebuild straight from the
+    #: LIVE project (`self.project`/`self.resolved()`) — see that method.
+    #: "batch" is deliberately excluded: it is rendered from two OTHER
+    #: captures' frozen snapshots (`_interpolate_batch_docs`), not from live
+    #: state, so "re-bake against current project state" does not apply to it.
+    _REBAKEABLE_KINDS = ("sheet", "frame", "plot")
+
+    @classmethod
+    def rebake_blocked(cls, group: CaptureGroup) -> str | None:
+        """Why `group` can't be re-baked from live project state, or None if
+        it can. Pure — also drives the tray UI's disabled/tooltip state
+        client-side (mirrored in plot.js, same pattern as interpolateBlocker)."""
+        if group.kind not in cls._REBAKEABLE_KINDS:
+            return (f'"{group.kind}" captures are derived from OTHER captures, '
+                     "not the live project — re-bake those instead")
+        return None
+
+    def rebake_capture_group(self, group_id: str) -> CaptureGroup:
+        """9a: re-run the capture that produced `group` (same kind, same
+        layout/format params — `group.format` already carries everything
+        `_documents_for_format` needs) against CURRENT project state,
+        replacing its sheets in place: same group id, name kept. One
+        checkpoint, so one undo restores the group's prior bake untouched
+        (groups replace-wholesale here too, never mutate in place — the old
+        object stays intact in history)."""
+        with self._lock:
+            group = self._find_capture(group_id)
+            reason = self.rebake_blocked(group)
+            if reason:
+                raise ValueError(reason)
+            docs = self._documents_for_format(group.format)
+            pass_ids = self._pass_ids_for_format(group.format)
+            if not any(self._doc_has_geometry(doc) for doc in docs):
+                raise RuntimeError("nothing to re-bake (no resolved geometry at this capture's settings)")
+            snapshot = self._capture_snapshot()
+            self._checkpoint()
+            old_files = [s.file for s in group.sheets if s.file]
+            new_sheets: list[StagedSheet] = []
+            for i, doc in enumerate(docs):
+                ids_for_sheet = pass_ids[i] if i < len(pass_ids) else None
+                sheet = StagedSheet(name=f"sheet {i + 1}", passes=self._pass_stats(doc, ids_for_sheet))
+                relname = f"staging/{group.id}-{sheet.id}.svg"
+                sheet.file = relname
+                for pinfo, layer in zip(sheet.passes, doc.layers):
+                    pinfo.name = layer.name or pinfo.name
+                new_sheets.append(sheet)
+                # ownership handover, no defensive copy — same discipline as
+                # _store_capture_group: frozen at store time.
+                self.staging_documents[relname] = doc
+            for f in old_files:
+                self.staging_documents.pop(f, None)
+            rebaked = group.model_copy(update={
+                "sheets": new_sheets, "snapshot": snapshot, "warnings": [],
+            })
+            self.project.staging = [rebaked if g.id == group_id else g
+                                    for g in self.project.staging]
+            return rebaked
+
     def delete_capture_group(self, group_id: str) -> list[str]:
         with self._lock:
             group = self._find_capture(group_id)

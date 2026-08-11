@@ -64,6 +64,28 @@ function clearDocPreviewState() {
   S.docPreview = null;
   const banner = $("doc-preview-banner");
   if (banner) banner.hidden = true;
+  renderViewLabel();
+}
+
+// 7a (docs/plans/timeline-v2.md §2c "Trays"): the ONE renderer for the
+// always-visible canvas-status label. S.docPreview is written in exactly two
+// places — here and showDocPreview below — so this can't drift from what the
+// canvas/banner actually show: null → ordinary live single-frame (nothing
+// special); kind "sheet" → the live grid-sheet preview; kind "tray" → a
+// frozen staged sheet. Format matches Ian's ruling verbatim: "live · sheet
+// n/N" / 'tray "name" · sheet n/N'.
+function renderViewLabel() {
+  const el = $("view-label");
+  if (!el) return;
+  const dp = S.docPreview;
+  if (!dp) { el.textContent = ""; return; }
+  if (dp.kind === "tray") {
+    el.textContent = `tray "${dp.trayName || "?"}" · sheet ${dp.sheetIndex}/${dp.sheetCount}`;
+  } else if (dp.kind === "sheet") {
+    el.textContent = `live · sheet ${dp.sheetIndex}/${dp.sheetCount}`;
+  } else {
+    el.textContent = dp.label || "";
+  }
 }
 
 function debounce(fn, ms) {
@@ -200,15 +222,33 @@ export const actions = {
   // master reflect the scrubbed frame. Not persisted (UI state only).
   // Defaults to the current scrub so ANY refresh (layer edits, drags) stays
   // on the scrubbed frame instead of snapping back to the stored t.
+  //
+  // 8a (docs/plans/timeline-v2.md §2c "Trays"): the LIVE sheet preview is
+  // STICKY — a param edit re-renders the sheet in place instead of dropping
+  // to single-frame (the resolve caches make this affordable: a "sheet="
+  // preview query always resolves fresh off self.project, so re-issuing it
+  // just picks up the edit). A staged/TRAY preview is never sticky here: it
+  // is frozen bytes from capture time, a live edit can't change what it
+  // shows — that's what 9a's re-bake is for — so it still exits to live, and
+  // so does any scrub/jump (opts.scrub) per Ian's ruling that timeline
+  // interactions may still switch views as they do today.
   async refreshResolved(master_t = S.masterT, opts = {}) {
-    // A live refresh (edits, SSE re-hydrate) supersedes any transient sheet
+    const stickySheet = !opts.scrub && S.docPreview?.kind === "sheet" ? S.docPreview : null;
+    // A live refresh (edits, SSE re-hydrate) supersedes any OTHER transient
     // preview — drop it and its banner rather than fight over the canvas.
-    if (S.docPreview) clearDocPreviewState();
+    if (S.docPreview && !stickySheet) clearDocPreviewState();
     S.masterT = master_t;
     let q = master_t == null ? "" : `?t=${encodeURIComponent(master_t)}`;
     if (opts.stats === false) q += q ? "&stats=false" : "?stats=false";
     S.resolved = await api.get(`/api/compose/resolved${q}`);
-    canvas.setData({ layers: S.resolved.layers, images: mapGhosts() });
+    if (stickySheet) {
+      // re-issue the SAME sheet query — same layout params, fresh geometry.
+      await actions.showDocPreview(stickySheet.kind, stickySheet.label, stickySheet.query, {
+        sheetIndex: stickySheet.sheetIndex, sheetCount: stickySheet.sheetCount,
+      });
+    } else {
+      canvas.setData({ layers: S.resolved.layers, images: mapGhosts() });
+    }
     renderLayerList();
     renderSelReadout();
     refreshPenOverlay(); // pen's anchor/handle overlay tracks undo/redo and any other external edit
@@ -220,13 +260,21 @@ export const actions = {
   // (already-encoded ``sheet=`` or ``staged=``). The plan overlay/estimate keep
   // running off S.sheetPlan/S.stagedPlan — this only fills the canvas geometry
   // the travel overlay draws on top of.
-  async showDocPreview(label, query) {
+  //
+  // ``kind`` is "sheet" (live grid-sheet preview) or "tray" (frozen staged
+  // sheet) — the two things a doc preview can ever be; ``meta`` carries the
+  // numbers 7a's view-label needs (sheetIndex/sheetCount, +trayName for
+  // "tray"). This is the ONE place S.docPreview is set to a non-null value
+  // (clearDocPreviewState is the only other writer, always to null) — see
+  // renderViewLabel's comment.
+  async showDocPreview(kind, label, query, meta = {}) {
     try {
       const data = await api.get(`/api/preview/sheet?${query}`);
-      S.docPreview = { label, query };
+      S.docPreview = { kind, label, query, ...meta };
       canvas.setData({ layers: data.layers, images: [] });
       const banner = $("doc-preview-banner");
       if (banner) { $("doc-preview-label").textContent = label; banner.hidden = false; }
+      renderViewLabel();
     } catch (e) { oops(e); }
   },
 

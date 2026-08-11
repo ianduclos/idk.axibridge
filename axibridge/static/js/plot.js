@@ -266,6 +266,11 @@ export function initPlotTab() {
           <label>A</label><select id="stage-a" style="flex:1"></select>
           <label>B</label><select id="stage-b" style="flex:1"></select>
         </div>
+        <!-- P7: these pickers (any two existing tray captures) and Quick A⇄B
+             above (capture-and-blend in one pass) both end at the same
+             interpolate endpoint — deliberate, deliberate vs quick, but
+             nothing on screen said so until now. -->
+        <div class="hint">or use A · B · ⇄ above to capture and blend in one pass</div>
         <div class="row">
           <label>steps</label><input type="number" id="stage-steps" min="2" max="60" step="1" value="5" style="width:4.5em">
           <button id="stage-interp" class="primary">Generate batch</button>
@@ -796,8 +801,11 @@ function syncSheetPlan() {
   S.sheetPlan = active ? currentSheetSpec() : null;
   if (S.sheetPlan) {
     S.stagedPlan = null;
-    actions.showDocPreview(sheetPreviewLabel(),
-      `sheet=${encodeURIComponent(JSON.stringify(S.sheetPlan))}`);
+    // 7a: kind "sheet" + the numbers the always-visible view-label needs
+    // ("live · sheet n/N") — see main.js's renderViewLabel.
+    actions.showDocPreview("sheet", sheetPreviewLabel(),
+      `sheet=${encodeURIComponent(JSON.stringify(S.sheetPlan))}`,
+      { sheetIndex: anim.sheet + 1, sheetCount: anim.nPages });
   } else if (S.docPreview && !S.stagedPlan) {
     actions.exitDocPreview();
   }
@@ -908,6 +916,10 @@ async function interpolateStaged() {
 }
 
 async function previewStaged(groupId, sheetId) {
+  const group = (S.state?.project?.staging || []).find((g) => g.id === groupId);
+  const sheets = group?.sheets || [];
+  if (!sheetId) sheetId = sheets[0]?.id;
+  const idx = sheets.findIndex((s) => s.id === sheetId);
   S.sheetPlan = null;
   S.stagedPlan = { group_id: groupId, sheet_id: sheetId };
   stage.selectedGroup = groupId;
@@ -915,17 +927,67 @@ async function previewStaged(groupId, sheetId) {
   renderStaging();
   // swap the centre canvas to the staged sheet's actual geometry (the plan
   // overlay only draws travel); estimate/travel still ride S.stagedPlan below.
-  await actions.showDocPreview(stagedPreviewLabel(groupId, sheetId),
-    `staged=${encodeURIComponent(JSON.stringify(S.stagedPlan))}`);
+  // 7a: kind "tray" + the numbers the view-label needs (name + sheet n/N).
+  await actions.showDocPreview("tray", stagedPreviewLabel(groupId, sheetId),
+    `staged=${encodeURIComponent(JSON.stringify(S.stagedPlan))}`,
+    { trayName: group?.name, sheetIndex: (idx >= 0 ? idx : 0) + 1, sheetCount: sheets.length || 1 });
   await actions.refreshPlan();
+}
+
+// "Plot targets the currently selected tray" (docs/plans/timeline-v2.md §2c
+// "Sheet grid"): make the selection a group-level thing, not just a side
+// effect of previewing one sheet — clicking a group's header (not one of its
+// buttons) selects it and previews its currently-selected (or first) sheet.
+// The per-sheet/pass buttons below stay the precise routing (Do not add a
+// new resolve path); this only keeps "what's selected" honest so the label
+// (7a) and the re-layout row (relayoutRow, already selection-gated) agree
+// with what's on screen.
+function selectGroup(groupId) {
+  const group = (S.state?.project?.staging || []).find((g) => g.id === groupId);
+  const keepSheet = stage.selectedGroup === groupId ? stage.selectedSheet : null;
+  const sheetId = group?.sheets?.some((s) => s.id === keepSheet) ? keepSheet : group?.sheets?.[0]?.id;
+  previewStaged(groupId, sheetId);
 }
 
 async function plotStaged(groupId, sheetId, penId) {
   try {
     await api.post("/api/plot/start", { staged: { group_id: groupId, sheet_id: sheetId, pen_id: penId } });
     plottedThisSession.add(plottedKey(groupId, sheetId, penId));
+    // keep selection honest: plotting a pass is acting on that sheet, so it
+    // becomes the selected one (7a's label follows).
+    if (stage.selectedGroup !== groupId || stage.selectedSheet !== sheetId) {
+      stage.selectedGroup = groupId;
+      stage.selectedSheet = sheetId;
+    }
     renderStaging();  // P6: dim/check this pass immediately, no reload needed
     actions.log(`▶ plotting staged sheet pass (${penId || "no pen"})`);
+  } catch (e) { actions.oops(e); }
+}
+
+// 9a — re-bake a frozen tray group from CURRENT project state (client mirror
+// of Session.rebake_blocked: same pattern as interpolateBlocker/P8 — compute
+// the reason before the click, server re-validates). Only "sheet"/"frame"/
+// "plot" captures are re-derivable this way; a "batch" (A⇄B interpolated)
+// group is built from two OTHER captures' frozen snapshots, not live state.
+function rebakeBlocked(g) {
+  if (g.kind !== "sheet" && g.kind !== "frame" && g.kind !== "plot") {
+    return `"${g.kind}" captures are derived from other captures, not the live project — re-bake those instead`;
+  }
+  return null;
+}
+
+async function rebakeStaged(groupId) {
+  try {
+    const r = await api.post(`/api/staging/groups/${encodeURIComponent(groupId)}/rebake`, {});
+    await actions.refreshProject();
+    actions.log(`re-baked "${r.group.name}" from the live project`);
+    // sheet ids were replaced — re-preview if this group was on screen,
+    // otherwise just repaint the list.
+    if (stage.selectedGroup === groupId) {
+      await previewStaged(groupId, r.group.sheets[0]?.id);
+    } else {
+      renderStaging();
+    }
   } catch (e) { actions.oops(e); }
 }
 
@@ -1040,11 +1102,15 @@ function renderStaging() {
   // it reads apart from a standalone loose capture at a glance.
   list.innerHTML = groups.map((g) => {
     const gridGroup = isGridGroup(g);
+    const selected = stage.selectedGroup === g.id;
+    const rebakeReason = rebakeBlocked(g);
     return `
-    <div class="stage-group${gridGroup ? " stage-group-anim" : ""}">
-      <div class="stage-head">
+    <div class="stage-group${gridGroup ? " stage-group-anim" : ""}${selected ? " selected" : ""}">
+      <div class="stage-head" data-stage-select="${esc(g.id)}" title="select this tray — plot targets the selected tray">
         <strong>${esc(groupLabel(g))}</strong>
         ${gridGroup ? `<span class="tag" title="captured from one animation/grid setup — these sheets belong together">animation set</span>` : ""}
+        <button data-stage-rebake="${esc(g.id)}" ${rebakeReason ? "disabled" : ""}
+          title="${esc(rebakeReason || "re-run this capture against the current project, replacing its sheets in place (one undo restores the old bake)")}">↻ Re-bake</button>
         <button data-stage-rename="${esc(g.id)}">Rename</button>
         <button data-stage-up="${esc(g.id)}">↑</button>
         <button data-stage-down="${esc(g.id)}">↓</button>
@@ -1094,6 +1160,13 @@ function renderStaging() {
     const rows = Math.max(1, Math.min(12, Math.round(Number(row.querySelector("[data-rl-rows]").value) || 1)));
     relayoutStaged(b.dataset.stageRelayout, cols, rows);
   });
+  // group-header click selects the tray (item 4) — ignore clicks on any
+  // button inside the header, which have their own handlers below.
+  list.querySelectorAll("[data-stage-select]").forEach((head) => head.onclick = (e) => {
+    if (e.target.closest("button")) return;
+    selectGroup(head.dataset.stageSelect);
+  });
+  list.querySelectorAll("[data-stage-rebake]").forEach((b) => b.onclick = () => rebakeStaged(b.dataset.stageRebake));
   list.querySelectorAll("[data-stage-delete]").forEach((b) => b.onclick = () => deleteStaged(b.dataset.stageDelete));
   list.querySelectorAll("[data-stage-copy]").forEach((b) => b.onclick = () => duplicateStaged(b.dataset.stageCopy));
   list.querySelectorAll("[data-stage-rename]").forEach((b) => b.onclick = () => renameStaged(b.dataset.stageRename));
@@ -1263,7 +1336,10 @@ const previewScrub = {
     const i = anim.i;
     S.masterT = t;
     try {
-      await actions.refreshResolved(t, { plan: false, stats: false });
+      // scrub:true — the frame/sheet stepper is a timeline interaction, same
+      // as the bottom bar's own scrub (§2c "Trays"): it may switch out of a
+      // live sheet preview; 8a's stickiness is for param edits, not stepping.
+      await actions.refreshResolved(t, { plan: false, stats: false, scrub: true });
       recordFetchedFrame(i); // S5: this frame's geometry has now been fetched this session
     } catch (e) {
       stopPreview();

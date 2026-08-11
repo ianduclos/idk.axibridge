@@ -1589,6 +1589,22 @@ def relayout_capture_group(group_id: str, body: RelayoutCaptureBody) -> dict[str
     return {"group": group.model_dump(exclude={"snapshot"})}
 
 
+@router.post("/staging/groups/{group_id}/rebake")
+def rebake_capture_group(group_id: str) -> dict[str, Any]:
+    """9a: re-run this capture against CURRENT project state, replacing its
+    sheets in place (same group id/name). One undo entry restores the prior
+    bake. 400 for a "batch" (A⇄B) group — see Session.rebake_blocked."""
+    try:
+        group = session.rebake_capture_group(group_id)
+    except KeyError as e:
+        raise _fail(e, 404)
+    except (ValueError, RuntimeError) as e:
+        raise _fail(e, 400)
+    except Exception as e:
+        raise _fail(e)
+    return {"group": group.model_dump(exclude={"snapshot"})}
+
+
 class InterpolateCapturesBody(BaseModel):
     a: str
     b: str
