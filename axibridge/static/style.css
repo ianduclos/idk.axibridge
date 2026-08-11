@@ -453,7 +453,27 @@ main {
 }
 #timeline-bar[hidden] { display: none; } /* [hidden] loses to a display rule below it in the cascade — see #layers-dock[hidden] */
 #timeline-bar button { padding: 1px 9px; font-size: 11px; }
-#tl-scrub { flex: 1; }
+/* S5: #tl-track carries #tl-scrub plus two decoration layers underneath it —
+   the shaded [tFrom,tTo] sub-range (Q4a) and one tick per frame-grid position
+   (Q4a), a brighter tick for a frame fetched this session. Both sit in the
+   padding this wrapper adds below the fader's own 26px box, positioned by
+   left% (bar spans 0..1, Q4a) and left untouched by the fader's own chrome. */
+#tl-track { position: relative; flex: 1; min-width: 80px; padding-bottom: 6px; }
+#tl-track #tl-scrub { flex: none; width: 100%; }
+#tl-shade {
+  position: absolute; top: 24px; height: 2px; border-radius: 999px;
+  background: var(--live-deep); pointer-events: none;
+}
+#tl-ticks { position: absolute; top: 24px; left: 0; right: 0; height: 6px; pointer-events: none; }
+#tl-ticks .tick {
+  position: absolute; top: 2px; width: 2px; height: 4px;
+  background: var(--ink-soft); border-radius: 1px; transform: translateX(-50%);
+}
+/* fetched this session — a hint, not a cache guarantee: the server's tween/
+   gencache caches evict randomly under a point budget (session.py's
+   TWEEN_CACHE_BUDGET_POINTS, gencache.py's docstring), so a bright tick can
+   still be a miss by the time you land on it again. */
+#tl-ticks .tick.fetched { top: 0; height: 6px; background: var(--live-soft); }
 #tl-t-val, #tl-frame-val { min-width: 5em; font-size: 11px; font-variant-numeric: tabular-nums; }
 #tl-frame-val:empty { display: none; }
 #tl-checkpoints { display: flex; gap: 4px; }

@@ -183,7 +183,16 @@
       <button id="tl-prev" title="previous frame">← Frame</button>
       <button id="tl-next" title="next frame">Frame →</button>
       <button id="tl-end" title="jump to end (t = 1)">⇥</button>
-      <input type="range" id="tl-scrub" min="0" max="1" step="0.001" value="0">
+      <!-- S5 (docs/plans/timeline-v2.md): #tl-track wraps the scrub input so
+           the frame grid's active [tFrom,tTo] range (#tl-shade) and per-frame
+           ticks (#tl-ticks, brighter = fetched this session) can sit under
+           the fader without touching its native chrome. Both are decoration
+           only (pointer-events:none) — the input on top still owns the drag. -->
+      <div id="tl-track">
+        <div id="tl-shade" title="the frame grid's active range (t-from .. t-to)"></div>
+        <input type="range" id="tl-scrub" min="0" max="1" step="0.001" value="0">
+        <div id="tl-ticks" aria-hidden="true"></div>
+      </div>
       <span class="hint" id="tl-t-val">t = 0.000</span>
       <span class="hint" id="tl-frame-val"></span>
       <div id="tl-checkpoints" hidden></div>

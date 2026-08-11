@@ -6,6 +6,14 @@
 import { api } from "./api.js";
 import { renderForm } from "./forms.js";
 import { S, actions } from "./main.js";
+// S5 (docs/plans/timeline-v2.md): recordFetchedFrame marks a grid tick lit in
+// the bar; renderTimelineBar re-syncs the bar's shaded range after an
+// Animation-panel edit to t-from/t-to/frames changes the grid under it.
+// Circular with timeline.js (which imports stepFrame/renderRasterPreview
+// below) — safe here the same way main.js<->timeline.js already is: every
+// use is inside a function body, called long after both modules finished
+// evaluating, never at module-top-level.
+import { recordFetchedFrame, renderTimelineBar } from "./timeline.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -397,6 +405,7 @@ export function initPlotTab() {
     updateExportLink();
     await refreshSheetInfo();
     syncSheetPlan();
+    renderTimelineBar(); // S5: frames/t-from/t-to just moved the grid under the bar's shading+ticks
   };
 
   const gridChanged = async () => {
@@ -1157,6 +1166,17 @@ function animT(i) {
   return anim.n <= 1 ? anim.tFrom : anim.tFrom + (anim.tTo - anim.tFrom) * i / (anim.n - 1);
 }
 
+// S5 (F6, docs/plans/timeline-v2.md): a thin accessor onto the exact grid
+// animT/pullAnimControls already compute, so the timeline bar can snap its
+// scrub to the same positions without a second copy of this math. No DOM
+// pull here on purpose — the bar can be visible on tabs where the Animation
+// panel's own inputs don't exist in the DOM (Compose/Pens/Settings); `anim`
+// is module-level and survives tab switches, so it already holds the last
+// values pulled from whichever panel last touched it.
+export function frameGrid() {
+  return { n: anim.n, tFrom: anim.tFrom, tTo: anim.tTo };
+}
+
 function pullAnimControls() {
   if (!$("anim-frames")) return;
   anim.n = Math.max(2, Math.min(240, Math.round(Number($("anim-frames").value) || 2)));
@@ -1240,9 +1260,11 @@ const previewScrub = {
     this.pending = false;
     this.inflight = true;
     const t = animT(anim.i);
+    const i = anim.i;
     S.masterT = t;
     try {
       await actions.refreshResolved(t, { plan: false, stats: false });
+      recordFetchedFrame(i); // S5: this frame's geometry has now been fetched this session
     } catch (e) {
       stopPreview();
       actions.oops(e);
@@ -1563,6 +1585,7 @@ export async function renderRasterPreview() {
       const frame = { url: URL.createObjectURL(blob), t, w: bitmap.width, h: bitmap.height, scale: anim.scale };
       bitmap.close?.();
       newFrames.push(frame);
+      recordFetchedFrame(i); // S5: the popup render loop is the third of the three known-t fetch points
       setRasterProgress(i + 1, anim.n);
       if (!anim.previewFrames.length && newFrames.length === 1) {
         // first-ever render (no old set to keep showing): alias the scratch

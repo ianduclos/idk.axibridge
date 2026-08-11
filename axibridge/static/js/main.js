@@ -10,7 +10,7 @@ import { api, subscribe } from "./api.js";
 import { CanvasEditor, mul, objToMat, matToObj, screenPxPerMm } from "./canvas.js";
 import { initComposeTab, initLayersDock, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, logDeleted, rerenderForView } from "./compose.js";
 import { initPlotTab, renderPlotTab, applyCapabilities } from "./plot.js";
-import { initTimelineBar } from "./timeline.js";
+import { initTimelineBar, clearFetchedFrames } from "./timeline.js";
 import { initPensTab, renderPensTab } from "./pens.js";
 import { initSettingsTab, renderSettingsTab } from "./settings.js";
 import { initMenu } from "./menu.js";
@@ -174,6 +174,11 @@ export const actions = {
 
   async refreshProject() {
     S.state.project = await api.get("/api/project");
+    // S5: refreshProject is what every mutating action calls once it's done
+    // (add/edit/delete a layer, undo/redo, tween edits, staging…) — the
+    // cheapest honest hook to invalidate the timeline bar's fetched-frame
+    // ticks, since any of those can change what geometry lives at a given t.
+    clearFetchedFrames();
     if (S.stagedPlan) {
       const group = (S.state.project.staging || []).find((g) => g.id === S.stagedPlan.group_id);
       const sheet = group?.sheets?.find((s) => !S.stagedPlan.sheet_id || s.id === S.stagedPlan.sheet_id);

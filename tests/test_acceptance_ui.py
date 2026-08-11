@@ -1196,6 +1196,134 @@ def test_timeline_bar_checkpoint_buttons_degrade_to_none_then_appear_for_a_chain
     assert not ui.errors
 
 
+# -- S5: frame-grid quantization + cached-frame ticks -------------------------
+
+def test_timeline_bar_scrub_snaps_to_the_frame_grid_by_default(ui):
+    """Q3(b)/Q4(a): dragging the bar snaps to the frame grid. The default
+    Animation-panel grid is 8 frames over t=0..1 (plot.js's `anim` defaults),
+    so the step is 1/7 and frame index 1 (the 2nd frame) sits at t≈0.143 —
+    docs/plans/timeline-v2.md's own worked example. A drag that lands near
+    but not on that point must snap there exactly, both in the readout and
+    in the slider's own committed value."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+
+    timeline_bar_scrub_to(ui, 0.16)  # nearest grid point (k=1) is 1/7 ≈ 0.143
+    ui.wait_for_function(
+        "() => document.getElementById('tl-t-val').textContent === 't = 0.143'",
+        timeout=10_000)
+    # the slider's own committed value snaps too, not just the readout — bounded
+    # by #tl-scrub's own step="0.001" attribute (native to <input type=range>,
+    # unrelated to the frame grid's much coarser 1/7 spacing here)
+    snapped = float(ui.eval_on_selector("#tl-scrub", "el => el.value"))
+    assert abs(snapped - 1 / 7) < 0.001, f"the slider's own value must snap too, got {snapped}"
+    assert not ui.errors
+
+
+def test_timeline_bar_shift_drag_escapes_to_continuous(ui):
+    """Q3(b): holding ⇧ during the drag must escape the snap — the one place
+    quantization would hide a between-frames morph artefact. t=0.5 is not on
+    the default 8-frame/1-7-step grid (0.5*7 = 3.5), so landing there exactly
+    proves no snapping happened."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+
+    ui.keyboard.down("Shift")
+    try:
+        timeline_bar_scrub_to(ui, 0.5)
+        ui.wait_for_function(
+            "() => document.getElementById('tl-t-val').textContent === 't = 0.500'",
+            timeout=10_000)
+    finally:
+        ui.keyboard.up("Shift")
+    assert not ui.errors
+
+
+def test_timeline_bar_shades_the_active_t_from_t_to_range(ui):
+    """Q4(a): the bar always spans 0..1; the frame grid's own [tFrom, tTo]
+    sub-range is shaded on top of it, so a non-default range stays visible
+    and inspectable rather than the (b) option the doc rejected (the bar
+    spanning exactly the range, making anything outside it unreachable)."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+
+    left0, width0 = ui.eval_on_selector("#tl-shade", "el => [el.style.left, el.style.width]")
+    assert (left0, width0) == ("0%", "100%"), "default t-from/t-to (0..1) spans the whole bar"
+
+    ui.click('#tabs button[data-tab="plot"]')
+    ui.wait_for_selector("#anim-panel", timeout=10_000)
+    if "collapsed" in (ui.locator("#anim-panel").get_attribute("class") or ""):
+        ui.click("#anim-panel > h2")  # collapsed by default (data-collapse-default)
+    ui.wait_for_selector("#anim-t-from", timeout=10_000)
+    ui.fill("#anim-t-from", "0.2")
+    ui.fill("#anim-t-to", "0.8")
+    ui.locator("#anim-t-to").dispatch_event("change")
+
+    ui.wait_for_function(
+        "() => document.getElementById('tl-shade').style.left === '20%'", timeout=10_000)
+    left1, width1 = ui.eval_on_selector("#tl-shade", "el => [el.style.left, el.style.width]")
+    assert (left1, width1) == ("20%", "60%")
+    assert not ui.errors
+
+
+def test_timeline_bar_ticks_light_up_for_frames_fetched_this_session(ui):
+    """S5: a brighter tick marks a frame whose geometry has been fetched at
+    least once this session — a hint (the server's caches evict randomly
+    under a point budget), not a guarantee, but it should track real fetches.
+    Stepping the bar's own next-frame button three times fetches three
+    distinct frames (frame 0 is never itself re-fetched by stepping away
+    from it), so at least that many ticks must light."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#tl-ticks .tick').length > 0", timeout=10_000)
+    assert ui.locator("#tl-ticks .tick.fetched").count() == 0, "nothing fetched yet this session"
+
+    for _ in range(3):
+        ui.click("#tl-next")
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#tl-ticks .tick.fetched').length >= 3", timeout=10_000)
+    assert not ui.errors
+
+
+def test_timeline_bar_arrow_keys_step_one_frame(ui):
+    """Q3(b): plain arrow keys on the focused slider step one frame — the
+    same grid math as the prev/next buttons (F6), not the native 0.001
+    per-keypress the input's own `step` attribute would otherwise give."""
+    layer_id = add_layer(ui, "polygon", {"sides": 5, "radius": 20})
+    animate_and_follow(ui, layer_id, b_radius=80)
+    reload_app(ui)
+    wait_for_ink(ui)
+    ui.wait_for_selector("#timeline-bar:not([hidden])", timeout=10_000)
+
+    ui.locator("#tl-scrub").focus()
+    ui.locator("#tl-scrub").press("ArrowRight")
+    ui.wait_for_function(
+        "() => document.getElementById('tl-frame-val').textContent.startsWith('frame 2/')",
+        timeout=10_000)
+    ui.locator("#tl-scrub").press("ArrowRight")
+    ui.wait_for_function(
+        "() => document.getElementById('tl-frame-val').textContent.startsWith('frame 3/')",
+        timeout=10_000)
+    ui.locator("#tl-scrub").press("ArrowLeft")
+    ui.wait_for_function(
+        "() => document.getElementById('tl-frame-val').textContent.startsWith('frame 2/')",
+        timeout=10_000)
+    assert not ui.errors
+
+
 # -- S3: chain UI in the layer detail -----------------------------------------
 # docs/plans/timeline-v2.md S3. Screenshots land in the scratchpad dir this
 # session used for temp files, named after the test that took them.
