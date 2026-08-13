@@ -566,8 +566,17 @@ for (const btn of document.querySelectorAll("#view-toggle button")) {
     document.querySelectorAll("#view-toggle button").forEach((b) => b.classList.toggle("on", b === btn));
     canvas.setData({ view: btn.dataset.view });
     try {
-      await api.put("/api/project", { view: btn.dataset.view });
-      S.state.project.view = btn.dataset.view; // params stay machine-frame; only display re-maps
+      // session.set_view() retroactively re-orients every existing
+      // "geometry"-sourced layer's transform server-side (not just future
+      // ones) — the response carries those UPDATED transforms, which the
+      // client can't derive locally (it only knows the view it sent).
+      // Discarding it here (as every other PUT /api/project call site does,
+      // safely, since none of THEM have server-side side effects on other
+      // fields) left the Placement panel's x/y/scale/rot reading stale
+      // values, and a canvas render off the old transform under the new
+      // view's rotate(90) — exactly the "renders sideways" bug this closes.
+      S.state.project = await api.put("/api/project", { view: btn.dataset.view });
+      await actions.refreshResolved();
       rerenderForView();
     } catch (e) { oops(e); }
   };

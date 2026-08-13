@@ -517,6 +517,22 @@ class Session:
             return Affine()
         return Affine(e=(compose.BED_WIDTH - doc.width) / 2, f=(compose.BED_HEIGHT - doc.height) / 2)
 
+    @staticmethod
+    def _orientation_turn() -> Affine:
+        """The quarter-turn a ``"geometry"``-oriented layer needs in
+        portrait: the canvas draws portrait through ``translate(H 0)
+        rotate(90)``, i.e. machine (x, y) appears at (H - y, x), so
+        machine-frame geometry with a dominant axis — a text baseline, a
+        scan direction, a width x height field — arrives a quarter-turn
+        round. This is the display map's inverse, (x, y) -> (y, H - x): a
+        270-degree (clockwise) turn plus H — the same machine-frame value
+        ``viewmap.js`` hands a ``viewRotate`` param whose displayed default
+        is 0. Shared by ``_placement_transform`` (bakes it in once, at
+        creation) and ``set_view`` (applies or undoes it on an EXISTING
+        layer when the view toggles afterwards) — one formula, so the two
+        can't quietly drift apart the way this bug started as."""
+        return Affine(a=0.0, b=-1.0, c=1.0, d=0.0, e=0.0, f=compose.BED_HEIGHT)
+
     def _placement_transform(
         self, generator_id: str, params: dict[str, Any], doc: PathDocument,
         paths: list[Path],
@@ -524,22 +540,17 @@ class Session:
         """A new layer's opening transform: centring, plus portrait's
         quarter-turn for sources that declare ``orientation = "geometry"``.
 
-        THE ONE PLACE orientation is corrected (ROADMAP "URGENT", option B).
-        The canvas draws portrait through ``translate(H 0) rotate(90)``, i.e.
-        machine (x, y) appears at (H - y, x), so machine-frame geometry with a
-        dominant axis — a text baseline, a scan direction, a width x height
-        field — arrives a quarter-turn round. The layer's own affine undoes
-        exactly that display map, so the layer lands **where it would have
-        landed in landscape, on screen**: apply the inverse, (x, y) ->
-        (y, H - x), which is a 270-degree (clockwise) turn plus H — the same
-        machine-frame value ``viewmap.js`` hands a ``viewRotate`` param whose
-        displayed default is 0.
+        THE ONE PLACE orientation is corrected for a freshly created layer
+        (ROADMAP "URGENT", option B) — ``set_view`` is the other, for a layer
+        that already existed when the view changed. The layer's own affine
+        undoes the display map exactly, so the layer lands **where it would
+        have landed in landscape, on screen**: see ``_orientation_turn``.
 
         Sources declaring ``"param"`` already get this from their tagged
         rotation param and must not be turned twice; ``"none"`` has no
         dominant axis to get wrong. Nothing downstream reads ``view``: the
-        correction is baked into the stored transform at creation, so resolve
-        stays byte-identical across a view toggle (test_view_coherence)."""
+        correction is baked into the stored transform, so resolve stays
+        byte-identical across a view toggle (test_view_coherence)."""
         base = self._centering_transform(generator_id, params, doc)
         if self.project.view != "portrait":
             return base
@@ -548,10 +559,7 @@ class Session:
         pts = [pt for path in paths for pt in path.points]
         if not pts:
             return base
-        # (x, y) -> (y + base.f, H - x - base.e): the display map's inverse,
-        # composed after the centring translation.
-        turned = Affine(a=0.0, b=-1.0, c=1.0, d=0.0,
-                        e=base.f, f=compose.BED_HEIGHT - base.e)
+        turned = _mul_affine(self._orientation_turn(), base)
         # The portrait sheet is narrower than the landscape one (218 vs 300),
         # so geometry laid out for the full width can now hang off the bed.
         # Slide it back rather than hand the user something to rescue.
@@ -562,6 +570,53 @@ class Session:
             "e": turned.e + _nudge_onto([c[0] for c in corners], compose.BED_WIDTH),
             "f": turned.f + _nudge_onto([c[1] for c in corners], compose.BED_HEIGHT),
         })
+
+    def set_view(self, view: str) -> None:
+        """Change the project's display view (portrait/landscape) and
+        retroactively re-orient every live ``"geometry"``-oriented layer to
+        match — closes the gap ``_placement_transform`` left open: that
+        method only corrects a layer at the moment it's CREATED, so a layer
+        created in one view and left alone while the other view is selected
+        used to just sit there un-rotated, rendering sideways. Composes
+        ``_orientation_turn`` (or its inverse, going the other way) onto
+        whatever transform each layer already has, so any manual Placement-
+        panel edit made since creation is preserved, not clobbered — and
+        toggling back and forth is exact (affine composition, no drift).
+
+        Only ``"generator"``-type layers qualify — a ``"baked"`` layer's
+        transform already got reset to identity when its geometry was
+        consolidated (``consolidate_effects``); its ORIENTATION is frozen
+        into that baked geometry the same way its params are, and turning
+        the (now-identity) transform on top would just rotate it wrong.
+        Un-bake (regenerate) to pick up a view change.
+
+        ``view`` is validated here (not just by the API layer): an invalid
+        or no-op value is silently ignored, matching ``ProjectPatch``'s
+        existing tolerance."""
+        if view not in ("portrait", "landscape") or view == self.project.view:
+            return
+        old = self.project.view
+        targets = []
+        for layer in self.project.layers:
+            if layer.source.type != "generator" or not layer.source.generator:
+                continue
+            try:
+                src = get_source(layer.source.generator)
+            except KeyError:
+                continue  # stale/renamed module id — nothing to correct
+            if src.orientation == "geometry":
+                targets.append(layer)
+        with self._lock:
+            if targets:
+                self._checkpoint()
+            self.project.view = view
+            if not targets:
+                return
+            step = self._orientation_turn()
+            if old == "portrait":  # portrait -> landscape undoes the turn
+                step = _invert_affine(step)
+            for layer in targets:
+                layer.transform = _mul_affine(step, layer.transform)
 
     def add_generated_layer(self, generator_id: str, params: dict[str, Any]) -> CanvasLayer:
         src = get_source(generator_id)

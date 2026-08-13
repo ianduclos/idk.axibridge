@@ -1931,8 +1931,8 @@ def patch_project(body: ProjectPatch) -> dict[str, Any]:
         p.name = body.name
     if body.guide is not None:
         p.guide = body.guide
-    if body.view in ("portrait", "landscape"):
-        p.view = body.view
+    if body.view is not None:
+        session.set_view(body.view)  # retroactively re-orients existing "geometry" layers too
     if body.plot_options is not None:
         p.plot_options = body.plot_options
     return _project_payload()

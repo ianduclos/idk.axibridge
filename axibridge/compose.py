@@ -265,7 +265,12 @@ class Project(BaseModel):
     name: str = "untitled"
     layers: list[CanvasLayer] = Field(default_factory=list)
     guide: PaperGuide = Field(default_factory=PaperGuide)
-    view: Literal["portrait", "landscape"] = "portrait"  # display-only
+    # Not display-only: changing it through Session.set_view() retroactively
+    # re-orients every live "geometry"-oriented layer's transform to match
+    # (session.py's _orientation_turn/_placement_transform). Never set this
+    # field directly outside that method, or existing oriented layers go
+    # stale relative to the new view.
+    view: Literal["portrait", "landscape"] = "portrait"
     pens_used: dict[str, Pen] = Field(default_factory=dict)
     backend_params: dict[str, dict[str, Any]] = Field(default_factory=dict)
     plot_options: PlotOptions = Field(default_factory=PlotOptions)
