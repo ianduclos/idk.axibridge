@@ -1,8 +1,30 @@
 ---
 project: idk.axibridge
-updated: 2026-08-11
-entries: 8
+updated: 2026-08-13
+entries: 9
 ---
+
+### Eye-check: text_fill + two orientation fixes — opened 2026-08-13, owner: ian
+- done: new "Text (filled)" source (real font outlines, closed/holed shapes,
+  system-font discovery, drag-in upload) plus two bug fixes found and closed
+  in the same session — a layer left un-rotated after toggling the view
+  (affects every `orientation="geometry"` source, not just text_fill), and
+  grid-sheet frame order ignoring portrait. Everything verified via
+  Playwright against the real UI and the full suite (990 passed), but per
+  standing rule that's provisional until you've clicked through it yourself.
+- next:
+  - Try the actual fonts you care about — a real system font (Helvetica/
+    Arial/Times New Roman if installed), the bundled Recursive variable
+    font's four sliders, and drag a `.ttf` file onto the canvas.
+  - Toggle portrait/landscape on a text/text_fill layer created in the
+    *other* view and confirm it reads right, then check a grid-sheet bake
+    (any cols×rows) in portrait for natural reading order.
+  - Nothing here has touched paper — this is screen/geometry-level only.
+- blockers: none.
+- context: `axibridge/sources/text_fill.py` + `_fontglyph.py` module
+  docstrings carry the font reasoning; `session.py`'s `set_view` and
+  `_grid_place` docstrings carry the orientation-fix derivation; STATUS.md's
+  top entry has the commit-by-commit summary.
 
 ### Docs-upkeep pass — opened 2026-08-11, owner: claude-hub — **DONE 2026-08-11**
 - done: the pass ran (Opus, docs only — no code, no tests, suite untouched at

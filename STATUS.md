@@ -1,17 +1,77 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-08-11
+updated: 2026-08-13
 machine: mac+pi
-summary: The E-batch, timeline v2 (chains, bottom bar, frame-grid scrub), and the staging/plot rework shipped in one ~15-commit round (843 → 947 passed); an Opus docs-upkeep pass runs next, then Ian's bench eye-check of the whole round.
+summary: New filled-outline text generator (real font outlines, system-font discovery, drag-in upload) shipped in three commits, then Ian's own testing surfaced two orientation bugs (layers sideways after a view toggle; grid-sheet frame order ignoring portrait) — both root-caused and fixed same session, suite 947 → 990.
 next:
-  - "Opus docs-upkeep pass runs right after this wrapup — see HANDOFF"
-  - "Ian eye-checks the whole round — CHECKME.md's 2026-08-11 section; hardware pass on the multi-pen swap queue is separate and unverified beyond the simulator"
-  - "Parked ideas from timeline-v2 (per-param copy/paste, dynamic trays, project-starts-in-a-tray, +keyframe jump-to-new-key, held-queue-survives-view-change) are in ROADMAP / HANDOFF, not scheduled"
-  - "Still open from before this round: bench eye-checks of offset_fill + brush, the 07-16 to 19 wave, and the URGENT round (see HANDOFF)"
+  - "Ian eye-checks all of this in the real UI — Playwright-verified only so far (text_fill's three phases, both orientation fixes)"
+  - "Pi runbook: fonttools moved from a transitive to a direct dependency; skia-pathops is a new optional extra (pip install axibridge[text]), deliberately excluded from the Pi like scikit-fmm — confirm idkpi's venv still installs cleanly"
+  - "Still open from before this round: bench/hardware eye-checks going back to 2026-07-13 (offset_fill + brush, the 07-16→19 wave, the URGENT round, the 2026-08-11 E-batch/timeline-v2 round) — see HANDOFF"
 handoff_for: ian
 ---
 # idk.axibridge — status
+
+**Session 2026-08-13 (Sonnet 5): filled-outline text generator, then two orientation bugs found and fixed.**
+
+Five commits, suite 947 → 990. Two pieces of work, the second triggered by
+Ian testing the first.
+
+**`text_fill` — real font outlines as closed, fillable shapes**, alongside
+the existing stroke-only `text`. Shipped in three phases:
+1. **Geometry core** (`b1559e1`): `axibridge/sources/_fontglyph.py` — shared
+   glyph-outline machinery (font loading, variable-axis instancing, TrueType/
+   CFF contour flattening, composite-glyph decomposition) used by both `text`
+   (relocated onto it, no behavior change) and the new module. Overlap
+   resolution runs through skia-pathops when installed (optional, same
+   scikit-fmm-style accelerator pattern) — Recursive's own glyphs turned out
+   to need it (a rings-count mismatch with/without confirmed this empirically,
+   not hypothetically). One bundled font: Recursive (OFL variable, weight/
+   slant/mono/casual sliders, each a no-op on a font lacking that axis).
+2. **System-font discovery** (`fcec806`): `axibridge/system_fonts.py` scans
+   macOS/Linux font directories (never raises; empty on the Pi, which is
+   correct, not broken) so real Helvetica/Arial/Times New Roman render where
+   actually installed — they're proprietary and can't be bundled. 1113 faces
+   found on this Mac in ~0.3s. New `GET /api/fonts`, folded into `/api/state`
+   too (mirrors how image assets already hydrate).
+3. **Drag-in upload** (`a86c826`): fonts share the existing image asset
+   store rather than a parallel one (its persistence/versioning were already
+   blob-agnostic) — `AssetStore` gained no "kind" tag at all, just a second
+   decode-as-validation accessor (`font_label`, fontTools instead of PIL).
+   Found and fixed a latent bug this surfaced: `info()` assumed a bad decode
+   always returns `None`, but it actually raises — harmless before because
+   upload always rolled back synchronously, not harmless once fonts
+   legitimately share the store. Also caught a real cache-correctness bug
+   while wiring resolution: re-uploading a different font under the same
+   filename would have silently kept serving stale glyph instances.
+
+**Then Ian reported it "renders sideways in portrait"** — reproduced
+identically against the *original* `text` module, so not a text_fill
+regression. Two related but distinct bugs, both closed same session:
+
+- **`c13abb4`** — `Session._placement_transform` only ever corrected a
+  `orientation="geometry"` layer's rotation *at creation*. Toggle the view
+  afterwards and the layer just sat there un-rotated. New
+  `Session.set_view()` retroactively re-applies the same quarter-turn (or its
+  inverse) to every live layer's existing transform — exact round-trip, no
+  drift, manual Placement edits preserved. The backend fix alone wasn't
+  enough: the frontend was discarding the corrected response and never
+  refetching resolved geometry, so the canvas kept drawing the old transform
+  even after the API returned the right one.
+- **`e6671f3`** — same root cause, different code path: baking a grid sheet
+  (e.g. 3×3) in portrait put frames in landscape reading order.
+  `_grid_place`'s frame-index → cell mapping was pure machine-frame divmod
+  with no idea the portrait display map exists. Fixed so cols/rows mean
+  "as you see them" in either view.
+
+Both fixes are hand-derived, numerically verified (a git-stash spot check
+confirmed the new regression tests fail on the old code and pass on the
+new), and the layer-orientation fix was checked live in the browser end to
+end. `tests/test_orientation.py` had a real coverage gap the investigation
+found along the way — `text_fill` and `flowfield` were both silently absent
+from the only test that exercises actual rotation behavior — now closed.
+
+---
 
 **Session 2026-08-11 continued (Fable 5 orchestrating Sonnet/Opus): the E-batch, timeline v2, and the staging/plot rework.**
 
