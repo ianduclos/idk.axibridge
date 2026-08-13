@@ -44,6 +44,7 @@ def _growing_follow():
 
 
 def test_grid_place_cells_within_rect_and_per_layer():
+    session.project.view = "landscape"  # cell math below is landscape-style
     _two_pen_project()
     placed = session._grid_place([0.0, 0.0, 0.0, 0.0], cols=2, rows=2, margin_mm=5.0)
     assert len(placed) == 4
@@ -93,6 +94,7 @@ def _bbox(frame):
 
 
 def test_grid_place_rotates_two_up_and_eight_up():
+    session.project.view = "landscape"  # cell math below is landscape-style
     _wide_scene()
     g = session.project.guide
 
@@ -123,6 +125,7 @@ def test_grid_place_rotation_generalises_beyond_the_old_lookup():
     scale in each orientation (docs/plans/timeline-v2.md §2c "Sheet grid"),
     so a shape that was never in that table — 3×1 — must still rotate when
     the cell is strongly portrait and the content is landscape."""
+    session.project.view = "landscape"  # cell math below is landscape-style
     _wide_scene()
     g = session.project.guide
 
@@ -134,6 +137,7 @@ def test_grid_place_rotation_generalises_beyond_the_old_lookup():
 
 
 def test_grid_place_rotation_covers_more_paper():
+    session.project.view = "landscape"  # cell math below is landscape-style
     _wide_scene()
     g = session.project.guide
 
@@ -144,6 +148,72 @@ def test_grid_place_rotation_covers_more_paper():
     box = _bbox(session._grid_place([0.0, 0.0], cols=2, rows=1, margin_mm=5.0)[0])
     assert box[3] - box[1] == pytest.approx(cell_h, abs=1e-6)
     assert box[3] - box[1] > 3 * (box[2] - box[0])
+
+
+# -- portrait reading order -----------------------------------------------
+#
+# cols/rows are what the user SEES on the sheet, in whichever view is
+# current (_grid_place's docstring) — frame 0 must land top-left AS
+# DISPLAYED, frame 1 to its right, etc., in EITHER view. The bed's own
+# axes are transposed+mirrored relative to the screen under the portrait
+# display map, so a naive row-major divmod into machine (row, col) —
+# correct in landscape — reads in a different order once the same cells
+# are viewed through that map. This is what actually put a frame's
+# on-paper reading order "in respect to landscape" no matter which view
+# was showing.
+
+
+def _displayed(pt):
+    """Machine mm -> what the canvas draws in portrait — same map as
+    test_orientation.py's displayed(), duplicated here to keep this file's
+    grid tests self-contained."""
+    from axibridge.compose import BED_HEIGHT
+
+    x, y = pt
+    return (BED_HEIGHT - y, x)
+
+
+def _sized_centers(placed):
+    """(centre_x, centre_y, size) per placed frame — size is the bbox's
+    longer axis, used below to identify WHICH frame index landed in a
+    cell independent of where that cell is."""
+    out = []
+    for frame in placed:
+        xs = [x for paths in frame.values() for p in paths for x, _ in p.points]
+        ys = [y for paths in frame.values() for p in paths for _, y in p.points]
+        cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+        out.append((cx, cy, max(max(xs) - min(xs), max(ys) - min(ys))))
+    return out
+
+
+@pytest.mark.parametrize("cols,rows", [(2, 2), (2, 1), (1, 2), (3, 1)])
+def test_grid_place_reading_order_is_view_independent(cols, rows):
+    """A growing tween (radius 10->40 with t) makes each frame's bbox SIZE
+    a unique, monotonic fingerprint for its index — independent of which
+    cell it lands in — so reading order can be checked by size rank
+    without needing visually distinguishable geometry per frame."""
+    _growing_follow()
+    n = cols * rows
+    ts = [i / (n - 1) for i in range(n)] if n > 1 else [0.0]
+
+    session.project.view = "landscape"
+    land = _sized_centers(session._grid_place(ts, cols=cols, rows=rows, margin_mm=5.0,
+                                              master_scale_ts=ts))
+    sizes = [s for _, _, s in land]
+    assert sizes == sorted(sizes), "frame sizes should already rank by index (sanity check)"
+
+    session.project.view = "portrait"
+    port = session._grid_place(ts, cols=cols, rows=rows, margin_mm=5.0, master_scale_ts=ts)
+    disp = [(*_displayed((cx, cy)), s) for cx, cy, s in _sized_centers(port)]
+
+    for i in range(n):
+        screen_row, screen_col = divmod(i, cols)
+        for j in range(i + 1, n):
+            jr, jc = divmod(j, cols)
+            if jr == screen_row:  # same reading-row: j must be to the right of i
+                assert disp[i][0] < disp[j][0], f"frame {j} should be right of frame {i}"
+            if jc == screen_col:  # same reading-column: j must be below i
+                assert disp[i][1] < disp[j][1], f"frame {j} should be below frame {i}"
 
 
 # -- sheet documents: paging, pen grouping, offsets ---------------------------

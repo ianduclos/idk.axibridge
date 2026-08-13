@@ -1293,8 +1293,21 @@ class Session:
             raise RuntimeError("nothing to place (no visible geometry across the frame range)")
 
         sheet_x, sheet_y, sheet_w, sheet_h = self._sheet_rect()
-        cell_w = sheet_w / cols - 2 * margin_mm
-        cell_h = sheet_h / rows - 2 * margin_mm
+        # cols/rows are what the user SEES on the sheet, in whichever view is
+        # current — the same "I shouldn't have to think about this" contract
+        # as a single layer's orientation (test_orientation.py), applied to
+        # which CELL a frame index lands in instead of a layer's transform.
+        # The bed's own axes are transposed relative to the screen under the
+        # portrait display map (canvas.js's translate(H 0) rotate(90):
+        # machine (x, y) -> screen (H - y, x)) — a machine COLUMN determines
+        # screen VERTICAL position, a machine ROW determines screen
+        # HORIZONTAL position, mirrored. So the physical grid this actually
+        # subdivides into is (mcols, mrows) = (rows, cols) in portrait; see
+        # the per-frame loop below for the matching index remap.
+        portrait = self.project.view == "portrait"
+        mcols, mrows = (rows, cols) if portrait else (cols, rows)
+        cell_w = sheet_w / mcols - 2 * margin_mm
+        cell_h = sheet_h / mrows - 2 * margin_mm
         if cell_w <= 0 or cell_h <= 0:
             raise RuntimeError("margin too large for this grid on the current paper guide")
 
@@ -1325,9 +1338,16 @@ class Session:
         placed_frames: list[dict[str, list[Path]]] = []
         for i, t in enumerate(ts):
             frame = visible_geo(t)
-            row, col = divmod(i, cols)  # row-major, left-to-right, top-to-bottom
-            cx = sheet_x + (col + 0.5) * (sheet_w / cols)
-            cy = sheet_y + (row + 0.5) * (sheet_h / rows)
+            if portrait:
+                # read (screen_row, screen_col) in SCREEN terms first —
+                # row-major, left-to-right, top-to-bottom as the user sees
+                # it — then map to the machine cell that displays there.
+                screen_row, screen_col = divmod(i, cols)
+                mcol, mrow = screen_row, (cols - 1) - screen_col
+            else:
+                mrow, mcol = divmod(i, cols)  # row-major, left-to-right, top-to-bottom
+            cx = sheet_x + (mcol + 0.5) * (sheet_w / mcols)
+            cy = sheet_y + (mrow + 0.5) * (sheet_h / mrows)
             if rotate:
                 aff = Affine(a=0.0, b=scale, c=-scale, d=0.0,
                              e=cx + scale * fcy, f=cy - scale * fcx)
@@ -1342,12 +1362,17 @@ class Session:
     def _sheet_marks(self, cols: int, rows: int, arm_mm: float = 2.0) -> list[Path]:
         """Registration crosshairs at every grid intersection of the sheet —
         (cols+1)×(rows+1) small ＋ marks separating the frames. Clamped to the
-        bed (the machine frame has no negatives)."""
+        bed (the machine frame has no negatives). ``cols``/``rows`` are
+        screen-frame, like ``_grid_place`` — swapped to the physical
+        (mcols, mrows) the bed actually divides into under portrait, so the
+        crosshairs land on the SAME cell boundaries ``_grid_place`` used
+        (a full mesh, so no reading-order remap needed, just the swap)."""
         x0, y0, w, h = self._sheet_rect()
+        mcols, mrows = (rows, cols) if self.project.view == "portrait" else (cols, rows)
         out: list[Path] = []
-        for i in range(cols + 1):
-            for j in range(rows + 1):
-                cx, cy = x0 + i * w / cols, y0 + j * h / rows
+        for i in range(mcols + 1):
+            for j in range(mrows + 1):
+                cx, cy = x0 + i * w / mcols, y0 + j * h / mrows
                 out.append(Path(points=[
                     (max(cx - arm_mm, 0.0), cy),
                     (min(cx + arm_mm, compose.BED_WIDTH), cy)], filled=False))
