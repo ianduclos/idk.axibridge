@@ -195,3 +195,55 @@ Simulator/headless-verified only — nothing below has had your eyes on it.
   layout summary; closing the popup should re-sync the timeline; pasting
   somewhere it can't apply should show a skip notice rather than silently
   doing nothing.
+
+---
+
+## 2026-08-17 — colour separation, and seeds everywhere
+
+Backend, UI and acceptance tests all pass, but the actual deliverable here is
+what two transparent felt tips do when they overprint, and no test can judge
+that. Nothing in this section has touched paper.
+
+**On screen, first**
+
+- **Separate a real photo.** Compose → an image generator (halftone is the
+  most legible) → pick an image → the **⌗ Separate** row appears under the
+  form. CMYK by default. Press it; you should get four plates named
+  `Halftone · cyan` and so on, landing pixel-exactly on top of one another.
+- **Black generation** (in the collapsed Image-processing group) is the knob
+  worth playing with before you commit ink. At 1.0 the K plate carries the
+  darks and CMY stay lean; at 0.0 the K plate is **empty** and the darks come
+  from overprinting CMY. The row tells you about the empty K plate, but
+  confirm that reads as informative rather than alarming.
+- **Effects on one plate.** Put `hatch_fill` or `freehand` on the cyan layer
+  alone. This is the thing the whole design is for — confirm it feels as
+  ordinary as it should, because a plate is just a layer.
+- **Per-plate generators.** Each plate row has a generator picker defaulting
+  to "same as above". Try cyan as halftone and magenta as subline — that is
+  the regime collision along the colour axis, and whether it's a good picture
+  or a mess is entirely your call.
+- **Tone bands** mode separates by darkness instead of colour (lights/mids/
+  darks). The `tone_rescale` checkbox in Image processing is the decision you
+  said you'd want to change: off, the bands add back up to the original ink;
+  on, each band reads at full contrast on its own. Off is the default.
+
+**Then on paper — the part that actually matters**
+
+- **Does the overprint colour work?** Cyan over magenta should give something
+  like blue. If the plates read as three separate drawings rather than one
+  image, the black-generation default is the first thing to move.
+- **Moiré.** Separating with `halftone` puts four dot grids at the same angle
+  on top of each other, which in real printing is exactly what screen angles
+  exist to prevent. If it moirés badly, that's the roadmapped per-plate screen
+  angles becoming worth building — I deliberately didn't guess.
+- **Misregistration.** The `slop` box (mm) nudges each plate off register on
+  purpose. 0 is exact. Whether a bit of drift reads as charm or as a mistake
+  is a paper question.
+
+**Seeds — a behaviour change worth noticing**
+
+- Adding the same effect to two layers now gives two different seeds, so
+  stacking `freehand` twice no longer produces the identical wobble. Same for
+  layers created by the lineart stack, the separation stack, or the API.
+  If anything you expected to match now differs, that's this — and an explicit
+  seed still always wins.

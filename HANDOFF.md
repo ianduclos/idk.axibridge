@@ -1,8 +1,38 @@
 ---
 project: idk.axibridge
-updated: 2026-08-13
+updated: 2026-08-17
 entries: 9
 ---
+
+### Eye-check + paper: colour separation — opened 2026-08-17, owner: ian
+- done: image generators can sample a colour plate instead of only luminance
+  (CMYK / RGB / luma, with a black-generation knob), plus tonal-band
+  separation, plus a ⌗ Separate row that turns one image into N ordinary
+  generator layers with a pen each, in one undo step. A plate may carry its
+  own generator, so cyan can be halftone dots and magenta squiggles. Suite
+  990 → 1042 including three acceptance tests that drive the real UI end to
+  end. Separately: seed rolling now covers effects and every server-side
+  creation path, which it never did before.
+- next:
+  - Work through **CHECKME.md's 2026-08-17 section** — the screen half first
+    (black generation, effects on one plate, per-plate generators, tone
+    bands), then paper.
+  - **The paper half is the actual deliverable and no test reaches it**: does
+    cyan-over-magenta give you a real third colour, does separating with
+    `halftone` moiré badly (four dot grids at one angle — if it does, the
+    roadmapped per-plate screen angles become worth building), and does the
+    `slop` misregistration read as charm or as a mistake.
+  - Two decisions are yours once you have seen ink: whether the subtract GCR
+    form lays the right amount of ink (the divide form is the textbook
+    alternative and roughly doubles it), and whether `tone_rescale` should
+    default on. Both are one-line changes documented with their alternatives.
+- blockers: none.
+- context: `docs/plans/channel-separation.md` is the design doc — it carries a
+  decision table of every judgment call, its alternative, and the exact change
+  that reverses it. `axibridge/channels.py`'s docstring has the polarity
+  contract everything rests on. ROADMAP's colour-separation follow-ons (spot
+  colour, HSV/Lab, the N-pen solve, screen angles) say what was deliberately
+  left for later.
 
 ### Eye-check: text_fill + two orientation fixes — opened 2026-08-13, owner: ian
 - done: new "Text (filled)" source (real font outlines, closed/holed shapes,
@@ -25,34 +55,6 @@ entries: 9
   docstrings carry the font reasoning; `session.py`'s `set_view` and
   `_grid_place` docstrings carry the orientation-fix derivation; STATUS.md's
   top entry has the commit-by-commit summary.
-
-### Docs-upkeep pass — opened 2026-08-11, owner: claude-hub — **DONE 2026-08-11**
-- done: the pass ran (Opus, docs only — no code, no tests, suite untouched at
-  947). `docs/plans/timeline-v2.md` is CLOSED: every build-order slice is
-  annotated SHIPPED with its commit and a new **§6 closing ledger** records
-  the slices, all ten proposals, the two supersessions (S4's Q7(b) play
-  button; framing → crop) and what stayed deliberately open. ROADMAP gained an
-  **"Animation v2 — SHIPPED 2026-08-11"** section (chains, the bar, the
-  staging/plot rework, plus the 08-10→11 perf round and
-  `fast_marching_contours`, neither of which had been recorded), and the
-  entries this round resolved are struck/annotated in place: ">2 keyframes /
-  keyframe lists vs layer pairs" (answered — a keys list; grouping still
-  open), `framing` under Sheets workflow v2, the 1/2/4/16 presets, the
-  GIF/video "convenience only" line, multidimensional sheet variants,
-  plot-cursor persistence and staging browser ergonomics. ARCHITECTURE.md:
-  the tween description generalises past two endpoints, chains get their own
-  paragraph, "Plotting — manual multi-pen" records the view-bound ▶ Plot and
-  the guided pass queue, and the tray paragraph records A→blends→B groups,
-  the chain fence and ↻ re-bake. CLAUDE.md: `timeline.js` in the table,
-  chains named on the `tween.py` row, one new ▶-Plot-semantics invariant.
-- next: nothing — this entry is closed; the orchestrator reviews and commits.
-  `docs/MODULES.md` was checked and deliberately left alone: chains live
-  inside `tween.py` and the crop rename is a sheet format, so neither changes
-  the module-authoring story.
-- blockers: none.
-- context: `docs/plans/timeline-v2.md` is the round's contract (Ian's Q1-Q7
-  rulings + §2b/§2c + the plot-flow ruling); STATUS.md's top entry lists what
-  actually shipped, which is the thing to check docs against.
 
 ### Bench + hardware check: E-batch, timeline v2, staging/plot rework — opened 2026-08-11, owner: ian
 - done: ~15 commits, suite 843 → 947, all simulator/headless-verified only —

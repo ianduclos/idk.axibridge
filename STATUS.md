@@ -1,16 +1,76 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-08-13
+updated: 2026-08-17
 machine: mac+pi
-summary: New filled-outline text generator (real font outlines, system-font discovery, drag-in upload) shipped in three commits, then Ian's own testing surfaced two orientation bugs (layers sideways after a view toggle; grid-sheet frame order ignoring portrait) — both root-caused and fixed same session, suite 947 → 990.
+summary: Colour separation shipped — any of the 16 image generators can now sample a CMYK/RGB plate instead of only luminance, and one button turns an image into N ordinary generator layers with a pen each; seed rolling was also extended to effects and every server-side creation path, which it had never covered.
 next:
-  - "Ian eye-checks all of this in the real UI — Playwright-verified only so far (text_fill's three phases, both orientation fixes)"
-  - "Pi runbook: fonttools moved from a transitive to a direct dependency; skia-pathops is a new optional extra (pip install axibridge[text]), deliberately excluded from the Pi like scikit-fmm — confirm idkpi's venv still installs cleanly"
-  - "Still open from before this round: bench/hardware eye-checks going back to 2026-07-13 (offset_fill + brush, the 07-16→19 wave, the URGENT round, the 2026-08-11 E-batch/timeline-v2 round) — see HANDOFF"
+  - "Ian works through CHECKME.md's 2026-08-17 section — the screen half, then paper. The overprint colour of real felt tips is the actual deliverable and no test reaches it"
+  - "Two calls are Ian's once there is ink: whether the subtract GCR form lays the right amount (the divide form roughly doubles it) and whether tone_rescale should default on — both one-line changes, both documented with their alternatives in docs/plans/channel-separation.md"
+  - "If separating with halftone moirés badly, the roadmapped per-plate screen angles become worth building — deliberately not guessed at"
+  - "Still open from before: bench/hardware eye-checks going back to 2026-07-13, and the multi-pen swap queue has still never touched a real AxiDraw — see HANDOFF"
 handoff_for: ian
 ---
+
 # idk.axibridge — status
+
+**Session 2026-08-17 (Opus 5): colour separation, and seeds everywhere.**
+
+Three commits, suite 990 → 1042. ROADMAP.md was also pruned to open work only
+at the top of the session — shipped items now leave the file rather than
+accumulating as struck-through history (`git log` and STATUS keep that), which
+took it from 1214 lines to ~330.
+
+**Colour separation** (`a8c4751`, `81e3280`) closes the roadmap's long-standing
+"CMYK / greyscale separation" item. axibridge could already *plot* in several
+colours — pen passes, nib-offset registration, the guided swap queue — but
+nothing in it could produce work that wanted several colours, because every
+image generator saw exactly one thing: luminance.
+
+- **The polarity contract is what made it small.** Every plate returns in
+  `asset_store.grayscale`'s convention (rows in [0,1], 0 = draw hardest), so
+  `_tone_lut`, the brightness/contrast/gamma stack, `ImageSampler` and
+  `image_threshold`'s marching squares need not know a channel exists. 16
+  generators gained channel selection from four one-line edits.
+- **`luma` delegates to `grayscale()`** rather than being reimplemented, so the
+  default path is byte-identical by identity, not by agreement — the existing
+  990-test suite passing unchanged is the evidence.
+- `black_generation` 0..1 moves the achromatic component between CMY and K.
+  At 0 the CMY plates are *exactly* the RGB planes and the K plate is empty:
+  both correct, both pinned as tests, and the UI says the second one out loud.
+- **A plate carries a params override, not a channel.** That one choice makes
+  colour and tonal separation the same operation, and lets a plate name its
+  own generator — cyan as halftone dots, magenta as squiggles. Ian's idea, and
+  the best structural call of the round.
+- **Plates are plain `CanvasLayer`s** with real generator provenance: own
+  effect stack, pen, transform, occluder flags, tween behaviour. Nothing links
+  them, which is the point — the button only creates four normal layers
+  atomically. Grouping-by-default is prepared for (one wrapper call in
+  `add_separation_stack`) without pre-empting the parked grouping question.
+- Two real bugs the tests caught: a tuple seed for `random.Random` (invalid in
+  3.13), and abutting tone windows both claiming the shared boundary — windows
+  are half-open now, so tonal plates partition the range exactly.
+- `docs/plans/channel-separation.md` carries a **decision table**: every
+  judgment call, its alternative, and the one-line change that reverses it.
+  Ian asked for this specifically so changing his mind later costs an
+  afternoon rather than an excavation.
+
+**Seeds** (`77ef845`), from Ian noticing that many modules still started at 0.
+The July round had put the roll in exactly one place — `renderGenForm` — so it
+only covered the Compose generator picker. Effects never rolled at all (two
+`freehand` layers wobbled identically), and neither did `add_lineart_stack`,
+the new separation stack, or any scripted `/api/layers/generate`. Now one rule
+each side (`rollSeed` in JS, `Session._rolled_seed` in Python): an **integer**
+field named exactly `seed`. `fast_marching_topo`'s `seed_x`/`seed_y` are
+wavefront *positions* — floats — and rolling them would move the picture
+rather than vary its texture, which is why the rule is that narrow.
+
+**Nothing here has touched paper.** The acceptance tests drive the real UI end
+to end (upload → separate → four named plates → one undo removes all four),
+but what two transparent felt tips do when they overprint is the actual
+deliverable and no test can judge it.
+
+---
 
 **Session 2026-08-13 (Sonnet 5): filled-outline text generator, then two orientation bugs found and fixed.**
 
