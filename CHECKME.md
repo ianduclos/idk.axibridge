@@ -247,3 +247,18 @@ that. Nothing in this section has touched paper.
   layers created by the lineart stack, the separation stack, or the API.
   If anything you expected to match now differs, that's this — and an explicit
   seed still always wins.
+
+**HSL mode (added same day, for fun)**
+
+- A fourth mode in the separation dropdown: hue / saturation / lightness.
+  Not an ink model — nobody prints these — so judge it as pictures, not as a
+  reproduction.
+- **Saturation** is the one that turned out useful: ink only where the image
+  is colourful, blank where it's grey. It's a "where is there colour" mask.
+- **Lightness** is a different greyscale from luma — even-handed about colour,
+  where luma knows blue is dark and yellow is bright. Worth comparing the two
+  on the same photo.
+- **Hue** has a hard seam through every red, because hue is an angle and a
+  circle doesn't flatten onto a line. That's inherent, not a bug to report.
+  Greys come out blank on both hue and saturation, deliberately — otherwise a
+  greyscale photo would have separated into a solid black rectangle.

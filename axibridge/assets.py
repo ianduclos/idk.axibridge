@@ -331,7 +331,13 @@ class AssetStore:
         and K and is meaningless for the others. See ``channels.py`` for the
         polarity contract and the maths.
         """
-        from .channels import INK_CHANNELS, PLANE_CHANNELS, cmyk_plate
+        from .channels import (
+            HSL_CHANNELS,
+            INK_CHANNELS,
+            PLANE_CHANNELS,
+            cmyk_plate,
+            hsl_plate,
+        )
 
         # luma DELEGATES rather than being reimplemented: it is the default
         # every existing project already sits on, and PIL's fixed-point
@@ -339,7 +345,8 @@ class AssetStore:
         # and hope matches. Same call, same cache, byte-identical by identity.
         if channel == "luma":
             return self.grayscale(name, blur_px, rotate, size)
-        if channel not in INK_CHANNELS and channel not in PLANE_CHANNELS:
+        if (channel not in INK_CHANNELS and channel not in PLANE_CHANNELS
+                and channel not in HSL_CHANNELS):
             raise ValueError(f"unknown channel {channel!r}")
 
         bg = min(max(float(black_generation), 0.0), 1.0)
@@ -376,17 +383,21 @@ class AssetStore:
         w, h = img.size
 
         plane = PLANE_CHANNELS.get(channel)
-        if plane is not None or bg == 0.0:
-            # Fast path, at C speed. An RGB plane is just a split; and because
-            # black_generation 0 pulls out no black at all, C/M/Y collapse to
-            # 1 - (1 - r) = r there, i.e. the very same planes.
-            idx = plane if plane is not None else {"c": 0, "m": 1, "y": 2, "k": None}[channel]
-            if idx is None:  # the K plate with no black generation: empty
+        if channel in INK_CHANNELS and bg == 0.0:
+            # black_generation 0 pulls out no black at all, so C/M/Y collapse
+            # to 1 - (1 - r) = r — the RGB planes exactly, at C speed.
+            plane = {"c": 0, "m": 1, "y": 2, "k": None}[channel]
+            if plane is None:  # the K plate with no black generation: empty
                 rows = [[1.0] * w for _ in range(h)]
-            else:
-                px = img.split()[idx].tobytes()
-                rows = [[px[y * w + x] / 255.0 for x in range(w)] for y in range(h)]
-        else:
+                plane = -1  # handled; skip both branches below
+        if plane is not None and plane >= 0:
+            px = img.split()[plane].tobytes()
+            rows = [[px[y * w + x] / 255.0 for x in range(w)] for y in range(h)]
+        elif plane is None:
+            # Per-pixel decode. The plate function returns plate polarity
+            # directly for HSL and ink units for CMYK, so the one inversion
+            # lives here rather than being repeated in every decoder.
+            ink_plate = channel in INK_CHANNELS
             px = img.tobytes()  # mode "RGB": three bytes per pixel, row-major
             rows = []
             for y in range(h):
@@ -394,13 +405,14 @@ class AssetStore:
                 row = []
                 for x in range(w):
                     i = base + x * 3
-                    ink = cmyk_plate(px[i] / 255.0, px[i + 1] / 255.0,
-                                     px[i + 2] / 255.0, channel, bg)
-                    # The subtract form stays in range analytically; the clamp
-                    # is for float dust, because ImageSampler indexes a
-                    # 256-entry LUT with int(v * 255 + 0.5) and an out-of-range
-                    # value is an IndexError, not a slightly wrong pixel.
-                    row.append(min(max(1.0 - ink, 0.0), 1.0))
+                    r, g, b = px[i] / 255.0, px[i + 1] / 255.0, px[i + 2] / 255.0
+                    v = (1.0 - cmyk_plate(r, g, b, channel, bg)) if ink_plate \
+                        else hsl_plate(r, g, b, channel)
+                    # Both stay in range analytically; the clamp is for float
+                    # dust, because ImageSampler indexes a 256-entry LUT with
+                    # int(v * 255 + 0.5) and an out-of-range value is an
+                    # IndexError, not a slightly wrong pixel.
+                    row.append(min(max(v, 0.0), 1.0))
                 rows.append(row)
 
         result = (rows, w, h)

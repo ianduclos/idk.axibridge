@@ -62,9 +62,12 @@ Shipped work has been pruned from this file (2026-08-17) — see `git log` /
       felt tips rather than four theoretical inks. The real design work is
       the metric — RGB euclidean distance lies about perceived colour, Lab
       doesn't.
-    - **HSV / Lab opponent plates**: a hue plate is a strange picture nobody
-      prints. Nearly free now that RGB decode exists; squarely in uncanny
-      territory.
+    - ~~**HSV / Lab opponent plates**~~ — **HSL shipped 2026-08-17** (hue /
+      saturation / lightness, an HSL mode in the separation row). Saturation
+      turned out to be the useful one (ink only where the image is colourful)
+      and lightness is a genuinely different greyscale from luma. **Lab is
+      still open** and is the better half: perceptual opponent axes, and its
+      distance metric is what spot colour above actually wants.
     - **N-pen least-squares separation**: pick 3–5 real pens from the library
       and solve the subtractive mix per pixel for the closest match to the
       photo. The end of Cohen's colour logic — a palette chosen by what you

@@ -189,6 +189,7 @@ export function initComposeTab() {
             <option value="cmyk">CMYK</option>
             <option value="cmy">CMY (no black plate)</option>
             <option value="rgb">RGB</option>
+            <option value="hsl">HSL</option>
             <option value="tone">Tone bands</option>
           </select>
           <label title="nudge each plate off perfect registration, offset-print style">slop</label>
@@ -633,6 +634,9 @@ const SEPARATION_MODES = {
   cmyk: [["yellow", "y"], ["magenta", "m"], ["cyan", "c"], ["black", "k"]],
   cmy: [["yellow", "y"], ["magenta", "m"], ["cyan", "c"]],
   rgb: [["red", "r"], ["green", "g"], ["blue", "b"]],
+  // Not an ink model and nobody prints it — hue is an angle, so its plate has
+  // a hard seam through every red. Here because it makes strange pictures.
+  hsl: [["hue", "h"], ["saturation", "s"], ["lightness", "l"]],
 };
 
 /** Tone bands split the darkness range instead of the colour: same op, a

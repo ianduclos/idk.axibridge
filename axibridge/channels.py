@@ -38,11 +38,12 @@ from typing import Any, Literal
 
 from .assets import asset_store
 
-#: Every plate a generator can sample. Adding one means adding a decoder to
-#: ``CHANNEL_DECODERS`` and a label here — never touching a generator.
-ChannelName = Literal["luma", "c", "m", "y", "k", "r", "g", "b"]
+#: Every plate a generator can sample. Adding one means a `PLATE_DECODERS`
+#: entry and a label here — never touching a generator.
+ChannelName = Literal["luma", "c", "m", "y", "k", "r", "g", "b", "h", "s", "l"]
 
-CHANNEL_NAMES: tuple[str, ...] = ("luma", "c", "m", "y", "k", "r", "g", "b")
+CHANNEL_NAMES: tuple[str, ...] = (
+    "luma", "c", "m", "y", "k", "r", "g", "b", "h", "s", "l")
 
 CHANNEL_LABELS: dict[str, str] = {
     "luma": "Luminance",
@@ -53,6 +54,9 @@ CHANNEL_LABELS: dict[str, str] = {
     "r": "Red",
     "g": "Green",
     "b": "Blue",
+    "h": "Hue",
+    "s": "Saturation",
+    "l": "Lightness",
 }
 
 #: Plates that are ink separations — the only ones ``black_generation`` moves.
@@ -60,6 +64,9 @@ INK_CHANNELS: frozenset[str] = frozenset({"c", "m", "y", "k"})
 
 #: Plates that are a raw RGB plane, readable straight off ``Image.split()``.
 PLANE_CHANNELS: dict[str, int] = {"r": 0, "g": 1, "b": 2}
+
+#: Plates derived from HSL. Not ink separations — see ``hsl_plate``.
+HSL_CHANNELS: frozenset[str] = frozenset({"h", "s", "l"})
 
 
 def cmyk_plate(r: float, g: float, b: float, channel: str,
@@ -86,6 +93,55 @@ def cmyk_plate(r: float, g: float, b: float, channel: str,
         return k
     complement = {"c": 1.0 - r, "m": 1.0 - g, "y": 1.0 - b}[channel]
     return complement - k
+
+
+def hsl_plate(r: float, g: float, b: float, channel: str) -> float:
+    """One HSL plate for one pixel, already in plate polarity (0 = draw
+    hardest).
+
+    These are not ink separations and nobody prints them — they are here
+    because they make strange pictures, which is the point. Each reads
+    differently enough to be worth its own note:
+
+    * **l** (lightness) is ``(max + min) / 2``, which is *not* luma. Luma is a
+      weighted perceptual sum, so it knows yellow is bright and blue is dark;
+      lightness does not, and renders every saturated hue as a mid grey. The
+      same photograph through the two plates is visibly a different drawing —
+      flatter, and oddly even-handed about colour.
+    * **s** (saturation) is the genuinely useful one: ink where the image is
+      colourful, nothing where it is grey. Returned inverted so vivid areas
+      draw hardest.
+    * **h** (hue) is the strange one, and honestly so. Hue is an *angle*, so
+      it has no more-and-less: the plate sweeps red → yellow → green → cyan →
+      blue → magenta and then jumps back, leaving a hard seam through every
+      red in the picture. There is no way to remove that seam, because a
+      circle does not flatten onto a line; it is a property of asking the
+      question, not a defect.
+
+      Achromatic pixels return blank. Hue is undefined when saturation is
+      zero and conventionally reported as 0 (red), which would make a
+      greyscale photograph come out as a solid black rectangle — a bug
+      wearing the costume of a weird artistic choice. Near-grey pixels still
+      carry noisy hue, and that is inherent rather than fixable.
+    """
+    mx, mn = max(r, g, b), min(r, g, b)
+    d = mx - mn
+    lightness = (mx + mn) / 2.0
+    if channel == "l":
+        return lightness
+    if d <= 1e-9:  # achromatic: no hue, no saturation
+        return 1.0
+    if channel == "s":
+        # HSL saturation; the denominator only vanishes as d does, which the
+        # guard above already caught, but float dust can still overshoot 1.
+        return 1.0 - min(d / max(1.0 - abs(2.0 * lightness - 1.0), 1e-9), 1.0)
+    if mx == r:
+        hue = ((g - b) / d) % 6.0
+    elif mx == g:
+        hue = (b - r) / d + 2.0
+    else:
+        hue = (r - g) / d + 4.0
+    return hue / 6.0
 
 
 def sample_rows(

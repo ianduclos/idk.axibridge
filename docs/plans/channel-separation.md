@@ -208,8 +208,19 @@ enum entry, with **no generator, no session and no UI change**:
   What actually separates for a drawer of three arbitrary felt tips rather than
   four theoretical inks. The real design work is the metric: RGB euclidean
   distance lies about perceived colour, Lab does not.
-- **HSV / Lab opponent plates** — a hue plate is a strange picture nobody
-  prints. Nearly free now that RGB decode exists.
+- ~~**HSV / Lab opponent plates**~~ — **HSL shipped 2026-08-17**, and it was
+  the first real exercise of this seam: three plate definitions plus a mode in
+  the UI, no generator, session or endpoint change. Lab is still open and is
+  the more interesting half (perceptual opponent axes, and the right distance
+  metric for spot colour below). What HSL turned out to be worth:
+  **saturation** is the genuinely useful plate — ink where the image is
+  colourful, nothing where it is grey; **lightness** is a *different*
+  greyscale from luma, even-handed about colour where luma knows blue is dark
+  and yellow bright; **hue** is the strange one, with an unavoidable seam
+  through every red because a circle does not flatten onto a line. The trap
+  worth remembering: hue is undefined without saturation and conventionally
+  reported as 0 (red), so a greyscale photo would have separated into a solid
+  black rectangle. Achromatic pixels return blank instead.
 - **N-pen least-squares separation** — pick 3–5 real pens from the library and
   solve the subtractive mix per pixel for the closest match to the photograph.
   The end of Cohen's colour logic: a palette chosen by what you own rather than

@@ -135,6 +135,83 @@ def test_rgb_plane_is_the_raw_channel():
     assert plate("g") == [0.0, 1.0, 1.0, 0.0]
 
 
+# -- HSL: the fun ones ---------------------------------------------------------
+
+
+@pytest.fixture()
+def hsl_asset():
+    """Black, white, mid-grey, then the six saturated primaries/secondaries."""
+    from PIL import Image
+
+    px = [(0, 0, 0), (255, 255, 255), (128, 128, 128),
+          (255, 0, 0), (0, 255, 0), (0, 0, 255), (0, 255, 255)]
+    img = Image.new("RGB", (len(px), 1))
+    img.putdata(px)
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    asset_store.put("hsl.png", buf.getvalue())
+    return "hsl.png"
+
+
+def test_hue_is_blank_on_achromatic_pixels(hsl_asset):
+    """The trap this avoids: hue is undefined without saturation and is
+    conventionally reported as 0, which is red — so a greyscale photograph
+    would separate into a solid black rectangle. Blank is the honest answer."""
+    black, white, grey = plate("h", name=hsl_asset)[:3]
+    assert black == white == grey == 1.0
+
+
+def test_hue_sweeps_the_colour_wheel(hsl_asset):
+    h = plate("h", name=hsl_asset)
+    red, green, blue, cyan = h[3], h[4], h[5], h[6]
+    assert red == 0.0
+    assert green == pytest.approx(1 / 3, abs=1e-3)
+    assert blue == pytest.approx(2 / 3, abs=1e-3)
+    assert cyan == pytest.approx(0.5, abs=1e-3)
+
+
+def test_hue_has_a_seam_at_red(hsl_asset):
+    """Not a defect to fix later — a circle does not flatten onto a line. Two
+    barely-different reds land at opposite ends of the plate, and any drawing
+    made from it will show that edge."""
+    from PIL import Image
+
+    img = Image.new("RGB", (2, 1))
+    img.putdata([(255, 2, 0), (255, 0, 2)])  # a hair either side of pure red
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    asset_store.put("seam.png", buf.getvalue())
+    lo, hi = plate("h", name="seam.png")
+    assert lo < 0.01 and hi > 0.99
+
+
+def test_saturation_draws_hardest_where_colour_is_vivid(hsl_asset):
+    s = plate("s", name=hsl_asset)
+    assert s[:3] == [1.0, 1.0, 1.0]        # grey: nothing to say
+    assert all(v == 0.0 for v in s[3:])    # saturated: full ink
+
+
+def test_lightness_is_not_luma(hsl_asset):
+    """The reason an L plate earns its place: lightness is (max+min)/2 and so
+    is even-handed about colour, while luma knows blue is dark and yellow is
+    bright. Same photo, visibly different drawing."""
+    light = plate("l", name=hsl_asset)
+    luma = plate("luma", name=hsl_asset)
+    assert light[:3] == luma[:3]                    # greys agree exactly
+    assert light[3] == light[4] == light[5] == 0.5  # every primary is mid
+    assert len({round(v, 3) for v in luma[3:6]}) == 3  # ...luma spreads them
+
+
+def test_hsl_ignores_black_generation(hsl_asset):
+    for ch in ("h", "s", "l"):
+        assert plate(ch, bg=0.0, name=hsl_asset) == plate(ch, bg=1.0, name=hsl_asset)
+
+
+def test_hsl_plates_reach_the_generators(hsl_asset):
+    pts = lambda d: [p.points for p in d.layers[0].paths]
+    assert pts(_gen("halftone", channel="l")) != pts(_gen("halftone", channel="s"))
+
+
 def test_unknown_channel_raises():
     with pytest.raises(ValueError):
         asset_store.channel("swatch.png", "puce")
