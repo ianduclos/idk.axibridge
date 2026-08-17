@@ -183,6 +183,22 @@ export function initComposeTab() {
         </select>
         <button id="btn-lineart-stack">★ Create stack</button>
       </div>
+      <div id="separate-row" hidden>
+        <div class="row">
+          <select id="separate-mode" title="which set of plates to split this image into">
+            <option value="cmyk">CMYK</option>
+            <option value="cmy">CMY (no black plate)</option>
+            <option value="rgb">RGB</option>
+            <option value="tone">Tone bands</option>
+          </select>
+          <label title="nudge each plate off perfect registration, offset-print style">slop</label>
+          <input id="separate-slop" type="number" min="0" max="3" step="0.1" value="0" style="width:4.5em">
+          <span class="hint">mm</span>
+          <button id="btn-separate">⌗ Separate</button>
+        </div>
+        <div id="separate-plates"></div>
+        <div id="separate-why" class="hint" hidden></div>
+      </div>
       <div id="gen-progress" class="progress" hidden><div id="gen-progress-bar"></div></div>
       <div id="gen-progress-msg" class="hint" hidden></div>
       <div class="row" style="margin-top:8px">
@@ -308,6 +324,38 @@ export function initComposeTab() {
       await actions.refreshProject();
       await actions.refreshResolved();
       actions.log(`created lineart stack (${flavor}, ${r.layers.length} layers)`);
+    } catch (e) { actions.oops(e); }
+    finally { genBusy(false, btn); }
+  };
+
+  $("separate-mode").onchange = () => {
+    renderSeparatePlates(S.state.modules.sources.find((m) => m.id === sel.value) || {});
+    updateSeparateRow(S.state.modules.sources.find((m) => m.id === sel.value) || { schema: {} });
+  };
+
+  $("btn-separate").onclick = async () => {
+    const btn = $("btn-separate");
+    const plates = [...$("separate-plates").querySelectorAll(".sep-plate")]
+      .filter((r) => r.querySelector(".sep-on").checked)
+      .map((r) => ({
+        name: r.dataset.name,
+        params: JSON.parse(r.dataset.params),
+        pen_id: r.querySelector(".sep-pen").value || null,
+        generator: r.querySelector(".sep-gen").value || null,
+      }));
+    if (!plates.length) return actions.oops(new Error("tick at least one plate"));
+    genBusy(true, btn);
+    try {
+      const r = await api.post("/api/layers/separate", {
+        module: sel.value,
+        params: genParams,
+        plates,
+        misregistration_mm: Number($("separate-slop").value) || 0,
+      });
+      preview.clear(); // the real layers replace the dashed ghost
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      actions.log(`separated into ${r.layers.length} plates`);
     } catch (e) { actions.oops(e); }
     finally { genBusy(false, btn); }
   };
@@ -573,6 +621,104 @@ function updateLineartStackRow(m) {
     : "choose an image first";
 }
 
+// ---- colour separation -------------------------------------------------------
+// One image -> N plates, each an ordinary generator layer with its own pen.
+// Gated on the generator declaring a `channel` param rather than on usesImage():
+// that also picks up image_threshold (its own params base, not the pixelgen
+// family) and stays right if an image-driven generator is ever added that
+// deliberately has no channel.
+
+/** Plate sets, in plot order — lightest first so darker plates land on top. */
+const SEPARATION_MODES = {
+  cmyk: [["yellow", "y"], ["magenta", "m"], ["cyan", "c"], ["black", "k"]],
+  cmy: [["yellow", "y"], ["magenta", "m"], ["cyan", "c"]],
+  rgb: [["red", "r"], ["green", "g"], ["blue", "b"]],
+};
+
+/** Tone bands split the darkness range instead of the colour: same op, a
+ *  different params override, which is why the endpoint takes overrides. */
+const TONE_BANDS = [
+  ["lights", { tone_from: 0, tone_to: 0.34 }],
+  ["mids", { tone_from: 0.34, tone_to: 0.67 }],
+  ["darks", { tone_from: 0.67, tone_to: 1 }],
+];
+
+/** Populate a pen <select>. Shared with the layer detail panel below so the
+ *  two lists can't drift in labelling. */
+function fillPenSelect(sel, selectedId) {
+  sel.innerHTML = '<option value="">— none —</option>';
+  for (const pen of S.state.pens || []) {
+    const o = document.createElement("option");
+    o.value = pen.id;
+    o.textContent = `${pen.name} (⌀${pen.barrel_diameter_mm})`;
+    if (pen.id === selectedId) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+
+function separationPlates() {
+  const mode = $("separate-mode").value;
+  if (mode === "tone") {
+    return TONE_BANDS.map(([name, params]) => ({ name, params }));
+  }
+  return (SEPARATION_MODES[mode] || []).map(([name, ch]) => ({
+    name, params: { channel: ch },
+  }));
+}
+
+/** Rebuild the plate rows — a checkbox, a pen picker and an optional
+ *  per-plate generator (Ian's regime-collision case: cyan as halftone dots,
+ *  magenta as squiggles). "same as above" is the default and the common case. */
+function renderSeparatePlates(m) {
+  const box = $("separate-plates");
+  const chosen = new Map(  // keep pen/generator picks across a mode switch
+    [...box.querySelectorAll(".sep-plate")].map((r) => [r.dataset.name, {
+      pen: r.querySelector(".sep-pen").value,
+      gen: r.querySelector(".sep-gen").value,
+    }]));
+  box.innerHTML = "";
+  for (const plate of separationPlates()) {
+    const row = document.createElement("div");
+    row.className = "row sep-plate";
+    row.dataset.name = plate.name;
+    row.dataset.params = JSON.stringify(plate.params);
+    row.innerHTML =
+      `<label><input type="checkbox" class="sep-on" checked> ${plate.name}</label>` +
+      `<select class="sep-pen"></select><select class="sep-gen"></select>`;
+    const gen = row.querySelector(".sep-gen");
+    gen.innerHTML = `<option value="">same as above</option>`;
+    for (const src of S.state.modules.sources) {
+      if (!("channel" in (src.schema.properties || {})) || src.id === m.id) continue;
+      const o = document.createElement("option");
+      o.value = src.id; o.textContent = src.label;
+      gen.appendChild(o);
+    }
+    box.appendChild(row);
+    const prev = chosen.get(plate.name);
+    fillPenSelect(row.querySelector(".sep-pen"), prev?.pen);
+    if (prev?.gen) gen.value = prev.gen;
+  }
+}
+
+function updateSeparateRow(m) {
+  const row = $("separate-row");
+  if (!row) return;
+  row.hidden = !("channel" in (m.schema.properties || {}));
+  if (row.hidden) return;
+  if (!$("separate-plates").children.length) renderSeparatePlates(m);
+  const btn = $("btn-separate");
+  btn.disabled = !genParams.image;
+  // A visible reason, not a title: the K plate really is blank when no black
+  // is pulled out, and finding that out from an empty layer is no fun.
+  const kBlank = $("separate-mode").value === "cmyk"
+    && Number(genParams.black_generation) === 0;
+  const why = $("separate-why");
+  why.textContent = !genParams.image ? "choose an image first"
+    : kBlank ? "black generation is 0, so the K plate will come out empty"
+    : "";
+  why.hidden = !why.textContent;
+}
+
 // ---- the bench latch ---------------------------------------------------------
 
 function latchedLayer() {
@@ -631,7 +777,7 @@ function benchPreview() {
 // (machine-frame, unchanged) — the shared tail of renderGenForm (new
 // generator picked) and rerenderForView (view toggled, params untouched).
 function bindGenForm(m) {
-  const sched = () => { benchPreview(); updateLineartStackRow(m); };
+  const sched = () => { benchPreview(); updateLineartStackRow(m); updateSeparateRow(m); };
   const commit = () => { sched(); if (latch) applyLatched(); };
   renderForm($("gen-form"), m.schema, genParams, commit, { onLive: sched, stateKey: `gen:${m.id}` });
   return sched;
@@ -660,6 +806,8 @@ function renderGenForm() {
   const sched = bindGenForm(m);
   sched();
   updateLineartStackRow(m);
+  $("separate-plates").innerHTML = "";  // plate generators list excludes the new base
+  updateSeparateRow(m);
 }
 
 // Called after the view toggles (main.js): re-renders any open forms so
@@ -1620,13 +1768,7 @@ export function renderLayerDetail() {
     </div>`;
   wrap.appendChild(occ);
   const penSel = occ.querySelector("#ld-pen");
-  for (const pen of S.state.pens || []) {
-    const o = document.createElement("option");
-    o.value = pen.id;
-    o.textContent = `${pen.name} (⌀${pen.barrel_diameter_mm})`;
-    if (pen.id === layer.pen_id) o.selected = true;
-    penSel.appendChild(o);
-  }
+  fillPenSelect(penSel, layer.pen_id);
   penSel.onchange = () => actions.patchLayer(layer.id, { pen_id: penSel.value || null });
   occ.querySelector("#ld-draw").onchange = (e) => actions.patchLayer(layer.id, { draw: e.target.checked });
   occ.querySelector("#ld-occluder").onchange = (e) => actions.patchLayer(layer.id, { occluder: e.target.checked });

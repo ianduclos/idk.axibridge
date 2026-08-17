@@ -2264,3 +2264,116 @@ def test_render_popup_close_leaves_master_timeline_on_the_shown_frame(ui):
         arg=shown_t, timeout=10_000)
     _shoot(ui, "p10-popup-close-master-readout.png")
     assert not ui.errors
+
+
+# -- colour separation ---------------------------------------------------------
+
+
+def _upload_colour_asset(page, name="sep-test.png"):
+    """Put a two-colour image in the store through the real upload endpoint.
+
+    Multipart by hand rather than through a helper: the app has no JSON asset
+    upload, and the point of an acceptance test is the path the browser takes.
+    """
+    import io as _io
+    from PIL import Image
+
+    img = Image.new("RGB", (48, 36))
+    img.putdata([(255, 40, 40) if (i % 48) < 24 else (40, 200, 255)
+                 for i in range(48 * 36)])
+    buf = _io.BytesIO()
+    img.save(buf, "PNG")
+
+    boundary = "----axibridge-sep-test"
+    body = (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="file"; filename="{name}"\r\n'
+        "Content-Type: image/png\r\n\r\n"
+    ).encode() + buf.getvalue() + f"\r\n--{boundary}--\r\n".encode()
+    req = urllib.request.Request(
+        f"{page.base}/api/assets", data=body, method="POST",
+        headers={"content-type": f"multipart/form-data; boundary={boundary}"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        json.loads(r.read())
+    return name
+
+
+def test_separation_row_appears_only_for_channel_generators(ui):
+    """The row is gated on the generator declaring a channel, so it must be
+    absent for a procedural source and present for an image-driven one."""
+    ui.select_option("#gen-select", "polygon")
+    ui.wait_for_function(
+        "() => document.getElementById('separate-row').hidden", timeout=5_000)
+
+    ui.select_option("#gen-select", "halftone")
+    ui.wait_for_function(
+        "() => !document.getElementById('separate-row').hidden", timeout=5_000)
+    # ...but not usable until there is an image, and it says why out loud
+    assert ui.locator("#btn-separate").is_disabled()
+    assert "image" in ui.locator("#separate-why").text_content()
+    assert not ui.errors
+
+
+def test_separation_creates_one_layer_per_plate(ui):
+    """The whole feature, through the UI the user actually touches: pick a
+    generator, choose an image, press one button, get four plates — and one
+    ⌘Z takes all four away again."""
+    name = _upload_colour_asset(ui)
+    reload_app(ui)  # the asset list is fetched at boot; this page predates it
+    ui.select_option("#gen-select", "halftone")
+    ui.wait_for_function(
+        "() => !document.getElementById('separate-row').hidden", timeout=5_000)
+    ui.wait_for_function(
+        "(n) => [...document.querySelectorAll('#gen-form select option')]"
+        "        .some((o) => o.value === n)", arg=name, timeout=10_000)
+
+    # pick the asset in the generator form's image field
+    ui.evaluate(
+        """(n) => {
+            const sel = [...document.querySelectorAll('#gen-form select')]
+                .find((s) => [...s.options].some((o) => o.value === n));
+            sel.value = n;
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+        }""", name)
+    ui.wait_for_function(
+        "() => !document.getElementById('btn-separate').disabled", timeout=10_000)
+
+    assert ui.locator("#separate-plates .sep-plate").count() == 4  # CMYK default
+    before = rows(ui)
+    ui.click("#btn-separate")
+    ui.wait_for_function("(n) => document.querySelectorAll('#layer-list .layer-row')"
+                         ".length === n + 4", arg=before, timeout=60_000)
+
+    _shoot(ui, "separation-row.png")
+    names = ui.locator("#layer-list .layer-row").all_text_contents()
+    joined = " ".join(names).lower()
+    for plate in ("cyan", "magenta", "yellow", "black"):
+        assert plate in joined, f"no {plate} plate in the layer list: {names}"
+
+    _post(f"{ui.base}/api/undo")
+    ui.reload(wait_until="domcontentloaded")
+    _wait_ready(ui)
+    ui.wait_for_function("(n) => document.querySelectorAll('#layer-list .layer-row')"
+                         ".length === n", arg=before, timeout=20_000)
+    assert not ui.errors
+
+
+def test_separation_mode_switch_rebuilds_the_plate_list(ui):
+    ui.select_option("#gen-select", "halftone")
+    ui.wait_for_function(
+        "() => !document.getElementById('separate-row').hidden", timeout=5_000)
+    assert ui.locator("#separate-plates .sep-plate").count() == 4
+
+    ui.select_option("#separate-mode", "rgb")
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#separate-plates .sep-plate').length === 3",
+        timeout=5_000)
+    labels = " ".join(ui.locator("#separate-plates .sep-plate").all_text_contents())
+    assert "red" in labels and "blue" in labels
+
+    ui.select_option("#separate-mode", "tone")
+    ui.wait_for_function(
+        "() => [...document.querySelectorAll('#separate-plates .sep-plate')]"
+        "        .some((r) => r.dataset.name === 'lights')", timeout=5_000)
+    assert not ui.errors
+

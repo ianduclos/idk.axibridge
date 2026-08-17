@@ -52,12 +52,31 @@ Shipped work has been pruned from this file (2026-08-17) — see `git log` /
     genome / "hand" presets** land ("nervous", "tired" freehand hands;
     two_hands agent genomes — its params are already grouped for it):
     presets over parameters, per IDEAS pass-1 UI principle 2.
-  - *CMYK / greyscale separation* (high conviction): image-driven
-    generators (anything with a `format:"asset"` param — the picker already
-    detects this) get a "separate channels" mode emitting one layer per
-    C/M/Y/K channel, each assignable to a pen. Needs `asset_store` channel
-    decode + a multi-layer return path from generate (the PathDocument
-    already supports it).
+  - *Colour separation follow-ons* — the CMYK/RGB/tonal separation itself
+    shipped 2026-08-17 (`docs/plans/channel-separation.md` has the design and
+    the decision table). Three extensions were roadmapped with it, and
+    `channels.py`'s `CHANNEL_DECODERS` seam exists so each is a plate
+    definition rather than surgery:
+    - **Spot-colour plates**: pick a hex, the plate is per-pixel proximity to
+      it. This is what actually separates for a drawer of three arbitrary
+      felt tips rather than four theoretical inks. The real design work is
+      the metric — RGB euclidean distance lies about perceived colour, Lab
+      doesn't.
+    - **HSV / Lab opponent plates**: a hue plate is a strange picture nobody
+      prints. Nearly free now that RGB decode exists; squarely in uncanny
+      territory.
+    - **N-pen least-squares separation**: pick 3–5 real pens from the library
+      and solve the subtractive mix per pixel for the closest match to the
+      photo. The end of Cohen's colour logic — a palette chosen by what you
+      own, not by what a printer assumes. Ambitious enough to be its own
+      project; the one part of the current shape it would strain is that the
+      plate list stops being a fixed `Literal`.
+    - **Per-plate screen angles**: real CMYK printing rotates each screen
+      (C 15°, M 75°, Y 0°, K 45°) to kill moiré, and separating with
+      `halftone` at one angle almost certainly will moiré. Deliberately held
+      back until Ian has seen the first prints and can say whether that
+      moiré is a problem or a feature — and it only works for generators
+      with an angle param, so it is conditional magic either way.
 - **Plot resume**: the job already reports `paths_done`; persist the last
   finished index and offer "resume from path N" after a USB/power failure.
   Saves real plots, cheap to do at path granularity (native backend plots

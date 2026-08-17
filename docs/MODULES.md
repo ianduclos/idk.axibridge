@@ -72,6 +72,19 @@ working size — derive `blur_px` from a `smoothing` mm param × image px / plac
 mm width) and `alpha(name, rotate, size)` (matching resampled, unblurred crop
 mask; `None` when absent). Shared brightness/contrast/gamma/levels behavior
 lives in `image_processing.py`; apply it to grayscale samples, not alpha masks.
+
+**Colour separation comes free with `ImageBaseParams`.** Subclass it and your
+module gains `channel` (luma / c m y k / r g b) and `black_generation`, so one
+image can drive one layer per ink plate, a pen each. Sample through
+`channels.sample_rows(params, blur_px, size)` rather than calling `grayscale`
+directly — it resolves frame sequences and reads the selected plate. **Every
+plate comes back in `grayscale`'s polarity: 0 = draw hardest**, whichever plane
+it is, which is precisely why nothing downstream of the decode needs to know a
+channel exists. Keep it that way. Dimension probes may stay on `grayscale`
+(no channel changes an image's size). The `tone_from`/`tone_to`/`tone_rescale`
+window is separate and lives on `PixelGenParams`, since it acts inside
+`_tone_lut`. Reasoning, alternatives and the extension seam:
+`docs/plans/channel-separation.md`.
 If the named asset is missing, **pass through / return empty, don't raise** in
 effects (a stored project must still resolve); generators may raise a helpful
 `ValueError`.

@@ -1154,3 +1154,11 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 @media (prefers-reduced-motion: reduce) {
   * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+/* Colour separation plate rows: the labels are different lengths (yellow /
+   magenta / cyan / black), so without a fixed column the pen and generator
+   pickers stagger down the panel. One column each, and the row stops
+   wrapping — four plates should read as a small table, not a paragraph. */
+.sep-plate { flex-wrap: nowrap; gap: 6px; margin: 4px 0; }
+.sep-plate > label { flex: 0 0 6.5em; display: flex; align-items: center; gap: 5px; }
+.sep-plate .sep-pen, .sep-plate .sep-gen { flex: 1 1 0; min-width: 0; }
