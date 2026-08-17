@@ -773,6 +773,25 @@ function benchPreview() {
   }
 }
 
+/** Roll a fresh random seed into `params` if the module has one.
+ *
+ * Every stochastic module starts at seed 0, so without this two `freehand`
+ * layers wobble identically and two `misremembered` layers misremember the
+ * same way — the exact thing that makes plotter output look mechanical. The
+ * rolled value is stored in the project, so a saved layer stays reproducible;
+ * this randomises the START, not the resolve.
+ *
+ * Strictly an INTEGER field named exactly `seed`. fast_marching_topo has
+ * `seed_x`/`seed_y`, which are where the wavefront starts — floats, and
+ * randomising them would move the picture rather than vary its texture.
+ */
+export function rollSeed(schema, params) {
+  const spec = schema?.properties?.seed;
+  if (!spec || (spec.type !== "integer" && spec.type !== "number")) return params;
+  params.seed = Math.floor(Math.random() * ((spec.maximum ?? 99999) + 1));
+  return params;
+}
+
 // Renders the gen-form DOM against whatever `genParams` currently holds
 // (machine-frame, unchanged) — the shared tail of renderGenForm (new
 // generator picked) and rerenderForView (view toggled, params untouched).
@@ -791,8 +810,7 @@ function renderGenForm() {
   genParams = { ...m.defaults };
   // roll a fresh seed on layer creation — the rolled value is stored in the
   // project, so saved layers stay reproducible (seed 0 means nothing special)
-  const seedSpec = m.schema.properties?.seed;
-  if (seedSpec) genParams.seed = Math.floor(Math.random() * ((seedSpec.maximum ?? 99999) + 1));
+  rollSeed(m.schema, genParams);
   // portrait view: viewRotate/viewAngle-tagged defaults get remapped so what
   // reads "0" (or whatever the schema default is) to the user is the same
   // physical result regardless of view — see static/js/viewmap.js.
@@ -1838,6 +1856,9 @@ export function renderLayerDetail() {
     if (!mod) return;
     expandedSteps.add(`${familyKey(layer)}:${layer.effects.length}`); // open the new step
     const params = { ...mod.defaults };
+    // a fresh seed, same as layer creation: stacking freehand on two layers
+    // should give two different hands, not the same wobble twice
+    rollSeed(mod.schema, params);
     // portrait view: same viewRotate/viewAngle default remap as generators —
     // image-driven effects (depth maps) default to what reads upright.
     applyViewDefaults(mod.schema, params, S.state?.project?.view === "portrait");

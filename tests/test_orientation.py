@@ -76,13 +76,17 @@ def test_param_sources_actually_have_a_tagged_rotation_param():
 
 # -- the behaviour --------------------------------------------------------
 
+# Stochastic modules pin a seed: layer creation rolls a fresh one, and this
+# test builds the SAME layer twice (once per view) to compare their spans.
+# Without a fixed seed the two draw different pictures and the comparison
+# stops being about orientation, which is the only thing under test here.
 @pytest.mark.parametrize("module,params", [
     ("text", {"text": "axibridge", "size": 12}),
     ("text_fill", {"text": "axibridge", "size": 12}),
-    ("glyphgram", {"text": "axibridge", "size": 12}),
+    ("glyphgram", {"text": "axibridge", "size": 12, "seed": 1}),
     ("rectangle", {"width": 120, "height": 40}),
     ("grid", {"width": 160, "height": 80, "cells_x": 4, "cells_y": 2}),
-    ("flowfield", {"width": 160, "height": 80}),
+    ("flowfield", {"width": 160, "height": 80, "seed": 1}),
 ])
 def test_oriented_output_reads_the_same_in_both_views(module, params):
     """The acceptance criterion: what you see when you insert a layer in

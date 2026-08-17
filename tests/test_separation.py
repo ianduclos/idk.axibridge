@@ -458,3 +458,52 @@ def test_separate_api_rejects_a_bogus_channel(client):
         "module": "halftone", "params": {"image": "photo.png"},
         "plates": [{"name": "puce", "params": {"channel": "puce"}}]})
     assert r.status_code == 400
+
+
+# -- seed rolling --------------------------------------------------------------
+# Lives here because add_separation_stack is one of the paths that used to
+# land on seed 0 every time. The rule it pins is general.
+
+
+def test_layer_creation_rolls_a_seed():
+    """Every stochastic module starts at seed 0, so without this two layers
+    of the same generator draw the identical picture — the thing that makes
+    plotter output look mechanical."""
+    seeds = {session.add_generated_layer("flowfield", {}).source.params["seed"]
+             for _ in range(8)}
+    assert len(seeds) > 1, f"every flowfield layer got the same seed: {seeds}"
+
+
+def test_an_explicit_seed_is_never_overwritten():
+    layer = session.add_generated_layer("flowfield", {"seed": 42})
+    assert layer.source.params["seed"] == 42
+
+
+def test_modules_without_a_seed_are_left_alone():
+    layer = session.add_generated_layer("polygon", {"sides": 5})
+    assert "seed" not in layer.source.params
+
+
+def test_positional_seed_fields_are_not_rolled():
+    """fast_marching_topo's seed_x/seed_y are where the wavefront starts —
+    floats, not an RNG seed. Rolling them would move the picture instead of
+    varying its texture, so the rule is an INTEGER field named exactly 'seed'."""
+    src = get_source("fast_marching_topo")
+    assert "seed" not in src.Params.model_fields
+    rolled = session._rolled_seed(src, {})
+    assert rolled == {}
+
+
+def test_rolled_seed_respects_the_schema_bound():
+    src = get_source("lineart_hatch")  # caps at 9999, not 99999
+    for _ in range(200):
+        assert 0 <= session._rolled_seed(src, {})["seed"] <= 9999
+
+
+def test_separation_plates_share_one_seed():
+    """The plates are one artwork in several inks, so they get one hand
+    between them. Per-plate variation should be something you dial in, not
+    something you get by accident."""
+    layers = session.add_separation_stack("misremembered", {"image": "photo.png"}, CMYK)
+    seeds = {l.source.params["seed"] for l in layers}
+    assert len(seeds) == 1, f"plates drew with different hands: {seeds}"

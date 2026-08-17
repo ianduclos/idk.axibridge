@@ -620,6 +620,10 @@ class Session:
 
     def add_generated_layer(self, generator_id: str, params: dict[str, Any]) -> CanvasLayer:
         src = get_source(generator_id)
+        # The Compose form normally rolls a seed before POSTing, so this only
+        # bites callers that never went through one — the API, a script, a
+        # test — which used to get seed 0 every time.
+        params = self._rolled_seed(src, params)
         doc = gencache.generate_cached(src, params)
         paths = [p for layer in doc.layers for p in layer.paths]
         layer = CanvasLayer(
@@ -2444,6 +2448,9 @@ class Session:
         for spec in LINEART_STACK_PRESETS[flavor]:
             params = {"image": image, "rotate": rotate, "width": width, **spec["params"]}
             src = get_source(spec["generator"])
+            # a fresh hand per band, and a different stack every press — the
+            # presets name no seed, so every stack used to come out identical
+            params = self._rolled_seed(src, params)
             doc = gencache.generate_cached(src, params)
             paths = [p for lyr in doc.layers for p in lyr.paths]
             generated.append((
@@ -2502,6 +2509,12 @@ class Session:
                 f"{base_src.label!r} has no channel to separate — pick an "
                 "image-based generator")
 
+        # One seed for the whole separation, not one per plate: the plates are
+        # one artwork in several inks, so they should share a hand. Per-plate
+        # variation is then something you dial in deliberately rather than
+        # something you get by accident.
+        params = self._rolled_seed(base_src, params)
+
         # Generate everything BEFORE mutating (add_lineart_stack's discipline):
         # a failure mid-stack must not leave a partial separation behind.
         generated: list[tuple[dict[str, Any], str, dict[str, Any], list[Path], Affine]] = []
@@ -2535,6 +2548,30 @@ class Session:
                 self._snapshot_pen(layer.pen_id)
                 created.append(layer)
             return created
+
+    @staticmethod
+    def _rolled_seed(module: Any, params: dict[str, Any]) -> dict[str, Any]:
+        """Fill in a random ``seed`` if the module has one and the caller
+        didn't pick a value.
+
+        The Compose form rolls a seed client-side before it POSTs, but nothing
+        that creates layers server-side went through a form — the lineart and
+        separation stacks, and any scripted call — so those all landed on seed
+        0 and every invocation produced the identical drawing. Rolled once at
+        creation and stored in the layer's params, so the layer is still
+        reproducible forever after; this randomises where you START.
+
+        Only an INTEGER field named exactly ``seed``. ``fast_marching_topo``
+        has ``seed_x``/``seed_y`` — those are where the wavefront begins, and
+        randomising them would move the picture instead of varying it.
+        """
+        field = module.Params.model_fields.get("seed")
+        if field is None or "seed" in params or field.annotation is not int:
+            return params
+        top = 99999
+        for meta in field.metadata:  # pydantic keeps le/ge as annotated-types
+            top = getattr(meta, "le", None) or top
+        return {**params, "seed": random.randint(0, int(top))}
 
     @staticmethod
     def _misregister(transform: Affine, amount_mm: float, seed: int, index: int) -> Affine:
