@@ -10,9 +10,10 @@ entries: 9
   separation, plus a ⌗ Separate row that turns one image into N ordinary
   generator layers with a pen each, in one undo step. A plate may carry its
   own generator, so cyan can be halftone dots and magenta squiggles. Suite
-  990 → 1042 including three acceptance tests that drive the real UI end to
-  end. Separately: seed rolling now covers effects and every server-side
-  creation path, which it never did before.
+  990 → 1048 including three acceptance tests that drive the real UI end to
+  end. An HSL mode (hue/saturation/lightness) landed the same day for fun.
+  Separately: seed rolling now covers effects and every server-side creation
+  path, which it never did before.
 - next:
   - Work through **CHECKME.md's 2026-08-17 section** — the screen half first
     (black generation, effects on one plate, per-plate generators, tone

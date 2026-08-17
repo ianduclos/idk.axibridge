@@ -3,7 +3,7 @@ project: idk.axibridge
 state: active
 updated: 2026-08-17
 machine: mac+pi
-summary: Colour separation shipped — any of the 16 image generators can now sample a CMYK/RGB plate instead of only luminance, and one button turns an image into N ordinary generator layers with a pen each; seed rolling was also extended to effects and every server-side creation path, which it had never covered.
+summary: Colour separation shipped — any of the 16 image generators can now sample a CMYK/RGB/HSL plate instead of only luminance, and one button turns an image into N ordinary generator layers with a pen each; seed rolling was also extended to effects and every server-side creation path, which it had never covered.
 next:
   - "Ian works through CHECKME.md's 2026-08-17 section — the screen half, then paper. The overprint colour of real felt tips is the actual deliverable and no test reaches it"
   - "Two calls are Ian's once there is ink: whether the subtract GCR form lays the right amount (the divide form roughly doubles it) and whether tone_rescale should default on — both one-line changes, both documented with their alternatives in docs/plans/channel-separation.md"
@@ -14,9 +14,9 @@ handoff_for: ian
 
 # idk.axibridge — status
 
-**Session 2026-08-17 (Opus 5): colour separation, and seeds everywhere.**
+**Session 2026-08-17 (Opus 5): colour separation, seeds everywhere, HSL.**
 
-Three commits, suite 990 → 1042. ROADMAP.md was also pruned to open work only
+Five commits, suite 990 → 1048. ROADMAP.md was also pruned to open work only
 at the top of the session — shipped items now leave the file rather than
 accumulating as struck-through history (`git log` and STATUS keep that), which
 took it from 1214 lines to ~330.
@@ -64,6 +64,26 @@ each side (`rollSeed` in JS, `Session._rolled_seed` in Python): an **integer**
 field named exactly `seed`. `fast_marching_topo`'s `seed_x`/`seed_y` are
 wavefront *positions* — floats — and rolling them would move the picture
 rather than vary its texture, which is why the rule is that narrow.
+
+**HSL plates** (`004ca71`), asked for as "just for fun", and the first real
+exercise of the extension seam — three plate definitions plus a UI mode, no
+generator, session or endpoint change. It also caught a small dishonesty: the
+docs named a `CHANNEL_DECODERS` dispatch that was actually inline branching,
+so that got built properly rather than gaining a third special case. What the
+three are worth: **saturation** is genuinely useful (ink only where the image
+is colourful), **lightness** is a different greyscale from luma (even-handed
+about colour, where luma knows blue is dark and yellow bright), and **hue** is
+the strange one, with an unavoidable seam through every red because a circle
+does not flatten onto a line. The trap designed around: hue is undefined
+without saturation and conventionally reported as 0 — red — so a greyscale
+photo would have separated into a solid black rectangle. Achromatic pixels
+return blank.
+
+**One non-event worth recording**: Ian asked for one-click CMYK/RGB layer
+generation, which was already what the ⌗ Separate row did — his browser tab
+predated the rebuild. Diagnosed rather than rebuilt (the running server
+answered the new endpoint with 400, not 404, so it was current); no second
+path to the same thing was added.
 
 **Nothing here has touched paper.** The acceptance tests drive the real UI end
 to end (upload → separate → four named plates → one undo removes all four),
