@@ -23,6 +23,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, model_validator
 
 from ..assets import asset_store
+from ..channels import ChannelName, sample_rows
 from ..image_processing import (
     IMAGE_PROCESSING_GROUP,
     apply_image_processing_value,
@@ -39,6 +40,20 @@ class ImageThresholdParams(BaseModel):
     image: str = Field(default="", title="Image (asset)",
                        description="Uploaded image asset to threshold",
                        json_schema_extra={"format": "asset"})
+    channel: ChannelName = Field(
+        default="luma", title="Channel",
+        description="Which plane to threshold. Luminance is the plain "
+                    "greyscale reading; c/m/y/k are CMYK ink plates (one pen "
+                    "each, meant to overprint) — thresholding those gives "
+                    "posterised colour zones; r/g/b read that colour plane as "
+                    "its own greyscale image")
+    black_generation: float = Field(
+        default=1.0, ge=0.0, le=1.0, title="Black generation",
+        description="CMYK only: how much of the shared grey goes to the K "
+                    "plate. 1 (default) hands it all to K and leaves CMY lean; "
+                    "0 pulls out no black at all, so CMY stay dense and the "
+                    "darks come from overprinting them — which also leaves the "
+                    "K plate empty")
     show_map: bool = Field(default=False, title="Show image on canvas",
                            description="Preview-only ghost of the source image")
     rotate: Literal[0, 90, 180, 270] = Field(
@@ -192,7 +207,10 @@ class ImageThreshold(SourceModule):
         if probe is None:
             raise ValueError(f"no asset named {image!r}")
         blur_px = p.smoothing * probe[1] / p.width if p.smoothing > 0 else 0.0
-        rows, iw, ih = asset_store.grayscale(image, blur_px, rotate=p.rotate)
+        # The probe above stays on grayscale(): it only wants (w, h), which no
+        # channel changes, and an "L" decode is cheaper than RGB plus maths for
+        # pixels it throws away. Only the real read follows p.channel.
+        rows, iw, ih = sample_rows(p, blur_px)
         alpha = asset_store.alpha(image, rotate=p.rotate)
         w_mm, h_mm = p.width, p.width * ih / iw
         sx, sy = iw / w_mm, ih / h_mm

@@ -412,6 +412,51 @@ def add_lineart_stack(body: LineartStackBody) -> dict[str, Any]:
     return {"layers": [layer.model_dump() for layer in layers]}
 
 
+class SeparationPlate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=40)
+    #: None = use the stack's base generator (the ordinary case)
+    generator: str | None = None
+    params: dict[str, Any] = Field(default_factory=dict)
+    pen_id: str | None = None
+
+
+class SeparateBody(BaseModel):
+    module: str
+    params: dict[str, Any] = Field(default_factory=dict)
+    plates: list[SeparationPlate] = Field(..., min_length=1, max_length=8)
+    misregistration_mm: float = Field(default=0.0, ge=0.0, le=3.0)
+    seed: int = Field(default=0, ge=0, le=9999)
+
+
+@router.post("/layers/separate")
+def add_separation_stack(body: SeparateBody) -> dict[str, Any]:
+    """Separate an image into plates, one layer per plate
+    (session.add_separation_stack) — same progress-scope and error-mapping
+    shape as the lineart stack above, since it is the same "run a generator,
+    add a layer" primitive repeated per plate.
+
+    ``plates[].params`` is an open dict by design: it is merged over the base
+    params and then validated by the target generator's own Pydantic model
+    before anything is created, which is the trust boundary /layers/generate
+    already sits on. The checks that can't be expressed statically — this
+    generator has no channel; that plate names an unknown generator — live in
+    the session and come back as 400/404."""
+    try:
+        with progress_scope(_gen_progress_sink()):
+            layers = session.add_separation_stack(
+                body.module,
+                body.params,
+                [plate.model_dump() for plate in body.plates],
+                body.misregistration_mm,
+                body.seed,
+            )
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+    return {"layers": [layer.model_dump() for layer in layers]}
+
+
 @router.post("/layers/upload")
 async def upload_svg_layers(file: UploadFile, quantization_mm: float = 0.1) -> dict[str, Any]:
     text = (await file.read()).decode("utf-8", errors="replace")

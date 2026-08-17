@@ -60,6 +60,15 @@ class AssetStore:
             tuple[str, int, tuple[int, int] | None],
             list[list[float]] | None,
         ] = {}
+        #: (name, channel, black_generation, blur_px, rotate, size) -> decoded
+        #: colour plate. Deliberately a SEPARATE dict from ``_gray`` rather
+        #: than an extra key element on it: ``channel("luma")`` delegates to
+        #: ``grayscale`` and so never lands here at all, which keeps the hot,
+        #: unchanged luma path's key shape untouched.
+        self._channel: dict[
+            tuple[str, str, float, float, int, tuple[int, int] | None],
+            tuple[list[list[float]], int, int],
+        ] = {}
         #: sequence prefix ("clip#") -> sorted concrete frame names; derived
         #: from ``self._data`` keys by ``_reindex`` (held under the lock).
         self._seq: dict[str, list[str]] = {}
@@ -94,6 +103,7 @@ class AssetStore:
             self._data[name] = data
             self._gray = {k: v for k, v in self._gray.items() if k[0] != name}
             self._alpha = {k: v for k, v in self._alpha.items() if k[0] != name}
+            self._channel = {k: v for k, v in self._channel.items() if k[0] != name}
             self._font_label.pop(name, None)
             self._reindex()
             self._version += 1
@@ -185,6 +195,7 @@ class AssetStore:
             self._data = dict(assets)
             self._gray.clear()
             self._alpha.clear()
+            self._channel.clear()
             self._font_label.clear()
             self._reindex()
             self._version += 1
@@ -297,6 +308,104 @@ class AssetStore:
         result = (rows, w, h)
         with self._lock:
             self._gray[key] = result
+        return result
+
+    def channel(
+        self,
+        name: str,
+        channel: str = "luma",
+        *,
+        black_generation: float = 1.0,
+        blur_px: float = 0.0,
+        rotate: int = 0,
+        size: tuple[int, int] | None = None,
+    ) -> tuple[list[list[float]], int, int] | None:
+        """One colour plate of ``name``, in ``grayscale``'s polarity.
+
+        Same shape and same contract as ``grayscale``: rows of floats in [0, 1]
+        where 0 draws hardest, plus dimensions. ``channel`` picks the plane —
+        ``"luma"`` (the default) is literally ``grayscale``, ``"c"``/``"m"``/
+        ``"y"``/``"k"`` are CMYK ink plates returned as ``1 - ink``, and
+        ``"r"``/``"g"``/``"b"`` are the raw planes read as their own greyscale
+        image. ``black_generation`` (0..1) moves achromatic density between CMY
+        and K and is meaningless for the others. See ``channels.py`` for the
+        polarity contract and the maths.
+        """
+        from .channels import INK_CHANNELS, PLANE_CHANNELS, cmyk_plate
+
+        # luma DELEGATES rather than being reimplemented: it is the default
+        # every existing project already sits on, and PIL's fixed-point
+        # ITU-R 601 kernel is not something to reproduce from decoded floats
+        # and hope matches. Same call, same cache, byte-identical by identity.
+        if channel == "luma":
+            return self.grayscale(name, blur_px, rotate, size)
+        if channel not in INK_CHANNELS and channel not in PLANE_CHANNELS:
+            raise ValueError(f"unknown channel {channel!r}")
+
+        bg = min(max(float(black_generation), 0.0), 1.0)
+        # black_generation cannot move an RGB plane, so it is normalised out of
+        # their keys — otherwise dragging the knob would fragment the cache
+        # with identical entries.
+        key = (
+            name,
+            channel,
+            round(bg, 3) if channel in INK_CHANNELS else 0.0,
+            round(max(blur_px, 0.0), 2),
+            rotate % 360,
+            size,
+        )
+        with self._lock:
+            cached = self._channel.get(key)
+            if cached is not None:
+                return cached
+            data = self._data.get(name)
+        if data is None:
+            return None
+        from PIL import Image, ImageFilter  # lazy: keep server start fast
+
+        img = _rotated(_open(data), key[4]).convert("RGB")
+        if size is not None and img.size != size:
+            img = img.resize(size, Image.LANCZOS)
+        # Blur BEFORE the channel maths, deliberately. RGB->L is linear so
+        # grayscale() may blur either side of it, but the CMYK decomposition is
+        # not — converting first makes the blur ring around dark edges. Keeping
+        # resize-then-blur order identical to grayscale() is also what keeps
+        # blur_px meaning the same millimetres it always did.
+        if key[3] > 0:
+            img = img.filter(ImageFilter.GaussianBlur(key[3]))
+        w, h = img.size
+
+        plane = PLANE_CHANNELS.get(channel)
+        if plane is not None or bg == 0.0:
+            # Fast path, at C speed. An RGB plane is just a split; and because
+            # black_generation 0 pulls out no black at all, C/M/Y collapse to
+            # 1 - (1 - r) = r there, i.e. the very same planes.
+            idx = plane if plane is not None else {"c": 0, "m": 1, "y": 2, "k": None}[channel]
+            if idx is None:  # the K plate with no black generation: empty
+                rows = [[1.0] * w for _ in range(h)]
+            else:
+                px = img.split()[idx].tobytes()
+                rows = [[px[y * w + x] / 255.0 for x in range(w)] for y in range(h)]
+        else:
+            px = img.tobytes()  # mode "RGB": three bytes per pixel, row-major
+            rows = []
+            for y in range(h):
+                base = y * w * 3
+                row = []
+                for x in range(w):
+                    i = base + x * 3
+                    ink = cmyk_plate(px[i] / 255.0, px[i + 1] / 255.0,
+                                     px[i + 2] / 255.0, channel, bg)
+                    # The subtract form stays in range analytically; the clamp
+                    # is for float dust, because ImageSampler indexes a
+                    # 256-entry LUT with int(v * 255 + 0.5) and an out-of-range
+                    # value is an IndexError, not a slightly wrong pixel.
+                    row.append(min(max(1.0 - ink, 0.0), 1.0))
+                rows.append(row)
+
+        result = (rows, w, h)
+        with self._lock:
+            self._channel[key] = result
         return result
 
 

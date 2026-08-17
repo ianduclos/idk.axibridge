@@ -2465,6 +2465,94 @@ class Session:
                 created.append(layer)
             return created
 
+    def add_separation_stack(
+        self,
+        generator_id: str,
+        params: dict[str, Any],
+        plates: list[dict[str, Any]],
+        misregistration_mm: float = 0.0,
+        seed: int = 0,
+    ) -> list[CanvasLayer]:
+        """Separate one image into plates — one ordinary generator layer each,
+        in a single undo step.
+
+        A **plate** is ``{"name", "generator"?, "params", "pen_id"?}``. It
+        carries a params *override* rather than a channel, which is what lets
+        colour separation (``{"channel": "c"}``) and tonal separation
+        (``{"tone_from": 0, "tone_to": 0.33}``) share this whole path — the
+        same shape ``LINEART_STACK_PRESETS`` entries already use.
+
+        A plate may also name its **own generator**: cyan as halftone dots,
+        magenta as squiggles, black as traced edges. Params carry across a
+        generator switch by keeping only the fields the target actually
+        declares, so the merge can never build an invalid params dict; the
+        rest fall to that generator's defaults. Omitting ``generator`` means
+        "same as the base", which is the ordinary case.
+
+        Nothing links the resulting layers — they are N normal layers that
+        happen to share a placement, each with its own effect stack, pen,
+        transform and timeline behaviour. That is the whole point: a plate is
+        not a special kind of layer, so everything already works on it.
+        """
+        if not plates:
+            raise ValueError("pick at least one plate to separate into")
+        base_src = get_source(generator_id)
+        if "channel" not in base_src.Params.model_fields:
+            raise ValueError(
+                f"{base_src.label!r} has no channel to separate — pick an "
+                "image-based generator")
+
+        # Generate everything BEFORE mutating (add_lineart_stack's discipline):
+        # a failure mid-stack must not leave a partial separation behind.
+        generated: list[tuple[dict[str, Any], str, dict[str, Any], list[Path], Affine]] = []
+        for i, plate in enumerate(plates):
+            gen_id = plate.get("generator") or generator_id
+            src = get_source(gen_id)
+            merged = {**params, **plate.get("params", {})}
+            if gen_id != generator_id:
+                merged = {k: v for k, v in merged.items() if k in src.Params.model_fields}
+            doc = gencache.generate_cached(src, merged)
+            paths = [p for lyr in doc.layers for p in lyr.paths]
+            transform = self._placement_transform(gen_id, merged, doc, paths)
+            if misregistration_mm > 0:
+                transform = self._misregister(transform, misregistration_mm, seed, i)
+            generated.append((plate, gen_id, merged, paths, transform))
+
+        with self._lock:
+            self._checkpoint()
+            created: list[CanvasLayer] = []
+            for plate, gen_id, merged, paths, transform in generated:
+                label = get_source(gen_id).label
+                layer = CanvasLayer(
+                    name=f"{label} · {plate['name']}",
+                    source=LayerSource(type="generator", generator=gen_id, params=merged),
+                    transform=transform,
+                    pen_id=plate.get("pen_id") or None,
+                    frame_follow=self._sequence_driven(gen_id, merged),
+                )
+                self.project.layers.append(layer)
+                self.source_geometry[layer.id] = paths
+                self._snapshot_pen(layer.pen_id)
+                created.append(layer)
+            return created
+
+    @staticmethod
+    def _misregister(transform: Affine, amount_mm: float, seed: int, index: int) -> Affine:
+        """Nudge a plate off perfect registration by up to ``amount_mm``.
+
+        Offset printing's charm is that the plates never land quite on top of
+        one another. This is only a translation composed into the layer's own
+        affine — so it is undoable, hand-editable afterwards, and zero is exact
+        identity. Seeded per (seed, index) so the same press gives the same
+        drift every time."""
+        rng = random.Random(f"misregistration:{seed}:{index}")
+        angle = rng.uniform(0, 2 * math.pi)
+        radius = amount_mm * math.sqrt(rng.random())  # uniform over the disc
+        return transform.model_copy(update={
+            "e": transform.e + radius * math.cos(angle),
+            "f": transform.f + radius * math.sin(angle),
+        })
+
     def animate_layer(self, layer_id: str) -> CanvasLayer:
         """One-click "Animate this layer": turn a layer into a keyframed
         animation without the manual duplicate + create-tween dance.

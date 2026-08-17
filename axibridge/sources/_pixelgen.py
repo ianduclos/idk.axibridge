@@ -26,6 +26,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from ..assets import asset_store
+from ..channels import ChannelName, sample_rows
 from ..image_processing import (
     IMAGE_PROCESSING_GROUP,
     apply_image_processing_value,
@@ -47,6 +48,19 @@ class ImageBaseParams(BaseModel):
     image: str = Field(default="", title="Image (asset)",
                        description="Uploaded image asset that drives the pattern",
                        json_schema_extra={"format": "asset"})
+    channel: ChannelName = Field(
+        default="luma", title="Channel",
+        description="Which plane to sample. Luminance is the plain greyscale "
+                    "reading; c/m/y/k are CMYK ink plates (one pen each, "
+                    "meant to overprint); r/g/b read that colour plane as its "
+                    "own greyscale image")
+    black_generation: float = Field(
+        default=1.0, ge=0.0, le=1.0, title="Black generation",
+        description="CMYK only: how much of the shared grey goes to the K "
+                    "plate. 1 (default) hands it all to K and leaves CMY lean; "
+                    "0 pulls out no black at all, so CMY stay dense and the "
+                    "darks come from overprinting them — which also leaves the "
+                    "K plate empty")
     rotate: Literal[0, 90, 180, 270] = Field(
         default=0, title="Rotate image (°)",
         description="Image rotation as seen in the current view",
@@ -81,6 +95,20 @@ class PixelGenParams(ImageBaseParams):
                                   json_schema_extra=_IMAGE_PROCESSING)
     max_brightness: float = Field(default=255, ge=0, le=255, title="Max brightness",
                                   json_schema_extra=_IMAGE_PROCESSING)
+    tone_from: float = Field(default=0.0, ge=0.0, le=1.0, title="Tone window from",
+                             description="Darkness window (0=lightest, 1=darkest) — "
+                                         "tones outside it draw nothing. Split one "
+                                         "image into light/mid/dark plates, a pen each",
+                             json_schema_extra=_IMAGE_PROCESSING)
+    tone_to: float = Field(default=1.0, ge=0.0, le=1.0, title="Tone window to",
+                           json_schema_extra=_IMAGE_PROCESSING)
+    tone_rescale: bool = Field(
+        default=False, title="Rescale tone window",
+        description="Off: the window passes through, so stacked bands add back "
+                    "up to roughly the original ink. On: the window is stretched "
+                    "to full contrast, so each band reads strongly on its own — "
+                    "at the cost of laying far more ink when they overlap",
+        json_schema_extra=_IMAGE_PROCESSING)
 
 
 def working_dims(p: ImageBaseParams) -> tuple[int, int]:
@@ -108,20 +136,39 @@ def luma_grid(p: ImageBaseParams, blur_px: float = 0.0,
 
     ``scale`` multiplies the working canvas (bounded to 0.25×..2×) for
     generators that want a speed/detail tradeoff — px-space params must be
-    scaled by the caller to keep their meaning."""
+    scaled by the caller to keep their meaning.
+
+    Reads whichever colour plate ``p.channel`` selects (luma by default, which
+    is plain greyscale); the name is historical and the contract unchanged,
+    since every plate comes back in the same 0=darkest polarity."""
     w, h = working_dims(p)
     if scale != 1.0:
         s = max(0.25, min(float(scale), 2.0))
         w = min(int(round(w * s)), 2 * WORK_W)
         h = min(int(round(h * s)), 2 * MAX_H)
-    image = asset_store.resolve_frame(p.image, p.frame)  # sequence -> concrete frame
-    rows, w, h = asset_store.grayscale(image, blur_px, p.rotate, size=(w, h))
+    rows, w, h = sample_rows(p, blur_px, size=(w, h))
     return [[v * 255.0 for v in row] for row in rows], w, h
 
 
 def _tone_lut(p: PixelGenParams) -> list[float]:
-    """Byte luma -> darkness 0..255; plotterfun tone plus gamma/levels."""
+    """Byte luma -> darkness 0..255; plotterfun tone plus gamma/levels, then
+    the tone window.
+
+    The window is the last stage on purpose: it selects a band of the tone the
+    user has already dialled in, rather than a band of the raw image, so
+    splitting into plates doesn't fight the brightness/contrast above it.
+
+    Abutting windows (0..0.5, 0.5..1) partition the range exactly, so a set of
+    tonal plates lays back the ink of the unwindowed drawing and no more."""
     tone = image_processing_kwargs(p)
+    lo, hi = min(p.tone_from, p.tone_to), max(p.tone_from, p.tone_to)
+    windowed = (lo, hi) != (0.0, 1.0)
+    span = max(hi - lo, 1e-6)
+    # Half-open [lo, hi), so abutting windows PARTITION the tone range instead
+    # of both claiming the shared boundary — two plates striking the same tone
+    # is a double load of ink on the paper, not a rounding detail. The top of
+    # the range closes, or the very darkest tones would fall out of every band.
+    top_closed = hi >= 1.0
     out = []
     for v in range(256):
         b = apply_image_processing_value(v / 255.0, **tone) * 255.0
@@ -129,7 +176,15 @@ def _tone_lut(p: PixelGenParams) -> list[float]:
             b = min(255 - p.min_brightness, 255 - b)
         else:
             b = max(p.min_brightness, b)
-        out.append(max(p.max_brightness - b, 0.0))
+        d = max(p.max_brightness - b, 0.0)
+        if windowed:
+            frac = d / 255.0
+            inside = frac >= lo and (frac <= hi if top_closed else frac < hi)
+            if not inside:
+                d = 0.0
+            elif p.tone_rescale:
+                d = min((frac - lo) / span, 1.0) * 255.0
+        out.append(d)
     return out
 
 
@@ -138,8 +193,7 @@ class ImageSampler:
 
     def __init__(self, p: PixelGenParams, blur_px: float = 0.0):
         w, h = working_dims(p)
-        image = asset_store.resolve_frame(p.image, p.frame)  # sequence -> concrete frame
-        rows, w, h = asset_store.grayscale(image, blur_px, p.rotate, size=(w, h))
+        rows, w, h = sample_rows(p, blur_px, size=(w, h))
         self.w, self.h = w, h
         lut = _tone_lut(p)
         self.grid = [[lut[int(v * 255 + 0.5)] for v in row] for row in rows]
