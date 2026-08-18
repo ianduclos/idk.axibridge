@@ -220,11 +220,15 @@ substrate round can be taken deliberately rather than under pressure.
 
 ### Round 2 — the sensor, and the blending axis
 
-4. **Prediction error as an effect** (A3) — ~30-line predictive-coding loop on
-   stroke statistics, modulating weight/presence by `|error|`. Build as an
-   **effect** first, the `freehand` argument: it retrofits onto every existing
-   source before a new generator is written. Two timescales beat one; the
-   learning rate is "how easily bored".
+4. **Prediction error as an effect, with habituation** (A3 + A5) — ~30-line
+   predictive-coding loop on stroke statistics, modulating weight/presence by
+   `|error|`. Build as an **effect** first, the `freehand` argument: it
+   retrofits onto every existing source before a new generator is written. Two
+   timescales beat one; the learning rate is "how easily bored".
+   **Ship A5 with it, not after it.** A predictor that learns is a habituating
+   memory; a drawer hunting for error is Pask's novelty drive. A3 alone has a
+   known failure mode — ink is error, error decays as it learns, the drawing
+   dies out — and A5 is precisely the fix. Shipping A3 by itself ships the bug.
 5. **Optimal-transport blending** (C1) — correspondence-free morphing via
    `scipy.optimize.linear_sum_assignment`. **A linear blend crossfades; OT
    makes mass travel**, and with no opacity available travel is the only
@@ -246,6 +250,18 @@ substrate round can be taken deliberately rather than under pressure.
    that was a stateless playground beside the project; this is a per-layer
    inspector for layers with a real time axis.
 
+   **The second argument for A1, and it is nearly as strong as the first:** once
+   time is a param, **"draw several moments of the same process on one sheet"
+   becomes a layer-level operation** — the sweep machinery pointed at the time
+   axis — rather than something each generator implements. That ships
+   **pentimento / rehearsal (A6)** for every time-based generator at once, with
+   per-pass pen assignment falling out of the existing multi-pen path
+   (rehearsals in pencil, the committed stroke in ink). Pass 1's §2 has been
+   open since July waiting for exactly this, and it is the same mechanic as
+   diffusion's descent — the interesting output is the trajectory, not the
+   converged result. A1 does not merely enable Half A; it retroactively closes
+   an old item.
+
 ### Round 4 — the engine
 
 8. **Homeostat generator** (A2) — the most expansive idea in the pass, and it
@@ -263,6 +279,12 @@ substrate round can be taken deliberately rather than under pressure.
 
 ### Opportunistic / parallel
 
+- **Algedonic marks** (A7) — the smallest item in the pass. One monitored
+  quantity, one threshold, one mark placed *without regard to* the composition
+  because something went critical. Indifference with a cause, which reads
+  differently from contrast for its own sake. Pairs with A2, which is the other
+  response to a variable leaving range — Ashby rerolls the rules, Beer raises
+  the alarm. Bolts onto anything that already measures something.
 - **Curve-shortening flow** (B5) — small and self-contained. Doubles as a
   correspondence mechanism (A → circle → B, circle as normal form); run it
   forward on both and reverse one trajectory, since backward CSF is unstable.

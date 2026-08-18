@@ -149,6 +149,69 @@ Ian, 2026-08-18: *"we already tried some of these, they don't really hit the
 spot but they're a good start and we should iterate."* Treat as a direction to
 return to with A1 in hand, not a spec.
 
+### A5. Habituation — the machine that gets bored
+
+Pask's **Musicolour** (1953) drove a light show from a musician's playing and
+**became bored**: fed a repeating figure it stopped responding, forcing the
+performer to find something new. The machine's unresponsiveness was the
+instruction.
+
+As a rule: keep a record of what has already been drawn, and make the system
+progressively **less willing** to draw more of the same. Not novelty as noise —
+a memory that actively suppresses self-similarity. The process is then driven
+by what it has *not* done rather than by a target, so its output is uneven
+because it is hunting.
+
+Underneath is Pask's **requisite variety**: a controller needs at least as much
+variety as what it regulates. Boredom is what a system does when the variety it
+is being fed drops below what it needs.
+
+**Build it with A3, not after it.** A predictor that learns *is* the habituating
+memory; a drawer hunting for prediction error *is* the novelty drive. They are
+one machine from two ends, and A3's known failure mode (ink is error, error
+decays, the drawing dies out) is fixed by exactly this. Shipping A3 without it
+means shipping the failure mode.
+
+### A6. The descent, not the destination
+
+Diffusion's actual mechanic is: start from noise, iteratively pull toward a
+manifold. You cannot run a model in the resolve path, but the *structure* is
+hand-writable with a crafted score function — and the interesting output is not
+the converged result but **the intermediate states, drawn as ghost passes**.
+
+This turns out to be the same thing as pass 1's unshipped §2 (rehearsal /
+pentimento): draw the figure, then draw it again, each pass a re-estimate of the
+last, converging toward an ideal never stated. Construction lines under a figure
+drawing. Visible machine self-revision, which reads as doubt.
+
+**A1 makes this nearly free, and generally so.** Once time is a param, "draw
+several moments of the same process on one sheet" is a *layer-level* operation
+— the sweep machinery pointed at the time axis — rather than a feature each
+generator has to implement. Every time-based generator gets pentimento at once,
+with per-pass pen assignment falling out of the existing multi-pen path
+(rehearsals in pencil, the committed stroke in ink).
+
+That is a strong second argument for A1: it does not just enable Half A, it
+retroactively ships a pass-1 idea that has been open since July.
+
+### A7. Algedonic marks (small)
+
+In Beer's Viable System Model an **algedonic** signal bypasses the hierarchy —
+when something is bad enough it goes straight to the top rather than being
+filtered and summarised at each level.
+
+A composition normally negotiates: everything placed relates to what is already
+there. An algedonic channel is the exception — a mark placed *without regard to*
+the composition because some measured quantity went critical. Not contrast for
+its own sake; indifference with a cause, which reads differently and is harder
+to fake.
+
+The smallest item in the pass and the easiest to bolt onto anything with a
+measure already: one monitored quantity, one threshold, one kind of mark that
+does not ask permission. Pairs naturally with A2, which is the *other* response
+to a variable leaving its range — Ashby changes the rules, Beer raises the
+alarm.
+
 ## Half B — lines out of fields
 
 ### B1. Geodesics on the Eikonal solver
