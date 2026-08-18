@@ -188,6 +188,103 @@ mechanisms are quoted there). Pull order:
    region layers either (regions shape what's below, they don't emit
    intersection geometry as new plottable layers).
 
+## Near term — pass 4: something at stake, and lines out of fields
+
+From `docs/IDEAS-pass4.md` (read it first — the *why* lives there, and the
+conceptual material is in the vault as atomic notes). Two halves: **A**, give
+the process something to lose (cybernetic loops); **B**, let the field carry
+the structure (field-derived geometry). Plus **C**, an adjacent blending axis.
+
+**The dependency that sets the order:** B and C items are all independent of
+each other and of A. Only A2/A4 genuinely need A1. So the cheap, visible,
+independent things can land first without blocking anything, and the one big
+substrate round can be taken deliberately rather than under pressure.
+
+### Round 1 — cheap, independent, new marks on paper immediately
+
+1. **Geodesics on the Eikonal solver** (B1) — the shortest hop in the pass.
+   `_fast_marching.py` already solves travel time under a spatially varying
+   speed function; trace the **orthogonal trajectories** of the iso-time
+   contours instead of the contours. Same solved field, a completely different
+   picture: lines that read as navigation rather than as a flow field.
+2. **Hachures** (B3) — Lehmann's slope-proportional stroke system. Direction
+   and weight both derived from the surface, so depth maps and
+   `_lineart.flow_field` supply everything it needs. A complete historical line
+   grammar nobody's eye is tired of.
+3. **Eigenfunction fill** (B2) — Chladni/membrane nodal lines as a **fill
+   primitive**, so the pattern is produced by the shape's own boundary rather
+   than laid over it. `scipy.sparse.linalg.eigsh` + the marching squares in
+   `image_threshold`. The mode index changes density *and* character on one
+   scrub. Degenerate-mode mixing and high-mode irregular boundaries are what
+   lift it past the obvious version.
+
+### Round 2 — the sensor, and the blending axis
+
+4. **Prediction error as an effect** (A3) — ~30-line predictive-coding loop on
+   stroke statistics, modulating weight/presence by `|error|`. Build as an
+   **effect** first, the `freehand` argument: it retrofits onto every existing
+   source before a new generator is written. Two timescales beat one; the
+   learning rate is "how easily bored".
+5. **Optimal-transport blending** (C1) — correspondence-free morphing via
+   `scipy.optimize.linear_sum_assignment`. **A linear blend crossfades; OT
+   makes mass travel**, and with no opacity available travel is the only
+   interpolation a pen can draw. Sinkhorn's ε is the expressive knob. Extend
+   `tween.py`'s shared blend core — never re-fork it.
+6. **Wasserstein barycenters** (C2) — N drawings, N weights, navigate the
+   simplex. The direct answer to the latent-blending wish, and its ceiling
+   rises with A1/A2 (plausible midpoints need a rich enough process to be a
+   manifold).
+
+### Round 3 — the substrate
+
+7. **Time as a param, plus a live popup** (A1) — the enabling round, and a
+   round on its own. `generate()` stays pure and returns the state at step *N*;
+   the popup scrubs and plays it; **interaction writes events into a hidden
+   params list**, so a live session becomes a recorded score and the layer
+   stays reproducible, undoable and tweenable. Binding step-count to
+   `master_t` makes growth an animation for free. Not a workbench revival —
+   that was a stateless playground beside the project; this is a per-layer
+   inspector for layers with a real time axis.
+
+### Round 4 — the engine
+
+8. **Homeostat generator** (A2) — the most expansive idea in the pass, and it
+   wants A1 because you cannot tune a system you cannot watch hunt. Measure an
+   essential variable, and when it leaves its viable range **reroll the rule
+   set blindly** until drawing can continue. Oehlen's regime collision with a
+   reason: the seam lands where the system was in trouble. Leave memory out by
+   default — adding it makes the system converge, and converged is another word
+   for finished.
+9. **The seam** (A4) — independent fronts with identical local rules and no
+   awareness of each other; draw the failure to reconcile. The aesthetic
+   inverse of `region_boundary: continuous`, which stitches. Ian's read: the
+   existing attempts "don't really hit the spot but they're a good start" —
+   return to it with A1 in hand rather than speccing it now.
+
+### Opportunistic / parallel
+
+- **Curve-shortening flow** (B5) — small and self-contained. Doubles as a
+  correspondence mechanism (A → circle → B, circle as normal form); run it
+  forward on both and reverse one trajectory, since backward CSF is unstable.
+- **Stripe patterns** (B4) — a **parallel branch** by Ian's reading, tied to
+  his separate 3D-engine plan. `flow_field` already gives the direction field,
+  so the cheap version can test the look; the paper's machinery is what makes
+  the forced singularities land gracefully rather than arbitrarily.
+
+### Spikes worth running before committing
+
+- **Greedy residual stroke fitting** — "place the stroke that most reduces the
+  error, repeat". ~100 lines, no dependencies, deterministic. If it delivers
+  the structural point (marks that cost something), it may make the diffvg
+  build fight unnecessary. Run this before touching diffvg/CLIPasso.
+- **diffvg offline on CPU without CLIP** — is it buildable and usable as a bake
+  step? Heavy dependency, historically fiddly build; torch is already present.
+- **Stripe patterns in 2D** — is a plane-only implementation tractable without
+  the full discrete-differential-geometry apparatus?
+- **Eigenfunction solve cost** at plotting resolution — does `eigsh` on a
+  boundary-shaped domain return in interactive time, or does B2 need the
+  round-3 popup to be bearable?
+
 ## Sheets workflow v2
 
 Still open, priority order:
