@@ -3,20 +3,23 @@ project: idk.axibridge
 state: active
 updated: 2026-08-17
 machine: mac+pi
-summary: Colour separation shipped — any of the 16 image generators can now sample a CMYK/RGB/HSL plate instead of only luminance, and one button turns an image into N ordinary generator layers with a pen each; seed rolling was also extended to effects and every server-side creation path, which it had never covered.
+summary: Colour separation shipped (CMYK/RGB/HSL plates, one button turning an image into N live generator layers with a pen each) plus server-side seed rolling; the session then turned to a long generator brainstorm, harvested into the vault as 13 atomic notes and into the repo as idea pass 4 — a roadmap, nothing started.
 next:
-  - "Ian works through CHECKME.md's 2026-08-17 section — the screen half, then paper. The overprint colour of real felt tips is the actual deliverable and no test reaches it"
-  - "Two calls are Ian's once there is ink: whether the subtract GCR form lays the right amount (the divide form roughly doubles it) and whether tone_rescale should default on — both one-line changes, both documented with their alternatives in docs/plans/channel-separation.md"
-  - "If separating with halftone moirés badly, the roadmapped per-plate screen angles become worth building — deliberately not guessed at"
-  - "Still open from before: bench/hardware eye-checks going back to 2026-07-13, and the multi-pen swap queue has still never touched a real AxiDraw — see HANDOFF"
+  - "Pick the first pass-4 item. The recommendation, with its reasoning, is in docs/IDEAS-pass4.md 'Where to start': geodesics as a one-afternoon warm-up, then jump the queue to the time-as-a-param substrate (A1)"
+  - "Two A1 design risks want settling BEFORE code — O(N) replay cost, and whether interaction-as-recorded-score feels expressive or like fighting a tape. The second is a throwaway probe, not an analysis"
+  - "13 harvested notes are staged in the vault's llm/proposed/ awaiting promotion — that happens in a vault session via its own promote skill, not from here"
+  - "Colour separation still has no ink on paper: CHECKME.md's 2026-08-17 section, then the felt-tip overprint test that no automated check can judge"
+  - "Still open from before: bench/hardware eye-checks back to 2026-07-13, and the multi-pen swap queue has never touched a real AxiDraw"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
 
-**Session 2026-08-17 (Opus 5): colour separation, seeds everywhere, HSL.**
+**Session 2026-08-17/18 (Opus 5): colour separation, seeds everywhere, HSL,
+then idea pass 4.**
 
-Five commits, suite 990 → 1048. ROADMAP.md was also pruned to open work only
+Seven commits, suite 990 → 1048. The last two are documentation only — no code
+changed after the HSL round. ROADMAP.md was also pruned to open work only
 at the top of the session — shipped items now leave the file rather than
 accumulating as struck-through history (`git log` and STATUS keep that), which
 took it from 1214 lines to ~330.
@@ -84,6 +87,38 @@ generation, which was already what the ⌗ Separate row did — his browser tab
 predated the rebuild. Diagnosed rather than rebuilt (the running server
 answered the new endpoint with 400, not 404, so it was current); no second
 path to the same thing was added.
+
+**Idea pass 4** (`9eaf476`, `40cf3ea`) — `docs/IDEAS-pass4.md` plus a ROADMAP
+section, from a long brainstorm. Passes 1–3 all asked *what should the marks
+look like?*; this one starts from a diagnosis instead — computational art gives
+itself away through seven properties (uniform rules, no history, no cost, one
+global state…) and underneath all seven is that **it has nothing at stake**.
+Two halves: give the process something to lose (cybernetic loops, where Ashby's
+homeostat supplies the *reason* Oehlen's regime collision always lacked), and
+let the field carry the structure (geodesics, eigenfunction fill, hachures,
+stripe patterns). Plus an adjacent blending axis — optimal transport, where the
+property that matters is that **a linear blend crossfades while OT makes mass
+travel**, and with no opacity available travel is the only interpolation a pen
+can draw.
+
+The build order turns on one dependency: only the homeostat and the seam need
+the time-as-a-param substrate, so everything field-derived and the whole
+blending axis can land first without blocking anything. A first draft of the
+roadmap dropped three items (Pask's habituation, the descent/pentimento idea,
+Beer's algedonic marks) — Ian caught it and they were restored. The second was
+the costly one: diffusion's trajectory and pass 1's long-open rehearsal idea
+are the same thing, and A1 ships it for every time-based generator at once,
+which is a second argument for the substrate nearly as strong as the first.
+
+Nothing is started. `docs/IDEAS-pass4.md` carries a "Where to start" section
+with the recommendation and the two A1 design risks worth settling first.
+
+**Conceptual material was harvested to the vault** the same day — 13 atomic
+notes staged in `llm/proposed/` (the seven-properties diagnosis, optimal
+transport and barycenters, prediction error, four cybernetics notes, hachures,
+eigenfunction nodal lines, three field-derived line notes) plus CLIPasso and
+diffvg bookmarks. Committed there separately; awaiting promotion in a vault
+session.
 
 **Nothing here has touched paper.** The acceptance tests drive the real UI end
 to end (upload → separate → four named plates → one undo removes all four),

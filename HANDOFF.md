@@ -1,6 +1,6 @@
 ---
 project: idk.axibridge
-updated: 2026-08-17
+updated: 2026-08-18
 entries: 9
 ---
 
@@ -13,7 +13,9 @@ entries: 9
   990 → 1048 including three acceptance tests that drive the real UI end to
   end. An HSL mode (hue/saturation/lightness) landed the same day for fun.
   Separately: seed rolling now covers effects and every server-side creation
-  path, which it never did before.
+  path, which it never did before. Note the behaviour change that comes with
+  it — two layers of the same generator, or the same effect stacked twice, no
+  longer come out identical unless you pin the seed.
 - next:
   - Work through **CHECKME.md's 2026-08-17 section** — the screen half first
     (black generation, effects on one plate, per-plate generators, tone

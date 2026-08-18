@@ -342,6 +342,45 @@ latent space to reach the middle ground" wish — and the honest caveat is that
 **plausible midpoints need a manifold**, which is what a rich process-like
 generator supplies. So C2's ceiling rises with A1 and A2.
 
+## Where to start (recommendation, 2026-08-18)
+
+ROADMAP's rounds are ordered by dependency and cost. The recommendation argues
+partly *against* that ordering, so it is recorded here rather than left implicit.
+
+**Do B1 (geodesics) as a one-afternoon warm-up, then go straight at A1.**
+
+B1 reuses the Eikonal solver that already exists — it traces the orthogonal
+family of contours already being traced — so it is nearly free and it proves
+whether the field-derived direction is worth the other two Round 1 items.
+
+Then jump the queue to A1, for two reasons:
+
+- **A1 is the only item in the pass that changes what is *possible* rather than
+  what is *available*.** Round 1's items are excellent new textures, but they
+  are textures: more things to draw with, the same kinds of drawings. Everything
+  in Half A is downstream of A1.
+- **Substrate rounds deferred behind cheap wins stay deferred**, because there
+  is always another cheap win. B2 and B3 are independent by construction, so
+  nothing is lost by taking them after — and they will be easier to tune with
+  the popup in hand.
+
+### Two design risks in A1, to settle before writing code
+
+Neither is a coding problem; both could send the design back a step.
+
+1. **O(N) replay.** State at step *N* may mean running steps 0..*N*. `gencache`
+   absorbs repeats and periodic checkpointing caps the cost, but a genuinely
+   slow process will still feel slow to scrub. Mitigable, not eliminable —
+   decide what the acceptable ceiling is before building around it.
+2. **Interaction-as-recorded-score may feel like fighting a tape.** Writing
+   "at step 340 the user pushed here" into a hidden params list is what keeps
+   the layer pure, reproducible and tweenable — the whole architectural win.
+   But it makes live pokes *edits to a score* rather than direct manipulation,
+   and scrubbing back to poke again means inserting into history. Whether that
+   reads as expressive or as fussy is a bench question, and it is the single
+   most likely thing to force a redesign. Worth a throwaway probe before
+   committing to the model.
+
 ## Deliberately not in this pass
 
 - **A 3D engine.** Ian has a separate plan; B4 touches it, nothing here depends
