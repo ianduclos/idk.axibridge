@@ -163,7 +163,11 @@ function onUp(e) {
 
 // -- commit: one stroke -> append to the active drawing layer, or create one ---
 
-async function commitStroke(stroke) {
+// Exported for the SHAPE tool's straight line (shapes.js): a line is a stroke,
+// not a mass, so it belongs on a drawing layer and picks up the pending brush
+// preset like any other stroke — Ian's call, "a separate type, akin to the
+// draw tool".
+export async function commitDrawStroke(stroke) {
   try {
     const id = currentTargetLayerId();
     if (id) {

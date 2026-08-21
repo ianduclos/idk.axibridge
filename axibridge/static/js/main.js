@@ -19,6 +19,7 @@ import { initDrawMode, activateDrawMode, deactivateDrawMode } from "./draw.js";
 import { initBrushMode, activateBrushMode, deactivateBrushMode, handleBrushEscape } from "./brush.js";
 import { initPenMode, activatePenMode, deactivatePenMode, handlePenEscape, refreshPenOverlay,
          commitPendingPath } from "./pen.js";
+import { initShapeMode, activateShapeMode, deactivateShapeMode, handleShapeEscape } from "./shapes.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -687,6 +688,7 @@ function initTabs() {
   initDrawMode(); // no-op after first call (returns early if already wired)
   initPenMode();  // no-op after first call (returns early if already wired)
   initBrushMode();
+  initShapeMode();
   renderLayerList();
   applyPanelCollapse();
   applyFoldMemory();
@@ -704,6 +706,7 @@ const TOOL_MODES = {
   draw: { activate: activateDrawMode, deactivate: deactivateDrawMode },
   pen: { activate: activatePenMode, deactivate: deactivatePenMode, handleEscape: handlePenEscape },
   brush: { activate: activateBrushMode, deactivate: deactivateBrushMode, handleEscape: handleBrushEscape },
+  shape: { activate: activateShapeMode, deactivate: deactivateShapeMode, handleEscape: handleShapeEscape },
 };
 
 let toolMode = "select";
@@ -724,6 +727,8 @@ function setToolMode(mode) {
   if (penBar) penBar.hidden = toolMode !== "pen";
   const brushBar = $("brush-bar");
   if (brushBar) brushBar.hidden = toolMode !== "brush";
+  const shapeBar = $("shape-bar");
+  if (shapeBar) shapeBar.hidden = toolMode !== "shape";
 }
 
 {

@@ -419,27 +419,28 @@ async function regenerateActiveLayer({ coalesce }) {
 
 // -- commit: one finished subpath -> append to the active pen layer, or create one --
 
-async function commitSubpath(closed) {
-  if (!pending.length) return;
-  const subpath = { anchors: pending.map((a) => ({ ...a })), closed };
-  pending = [];
-  gesture = null;
-  redraw();
+// Exported because the SHAPE tool (shapes.js) produces the very same thing by
+// a different gesture — a rectangle is four corner anchors, an ellipse is four
+// with kappa handles. The targeting rules below (subtract needs a target,
+// a non-pen target converts to a shape layer, otherwise append or create) are
+// subtle enough that a second copy of them would drift; there is one.
+export async function commitPenSubpath(subpath, opts = {}) {
+  const bite = opts.subtract ?? subtract;
   try {
     const id = currentTargetLayerId();
     const target = id ? S.state.project.layers.find((l) => l.id === id) : null;
     const gen = target?.source?.type === "generator" ? target.source.generator : null;
-    if (subtract && !target) {
+    if (bite && !target) {
       actions.log("subtract: nothing to bite into — select a pen, brush or shape layer");
       return;
     }
-    if (target && (subtract || gen !== "pen")) {
+    if (target && (bite || gen !== "pen")) {
       // region semantics: one op onto the mass. A plain pen/brush target
       // converts to a shape layer inside the same server-side undo step
       // (session.append_shape_op) — "erase from a pen shape commits the shape".
       await api.post(`/api/layers/${target.id}/shape_op`,
-                     { op: { kind: "pen", mode: subtract ? "subtract" : "add",
-                             anchors: subpath.anchors, closed } });
+                     { op: { kind: "pen", mode: bite ? "subtract" : "add",
+                             anchors: subpath.anchors, closed: subpath.closed } });
       activePenLayerId = target.id;
     } else if (target) {
       const subpaths = [...(target.source.params.subpaths || []), subpath];
@@ -452,8 +453,17 @@ async function commitSubpath(closed) {
     }
     await actions.refreshProject();
     await actions.refreshResolved();
-    redraw();
   } catch (e) { actions.oops(e); }
+}
+
+async function commitSubpath(closed) {
+  if (!pending.length) return;
+  const subpath = { anchors: pending.map((a) => ({ ...a })), closed };
+  pending = [];
+  gesture = null;
+  redraw();
+  await commitPenSubpath(subpath);
+  redraw();
 }
 
 // -- overlay: committed anchors/handles (re-edit) + pending shape + rubber-band --

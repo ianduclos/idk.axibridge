@@ -2377,3 +2377,155 @@ def test_separation_mode_switch_rebuilds_the_plate_list(ui):
         "        .some((r) => r.dataset.name === 'lights')", timeout=5_000)
     assert not ui.errors
 
+
+
+# -- the shape tool (rect / ellipse / line) ---------------------------------
+
+def shape_drag(page, kind: str, dx: float, dy: float, modifiers=None) -> None:
+    """Drag a shape out on the canvas the way a user does: pick the tool, pick
+    the primitive, then a real pointer drag from the middle of the canvas.
+
+    Deliberately in SCREEN pixels with the assertions phrased in relationships
+    (four anchors, rx == ry, a stroke of two points) rather than in millimetres
+    — the mm a drag lands on depend on zoom and pan, and a test that pins those
+    is testing the viewport, not the tool."""
+    page.click('#tool-toggle button[data-tool="shape"]')
+    page.wait_for_selector("#shape-bar:not([hidden])", timeout=10_000)
+    page.click(f"#shape-{kind}")
+    box = page.locator("#canvas-wrap").bounding_box()
+    x0 = box["x"] + box["width"] / 2 - 60
+    y0 = box["y"] + box["height"] / 2 - 60
+    for key in modifiers or []:
+        page.keyboard.down(key)
+    page.mouse.move(x0, y0)
+    page.mouse.down()
+    page.mouse.move(x0 + dx / 2, y0 + dy / 2)
+    page.mouse.move(x0 + dx, y0 + dy)
+    page.mouse.up()
+    for key in reversed(modifiers or []):
+        page.keyboard.up(key)
+
+
+def only_layer(page) -> dict:
+    layers = _get(f"{page.base}/api/project")["layers"]
+    assert len(layers) == 1, f"expected one layer, got {[l['name'] for l in layers]}"
+    return layers[0]
+
+
+def wait_for_generator(page, generator: str, timeout: float = 15.0) -> dict:
+    """Poll the project until the single layer runs `generator`.
+
+    A commit is two round trips (the op, then the refresh), so reading the
+    project the instant the mouse comes up is a race — and one that passes
+    locally and fails on a slower machine, which is the worst kind."""
+    deadline = time.time() + timeout
+    while True:
+        layer = only_layer(page)
+        if layer["source"].get("generator") == generator:
+            return layer
+        assert time.time() < deadline, (
+            f"layer never became a {generator} layer "
+            f"(still {layer['source'].get('generator')})")
+        time.sleep(0.1)
+
+
+def test_the_shape_bar_offers_the_primitives_and_hides_subtract_on_line(ui):
+    """Subtract is meaningless for a line — it has no interior to bite with —
+    so the control says so by going dead rather than by failing on commit."""
+    ui.click('#tool-toggle button[data-tool="shape"]')
+    ui.wait_for_selector("#shape-bar:not([hidden])", timeout=10_000)
+    assert ui.is_visible("#shape-bar")
+    assert not ui.is_visible("#pen-bar"), "and only its own controls"
+
+    assert ui.is_enabled("#shape-subtract")
+    ui.click("#shape-line")
+    ui.wait_for_function(
+        "() => document.getElementById('shape-subtract').disabled", timeout=5_000)
+
+    ui.click("#shape-rect")
+    ui.wait_for_function(
+        "() => !document.getElementById('shape-subtract').disabled", timeout=5_000)
+    assert not ui.errors
+
+
+def test_dragging_a_rectangle_makes_a_four_corner_pen_shape(ui):
+    """A rectangle is not a new kind of object: it is four corner anchors on
+    an ordinary pen layer, which is what lets the Pen tool re-edit its corners
+    afterwards and lets it bite into a brush blob."""
+    shape_drag(ui, "rect", 140, 90)
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#layer-list .layer-row').length === 1",
+        timeout=15_000)
+
+    layer = only_layer(ui)
+    assert layer["source"]["generator"] == "pen"
+    [subpath] = layer["source"]["params"]["subpaths"]
+    assert subpath["closed"] is True
+    anchors = subpath["anchors"]
+    assert len(anchors) == 4
+    assert all(a["in_handle"] is None and a["out_handle"] is None for a in anchors), \
+        "a rectangle's corners are corners — handles would round them"
+    xs = sorted({round(a["x"], 3) for a in anchors})
+    ys = sorted({round(a["y"], 3) for a in anchors})
+    assert len(xs) == 2 and len(ys) == 2, "axis-aligned: two distinct x, two distinct y"
+    assert not ui.errors
+
+
+def test_shift_dragging_an_ellipse_makes_a_true_circle(ui):
+    """Four kappa handles, and Shift constrains the box to a square, so the
+    committed anchors describe a circle rather than an ellipse."""
+    shape_drag(ui, "ellipse", 120, 60, modifiers=["Shift"])
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#layer-list .layer-row').length === 1",
+        timeout=15_000)
+
+    anchors = only_layer(ui)["source"]["params"]["subpaths"][0]["anchors"]
+    assert len(anchors) == 4
+    assert all(a["in_handle"] and a["out_handle"] for a in anchors), \
+        "every quarter point is smooth, or the circle shows four corners"
+    rx = (max(a["x"] for a in anchors) - min(a["x"] for a in anchors)) / 2
+    ry = (max(a["y"] for a in anchors) - min(a["y"] for a in anchors)) / 2
+    assert abs(rx - ry) < 0.5, f"Shift should give a circle, got rx={rx:.2f} ry={ry:.2f}"
+    # the handle is the circle constant, which is what keeps the arc a true
+    # quarter circle rather than a visibly flat approximation
+    assert abs(abs(anchors[0]["out_handle"][0]) - 0.5523 * rx) < 0.1
+    assert not ui.errors
+
+
+def test_a_line_commits_as_a_drawing_stroke_not_a_mass(ui):
+    """The one primitive that is NOT a silhouette: a line has no interior, so
+    it lands on a drawing layer as a two-point stroke, like anything else the
+    draw tool captures."""
+    shape_drag(ui, "line", 100, 70)
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#layer-list .layer-row').length === 1",
+        timeout=15_000)
+
+    layer = only_layer(ui)
+    assert layer["source"]["generator"] == "drawing", \
+        "a line is a stroke, not a filled mass"
+    [stroke] = layer["source"]["params"]["strokes"]
+    assert len(stroke) == 2, "a straight line is two points, however far you dragged"
+    assert not ui.errors
+
+
+def test_subtracting_a_circle_bites_into_a_brush_layer(ui):
+    """The whole reason shapes are pen silhouettes: with Subtract on, an
+    ellipse dragged over a selected brush blob converts that layer to a shape
+    mass and takes a bite out of it — one undo step, no new op kind."""
+    add_layer(ui, "brush", {"strokes": [
+        {"points": [[80.0, 80.0, 0.0], [180.0, 110.0, 0.5]], "radius": 18.0}]})
+    reload_app(ui)
+    wait_for_ink(ui)
+    select_layer(ui, 0)
+
+    ui.click('#tool-toggle button[data-tool="shape"]')
+    ui.wait_for_selector("#shape-bar:not([hidden])", timeout=10_000)
+    ui.click("#shape-subtract")
+    shape_drag(ui, "ellipse", 90, 90)
+
+    layer = wait_for_generator(ui, "shape")
+    ops = layer["source"]["params"]["ops"]
+    assert [op["kind"] for op in ops] == ["brush", "pen"]
+    assert ops[-1]["mode"] == "subtract"
+    assert not ui.errors
