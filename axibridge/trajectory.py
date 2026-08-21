@@ -83,6 +83,26 @@ def _points(traj: Trajectory) -> int:
     return sum(len(p.points) for chunk in traj.steps for p in chunk)
 
 
+def _evict_locked(protect_key: str) -> None:
+    """Caller holds ``_lock``. Evicts the oldest entries — never
+    ``protect_key``, the one just inserted — until both the point budget and
+    the entry cap are satisfied, or nothing else is left to evict. Without
+    the protection, an entry over budget on its own (a long accumulative
+    trajectory can be) would still get popped once it is the last one
+    standing, emptying the cache and forcing a recompute on the very next
+    call for the same params — silently, forever, at a zero hit rate. An
+    oversized single trajectory staying cached beats that. Mirrors
+    ``gencache._evict_locked``'s protect-the-inserted-key contract, though
+    that cache evicts randomly and this one evicts oldest-first (LRU, via
+    ``OrderedDict``)."""
+    budget = CACHE_BUDGET_POINTS * cache_budget_multiplier()
+    while len(_CACHE) > CACHE_MAX_ENTRIES or sum(_points(t) for t in _CACHE.values()) > budget:
+        victims = [k for k in _CACHE if k != protect_key]
+        if not victims:
+            break
+        del _CACHE[victims[0]]
+
+
 def _key(module: "ProcessModule", params: BaseModel) -> str:
     """Everything about the run EXCEPT where along it we are looking. Dropping
     the time axis from the key is the whole trick: every step of a scrub is
@@ -104,8 +124,5 @@ def build(module: "ProcessModule", params: BaseModel) -> Trajectory:
     with _lock:
         _CACHE[key] = traj
         _CACHE.move_to_end(key)
-        budget = CACHE_BUDGET_POINTS * cache_budget_multiplier()
-        while _CACHE and (len(_CACHE) > CACHE_MAX_ENTRIES
-                          or sum(_points(t) for t in _CACHE.values()) > budget):
-            _CACHE.popitem(last=False)
+        _evict_locked(key)
     return traj

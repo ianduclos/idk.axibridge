@@ -64,3 +64,19 @@ def test_the_cache_is_bounded():
     for seed in range(60):
         mod.generate(P(steps=6, seed=seed))
     assert len(trajectory._CACHE) <= trajectory.CACHE_MAX_ENTRIES
+
+
+def test_an_oversized_trajectory_still_caches(monkeypatch):
+    """One trajectory whose own point count exceeds the budget must not
+    evict itself: the eviction loop must protect the entry it just
+    inserted, oldest-first, and stop rather than empty the cache down to
+    nothing. Otherwise every scrub position recomputes the process, forever,
+    at a zero hit rate — the exact failure this cache exists to prevent."""
+    trajectory.clear_cache()
+    Counted.runs = 0
+    monkeypatch.setattr(trajectory, "CACHE_BUDGET_POINTS", 1)
+    mod = Counted()
+    mod.generate(P(steps=3))
+    assert len(trajectory._CACHE) == 1, "the just-inserted entry evicted itself"
+    mod.generate(P(steps=5))
+    assert Counted.runs == 1, "an over-budget trajectory must not evict itself"
