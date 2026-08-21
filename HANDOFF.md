@@ -1,8 +1,48 @@
 ---
 project: idk.axibridge
 updated: 2026-08-21
-entries: 10
+entries: 11
 ---
+
+### Watch/scrub/rehearse/plot: time as a param (A1) — opened 2026-08-21, owner: ian
+
+- done: generators can declare a time axis; `ProcessModule` yields step-by-step
+  process output; a trajectory cache runs a process once so scrubbing is a
+  free prefix slice; `venation` (space-colonisation growth) is the first real
+  process generator; a popup plays and scrubs any layer with a time axis;
+  Rehearse stamps several moments of one process onto the sheet in one undo
+  step, at nearly no extra cost because the trajectory cache shares across
+  moments. Suite 1080 → 1115, verified only through pytest/simulator —
+  nothing here has touched paper, and nobody has watched it on a real screen
+  yet either. `docs/plans/time-as-a-param-RESULTS.md` has the full ledger.
+- next:
+  - **The question this whole round exists to make answerable: now that
+    there is something to watch, does poking a running process want to be
+    direct manipulation, or a recorded score?** The design deliberately
+    deferred interaction (A1.5) because it is the single most likely thing
+    here to force a redesign, and it cannot be settled from a desk — it
+    wants a hand actually on the scrub slider while venation is growing.
+  - Watch a venation layer play in the popup. It requests one step every
+    40ms, but each request is a full HTTP round trip — check by eye whether
+    it holds anywhere near that rate, or reads as choppy.
+  - Scrub it by hand — does landing on an arbitrary step ever look "wrong"
+    (a half-grown branch, a stalled tip) in a way that argues for smarter
+    snapping.
+  - Rehearse one — does a pencil-then-ink pass on a growth process actually
+    read as rehearsal, or does the nesting need something like fading pen
+    weight per moment to sell it.
+  - **Plot one.** Nodal-free continuous growth lines should plot unusually
+    cleanly — no crossing hatch, no fill boundary, just branching strokes —
+    and that claim has never met a pen.
+- blockers: none — it's shipped and green, this is eyes/hands/paper only, and
+  the A1.5 question above is the input the next round (A2, the homeostat)
+  needs before it can be designed.
+- context: `docs/plans/time-as-a-param.md` (design, with the interaction
+  decision and its reversal path spelled out), `docs/plans/time-as-a-param-
+  RESULTS.md` (what shipped and what the design got wrong), `axibridge/
+  sources/venation.py`, `axibridge/process.py`, `axibridge/trajectory.py`,
+  `axibridge/static/js/process.js`. ROADMAP's A2 (homeostat) is the item most
+  directly waiting on this answer.
 
 ### Eye-check: eigenfunction (cymatic) fill — opened 2026-08-21, updated 2026-08-21, owner: ian
 

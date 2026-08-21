@@ -49,7 +49,21 @@ B makes what it draws with interesting.
 
 ## Half A — something at stake
 
-### A1. Time as a param, plus a live popup (the substrate)
+### A1. Time as a param, plus a live popup (the substrate) — SHIPPED 2026-08-21
+
+`axibridge/process.py` + `axibridge/trajectory.py` + `axibridge/sources/
+venation.py` + `static/js/process.js`. Full ledger and defect list:
+`docs/plans/time-as-a-param-RESULTS.md`. One thing this sketch got wrong,
+in the good direction: it assumed the master-timeline binding needed
+building. It didn't — `Session._effective_gen_params` already folded
+`master_t` into a generator's `frame` field, so A1 turned out to be a
+*generalisation of one existing method*, not new plumbing, and the frame
+path stayed byte-identical throughout. And the second argument for A1
+below (pentimento) paid out further than expected: because the trajectory
+cache keys on every param except the time axis, `Rehearse` gets N moments
+of a process for the cost of ONE run, not N — a consequence of the cache
+design colliding productively with a problem neither task set out to
+solve together.
 
 Ian, 2026-08-18: *"many algos can occur in time; current ones are more
 instant/parametric… a new sort of generator type that opens a popup where we can

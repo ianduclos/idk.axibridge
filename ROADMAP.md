@@ -233,39 +233,16 @@ substrate round can be taken deliberately rather than under pressure.
    rises with A1/A2 (plausible midpoints need a rich enough process to be a
    manifold).
 
-### Round 3 — the substrate
+### Round 3 — the engine
 
-6. **Time as a param, plus a live popup** (A1) — the enabling round, and a
-   round on its own. `generate()` stays pure and returns the state at step *N*;
-   the popup scrubs and plays it; **interaction writes events into a hidden
-   params list**, so a live session becomes a recorded score and the layer
-   stays reproducible, undoable and tweenable. Binding step-count to
-   `master_t` makes growth an animation for free. Not a workbench revival —
-   that was a stateless playground beside the project; this is a per-layer
-   inspector for layers with a real time axis.
-
-   **The second argument for A1, and it is nearly as strong as the first:** once
-   time is a param, **"draw several moments of the same process on one sheet"
-   becomes a layer-level operation** — the sweep machinery pointed at the time
-   axis — rather than something each generator implements. That ships
-   **pentimento / rehearsal (A6)** for every time-based generator at once, with
-   per-pass pen assignment falling out of the existing multi-pen path
-   (rehearsals in pencil, the committed stroke in ink). Pass 1's §2 has been
-   open since July waiting for exactly this, and it is the same mechanic as
-   diffusion's descent — the interesting output is the trajectory, not the
-   converged result. A1 does not merely enable Half A; it retroactively closes
-   an old item.
-
-### Round 4 — the engine
-
-7. **Homeostat generator** (A2) — the most expansive idea in the pass, and it
+6. **Homeostat generator** (A2) — the most expansive idea in the pass, and it
    wants A1 because you cannot tune a system you cannot watch hunt. Measure an
    essential variable, and when it leaves its viable range **reroll the rule
    set blindly** until drawing can continue. Oehlen's regime collision with a
    reason: the seam lands where the system was in trouble. Leave memory out by
    default — adding it makes the system converge, and converged is another word
    for finished.
-8. **The seam** (A4) — independent fronts with identical local rules and no
+7. **The seam** (A4) — independent fronts with identical local rules and no
    awareness of each other; draw the failure to reconcile. The aesthetic
    inverse of `region_boundary: continuous`, which stitches. Ian's read: the
    existing attempts "don't really hit the spot but they're a good start" —

@@ -37,7 +37,7 @@ plot and costs nothing.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Iterator
+from typing import Iterator
 
 from pydantic import BaseModel
 

@@ -2703,11 +2703,16 @@ class Session:
         top, still the "ink"), and stays exactly as live and re-editable as
         any other layer — nothing here is frozen or baked.
 
-        This is nearly free. The trajectory cache (Task 3) keys on every
-        param EXCEPT the time axis by design — that is the whole trick behind
-        scrubbing — so every moment below hits the SAME cached trajectory and
-        only slices a different prefix of it. N moments cost one process run,
-        not N.
+        This is nearly free FOR A ``ProcessModule`` SOURCE. The trajectory
+        cache (Task 3) keys on every param EXCEPT the time axis by design —
+        that is the whole trick behind scrubbing — so every moment below hits
+        the SAME cached trajectory and only slices a different prefix of it:
+        N moments cost one process run, not N. A generator reached only
+        through the plain ``frame`` fallback (an image generator with no
+        declared ``time_axis``) has no trajectory cache to share — each
+        moment is its own ``generate()`` call, memoised by `gencache` like
+        any other, so N moments cost N (cheap) calls rather than one shared
+        run.
 
         Follows ``add_separation_stack``'s shape, not ``animate_layer``'s:
         every moment's geometry is generated BEFORE anything is mutated, then
