@@ -2688,6 +2688,77 @@ class Session:
         if isinstance(image, str) and asset_store.is_sequence(image):
             b.source.params = {**params, "frame": 1.0}
 
+    def rehearse_layer(self, layer_id: str, moments: int = 4) -> list[CanvasLayer]:
+        """Stamp several moments of one process onto the sheet — pencil
+        rehearsals under a committed stroke, which is what makes a drawing
+        show its own history.
+
+        A moment is nothing but the layer's own generator re-run with a
+        different value on its TIME AXIS: no tween, no baking, no new
+        machinery. ``moments`` values are spread evenly across the axis's own
+        declared bounds (:meth:`axis_bounds`), not the layer's current value —
+        the rehearsal covers the whole process, not just the neighbourhood of
+        where this particular layer happens to sit today. Each moment is an
+        ORDINARY generator layer, inserted just below the original (still on
+        top, still the "ink"), and stays exactly as live and re-editable as
+        any other layer — nothing here is frozen or baked.
+
+        This is nearly free. The trajectory cache (Task 3) keys on every
+        param EXCEPT the time axis by design — that is the whole trick behind
+        scrubbing — so every moment below hits the SAME cached trajectory and
+        only slices a different prefix of it. N moments cost one process run,
+        not N.
+
+        Follows ``add_separation_stack``'s shape, not ``animate_layer``'s:
+        every moment's geometry is generated BEFORE anything is mutated, then
+        one ``_checkpoint()`` takes the whole project at once and every layer
+        is appended directly — no other checkpointing method is called along
+        the way, so this is one undo step, not several."""
+        layer = self.project.layer(layer_id)
+        if layer.source.type not in ("generator", "baked") or not layer.source.generator:
+            raise RuntimeError(f"{layer.name} was not generated; nothing to rehearse")
+        if moments < 2:
+            raise ValueError("rehearse needs at least 2 moments")
+        generator_id = layer.source.generator
+        axis = self.time_axis(generator_id)
+        bounds = self.axis_bounds(generator_id, axis) if axis else None
+        if not axis or not bounds:
+            raise RuntimeError(f"{layer.name} has no time axis to rehearse along")
+
+        src = get_source(generator_id)
+        base = dict(layer.source.params or {})
+        is_int_axis = src.Params.model_fields[axis].annotation is int
+        lo, hi = bounds
+        span = hi - lo
+
+        # Generate every moment BEFORE mutating anything — a failure partway
+        # through must not leave a partial rehearsal behind.
+        generated: list[tuple[dict[str, Any], list[Path]]] = []
+        for i in range(moments):
+            frac = i / (moments - 1) if moments > 1 else 0.0
+            value: float = lo + frac * span
+            if is_int_axis:
+                value = int(round(value))
+            params = {**base, axis: value}
+            doc = gencache.generate_cached(src, params)
+            paths = [p for lyr in doc.layers for p in lyr.paths]
+            generated.append((params, paths))
+
+        with self._lock:
+            self._checkpoint()
+            idx = self.project.layers.index(layer)
+            created: list[CanvasLayer] = []
+            for offset, (params, paths) in enumerate(generated):
+                moment = CanvasLayer(
+                    name=f"{layer.name} · moment {offset + 1}/{moments}",
+                    source=LayerSource(type="generator", generator=generator_id, params=params),
+                    transform=layer.transform.model_copy(),
+                )
+                self.project.layers.insert(idx + offset, moment)
+                self.source_geometry[moment.id] = paths
+                created.append(moment)
+            return created
+
     def consolidate_effects(self, layer_id: str) -> CanvasLayer:
         """Bake transform + effect stack into the source geometry.
 

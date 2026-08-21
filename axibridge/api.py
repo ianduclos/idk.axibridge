@@ -1018,6 +1018,19 @@ def animate_layer(layer_id: str) -> dict[str, Any]:
         raise _fail(e)
 
 
+@router.post("/layers/{layer_id}/rehearse")
+def rehearse_layer(layer_id: str, moments: int = Query(default=4, ge=2, le=12)) -> dict[str, Any]:
+    """Stamp `moments` moments of a process layer's time axis onto the
+    sheet — one new ordinary generator layer per moment, one undo step."""
+    try:
+        layers = session.rehearse_layer(layer_id, moments)
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+    return {"layers": [l.model_dump() for l in layers]}
+
+
 @router.post("/layers/{layer_id}/consolidate")
 def consolidate_layer(layer_id: str) -> dict[str, Any]:
     """Bake the layer's transform + effect stack into its source geometry."""

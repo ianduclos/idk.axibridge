@@ -1829,6 +1829,8 @@ export function renderLayerDetail() {
         title="Turn this layer into a keyframed A/B animation that follows the master timeline">⏱ Animate</button>` : ""}
       <button id="process-watch" hidden
         title="Watch this process play and scrub its time axis — preview only, the project is not touched">▷ Watch</button>
+      <button id="fx-rehearse" hidden
+        title="Stamp several moments of this process onto the sheet — assign a pale pen to the early ones for rehearsal under ink">Rehearse</button>
     </div>
     <div id="fx-steps"></div>`;
   wrap.appendChild(fx);
@@ -1848,6 +1850,22 @@ export function renderLayerDetail() {
   if (watchBtn) {
     watchBtn.hidden = !watchableAxis(layer);
     watchBtn.onclick = () => openProcessPopup(layer.id);
+  }
+  // Rehearse: same eligibility as Watch (a generator with a time axis) —
+  // gated identically because both need a real axis to sweep. One session
+  // call, one undo step; the new layers land selected so the pen/pale-ink
+  // pass is the very next thing to do.
+  const rehearseBtn = fx.querySelector("#fx-rehearse");
+  if (rehearseBtn) {
+    rehearseBtn.hidden = !watchableAxis(layer);
+    rehearseBtn.onclick = async () => {
+      try {
+        const { layers } = await api.post(`/api/layers/${layer.id}/rehearse?moments=4`);
+        await actions.refreshProject();
+        await actions.refreshResolved();
+        actions.setSelection(layers.map((l) => l.id));
+      } catch (e) { actions.oops(e); }
+    };
   }
   const animateBtn = fx.querySelector("#fx-animate");
   if (animateBtn) {
