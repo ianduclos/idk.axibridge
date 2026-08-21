@@ -167,14 +167,16 @@ class CanvasLayer(BaseModel):
                                        description="Signed: + opens a gap, − bleeds under")
     frame_offset: float = Field(
         default=0.0, ge=-1.0, le=1.0,
-        description="Added to the generator's 'frame' when sampling an image "
-                    "sequence (result clamped 0..1); layers can time-shift the "
-                    "same clip, and interpolation layers lerp it")
+        description="Added (normalised 0..1) to the generator's TIME AXIS — "
+                    "the 'frame' of an image sequence, or whatever param a "
+                    "generator declares — when sampling it (result clamped to "
+                    "the axis's own bounds); layers can time-shift the same "
+                    "clip/process, and interpolation layers lerp it")
     frame_follow: bool = Field(
         default=False,
-        description="Clip advances with the master timeline: effective frame = "
-                    "frame + frame_offset + master t (clamped 0..1); positions "
-                    "never move")
+        description="Time axis advances with the master timeline: effective "
+                    "position = axis + frame_offset + master t (clamped to the "
+                    "axis's own bounds); positions never move")
 
 
 class PaperGuide(BaseModel):

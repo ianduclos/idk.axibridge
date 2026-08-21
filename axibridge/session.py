@@ -36,7 +36,7 @@ from .compose import (
 )
 from .machine import manager
 from .model import Layer, Path, PathDocument
-from .registry import effective_time_axis, field_bounds, get_source
+from .registry import effective_time_axis, field_bounds, fold_time_axis, get_source
 from .stores import Pen, pen_library, settings_store
 from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
 
@@ -498,30 +498,7 @@ class Session:
             shift += master_t
         if not shift:
             return params
-        gen = layer.source.generator
-        axis = Session.time_axis(gen)
-        if axis is None:
-            return params
-        bounds = Session.axis_bounds(gen, axis)
-        if bounds is None:
-            return params
-        lo, hi = bounds
-        span = hi - lo
-        field = get_source(gen).Params.model_fields[axis]
-        current = params.get(axis, field.default)
-        norm = (float(current) - lo) / span if span else 0.0
-        value = lo + min(1.0, max(0.0, norm + shift)) * span
-        value = min(hi, max(lo, value))
-        # An int axis must be handed an int: Pydantic v2 rejects 4.5 for an int
-        # field rather than truncating, so an unrounded fold 422s on a scrub.
-        # int(round()) rounds to nearest (Python's round-half-to-even at exact
-        # midpoints); nothing depends on the tie direction. This cast MUST come
-        # after the clamp above — clamping an already-int value against float
-        # lo/hi widens it back to float (min(8.0, 8) returns the float 8.0).
-        if field.annotation is int:
-            value = int(round(value))
-        params[axis] = value
-        return params
+        return fold_time_axis(get_source(layer.source.generator), params, shift)
 
     @staticmethod
     def _sequence_driven(generator_id: str, params: dict[str, Any]) -> bool:
@@ -832,19 +809,20 @@ class Session:
             idx = self.project.layers.index(layer)
             self.project.layers[idx] = updated
             self._snapshot_pen(updated.pen_id)
-            # A frame_offset change on a frame-driven generator re-samples the
-            # clip: regenerate its source geometry with the offset folded into
-            # ``frame`` (stored params keep the user's raw value). Same lock,
-            # same single checkpoint; a generation failure propagates (identical
-            # failure semantics to regenerate_layer, which has already
-            # checkpointed). Non-generator sources just store the field.
+            # A frame_offset change on a time-axis generator re-samples it:
+            # regenerate its source geometry with the offset folded into
+            # whichever param is its TIME AXIS (stored params keep the user's
+            # raw value). Same lock, same single checkpoint; a generation
+            # failure propagates (identical failure semantics to
+            # regenerate_layer, which has already checkpointed). Non-generator
+            # sources just store the field.
             # (live generators only: a baked layer's geometry holds consolidated
             # transform/effects — regenerating here would silently discard them;
             # an explicit "regenerate" un-bakes on purpose and picks up the offset)
             if ("frame_offset" in patch and updated.frame_offset != layer.frame_offset
                     and updated.source.type == "generator"
                     and updated.source.generator
-                    and "frame" in get_source(updated.source.generator).Params.model_fields):
+                    and effective_time_axis(get_source(updated.source.generator)) is not None):
                 src = get_source(updated.source.generator)
                 doc = gencache.generate_cached(src, self._effective_gen_params(updated))
                 self.source_geometry[updated.id] = [p for lyr in doc.layers for p in lyr.paths]

@@ -36,6 +36,7 @@ file in is enough.
 from __future__ import annotations
 
 import importlib
+import math
 import pkgutil
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -43,6 +44,7 @@ from contextvars import ContextVar
 from typing import Any, Callable, Iterator, Literal
 
 from pydantic import BaseModel
+from pydantic_core import PydanticUndefined
 
 from .model import Path, PathDocument
 
@@ -152,6 +154,54 @@ def effective_time_axis(src: Any) -> str | None:
     if axis and axis in fields:
         return axis
     return "frame" if "frame" in fields else None
+
+
+def fold_time_axis(src: Any, params: dict[str, Any], shift: float) -> dict[str, Any]:
+    """``params`` with ``shift`` (in NORMALISED units, 0..1 across the axis's
+    own bounds) folded into whichever param is this source's time axis.
+    Returns a NEW dict; never mutates the input. A source with no axis, no
+    bounds, or a zero shift comes back unchanged.
+
+    The ONE place this arithmetic lives: ``Session._effective_gen_params``
+    (per-layer offset/scrub) and ``tween.py``'s A/B parameter blend both call
+    this rather than each folding a ``frame`` field by hand — that duplication
+    is exactly how the tween path stayed hardcoded to ``frame`` after the
+    layer path was generalised."""
+    params = dict(params)
+    if not shift:
+        return params
+    axis = effective_time_axis(src)
+    if axis is None:
+        return params
+    field = src.Params.model_fields[axis]
+    bounds = field_bounds(field)
+    if bounds is None:
+        return params
+    lo, hi = bounds
+    span = hi - lo
+    current = params.get(axis, field.default)
+    # A required field (no default) has PydanticUndefined rather than a real
+    # value when unset in the stored params; treat it as the axis's own low
+    # bound rather than raising on the arithmetic below.
+    if current is PydanticUndefined:
+        current = lo
+    norm = (float(current) - lo) / span if span else 0.0
+    value = lo + min(1.0, max(0.0, norm + shift)) * span
+    value = min(hi, max(lo, value))
+    if field.annotation is int:
+        # An int axis must be handed an int: Pydantic v2 rejects a float for
+        # an int field rather than truncating, so an unrounded fold 422s on a
+        # scrub. int(round()) rounds to nearest (Python's round-half-to-even
+        # at exact midpoints); nothing depends on the tie direction.
+        value = int(round(value))
+        # Re-clamp with INTEGER bounds, not the float ge/le: `le=8.6` on an
+        # int field admits 8, not 9, so floor/ceil the float bounds to the
+        # nearest valid int rather than reusing lo/hi — rounding `value` can
+        # land outside that narrower integer range even after the float
+        # clamp above, and Pydantic would 422 on the result.
+        value = min(math.floor(hi), max(math.ceil(lo), value))
+    params[axis] = value
+    return params
 
 
 class EffectContext(BaseModel):

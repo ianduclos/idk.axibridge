@@ -84,7 +84,7 @@ from pydantic import BaseModel, Field, model_validator
 from .compose import Affine, CanvasLayer, EffectStep, Project, _layer_seed, guide_page as _guide_page, transform_paths
 from .gencache import generate_cached
 from .model import Path
-from .registry import EffectContext, get_effect, get_source
+from .registry import EffectContext, fold_time_axis, get_effect, get_source
 
 log = logging.getLogger(__name__)
 
@@ -667,14 +667,20 @@ def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
             if blended is not _NO_BLEND:
                 params[field] = blended
         # frame_offset is a layer-level lerped quantity (like the transform):
-        # fold the interpolated offset into the generator's ``frame`` axis so an
-        # A/B pair with identical params but different offsets plays the clip.
-        # Each endpoint's effective offset already carries the raw (clamped)
-        # master value for any ``frame_follow`` layer in its reduction — so
-        # scrubbing advances the clip content without moving any stamp.
+        # fold the interpolated offset into the generator's TIME AXIS so an
+        # A/B pair with identical params but different offsets plays through
+        # it. Each endpoint's effective offset already carries the raw
+        # (clamped) master value for any ``frame_follow`` layer in its
+        # reduction — so scrubbing advances the axis without moving any stamp.
+        # ``off`` is already in the same normalised (0..1) units the fold
+        # expects. The guard is deliberate: fold even when the BLENDED offset
+        # is zero, as long as either endpoint carries one — two nonzero
+        # offsets can cancel at this ``t`` and still need to route through
+        # ``fold_time_axis`` (whose own no-op shortcut only covers ``off``
+        # itself being falsy).
         off = ega[2] + (egb[2] - ega[2]) * t
-        if (off or ega[2] or egb[2]) and "frame" in src.Params.model_fields:
-            params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + off))
+        if off or ega[2] or egb[2]:
+            params = fold_time_axis(src, params, off)
         doc = generate_cached(src, params)
         return [p for lyr in doc.layers for p in lyr.paths]
     # structural mode: pointwise lerp (validated to match)
