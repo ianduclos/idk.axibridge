@@ -4,7 +4,7 @@ updated: 2026-08-21
 entries: 10
 ---
 
-### Eye-check: eigenfunction (cymatic) fill — opened 2026-08-21, owner: ian
+### Eye-check: eigenfunction (cymatic) fill — opened 2026-08-21, updated 2026-08-21, owner: ian
 
 - done: new effect **Eigenfunction fill (cymatics)** — every closed+filled
   path in a layer becomes a vibrating membrane and gets filled with its own
@@ -12,12 +12,24 @@ entries: 10
   over it. Mode changes density *and* character on one scrub; Mix sweeps the
   family of figures a symmetric shape shows at one frequency (a square: the
   straight line at 0, the two diagonals at ±1); an image can weigh the
-  membrane so lines bunch where it is dark. Suite 1049 → 1072, all analytic
+  membrane so lines bunch where it is dark. **Second round the same day,
+  after Ian saw the first output and called it boring — correctly**: it drew
+  only the nodal set, which Courant's theorem caps at ~n curves, so it was a
+  partition of the shape rather than a fill (2 strokes on his shape). It now
+  traces a whole family of level sets (`levels`, `level_bias`), can contour
+  stillness instead of displacement (`field=sand`), and can ring across a
+  band of modes (`spread`). Suite 1049 → 1075, all analytic
   (rectangle spectrum in closed form, Courant's nodal-domain bound) rather
   than golden files. Verified end to end through the real API — PATCH, resolve,
   stats, undo — and rendered to PNG contact sheets, but never on paper and
   never in the actual browser UI.
 - next:
+  - Look at the defaults first — Mode 6, 9 levels, bias 0.6. Then **drag
+    Level bias from 0 to 1** on a mid mode: 0 shades every lobe alike, 1
+    piles the contours onto the nodal figure. That is the tonal control and
+    the one most likely to be tuned wrong.
+  - **`field = sand`** is the other look worth an early opinion — it is the
+    physically honest one (ink where the surface is still) and much denser.
   - Add a filled `polygon` layer, stack the effect, and **drag Mode**. The
     first drag step pays for the eigensolve (~80 ms on a 120 mm pentagon),
     every step after is ~10 ms from the cached basis. If that ever feels slow,

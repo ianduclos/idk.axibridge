@@ -3,7 +3,7 @@ project: idk.axibridge
 state: active
 updated: 2026-08-21
 machine: mac+pi
-summary: Idea pass 4 is under way — B2 (eigenfunction/cymatic fill) shipped as an effect, filling any closed shape with the nodal lines of its own vibration, with degenerate-mode mixing, the high-mode Berry regime and an image-weighted membrane.
+summary: Idea pass 4 is under way — B2 (eigenfunction/cymatic fill) shipped as an effect that fills any closed shape with the level sets of its own vibration, with degenerate-mode mixing, a stillness/"sand" field, multi-mode ringing and an image-weighted membrane.
 next:
   - "Eye-check the new fill and get ink on paper — HANDOFF.md's top entry says exactly what to look at; the Mix sweep on a square is the part no test can judge"
   - "Pass 4 continues: B1 (geodesics on the Eikonal solver) is still the cheap warm-up, B3 (hachures) the other Round 1 item, then the A1 substrate round"
@@ -18,7 +18,7 @@ handoff_for: ian
 
 **Session 2026-08-21 (Opus 5): the cymatic fill — pass 4's B2, shipped.**
 
-Three commits, suite 1049 → 1072. The first item of idea pass 4 to be built,
+Five commits, suite 1049 → 1075. The first item of idea pass 4 to be built,
 taken out of Round 1 order because it was the one Ian wanted.
 
 **Eigenfunction fill** (`e3cca09`) fills a closed shape with the **nodal
@@ -47,6 +47,22 @@ density **and** character together, which hatch spacing cannot do.
   cells past the boundary** before contouring: zeroing the outside instead
   puts a contour crossing wherever a negative nodal domain meets the edge,
   i.e. a traced line running along the outline itself.
+- **It shipped sparse, and that was wrong.** The first version drew only the
+  nodal set — which Courant's theorem caps at n curves for the n-th mode, so
+  it could only ever be a dozen stubby strokes with a great deal of white
+  between them. Ian looked at it and said it felt boring; on his shape it was
+  2 strokes and 185 mm of ink, and it read as a diagram. Every *other* level
+  set of the same mode is equally a product of the boundary and they nest into
+  long continuous closed curves, so `levels` + `level_bias` turn a partition
+  into a fill (same shape, new defaults: 20 strokes, 1815 mm) and hand density
+  its own control, which gives Mode back to character. `field = sand` contours
+  |u| instead — ink where the surface is *still*, which is what sand on a real
+  plate does — and `spread` rings the shape across a band of modes rather than
+  holding one. Two artefacts fell out of that round: non-zero levels
+  staircasing along the outline (fixed by a sub-cell blur), and then the blur
+  making contours touch the lattice edge, where a contour that fails to close
+  is **dropped in silence** — `levels=1` drew nothing at all until the padding
+  ring was forced back to zero.
 - **Image density** is the one addition beyond the idea doc: an image weighs
   the membrane, dark is heavy is slow, so lines bunch and low modes localise
   where the picture is dense.
