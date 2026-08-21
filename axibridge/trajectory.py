@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+import threading
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
+from .gencache import cache_budget_multiplier
 from .model import Path
 from .registry import field_bounds
 
@@ -34,7 +39,7 @@ class Trajectory:
         return out
 
 
-def build(module: "ProcessModule", params: BaseModel) -> Trajectory:
+def _run(module: "ProcessModule", params: BaseModel) -> Trajectory:
     """The whole run, up to the time axis's upper bound.
 
     Bounds come from the PARAMS MODEL directly (``field_bounds`` on the
@@ -55,3 +60,52 @@ def build(module: "ProcessModule", params: BaseModel) -> Trajectory:
         if i >= last:
             break
     return Trajectory(steps, telemetry, module.accumulative)
+
+
+#: Cached trajectory points before LRU eviction. A trajectory of an
+#: accumulative process is ONE drawing's worth of geometry however many steps
+#: it has — the increments, not a snapshot per step — so this is generous.
+#: Scaled by the same AXIBRIDGE_CACHE_BUDGET multiplier as every other cache,
+#: so the Pi's 0.25 applies here too.
+CACHE_BUDGET_POINTS = 4_000_000
+CACHE_MAX_ENTRIES = 32
+
+_lock = threading.Lock()
+_CACHE: "OrderedDict[str, Trajectory]" = OrderedDict()
+
+
+def clear_cache() -> None:
+    with _lock:
+        _CACHE.clear()
+
+
+def _points(traj: Trajectory) -> int:
+    return sum(len(p.points) for chunk in traj.steps for p in chunk)
+
+
+def _key(module: "ProcessModule", params: BaseModel) -> str:
+    """Everything about the run EXCEPT where along it we are looking. Dropping
+    the time axis from the key is the whole trick: every step of a scrub is
+    then the same cache entry."""
+    raw = params.model_dump()
+    raw.pop(module.time_axis, None)
+    blob = json.dumps({"id": module.id, "params": raw}, sort_keys=True, default=str)
+    return hashlib.blake2b(blob.encode(), digest_size=16).hexdigest()
+
+
+def build(module: "ProcessModule", params: BaseModel) -> Trajectory:
+    key = _key(module, params)
+    with _lock:
+        hit = _CACHE.get(key)
+        if hit is not None:
+            _CACHE.move_to_end(key)
+            return hit
+    traj = _run(module, params)
+    with _lock:
+        _CACHE[key] = traj
+        _CACHE.move_to_end(key)
+        budget = CACHE_BUDGET_POINTS * cache_budget_multiplier()
+        while _CACHE and (len(_CACHE) > CACHE_MAX_ENTRIES
+                          or sum(_points(t) for t in _CACHE.values()) > budget):
+            _CACHE.popitem(last=False)
+    return traj
