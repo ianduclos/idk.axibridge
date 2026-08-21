@@ -20,6 +20,10 @@ dependencies = [
     "contourpy>=1.2",
     # imported directly (not just via vpype): occlusion engine + SVG reader
     "shapely>=2.0",
+    # imported directly by the lineart family (scipy.ndimage) and by the
+    # eigenfunction fill (scipy.sparse.linalg.eigsh). Was only ever transitive
+    # through vpype -- pinned for the same reason fonttools was.
+    "scipy>=1.10",
     "svgelements>=1.9",
     # depth-map displacement effect: PNG decoding
     "pillow>=10",

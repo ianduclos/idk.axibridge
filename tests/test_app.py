@@ -21,7 +21,7 @@ def test_state_shape(client):
     # between machines (Mac/Pi share this suite) — the roster is the contract
     assert sorted(m["id"] for m in st["modules"]["effects"]) == [
         "bitmap", "coherent_jitter", "continue_strokes", "contract_expand",
-        "depth_displace", "eyelets", "fat_tube", "freehand", "hatch_fill",
+        "depth_displace", "eigen_fill", "eyelets", "fat_tube", "freehand", "hatch_fill",
         "invert", "multipass", "offset_fill", "offset_fill_v2", "parasite_line",
         "perspective", "smoothen",
     ]

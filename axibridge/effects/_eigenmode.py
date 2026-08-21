@@ -49,6 +49,7 @@ from collections import OrderedDict
 from typing import Callable, NamedTuple
 
 import numpy as np
+from scipy import ndimage
 from shapely.geometry import LineString, Polygon
 
 from ..gencache import cache_budget_multiplier
@@ -76,6 +77,16 @@ K_BUCKET = 16
 CACHE_BUDGET_FLOATS = 12_000_000
 CACHE_MAX_ENTRIES = 16
 
+#: How far past the boundary the mode field is extended before contouring.
+#: Zeroing the outside instead would put a contour crossing on every cell
+#: where a negative nodal domain meets the edge, i.e. a traced line running
+#: along the outline itself — ink the drawing never asked for. Holding the
+#: nearest interior value for a couple of cells and zeroing beyond that moves
+#: that crossing safely OUTSIDE the shape, where clipping discards it, and
+#: leaves the interior nodal lines running right up to the boundary, which is
+#: where they genuinely end.
+EXTEND_CELLS = 2
+
 #: A gap this much smaller than the local median gap counts as "the same
 #: frequency". Discretisation splits what should be exactly repeated
 #: eigenvalues, so an exact test finds nothing; an ABSOLUTE tolerance fails
@@ -99,11 +110,14 @@ class Basis(NamedTuple):
 
     mask: np.ndarray            # (ny, nx) bool — interior nodes
     index: np.ndarray           # (ny, nx) int32 — row in `vecs`, -1 outside
+    extend: np.ndarray          # (ny, nx) int32 — nearest interior row within
+                                #   EXTEND_CELLS of the domain, -1 beyond
     pitch: float                # effective lattice pitch in mm (may be coarsened)
     origin: tuple[float, float] # mm position of node (0, 0)
     values: np.ndarray          # (k,) eigenvalues, ascending
     vectors: np.ndarray         # (N, k) float32, columns matching `values`
     groups: list[tuple[int, int]]  # [start, stop) index ranges of degenerate modes
+    settled: set[int]           # groups already canonicalised (done lazily)
 
 
 # -- rasterising the domain ----------------------------------------------------
@@ -285,39 +299,85 @@ def _groups(values: np.ndarray) -> list[tuple[int, int]]:
     return out
 
 
-def _canonicalise(vectors: np.ndarray, groups: list[tuple[int, int]]) -> None:
-    """Fix the basis WITHIN each degenerate group, in place.
+def _crossings(b: "Basis", u: np.ndarray) -> int:
+    """Lattice edges the zero set crosses — a stand-in for nodal line length
+    that costs one vectorised pass instead of a contour trace."""
+    field = np.zeros(b.mask.shape)
+    field[b.mask] = u
+    s = np.sign(field) * b.mask
+    return int(((s[:, :-1] * s[:, 1:]) < 0).sum() + ((s[:-1] * s[1:]) < 0).sum())
+
+
+def _settle(b: "Basis", group: int) -> None:
+    """Fix the basis of one degenerate group, in place, once.
 
     Any rotation of a degenerate group is an equally valid eigenbasis, so
-    ARPACK's choice is arbitrary and jumps when the shape is nudged — which
-    would make ``mix`` mean something different every time. Rotating the group
-    so its first vector maximises overlap with a fixed probe makes the knob
-    stable across edits.
+    ARPACK's choice is arbitrary — and arbitrary means two things go wrong:
+    the mix = 0 picture is an accidental superposition rather than the clean
+    figure the shape is known for, and the basis jumps whenever the boundary
+    is nudged, so ``mix`` stops meaning the same thing between edits.
+
+    The criterion is **least ink**: rotate the group to minimise the total
+    nodal length. On a square's degenerate pair that lands on the two single
+    straight lines rather than the curved diagonal combinations, so mix = 0 is
+    the figure the shape is known for and the knob sweeps out to the others.
+    (Quartimax, the textbook "simplest structure" rotation, was tried first
+    and prefers the diagonals — it maximises concentration, which is not the
+    same question as which picture a pen would rather draw.)
+
+    Done lazily per group because the sweep costs a pass over the lattice per
+    trial angle, and a 208-mode solve has a hundred groups the user will never
+    look at.
     """
-    for lo, hi in groups:
-        if hi - lo < 2:
-            continue
-        v = vectors[:, lo:hi]
-        p = _probe(v.shape[0], 1).astype(np.float32)
-        c = v.T @ p
-        norm = float(np.linalg.norm(c))
-        if norm <= 1e-12:
-            continue
-        first = v @ (c / norm)
-        rest = v - np.outer(first, first @ v) / max(float(first @ first), 1e-12)
-        q, _ = np.linalg.qr(rest)
-        block = [first]
-        for col in range(hi - lo - 1):
-            u = q[:, col]
-            if float(u @ _probe(v.shape[0], 2 + col).astype(np.float32)) < 0:
-                u = -u
-            block.append(u)
-        stacked = np.stack(block, axis=1)
-        for col in range(stacked.shape[1]):
-            big = float(np.max(np.abs(stacked[:, col])))
-            if big > 0:
-                stacked[:, col] /= big
-        vectors[:, lo:hi] = stacked
+    lo, hi = b.groups[group]
+    g = hi - lo
+    if g < 2 or group in b.settled:
+        b.settled.add(group)
+        return
+    v = b.vectors[:, lo:hi].astype(np.float64)
+
+    def rotate(a: int, c: int, theta: float) -> tuple[np.ndarray, np.ndarray]:
+        cs, sn = math.cos(theta), math.sin(theta)
+        return cs * v[:, a] + sn * v[:, c], -sn * v[:, a] + cs * v[:, c]
+
+    for _ in range(3):
+        moved = False
+        for a in range(g - 1):
+            for c in range(a + 1, g):
+                # coarse sweep then one refinement — the objective is a smooth
+                # function of the angle with a quarter-turn period
+                best, best_theta = None, 0.0
+                for step, span, centre in ((math.pi / 36, math.pi / 2, 0.0),
+                                           (math.pi / 360, math.pi / 18, None)):
+                    origin = best_theta if centre is None else centre
+                    theta = origin - span / 2
+                    while theta <= origin + span / 2 + 1e-12:
+                        x, y = rotate(a, c, theta)
+                        score = _crossings(b, x) + _crossings(b, y)
+                        if best is None or score < best:
+                            best, best_theta = score, theta
+                        theta += step
+                if abs(best_theta) > 1e-6:
+                    v[:, a], v[:, c] = rotate(a, c, best_theta)
+                    moved = True
+        if not moved:
+            break
+
+    # Order (simplest first) and sign still have to be pinned or they wobble
+    # on float dust; the probe only breaks ties between equally simple figures.
+    probe = _probe(v.shape[0], 1)
+    rank = sorted(range(g), key=lambda c: (_crossings(b, v[:, c]),
+                                           -abs(float(v[:, c] @ probe))))
+    v = v[:, rank]
+    for col in range(g):
+        peak = int(np.argmax(np.abs(v[:, col])))
+        if v[peak, col] < 0:
+            v[:, col] *= -1.0
+        big = abs(v[peak, col])
+        if big > 0:
+            v[:, col] /= big
+    b.vectors[:, lo:hi] = v.astype(np.float32)
+    b.settled.add(group)
 
 
 # -- the cache -----------------------------------------------------------------
@@ -359,6 +419,8 @@ def basis(poly: Polygon, pitch: float, wanted: int,
         return None
     index = np.full(mask.shape, -1, dtype=np.int32)
     index[mask] = np.arange(n, dtype=np.int32)
+    dist, near = ndimage.distance_transform_edt(~mask, return_indices=True)
+    extend = np.where(dist <= EXTEND_CELLS, index[near[0], near[1]], -1).astype(np.int32)
 
     rho = None
     if density is not None:
@@ -388,8 +450,7 @@ def basis(poly: Polygon, pitch: float, wanted: int,
         return None
     values, vectors = solved
     groups = _groups(values)
-    _canonicalise(vectors, groups)
-    out = Basis(mask, index, pitch, origin, values, vectors, groups)
+    out = Basis(mask, index, extend, pitch, origin, values, vectors, groups, set())
 
     with _lock:
         _CACHE[key] = out
@@ -410,9 +471,11 @@ def mix_group(b: Basis, mode: int) -> tuple[int, int]:
     mode, but a legible chord, and it keeps the knob alive on every shape."""
     k = len(b.values)
     m = max(0, min(mode - 1, k - 1))
-    for lo, hi in b.groups:
-        if lo <= m < hi and m + 1 < hi:
-            return m, m + 1
+    for g, (lo, hi) in enumerate(b.groups):
+        if lo <= m < hi:
+            with _lock:
+                _settle(b, g)
+            return (m, m + 1) if m + 1 < hi else (m, min(m + 1, k - 1))
     return m, min(m + 1, k - 1)
 
 
@@ -432,3 +495,24 @@ def mode_field(b: Basis, mode: int, mix: float) -> np.ndarray:
     field = np.zeros(b.mask.shape, dtype=np.float64)
     field[b.mask] = u
     return field
+
+
+def contour_field(b: Basis, mode: int, mix: float) -> tuple[list[list[float]], tuple[float, float]]:
+    """The field as ``marching.trace_contours`` wants it, plus the mm position
+    of its (0, 0) cell.
+
+    Two things happen here that the raw ``mode_field`` does not do: the values
+    are held past the boundary for ``EXTEND_CELLS`` (see above), and the whole
+    lattice gets one ring of zero padding so every contour closes — a contour
+    that does not close is dropped by the tracer, so the padding is what makes
+    a nodal domain touching the lattice edge come back at all.
+    """
+    m, partner = mix_group(b, mode)
+    theta = float(np.clip(mix, -1.0, 1.0)) * (math.pi / 4.0)
+    u = math.cos(theta) * b.vectors[:, m]
+    if partner != m:
+        u = u + math.sin(theta) * b.vectors[:, partner]
+    ny, nx = b.mask.shape
+    padded = np.zeros((ny + 2, nx + 2), dtype=np.float64)
+    padded[1:-1, 1:-1] = np.where(b.extend >= 0, u[np.maximum(b.extend, 0)], 0.0)
+    return padded.tolist(), (b.origin[0] - b.pitch, b.origin[1] - b.pitch)

@@ -19,6 +19,10 @@ from scipy import ndimage
 from shapely.geometry import Point, Polygon
 
 from axibridge.effects import _eigenmode as E
+from axibridge.model import Path
+from axibridge.registry import EffectContext, effects, load_builtin_modules
+
+load_builtin_modules()
 
 SQUARE = Polygon([(0.0, 0.0), (40.0, 0.0), (40.0, 40.0), (0.0, 40.0)])
 
@@ -113,7 +117,124 @@ def test_pitch_coarsens_instead_of_exploding():
 
 
 def test_solve_is_deterministic_across_a_cold_cache():
-    first = E.basis(SQUARE, 0.8, 6).vectors.copy()
-    E.clear_cache()
-    second = E.basis(SQUARE, 0.8, 6).vectors
-    assert np.array_equal(first, second)
+    """ARPACK starts from a random vector unless told otherwise, and the basis
+    of a degenerate group is settled lazily — both have to come out the same
+    on a cold cache or the effect contract's determinism clause is a lie."""
+    def solved():
+        E.clear_cache()
+        basis = E.basis(SQUARE, 0.8, 6)
+        E.mode_field(basis, 2, 0.25)   # forces the degenerate group to settle
+        return basis.vectors.copy()
+
+    assert np.array_equal(solved(), solved())
+
+
+# -- the effect ----------------------------------------------------------------
+
+def _square_path(size: float = 40.0) -> Path:
+    return Path(points=[(0.0, 0.0), (size, 0.0), (size, size), (0.0, size), (0.0, 0.0)],
+                filled=True)
+
+
+def run(paths, **params) -> list[Path]:
+    eff = effects()["eigen_fill"]
+    return eff.apply(paths, eff.Params(**params), EffectContext(layer_id="t", seed=7))
+
+
+def fills(out: list[Path]) -> list[Path]:
+    return [p for p in out if not p.filled]
+
+
+def test_open_and_unfilled_paths_pass_through_untouched():
+    wiggle = Path(points=[(5.0, 5.0), (20.0, 9.0), (35.0, 5.0)], filled=False)
+    out = run([wiggle], mode=4)
+    assert out == [wiggle]
+
+
+def test_fill_lines_are_open_and_inside_the_shape():
+    out = run([_square_path()], mode=9, inset=1.0)
+    lines = fills(out)
+    assert lines
+    for path in lines:
+        assert not path.filled
+        for x, y in path.points:
+            assert 0.9 <= x <= 39.1 and 0.9 <= y <= 39.1
+
+
+def test_outline_is_kept_or_dropped_on_request():
+    assert any(p.filled for p in run([_square_path()], mode=6))
+    assert not any(p.filled for p in run([_square_path()], mode=6, outline=False))
+
+
+def test_first_mode_draws_no_fill_lines():
+    """The fundamental has no interior nodal line at all. An empty fill is the
+    correct answer, not a failure — worth pinning so nobody 'fixes' it."""
+    assert fills(run([_square_path()], mode=1)) == []
+
+
+def test_higher_modes_draw_more_line():
+    def ink(mode: int) -> float:
+        return sum(math.dist(a, b) for p in fills(run([_square_path()], mode=mode))
+                   for a, b in zip(p.points, p.points[1:]))
+
+    assert ink(20) > ink(9) > ink(3) > 0
+
+
+def test_a_hole_is_a_real_boundary():
+    ring = [_square_path(),
+            Path(points=[(15.0, 15.0), (25.0, 15.0), (25.0, 25.0), (15.0, 25.0), (15.0, 15.0)],
+                 filled=True)]
+    for path in fills(run(ring, mode=12, inset=0.5)):
+        for x, y in path.points:
+            assert not (15.6 < x < 24.4 and 15.6 < y < 24.4)
+
+
+def test_min_length_drops_fragments():
+    # a high mode is where the short pieces are: a nodal line clipped near a
+    # corner leaves a sliver that costs a whole pen lift to draw
+    long_only = fills(run([_square_path()], mode=60, min_length=15.0))
+    everything = fills(run([_square_path()], mode=60, min_length=0.0))
+    assert len(long_only) < len(everything)
+    assert all(sum(math.dist(a, b) for a, b in zip(p.points, p.points[1:])) >= 15.0
+               for p in long_only)
+
+
+def test_mix_changes_the_figure_within_one_frequency():
+    a = fills(run([_square_path()], mode=2, mix=-1.0))
+    b = fills(run([_square_path()], mode=2, mix=1.0))
+    assert [p.points for p in a] != [p.points for p in b]
+
+
+def test_missing_asset_falls_back_to_a_uniform_membrane():
+    """A stored project whose assets have gone walkabout must still resolve."""
+    plain = fills(run([_square_path()], mode=8))
+    gone = fills(run([_square_path()], mode=8, image="nope.png", density=1.0))
+    assert [p.points for p in gone] == [p.points for p in plain]
+
+
+def test_density_bunches_the_lines_where_the_image_is_dark():
+    from PIL import Image
+
+    import io
+
+    from axibridge.assets import asset_store
+
+    img = Image.new("L", (64, 64), 255)
+    img.paste(0, (0, 0, 32, 64))          # left half black = heavy = slow
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    before = asset_store.all()
+    asset_store.put("half.png", buf.getvalue())
+    try:
+        out = fills(run([_square_path()], mode=10, image="half.png", density=1.0))
+        left = right = 0.0
+        for path in out:
+            for a, b in zip(path.points, path.points[1:]):
+                length = math.dist(a, b)
+                if (a[0] + b[0]) / 2 < 20.0:
+                    left += length
+                else:
+                    right += length
+        assert left > 1.5 * right
+    finally:
+        asset_store.replace_all(before)

@@ -226,7 +226,14 @@ flow field.
 Same solved field, two completely different pictures. The shortest hop in the
 whole pass.
 
-### B2. Eigenfunction fill
+### B2. Eigenfunction fill — SHIPPED 2026-08-21
+
+`effects/eigen_fill.py` + `effects/_eigenmode.py`. Both lifts below are
+in it, and the honesty clause is stated in the module docstring: it is a
+clamped membrane, not a free plate. One thing the sketch below did not
+anticipate — a degenerate group needs a *canonical* basis or the default
+picture is an accidental superposition and the mix knob changes meaning
+whenever the shape is nudged; least-nodal-length settles it.
 
 Chladni figures as a **fill primitive** rather than a generator, which is the
 better idea: the nodal pattern is determined by the boundary of the shape being
