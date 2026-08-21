@@ -83,6 +83,7 @@ export async function openProcessPopup(id) {
 
 function close() {
   stop();
+  queued = false;
   $("process-popup").hidden = true;
   layerId = null;
 }
@@ -123,7 +124,10 @@ let pending = false;
 let queued = false;
 async function render() {
   const layer = (S.state?.project?.layers || []).find((l) => l.id === layerId);
-  if (!layer) return;
+  // the watched layer went away under us (deleted from the layer list while
+  // the popup was open): close rather than return, or a running Play leaves
+  // its 40 ms timer ticking as a silent no-op until someone closes the popup
+  if (!layer) { close(); return; }
   if (pending) { queued = true; return; }
   const value = Number($("process-scrub").value);
   $("process-readout").textContent = String(value);

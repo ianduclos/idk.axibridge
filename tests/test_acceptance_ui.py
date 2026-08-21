@@ -2556,7 +2556,7 @@ def test_the_watch_button_appears_only_for_a_process_layer(ui):
 def test_scrubbing_the_popup_changes_the_ink_and_not_the_project(ui):
     """The popup is a viewer of a param. Same discipline as the timeline bar:
     it must never PATCH the project."""
-    add_layer(ui, "venation", {"steps": 80, "attractors": 150, "seed": 5})
+    add_layer(ui, "venation", {"steps": 30, "attractors": 150, "seed": 5})
     reload_app(ui)
     wait_for_ink(ui)
     select_layer(ui, 0)
@@ -2577,10 +2577,13 @@ def test_scrubbing_the_popup_changes_the_ink_and_not_the_project(ui):
     ui.eval_on_selector("#process-scrub",
                         "(el) => { el.value = el.max; "
                         "el.dispatchEvent(new Event('input', {bubbles: true})); }")
-    # venation at these params: 608 segments at steps=80, 620 at the axis's
-    # upper bound of 600 (growth converges around step 200). A real increase,
-    # but a narrow one — if this ever fails by equality, check whether the
-    # generator's growth changed rather than whether the scrub did.
+    # venation at these params (measured 2026-08-21): 141 segments at
+    # steps=30, 620 at the axis's upper bound of 600 — growth converges
+    # around step 200. The fixture starts at 30 rather than at a later step
+    # on purpose: at steps=80 the same assertion is 608 -> 620, a 12-element
+    # margin that a change to the growth curve or to venation's _MAX_NODES
+    # cap could collapse to equality, and the failure would read as a scrub
+    # regression rather than as a generator change.
     ui.wait_for_function(
         "(n) => document.querySelectorAll('#process-canvas polyline').length > n",
         arg=early, timeout=20_000)
