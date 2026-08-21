@@ -22,6 +22,30 @@ block the very first ``generate()`` for that long. Every per-step
 nearest-node search here is a broadcast distance matrix over numpy arrays
 instead of a Python double loop; see ``tests/test_venation.py``'s
 ``test_a_full_trajectory_is_fast`` for the budget this is held to.
+
+**Two costs, two fixes.** Vectorising fixed the constant factor but not the
+asymptotics: the nearest-node search used an ``(M, N, 2)`` difference tensor
+(``M`` attractors, ``N`` nodes), and ``N`` is unbounded across up to 601
+steps. At a small ``kill`` radius — still inside the declared bound
+(``ge=0.5``) — attractors are rarely consumed, growth never converges, and
+``N`` runs away: measured at ``kill=0.5`` with otherwise-default params,
+~92k nodes and ~7 GB before the run finished. That lands on the very first
+``generate()`` (a trajectory always runs to the declared upper bound), not
+only when a user drags a slider to the end. Two independent fixes, per the
+review that caught this:
+
+1. The distance search below uses the ``|a|² + |b|² − 2·a·bᵀ`` expansion
+   instead of materialising ``attractors[:, None, :] - nodes[None, :, :]``,
+   and stays in squared distances throughout (nothing downstream needs the
+   root — only comparisons against ``attraction``/``kill``, done against
+   their squares). This removes the ``× 2`` tensor but NOT the unbounded-``N``
+   growth by itself.
+2. ``_MAX_NODES`` hard-caps total node count. Growth is truncated
+   deterministically (the lowest-index voted nodes win, same order
+   ``np.unique`` already produces) rather than chunked, so there is no
+   chunk-boundary dependence to worry about. Hitting the cap is treated
+   exactly like convergence: ``run()`` returns, and ``trajectory.state()``
+   repeats the final accumulated geometry for any later step.
 """
 
 from __future__ import annotations
@@ -37,6 +61,15 @@ from ..registry import register_source
 
 BED_WIDTH = 300.0
 BED_HEIGHT = 218.0
+
+# Hard cap on total node count for one trajectory. Bounds the runaway-growth
+# case (small `kill`, attractors never consumed) that vectorising alone does
+# not fix — see the module docstring. Normal converging runs stay far below
+# this (observed under ~2000 nodes across a full trajectory at the attractor
+# upper bound, 3000); this leaves generous headroom above that while still
+# stopping a pathological param combination well inside the time/memory
+# budget instead of running for the whole 601-step axis.
+_MAX_NODES = 8000
 
 
 class VenationParams(BaseModel):
@@ -81,23 +114,41 @@ class Venation(ProcessModule):
             [0.0, 0.0], [w, h], size=(p.attractors, 2))
         # (N, 2): the tree, starting from a single root at the bottom middle.
         # Grows by one row per surviving tip each step (np.vstack) — cheap at
-        # the node counts this algorithm reaches within its declared bounds.
+        # the node counts this algorithm reaches within its declared bounds,
+        # and hard-capped at _MAX_NODES regardless.
         nodes = np.array([[ox + w / 2.0, oy + h]])
+
+        attraction2 = p.attraction ** 2
+        kill2 = p.kill ** 2
 
         while True:
             if attractors.shape[0] == 0:
                 yield Step(paths=[], telemetry={"attractors": 0.0, "tips": 0.0})
                 return
+            if nodes.shape[0] >= _MAX_NODES:
+                # Runaway growth (small `kill`, attractors rarely consumed)
+                # hit the cap: treat it exactly like convergence rather than
+                # keep growing for the rest of the declared step bound.
+                yield Step(paths=[], telemetry={"attractors": float(attractors.shape[0]),
+                                                 "tips": 0.0})
+                return
 
-            # Broadcast distance matrix (M attractors x N nodes), instead of
-            # a Python double loop: each attractor votes for its nearest node,
-            # if that node is within reach.
-            delta = attractors[:, None, :] - nodes[None, :, :]      # (M, N, 2)
-            dist = np.hypot(delta[..., 0], delta[..., 1])            # (M, N)
-            nearest = np.argmin(dist, axis=1)                        # (M,) — ties
-            # resolve to the lowest node index, deterministically.
-            nearest_dist = dist[np.arange(dist.shape[0]), nearest]
-            within = nearest_dist < p.attraction
+            # Nearest-node search via the |a|^2 + |b|^2 - 2*a.b^T expansion
+            # instead of a materialised (M, N, 2) difference tensor — same
+            # (M, N) distance matrix, without ever allocating the doubled
+            # tensor it was built from. Squared distances throughout: nothing
+            # downstream needs the root, only comparisons against
+            # `attraction`/`kill`, done here against their squares.
+            a2 = np.sum(attractors ** 2, axis=1)[:, None]             # (M, 1)
+            b2 = np.sum(nodes ** 2, axis=1)[None, :]                  # (1, N)
+            dist2 = a2 + b2 - 2.0 * attractors @ nodes.T              # (M, N)
+            np.maximum(dist2, 0.0, out=dist2)  # guard fp round-off near 0
+
+            nearest = np.argmin(dist2, axis=1)                        # (M,) — ties
+            # resolve to the lowest node index, deterministically (argmin
+            # always returns the first occurrence of the minimum).
+            nearest_dist2 = dist2[np.arange(dist2.shape[0]), nearest]
+            within = nearest_dist2 < attraction2
 
             if not np.any(within):
                 yield Step(paths=[], telemetry={"attractors": float(attractors.shape[0]),
@@ -108,7 +159,7 @@ class Venation(ProcessModule):
             # sum each group's pull direction — the vectorised form of
             # `votes.setdefault(best, []).append(a)` then summing `a - node`.
             voted_nodes = nearest[within]                            # (K,)
-            pull = delta[np.arange(dist.shape[0]), nearest][within]   # (K, 2)
+            pull = attractors[within] - nodes[voted_nodes]           # (K, 2)
             voters, inverse = np.unique(voted_nodes, return_inverse=True)
             sums = np.zeros((voters.shape[0], 2))
             np.add.at(sums, inverse, pull)
@@ -117,13 +168,25 @@ class Venation(ProcessModule):
             mag = np.hypot(sums[:, 0], sums[:, 1])
             grew = mag > 1e-9
             grown_nodes = voters[grew]
+            grown_mag = mag[grew]
+            grown_sums = sums[grew]
 
             if grown_nodes.shape[0] == 0:
                 yield Step(paths=[], telemetry={"attractors": float(attractors.shape[0]),
                                                  "tips": float(tips_count)})
                 return
 
-            direction = sums[grew] / mag[grew, None]
+            # Truncate growth to the remaining node budget, deterministically
+            # (grown_nodes is already lowest-index-first, from np.unique) —
+            # not a chunk boundary, a straight slice, so it can't introduce
+            # chunk-dependent results.
+            remaining = _MAX_NODES - nodes.shape[0]
+            if grown_nodes.shape[0] > remaining:
+                grown_nodes = grown_nodes[:remaining]
+                grown_mag = grown_mag[:remaining]
+                grown_sums = grown_sums[:remaining]
+
+            direction = grown_sums / grown_mag[:, None]
             old_tips = nodes[grown_nodes]                            # (K', 2)
             new_tips = old_tips + direction * p.step_len
             new_tips[:, 0] = np.clip(new_tips[:, 0], 0.0, BED_WIDTH)
@@ -140,9 +203,12 @@ class Venation(ProcessModule):
             # (not the whole tree) — a node that already had its chance to
             # attract and didn't consume nearby attractors shouldn't start
             # doing so just because it happens to still be part of the tree.
-            d_to_new = attractors[:, None, :] - new_tips[None, :, :]   # (M, K', 2)
-            dist_to_new = np.hypot(d_to_new[..., 0], d_to_new[..., 1])  # (M, K')
-            keep = dist_to_new.min(axis=1) > p.kill
+            # Same squared-distance expansion as the search above, reusing
+            # `a2` since `attractors` hasn't changed since it was computed.
+            t2 = np.sum(new_tips ** 2, axis=1)[None, :]               # (1, K')
+            dist2_to_new = a2 + t2 - 2.0 * attractors @ new_tips.T    # (M, K')
+            np.maximum(dist2_to_new, 0.0, out=dist2_to_new)
+            keep = dist2_to_new.min(axis=1) > kill2
             attractors = attractors[keep]
 
             yield Step(paths=added,

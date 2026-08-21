@@ -37,10 +37,22 @@ def test_every_segment_is_a_real_line():
 
 
 def test_a_seed_pins_the_whole_run():
-    assert ([tuple(p.points) for p in run(steps=40, seed=11)]
-            == [tuple(p.points) for p in run(steps=40, seed=11)])
-    assert ([tuple(p.points) for p in run(steps=40, seed=11)]
-            != [tuple(p.points) for p in run(steps=40, seed=12)])
+    """Both halves need `clear_cache()` between calls: `run(steps=40,
+    seed=11)` used against a warm trajectory cache hits the SAME cached
+    Trajectory object both times, so the equality half would compare an
+    object with itself and pass even against a non-deterministic
+    implementation."""
+    from axibridge import trajectory as trajectory_module
+
+    trajectory_module.clear_cache()
+    first = [tuple(p.points) for p in run(steps=40, seed=11)]
+    trajectory_module.clear_cache()
+    second = [tuple(p.points) for p in run(steps=40, seed=11)]
+    assert first == second
+
+    trajectory_module.clear_cache()
+    third = [tuple(p.points) for p in run(steps=40, seed=12)]
+    assert first != third
 
 
 def test_telemetry_reports_the_hunt():
@@ -51,12 +63,13 @@ def test_telemetry_reports_the_hunt():
     assert all("tips" in t for t in traj.telemetry)
 
 
-def test_coordinates_are_plain_python_floats():
-    """Everything downstream (Pydantic, JSON, the SVG writer) expects plain
-    floats, not numpy scalars — a real risk once the hot loop is numpy."""
-    for p in run(steps=30, seed=5):
-        for x, y in p.points:
-            assert type(x) is float and type(y) is float
+# No test_coordinates_are_plain_python_floats: `Point = tuple[float, float]`,
+# and every Path here is built via `Path(points=[...])`, so Pydantic v2
+# coerces any numpy scalar (np.float64/np.float32) to plain `float` at
+# construction — before a test could ever observe one. That coercion is the
+# real guarantee, and it holds regardless of what `run()`'s internals do, so
+# a `type(x) is float` assertion on the returned points cannot fail whatever
+# the implementation is. Confirmed vacuous in review; not worth a fake guard.
 
 
 def test_a_full_trajectory_is_fast():
@@ -78,3 +91,33 @@ def test_a_full_trajectory_is_fast():
     src.trajectory(src.Params())  # runs to the "steps" axis's declared le=600
     elapsed = time.perf_counter() - start
     assert elapsed < 20.0, f"venation trajectory took {elapsed:.1f}s, budget is 20s"
+
+
+def test_a_pathological_run_stays_bounded():
+    """The Critical review finding on this module: covering only default
+    params in the perf test above is exactly why the original vectorisation
+    got through review with an unbounded worst case. At a small `kill`,
+    attractors are rarely consumed, growth never converges, and node count
+    runs away across the full 601-step trajectory — measured pre-fix:
+    `kill` at its declared minimum (0.5) with otherwise-default params did
+    not finish in 60s and peaked around 7 GB RSS, and
+    `attractors=3000, attraction=120, kill=0.5, step_len=0.3` took 64s and
+    6.2 GB. Both are one slider drag from the default and inside every
+    declared param bound, and both land on the very first `generate()` (a
+    trajectory always runs to the time axis's declared upper bound). This
+    pins both halves of the fix: a tight time budget, AND that total node
+    count actually stays capped rather than merely running fast while still
+    unbounded."""
+    from axibridge import trajectory as trajectory_module
+    from axibridge.sources.venation import _MAX_NODES
+
+    trajectory_module.clear_cache()
+    src = get_source("venation")
+    start = time.perf_counter()
+    traj = src.trajectory(src.Params(
+        attractors=3000, attraction=120.0, kill=0.5, step_len=0.3))
+    elapsed = time.perf_counter() - start
+    total_nodes = sum(len(step) for step in traj.steps)
+    assert elapsed < 20.0, f"pathological venation trajectory took {elapsed:.1f}s, budget is 20s"
+    assert total_nodes <= _MAX_NODES, (
+        f"node growth ran away: {total_nodes} nodes exceeds the {_MAX_NODES} cap")
