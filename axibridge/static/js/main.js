@@ -20,6 +20,7 @@ import { initBrushMode, activateBrushMode, deactivateBrushMode, handleBrushEscap
 import { initPenMode, activatePenMode, deactivatePenMode, handlePenEscape, refreshPenOverlay,
          commitPendingPath } from "./pen.js";
 import { initShapeMode, activateShapeMode, deactivateShapeMode, handleShapeEscape } from "./shapes.js";
+import { initProcessPopup } from "./process.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -689,6 +690,7 @@ function initTabs() {
   initPenMode();  // no-op after first call (returns early if already wired)
   initBrushMode();
   initShapeMode();
+  initProcessPopup(); // likewise — the popup is static markup, wired once
   renderLayerList();
   applyPanelCollapse();
   applyFoldMemory();

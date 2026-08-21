@@ -370,6 +370,44 @@
   </div>
 </div>
 
+<!-- Process popup: watch a layer whose generator has a TIME AXIS play and
+     scrub. Static top-level markup for the same reason the render popup above
+     is (`hidden` on a tab body computes to display:none on every descendant,
+     so a modal built inside a tab vanishes the moment you leave it), opened
+     from the Watch button the layer detail panel shows for a watchable layer.
+
+     Preview only. It drives /api/generators/preview — which already runs a
+     generator with no layer, no undo checkpoint and no session lock — and
+     never PATCHes the project. Same discipline the timeline bar keeps: this
+     is a viewer of a param, and committing a step means typing it into the
+     form. process.js owns every control inside it. -->
+<div id="process-popup" class="modal-backdrop" hidden>
+  <div class="preview-modal">
+    <div class="preview-head">
+      <h2 id="process-title">Process</h2>
+      <button id="process-close">Close</button>
+    </div>
+    <div class="preview-stage">
+      <svg id="process-canvas" viewBox="0 0 300 218" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="row">
+      <button id="process-play" class="primary">Play</button>
+      <button id="process-prev">← Step</button>
+      <button id="process-next">Step →</button>
+      <input id="process-scrub" type="range" min="0" max="100" step="1" value="0"
+             title="scrub the generator's time axis — preview only, the project is not touched">
+      <span id="process-readout" class="hint">0</span>
+    </div>
+    <div class="row">
+      <!-- Points-so-far against the axis: the growth curve of whatever has
+           actually been previewed. Filled in from the same replies that draw
+           the canvas, so it costs no extra request. -->
+      <svg id="process-telemetry" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
+      <span class="hint">points against the axis</span>
+    </div>
+  </div>
+</div>
+
 <script type="module" src="/js/main.js"></script>
 </body>
 </html>

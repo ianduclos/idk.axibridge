@@ -860,6 +860,24 @@ input[type="range"].fine::-moz-range-thumb {
      sheet rather than dragging it off-corner */
   transform-origin: center center;
 }
+/* Process popup (process.js): the same modal furniture as the render popup,
+   with a vector stage instead of a raster one. The stage is `--bench-deep`
+   and `.draw-line` is dark ink, so the svg carries the sheet itself. */
+#process-canvas {
+  /* the sheet reads as the bed, not as whatever shape the modal happens to
+     be: aspect-ratio here, `meet` on the element, so the paper and the ink
+     agree */
+  display: block; height: min(62vh, 700px); aspect-ratio: 300 / 218; max-width: 100%;
+  background: var(--sheet); box-shadow: 0 3px 18px rgba(0,0,0,.5);
+}
+#process-scrub { flex: 1; min-width: 160px; }
+#process-readout { min-width: 3.5em; text-align: right; font-variant-numeric: tabular-nums; }
+#process-telemetry {
+  flex: 1; height: 44px; background: var(--bench-deep); border: 1px solid var(--bench-edge);
+}
+#process-telemetry polyline { fill: none; stroke: var(--ochre); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+#process-telemetry line { stroke: var(--live); stroke-width: 1; vector-effect: non-scaling-stroke; }
+
 .stage-list { display: grid; gap: 10px; margin-top: 10px; }
 .stage-group {
   border: none; border-left: 1px solid var(--bench-edge); border-radius: 0;

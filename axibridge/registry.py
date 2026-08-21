@@ -342,6 +342,8 @@ def describe_modules() -> dict[str, list[dict[str, Any]]]:
         }
         if kind == "transform":
             d["category"] = inst.category
+        if kind == "source":
+            d["time_axis"] = effective_time_axis(inst)
         return d
 
     return {
