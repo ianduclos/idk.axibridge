@@ -166,10 +166,52 @@ def test_outline_is_kept_or_dropped_on_request():
     assert not any(p.filled for p in run([_square_path()], mode=6, outline=False))
 
 
-def test_first_mode_draws_no_fill_lines():
-    """The fundamental has no interior nodal line at all. An empty fill is the
-    correct answer, not a failure — worth pinning so nobody 'fixes' it."""
-    assert fills(run([_square_path()], mode=1)) == []
+def test_first_mode_has_no_nodal_line_but_still_fills():
+    """The fundamental never crosses zero inside, so its NODAL set is empty —
+    correct, not a failure. That emptiness is also the whole argument for
+    tracing a family of levels: the same mode has plenty of structure to draw
+    once you stop looking only at zero."""
+    assert fills(run([_square_path()], mode=1, levels=1)) == []
+    assert len(fills(run([_square_path()], mode=1, levels=9))) >= 4
+
+
+def test_levels_are_the_density_control():
+    def ink(**kw):
+        return sum(math.dist(a, b) for p in fills(run([_square_path()], mode=6, **kw))
+                   for a, b in zip(p.points, p.points[1:]))
+
+    assert ink(levels=21) > ink(levels=9) > ink(levels=1) > 0
+
+
+def test_the_nodal_set_is_always_drawn():
+    """Whatever the count, mode 6's nodal figure is drawn — an even count is
+    rounded up rather than straddling zero.
+
+    The non-emptiness matters as much as the containment: a contour that fails
+    to close is DROPPED rather than reported, so a level can go missing in
+    silence. That is not hypothetical — smoothing the field pulled values into
+    the padding ring, lobes reached the lattice edge, and levels=1 quietly drew
+    nothing at all until the outer ring was forced back to zero."""
+    bare = {tuple(p.points) for p in fills(run([_square_path()], mode=6, levels=1))}
+    assert len(bare) >= 2
+    for count in (8, 9, 12):
+        traced = {tuple(p.points) for p in fills(run([_square_path()], mode=6, levels=count))}
+        assert bare <= traced
+
+
+def test_sand_field_draws_bands_around_the_nodal_set():
+    """|u| contours are closed loops flanking the nodal lines, so the sand
+    field puts strictly more line down than the displacement one at the same
+    count, and none of it is the nodal set itself."""
+    disp = fills(run([_square_path()], mode=6, levels=9, field="displacement"))
+    sand = fills(run([_square_path()], mode=6, levels=9, field="sand"))
+    assert len(sand) > len(disp)
+
+
+def test_spread_changes_the_figure_without_a_bigger_solve():
+    pure = fills(run([_square_path()], mode=6, levels=1, spread=0))
+    rung = fills(run([_square_path()], mode=6, levels=1, spread=8))
+    assert [p.points for p in pure] != [p.points for p in rung]
 
 
 def test_higher_modes_draw_more_line():

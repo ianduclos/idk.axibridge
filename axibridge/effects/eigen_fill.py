@@ -13,7 +13,15 @@ figures are genuinely different and the distinction is usually glossed over —
 ``_eigenmode.py`` has the full statement. "Cymatics" is fair for both; Chladni
 is not, so the label does not claim it.
 
-Three controls carry the idea:
+**Why a family of levels and not just the nodal lines.** The nodal set alone
+is a *thin* set — Courant's theorem caps the n-th mode at n nodal domains, so
+it can only ever be a dozen or so strokes with a great deal of white between
+them: a partition of the shape rather than a fill of it. Every other level set
+of that same mode is equally a product of the boundary, and they nest into
+long continuous closed curves, so tracing a family is what makes this a fill.
+``levels = 1`` is still the bare nodal figure.
+
+Four controls carry the idea:
 
 * **Mode** — which vibration. Low modes are a few big lobes; push it up on an
   irregular boundary and the nodal lines drift into the quantum-chaos regime,
@@ -24,6 +32,16 @@ Three controls carry the idea:
   square gives stars, crosses and flowers rather than a single figure, and why
   this knob is signed: +1 and -1 are ``u1 + u2`` and ``u1 - u2``, two
   different pictures of the same note.
+* **Levels / bias** — how many contours, and whether they spread evenly
+  through each lobe (bias 0, every lobe shaded alike) or pile onto the nodal
+  figure (bias 1, which keeps it legible as a dark ridge while the lobes open
+  out). ``Field`` switches what is contoured: *displacement* nests the lobes;
+  *sand* contours |u| instead, so the ink gathers where the surface is STILL
+  and the nodal lines thicken into dark bands — which is literally what the
+  sand on a real plate does.
+* **Spread** — ring the shape at several frequencies at once instead of
+  holding it at one, the way a struck plate does. Breaks the schematic
+  symmetry of a single mode, and costs nothing: the modes are already solved.
 * **Density** — an image weighs the membrane. Heavy is slow is short
   wavelength, so lines bunch and low modes gather where the picture is dark.
 
@@ -75,6 +93,28 @@ class EigenFillParams(BaseModel):
                                    "+1 and -1 are two different figures of the same "
                                    "note (a square's star vs its cross); elsewhere "
                                    "it is a chord rather than a true mode")
+    spread: int = Field(default=0, ge=0, le=24, title="Spread",
+                        description="Sum this many further modes above Mode, with "
+                                    "decaying weight — a struck plate ringing across "
+                                    "a band rather than held at one frequency. 0 is a "
+                                    "single pure mode")
+    field: Literal["displacement", "sand"] = Field(
+        default="displacement", title="Field",
+        description="What the contours follow. Displacement nests the lobes of the "
+                    "vibration; sand contours the STILLNESS instead, so ink gathers "
+                    "along the nodal lines as bands — what the sand on a real plate "
+                    "actually does")
+    levels: int = Field(default=9, ge=1, le=41, title="Levels",
+                        description="How many contours to trace. 1 is the bare nodal "
+                                    "figure — a partition rather than a fill. This is "
+                                    "the density control; Mode is the character one. "
+                                    "Displacement always includes the nodal line, so "
+                                    "an even count is rounded up")
+    level_bias: float = Field(default=0.6, ge=0.0, le=1.0, title="Level bias",
+                              description="0 spreads the contours evenly through each "
+                                          "lobe; 1 piles them onto the nodal lines, "
+                                          "which keeps the figure legible as a dark "
+                                          "ridge while the lobes open out")
     detail: float = Field(default=1.5, ge=0.5, le=8.0, title="Detail (mm)",
                           description="Solve lattice pitch — finer follows the "
                                       "boundary more exactly, reaches higher modes, "
@@ -183,19 +223,24 @@ class EigenFill(EffectModule):
             # The membrane is the shape itself; the inset trims the DRAWING
             # only. Solving the inset shape instead would make the inset a
             # physical parameter and re-solve on every nudge of it.
-            basis = _eigenmode.basis(sub, params.detail, params.mode, mass)
+            basis = _eigenmode.basis(sub, params.detail,
+                                     params.mode + params.spread, mass)
             if basis is None:
                 continue
             clip = sub.buffer(-params.inset) if params.inset > 0 else sub
             if clip.is_empty:
                 continue
-            field, (ox, oy) = _eigenmode.contour_field(basis, params.mode, params.mix)
-            for loop in trace_contours(field, 0.0, basis.pitch):
-                cut = LineString([(x + ox, y + oy) for x, y in loop]).intersection(clip)
-                for part in getattr(cut, "geoms", [cut]):
-                    if not isinstance(part, LineString) or part.is_empty:
-                        continue
-                    if part.length < params.min_length:
-                        continue
-                    out.append(Path(points=[(x, y) for x, y in part.coords], filled=False))
+            sand = params.field == "sand"
+            field, (ox, oy) = _eigenmode.contour_field(
+                basis, params.mode, params.mix, params.spread, sand)
+            for level in _eigenmode.contour_levels(params.levels, params.level_bias, sand):
+                for loop in trace_contours(field, level, basis.pitch):
+                    cut = LineString([(x + ox, y + oy) for x, y in loop]).intersection(clip)
+                    for part in getattr(cut, "geoms", [cut]):
+                        if not isinstance(part, LineString) or part.is_empty:
+                            continue
+                        if part.length < params.min_length:
+                            continue
+                        out.append(Path(points=[(x, y) for x, y in part.coords],
+                                        filled=False))
         return out

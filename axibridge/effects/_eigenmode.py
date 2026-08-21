@@ -87,6 +87,13 @@ CACHE_MAX_ENTRIES = 16
 #: where they genuinely end.
 EXTEND_CELLS = 2
 
+#: Gaussian smoothing (in lattice cells) applied to the field before it is
+#: contoured. Fixes one artefact only: the held extension outside the domain
+#: is piecewise constant, so every non-zero level staircases along the
+#: outline without it. Deliberately not a user param — it is a discretisation
+#: fix, not a look.
+EDGE_SMOOTH = 0.6
+
 #: A gap this much smaller than the local median gap counts as "the same
 #: frequency". Discretisation splits what should be exactly repeated
 #: eigenvalues, so an exact test finds nothing; an ABSOLUTE tolerance fails
@@ -479,40 +486,103 @@ def mix_group(b: Basis, mode: int) -> tuple[int, int]:
     return m, min(m + 1, k - 1)
 
 
-def mode_field(b: Basis, mode: int, mix: float) -> np.ndarray:
-    """The scalar field on the lattice, zero outside the domain.
+def _blend(b: Basis, mode: int, mix: float, spread: int = 0) -> np.ndarray:
+    """The scalar field over the interior nodes, peak-normalised.
 
-    ``mix`` runs -1..+1 and rotates by up to a quarter turn into the partner
-    mode, so +1 and -1 give ``u1 + u2`` and ``u1 - u2`` — the two different
-    figures a symmetric domain shows at one frequency, and the reason the knob
-    is signed rather than 0..1.
+    ``spread`` rings the shape at several frequencies at once instead of
+    holding it at one: modes m..m+spread summed with decaying weights, which
+    is what a struck plate does. It breaks the schematic symmetry a single
+    mode has, at no extra solve — the modes are already in the basis.
     """
     m, partner = mix_group(b, mode)
     theta = float(np.clip(mix, -1.0, 1.0)) * (math.pi / 4.0)
-    u = math.cos(theta) * b.vectors[:, m]
+    u = math.cos(theta) * b.vectors[:, m].astype(np.float64)
     if partner != m:
         u = u + math.sin(theta) * b.vectors[:, partner]
+    for j in range(1, max(spread, 0) + 1):
+        c = m + j
+        if c >= b.vectors.shape[1]:
+            break
+        u = u + b.vectors[:, c].astype(np.float64) / (1.0 + j)
+    peak = float(np.max(np.abs(u)))
+    return u / peak if peak > 0 else u
+
+
+def mode_field(b: Basis, mode: int, mix: float, spread: int = 0) -> np.ndarray:
+    """The field on the lattice, zero outside the domain."""
     field = np.zeros(b.mask.shape, dtype=np.float64)
-    field[b.mask] = u
+    field[b.mask] = _blend(b, mode, mix, spread)
     return field
 
 
-def contour_field(b: Basis, mode: int, mix: float) -> tuple[list[list[float]], tuple[float, float]]:
+def contour_levels(count: int, bias: float, magnitude: bool) -> list[float]:
+    """Which level sets to trace, over a field normalised to peak 1.
+
+    The zero set alone is a **thin** set — Courant caps the n-th mode at n
+    nodal domains, so it can only ever be a dozen or so strokes with a lot of
+    white between them. The other level sets of the same mode are just as much
+    a product of the boundary, and they nest into long continuous closed
+    curves, so tracing a family is what turns this from a partition into a
+    fill. ``count = 1`` is the bare nodal set, unchanged.
+
+    ``bias`` crowds the levels toward zero, i.e. toward the nodal lines: at 0
+    they are evenly spread and every lobe shades alike; at 1 they pile onto the
+    nodal figure, which stays legible as a dark ridge while the lobes open out.
+    """
+    count = max(1, count)
+    if not magnitude and count % 2 == 0:
+        # the nodal set is the point of the whole effect, so it is always one
+        # of the traced levels — which means an odd count, symmetric about 0
+        count += 1
+    power = 1.0 + 3.0 * float(np.clip(bias, 0.0, 1.0))
+    if magnitude:
+        # |u|: every level is a closed band around the nodal set, so low
+        # levels hug it. Start above 0 (the nodal set itself is measure-zero
+        # for |u| and would trace as a doubled line).
+        return [float(((i + 1) / (count + 1)) ** power) for i in range(count)]
+    if count == 1:
+        return [0.0]
+    spread = np.linspace(-1.0, 1.0, count + 2)[1:-1]
+    return [float(math.copysign(abs(s) ** power, s)) for s in spread]
+
+
+def contour_field(b: Basis, mode: int, mix: float, spread: int = 0,
+                  magnitude: bool = False
+                  ) -> tuple[list[list[float]], tuple[float, float]]:
     """The field as ``marching.trace_contours`` wants it, plus the mm position
     of its (0, 0) cell.
 
-    Two things happen here that the raw ``mode_field`` does not do: the values
-    are held past the boundary for ``EXTEND_CELLS`` (see above), and the whole
-    lattice gets one ring of zero padding so every contour closes — a contour
-    that does not close is dropped by the tracer, so the padding is what makes
-    a nodal domain touching the lattice edge come back at all.
+    Three things happen here that ``mode_field`` does not do:
+
+    * the values are **held past the boundary** for ``EXTEND_CELLS``, so a
+      contour crossing lands outside the shape where the clip discards it
+      rather than running along the outline (see above);
+    * the lattice gets a **two-cell ring of padding whose outermost row is
+      forced to zero after the smoothing**, because a contour that does not
+      close is dropped by the tracer, and the padding is what closes the ones
+      touching the lattice edge. Zeroing before the blur is not enough: the
+      blur pulls interior values out into the ring, a negative lobe then
+      reaches the lattice edge, its contour never closes, and the level is
+      silently dropped — which is exactly what happened, and why
+      ``test_the_nodal_set_is_always_drawn`` asserts it comes back non-empty;
+    * the whole thing is **smoothed by ``EDGE_SMOOTH``** before tracing. The
+      held extension is piecewise constant over the boundary nodes' cells, so
+      without it every non-zero level visibly staircases along the outline —
+      the lattice showing through. Well under a cell, so interior structure is
+      untouched; the alternative (clipping a further pitch inward) only traded
+      the staircase for ragged line ends.
+
+    ``magnitude`` contours the stillness |u| instead of the displacement:
+    closed bands hugging the nodal set, which is what the sand on a real plate
+    piles into. Taken after the blur, so the fold at zero stays sharp.
     """
-    m, partner = mix_group(b, mode)
-    theta = float(np.clip(mix, -1.0, 1.0)) * (math.pi / 4.0)
-    u = math.cos(theta) * b.vectors[:, m]
-    if partner != m:
-        u = u + math.sin(theta) * b.vectors[:, partner]
+    u = _blend(b, mode, mix, spread)
     ny, nx = b.mask.shape
-    padded = np.zeros((ny + 2, nx + 2), dtype=np.float64)
-    padded[1:-1, 1:-1] = np.where(b.extend >= 0, u[np.maximum(b.extend, 0)], 0.0)
-    return padded.tolist(), (b.origin[0] - b.pitch, b.origin[1] - b.pitch)
+    pad = 2
+    padded = np.zeros((ny + 2 * pad, nx + 2 * pad))
+    padded[pad:-pad, pad:-pad] = np.where(b.extend >= 0, u[np.maximum(b.extend, 0)], 0.0)
+    padded = ndimage.gaussian_filter(padded, EDGE_SMOOTH)
+    if magnitude:
+        padded = np.abs(padded)
+    padded[0, :] = padded[-1, :] = padded[:, 0] = padded[:, -1] = 0.0
+    return padded.tolist(), (b.origin[0] - pad * b.pitch, b.origin[1] - pad * b.pitch)
