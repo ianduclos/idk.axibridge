@@ -2,8 +2,8 @@
 
 Implements `docs/plans/time-as-a-param.md` (design) via
 `docs/plans/time-as-a-param-IMPLEMENTATION.md` (plan), Round 3 of
-`docs/IDEAS-pass4.md`'s A1. Branch `feat/time-as-a-param`, 10 commits
-(`2c3aefe..72167f5`), base `21f4ddc`. Suite 1080 → 1115. Full SDD ledger —
+`docs/IDEAS-pass4.md`'s A1. Branch `feat/time-as-a-param`, 11 commits
+(`21f4ddc..42f2d60`). Suite 1080 → 1115. Full SDD ledger —
 every ruling, every defect, every measurement — is
 `.superpowers/sdd/time-as-a-param-IMPLEMENTATION/progress.md`; this doc is
 the settled record, not a replay of the process.
@@ -65,10 +65,16 @@ frame-fallback path is byte-identical to pre-change behaviour — every
 image-generator test in the suite passed unchanged through the whole round,
 which is the evidence that mattered more than any single assertion.
 
-**Seven real defects were found in the plan's own code and tests** — not in
+**Real defects were found throughout the plan's own code and tests** — not in
 what the implementers designed, but in what the plan told them to write,
 because each dispatch was told to check whether a predicted test failure
-would actually happen for the reason the step claimed:
+would actually happen for the reason the step claimed. The seven below are
+representative, one or two per task, not the full count — Task 2 alone
+surfaced two (the `KeyError`-on-lookup bug is the one omitted here) and
+Task 5 four (only two are listed; the other two were a dropped-scrub race
+in `render()` and a `nudge()` that double-rendered, didn't clamp to axis
+bounds, and could spam `actions.oops` every 40ms during playback). Full
+enumeration is in the ledger (`task-*-report.md`, `progress.md`):
 
 1. Task 1's own test file imported the `session` singleton but every test
    called `Session.time_axis` — a `NameError` before the `AttributeError`
@@ -81,7 +87,7 @@ would actually happen for the reason the step claimed:
    entries) regardless of the param's current value — which is exactly what
    lets one cached trajectory serve every scrub position. The test's
    expectation was wrong, not the code.
-4. Task 4's acceptance test queried `#process-canvas path`; the plan's own
+4. Task 5's acceptance test queried `#process-canvas path`; the plan's own
    `draw()` created `polyline` elements. Caught before dispatch (Ruling 11
    in the ledger) rather than left as a mystery hang.
 5. Task 5's popup CSS classes (`.popup`/`.popup-head`/`.popup-controls`)

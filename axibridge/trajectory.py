@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
+from .assets import asset_store
 from .gencache import cache_budget_multiplier
 from .model import Path
 from .registry import field_bounds
@@ -106,10 +107,18 @@ def _evict_locked(protect_key: str) -> None:
 def _key(module: "ProcessModule", params: BaseModel) -> str:
     """Everything about the run EXCEPT where along it we are looking. Dropping
     the time axis from the key is the whole trick: every step of a scrub is
-    then the same cache entry."""
+    then the same cache entry.
+
+    Folds in ``asset_store.version()``, the same way ``gencache.generate_
+    cached`` does — no ``ProcessModule`` takes an asset param today, so this
+    is latent, but without it the first one that does would serve geometry
+    from a replaced image forever (a project switch bumps the version but
+    this cache has no other way to notice)."""
     raw = params.model_dump()
     raw.pop(module.time_axis, None)
-    blob = json.dumps({"id": module.id, "params": raw}, sort_keys=True, default=str)
+    blob = json.dumps(
+        {"id": module.id, "params": raw, "asset_version": asset_store.version()},
+        sort_keys=True, default=str)
     return hashlib.blake2b(blob.encode(), digest_size=16).hexdigest()
 
 

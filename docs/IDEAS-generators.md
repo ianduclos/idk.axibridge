@@ -58,7 +58,18 @@ length since last pen lift), occasionally recommits to a new local target.
   mm-scale tremor stays physical at any layer scale.
 - **UI load:** low — 4-6 sliders, standard auto-form.
 
-## 2. Rehearsal / pentimento
+## 2. Rehearsal / pentimento — **shipped August 2026**
+
+Shipped as `Session.rehearse_layer` (`docs/plans/time-as-a-param-RESULTS.md`,
+2026-08-21), riding in on A1 (pass 4's "time as a param") rather than as a
+standalone build: a process generator's declared time axis gives Rehearse N
+evenly-spaced moments for free, sharing one trajectory run. What shipped
+differs from the sketch below — moments are ordinary, live, re-editable
+generator layers (each the source layer's generator re-run at a different
+axis value, effect stack copied along, pen/occluder/region left at their
+layer defaults) rather than a tween-based ghost-pass sequence with a
+`self_trust` blend — but the "pencil rehearsals under a committed stroke"
+read is the same. Original sketch kept for the rationale:
 
 Draw the figure, then draw it *again* — each pass a re-estimate of the
 previous attempt, converging toward an ideal never stated. Ghost passes plus

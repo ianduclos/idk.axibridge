@@ -27,7 +27,7 @@ from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import calibration, compose, depth_pro, gencache, logbuf, project_io, svg_io, system_fonts
+from . import calibration, compose, depth_pro, gencache, logbuf, project_io, svg_io, system_fonts, trajectory
 from .assets import SEQUENCE_FRAME_RE, asset_store, safe_asset_name
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
@@ -2009,6 +2009,7 @@ def new_project() -> dict[str, Any]:
     session.clear_history()
     asset_store.replace_all({})
     gencache.clear()
+    trajectory.clear_cache()
     return _project_payload()
 
 
@@ -2067,6 +2068,7 @@ def load_project(body: LoadBody) -> dict[str, Any]:
     session.restore_history(history)
     asset_store.replace_all(assets)
     gencache.clear()
+    trajectory.clear_cache()
     return _project_payload()
 
 
@@ -2109,4 +2111,5 @@ async def import_project(file: UploadFile) -> dict[str, Any]:
     session.restore_history(history)
     asset_store.replace_all(assets)
     gencache.clear()
+    trajectory.clear_cache()
     return _project_payload()

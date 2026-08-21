@@ -193,20 +193,30 @@ manifold. You cannot run a model in the resolve path, but the *structure* is
 hand-writable with a crafted score function — and the interesting output is not
 the converged result but **the intermediate states, drawn as ghost passes**.
 
-This turns out to be the same thing as pass 1's unshipped §2 (rehearsal /
-pentimento): draw the figure, then draw it again, each pass a re-estimate of the
-last, converging toward an ideal never stated. Construction lines under a figure
-drawing. Visible machine self-revision, which reads as doubt.
+This turns out to be the same thing as pass 1's §2 (rehearsal / pentimento,
+**shipped August 2026** as `Session.rehearse_layer` — see
+`docs/IDEAS-generators.md` §2 and `docs/plans/time-as-a-param-RESULTS.md`):
+draw the figure, then draw it again, each pass a re-estimate of the last,
+converging toward an ideal never stated. Construction lines under a figure
+drawing. Visible machine self-revision, which reads as doubt. A6 itself (the
+score-function generator whose intermediate states would be drawn this way)
+remains unbuilt — what shipped is the layer-level sweep machinery A6 would
+ride on, not A6.
 
-**A1 makes this nearly free, and generally so.** Once time is a param, "draw
-several moments of the same process on one sheet" is a *layer-level* operation
-— the sweep machinery pointed at the time axis — rather than a feature each
-generator has to implement. Every time-based generator gets pentimento at once,
-with per-pass pen assignment falling out of the existing multi-pen path
-(rehearsals in pencil, the committed stroke in ink).
+**A1 delivered exactly this, and generally so.** Once time is a param, "draw
+several moments of the same process on one sheet" is a *layer-level*
+operation — the sweep machinery pointed at the time axis — rather than a
+feature each generator has to implement. Every time-based generator gets
+pentimento at once, with per-pass pen assignment falling out of the existing
+multi-pen path (rehearsals in pencil, the committed stroke in ink) — modulo
+the ruling that shipped `Rehearse` actually made: moments are independent
+live layers with the source layer's effect stack copied on, not a tween you
+can re-tune, since the trajectory cache already makes cheap re-runs the
+mitigation.
 
-That is a strong second argument for A1: it does not just enable Half A, it
-retroactively ships a pass-1 idea that has been open since July.
+That was a strong second argument for A1: it did not just enable Half A, it
+retroactively shipped a pass-1 idea that had been open since July. A6's own
+diffusion-mechanic generator is still open.
 
 ### A7. Algedonic marks (small)
 

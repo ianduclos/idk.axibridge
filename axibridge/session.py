@@ -2758,6 +2758,15 @@ class Session:
                     name=f"{layer.name} · moment {offset + 1}/{moments}",
                     source=LayerSource(type="generator", generator=generator_id, params=params),
                     transform=layer.transform.model_copy(),
+                    # Effects carry — a rehearsal should look like the thing
+                    # being rehearsed (a process read through ``freehand``
+                    # must rehearse in the same hand). ``pen``, ``occluder``
+                    # and ``region`` stay at their CanvasLayer defaults on
+                    # purpose: the pen is precisely what you want to differ
+                    # (pencil under ink), and occluder/region are layer
+                    # ROLES rather than appearance — inheriting them would
+                    # make every moment clip the layers below it.
+                    effects=[e.model_copy(deep=True) for e in layer.effects],
                 )
                 self.project.layers.insert(idx + offset, moment)
                 self.source_geometry[moment.id] = paths

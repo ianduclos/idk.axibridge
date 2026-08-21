@@ -196,9 +196,12 @@ the process something to lose (cybernetic loops); **B**, let the field carry
 the structure (field-derived geometry). Plus **C**, an adjacent blending axis.
 
 **The dependency that sets the order:** B and C items are all independent of
-each other and of A. Only A2/A4 genuinely need A1. So the cheap, visible,
-independent things can land first without blocking anything, and the one big
-substrate round can be taken deliberately rather than under pressure.
+each other and of A. Only A2/A4 genuinely needed A1 — and A1 has landed
+(`docs/plans/time-as-a-param-RESULTS.md`, 2026-08-21: declared time axes,
+`ProcessModule`/`Trajectory`, the `venation` generator, the process popup,
+and `Rehearse` — the last of which also closes pass 1's §2, see
+`docs/IDEAS-generators.md`). So Round 3 below is no longer gated; A2 and A4
+can be picked up whenever, same as B and C.
 
 ### Round 1 — cheap, independent, new marks on paper immediately
 

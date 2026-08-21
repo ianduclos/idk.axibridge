@@ -61,3 +61,44 @@ def test_a_layer_with_no_time_axis_cannot_be_rehearsed():
     layer = session.add_generated_layer("polygon", {"sides": 5})
     with pytest.raises(Exception, match="time axis"):
         session.rehearse_layer(layer.id, moments=3)
+
+
+def test_moments_inherit_the_effect_stack():
+    """A process read through ``freehand`` must rehearse in the same hand —
+    each moment's effect stack must match the original layer's, not come
+    back empty."""
+    layer = venation_layer(session)
+    session.update_layer(layer.id, {"effects": [
+        {"effect": "freehand", "params": {}, "enabled": True}]})
+    out = session.rehearse_layer(layer.id, moments=3)
+    for moment in out:
+        assert [e.effect for e in moment.effects] == ["freehand"]
+        assert moment.effects[0].enabled is True
+
+
+def test_moments_inherit_effects_by_copy_not_by_reference():
+    """Editing a moment's effect stack after the fact must not reach back
+    into the original layer's — ``model_copy(deep=True)``, not aliasing."""
+    layer = venation_layer(session)
+    session.update_layer(layer.id, {"effects": [
+        {"effect": "freehand", "params": {"seed": 1}, "enabled": True}]})
+    out = session.rehearse_layer(layer.id, moments=2)
+    out[0].effects[0].params["seed"] = 999
+    assert session.project.layer(layer.id).effects[0].params["seed"] == 1
+
+
+def test_moments_do_not_inherit_pen_occluder_or_region():
+    """The pen is precisely what you want to differ (pencil under ink), and
+    occluder/region are layer ROLES rather than appearance — inheriting them
+    would make every moment clip the layers below it."""
+    layer = venation_layer(session)
+    session.update_layer(layer.id, {
+        "pen_id": "some-pen",
+        "occluder": True,
+        "region": True,
+    })
+    out = session.rehearse_layer(layer.id, moments=3)
+    for moment in out:
+        assert moment.pen_id is None
+        assert moment.occluder is False
+        assert moment.region is False

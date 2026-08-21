@@ -673,11 +673,13 @@ def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
         # (clamped) master value for any ``frame_follow`` layer in its
         # reduction — so scrubbing advances the axis without moving any stamp.
         # ``off`` is already in the same normalised (0..1) units the fold
-        # expects. The guard is deliberate: fold even when the BLENDED offset
-        # is zero, as long as either endpoint carries one — two nonzero
-        # offsets can cancel at this ``t`` and still need to route through
-        # ``fold_time_axis`` (whose own no-op shortcut only covers ``off``
-        # itself being falsy).
+        # expects. The guard is deliberate: route through ``fold_time_axis``
+        # whenever the BLENDED offset is nonzero, OR when either endpoint
+        # carries one — two nonzero offsets can cancel at this ``t``, and
+        # that case still needs to reach ``fold_time_axis`` so the params
+        # come back unmodified via ITS OWN ``if not shift`` no-op, rather
+        # than skip the call here and rely on a zero-offset default that
+        # would be equally correct but for a different reason.
         off = ega[2] + (egb[2] - ega[2]) * t
         if off or ega[2] or egb[2]:
             params = fold_time_axis(src, params, off)

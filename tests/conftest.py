@@ -14,6 +14,7 @@ import pytest  # noqa: E402
 @pytest.fixture(autouse=True)
 def fresh_session(tmp_path):
     """Reset the session and point projects_root at a per-test tmp dir."""
+    from axibridge import trajectory
     from axibridge.compose import Project
     from axibridge.registry import load_builtin_modules
     from axibridge.session import session
@@ -30,6 +31,7 @@ def fresh_session(tmp_path):
     session._clip_cache.clear()
     session._occlusion_cache.clear()
     session.clear_history()
+    trajectory.clear_cache()
     settings_store.update({
         "projects_root": str(tmp_path / "projects"),
         "holder_calibration": {"dx_per_mm": 0.0, "dy_per_mm": 0.0},
