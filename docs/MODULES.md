@@ -140,7 +140,17 @@ Contract:
   client-side tool. A companion `static/js/<tool>.js` captures pointer
   events into the params and POSTs `regenerate` (usually with
   `coalesce=true` mid-drag — see CLAUDE.md's Undo discipline). Copy
-  `sources/drawing.py` + `static/js/draw.js`. **Tween: captured geometry now
+  `sources/drawing.py` + `static/js/draw.js`.
+  **A new TOOL does not imply a new SOURCE.** The shape tool
+  (`static/js/shapes.js`, 2026-08-21) adds rectangle/ellipse/line to the canvas
+  without a line of Python: a rectangle is four corner anchors and an ellipse
+  is four with kappa handles, so both are ordinary pen subpaths committed
+  through `pen.js`'s `commitPenSubpath` — which is also what earns them boolean
+  add/subtract against brush and pen layers for free. A line has no interior to
+  union, so it commits through `draw.js`'s `commitDrawStroke` as a two-point
+  stroke instead. Before writing a source for a new tool, check whether an
+  existing param model already says what the gesture produces.
+  **Tween: captured geometry now
   MORPHS when A and B share structure** (2026-07-21). A hidden geometry param
   (`pen.subpaths`, `drawing.strokes` — anything marked
   `json_schema_extra={"hidden": True}`) is deep-lerped by
