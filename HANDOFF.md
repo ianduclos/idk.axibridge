@@ -1,8 +1,41 @@
 ---
 project: idk.axibridge
-updated: 2026-08-18
-entries: 9
+updated: 2026-08-21
+entries: 10
 ---
+
+### Eye-check: eigenfunction (cymatic) fill — opened 2026-08-21, owner: ian
+
+- done: new effect **Eigenfunction fill (cymatics)** — every closed+filled
+  path in a layer becomes a vibrating membrane and gets filled with its own
+  nodal lines, so the pattern is produced by the boundary rather than laid
+  over it. Mode changes density *and* character on one scrub; Mix sweeps the
+  family of figures a symmetric shape shows at one frequency (a square: the
+  straight line at 0, the two diagonals at ±1); an image can weigh the
+  membrane so lines bunch where it is dark. Suite 1049 → 1072, all analytic
+  (rectangle spectrum in closed form, Courant's nodal-domain bound) rather
+  than golden files. Verified end to end through the real API — PATCH, resolve,
+  stats, undo — and rendered to PNG contact sheets, but never on paper and
+  never in the actual browser UI.
+- next:
+  - Add a filled `polygon` layer, stack the effect, and **drag Mode**. The
+    first drag step pays for the eigensolve (~80 ms on a 120 mm pentagon),
+    every step after is ~10 ms from the cached basis. If that ever feels slow,
+    the honest fix is a coarser Detail, not a smaller cache.
+  - Set the polygon to 4 sides and **sweep Mix from −1 to +1** — that is the
+    detail the whole item was for, and it is the one thing a test can only
+    check is *different*, not whether it is *right*.
+  - Push Mode past ~60 on an irregular shape (a `shape` layer, or text_fill
+    glyphs) for the tangled Berry regime, then plot one. Nodal lines are
+    smooth and non-crossing, so it should be an unusually clean plot — that
+    claim has never met a pen.
+  - Try it on `text_fill` glyphs: each letter is its own membrane with its
+    counters as real holes, which is the case with no precedent to compare to.
+- blockers: none — it is shipped and green, this is eyes-and-ink only.
+- context: `axibridge/effects/eigen_fill.py` (docstring states the physics
+  honestly: clamped membrane, NOT a free Chladni plate),
+  `axibridge/effects/_eigenmode.py` (solver, cache, degenerate-basis
+  reasoning), `tests/test_eigen_fill.py`, `docs/IDEAS-pass4.md` §B2.
 
 ### Eye-check + paper: colour separation — opened 2026-08-17, owner: ian
 - done: image generators can sample a colour plate instead of only luminance

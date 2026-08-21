@@ -1,16 +1,76 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-08-17
+updated: 2026-08-21
 machine: mac+pi
-summary: Colour separation shipped (CMYK/RGB/HSL plates, one button turning an image into N live generator layers with a pen each) plus server-side seed rolling; the session then turned to a long generator brainstorm, harvested into the vault as 13 atomic notes and into the repo as idea pass 4 — a roadmap, nothing started.
+summary: Idea pass 4 is under way — B2 (eigenfunction/cymatic fill) shipped as an effect, filling any closed shape with the nodal lines of its own vibration, with degenerate-mode mixing, the high-mode Berry regime and an image-weighted membrane.
 next:
-  - "Pick the first pass-4 item. The recommendation, with its reasoning, is in docs/IDEAS-pass4.md 'Where to start': geodesics as a one-afternoon warm-up, then jump the queue to the time-as-a-param substrate (A1)"
-  - "Two A1 design risks want settling BEFORE code — O(N) replay cost, and whether interaction-as-recorded-score feels expressive or like fighting a tape. The second is a throwaway probe, not an analysis"
+  - "Eye-check the new fill and get ink on paper — HANDOFF.md's top entry says exactly what to look at; the Mix sweep on a square is the part no test can judge"
+  - "Pass 4 continues: B1 (geodesics on the Eikonal solver) is still the cheap warm-up, B3 (hachures) the other Round 1 item, then the A1 substrate round"
+  - "Two A1 design risks still want settling BEFORE code — O(N) replay cost, and whether interaction-as-recorded-score feels expressive or like fighting a tape"
   - "13 harvested notes are staged in the vault's llm/proposed/ awaiting promotion — that happens in a vault session via its own promote skill, not from here"
   - "Colour separation still has no ink on paper: CHECKME.md's 2026-08-17 section, then the felt-tip overprint test that no automated check can judge"
   - "Still open from before: bench/hardware eye-checks back to 2026-07-13, and the multi-pen swap queue has never touched a real AxiDraw"
 handoff_for: ian
+---
+
+# idk.axibridge — status
+
+**Session 2026-08-21 (Opus 5): the cymatic fill — pass 4's B2, shipped.**
+
+Three commits, suite 1049 → 1072. The first item of idea pass 4 to be built,
+taken out of Round 1 order because it was the one Ian wanted.
+
+**Eigenfunction fill** (`e3cca09`) fills a closed shape with the **nodal
+lines of its own vibration** — the lines where sand collects on a vibrating
+surface. The point of it, and the reason it is an effect rather than a
+generator: the pattern is not laid over the shape, it is *produced by* the
+boundary, so every silhouette gives a different figure and a hole is a real
+boundary that the pattern reorganises around. One control (Mode) changes
+density **and** character together, which hatch spacing cannot do.
+
+- **What it is, precisely:** a clamped membrane — a drumhead, second-order
+  Dirichlet Laplacian. NOT a free Chladni plate, which is fourth-order and
+  biharmonic and a genuinely harder problem. The module docstring says so
+  rather than claiming a physics it does not solve.
+- **Mix is signed on purpose.** A symmetric shape has *repeated* frequencies,
+  and any combination of the modes sharing one is also a mode — physically why
+  a square gives stars, crosses and flowers rather than one figure. −1 and +1
+  are `u1 − u2` and `u1 + u2`; a square shows the straight line at 0 and the
+  two diagonals at the ends.
+- **Two things the idea doc did not anticipate.** A degenerate group needs a
+  *canonical* basis or ARPACK's arbitrary choice makes Mix = 0 an accidental
+  superposition and shifts the knob's meaning whenever the boundary is nudged;
+  it is settled by **least nodal length** (quartimax, the textbook answer, was
+  tried first — it maximises concentration, which is not the same question as
+  which picture a pen would rather draw). And the field has to be **held two
+  cells past the boundary** before contouring: zeroing the outside instead
+  puts a contour crossing wherever a negative nodal domain meets the edge,
+  i.e. a traced line running along the outline itself.
+- **Image density** is the one addition beyond the idea doc: an image weighs
+  the membrane, dark is heavy is slow, so lines bunch and low modes localise
+  where the picture is dense.
+- **The solve is cached whole**, with the mode count bucketed, so the first
+  drag of the Mode slider pays for it (~80 ms on a 120 mm pentagon, ~7 s for a
+  bed-sized shape at mode 200) and every step after is ~10 ms. That also
+  answers ROADMAP's open question about eigensolve cost, which is now removed
+  from the file.
+- Two supporting changes: `axibridge/marching.py` (`bd48239`) now owns the
+  marching-squares tracer that `image_threshold` used to keep private — an
+  image contour and a nodal line are the same problem once the field is on a
+  lattice — and `scipy` is finally a **declared** dependency rather than a
+  transitive one through vpype, the same fix `fonttools` got on 2026-08-13.
+
+Tests are analytic rather than golden: the closed-form rectangle spectrum
+(0.01–0.1 % error), Courant's nodal-domain bound, and a square's degenerate
+pairs equal to 1e-6 — that last one is what caught a rasteriser bug where a
+horizontal boundary edge lying exactly on a scanline read as interior.
+
+**No ink on paper, and it has never been driven in the browser** — verified
+through the same API the UI calls (effect preview, PATCH, resolve, stats,
+undo) and rendered to PNG contact sheets. HANDOFF.md's top entry is the
+eye-check.
+
 ---
 
 # idk.axibridge — status
