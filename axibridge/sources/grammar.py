@@ -220,6 +220,14 @@ class GrammarParams(BaseModel):
 class Grammar(SourceModule):
     id = "grammar"
     orientation = "none"  # a square-ish field of shapes with no dominant axis
+
+    #: Rewrite generations ARE this grammar's time — scrubbing the master
+    #: timeline grows it. Note it regenerates rather than accumulating: the
+    #: composition is scaled from the hull of all emissions, so iteration 4 is
+    #: not a superset of iteration 3. Correct for an axis; it is why grammar is
+    #: not a ProcessModule.
+    time_axis = "iterations"
+
     label = "Grammar (transgression budget)"
     description = ("A shape grammar that obeys itself almost everywhere — and spends a "
                    "small budget of rule-aware violations at the most salient sites.")

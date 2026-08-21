@@ -47,6 +47,18 @@ from pydantic import BaseModel
 from .model import Path, PathDocument
 
 
+def field_bounds(field: Any) -> tuple[float, float] | None:
+    """A numeric field's ``ge``/``le``, or None unless BOTH are set.
+
+    Pydantic v2 keeps these in ``field.metadata`` as ``annotated_types``
+    markers rather than as attributes on the field itself."""
+    lo = hi = None
+    for meta in field.metadata:
+        lo = getattr(meta, "ge", lo) if getattr(meta, "ge", None) is not None else lo
+        hi = getattr(meta, "le", hi) if getattr(meta, "le", None) is not None else hi
+    return (float(lo), float(hi)) if lo is not None and hi is not None else None
+
+
 class ModuleParams(BaseModel):
     """Base class for module parameter models (plain pydantic is fine too)."""
 
@@ -115,9 +127,31 @@ class SourceModule(ABC):
     #: samples real-world state (e.g. sensor data) would flip it.
     cacheable: bool = True
 
+    #: The param that is this generator's TIME axis, if it has one — the field
+    #: the master timeline scrubs and the process popup plays. ``None`` means
+    #: an instantaneous generator, which is most of them.
+    #:
+    #: The axis MUST be a bounded numeric field: the fold normalises against
+    #: its own ``ge``/``le``, so an unbounded one is ignored rather than
+    #: guessed at. Modules that already have a ``frame`` field need not
+    #: declare anything — see ``effective_time_axis``.
+    time_axis: str | None = None
+
     @abstractmethod
     def generate(self, params: BaseModel) -> PathDocument:
         """Build and return a new document. Must not mutate shared state."""
+
+
+def effective_time_axis(src: Any) -> str | None:
+    """Which param of this source is time, or None. Declared axis first;
+    a module with a ``frame`` field falls back to it, which is what makes
+    this a generalisation rather than a migration — every image generator
+    predates the declaration and keeps working untouched."""
+    fields = src.Params.model_fields
+    axis = getattr(src, "time_axis", None)
+    if axis and axis in fields:
+        return axis
+    return "frame" if "frame" in fields else None
 
 
 class EffectContext(BaseModel):

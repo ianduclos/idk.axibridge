@@ -36,7 +36,7 @@ from .compose import (
 )
 from .machine import manager
 from .model import Layer, Path, PathDocument
-from .registry import get_source
+from .registry import effective_time_axis, field_bounds, get_source
 from .stores import Pen, pen_library, settings_store
 from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
 
@@ -451,19 +451,45 @@ class Session:
     # -- layer CRUD -----------------------------------------------------------
 
     @staticmethod
+    def time_axis(generator_id: str) -> str | None:
+        """Which param of this generator is time, or None.
+
+        The ``frame`` fallback is what makes this a generalisation rather than
+        a migration: every image generator predates the declaration and keeps
+        working untouched. Declaring is how a NEW axis opts in."""
+        try:
+            src = get_source(generator_id)
+        except KeyError:
+            return None
+        return effective_time_axis(src)
+
+    @staticmethod
+    def axis_bounds(generator_id: str, axis: str) -> tuple[float, float] | None:
+        """The axis's own ``ge``/``le``, or None when it is not bounded on both
+        sides — in which case there is nothing to map ``master_t`` onto and the
+        layer simply does not follow the timeline."""
+        return field_bounds(get_source(generator_id).Params.model_fields[axis])
+
+    @staticmethod
     def _effective_gen_params(
         layer: CanvasLayer, master_t: float | None = None
     ) -> dict[str, Any]:
         """The generator params to actually GENERATE with: the layer's stored
-        source params, but with the layer's frame shift folded into the
-        generator's ``frame`` axis (clamped 0..1) when the generator exposes
-        one. The stored params are NEVER mutated — this returns a copy — so
-        the user's raw ``frame`` and the undo/purity contract stay intact.
+        source params, but with the layer's time shift folded into whichever
+        param the generator declares as its TIME AXIS. The stored params are
+        NEVER mutated — this returns a copy — so the user's raw value and the
+        undo/purity contract stay intact.
 
-        The frame shift is ``frame_offset``, PLUS ``master_t`` when the layer
-        opted into ``frame_follow`` and a ``master_t`` is supplied (the single
-        place that folds a clip-follow scrub — the effective frame for the
-        preview, estimate and plotter alike is computed here)."""
+        The shift is ``frame_offset``, PLUS ``master_t`` when the layer opted
+        into ``frame_follow`` and a ``master_t`` is supplied (the single place
+        that folds a scrub — the effective params for the preview, estimate and
+        plotter alike are computed here).
+
+        The shift is in NORMALISED units (0..1 across the axis's own bounds),
+        which is what lets one mechanism serve a 0..1 video ``frame`` and a
+        0..2000 step count. The layer fields are still named ``frame_*``
+        because they are persisted in every saved project; renaming them would
+        buy clarity worth less than a migration."""
         params = dict(layer.source.params or {})
         if layer.source.type not in ("generator", "baked") or not layer.source.generator:
             return params
@@ -472,9 +498,29 @@ class Session:
             shift += master_t
         if not shift:
             return params
-        if "frame" not in get_source(layer.source.generator).Params.model_fields:
+        gen = layer.source.generator
+        axis = Session.time_axis(gen)
+        if axis is None:
             return params
-        params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + shift))
+        bounds = Session.axis_bounds(gen, axis)
+        if bounds is None:
+            return params
+        lo, hi = bounds
+        span = hi - lo
+        field = get_source(gen).Params.model_fields[axis]
+        current = params.get(axis, field.default)
+        norm = (float(current) - lo) / span if span else 0.0
+        value = lo + min(1.0, max(0.0, norm + shift)) * span
+        value = min(hi, max(lo, value))
+        # An int axis must be handed an int: Pydantic v2 rejects 4.5 for an int
+        # field rather than truncating, so an unrounded fold 422s on a scrub.
+        # int(round()) rounds to nearest (Python's round-half-to-even at exact
+        # midpoints); nothing depends on the tie direction. This cast MUST come
+        # after the clamp above — clamping an already-int value against float
+        # lo/hi widens it back to float (min(8.0, 8) returns the float 8.0).
+        if field.annotation is int:
+            value = int(round(value))
+        params[axis] = value
         return params
 
     @staticmethod
