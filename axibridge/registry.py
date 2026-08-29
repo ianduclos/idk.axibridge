@@ -36,6 +36,7 @@ file in is enough.
 from __future__ import annotations
 
 import importlib
+import math
 import pkgutil
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -43,8 +44,21 @@ from contextvars import ContextVar
 from typing import Any, Callable, Iterator, Literal
 
 from pydantic import BaseModel
+from pydantic_core import PydanticUndefined
 
 from .model import Path, PathDocument
+
+
+def field_bounds(field: Any) -> tuple[float, float] | None:
+    """A numeric field's ``ge``/``le``, or None unless BOTH are set.
+
+    Pydantic v2 keeps these in ``field.metadata`` as ``annotated_types``
+    markers rather than as attributes on the field itself."""
+    lo = hi = None
+    for meta in field.metadata:
+        lo = getattr(meta, "ge", lo) if getattr(meta, "ge", None) is not None else lo
+        hi = getattr(meta, "le", hi) if getattr(meta, "le", None) is not None else hi
+    return (float(lo), float(hi)) if lo is not None and hi is not None else None
 
 
 class ModuleParams(BaseModel):
@@ -115,9 +129,79 @@ class SourceModule(ABC):
     #: samples real-world state (e.g. sensor data) would flip it.
     cacheable: bool = True
 
+    #: The param that is this generator's TIME axis, if it has one — the field
+    #: the master timeline scrubs and the process popup plays. ``None`` means
+    #: an instantaneous generator, which is most of them.
+    #:
+    #: The axis MUST be a bounded numeric field: the fold normalises against
+    #: its own ``ge``/``le``, so an unbounded one is ignored rather than
+    #: guessed at. Modules that already have a ``frame`` field need not
+    #: declare anything — see ``effective_time_axis``.
+    time_axis: str | None = None
+
     @abstractmethod
     def generate(self, params: BaseModel) -> PathDocument:
         """Build and return a new document. Must not mutate shared state."""
+
+
+def effective_time_axis(src: Any) -> str | None:
+    """Which param of this source is time, or None. Declared axis first;
+    a module with a ``frame`` field falls back to it, which is what makes
+    this a generalisation rather than a migration — every image generator
+    predates the declaration and keeps working untouched."""
+    fields = src.Params.model_fields
+    axis = getattr(src, "time_axis", None)
+    if axis and axis in fields:
+        return axis
+    return "frame" if "frame" in fields else None
+
+
+def fold_time_axis(src: Any, params: dict[str, Any], shift: float) -> dict[str, Any]:
+    """``params`` with ``shift`` (in NORMALISED units, 0..1 across the axis's
+    own bounds) folded into whichever param is this source's time axis.
+    Returns a NEW dict; never mutates the input. A source with no axis, no
+    bounds, or a zero shift comes back unchanged.
+
+    The ONE place this arithmetic lives: ``Session._effective_gen_params``
+    (per-layer offset/scrub) and ``tween.py``'s A/B parameter blend both call
+    this rather than each folding a ``frame`` field by hand — that duplication
+    is exactly how the tween path stayed hardcoded to ``frame`` after the
+    layer path was generalised."""
+    params = dict(params)
+    if not shift:
+        return params
+    axis = effective_time_axis(src)
+    if axis is None:
+        return params
+    field = src.Params.model_fields[axis]
+    bounds = field_bounds(field)
+    if bounds is None:
+        return params
+    lo, hi = bounds
+    span = hi - lo
+    current = params.get(axis, field.default)
+    # A required field (no default) has PydanticUndefined rather than a real
+    # value when unset in the stored params; treat it as the axis's own low
+    # bound rather than raising on the arithmetic below.
+    if current is PydanticUndefined:
+        current = lo
+    norm = (float(current) - lo) / span if span else 0.0
+    value = lo + min(1.0, max(0.0, norm + shift)) * span
+    value = min(hi, max(lo, value))
+    if field.annotation is int:
+        # An int axis must be handed an int: Pydantic v2 rejects a float for
+        # an int field rather than truncating, so an unrounded fold 422s on a
+        # scrub. int(round()) rounds to nearest (Python's round-half-to-even
+        # at exact midpoints); nothing depends on the tie direction.
+        value = int(round(value))
+        # Re-clamp with INTEGER bounds, not the float ge/le: `le=8.6` on an
+        # int field admits 8, not 9, so floor/ceil the float bounds to the
+        # nearest valid int rather than reusing lo/hi — rounding `value` can
+        # land outside that narrower integer range even after the float
+        # clamp above, and Pydantic would 422 on the result.
+        value = min(math.floor(hi), max(math.ceil(lo), value))
+    params[axis] = value
+    return params
 
 
 class EffectContext(BaseModel):
@@ -258,6 +342,8 @@ def describe_modules() -> dict[str, list[dict[str, Any]]]:
         }
         if kind == "transform":
             d["category"] = inst.category
+        if kind == "source":
+            d["time_axis"] = effective_time_axis(inst)
         return d
 
     return {

@@ -8,6 +8,7 @@ import { S, actions, rememberDetails } from "./main.js";
 import { mul, translate, rotate, scale, matToObj, objToMat } from "./canvas.js";
 import { applyViewDefaults } from "./viewmap.js";
 import { renderTimelineBar, jumpTimelineToKeyframe } from "./timeline.js";
+import { openProcessPopup, watchableAxis } from "./process.js";
 
 const $ = (id) => document.getElementById(id);
 let genParams = {};
@@ -1826,6 +1827,10 @@ export function renderLayerDetail() {
       <button id="fx-consolidate" title="Bake transform + effects into the source geometry (undoable; regenerate also reverts a generated layer)">⤓ Consolidate</button>
       ${layer.source.type !== "tween" ? `<button id="fx-animate"
         title="Turn this layer into a keyframed A/B animation that follows the master timeline">⏱ Animate</button>` : ""}
+      <button id="process-watch" hidden
+        title="Watch this process play and scrub its time axis — preview only, the project is not touched">▷ Watch</button>
+      <button id="fx-rehearse" hidden
+        title="Stamp several moments of this process onto the sheet — assign a pale pen to the early ones for rehearsal under ink">Rehearse</button>
     </div>
     <div id="fx-steps"></div>`;
   wrap.appendChild(fx);
@@ -1837,6 +1842,31 @@ export function renderLayerDetail() {
       renderLayerDetail();
     } catch (e) { actions.oops(e); }
   };
+  // Watch: only a generator with a TIME AXIS has anything to play, and
+  // offering it on a polygon would describe something that cannot happen.
+  // The popup previews; it never patches, so this button sits beside Animate
+  // without being a second way to edit the layer.
+  const watchBtn = fx.querySelector("#process-watch");
+  if (watchBtn) {
+    watchBtn.hidden = !watchableAxis(layer);
+    watchBtn.onclick = () => openProcessPopup(layer.id);
+  }
+  // Rehearse: same eligibility as Watch (a generator with a time axis) —
+  // gated identically because both need a real axis to sweep. One session
+  // call, one undo step; the new layers land selected so the pen/pale-ink
+  // pass is the very next thing to do.
+  const rehearseBtn = fx.querySelector("#fx-rehearse");
+  if (rehearseBtn) {
+    rehearseBtn.hidden = !watchableAxis(layer);
+    rehearseBtn.onclick = async () => {
+      try {
+        const { layers } = await api.post(`/api/layers/${layer.id}/rehearse?moments=4`);
+        await actions.refreshProject();
+        await actions.refreshResolved();
+        actions.setSelection(layers.map((l) => l.id));
+      } catch (e) { actions.oops(e); }
+    };
+  }
   const animateBtn = fx.querySelector("#fx-animate");
   if (animateBtn) {
     animateBtn.onclick = async () => {

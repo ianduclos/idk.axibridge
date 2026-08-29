@@ -36,7 +36,7 @@ from .compose import (
 )
 from .machine import manager
 from .model import Layer, Path, PathDocument
-from .registry import get_source
+from .registry import effective_time_axis, field_bounds, fold_time_axis, get_source
 from .stores import Pen, pen_library, settings_store
 from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
 
@@ -451,19 +451,45 @@ class Session:
     # -- layer CRUD -----------------------------------------------------------
 
     @staticmethod
+    def time_axis(generator_id: str) -> str | None:
+        """Which param of this generator is time, or None.
+
+        The ``frame`` fallback is what makes this a generalisation rather than
+        a migration: every image generator predates the declaration and keeps
+        working untouched. Declaring is how a NEW axis opts in."""
+        try:
+            src = get_source(generator_id)
+        except KeyError:
+            return None
+        return effective_time_axis(src)
+
+    @staticmethod
+    def axis_bounds(generator_id: str, axis: str) -> tuple[float, float] | None:
+        """The axis's own ``ge``/``le``, or None when it is not bounded on both
+        sides — in which case there is nothing to map ``master_t`` onto and the
+        layer simply does not follow the timeline."""
+        return field_bounds(get_source(generator_id).Params.model_fields[axis])
+
+    @staticmethod
     def _effective_gen_params(
         layer: CanvasLayer, master_t: float | None = None
     ) -> dict[str, Any]:
         """The generator params to actually GENERATE with: the layer's stored
-        source params, but with the layer's frame shift folded into the
-        generator's ``frame`` axis (clamped 0..1) when the generator exposes
-        one. The stored params are NEVER mutated — this returns a copy — so
-        the user's raw ``frame`` and the undo/purity contract stay intact.
+        source params, but with the layer's time shift folded into whichever
+        param the generator declares as its TIME AXIS. The stored params are
+        NEVER mutated — this returns a copy — so the user's raw value and the
+        undo/purity contract stay intact.
 
-        The frame shift is ``frame_offset``, PLUS ``master_t`` when the layer
-        opted into ``frame_follow`` and a ``master_t`` is supplied (the single
-        place that folds a clip-follow scrub — the effective frame for the
-        preview, estimate and plotter alike is computed here)."""
+        The shift is ``frame_offset``, PLUS ``master_t`` when the layer opted
+        into ``frame_follow`` and a ``master_t`` is supplied (the single place
+        that folds a scrub — the effective params for the preview, estimate and
+        plotter alike are computed here).
+
+        The shift is in NORMALISED units (0..1 across the axis's own bounds),
+        which is what lets one mechanism serve a 0..1 video ``frame`` and a
+        0..2000 step count. The layer fields are still named ``frame_*``
+        because they are persisted in every saved project; renaming them would
+        buy clarity worth less than a migration."""
         params = dict(layer.source.params or {})
         if layer.source.type not in ("generator", "baked") or not layer.source.generator:
             return params
@@ -472,10 +498,7 @@ class Session:
             shift += master_t
         if not shift:
             return params
-        if "frame" not in get_source(layer.source.generator).Params.model_fields:
-            return params
-        params["frame"] = min(1.0, max(0.0, params.get("frame", 0.0) + shift))
-        return params
+        return fold_time_axis(get_source(layer.source.generator), params, shift)
 
     @staticmethod
     def _sequence_driven(generator_id: str, params: dict[str, Any]) -> bool:
@@ -786,19 +809,20 @@ class Session:
             idx = self.project.layers.index(layer)
             self.project.layers[idx] = updated
             self._snapshot_pen(updated.pen_id)
-            # A frame_offset change on a frame-driven generator re-samples the
-            # clip: regenerate its source geometry with the offset folded into
-            # ``frame`` (stored params keep the user's raw value). Same lock,
-            # same single checkpoint; a generation failure propagates (identical
-            # failure semantics to regenerate_layer, which has already
-            # checkpointed). Non-generator sources just store the field.
+            # A frame_offset change on a time-axis generator re-samples it:
+            # regenerate its source geometry with the offset folded into
+            # whichever param is its TIME AXIS (stored params keep the user's
+            # raw value). Same lock, same single checkpoint; a generation
+            # failure propagates (identical failure semantics to
+            # regenerate_layer, which has already checkpointed). Non-generator
+            # sources just store the field.
             # (live generators only: a baked layer's geometry holds consolidated
             # transform/effects — regenerating here would silently discard them;
             # an explicit "regenerate" un-bakes on purpose and picks up the offset)
             if ("frame_offset" in patch and updated.frame_offset != layer.frame_offset
                     and updated.source.type == "generator"
                     and updated.source.generator
-                    and "frame" in get_source(updated.source.generator).Params.model_fields):
+                    and effective_time_axis(get_source(updated.source.generator)) is not None):
                 src = get_source(updated.source.generator)
                 doc = gencache.generate_cached(src, self._effective_gen_params(updated))
                 self.source_geometry[updated.id] = [p for lyr in doc.layers for p in lyr.paths]
@@ -2663,6 +2687,91 @@ class Session:
         image = params.get("image")
         if isinstance(image, str) and asset_store.is_sequence(image):
             b.source.params = {**params, "frame": 1.0}
+
+    def rehearse_layer(self, layer_id: str, moments: int = 4) -> list[CanvasLayer]:
+        """Stamp several moments of one process onto the sheet — pencil
+        rehearsals under a committed stroke, which is what makes a drawing
+        show its own history.
+
+        A moment is nothing but the layer's own generator re-run with a
+        different value on its TIME AXIS: no tween, no baking, no new
+        machinery. ``moments`` values are spread evenly across the axis's own
+        declared bounds (:meth:`axis_bounds`), not the layer's current value —
+        the rehearsal covers the whole process, not just the neighbourhood of
+        where this particular layer happens to sit today. Each moment is an
+        ORDINARY generator layer, inserted just below the original (still on
+        top, still the "ink"), and stays exactly as live and re-editable as
+        any other layer — nothing here is frozen or baked.
+
+        This is nearly free FOR A ``ProcessModule`` SOURCE. The trajectory
+        cache (Task 3) keys on every param EXCEPT the time axis by design —
+        that is the whole trick behind scrubbing — so every moment below hits
+        the SAME cached trajectory and only slices a different prefix of it:
+        N moments cost one process run, not N. A generator reached only
+        through the plain ``frame`` fallback (an image generator with no
+        declared ``time_axis``) has no trajectory cache to share — each
+        moment is its own ``generate()`` call, memoised by `gencache` like
+        any other, so N moments cost N (cheap) calls rather than one shared
+        run.
+
+        Follows ``add_separation_stack``'s shape, not ``animate_layer``'s:
+        every moment's geometry is generated BEFORE anything is mutated, then
+        one ``_checkpoint()`` takes the whole project at once and every layer
+        is appended directly — no other checkpointing method is called along
+        the way, so this is one undo step, not several."""
+        layer = self.project.layer(layer_id)
+        if layer.source.type not in ("generator", "baked") or not layer.source.generator:
+            raise RuntimeError(f"{layer.name} was not generated; nothing to rehearse")
+        if moments < 2:
+            raise ValueError("rehearse needs at least 2 moments")
+        generator_id = layer.source.generator
+        axis = self.time_axis(generator_id)
+        bounds = self.axis_bounds(generator_id, axis) if axis else None
+        if not axis or not bounds:
+            raise RuntimeError(f"{layer.name} has no time axis to rehearse along")
+
+        src = get_source(generator_id)
+        base = dict(layer.source.params or {})
+        is_int_axis = src.Params.model_fields[axis].annotation is int
+        lo, hi = bounds
+        span = hi - lo
+
+        # Generate every moment BEFORE mutating anything — a failure partway
+        # through must not leave a partial rehearsal behind.
+        generated: list[tuple[dict[str, Any], list[Path]]] = []
+        for i in range(moments):
+            frac = i / (moments - 1) if moments > 1 else 0.0
+            value: float = lo + frac * span
+            if is_int_axis:
+                value = int(round(value))
+            params = {**base, axis: value}
+            doc = gencache.generate_cached(src, params)
+            paths = [p for lyr in doc.layers for p in lyr.paths]
+            generated.append((params, paths))
+
+        with self._lock:
+            self._checkpoint()
+            idx = self.project.layers.index(layer)
+            created: list[CanvasLayer] = []
+            for offset, (params, paths) in enumerate(generated):
+                moment = CanvasLayer(
+                    name=f"{layer.name} · moment {offset + 1}/{moments}",
+                    source=LayerSource(type="generator", generator=generator_id, params=params),
+                    transform=layer.transform.model_copy(),
+                    # Effects carry — a rehearsal should look like the thing
+                    # being rehearsed (a process read through ``freehand``
+                    # must rehearse in the same hand). ``pen``, ``occluder``
+                    # and ``region`` stay at their CanvasLayer defaults on
+                    # purpose: the pen is precisely what you want to differ
+                    # (pencil under ink), and occluder/region are layer
+                    # ROLES rather than appearance — inheriting them would
+                    # make every moment clip the layers below it.
+                    effects=[e.model_copy(deep=True) for e in layer.effects],
+                )
+                self.project.layers.insert(idx + offset, moment)
+                self.source_geometry[moment.id] = paths
+                created.append(moment)
+            return created
 
     def consolidate_effects(self, layer_id: str) -> CanvasLayer:
         """Bake transform + effect stack into the source geometry.

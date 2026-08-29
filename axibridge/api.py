@@ -27,7 +27,7 @@ from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import calibration, compose, depth_pro, gencache, logbuf, project_io, svg_io, system_fonts
+from . import calibration, compose, depth_pro, gencache, logbuf, project_io, svg_io, system_fonts, trajectory
 from .assets import SEQUENCE_FRAME_RE, asset_store, safe_asset_name
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
@@ -1018,6 +1018,19 @@ def animate_layer(layer_id: str) -> dict[str, Any]:
         raise _fail(e)
 
 
+@router.post("/layers/{layer_id}/rehearse")
+def rehearse_layer(layer_id: str, moments: int = Query(default=4, ge=2, le=12)) -> dict[str, Any]:
+    """Stamp `moments` moments of a process layer's time axis onto the
+    sheet — one new ordinary generator layer per moment, one undo step."""
+    try:
+        layers = session.rehearse_layer(layer_id, moments)
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+    return {"layers": [l.model_dump() for l in layers]}
+
+
 @router.post("/layers/{layer_id}/consolidate")
 def consolidate_layer(layer_id: str) -> dict[str, Any]:
     """Bake the layer's transform + effect stack into its source geometry."""
@@ -1996,6 +2009,7 @@ def new_project() -> dict[str, Any]:
     session.clear_history()
     asset_store.replace_all({})
     gencache.clear()
+    trajectory.clear_cache()
     return _project_payload()
 
 
@@ -2054,6 +2068,7 @@ def load_project(body: LoadBody) -> dict[str, Any]:
     session.restore_history(history)
     asset_store.replace_all(assets)
     gencache.clear()
+    trajectory.clear_cache()
     return _project_payload()
 
 
@@ -2096,4 +2111,5 @@ async def import_project(file: UploadFile) -> dict[str, Any]:
     session.restore_history(history)
     asset_store.replace_all(assets)
     gencache.clear()
+    trajectory.clear_cache()
     return _project_payload()

@@ -168,6 +168,14 @@ Contract:
   A/B could morph. That's still a genuine design decision (resample vs. keep
   stepping mismatches) and is deliberately left for later — the structural
   case covers the common workflow.
+- **Process sources** (`axibridge/process.py`): a generator that UNFOLDS.
+  Subclass `ProcessModule`, declare a bounded step param as `time_axis`, and
+  write `run()` yielding one `Step` per tick — the marks ADDED at that step,
+  plus optional `telemetry` for the popup to plot. `generate()` is provided
+  and stays pure: it asks the trajectory cache for the state at step N. `run()`
+  may be `while True`; the param bounds it. A process that revises earlier
+  marks rather than adding sets `accumulative = False` and yields whole states,
+  which costs much more to cache. Copy `sources/venation.py`.
 
 ## Writing an Effect — the v2 per-layer stack
 

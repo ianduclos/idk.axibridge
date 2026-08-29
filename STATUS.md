@@ -1,17 +1,71 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-08-21
+updated: 2026-08-22
 machine: mac+pi
-summary: Idea pass 4 is under way — B2 (eigenfunction/cymatic fill) shipped as an effect that fills any closed shape with the level sets of its own vibration, with degenerate-mode mixing, a stillness/"sand" field, multi-mode ringing and an image-weighted membrane.
+summary: Pass 4's A1 (time as a param) is built and green on the branch feat/time-as-a-param — a declared time axis, ProcessModule, a trajectory cache, the venation growth generator, a watch/scrub popup and Rehearse — reviewed clean but NOT merged and never once on paper.
 next:
-  - "Eye-check the new fill and get ink on paper — HANDOFF.md's top entry says exactly what to look at; the Mix sweep on a square is the part no test can judge"
-  - "Pass 4 continues: B1 (geodesics on the Eikonal solver) is still the cheap warm-up, B3 (hachures) the other Round 1 item, then the A1 substrate round"
-  - "Two A1 design risks still want settling BEFORE code — O(N) replay cost, and whether interaction-as-recorded-score feels expressive or like fighting a tape"
-  - "13 harvested notes are staged in the vault's llm/proposed/ awaiting promotion — that happens in a vault session via its own promote skill, not from here"
-  - "Colour separation still has no ink on paper: CHECKME.md's 2026-08-17 section, then the felt-tip overprint test that no automated check can judge"
-  - "Still open from before: bench/hardware eye-checks back to 2026-07-13, and the multi-pen swap queue has never touched a real AxiDraw"
+  - "Decide what happens to feat/time-as-a-param (12 commits, 21f4ddc..9727323, suite 1080 -> 1118, final review clean). Nothing is pushed or merged — that call is yours"
+  - "Then the bench work in HANDOFF.md's top entry, which is the point of the whole round: watch a venation layer play, scrub it, Rehearse it, and PLOT one. Continuous growth lines should plot unusually cleanly and nothing here has touched paper"
+  - "The A1.5 question the round exists to make answerable: now that there is something to watch, does poking a running process want to be direct manipulation or a recorded score? It cannot be answered from a desk"
+  - "A2 (the homeostat) is now unblocked and is the natural next build; docs/plans/time-as-a-param.md sketches what it needs from A1 and what it deliberately leaves open"
+  - "Still open from before: the cymatic fill has no ink on paper either, colour separation's CHECKME.md 2026-08-17 section, bench/hardware eye-checks back to 2026-07-13, and the multi-pen swap queue has never touched a real AxiDraw"
 handoff_for: ian
+---
+
+# idk.axibridge — status
+
+**Session 2026-08-21/22 (Opus 5): pass 4's A1 — time as a param — built by a
+subagent fleet on a branch, reviewed clean, unmerged.**
+
+Twelve commits on `feat/time-as-a-param`, suite 1080 -> 1118. Design first
+(`docs/plans/time-as-a-param.md`), then a phased plan
+(`…-IMPLEMENTATION.md`), then seven tasks each with its own implementer and
+reviewer. The full account, including what the design got wrong, is
+`docs/plans/time-as-a-param-RESULTS.md`.
+
+**What shipped.** A generator can declare which param is its **time axis**;
+the master timeline scrubs it. `ProcessModule` is a base for generators that
+unfold — `run()` yields the marks added at each step — and `generate()` stays
+a pure function of params, so the memo, tweening, undo, estimates and the
+plotter all keep working. A **trajectory cache** runs the whole process once
+and slices it, so scrubbing costs a prefix concatenation rather than a re-run.
+`venation` (space-colonisation growth) is the first real process. A **popup**
+plays and scrubs any layer with a time axis, driving the existing
+`/api/generators/preview` — no new endpoint. **Rehearse** stamps several
+moments of a process onto one sheet in a single undo step.
+
+**Two things the design did not anticipate, both worth knowing.** The
+master-timeline binding largely already existed: `_effective_gen_params` was
+already folding `master_t` into a `frame` axis, so A1 was mostly a
+generalisation of one method rather than new plumbing. And because the
+trajectory cache key deliberately **excludes** the time axis, Rehearse's N
+moments all hit ONE cached run — which is why Rehearse ended up as N ordinary
+generator layers rather than the tween-sweep-explode route the design doc
+specified. That route could not have delivered the single undo step the doc
+itself demanded, since each of those methods checkpoints independently.
+
+**The plan's own test code was the main source of defects.** Seven were found
+because every implementer was told to check whether a test would genuinely
+fail for the reason its step predicted — two broken test imports, a clamp that
+ran after an int cast, a vacuous cache test, a selector that never matched the
+element the code created, popup CSS classes that never existed, dead telemetry
+markup. Prose saying "run it and watch it fail" is not the same as having
+watched it fail.
+
+**Two performance defects were mine, not the implementers'.** The venation
+loop was ~918M distance computations (~3 minutes) and lands on the *first*
+`generate()`, because a trajectory always runs to its declared bound.
+Vectorising fixed the constant factor but not the growth: at `kill`'s declared
+minimum the node count ran away to 92k and ~7 GB. Final: the pathological case
+is 6.18 s / 465 MB, the default 0.108 s. Separately the trajectory cache could
+evict the entry it had just inserted, recomputing forever at a zero hit rate —
+found by a reviewer comparing against `gencache`, which has guarded that for
+years.
+
+**Nothing has touched paper, and the popup has never been driven by hand** —
+only headless. HANDOFF.md's top entry is the bench work.
+
 ---
 
 # idk.axibridge — status
