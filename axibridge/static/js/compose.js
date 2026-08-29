@@ -8,7 +8,7 @@ import { S, actions, rememberDetails } from "./main.js";
 import { mul, translate, rotate, scale, matToObj, objToMat } from "./canvas.js";
 import { applyViewDefaults } from "./viewmap.js";
 import { renderTimelineBar, jumpTimelineToKeyframe } from "./timeline.js";
-import { openProcessPopup, watchableAxis } from "./process.js";
+import { openProcessPopup, openProcessBench, watchableAxis, moduleAxis } from "./process.js";
 
 const $ = (id) => document.getElementById(id);
 let genParams = {};
@@ -209,6 +209,8 @@ export function initComposeTab() {
              a Compose act, the list is only where you pick one -->
         <button id="btn-empty-layer"
           title="blank layer the pen/brush/draw tools draw onto (a shape layer both pen and brush can add to and subtract from when those tools are active) — an explicit fresh target instead of appending to the last drawn layer">＋ empty</button>
+        <button id="btn-bench" hidden
+          title="open the bench — tune this process with its own growth on screen, play and scrub its time axis, then create the layer at the moment you want">▷ Bench</button>
         <button id="gen-latch" class="latch-chip" hidden
           title="the sliders above edit this layer live — click to select it"></button>
         <label class="hint" style="cursor:pointer;margin-left:auto"
@@ -294,6 +296,32 @@ export function initComposeTab() {
     } catch (e) { actions.oops(e); }
     finally { genBusy(false); renderBenchAction(); }  // after genBusy restores the label
   };
+  // ▷ Bench: only a generator with a TIME AXIS has a process to watch, so the
+  // button appears for those and nothing else. It hands the bench the panel's
+  // OWN params object — tuning in the bench is tuning here — and owns the two
+  // acts the popup must not do itself: rolling a seed, and creating the layer.
+  $("btn-bench").onclick = () => openProcessBench({
+    mod: S.state.modules.sources.find((m) => m.id === sel.value),
+    params: genParams,
+    onReroll: (params) => rollSeed(
+      S.state.modules.sources.find((m) => m.id === sel.value)?.schema || {}, params),
+    onCreate: async (params) => {
+      // same call, latch and selection as ＋ Create layer: the bench is a way
+      // to choose params, never a second way to make a layer
+      const layer = await api.post("/api/layers/generate", { module: sel.value, params });
+      genParams = { ...params };
+      preview.clear();
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      latch = layer.id;
+      actions.setSelection([layer.id]);
+      renderBenchAction();
+    },
+    // the bench moved the axis (and maybe the seed) inside our own object;
+    // re-render so the panel form shows where it was left
+    onClose: () => { const m = S.state.modules.sources.find((x) => x.id === sel.value);
+                     if (m) { bindGenForm(m); benchPreview(); } },
+  });
   initCanvasDrop();
 
   $("btn-empty-layer").onclick = async () => {
@@ -610,6 +638,13 @@ async function refreshDepthProStatus() {
 // "＋ Create layer", building the whole tonal-band + edges family at once.
 const LINEART_STACK_IDS = new Set(["lineart_edges", "lineart_hatch"]);
 
+// ▷ Bench is offered exactly when the module declares a time axis — the same
+// test the layer panel's ▷ Watch uses, asked of the module instead of a layer.
+function updateBenchButton(m) {
+  const btn = $("btn-bench");
+  if (btn) btn.hidden = !moduleAxis(m);
+}
+
 function updateLineartStackRow(m) {
   const row = $("lineart-stack-row");
   if (!row) return;
@@ -802,6 +837,7 @@ export function rollSeed(schema, params) {
 // generator picked) and rerenderForView (view toggled, params untouched).
 function bindGenForm(m) {
   const sched = () => { benchPreview(); updateLineartStackRow(m); updateSeparateRow(m); };
+  updateBenchButton(m);
   const commit = () => { sched(); if (latch) applyLatched(); };
   renderForm($("gen-form"), m.schema, genParams, commit, { onLive: sched, stateKey: `gen:${m.id}` });
   return sched;

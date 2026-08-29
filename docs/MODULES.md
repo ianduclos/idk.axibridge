@@ -176,6 +176,13 @@ Contract:
   may be `while True`; the param bounds it. A process that revises earlier
   marks rather than adding sets `accumulative = False` and yields whole states,
   which costs much more to cache. Copy `sources/venation.py`.
+  Declaring a `time_axis` also buys the UI for free, and there is no way to
+  opt out of it: the Generate panel shows a **▷ Bench** button for the module
+  (params beside a stage that plays and scrubs the axis, then creates the layer
+  at the step on screen), and a committed layer gets **▷ Watch** and
+  **Rehearse**. The bench form drops the axis field — the scrub bar is that
+  param's control — so give the axis a real title and a tight `ge`/`le`: those
+  bounds become the scrub's range, and an unbounded axis has nothing to scrub.
 
 ## Writing an Effect — the v2 per-layer stack
 

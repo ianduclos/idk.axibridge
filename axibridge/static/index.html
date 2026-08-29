@@ -378,17 +378,23 @@
 
      Preview only. It drives /api/generators/preview — which already runs a
      generator with no layer, no undo checkpoint and no session lock — and
-     never PATCHes the project. Same discipline the timeline bar keeps: this
-     is a viewer of a param, and committing a step means typing it into the
-     form. process.js owns every control inside it. -->
+     never PATCHes an existing layer. Same discipline the timeline bar keeps.
+     Bench mode (opened from the Generate panel) adds the generator's params
+     and one write: creating a NEW layer at the step on screen, through the
+     same call the panel's own button makes. process.js owns every control. -->
 <div id="process-popup" class="modal-backdrop" hidden>
   <div class="preview-modal">
     <div class="preview-head">
       <h2 id="process-title">Process</h2>
       <button id="process-close">Close</button>
     </div>
-    <div class="preview-stage">
-      <svg id="process-canvas" viewBox="0 0 300 218" preserveAspectRatio="xMidYMid meet"></svg>
+    <!-- bench mode puts the generator's own auto-form beside the stage; watch
+         mode hides it and the stage takes the width. process.js owns both. -->
+    <div class="process-body">
+      <div id="process-params" class="form" hidden></div>
+      <div class="preview-stage">
+        <svg id="process-canvas" viewBox="0 0 300 218" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
     </div>
     <div class="row">
       <button id="process-play" class="primary">Play</button>
@@ -397,6 +403,10 @@
       <input id="process-scrub" type="range" min="0" max="100" step="1" value="0"
              title="scrub the generator's time axis — preview only, the project is not touched">
       <span id="process-readout" class="hint">0</span>
+      <button id="process-reroll" hidden
+              title="new random seed — same params, a different run of the same process">Reroll</button>
+      <button id="process-create" class="primary" hidden
+              title="create a layer from these params, stopped at the step on screen">＋ Create layer</button>
     </div>
     <div class="row">
       <!-- Points-so-far against the axis: the growth curve of whatever has

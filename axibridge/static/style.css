@@ -870,6 +870,17 @@ input[type="range"].fine::-moz-range-thumb {
   display: block; height: min(62vh, 700px); aspect-ratio: 300 / 218; max-width: 100%;
   background: var(--sheet); box-shadow: 0 3px 18px rgba(0,0,0,.5);
 }
+/* Bench mode: params column beside the stage. The column is fixed-width and
+   scrolls on its own — the stage must not shrink as a generator's form grows,
+   or picking a module with many params would resize the picture you are
+   judging. Watch mode hides the column and the stage takes the row. */
+.process-body { display: flex; gap: 12px; align-items: stretch; min-height: 0; flex: 1; }
+.process-body .preview-stage { flex: 1; min-width: 0; }
+#process-params {
+  width: 260px; flex: none; overflow-y: auto; max-height: min(62vh, 700px);
+  padding-right: 8px; border-right: 1px solid var(--bench-edge);
+}
+#process-params[hidden] { display: none; }
 #process-scrub { flex: 1; min-width: 160px; }
 #process-readout { min-width: 3.5em; text-align: right; font-variant-numeric: tabular-nums; }
 #process-telemetry {

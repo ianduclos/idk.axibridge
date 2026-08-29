@@ -2553,6 +2553,77 @@ def test_the_watch_button_appears_only_for_a_process_layer(ui):
     assert not ui.errors
 
 
+def test_the_bench_button_appears_only_for_a_process_generator(ui):
+    """▷ Bench is offered on the Generate panel by the same test ▷ Watch uses
+    on a layer — the module declares a time axis — asked before any layer
+    exists, which is the whole point of the bench."""
+    ui.select_option("#gen-select", "polygon")
+    ui.wait_for_function(
+        "() => document.getElementById('btn-bench').hidden", timeout=5_000)
+
+    ui.select_option("#gen-select", "venation")
+    ui.wait_for_function(
+        "() => !document.getElementById('btn-bench').hidden", timeout=5_000)
+    assert not ui.errors
+
+
+def test_the_bench_form_omits_the_time_axis(ui):
+    """The scrub bar IS the time axis's control. A second widget for it in the
+    bench form is how the two come to disagree mid-drag, so `steps` must not
+    appear there — while the generator's other params must."""
+    ui.select_option("#gen-select", "venation")
+    ui.wait_for_function(
+        "() => !document.getElementById('btn-bench').hidden", timeout=5_000)
+    ui.click("#btn-bench")
+    ui.wait_for_selector("#process-popup:not([hidden])", timeout=10_000)
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#process-params .field').length > 0",
+        timeout=10_000)
+
+    labels = ui.eval_on_selector_all(
+        "#process-params .field label span",
+        "els => els.map(e => e.textContent)")
+    assert "Attractors" in labels, labels
+    assert "Steps" not in labels, "the bench form duplicated the scrub bar"
+    assert not ui.errors
+
+
+def test_creating_from_the_bench_lands_on_the_step_on_screen(ui):
+    """The one write the popup is allowed: a NEW layer, at the moment being
+    watched. What was on screen has to be what gets made, or the bench is a
+    picture of a layer you cannot have."""
+    ui.select_option("#gen-select", "venation")
+    ui.wait_for_function(
+        "() => !document.getElementById('btn-bench').hidden", timeout=5_000)
+    # a cheap run: the default 400 attractors x 600 steps is a slow way to
+    # assert a number gets through
+    ui.eval_on_selector_all(
+        "#gen-form .field",
+        "els => els.forEach(e => { const s = e.querySelector('label span');"
+        "  if (s && s.textContent === 'Attractors') {"
+        "    const i = e.querySelector('input[type=number], input[type=range]');"
+        "    i.value = '60'; i.dispatchEvent(new Event('change', {bubbles: true})); } })")
+    ui.click("#btn-bench")
+    ui.wait_for_selector("#process-popup:not([hidden])", timeout=10_000)
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#process-canvas polyline').length > 0",
+        timeout=20_000)
+
+    ui.eval_on_selector("#process-scrub",
+                        "(el) => { el.value = '45'; "
+                        "el.dispatchEvent(new Event('input', {bubbles: true})); }")
+    ui.wait_for_function(
+        "() => document.getElementById('process-readout').textContent === '45'",
+        timeout=10_000)
+    ui.click("#process-create")
+    ui.wait_for_function(
+        "() => document.getElementById('process-popup').hidden", timeout=15_000)
+
+    layer = wait_for_generator(ui, "venation")
+    assert layer["source"]["params"]["steps"] == 45
+    assert not ui.errors
+
+
 def test_scrubbing_the_popup_changes_the_ink_and_not_the_project(ui):
     """The popup is a viewer of a param. Same discipline as the timeline bar:
     it must never PATCH the project."""
