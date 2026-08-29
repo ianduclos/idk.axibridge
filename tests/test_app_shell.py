@@ -477,6 +477,10 @@ def test_mark_native_shell_publishes_shell_and_titlebar_state():
     """The title-bar tweak is a best-effort AppKit poke, and three separate
     rounds of it failed by doing nothing at all rather than raising. Its
     outcome is published to the DOM so a no-op is inspectable."""
+    # the branch under test is the one INSIDE the AppKit import — without it
+    # the status reads "unavailable: ModuleNotFoundError" and the assertion
+    # would be describing a machine, not the code
+    pytest.importorskip("AppKit", reason="not macOS")
     shell = _shell()
     win = _FakeWindow()
     shell.integrate_titlebar(win)          # no native window -> degraded path

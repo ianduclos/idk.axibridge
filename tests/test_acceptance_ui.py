@@ -1325,10 +1325,13 @@ def test_timeline_bar_arrow_keys_step_one_frame(ui):
 
 
 # -- S3: chain UI in the layer detail -----------------------------------------
-# docs/plans/timeline-v2.md S3. Screenshots land in the scratchpad dir this
-# session used for temp files, named after the test that took them.
-_SHOT_DIR = Path("/private/tmp/claude-501/-Users-ianduclos--SecondBrain-02-Areas--Coding-idk-axibridge"
-                  "/104f5af6-cb90-4e9e-adfd-fafc78733d09/scratchpad")
+# docs/plans/timeline-v2.md S3. Screenshots are a debugging aid, named after
+# the test that took them; set AXIBRIDGE_SHOT_DIR to collect them somewhere
+# you will look. This used to be one session's absolute macOS scratchpad path,
+# which every machine but that Mac failed to mkdir — taking nine unrelated
+# acceptance tests down with it (found on the Pi, 2026-08-29).
+_SHOT_DIR = Path(os.environ.get("AXIBRIDGE_SHOT_DIR")
+                 or Path(tempfile.gettempdir()) / "axibridge-shots")
 
 
 def _shoot(page, name: str) -> None:

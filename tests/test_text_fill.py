@@ -35,6 +35,9 @@ def test_renders_nonempty_and_every_ring_is_closed_and_filled():
         assert len(p.points) >= 4
 
 
+@pytest.mark.skipif(not fg.USE_PATHOPS,
+                    reason="counters need skia-pathops (the optional [text] extra) to "
+                           "resolve Recursive's overlapping contour authoring")
 @pytest.mark.parametrize("ch,min_rings", [("o", 2), ("e", 2), ("a", 2), ("B", 3)])
 def test_counters_produce_extra_rings(ch, min_rings):
     # "o"/"e"/"a" each have one counter (2 rings: outer + hole), "B" has two

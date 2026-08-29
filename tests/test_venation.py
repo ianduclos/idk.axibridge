@@ -118,6 +118,12 @@ def test_a_pathological_run_stays_bounded():
         attractors=3000, attraction=120.0, kill=0.5, step_len=0.3))
     elapsed = time.perf_counter() - start
     total_nodes = sum(len(step) for step in traj.steps)
-    assert elapsed < 20.0, f"pathological venation trajectory took {elapsed:.1f}s, budget is 20s"
+    # The budget has to clear the slowest machine that runs this suite, not
+    # the fastest: the same call measures ~6s on the Mac and ~25s on the Pi
+    # (2026-08-29). It still separates bounded from runaway by an order of
+    # magnitude — the unbounded version did not finish in 60s on the FAST
+    # machine — and `total_nodes` below is the machine-independent half of
+    # the assertion, which is the one that actually pins the cap.
+    assert elapsed < 50.0, f"pathological venation trajectory took {elapsed:.1f}s, budget is 50s"
     assert total_nodes <= _MAX_NODES, (
         f"node growth ran away: {total_nodes} nodes exceeds the {_MAX_NODES} cap")
