@@ -2354,8 +2354,12 @@ def test_separation_creates_one_layer_per_plate(ui):
         assert plate in joined, f"no {plate} plate in the layer list: {names}"
 
     _post(f"{ui.base}/api/undo")
-    ui.reload(wait_until="domcontentloaded")
-    _wait_ready(ui)
+    # reload_app, not a bare reload: a reload aborts the OLD page's in-flight
+    # fetches, and an aborted fetch surfaces as an unhandled "Failed to fetch"
+    # that the final assertion then reads as an app error. The Mac's fetches
+    # land before the reload and the Pi's do not, which is what makes a bare
+    # reload here a machine-speed test rather than an undo test.
+    reload_app(ui)
     ui.wait_for_function("(n) => document.querySelectorAll('#layer-list .layer-row')"
                          ".length === n", arg=before, timeout=20_000)
     assert not ui.errors
