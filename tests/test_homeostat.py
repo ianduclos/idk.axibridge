@@ -3,9 +3,13 @@ an essential variable leaves its viable range."""
 
 import numpy as np
 
+from axibridge.registry import get_source, load_builtin_modules
+from axibridge.sources._homeostasis import MEASURES
 from axibridge.sources.homeostat import (
     BED_HEIGHT, BED_WIDTH, Genome, advance, sample_genome,
 )
+
+load_builtin_modules()
 
 
 def test_a_genome_is_reproducible_from_its_seed():
@@ -78,3 +82,109 @@ def test_persistence_makes_a_smoother_line():
 
 def test_the_bed_constants_match_the_machine():
     assert (BED_WIDTH, BED_HEIGHT) == (300.0, 218.0)
+
+
+def draw(**kw):
+    src = get_source("homeostat")
+    doc = src.generate(src.Params(**kw))
+    return [p for layer in doc.layers for p in layer.paths]
+
+
+def telemetry(**kw):
+    src = get_source("homeostat")
+    return src.trajectory(src.Params(**kw)).telemetry
+
+
+def test_it_is_registered_and_oriented():
+    src = get_source("homeostat")
+    assert src.time_axis == "steps"
+    assert src.accumulative is True
+    assert src.orientation == "geometry"
+
+
+def test_it_accumulates_monotonically():
+    """The prefix contract: a later step contains every mark of an earlier one.
+    Compared as flattened points because `document()` stitches contiguous
+    segments, so path COUNTS need not grow even though the drawing does."""
+    early = [pt for p in draw(steps=40, seed=3) for pt in p.points]
+    late = [pt for p in draw(steps=90, seed=3) for pt in p.points]
+    assert len(late) > len(early)
+    assert late[:len(early)] == early
+
+
+def test_the_line_is_stitched_not_shattered():
+    """One segment per step would be one two-point PATH per step — 300 pen
+    lifts on paper, which would make the no-lift ruling false where it counts.
+    `document()` stitches contiguous segments into runs."""
+    paths = draw(steps=300, seed=2, lift_on_reroll=False)
+    assert len(paths) == 1
+    # 302, not 301: `Trajectory.state(n)` is steps 0..n INCLUSIVE, so 300 steps
+    # is 301 segments, and 301 stitched segments share endpoints into 302
+    # points. Same prefix contract venation is tested against.
+    assert len(paths[0].points) == 302
+
+
+def test_a_seed_pins_the_whole_run():
+    from axibridge import trajectory as trajectory_module
+
+    trajectory_module.clear_cache()
+    first = [tuple(p.points) for p in draw(steps=80, seed=11)]
+    trajectory_module.clear_cache()
+    second = [tuple(p.points) for p in draw(steps=80, seed=11)]
+    assert first == second
+
+    trajectory_module.clear_cache()
+    third = [tuple(p.points) for p in draw(steps=80, seed=12)]
+    assert first != third
+
+
+def test_a_wide_range_never_puts_the_system_in_trouble():
+    """tolerance=1.0 makes every value viable, so a reroll would mean the
+    controller fires on something other than the variable leaving range."""
+    tel = telemetry(steps=400, seed=5, tolerance=1.0, target=0.5)
+    assert tel[-1]["rerolls"] == 0.0
+
+
+def test_a_narrow_range_forces_rerolls():
+    tel = telemetry(steps=400, seed=5, measure="coverage",
+                    target=1.0, tolerance=0.01, patience=1)
+    assert tel[-1]["rerolls"] > 0.0
+
+
+def test_patience_delays_the_reroll():
+    """Sample-and-hold, not a hair trigger: the same impossible range with a
+    long patience must reroll strictly less often than with a short one."""
+    impatient = telemetry(steps=400, seed=5, measure="coverage",
+                          target=1.0, tolerance=0.01, patience=1)
+    patient = telemetry(steps=400, seed=5, measure="coverage",
+                        target=1.0, tolerance=0.01, patience=50)
+    assert patient[-1]["rerolls"] < impatient[-1]["rerolls"]
+
+
+def test_the_drawing_stays_on_the_bed():
+    for p in draw(steps=500, seed=9, width=280.0, height=200.0):
+        for x, y in p.points:
+            assert 0.0 <= x <= BED_WIDTH and 0.0 <= y <= BED_HEIGHT
+
+
+def test_a_full_trajectory_is_fast():
+    """The performance guard, venation's precedent. `trajectory()` always runs
+    to the axis's DECLARED upper bound regardless of the `steps` passed in, so
+    a measure that walked the accumulated paths each step would put its whole
+    quadratic cost on this call. Generous enough not to flake on a loaded
+    machine or the Pi, tight enough to catch a regression to a path walk."""
+    import time
+
+    from axibridge import trajectory as trajectory_module
+
+    trajectory_module.clear_cache()
+    src = get_source("homeostat")
+    t0 = time.perf_counter()
+    src.trajectory(src.Params(steps=10, seed=1))
+    assert time.perf_counter() - t0 < 10.0
+
+
+def test_every_measure_runs_end_to_end():
+    for name in MEASURES:
+        paths = draw(steps=120, seed=6, measure=name)
+        assert paths and all(len(p.points) >= 2 for p in paths)

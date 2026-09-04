@@ -91,3 +91,140 @@ def advance(x: float, y: float, heading: float, prev_turn: float,
         heading = -heading
         ny = min(max(ny, 0.0), h)
     return nx, ny, heading, turn
+
+
+class HomeostatParams(BaseModel):
+    steps: int = Field(default=300, ge=0, le=1200, title="Steps",
+                       description="How far the pen has walked. This is the time "
+                                   "axis — bind it to the master timeline and the "
+                                   "hunt becomes an animation")
+    width: float = Field(default=200.0, ge=20.0, le=290.0, title="Width (mm)")
+    height: float = Field(default=160.0, ge=20.0, le=210.0, title="Height (mm)")
+    step_len: float = Field(default=2.0, ge=0.3, le=8.0, title="Step length (mm)",
+                            description="Base pen advance per step; the hand scales it")
+    measure: str = Field(default="crowding", title="Essential variable",
+                         json_schema_extra={"enum": list(MEASURES)},
+                         description="What the system is trying not to lose. "
+                                     "Crowding is local (am I in a corner?), "
+                                     "coverage is global, tangle is how much "
+                                     "ground it is retracing")
+    target: float = Field(default=0.25, ge=0.0, le=1.0, title="Target",
+                          description="Where the variable wants to sit")
+    tolerance: float = Field(default=0.12, ge=0.01, le=1.0, title="Tolerance",
+                             description="Half-width of the viable range. Narrow "
+                                         "gives constant crisis and visible "
+                                         "thrash; wide gives long stable passages "
+                                         "punctuated by lurches")
+    patience: int = Field(default=8, ge=1, le=60, title="Patience (steps)",
+                          description="Consecutive steps out of range before the "
+                                      "hand is rerolled")
+    variety: float = Field(default=0.8, ge=0.0, le=1.0, title="Variety",
+                           description="How wide a reroll samples. 0 rerolls to "
+                                       "nearly the same hand")
+    memory: float = Field(default=0.0, ge=0.0, le=1.0, title="Memory",
+                          description="Bias a reroll toward hands that held "
+                                      "before. Ashby had none, and adding it "
+                                      "makes the system converge — which is "
+                                      "another word for finished")
+    lift_on_reroll: bool = Field(default=False, title="Lift on reroll",
+                                 description="Off: the hand changes mid-stroke "
+                                             "and the seam is a change of "
+                                             "character. On: the pen lifts and "
+                                             "the seam is two marks")
+    seed: int = Field(default=0, ge=0, le=99999, title="Seed")
+
+
+def _stitch(paths: list[Path]) -> list[Path]:
+    """Join consecutive paths that share an endpoint into single polylines.
+
+    The trajectory stores per-step increments — that is what makes state at
+    step N a prefix slice — so an unstitched state is one two-point path per
+    step, which the plotter would draw as one pen lift per step. Stitching
+    here, at document time, keeps the increments intact and still gives the
+    plotter the continuous line the module's whole premise rests on.
+    """
+    out: list[Path] = []
+    for p in paths:
+        if out and out[-1].points[-1] == p.points[0]:
+            out[-1] = Path(points=out[-1].points + list(p.points[1:]), filled=False)
+        else:
+            out.append(Path(points=list(p.points), filled=False))
+    return out
+
+
+@register_source
+class Homeostat(ProcessModule):
+    id = "homeostat"
+    orientation = "geometry"  # a width x height field
+    label = "Homeostat (hunting)"
+    description = ("A pen that rerolls its own handwriting, blindly, whenever "
+                   "the drawing leaves its viable range.")
+    Params = HomeostatParams
+    time_axis = "steps"
+    accumulative = True
+
+    def run(self, params: HomeostatParams) -> Iterator[Step]:
+        p = params
+        rng = np.random.default_rng(p.seed)
+        w = min(p.width, BED_WIDTH - 4.0)
+        h = min(p.height, BED_HEIGHT - 4.0)
+        ox, oy = 2.0, 2.0
+
+        field = Measures(w, h)
+        hand = sample_genome(rng, p.variety)
+        held: list[Genome] = []
+
+        x, y = w / 2.0, h / 2.0
+        heading, turn = 0.0, 0.0
+        out_of_range = 0
+        in_range_run = 0
+        rerolls = 0.0
+        i = 0
+
+        while True:
+            nx, ny, heading, turn = advance(x, y, heading, turn, hand,
+                                            p.step_len, i, w, h, rng)
+            field.add(x, y, nx, ny)
+            seg = Path(points=[(ox + x, oy + y), (ox + nx, oy + ny)], filled=False)
+            x, y = nx, ny
+            i += 1
+
+            v = field.read(p.measure, x, y)
+            strain = (v - p.target) / p.tolerance
+
+            if abs(strain) > 1.0:
+                if in_range_run > p.patience:
+                    # This hand kept the system viable for a while. Remembered
+                    # only so `memory` has a pool to bias toward; with memory
+                    # at its default 0 the list is never read.
+                    held.append(hand)
+                in_range_run = 0
+                out_of_range += 1
+            else:
+                out_of_range = 0
+                in_range_run += 1
+
+            if out_of_range >= p.patience:
+                centre = None
+                if p.memory > 0.0 and held and rng.random() < p.memory:
+                    centre = held[int(rng.integers(len(held)))]
+                hand = sample_genome(rng, p.variety, centre=centre)
+                out_of_range = 0
+                rerolls += 1.0
+                if p.lift_on_reroll:
+                    # Break the stitch: a segment starting somewhere else is a
+                    # new stroke, and `_stitch` only joins shared endpoints.
+                    x, y = float(rng.uniform(0.0, w)), float(rng.uniform(0.0, h))
+
+            yield Step(paths=[seg],
+                       telemetry={"variable": v, "strain": strain,
+                                  "rerolls": rerolls})
+
+    def document(self, params: HomeostatParams, paths: list[Path]) -> PathDocument:
+        return PathDocument(
+            layers=[Layer(id=1, name="homeostat", color="#26241f",
+                          paths=_stitch(paths))],
+            width=params.width,
+            height=params.height,
+            source=f"homeostat {params.seed} @ {params.steps}",
+        )
