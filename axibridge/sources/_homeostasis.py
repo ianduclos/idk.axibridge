@@ -1,0 +1,80 @@
+"""The homeostat's measurement vocabulary: what "the drawing so far" is worth
+measuring about, and how to read it without walking the drawing.
+
+THE COST THAT SHAPES THIS FILE. A homeostat measures the drawing so far at
+every step. Doing that by walking the accumulated paths is quadratic in the
+step count — and because ``trajectory()`` always runs a process to its time
+axis's declared UPPER bound (that is what lets one cached run serve every
+scrub position), the whole quadratic cost lands on the first ``generate()``,
+not when someone drags the scrub to the end. ``sources/venation.py`` was bitten
+by the same shape of mistake; its docstring is the account.
+
+So the drawing is rasterised once, incrementally, into an occupancy grid as it
+is drawn, and every measure is an O(1) read off that grid. The invariant this
+rests on — that the incrementally built grid equals a from-scratch
+rasterisation of the same segments — is asserted in
+``tests/test_homeostasis.py`` and is the thing to check first if a measure ever
+looks wrong: nothing else here would fail loudly.
+
+Kept free of pens, params and modules on purpose. A7 (algedonic marks) wants
+this vocabulary and nothing else in ``homeostat.py``.
+"""
+
+from __future__ import annotations
+
+import math
+
+import numpy as np
+
+
+class OccupancyGrid:
+    """Which millimetre cells of the sheet have ink on them.
+
+    Boolean, not a visit count: every measure here is a fraction of cells, so
+    counts would only invite an unnormalised number into a design where
+    ``target``/``tolerance`` are meant to mean the same thing across all three
+    measures.
+    """
+
+    def __init__(self, width: float, height: float, cell: float = 1.0) -> None:
+        self.cell = cell
+        self.width = width
+        self.height = height
+        self.nx = max(1, int(math.ceil(width / cell)))
+        self.ny = max(1, int(math.ceil(height / cell)))
+        self.cells = np.zeros((self.ny, self.nx), dtype=np.uint8)
+        self.total = self.nx * self.ny
+        self.occupied = 0
+
+    def _cells_on(self, x0: float, y0: float, x1: float, y1: float):
+        """Row/column indices the segment passes through, deduplicated.
+
+        Sampled at half-cell intervals rather than run through a Bresenham
+        supercover: a pen step is a couple of mm over 1 mm cells, so the
+        sampling is dense enough to leave no gaps, and it stays vectorised.
+        """
+        length = math.dist((x0, y0), (x1, y1))
+        n = max(2, int(math.ceil(length / (self.cell * 0.5))) + 1)
+        ts = np.linspace(0.0, 1.0, n)
+        xs = np.clip(((x0 + (x1 - x0) * ts) / self.cell).astype(np.int64), 0, self.nx - 1)
+        ys = np.clip(((y0 + (y1 - y0) * ts) / self.cell).astype(np.int64), 0, self.ny - 1)
+        flat = np.unique(ys * self.nx + xs)
+        return flat // self.nx, flat % self.nx
+
+    def mark(self, x0: float, y0: float, x1: float, y1: float) -> tuple[int, int]:
+        """Lay one segment. Returns ``(cells_touched, cells_already_occupied)``
+        — the second number is what ``tangle`` is built from."""
+        ry, rx = self._cells_on(x0, y0, x1, y1)
+        before = self.cells[ry, rx]
+        revisits = int(np.count_nonzero(before))
+        self.cells[ry, rx] = 1
+        self.occupied += int(before.size) - revisits
+        return int(before.size), revisits
+
+    def window_occupancy(self, x: float, y: float, radius: float) -> float:
+        """Fraction of occupied cells in a square window around a point."""
+        r = max(1, int(round(radius / self.cell)))
+        cx = min(max(int(x / self.cell), 0), self.nx - 1)
+        cy = min(max(int(y / self.cell), 0), self.ny - 1)
+        sub = self.cells[max(0, cy - r):cy + r + 1, max(0, cx - r):cx + r + 1]
+        return float(sub.mean()) if sub.size else 0.0
