@@ -238,13 +238,10 @@ can be picked up whenever, same as B and C.
 
 ### Round 3 — the engine
 
-6. **Homeostat generator** (A2) — the most expansive idea in the pass, and it
-   wants A1 because you cannot tune a system you cannot watch hunt. Measure an
-   essential variable, and when it leaves its viable range **reroll the rule
-   set blindly** until drawing can continue. Oehlen's regime collision with a
-   reason: the seam lands where the system was in trouble. Leave memory out by
-   default — adding it makes the system converge, and converged is another word
-   for finished.
+6. ~~**Homeostat generator** (A2)~~ — **SHIPPED 2026-09-04**, source id
+   `homeostat`; ledger `docs/plans/homeostat-RESULTS.md`. Memory is a slider
+   defaulting to 0, as specified. **Not yet on paper, and not yet seen in the
+   bench** — that eye-check is the open half of the item, alongside venation's.
 7. **The seam** (A4) — independent fronts with identical local rules and no
    awareness of each other; draw the failure to reconcile. The aesthetic
    inverse of `region_boundary: continuous`, which stitches. Ian's read: the

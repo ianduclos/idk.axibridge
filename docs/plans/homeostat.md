@@ -1,7 +1,10 @@
 # The homeostat — design notes
 
-Pass 4's **A2** (`docs/IDEAS-pass4.md` §A2, ROADMAP Round 3, item 6). Not
-started; this is the design agreed with Ian on 2026-09-04, written before code
+Pass 4's **A2** (`docs/IDEAS-pass4.md` §A2, ROADMAP Round 3, item 6).
+**SHIPPED 2026-09-04 — read `homeostat-RESULTS.md` alongside this; where the
+two disagree the ledger is right** (the defaults in the params table below were
+retuned, and two decisions were corrected during planning, marked inline).
+This is the design agreed with Ian on 2026-09-04, written before code
 because three of its decisions could reasonably have gone the other way and the
 point of writing them down is that changing your mind later should cost an
 afternoon rather than an archaeology session.
@@ -117,9 +120,20 @@ same thing across measures — swap the measure and the range control still
 reads. The doc calls the measure "the biggest lever by far", so it is a knob;
 three, not eight.
 
-A hard cap on total points, treated exactly like convergence (`run()` returns;
-`Trajectory.state()` repeats the final geometry for any later step) — venation's
-`_MAX_NODES` precedent, for the same reason.
+**No point cap** (corrected 2026-09-04, during planning). Venation needs
+`_MAX_NODES` because one step can add unboundedly many nodes; here one step adds
+exactly one segment, so the time axis's own upper bound *is* the point bound and
+a cap would be dead code.
+
+**The stitch** (added 2026-09-04, during planning — the spec above was silent on
+it and the naive reading breaks this document's own central ruling). `Step.paths`
+is the marks *added* this step, so one segment per step is one two-point *path*
+per step: 300 pen lifts on paper, and "the line does not lift at a reroll" would
+be false exactly where it matters. `document()` therefore stitches contiguous
+segments into polylines. The trajectory still stores per-step increments, so the
+prefix contract is untouched. Build it by accumulating plain lists and
+constructing each `Path` once — the obvious per-segment rebuild is O(N²) and
+costs 40 ms at the axis bound against 0.19 ms, on every frame of a scrub.
 
 ## Params
 

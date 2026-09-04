@@ -93,7 +93,30 @@ popup precedent is the render popup (top-level markup, opens over any tab).
 was a stateless recipe playground beside the project; this is a per-layer
 inspector for layers that genuinely have a time axis.
 
-### A2. Homeostat generator — regime collision with a reason
+### A2. Homeostat generator — SHIPPED 2026-09-04
+
+`axibridge/sources/homeostat.py` + `sources/_homeostasis.py`. Design
+`docs/plans/homeostat.md`, plan `…-IMPLEMENTATION.md`, ledger
+`…-RESULTS.md`. What shipped: a single wandering pen whose genome (turn
+bias, wander, persistence, step scale, dwell) is rerolled blindly when an
+essential variable leaves `target ± tolerance` for `patience` consecutive
+steps; three measures — crowding, coverage, tangle — read in O(1) off one
+incremental occupancy grid; telemetry the bench plots.
+
+Three things the sketch below did not anticipate. **The measures share a
+0…1 knob but not a reachable band** — one pen inks under a tenth of a
+sheet, so a target sensible for crowding puts `coverage` in permanent
+crisis; the bands are now in the form's own description. **A homeostat can
+fail by thrashing**, not only by converging: the first defaults sat outside
+their range 63% of the time, which is not hunting, and the tuning is now a
+test because a thrashing homeostat still draws. And **the boundary was
+drawing** — a clamped pen bounces along a wall at shallow incidence and
+grows a rectangular frame around the picture; true reflection of the
+overshoot cut wall-pinned points to a third.
+
+The original sketch follows.
+
+#### The sketch — regime collision with a reason
 
 The most expansive single idea in the pass. Ashby's homeostat held equilibrium
 and, pushed outside its viable range, **randomly rewired itself** until it found
