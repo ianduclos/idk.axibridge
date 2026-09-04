@@ -78,3 +78,42 @@ class OccupancyGrid:
         cy = min(max(int(y / self.cell), 0), self.ny - 1)
         sub = self.cells[max(0, cy - r):cy + r + 1, max(0, cx - r):cx + r + 1]
         return float(sub.mean()) if sub.size else 0.0
+
+
+#: The essential variables a homeostat can be built around. The idea doc calls
+#: the choice "the biggest lever by far", which is why it is a knob — and why
+#: it is three, not eight.
+MEASURES: tuple[str, ...] = ("crowding", "coverage", "tangle")
+
+
+class Measures:
+    """One grid, three readings, all in 0..1 and all O(1) per step.
+
+    ``tangle`` is explicitly a PROXY for crossing density: it is the rate at
+    which the pen enters cells that already have ink, over a trailing window of
+    segments. Counting real segment intersections is the quadratic trap this
+    whole file exists to avoid, and calling the proxy a crossing count would be
+    a lie a later reader would build on.
+    """
+
+    def __init__(self, width: float, height: float, cell: float = 1.0,
+                 window: float = 6.0, tangle_window: int = 40) -> None:
+        self.grid = OccupancyGrid(width, height, cell)
+        self.window = window
+        self._tangle_window = tangle_window
+        self._recent: list[float] = []
+
+    def add(self, x0: float, y0: float, x1: float, y1: float) -> None:
+        touched, revisits = self.grid.mark(x0, y0, x1, y1)
+        self._recent.append(revisits / touched if touched else 0.0)
+        if len(self._recent) > self._tangle_window:
+            del self._recent[0]
+
+    def read(self, measure: str, x: float, y: float) -> float:
+        if measure == "crowding":
+            return self.grid.window_occupancy(x, y, self.window)
+        if measure == "coverage":
+            return self.grid.occupied / self.grid.total if self.grid.total else 0.0
+        if measure == "tangle":
+            return sum(self._recent) / len(self._recent) if self._recent else 0.0
+        raise ValueError(f"unknown measure: {measure!r}")

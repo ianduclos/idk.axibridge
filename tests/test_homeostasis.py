@@ -4,7 +4,7 @@ is expected to import this file and nothing else."""
 
 import numpy as np
 
-from axibridge.sources._homeostasis import OccupancyGrid
+from axibridge.sources._homeostasis import MEASURES, Measures, OccupancyGrid
 
 
 def test_a_fresh_grid_is_empty():
@@ -67,3 +67,64 @@ def test_window_occupancy_is_a_fraction():
     v = g.window_occupancy(40.0, 50.0, 5.0)
     assert 0.0 < v < 1.0
     assert g.window_occupancy(90.0, 90.0, 5.0) == 0.0
+
+
+def test_every_measure_is_normalised():
+    """target/tolerance mean the same thing across measures only because all
+    three land in 0..1. This is the property that lets the measure be a knob."""
+    m = Measures(120.0, 80.0)
+    x, y = 10.0, 40.0
+    for i in range(200):
+        m.add(x, y, x + 0.5, y)
+        x += 0.5
+        if x > 110.0:
+            x, y = 10.0, y + 1.0
+    for name in MEASURES:
+        v = m.read(name, x, y)
+        assert 0.0 <= v <= 1.0, (name, v)
+
+
+def test_crowding_is_local():
+    """The point of the default measure: it reports where the pen IS, not what
+    the sheet looks like overall."""
+    m = Measures(200.0, 200.0)
+    for i in range(120):
+        m.add(20.0 + i * 0.5, 20.0, 20.5 + i * 0.5, 20.0)
+    busy = m.read("crowding", 40.0, 20.0)
+    empty = m.read("crowding", 180.0, 180.0)
+    assert busy > empty
+    assert empty == 0.0
+
+
+def test_coverage_is_global_and_rises_monotonically():
+    m = Measures(100.0, 100.0)
+    seen = 0.0
+    x = 5.0
+    for _ in range(150):
+        m.add(x, 50.0, x + 0.5, 50.0)
+        x += 0.5
+        now = m.read("coverage", x, 50.0)
+        assert now >= seen
+        seen = now
+    assert seen > 0.0
+
+
+def test_tangle_separates_fresh_ground_from_retraced_ground():
+    m = Measures(100.0, 100.0)
+    for i in range(60):
+        m.add(10.0 + i, 50.0, 11.0 + i, 50.0)
+    fresh = m.read("tangle", 70.0, 50.0)
+    for i in range(60):
+        m.add(10.0 + i, 50.0, 11.0 + i, 50.0)
+    retraced = m.read("tangle", 70.0, 50.0)
+    assert retraced > fresh
+    assert retraced <= 1.0
+
+
+def test_an_unknown_measure_is_refused():
+    m = Measures(50.0, 50.0)
+    try:
+        m.read("vibes", 10.0, 10.0)
+    except ValueError:
+        return
+    raise AssertionError("an unknown measure should raise")
