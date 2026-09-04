@@ -31,27 +31,76 @@ def test_remarking_the_same_segment_is_all_revisits():
     assert g.occupied == touched   # the count did NOT double
 
 
-def test_the_incremental_count_equals_a_from_scratch_rasterisation():
-    """THE invariant. Every measure is a cheap running read off this grid
-    instead of a walk over accumulated paths, and that is only legitimate if
-    the running state matches what a from-scratch pass would produce. If this
-    ever fails, all three measures are quietly wrong."""
-    rng = np.random.default_rng(4)
-    g = OccupancyGrid(120.0, 80.0, cell=1.0)
-    segs = []
-    x, y = 60.0, 40.0
-    for _ in range(300):
-        nx_, ny_ = x + rng.uniform(-4, 4), y + rng.uniform(-4, 4)
-        nx_, ny_ = min(max(nx_, 0.0), 120.0), min(max(ny_, 0.0), 80.0)
-        segs.append((x, y, nx_, ny_))
-        g.mark(x, y, nx_, ny_)
-        x, y = nx_, ny_
+def _dense_reference(segs, w, h, cell=1.0):
+    """An INDEPENDENT rasterisation: walk each segment at 1/50th of a cell and
+    mark wherever a sample lands. Deliberately shares no code with
+    `OccupancyGrid._cells_on` — a reference that called it would only compare
+    the algorithm to itself."""
+    nx, ny = int(np.ceil(w / cell)), int(np.ceil(h / cell))
+    grid = np.zeros((ny, nx), dtype=np.uint8)
+    for x0, y0, x1, y1 in segs:
+        n = max(2, int(np.hypot(x1 - x0, y1 - y0) / (cell * 0.02)) + 1)
+        for t in np.linspace(0.0, 1.0, n):
+            xi = min(max(int((x0 + (x1 - x0) * t) / cell), 0), nx - 1)
+            yi = min(max(int((y0 + (y1 - y0) * t) / cell), 0), ny - 1)
+            grid[yi, xi] = 1
+    return grid
 
-    fresh = OccupancyGrid(120.0, 80.0, cell=1.0)
-    for s in segs:
-        fresh.mark(*s)
-    assert np.array_equal(g.cells, fresh.cells)
-    assert g.occupied == int(np.count_nonzero(g.cells))
+
+def _wander(n=300, seed=4):
+    rng = np.random.default_rng(seed)
+    segs, x, y = [], 60.0, 40.0
+    for _ in range(n):
+        nx_ = min(max(x + rng.uniform(-4, 4), 0.0), 120.0)
+        ny_ = min(max(y + rng.uniform(-4, 4), 0.0), 80.0)
+        segs.append((x, y, nx_, ny_))
+        x, y = nx_, ny_
+    return segs
+
+
+def test_the_running_count_never_diverges_from_the_grid():
+    """THE invariant. Every measure is a cheap running read instead of a walk
+    over accumulated paths, and that is only legitimate if the running state
+    matches the grid it claims to summarise."""
+    g = OccupancyGrid(120.0, 80.0, cell=1.0)
+    for seg in _wander():
+        g.mark(*seg)
+        assert g.occupied == int(np.count_nonzero(g.cells))
+
+
+def test_marking_order_does_not_change_the_grid():
+    """Occupancy is a set union, so the same segments in any order must give
+    the same grid. Catches state that leaks between marks."""
+    segs = _wander()
+    a = OccupancyGrid(120.0, 80.0)
+    for seg in segs:
+        a.mark(*seg)
+    b = OccupancyGrid(120.0, 80.0)
+    for seg in reversed(segs):
+        b.mark(*seg)
+    assert np.array_equal(a.cells, b.cells)
+    assert a.occupied == b.occupied
+
+
+def test_the_grid_agrees_with_an_independent_rasterisation():
+    """What the previous version of this test claimed to do and did not: check
+    the rasterisation against something that is not itself.
+
+    `_cells_on` samples at half a cell, which gives an 8-connected chain rather
+    than a supercover — it finds ~94% of the cells a dense walk does, missing
+    only corner clips, and it never invents one. That shortfall is uniform and
+    absorbed by the tuned bands, but it is a real property and it is asserted
+    here rather than left to a docstring. The 0.85 floor is set to catch
+    genuine under-sampling: sampling at 4x the cell size instead of half
+    scores 0.45."""
+    segs = _wander()
+    g = OccupancyGrid(120.0, 80.0)
+    for seg in segs:
+        g.mark(*seg)
+    ref = _dense_reference(segs, 120.0, 80.0)
+
+    assert int(np.count_nonzero(g.cells & ref)) == g.occupied   # a strict subset
+    assert g.occupied / int(np.count_nonzero(ref)) > 0.85
 
 
 def test_a_point_outside_the_sheet_is_clamped_not_crashed():

@@ -205,3 +205,71 @@ def test_the_defaults_are_mostly_viable_but_do_get_into_trouble():
         in_range = float(np.mean(np.abs(strain) <= 1.0))
         assert 0.55 < in_range < 0.95, (seed, in_range)
         assert tel[-1]["rerolls"] >= 5
+
+
+def _out_of_range_profile(**kw):
+    """(total steps out of range, longest consecutive run, rerolls)."""
+    import numpy as np
+
+    tel = telemetry(**kw)
+    out = np.abs(np.array([t["strain"] for t in tel])) > 1.0
+    longest = cur = 0
+    for b in out:
+        cur = cur + 1 if b else 0
+        longest = max(longest, cur)
+    return int(out.sum()), longest, tel[-1]["rerolls"]
+
+
+def test_patience_counts_consecutive_steps_not_total_ones():
+    """The discriminating test for sample-and-hold, and the one the plan
+    dropped between the design doc and the implementation.
+
+    A cumulative counter — one that forgets to reset when the variable comes
+    back into range — is indistinguishable from a consecutive one in any
+    fixture whose range is never reachable, which is what the other two
+    controller tests use. So: pick a regime that goes out of range OFTEN but
+    never for long, and assert nothing rerolls even though the running total
+    passes `patience` many times over. Both implementations are identical up
+    to the first reroll, so a cumulative counter provably fires here and this
+    test provably fails against it."""
+    for seed, tol, patience in ((7, 0.20, 40), (1, 0.15, 45)):
+        total, longest, rerolls = _out_of_range_profile(
+            steps=1200, seed=seed, tolerance=tol, patience=patience)
+        assert rerolls == 0.0, (seed, rerolls)
+        assert longest < patience, (seed, longest)
+        assert total > patience, (seed, total)   # a cumulative rule would fire
+
+
+def test_lifting_on_reroll_breaks_the_stroke_into_one_per_hand():
+    """`lift_on_reroll` is the aesthetic escape hatch — the seam as two marks
+    instead of one change of character — so it needs to actually break the
+    stitch, not merely be readable in the form."""
+    joined = draw(steps=1200, seed=1, lift_on_reroll=False)
+    lifted = draw(steps=1200, seed=1, lift_on_reroll=True)
+    assert len(joined) == 1
+    assert len(lifted) > 1
+    tel = telemetry(steps=1200, seed=1, lift_on_reroll=True)
+    assert len(lifted) == int(tel[-1]["rerolls"]) + 1
+
+
+def test_the_measure_enum_matches_the_measurement_vocabulary():
+    """Two lists of measure names that can drift apart is one list too many."""
+    from typing import get_args
+
+    from axibridge.sources.homeostat import HomeostatParams
+
+    declared = get_args(HomeostatParams.model_fields["measure"].annotation)
+    assert set(declared) == set(MEASURES)
+
+
+def test_an_unknown_measure_is_refused_at_the_param_boundary():
+    """A bad measure should be a 422 from validation, not a 400 from deep
+    inside generate()."""
+    import pydantic
+
+    src = get_source("homeostat")
+    try:
+        src.Params(measure="vibes")
+    except pydantic.ValidationError:
+        return
+    raise AssertionError("an unknown measure should not validate")

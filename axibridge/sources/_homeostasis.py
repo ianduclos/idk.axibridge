@@ -10,11 +10,11 @@ not when someone drags the scrub to the end. ``sources/venation.py`` was bitten
 by the same shape of mistake; its docstring is the account.
 
 So the drawing is rasterised once, incrementally, into an occupancy grid as it
-is drawn, and every measure is an O(1) read off that grid. The invariant this
-rests on — that the incrementally built grid equals a from-scratch
-rasterisation of the same segments — is asserted in
-``tests/test_homeostasis.py`` and is the thing to check first if a measure ever
-looks wrong: nothing else here would fail loudly.
+is drawn, and every measure is an O(1) read off that grid. Two invariants hold
+that up, both asserted in ``tests/test_homeostasis.py`` and both the first
+thing to check if a measure ever looks wrong, because nothing else here fails
+loudly: the running ``occupied`` count never diverges from the grid it
+summarises, and the grid agrees with an independent dense rasterisation.
 
 Kept free of pens, params and modules on purpose. A7 (algedonic marks) wants
 this vocabulary and nothing else in ``homeostat.py``.
@@ -50,8 +50,14 @@ class OccupancyGrid:
         """Row/column indices the segment passes through, deduplicated.
 
         Sampled at half-cell intervals rather than run through a Bresenham
-        supercover: a pen step is a couple of mm over 1 mm cells, so the
-        sampling is dense enough to leave no gaps, and it stays vectorised.
+        supercover, which makes this an 8-CONNECTED CHAIN and not a supercover:
+        it finds ~94% of the cells a dense walk finds, missing only cells the
+        segment merely clips at a corner, and it never invents one. The
+        shortfall is uniform, so it shifts every measure by the same small
+        factor and the tuned bands absorb it; it is asserted rather than
+        assumed (``test_the_grid_agrees_with_an_independent_rasterisation``).
+        Densifying is cheap if a use ever needs true supercover fidelity, but
+        it would move every band.
         """
         length = math.dist((x0, y0), (x1, y1))
         n = max(2, int(math.ceil(length / (self.cell * 0.5))) + 1)
