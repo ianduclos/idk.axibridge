@@ -188,3 +188,20 @@ def test_every_measure_runs_end_to_end():
     for name in MEASURES:
         paths = draw(steps=120, seed=6, measure=name)
         assert paths and all(len(p.points) >= 2 for p in paths)
+
+
+def test_the_defaults_are_mostly_viable_but_do_get_into_trouble():
+    """The tuning, as a contract. A homeostat whose defaults sit permanently
+    outside their range is not hunting, it is thrashing — and one that never
+    leaves range has nothing at stake, which is the whole point of the module.
+    The first defaults were the former: target 0.25 against a variable that
+    lives around 0.14 gave 37% in range and 71 rerolls. Measured 74-76% in
+    range and ~21 rerolls across seeds at 0.12 +- 0.08."""
+    import numpy as np
+
+    for seed in (1, 2, 7):
+        tel = telemetry(steps=1200, seed=seed)
+        strain = np.array([t["strain"] for t in tel])
+        in_range = float(np.mean(np.abs(strain) <= 1.0))
+        assert 0.55 < in_range < 0.95, (seed, in_range)
+        assert tel[-1]["rerolls"] >= 5

@@ -107,10 +107,17 @@ class HomeostatParams(BaseModel):
                          description="What the system is trying not to lose. "
                                      "Crowding is local (am I in a corner?), "
                                      "coverage is global, tangle is how much "
-                                     "ground it is retracing")
-    target: float = Field(default=0.25, ge=0.0, le=1.0, title="Target",
-                          description="Where the variable wants to sit")
-    tolerance: float = Field(default=0.12, ge=0.01, le=1.0, title="Tolerance",
+                                     "ground it is retracing. THE BANDS DIFFER: "
+                                     "crowding lives around 0.12, coverage "
+                                     "around 0.05 (one pen inks under a tenth "
+                                     "of a sheet), tangle around 0.27 — set "
+                                     "Target near the band or the system never "
+                                     "leaves crisis")
+    target: float = Field(default=0.12, ge=0.0, le=1.0, title="Target",
+                          description="Where the variable wants to sit. Each "
+                                      "measure has its own reachable band — see "
+                                      "Essential variable")
+    tolerance: float = Field(default=0.08, ge=0.01, le=1.0, title="Tolerance",
                              description="Half-width of the viable range. Narrow "
                                          "gives constant crisis and visible "
                                          "thrash; wide gives long stable passages "
