@@ -1,10 +1,48 @@
 ---
 project: idk.axibridge
-updated: 2026-08-21
-entries: 11
+updated: 2026-09-04
+entries: 12
 ---
 
-### Watch/scrub/rehearse/plot: time as a param (A1) — opened 2026-08-21, owner: ian
+### Bench + paper: the homeostat (A2) — opened 2026-09-04, owner: ian
+
+- done: pass 4's **A2** shipped and pushed — `sources/homeostat.py` +
+  `sources/_homeostasis.py`. A pen whose handwriting is rerolled blindly when
+  an essential variable leaves its viable range; four variables (crowding,
+  coverage, tangle, and **surprise** — the pen's own prediction error about its
+  own next turn, so becoming predictable is itself a crisis); **ultrastability**
+  (`escalation`: a reroll that FAILED widens the space the next hand is drawn
+  from, a viable passage narrows it — the drawing gets an arc); and 1-6
+  **coupled units** sharing one occupancy grid with no concept of each other,
+  which also closes **A4 (the seam)**. Suite 1121 -> 1182. Ian ran the bench on
+  2026-09-04 and kept four highlights (`shots/homeostat-bench-0904/`).
+- next:
+  - **Plot one.** Still nothing from pass 4 has touched paper — not the
+    homeostat, not venation, not the cymatic fill. The homeostat's output is a
+    single continuous stroke, which should plot unusually cleanly.
+  - Try `measure = surprise` (band ~0.30 +- 0.20) against the default
+    `crowding` on the same seed — that is the change that alters what the
+    drawing is ABOUT, and it wants an eye, not a test.
+  - Turn on `escalation` 0.4 with `variety` STARTING low (~0.35) and watch the
+    variety trace in the bench. From 0.8 there is nowhere to escalate to.
+  - Two or three `pens` is the sweet spot; four and six fill the sheet (that is
+    Ashby's own result, see the ledger). Duplicate the layer at one seed, set
+    `unit` 0/1/2 and give each a pen to plot the ensemble in colour.
+- blockers: none — shipped, green and pushed; this is eyes, hands and paper.
+- context: `docs/plans/homeostat.md` (design), `-IMPLEMENTATION.md` (plan),
+  `-RESULTS.md` (what the design got wrong, what a review caught, and the
+  ensemble finding), `shots/homeostat-bench-0904/README.md` (what Ian's own
+  runs showed that the renders did not), `shots/homeostat-coupled-pens.png`,
+  `shots/homeostat-surprise-arc.png`. The six criticisms of this module —
+  where the ceiling actually is — are section 6 of `docs/BRIEF-new-generator.md`.
+
+### Watch/scrub/rehearse/plot: time as a param (A1) — opened 2026-08-21, updated 2026-09-04, owner: ian
+
+**2026-09-04:** the substrate is no longer unseen — Ian drove the bench for the
+homeostat and it held up (play, scrub, tune, create at the step on screen). The
+A1.5 question is still formally open, but nothing about the session argued for
+direct manipulation over a recorded score. **Venation itself is still unwatched
+and unplotted**, which is what the rest of this entry is about.
 
 - done: generators can declare a time axis; `ProcessModule` yields step-by-step
   process output; a trajectory cache runs a process once so scrubbing is a
