@@ -345,3 +345,24 @@ def test_a_full_ensemble_trajectory_is_fast():
     t0 = time.perf_counter()
     src.trajectory(src.Params(steps=10, seed=1, pens=6))
     assert time.perf_counter() - t0 < 20.0
+
+
+def test_an_ensemble_is_harder_to_keep_viable_than_a_soloist():
+    """Ashby's own result, and worth pinning because it is the thing that will
+    look like a bug: the more units are coupled, the harder joint equilibrium
+    is. Every unit inks the one grid they all measure, so crowding rises ~N
+    times faster while each unit's viable band stays where it was — at the
+    single-pen defaults, in-range goes 70% -> 28% and rerolls 26 -> 566 from
+    one pen to six. The practical rule is to widen `tolerance` as pens are
+    added (0.30 +- 0.20 restores six pens to ~65%); the mechanism is not what
+    needs fixing."""
+    import numpy as np
+
+    def in_range(pens):
+        tel = telemetry(steps=1200, seed=3, pens=pens)
+        keys = [f"strain_{i}" for i in range(pens)] if pens > 1 else ["strain"]
+        s = np.array([[t[k] for k in keys] for t in tel])
+        return float(np.mean(np.abs(s) <= 1.0))
+
+    assert in_range(1) > in_range(3) > in_range(6)
+    assert in_range(6) < 0.45

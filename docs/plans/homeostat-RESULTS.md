@@ -98,3 +98,39 @@ a plan that no test held to account.** The mechanism was right each time.
   `memory > 0`, which is off by default.
 - **A7 (algedonic marks)** is now cheap: `_homeostasis.py` is the vocabulary it
   needs, and the threshold-crossing it wants is `strain` leaving ±1.
+
+## The ensemble (2026-09-04, second round)
+
+`pens` 1–6 coupled units on one shared grid, plus a `unit` param so the layer
+can be duplicated at the same seed and plotted in several pens. This is also
+**A4 (the seam)** arriving through the front door: independent fronts, identical
+local rules, no awareness of each other.
+
+Two decisions, both Ian's, both taken before building: units are **identical
+machines differing only in seed and start** (Ashby's four units were identical
+in construction — the difference should come from position and history, not
+from being told to differ), and a unit reacts to **all ink equally**, its own
+included, so it has no concept of another pen at all.
+
+**Every unit gets its own RNG stream**, and that is not a detail. Drawing them
+all from one generator interleaves the streams, so unit 0's hand would change
+merely because two other pens exist — and then "the units are coupled" could
+not be told apart from "the random numbers moved". With one stream each, the
+only channel between units is the shared grid, and the coupling test can prove
+it: unit 0 alone and unit 0 in company share a start and diverge anyway.
+
+**What the ensemble taught, and it is Ashby's own result:** joint equilibrium is
+harder to reach the more units are coupled. Every unit inks the one grid they
+all measure, so crowding rises ~N times faster while each unit's viable band
+stays put. At the single-pen defaults, in-range falls 70% → 49% → 28% and total
+rerolls climb 26 → 178 → 566 from one pen to three to six. The sheet fills and
+the composition that made the single-pen drawings good — knots against long
+empty travels — is lost above about three pens.
+
+This is **not** auto-corrected, deliberately. Scaling the band by pen count
+would hide the finding, and a system that quietly adjusts its own viable range
+so it is never in trouble is precisely the thing this whole pass exists to
+avoid. The rule of thumb is in the test: widen `tolerance` as pens are added —
+0.30 ± 0.20 restores six pens to ~65% in range.
+
+Sweet spot at current defaults: **two or three pens.**
