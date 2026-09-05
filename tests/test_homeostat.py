@@ -273,3 +273,75 @@ def test_an_unknown_measure_is_refused_at_the_param_boundary():
     except pydantic.ValidationError:
         return
     raise AssertionError("an unknown measure should not validate")
+
+
+# --- coupled pens: N units, one shared sheet ---------------------------------
+
+
+def test_three_pens_draw_three_strokes():
+    """Units emit one segment each per step, so the accumulated list
+    interleaves them; `document()` de-interleaves by index before stitching or
+    the drawing comes back as thousands of two-point fragments."""
+    paths = draw(steps=600, seed=3, pens=3)
+    assert len(paths) == 3
+    # 602 for the same reason the single-pen case gives 302: state(n) is steps
+    # 0..n inclusive, and each unit lays exactly one segment per step.
+    assert all(len(p.points) == 602 for p in paths)
+
+
+def test_one_unit_is_exactly_its_slice_of_the_ensemble():
+    """`unit` is what makes multi-pen possible without a session change:
+    duplicate the layer, set unit 0/1/2, give each a pen. All three must be
+    views of ONE simulation, not three separate ones."""
+    everything = draw(steps=400, seed=3, pens=3)
+    assert len(everything) == 3
+    for i in range(3):
+        only = draw(steps=400, seed=3, pens=3, unit=i)
+        assert len(only) == 1
+        assert only[0].points == everything[i].points
+
+
+def test_the_pens_are_actually_coupled():
+    """The test without which 'coupled' is decoration. Unit 0 has the same
+    seed, the same starting point and the same first genome whether it draws
+    alone or in company — so if its trail is unchanged by two other pens
+    inking the sheet it measures, they are three independent drawings sharing
+    a frame and nothing more."""
+    alone = draw(steps=600, seed=3, pens=1)
+    in_company = draw(steps=600, seed=3, pens=3, unit=0)
+    assert alone[0].points[:2] == in_company[0].points[:2]   # same start
+    assert alone[0].points != in_company[0].points           # different life
+
+
+def test_an_ensemble_still_accumulates_monotonically():
+    early = [pt for p in draw(steps=200, seed=3, pens=3) for pt in p.points]
+    late = [pt for p in draw(steps=201, seed=3, pens=3) for pt in p.points]
+    assert len(late) == len(early) + 3
+
+
+def test_a_single_pen_is_unchanged_by_the_ensemble_machinery():
+    """`pens=1` must draw exactly what it drew before units existed: unit 0
+    starts at the centre and consumes no extra randomness. The other 21 tests
+    in this file all run at pens=1 and assert exact counts and strain
+    profiles, so they are the real regression guard; this states the intent."""
+    paths = draw(steps=300, seed=2)
+    assert len(paths) == 1
+    assert paths[0].points[0] == (2.0 + 200.0 / 2.0, 2.0 + 160.0 / 2.0)
+
+
+def test_every_unit_reports_its_own_strain():
+    tel = telemetry(steps=200, seed=3, pens=3)
+    assert {"variable", "strain", "rerolls", "strain_0", "strain_1", "strain_2"} <= set(tel[-1])
+    assert "strain_0" not in telemetry(steps=200, seed=3, pens=1)[-1]
+
+
+def test_a_full_ensemble_trajectory_is_fast():
+    import time
+
+    from axibridge import trajectory as trajectory_module
+
+    trajectory_module.clear_cache()
+    src = get_source("homeostat")
+    t0 = time.perf_counter()
+    src.trajectory(src.Params(steps=10, seed=1, pens=6))
+    assert time.perf_counter() - t0 < 20.0
