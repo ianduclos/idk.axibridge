@@ -4,7 +4,9 @@ is expected to import this file and nothing else."""
 
 import numpy as np
 
-from axibridge.sources._homeostasis import MEASURES, Measures, OccupancyGrid
+from axibridge.sources._homeostasis import (
+    GRID_MEASURES, MEASURES, LineMemory, Measures, OccupancyGrid,
+)
 
 
 def test_a_fresh_grid_is_empty():
@@ -128,7 +130,7 @@ def test_every_measure_is_normalised():
         x += 0.5
         if x > 110.0:
             x, y = 10.0, y + 1.0
-    for name in MEASURES:
+    for name in GRID_MEASURES:
         v = m.read(name, x, y)
         assert 0.0 <= v <= 1.0, (name, v)
 
@@ -177,3 +179,53 @@ def test_an_unknown_measure_is_refused():
     except ValueError:
         return
     raise AssertionError("an unknown measure should raise")
+
+
+# --- self-surprise: a line's own read of its own hand -------------------------
+
+
+def test_a_perfectly_regular_hand_is_not_surprising():
+    """Boredom, detected. A constant turn is the most predictable line there
+    is: fast and slow reads of it agree exactly, so the variable goes to zero
+    and the system is in trouble for being legible."""
+    m = LineMemory()
+    for _ in range(400):
+        m.add(7.0)
+    assert m.surprise() < 0.05
+
+
+def test_a_wild_but_regular_hand_is_also_not_surprising():
+    """The test that matters, and the one a naive predictor fails. Surprise is
+    divergence measured in units of the hand's OWN spread — otherwise a big
+    wander reads as permanent surprise and the loop is just an amplitude
+    meter with extra steps."""
+    calm, wild = LineMemory(), LineMemory()
+    for i in range(400):
+        calm.add(2.0 * (1 if i % 2 else -1))
+        wild.add(30.0 * (1 if i % 2 else -1))
+    assert abs(calm.surprise() - wild.surprise()) < 0.15
+
+
+def test_a_change_of_hand_registers_as_surprise():
+    m = LineMemory()
+    for _ in range(400):
+        m.add(5.0)
+    settled = m.surprise()
+    for _ in range(20):
+        m.add(-25.0)
+    assert m.surprise() > settled + 0.2
+
+
+def test_surprise_is_normalised():
+    import numpy as np
+
+    rng = np.random.default_rng(3)
+    for wander in (0.5, 5.0, 40.0):
+        m = LineMemory()
+        for _ in range(600):
+            m.add(float(rng.normal(0.0, wander)))
+            assert 0.0 <= m.surprise() <= 1.0
+
+
+def test_an_empty_memory_is_not_surprising():
+    assert LineMemory().surprise() == 0.0

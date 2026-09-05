@@ -86,10 +86,15 @@ class OccupancyGrid:
         return float(sub.mean()) if sub.size else 0.0
 
 
-#: The essential variables a homeostat can be built around. The idea doc calls
-#: the choice "the biggest lever by far", which is why it is a knob — and why
-#: it is three, not eight.
-MEASURES: tuple[str, ...] = ("crowding", "coverage", "tangle")
+#: Measures read off the shared occupancy grid — properties of the INK.
+GRID_MEASURES: tuple[str, ...] = ("crowding", "coverage", "tangle")
+
+#: The whole vocabulary. `surprise` is not in the list above because it is not
+#: a property of the ink at all: it is per-unit state about that unit's own
+#: hand, so it lives in `LineMemory` and a shared `Measures` cannot serve it.
+#: The idea doc calls the choice of variable "the biggest lever by far", which
+#: is why it is a knob — and why it is four, not eight.
+MEASURES: tuple[str, ...] = GRID_MEASURES + ("surprise",)
 
 
 class Measures:
@@ -123,3 +128,56 @@ class Measures:
         if measure == "tangle":
             return sum(self._recent) / len(self._recent) if self._recent else 0.0
         raise ValueError(f"unknown measure: {measure!r}")
+
+
+class LineMemory:
+    """A line's read of its own hand — how surprising it still finds itself.
+
+    The other three measures ask about ink: how much is near me, how much of
+    the sheet is covered, how much am I retracing. This one asks about the
+    DRAWING BEHAVIOUR itself, and it is what lets a homeostat be in trouble for
+    having become predictable rather than for having made a mess.
+
+    TWO TIMESCALES, NOT ONE. A fast and a slow exponentially-weighted read of
+    the turn sequence, and the variable is how far apart they are. A single
+    predictor compared against truth measures noise; two predictors compared
+    against each other measure CHANGE, which is the thing worth being bored by.
+    A constant turn — however extreme — drives both reads to the same value and
+    reports nothing.
+
+    AND THE DIVERGENCE IS MEASURED IN UNITS OF THE HAND'S OWN SPREAD (an EWMA
+    of turn squared). Without that normalisation a wide-wander hand looks
+    permanently surprising and the measure degenerates into an amplitude meter:
+    the system would then hunt for small turns rather than for novelty. With
+    it, "regular" and "wild" are orthogonal, which is the whole point —
+    ``tests/test_homeostasis.py`` holds it to that.
+    """
+
+    #: Roughly a 7-step and a 100-step view of the same sequence.
+    FAST = 0.25
+    SLOW = 0.02
+
+    def __init__(self) -> None:
+        self._fast = 0.0
+        self._slow = 0.0
+        self._scale = 0.0
+        self._n = 0
+
+    def add(self, turn: float) -> None:
+        if self._n == 0:
+            self._fast = self._slow = turn
+            self._scale = turn * turn
+        else:
+            self._fast += self.FAST * (turn - self._fast)
+            self._slow += self.SLOW * (turn - self._slow)
+            self._scale += self.SLOW * (turn * turn - self._scale)
+        self._n += 1
+
+    def surprise(self) -> float:
+        """0 is "I have heard this before", 1 is "I have no idea"."""
+        if self._n < 2:
+            return 0.0
+        scale = math.sqrt(max(self._scale, 0.0))
+        if scale < 1e-9:
+            return 0.0
+        return min(1.0, abs(self._fast - self._slow) / scale)

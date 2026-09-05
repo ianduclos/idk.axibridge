@@ -366,3 +366,69 @@ def test_an_ensemble_is_harder_to_keep_viable_than_a_soloist():
 
     assert in_range(1) > in_range(3) > in_range(6)
     assert in_range(6) < 0.45
+
+
+# --- ultrastability: the system regulates its own capacity to change ---------
+
+
+def test_escalation_off_changes_nothing():
+    """The compatibility gate. `escalation` is Ashby's second loop bolted onto
+    a working first one; at 0 the module must be exactly what it was."""
+    plain = [tuple(p.points) for p in draw(steps=600, seed=4)]
+    explicit = [tuple(p.points) for p in draw(steps=600, seed=4, escalation=0.0)]
+    assert plain == explicit
+    tel = telemetry(steps=600, seed=4, escalation=0.0)
+    assert {t["variety"] for t in tel} == {0.8}     # the param, never moved
+
+
+def test_failure_widens_the_search():
+    """A controller needs at least as much variety as what it regulates. When
+    this one cannot hold its variable, acquiring some is the only move it has."""
+    tel = telemetry(steps=1200, seed=4, escalation=0.5,
+                    tolerance=0.02, variety=0.3)   # an impossible band
+    assert tel[-1]["rerolls"] > 20
+    assert tel[-1]["variety"] > 0.6
+
+
+def test_comfort_narrows_it_again():
+    """And the other half, or it is a ratchet rather than a loop: a system that
+    only ever escalates ends every drawing at maximum variety."""
+    tel = telemetry(steps=1200, seed=4, escalation=0.5,
+                    tolerance=0.9, variety=0.8)    # trivially satisfiable
+    assert tel[-1]["variety"] < 0.5
+
+
+def test_the_drawing_gets_an_arc():
+    """The point of the whole mechanism, and the assertion has to be strong
+    enough to catch a RATCHET.
+
+    The first version of this test asked only that variety rise and then dip
+    once. It passed against an implementation that escalated on every reroll —
+    including rerolls that had worked — which drove variety to the ceiling
+    within twenty steps and left it there for the rest of the run: a ratchet
+    with an occasional slip, not a system regulating its own capacity to
+    change. So: real spread, a genuine climb, and a genuine fall afterwards."""
+    import numpy as np
+
+    for seed in (3, 7, 11):
+        tel = telemetry(steps=1200, seed=seed, measure="surprise", target=0.30,
+                        tolerance=0.20, escalation=0.4, variety=0.35)
+        v = np.array([t["variety"] for t in tel])
+        assert float(np.std(v)) > 0.08, seed             # it actually moves
+        assert v.max() > v[0] + 0.15, seed               # failure escalates
+        after_peak = v[int(np.argmax(v)):]
+        assert after_peak.min() < v.max() - 0.15, seed   # success consolidates
+        assert float(np.mean(v >= 0.999)) < 0.75, seed   # not pinned at the top
+
+
+def test_a_reroll_that_worked_does_not_widen_the_search():
+    """The ratchet, stated directly. A hand that holds for a long viable
+    passage is a SUCCESS, and escalating after it punishes the system for
+    succeeding."""
+    import numpy as np
+
+    tel = telemetry(steps=1200, seed=3, escalation=0.6, tolerance=0.9,
+                    variety=0.35)
+    v = np.array([t["variety"] for t in tel])
+    assert v.max() <= 0.36            # nothing ever failed, so nothing widened
+    assert v[-1] < v[0]               # and comfort narrowed it

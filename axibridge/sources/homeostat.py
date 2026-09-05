@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 from ..model import Layer, Path, PathDocument
 from ..process import ProcessModule, Step
 from ..registry import register_source
-from ._homeostasis import Measures
+from ._homeostasis import LineMemory, Measures
 
 BED_WIDTH = 300.0
 BED_HEIGHT = 218.0
@@ -53,6 +53,13 @@ class _Unit:
 
     hand: Genome
     rng: "np.random.Generator | None" = None
+    memory: LineMemory = dataclass_field(default_factory=LineMemory)
+    #: This unit's CURRENT variety. Fixed at the param unless `escalation` is
+    #: on, in which case it is the thing the second loop regulates.
+    variety: float = 0.0
+    #: Steps since this unit last rerolled — how the second loop tells a hand
+    #: that failed from one that worked.
+    since_reroll: int = 0
     x: float = 0.0
     y: float = 0.0
     heading: float = 0.0
@@ -131,15 +138,19 @@ class HomeostatParams(BaseModel):
     height: float = Field(default=160.0, ge=20.0, le=210.0, title="Height (mm)")
     step_len: float = Field(default=2.0, ge=0.3, le=8.0, title="Step length (mm)",
                             description="Base pen advance per step; the hand scales it")
-    measure: Literal["crowding", "coverage", "tangle"] = Field(
+    measure: Literal["crowding", "coverage", "tangle", "surprise"] = Field(
                          default="crowding", title="Essential variable",
                          description="What the system is trying not to lose. "
                                      "Crowding is local (am I in a corner?), "
                                      "coverage is global, tangle is how much "
-                                     "ground it is retracing. THE BANDS DIFFER: "
+                                     "ground it is retracing; surprise is the "
+                                     "unit's own read of its own hand, so a "
+                                     "passage that has become predictable is "
+                                     "itself a crisis. THE BANDS DIFFER: "
                                      "crowding lives around 0.12, coverage "
                                      "around 0.05 (one pen inks under a tenth "
-                                     "of a sheet), tangle around 0.27 — set "
+                                     "of a sheet), tangle around 0.27, surprise "
+                                     "around 0.30 — set "
                                      "Target near the band or the system never "
                                      "leaves crisis")
     target: float = Field(default=0.12, ge=0.0, le=1.0, title="Target",
@@ -162,6 +173,18 @@ class HomeostatParams(BaseModel):
                                       "before. Ashby had none, and adding it "
                                       "makes the system converge — which is "
                                       "another word for finished")
+    escalation: float = Field(default=0.0, ge=0.0, le=1.0, title="Escalation",
+                              description="Ashby's second loop. Above 0, a "
+                                          "reroll WIDENS this unit's variety and "
+                                          "a long viable passage narrows it — the "
+                                          "system regulates its own capacity to "
+                                          "change, so failure escalates the "
+                                          "search and success consolidates it. "
+                                          "The drawing then has an arc instead "
+                                          "of a texture. 0 leaves variety fixed. "
+                                          "Most legible with Variety starting "
+                                          "LOW (~0.35) — from 0.8 there is "
+                                          "nowhere left to escalate to")
     pens: int = Field(default=1, ge=1, le=6, title="Pens",
                       description="Units sharing one sheet. Ashby's machine was "
                                   "four coupled units seeking a JOINT "
@@ -255,7 +278,8 @@ class Homeostat(ProcessModule):
         units: list[_Unit] = []
         for n in range(p.pens):
             urng = rng if n == 0 else np.random.default_rng(p.seed + 7919 * n)
-            units.append(_Unit(hand=sample_genome(urng, p.variety), rng=urng))
+            units.append(_Unit(hand=sample_genome(urng, p.variety), rng=urng,
+                               variety=p.variety))
         units[0].x, units[0].y = w / 2.0, h / 2.0
         for u in units[1:]:
             u.x = float(u.rng.uniform(0.0, w))
@@ -277,7 +301,10 @@ class Homeostat(ProcessModule):
                                  filled=False))
                 u.x, u.y = nx, ny
 
-                v = field.read(p.measure, u.x, u.y)
+                u.since_reroll += 1
+                u.memory.add(u.turn)
+                v = (u.memory.surprise() if p.measure == "surprise"
+                     else field.read(p.measure, u.x, u.y))
                 strain = (v - p.target) / p.tolerance
                 values.append(v)
                 strains.append(strain)
@@ -293,13 +320,28 @@ class Homeostat(ProcessModule):
                 else:
                     u.out_of_range = 0
                     u.in_range_run += 1
+                    if p.escalation > 0.0 and u.in_range_run % (2 * p.patience) == 0:
+                        # A viable passage: this hand is working, so stop
+                        # searching so hard. Ashby's consolidation.
+                        u.variety = max(0.05, u.variety * (1.0 - 0.5 * p.escalation))
 
                 if u.out_of_range >= p.patience:
                     centre = None
                     if p.memory > 0.0 and u.held and u.rng.random() < p.memory:
                         centre = u.held[int(u.rng.integers(len(u.held)))]
-                    u.hand = sample_genome(u.rng, p.variety, centre=centre)
+                    if p.escalation > 0.0 and u.since_reroll < 4 * p.patience:
+                        # Widen ONLY when the last reroll FAILED — when this
+                        # crisis arrived before the new hand had a fair run. A
+                        # controller needs at least as much variety as what it
+                        # regulates, and this is the only way it has of
+                        # acquiring some; escalating after a reroll that WORKED
+                        # would punish the system for succeeding, which pins
+                        # variety at maximum within a few dozen steps and turns
+                        # the second loop into a ratchet.
+                        u.variety = min(1.0, u.variety * (1.0 + p.escalation))
+                    u.hand = sample_genome(u.rng, u.variety, centre=centre)
                     u.out_of_range = 0
+                    u.since_reroll = 0
                     rerolls += 1.0
                     if p.lift_on_reroll:
                         # Break the stitch: a segment starting somewhere else is
@@ -310,7 +352,10 @@ class Homeostat(ProcessModule):
             i += 1
             worst = max(strains, key=abs)
             telemetry = {"variable": sum(values) / len(values),
-                         "strain": worst, "rerolls": rerolls}
+                         "strain": worst, "rerolls": rerolls,
+                         # The arc — flail, settle, stagnate, escalate — is
+                         # invisible without this.
+                         "variety": sum(u.variety for u in units) / len(units)}
             if p.pens > 1:
                 # One trace per unit, so the bench plots each one hunting —
                 # "you cannot tune a homeostat you cannot watch" does not get
