@@ -1042,6 +1042,21 @@ def consolidate_layer(layer_id: str) -> dict[str, Any]:
         raise _fail(e, 400)
 
 
+@router.post("/layers/merge")
+def merge_layers(body: dict[str, Any]) -> dict[str, Any]:
+    """Bake the given layers and join them into one (the top-most survives)."""
+    ids = body.get("ids") or []
+    if not isinstance(ids, list):
+        raise HTTPException(status_code=422, detail="ids must be a list")
+    try:
+        merged = session.merge_layers([str(i) for i in ids])
+    except KeyError as e:
+        raise _fail(e, 404)
+    except Exception as e:
+        raise _fail(e, 400)
+    return merged.model_dump()
+
+
 @router.post("/undo")
 def undo() -> dict[str, Any]:
     if not session.undo():

@@ -1191,3 +1191,8 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 .sep-plate { flex-wrap: nowrap; gap: 6px; margin: 4px 0; }
 .sep-plate > label { flex: 0 0 6.5em; display: flex; align-items: center; gap: 5px; }
 .sep-plate .sep-pen, .sep-plate .sep-gen { flex: 1 1 0; min-width: 0; }
+
+/* Consolidate & merge lives with the selection it acts on (the layers dock),
+   not with the single-layer bake in the effects panel. */
+#layer-actions { padding: 0 6px 6px; }
+#layer-actions button { width: 100%; }

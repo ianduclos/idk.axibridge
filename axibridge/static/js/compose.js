@@ -959,8 +959,32 @@ function chainKeyIds(params) {
   return (Array.isArray(p.keys) && p.keys.length > 2) ? p.keys : [p.a, p.b].filter(Boolean);
 }
 
+// Consolidate & merge, in the layers area rather than in the effects panel:
+// the fx panel's ⤓ Consolidate bakes ONE layer because that is the layer it is
+// about, but merging is an operation on a SELECTION, so it belongs where the
+// selection is made. Hidden below two selected layers — a merge of one is a
+// consolidate, which already has its own button.
+function renderLayerActions() {
+  const bar = $("layer-actions"), btn = $("layers-merge");
+  if (!bar || !btn) return;
+  const ids = S.selection || [];
+  bar.hidden = ids.length < 2;
+  btn.title = `bake ${ids.length} layers' transforms and effects, then join them `
+    + "into one — the top-most keeps its name and pen (one undo step)";
+  btn.onclick = async () => {
+    btn.disabled = true;
+    try {
+      const merged = await api.post("/api/layers/merge", { ids });
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      actions.setSelection([merged.id]);
+    } catch (e) { actions.oops(e); } finally { btn.disabled = false; }
+  };
+}
+
 export function renderLayerList() {
   if (renaming) return;
+  renderLayerActions();
   const wrap = $("layer-list");
   if (!wrap) return;
   wrap.innerHTML = "";

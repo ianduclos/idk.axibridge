@@ -11,6 +11,16 @@ from axibridge import session as sess_mod
 from axibridge.session import UNDO_DEPTH, session
 
 
+@pytest.fixture
+def client():
+    from fastapi.testclient import TestClient
+
+    from axibridge.app import create_app
+
+    with TestClient(create_app()) as c:  # context manager runs lifespan
+        yield c
+
+
 def test_undo_restores_deleted_layer():
     layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 20})
     before = session.resolved()[layer.id]
@@ -482,3 +492,84 @@ def test_soft_limits_persist_via_settings_store():
     settings_store.update({"soft_limits": {"enabled": False, "width": 430, "height": 297}})
     m = MachineManager()
     assert m.limits.enabled is False and m.limits.width == 430
+
+
+# --- consolidate + merge: several layers become one baked layer --------------
+
+
+def test_merge_bakes_and_joins_the_selection():
+    """The layers-area button: bake each selected layer's transform and effect
+    stack, then join them into one. What was on the page must still be on the
+    page — merging is a change of bookkeeping, not of the drawing."""
+    a = session.add_generated_layer("polygon", {"sides": 5, "radius": 18})
+    b = session.add_generated_layer("polygon", {"sides": 3, "radius": 12})
+    session.update_layer(b.id, {
+        "transform": {"a": 1, "b": 0, "c": 0, "d": 1, "e": 30, "f": 20},
+        "effects": [{"effect": "coherent_jitter", "params": {"amplitude": 1.0, "seed": 2}}],
+    })
+    before = session.resolved()
+    was = [p.points for p in before[a.id]] + [p.points for p in before[b.id]]
+
+    merged = session.merge_layers([a.id, b.id])
+
+    assert merged.id == b.id                    # the topmost survives, with its pen
+    assert merged.source.type == "baked"
+    assert merged.effects == [] and merged.transform.e == 0
+    assert [l.id for l in session.project.layers] == [b.id]
+    assert [p.points for p in session.resolved()[b.id]] == was
+
+
+def test_merge_is_one_undo_step():
+    a = session.add_generated_layer("polygon", {})
+    b = session.add_generated_layer("polygon", {})
+    c = session.add_generated_layer("polygon", {})
+    session.clear_history()
+    session.merge_layers([a.id, c.id])
+    assert {l.id for l in session.project.layers} == {b.id, c.id}
+    assert session.undo()
+    assert {l.id for l in session.project.layers} == {a.id, b.id, c.id}
+    assert not session.undo()
+
+
+def test_merge_refuses_a_mixed_selection():
+    """An occluder masks what is below and a region reshapes it; plain baked
+    geometry can express neither. Merging one INTO a normal layer would quietly
+    change what the sheet does, so it is refused rather than guessed at."""
+    a = session.add_generated_layer("polygon", {})
+    b = session.add_generated_layer("polygon", {})
+    session.update_layer(b.id, {"occluder": True})
+    with pytest.raises(ValueError, match="occluder"):
+        session.merge_layers([a.id, b.id])
+    assert len(session.project.layers) == 2      # and nothing was touched
+
+
+def test_merge_refuses_fewer_than_two():
+    a = session.add_generated_layer("polygon", {})
+    with pytest.raises(ValueError, match="two"):
+        session.merge_layers([a.id])
+
+
+def test_merging_two_occluders_is_allowed():
+    """Same status on both sides is unambiguous — the merged layer is an
+    occluder that masks what either of them masked."""
+    a = session.add_generated_layer("polygon", {})
+    b = session.add_generated_layer("polygon", {})
+    session.update_layer(a.id, {"occluder": True})
+    session.update_layer(b.id, {"occluder": True})
+    merged = session.merge_layers([a.id, b.id])
+    assert merged.occluder is True
+
+
+def test_merge_endpoint_returns_the_new_project(client):
+    a = session.add_generated_layer("polygon", {})
+    b = session.add_generated_layer("polygon", {})
+    r = client.post("/api/layers/merge", json={"ids": [a.id, b.id]})
+    assert r.status_code == 200
+    assert r.json()["id"] == b.id
+    assert len(client.get("/api/state").json()["project"]["layers"]) == 1
+
+
+def test_merge_endpoint_reports_a_refusal_as_400(client):
+    a = session.add_generated_layer("polygon", {})
+    r = client.post("/api/layers/merge", json={"ids": [a.id]})
+    assert r.status_code == 400

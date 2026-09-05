@@ -2669,3 +2669,49 @@ def test_scrubbing_the_popup_changes_the_ink_and_not_the_project(ui):
     assert json.dumps(_get(f"{ui.base}/api/project")) == before, \
         "the popup scrubbed the project instead of previewing it"
     assert not ui.errors
+
+
+def test_merge_appears_only_for_a_multiple_selection(ui):
+    """The button lives with the selection it acts on. One layer is a
+    consolidate — which already has its own button in the effects panel — so
+    the merge affordance must not offer itself until there are two."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 18})
+    add_layer(ui, "polygon", {"sides": 3, "radius": 12})
+    reload_app(ui)
+    wait_for_ink(ui)
+
+    select_layer(ui, 0)
+    assert ui.locator("#layer-actions").is_hidden()
+
+    ui.locator("#layer-list .layer-row").nth(1).locator(".lname").click(
+        modifiers=["Meta"])
+    ui.wait_for_selector("#layer-actions:not([hidden])", timeout=10_000)
+
+
+def test_merging_two_layers_leaves_one_row_and_the_same_drawing(ui):
+    """What the user sees: two rows become one, and the picture does not
+    change. Merging is a change of bookkeeping, not of the drawing."""
+    add_layer(ui, "polygon", {"sides": 5, "radius": 18})
+    add_layer(ui, "polygon", {"sides": 3, "radius": 12})
+    reload_app(ui)
+    wait_for_ink(ui)
+    # The ink itself, not the element count: the canvas draws one element per
+    # LAYER, so merging two layers legitimately turns two elements into one
+    # while drawing exactly the same thing. Comparing the coordinates is the
+    # assertion that says "the picture did not change".
+    ink = ("() => [...document.querySelectorAll('#canvas path, #canvas polyline')]"
+           ".flatMap(el => (el.getAttribute('d') || el.getAttribute('points') || '')"
+           ".match(/-?\\d+(\\.\\d+)?/g) || []).map(Number).sort((a, b) => a - b)")
+    before = ui.evaluate(ink)
+    assert before, "no ink on the canvas to compare"
+
+    select_layer(ui, 0)
+    ui.locator("#layer-list .layer-row").nth(1).locator(".lname").click(
+        modifiers=["Meta"])
+    ui.wait_for_selector("#layer-actions:not([hidden])", timeout=10_000)
+    ui.click("#layers-merge")
+
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#layer-list .layer-row').length === 1",
+        timeout=10_000)
+    assert ui.evaluate(ink) == before

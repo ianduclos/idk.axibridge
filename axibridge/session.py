@@ -2795,6 +2795,70 @@ class Session:
             self._shaped_cache.pop(layer_id, None)
             return layer
 
+    def merge_layers(self, layer_ids: list[str]) -> CanvasLayer:
+        """Consolidate several layers and join them into one.
+
+        The layers-area button. Each selected layer is baked exactly as
+        ``consolidate_effects`` bakes one — transform and effect stack shaped
+        into paper-space geometry — and the results are concatenated in STACK
+        ORDER (bottom first, so the drawing order is preserved) into the
+        top-most selected layer, which survives with its own name, pen and
+        position. The others are deleted. One checkpoint, so one undo puts them
+        all back.
+
+        Two refusals rather than guesses. A selection mixing occluders (or
+        regions) with ordinary layers has no honest answer: an occluder masks
+        what is below it and a region reshapes it, and plain baked geometry can
+        express neither, so merging one into the other would quietly change
+        what the sheet does. And tween layers are not merged at all — a tween
+        is a live relationship between two keyframes, not geometry that happens
+        to be somewhere.
+
+        One consequence worth knowing, inherent to merging rather than to this
+        implementation: if the selection is NOT contiguous, a layer left
+        between two merged ones no longer sits between them, so its occlusion
+        of the lower member is lost. The pixels move because the stack changed,
+        which is what merging means.
+        """
+        with self._lock:
+            if len(set(layer_ids)) < 2:
+                raise ValueError("merge needs at least two layers")
+            order = [l.id for l in self.project.layers]
+            chosen = [self.project.layer(i) for i in layer_ids]
+            if any(l.source.type == "tween" for l in chosen):
+                raise ValueError("cannot merge a tween layer: it is a relationship "
+                                 "between keyframes, not geometry")
+            if len({l.occluder for l in chosen}) > 1:
+                raise ValueError("cannot merge an occluder with a normal layer — "
+                                 "baked geometry cannot mask what is below it")
+            if len({l.region for l in chosen}) > 1:
+                raise ValueError("cannot merge a region with a normal layer — "
+                                 "baked geometry cannot reshape what is below it")
+
+            self._checkpoint()
+            self._materialize_tweens()  # a stale tween must bake its CURRENT look
+            chosen.sort(key=lambda l: order.index(l.id))
+            page = compose.guide_page(self.project)
+            merged: list[Path] = []
+            for layer in chosen:
+                merged.extend(compose.shape_layer(
+                    layer, self.source_geometry.get(layer.id, []), page))
+
+            survivor = chosen[-1]
+            self.source_geometry[survivor.id] = merged
+            survivor.transform = Affine()
+            survivor.effects = []
+            survivor.source.type = "baked"
+            survivor.source.file = None  # snapshot is stale; rewritten on save
+            self._shaped_cache.pop(survivor.id, None)
+            for layer in chosen[:-1]:
+                self._shaped_cache.pop(layer.id, None)
+                self.source_geometry.pop(layer.id, None)
+                self.project.layers = [l for l in self.project.layers
+                                       if l.id != layer.id]
+            self._occlusion_cache.clear()
+            return survivor
+
     # -- resolve pipeline (the single source of truth) -------------------------
 
     def resolved(self, master_t: float | None = None) -> dict[str, list[Path]]:
