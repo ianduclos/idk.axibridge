@@ -1,0 +1,583 @@
+[
+  {
+    "name": "Opening at turn 4",
+    "module": "second_reading",
+    "params": {
+      "turns": 4,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 23,
+      "events": []
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "response": "yield at crossing",
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          2,
+          1
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "response": "yield at crossing",
+        "passage_id": 4
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 5
+      }
+    ]
+  },
+  {
+    "name": "Continuation A",
+    "module": "second_reading",
+    "params": {
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 23,
+      "events": [
+        {
+          "kind": "branch",
+          "turn": 5,
+          "seed": 11
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "response": "yield at crossing",
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          2,
+          1
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "response": "yield at crossing",
+        "passage_id": 4
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 5
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 7
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 8
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          8
+        ],
+        "response": null,
+        "passage_id": 9
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 10
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          9,
+          1,
+          3
+        ],
+        "response": "yield at crossing",
+        "passage_id": 11
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 12
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          12
+        ],
+        "response": null,
+        "passage_id": 13
+      }
+    ]
+  },
+  {
+    "name": "Continuation B",
+    "module": "second_reading",
+    "params": {
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 23,
+      "events": [
+        {
+          "kind": "branch",
+          "turn": 5,
+          "seed": 29
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "response": "yield at crossing",
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          2,
+          1
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "response": "yield at crossing",
+        "passage_id": 4
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 5
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          6,
+          0,
+          3
+        ],
+        "response": "yield at crossing",
+        "passage_id": 7
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 8
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6,
+          8
+        ],
+        "response": "accent encounter",
+        "passage_id": 9
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 10
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 11
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          9,
+          0,
+          4
+        ],
+        "response": "yield at crossing",
+        "passage_id": 12
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 13
+      }
+    ]
+  },
+  {
+    "name": "Continuation C",
+    "module": "second_reading",
+    "params": {
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 23,
+      "events": [
+        {
+          "kind": "branch",
+          "turn": 5,
+          "seed": 71
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "response": "yield at crossing",
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          2,
+          1
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "response": "yield at crossing",
+        "passage_id": 4
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 5
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          5
+        ],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          5,
+          1
+        ],
+        "response": null,
+        "passage_id": 7
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          5
+        ],
+        "response": null,
+        "passage_id": 8
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          5
+        ],
+        "response": null,
+        "passage_id": 9
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          2,
+          8
+        ],
+        "response": "accent encounter",
+        "passage_id": 10
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2,
+          8
+        ],
+        "response": "yield at crossing",
+        "passage_id": 11
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          2,
+          1,
+          11
+        ],
+        "response": "yield at crossing",
+        "passage_id": 12
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 13
+      }
+    ]
+  },
+  {
+    "name": "Human turn + continuation A",
+    "module": "second_reading",
+    "params": {
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 23,
+      "events": [
+        {
+          "kind": "branch",
+          "turn": 5,
+          "seed": 11
+        },
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "response": "yield at crossing",
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          2,
+          1
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "response": "yield at crossing",
+        "passage_id": 4
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 7
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 8
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          8
+        ],
+        "response": null,
+        "passage_id": 9
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          9,
+          0,
+          4
+        ],
+        "response": "yield at crossing",
+        "passage_id": 10
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 11
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 12
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          12,
+          2
+        ],
+        "response": null,
+        "passage_id": 13
+      }
+    ]
+  }
+]

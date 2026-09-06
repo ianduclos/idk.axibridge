@@ -8,7 +8,10 @@ import { S, actions, rememberDetails } from "./main.js";
 import { mul, translate, rotate, scale, matToObj, objToMat } from "./canvas.js";
 import { applyViewDefaults } from "./viewmap.js";
 import { renderTimelineBar, jumpTimelineToKeyframe } from "./timeline.js";
-import { openProcessPopup, openProcessBench, watchableAxis, moduleAxis } from "./process.js";
+import {
+  interventionBenchable, moduleAxis, openProcessBench, openProcessLayerBench,
+  openProcessPopup, watchableAxis,
+} from "./process.js";
 
 const $ = (id) => document.getElementById(id);
 let genParams = {};
@@ -300,28 +303,37 @@ export function initComposeTab() {
   // button appears for those and nothing else. It hands the bench the panel's
   // OWN params object — tuning in the bench is tuning here — and owns the two
   // acts the popup must not do itself: rolling a seed, and creating the layer.
-  $("btn-bench").onclick = () => openProcessBench({
-    mod: S.state.modules.sources.find((m) => m.id === sel.value),
-    params: genParams,
-    onReroll: (params) => rollSeed(
-      S.state.modules.sources.find((m) => m.id === sel.value)?.schema || {}, params),
-    onCreate: async (params) => {
-      // same call, latch and selection as ＋ Create layer: the bench is a way
-      // to choose params, never a second way to make a layer
-      const layer = await api.post("/api/layers/generate", { module: sel.value, params });
-      genParams = { ...params };
-      preview.clear();
-      await actions.refreshProject();
-      await actions.refreshResolved();
-      latch = layer.id;
-      actions.setSelection([layer.id]);
-      renderBenchAction();
-    },
-    // the bench moved the axis (and maybe the seed) inside our own object;
-    // re-render so the panel form shows where it was left
-    onClose: () => { const m = S.state.modules.sources.find((x) => x.id === sel.value);
-                     if (m) { bindGenForm(m); benchPreview(); } },
-  });
+  $("btn-bench").onclick = () => {
+    // Freeze the module at the moment the bench opens. The modal normally
+    // prevents changing the picker underneath it, but programmatic selection
+    // and async refreshes must not make Keep create a different source.
+    const benchMod = S.state.modules.sources.find((m) => m.id === sel.value);
+    if (!benchMod) return;
+    const moduleId = benchMod.id;
+    const moduleSchema = benchMod.schema;
+    const benchParams = genParams;
+    openProcessBench({
+      mod: benchMod,
+      params: benchParams,
+      onReroll: (params) => rollSeed(moduleSchema, params),
+      onCreate: async (params) => {
+        const layer = await api.post("/api/layers/generate", { module: moduleId, params });
+        // Keep stays open, so retain the caller's object even if an unrelated
+        // selection has replaced the Generate panel's current parameters.
+        Object.assign(benchParams, params);
+        preview.clear();
+        await actions.refreshProject();
+        await actions.refreshResolved();
+        if (sel.value === moduleId) latch = layer.id;
+        actions.setSelection([layer.id]);
+        renderBenchAction();
+        return layer;
+      },
+      onClose: () => {
+        if (sel.value === moduleId) { bindGenForm(benchMod); benchPreview(); }
+      },
+    });
+  };
   initCanvasDrop();
 
   $("btn-empty-layer").onclick = async () => {
@@ -1889,6 +1901,8 @@ export function renderLayerDetail() {
         title="Turn this layer into a keyframed A/B animation that follows the master timeline">⏱ Animate</button>` : ""}
       <button id="process-watch" hidden
         title="Watch this process play and scrub its time axis — preview only, the project is not touched">▷ Watch</button>
+      <button id="process-resume" hidden
+        title="Copy this kept recipe into the working bench; the layer itself is never changed">Resume in bench</button>
       <button id="fx-rehearse" hidden
         title="Stamp several moments of this process onto the sheet — assign a pale pen to the early ones for rehearsal under ink">Rehearse</button>
     </div>
@@ -1910,6 +1924,11 @@ export function renderLayerDetail() {
   if (watchBtn) {
     watchBtn.hidden = !watchableAxis(layer);
     watchBtn.onclick = () => openProcessPopup(layer.id);
+  }
+  const resumeBtn = fx.querySelector("#process-resume");
+  if (resumeBtn) {
+    resumeBtn.hidden = !interventionBenchable(layer);
+    resumeBtn.onclick = () => openProcessLayerBench(layer.id);
   }
   // Rehearse: same eligibility as Watch (a generator with a time axis) —
   // gated identically because both need a real axis to sweep. One session

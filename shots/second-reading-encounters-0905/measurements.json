@@ -1,0 +1,212 @@
+[
+  {
+    "seed": 1,
+    "case": "Opening at turn 4",
+    "cold_seconds": 0.05857799999648705,
+    "warm_seconds": 3.374999505467713e-05,
+    "points": 716
+  },
+  {
+    "seed": 1,
+    "case": "Continuation A",
+    "cold_seconds": 0.045295000018086284,
+    "warm_seconds": 4.7999987145885825e-05,
+    "points": 1176
+  },
+  {
+    "seed": 1,
+    "case": "Continuation B",
+    "cold_seconds": 0.03999912500148639,
+    "warm_seconds": 5.0749978981912136e-05,
+    "points": 1643
+  },
+  {
+    "seed": 1,
+    "case": "Continuation C",
+    "cold_seconds": 0.0468422090052627,
+    "warm_seconds": 5.0000002374872565e-05,
+    "points": 1323
+  },
+  {
+    "seed": 1,
+    "case": "Human turn + continuation A",
+    "cold_seconds": 0.04361533300834708,
+    "warm_seconds": 5.683398921974003e-05,
+    "points": 1358
+  },
+  {
+    "seed": 4,
+    "case": "Opening at turn 4",
+    "cold_seconds": 0.04144741702475585,
+    "warm_seconds": 2.7290981961414218e-05,
+    "points": 496
+  },
+  {
+    "seed": 4,
+    "case": "Continuation A",
+    "cold_seconds": 0.035956625011749566,
+    "warm_seconds": 4.254200030118227e-05,
+    "points": 1117
+  },
+  {
+    "seed": 4,
+    "case": "Continuation B",
+    "cold_seconds": 0.04457316698972136,
+    "warm_seconds": 5.8958015870302916e-05,
+    "points": 1168
+  },
+  {
+    "seed": 4,
+    "case": "Continuation C",
+    "cold_seconds": 0.06833120799274184,
+    "warm_seconds": 4.045901005156338e-05,
+    "points": 1246
+  },
+  {
+    "seed": 4,
+    "case": "Human turn + continuation A",
+    "cold_seconds": 0.03980812500230968,
+    "warm_seconds": 4.374998388811946e-05,
+    "points": 969
+  },
+  {
+    "seed": 12,
+    "case": "Opening at turn 4",
+    "cold_seconds": 0.04100041699712165,
+    "warm_seconds": 3.399999695830047e-05,
+    "points": 544
+  },
+  {
+    "seed": 12,
+    "case": "Continuation A",
+    "cold_seconds": 0.04396979097509757,
+    "warm_seconds": 6.179098272696137e-05,
+    "points": 1375
+  },
+  {
+    "seed": 12,
+    "case": "Continuation B",
+    "cold_seconds": 0.05023870899458416,
+    "warm_seconds": 5.2207993576303124e-05,
+    "points": 1173
+  },
+  {
+    "seed": 12,
+    "case": "Continuation C",
+    "cold_seconds": 0.04002099999343045,
+    "warm_seconds": 2.7667003450915217e-05,
+    "points": 1682
+  },
+  {
+    "seed": 12,
+    "case": "Human turn + continuation A",
+    "cold_seconds": 0.04045587501605041,
+    "warm_seconds": 4.4042011722922325e-05,
+    "points": 1363
+  },
+  {
+    "seed": 23,
+    "case": "Opening at turn 4",
+    "cold_seconds": 0.04960333398776129,
+    "warm_seconds": 3.8833997678011656e-05,
+    "points": 639
+  },
+  {
+    "seed": 23,
+    "case": "Continuation A",
+    "cold_seconds": 0.041860666999127716,
+    "warm_seconds": 4.1207997128367424e-05,
+    "points": 1539
+  },
+  {
+    "seed": 23,
+    "case": "Continuation B",
+    "cold_seconds": 0.05798108299495652,
+    "warm_seconds": 4.158299998380244e-05,
+    "points": 1738
+  },
+  {
+    "seed": 23,
+    "case": "Continuation C",
+    "cold_seconds": 0.04750858299667016,
+    "warm_seconds": 4.070898285135627e-05,
+    "points": 1848
+  },
+  {
+    "seed": 23,
+    "case": "Human turn + continuation A",
+    "cold_seconds": 0.04453491698950529,
+    "warm_seconds": 5.2791001508012414e-05,
+    "points": 1634
+  },
+  {
+    "seed": 42,
+    "case": "Opening at turn 4",
+    "cold_seconds": 0.04220666701439768,
+    "warm_seconds": 3.850000211969018e-05,
+    "points": 582
+  },
+  {
+    "seed": 42,
+    "case": "Continuation A",
+    "cold_seconds": 0.03897262501413934,
+    "warm_seconds": 4.4832995627075434e-05,
+    "points": 1353
+  },
+  {
+    "seed": 42,
+    "case": "Continuation B",
+    "cold_seconds": 0.04229483299423009,
+    "warm_seconds": 4.733400419354439e-05,
+    "points": 1189
+  },
+  {
+    "seed": 42,
+    "case": "Continuation C",
+    "cold_seconds": 0.041088541998760775,
+    "warm_seconds": 4.2333005694672465e-05,
+    "points": 1576
+  },
+  {
+    "seed": 42,
+    "case": "Human turn + continuation A",
+    "cold_seconds": 0.034677499992540106,
+    "warm_seconds": 4.687500768341124e-05,
+    "points": 1270
+  },
+  {
+    "seed": 91,
+    "case": "Opening at turn 4",
+    "cold_seconds": 0.042535790998954326,
+    "warm_seconds": 3.6874989746138453e-05,
+    "points": 459
+  },
+  {
+    "seed": 91,
+    "case": "Continuation A",
+    "cold_seconds": 0.034578499995404854,
+    "warm_seconds": 5.199998850002885e-05,
+    "points": 979
+  },
+  {
+    "seed": 91,
+    "case": "Continuation B",
+    "cold_seconds": 0.044934375007869676,
+    "warm_seconds": 3.970798570662737e-05,
+    "points": 1184
+  },
+  {
+    "seed": 91,
+    "case": "Continuation C",
+    "cold_seconds": 0.04355804200167768,
+    "warm_seconds": 2.4999986635521054e-05,
+    "points": 1033
+  },
+  {
+    "seed": 91,
+    "case": "Human turn + continuation A",
+    "cold_seconds": 0.03551283400156535,
+    "warm_seconds": 4.0624989196658134e-05,
+    "points": 1134
+  }
+]

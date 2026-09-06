@@ -1,0 +1,535 @@
+[
+  {
+    "name": "Opening at turn 4",
+    "module": "second_reading",
+    "params": {
+      "turns": 4,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": []
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 5
+      }
+    ]
+  },
+  {
+    "name": "Continuation A",
+    "module": "second_reading",
+    "params": {
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "branch",
+          "turn": 5,
+          "seed": 11
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          5
+        ],
+        "passage_id": 6
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          5
+        ],
+        "passage_id": 7
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          5
+        ],
+        "passage_id": 8
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          5
+        ],
+        "passage_id": 9
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          9
+        ],
+        "passage_id": 10
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          10
+        ],
+        "passage_id": 11
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          11
+        ],
+        "passage_id": 12
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 13
+      }
+    ]
+  },
+  {
+    "name": "Continuation B",
+    "module": "second_reading",
+    "params": {
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "branch",
+          "turn": 5,
+          "seed": 29
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          2,
+          0
+        ],
+        "passage_id": 6
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          2,
+          0
+        ],
+        "passage_id": 7
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          2,
+          0
+        ],
+        "passage_id": 8
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          2,
+          0
+        ],
+        "passage_id": 9
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          1
+        ],
+        "passage_id": 10
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          1
+        ],
+        "passage_id": 11
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          1
+        ],
+        "passage_id": 12
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          1
+        ],
+        "passage_id": 13
+      }
+    ]
+  },
+  {
+    "name": "Continuation C",
+    "module": "second_reading",
+    "params": {
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "branch",
+          "turn": 5,
+          "seed": 71
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "passage_id": 6
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 7
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          7
+        ],
+        "passage_id": 8
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          7
+        ],
+        "passage_id": 9
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          7
+        ],
+        "passage_id": 10
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          7
+        ],
+        "passage_id": 11
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          11
+        ],
+        "passage_id": 12
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          11
+        ],
+        "passage_id": 13
+      }
+    ]
+  },
+  {
+    "name": "Human turn + continuation A",
+    "module": "second_reading",
+    "params": {
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "branch",
+          "turn": 5,
+          "seed": 11
+        },
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 7
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 8
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 9
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 10
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "passage_id": 11
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          11
+        ],
+        "passage_id": 12
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          12
+        ],
+        "passage_id": 13
+      }
+    ]
+  }
+]

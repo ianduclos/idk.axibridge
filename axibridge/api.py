@@ -33,6 +33,7 @@ from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
 from .events import bus
 from .machine import SoftLimits, manager
+from .process import ProcessModule
 from .registry import describe_modules, get_effect, get_source, progress_scope
 from .session import session
 from .stores import Pen, pen_library, settings_store
@@ -343,7 +344,18 @@ def preview_generator(body: GenerateBody) -> dict[str, Any]:
     except Exception as e:
         raise _fail(e, 400)
     paths = [p for layer in doc.layers for p in layer.paths]
-    return {**_preview_payload(paths), "width": doc.width, "height": doc.height}
+    result = {**_preview_payload(paths), "width": doc.width, "height": doc.height}
+    if isinstance(src, ProcessModule):
+        params = src.Params(**body.params)
+        run = src.trajectory(params)
+        turn = min(int(getattr(params, src.time_axis)), len(run.steps) - 1)
+        if turn >= 0:
+            metadata = run.metadata[turn] if run.metadata else {}
+            result["process"] = {
+                **metadata, "turn": turn,
+                "telemetry": run.telemetry[turn],
+            }
+    return result
 
 
 def _preview_payload(paths: list[Any]) -> dict[str, Any]:

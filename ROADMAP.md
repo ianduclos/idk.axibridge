@@ -14,6 +14,29 @@ Cohen-line direction, plus how the involved ones should meet the UI) live in
 Shipped work has been pruned from this file (2026-08-17) — see `git log` /
 `STATUS.md` for what landed and when. This file tracks what's still open.
 
+## Near term — Second Reading: recover responsiveness, make elements
+
+**2026-09-05–06 shipped:** interactive process bench with recorded human turns,
+continuation branches, Keep/Resume and reproducible studies; initial generator
+and subsequent experiments. These are mechanically verified, not an aesthetic
+completion. Ian's judgement: the first version was more responsive; later
+revisions made little progress. Do not treat the latest mechanism as the winner.
+
+**Agreed next experiment:** recover the first response baseline, improve shapes
+and unequal proportions, retain occasional homeostat-like gestures, then test
+more selective awareness of existing material. Explore Attention/Departure/Scale
+as distinct controls. The workflow is “create interesting elements to then send
+to the main canvas”: investigate containment or whole-element fitting instead
+of default hard clipping. Preserve stable human capture and physical plot bounds.
+Tapered multi-line finish is deferred to an effect; avoid using it as a substitute
+for responsive drawing. Interesting results are not expected all the time.
+
+Project skill `.agents/skills/drawing-review/SKILL.md` defines a bounded Sol
+second eye for iteration sheets and exchanges. Lead keeps direction/integration;
+reviewer calibration and a midway review are part of the next experiment, not
+an automatic score or acceptance gate. Detailed preparation and baseline recovery
+limits: `docs/plans/second-reading-next-session.md`.
+
 ## Near term — make what exists comfortable
 
 - **Collapsible panels** (`<details>`/`<summary>` needs ~no JS) and

@@ -183,6 +183,15 @@ Contract:
   **Rehearse**. The bench form drops the axis field — the scrub bar is that
   param's control — so give the axis a real title and a tight `ge`/`le`: those
   bounds become the scrub's range, and an unbounded axis has nothing to scrub.
+  **Interactive score bench (2026-09-05):** `second_reading` additionally
+  declares `bench_capabilities = ("intervene", "branch")`. This selects an
+  event-aware editor with human turns, preserved alternatives and Keep as
+  layer. It requires the recorded-event contract in
+  `plans/second-reading.md`; adding the capability to an arbitrary process
+  does not make that process understand interventions. `Step.metadata`
+  retains discrete decisions alongside numeric telemetry. The preview API
+  returns these under optional `process`; the interactive bench exposes
+  details on demand. Generic Watch still graphs point count.
 
 ## Writing an Effect — the v2 per-layer stack
 

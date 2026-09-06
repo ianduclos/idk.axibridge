@@ -27,11 +27,10 @@ than a re-run. A process that REVISES earlier marks instead of adding to them
 and yields the complete state each time; see ``trajectory.py`` for what that
 costs.
 
-``Step.telemetry`` is not decoration. A homeostat's whole premise is an
-essential variable leaving its viable range, and "you cannot tune a homeostat
-you cannot watch" means watching that NUMBER, not only the marks it leaves.
-The popup plots whatever keys turn up; a process that reports nothing gets no
-plot and costs nothing.
+``Step.telemetry`` retains numeric observations for the preview API. The
+interactive bench can expose them in optional details. The generic Watch
+popup currently graphs point count, not these values; do not infer that a
+declared trace automatically receives its own chart.
 """
 
 from __future__ import annotations
@@ -52,10 +51,11 @@ class Step:
     #: The marks ADDED at this step (accumulative, the default), or the
     #: complete state at this step when ``accumulative`` is False.
     paths: list[Path] = field(default_factory=list)
-    #: Anything worth plotting against time — an essential variable, a
-    #: population count, an error. Flat and unregistered on purpose: the popup
-    #: plots whatever keys turn up.
+    #: Numeric observations, supplied through preview separately from geometry.
     telemetry: dict[str, float] | None = None
+    #: Discrete decisions are separate from numeric traces. This is preview
+    #: context, never an alternative representation of the plotted geometry.
+    metadata: dict | None = None
 
 
 class ProcessModule(SourceModule):

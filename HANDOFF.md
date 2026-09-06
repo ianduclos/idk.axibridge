@@ -1,8 +1,34 @@
 ---
 project: idk.axibridge
-updated: 2026-09-04
-entries: 12
+updated: 2026-09-06
+entries: 13
 ---
+
+### Interactive drawing machine: Second Reading — opened 2026-09-05, owner: ian
+
+- done: interactive bench and experimental generator, deterministic human/control/
+  branch events, Keep/Resume, smoothing, comparison sheets and independent checks.
+  Project skill `drawing-review` captures the agreed Sol aesthetic-review role.
+- correction: Ian still prefers the FIRST version's responsiveness. Later passes
+  made little progress. Current code is the encounter experiment, not a restored
+  first baseline or an aesthetically accepted endpoint.
+- next: **start at `docs/plans/second-reading-next-session.md`**. Recover/preserve
+  the first baseline; improve proportions, allow occasional homeostat gestures,
+  explore element-friendly borders and Attention/Departure/Scale, then compare
+  added awareness with the simpler response. Those changes are not implemented.
+  Read the skill and calibrate Sol on iteration sheets/variants before leaning
+  on its judgements; the primary agent retains direction and acceptance.
+- recovery: first engine was never separately committed; original JSON/SVG studies
+  survive in `shots/second-reading-0905/`. Use prior task history if available;
+  label reconstruction honestly. Historical recipes aren't engine-version pinned.
+- verification: 1,239 tests passed; build/typecheck and three-case temporary-server
+  capture–Keep–Resume smoke passed. Skill validation and independent Sol trial
+  completed (with a provenance limitation documented in its review). No hardware commands. Save projects after Keep for
+  durable recipes. Retained alternatives alone last only the app session.
+- context: `docs/IDEAS-drawing-machine-session-2026-09-05.md`,
+  `docs/plans/second-reading.md`, `.agents/skills/drawing-review/SKILL.md`,
+  `docs/reviews/drawing-review-skill-trial.md`. Original bench/testing assistance
+  used Sol/Terra; primary agent completed integration and subsequent experiments.
 
 ### Bench + paper: the homeostat (A2) — opened 2026-09-04, owner: ian
 

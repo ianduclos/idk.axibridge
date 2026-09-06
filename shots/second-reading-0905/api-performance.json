@@ -1,0 +1,74 @@
+[
+  {
+    "seed": 1,
+    "phase": "cold",
+    "seconds": 0.029530542000429705,
+    "points": 8727
+  },
+  {
+    "seed": 1,
+    "phase": "warm",
+    "seconds": 0.006247584009543061,
+    "points": 8727
+  },
+  {
+    "seed": 4,
+    "phase": "cold",
+    "seconds": 0.011198041989700869,
+    "points": 3328
+  },
+  {
+    "seed": 4,
+    "phase": "warm",
+    "seconds": 0.0027784999983850867,
+    "points": 3328
+  },
+  {
+    "seed": 12,
+    "phase": "cold",
+    "seconds": 0.02507433298160322,
+    "points": 6783
+  },
+  {
+    "seed": 12,
+    "phase": "warm",
+    "seconds": 0.004559500026516616,
+    "points": 6783
+  },
+  {
+    "seed": 23,
+    "phase": "cold",
+    "seconds": 0.03480287501588464,
+    "points": 3255
+  },
+  {
+    "seed": 23,
+    "phase": "warm",
+    "seconds": 0.0030279580096248537,
+    "points": 3255
+  },
+  {
+    "seed": 42,
+    "phase": "cold",
+    "seconds": 0.02878279102151282,
+    "points": 8491
+  },
+  {
+    "seed": 42,
+    "phase": "warm",
+    "seconds": 0.005909209023229778,
+    "points": 8491
+  },
+  {
+    "seed": 91,
+    "phase": "cold",
+    "seconds": 0.01452929200604558,
+    "points": 3185
+  },
+  {
+    "seed": 91,
+    "phase": "warm",
+    "seconds": 0.0049157920002471656,
+    "points": 3185
+  }
+]

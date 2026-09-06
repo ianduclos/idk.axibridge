@@ -2540,6 +2540,301 @@ def test_subtracting_a_circle_bites_into_a_brush_layer(ui):
 
 # -- the process popup ----------------------------------------------------
 
+def open_second_reading_bench(page) -> None:
+    """Open the intervention bench only after its first exact preview lands."""
+    page.select_option("#gen-select", "second_reading")
+    page.wait_for_function(
+        "() => !document.getElementById('btn-bench').hidden", timeout=10_000)
+    page.click("#btn-bench")
+    page.wait_for_selector("#process-popup.second-reading:not([hidden])", timeout=10_000)
+    page.wait_for_function(
+        "() => document.getElementById('process-preview-state').textContent === 'rendered'",
+        timeout=20_000)
+
+
+def second_reading_recipe(page) -> dict:
+    return json.loads(page.locator("#process-recipe").text_content())
+
+
+def preview_canvas_points(page) -> list[float]:
+    """The visible preview, flattened for a numerical comparison to the API."""
+    return page.eval_on_selector_all(
+        "#process-canvas polyline",
+        "els => els.flatMap(el => (el.getAttribute('points') || '').trim()"
+        ".split(/\\s+/).filter(Boolean).flatMap(p => p.split(',').map(Number)))")
+
+
+def test_second_reading_bench_captures_a_human_turn_on_its_working_paper(ui):
+    open_second_reading_bench(ui)
+    before = second_reading_recipe(ui)
+    assert before["turns"] == 12
+
+    ui.click("#process-your-turn")
+    canvas = ui.locator("#process-canvas").bounding_box()
+    x, y = canvas["x"] + canvas["width"] * .32, canvas["y"] + canvas["height"] * .40
+    ui.mouse.move(x, y)
+    ui.mouse.down()
+    ui.mouse.move(x + 35, y + 12)
+    ui.mouse.move(x + 72, y + 32)
+    ui.mouse.up()
+    ui.wait_for_function(
+        "() => document.getElementById('process-preview-state').textContent === 'rendered'",
+        timeout=20_000)
+
+    recipe = second_reading_recipe(ui)
+    stroke = recipe["events"][-1]
+    assert recipe["turns"] == before["turns"] + 1
+    assert stroke["kind"] == "stroke" and stroke["turn"] == recipe["turns"]
+    assert stroke["smoothing"] == .6
+    assert len(stroke["points"]) >= 3
+    assert not ui.errors
+
+
+def test_second_reading_branches_and_its_local_undo_redo_restore_the_recipe(ui):
+    open_second_reading_bench(ui)
+    original = second_reading_recipe(ui)
+    ui.click("#process-try-another")
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#process-branch-select option').length === 2 && "
+        "document.getElementById('process-preview-state').textContent === 'rendered'",
+        timeout=20_000)
+    alternative = second_reading_recipe(ui)
+    assert alternative["turns"] == original["turns"] + 1
+    assert alternative["events"][-1]["kind"] == "branch"
+
+    ui.click("#process-undo")
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#process-branch-select option').length === 1 && "
+        "document.getElementById('process-preview-state').textContent === 'rendered'",
+        timeout=20_000)
+    assert second_reading_recipe(ui) == original
+    assert ui.is_enabled("#process-redo")
+
+    ui.click("#process-redo")
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#process-branch-select option').length === 2 && "
+        "document.getElementById('process-preview-state').textContent === 'rendered'",
+        timeout=20_000)
+    assert second_reading_recipe(ui) == alternative
+    assert not ui.errors
+
+
+def test_second_reading_never_shows_a_stale_branch_preview(ui):
+    """An old response is ignored after programmatically switching readings.
+
+    The delay makes the race deterministic: the first branch's preview arrives
+    after the second is selected.  The user-visible paper must match the
+    selected recipe, not merely the last response received.
+    """
+    open_second_reading_bench(ui)
+    ui.click("#process-try-another")
+    ui.wait_for_function(
+        "() => document.querySelectorAll('#process-branch-select option').length === 2 && "
+        "document.getElementById('process-preview-state').textContent === 'rendered'",
+        timeout=20_000)
+    ui.select_option("#process-branch-select", "branch-1")
+    ui.wait_for_function(
+        "() => document.getElementById('process-preview-state').textContent === 'rendered'",
+        timeout=20_000)
+
+    # Delay the next preview only, then move to the other branch while it is
+    # still in flight.  Native clicks honour the disabled controls during a
+    # request; selection by dispatching the same change event exercises the
+    # real branch handler while modelling a queued selection update.
+    ui.evaluate("""() => {
+      const original = window.fetch;
+      let delayed = false;
+      window.fetch = (...args) => {
+        if (!delayed && String(args[0]).includes('/api/generators/preview')) {
+          delayed = true;
+          return new Promise(resolve => setTimeout(() => original(...args).then(resolve), 350));
+        }
+        return original(...args);
+      };
+    }""")
+    ui.click("#process-continue")
+    ui.eval_on_selector("#process-branch-select", """el => {
+      el.value = 'branch-2';
+      el.dispatchEvent(new Event('change', {bubbles: true}));
+    }""")
+    ui.wait_for_function(
+        "() => document.getElementById('process-preview-state').textContent === 'rendered'",
+        timeout=20_000)
+    time.sleep(.45)  # let the delayed, now-orphaned response arrive
+
+    assert ui.input_value("#process-branch-select") == "branch-2"
+    recipe = second_reading_recipe(ui)
+    expected = _post(f"{ui.base}/api/generators/preview", {
+        "module": "second_reading", "params": recipe})["lines"]
+    flattened_expected = [coordinate for line in expected for point in line for coordinate in point]
+    assert preview_canvas_points(ui) == pytest.approx(flattened_expected, abs=1e-6)
+    assert not ui.errors
+
+
+def test_second_reading_keep_stays_open_and_commits_the_recipe_on_screen(ui):
+    open_second_reading_bench(ui)
+    ui.click("#process-continue")
+    ui.wait_for_function(
+        "() => document.getElementById('process-preview-state').textContent === 'rendered' && "
+        "!document.getElementById('process-keep').disabled",
+        timeout=20_000)
+    recipe = second_reading_recipe(ui)
+    ui.click("#process-keep")
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 1",
+                         timeout=20_000)
+    ui.wait_for_selector("#process-kept-state:not([hidden])", timeout=10_000)
+    assert ui.is_visible("#process-popup"), "Keep makes a layer but keeps the working bench open"
+    layer = only_layer(ui)
+    assert layer["source"]["generator"] == "second_reading"
+    assert layer["source"]["params"] == recipe
+    assert not ui.errors
+
+
+def test_resuming_a_kept_second_reading_never_patches_the_original_layer(ui):
+    open_second_reading_bench(ui)
+    ui.click("#process-keep")
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 1",
+                         timeout=20_000)
+    original = only_layer(ui)
+    original_params = original["source"]["params"]
+    ui.click("#process-close")
+    ui.wait_for_function("() => document.getElementById('process-popup').hidden", timeout=10_000)
+    select_layer(ui, 0)
+    ui.wait_for_selector("#process-resume:not([hidden])", timeout=10_000)
+    ui.click("#process-resume")
+    ui.wait_for_selector("#process-popup.second-reading:not([hidden])", timeout=10_000)
+    ui.wait_for_function(
+        "() => document.getElementById('process-preview-state').textContent === 'rendered'",
+        timeout=20_000)
+    ui.click("#process-continue")
+    ui.wait_for_function(
+        "() => document.getElementById('process-preview-state').textContent === 'rendered'",
+        timeout=20_000)
+    assert only_layer(ui)["source"]["params"] == original_params
+
+    ui.click("#process-keep")
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 2",
+                         timeout=20_000)
+    restored = _get(f"{ui.base}/api/project")["layers"]
+    assert next(layer for layer in restored if layer["id"] == original["id"])["source"]["params"] == original_params
+    assert not ui.errors
+
+
+def test_second_reading_new_drawing_applies_entered_settings_and_queued_controls(ui):
+    open_second_reading_bench(ui)
+    ui.eval_on_selector("#process-reach", "el => {el.value='.8'; el.dispatchEvent(new Event('change'));}")
+    ui.fill("#process-width", "190")
+    ui.fill("#process-height", "170")
+    ui.fill("#process-seed", "314")
+    ui.click("#process-new-drawing")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    recipe = second_reading_recipe(ui)
+    assert (recipe["width"], recipe["height"], recipe["seed"], recipe["turns"]) == (190, 170, 314, 0)
+    assert recipe["reach"] == .8 and recipe["events"] == []
+    assert ui.get_attribute("#process-canvas", "viewBox") == "0 0 190 170"
+    assert not ui.errors
+
+
+def test_second_reading_scrubbed_revision_preserves_original_future(ui):
+    open_second_reading_bench(ui)
+    original = second_reading_recipe(ui)
+    ui.eval_on_selector("#process-turn-scrub", "el => {el.value='4'; el.dispatchEvent(new Event('input'));}")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    prefix = preview_canvas_points(ui)
+    ui.eval_on_selector("#process-reach", "el => {el.value='.9'; el.dispatchEvent(new Event('change'));}")
+    # A staged control has not changed a single displayed mark.
+    assert preview_canvas_points(ui) == prefix
+    ui.click("#process-continue")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    revised = second_reading_recipe(ui)
+    assert revised["turns"] == 5
+    assert revised["events"][-1]["reach"] == .9
+    assert ui.locator("#process-branch-select option").count() == 2
+    assert preview_canvas_points(ui)[:len(prefix)] == prefix
+    ui.select_option("#process-branch-select", "branch-1")
+    ui.eval_on_selector("#process-turn-scrub", "el => {el.value='12'; el.dispatchEvent(new Event('input'));}")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    assert second_reading_recipe(ui) == original
+    assert not ui.errors
+
+
+def test_second_reading_pause_survives_an_outstanding_preview(ui):
+    open_second_reading_bench(ui)
+    ui.evaluate("""() => {
+      const original = window.fetch;
+      window.fetch = (...args) => String(args[0]).includes('/api/generators/preview')
+        ? new Promise(resolve => setTimeout(() => original(...args).then(resolve), 400))
+        : original(...args);
+    }""")
+    ui.click("#process-play")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'resolving'")
+    ui.click("#process-play")
+    stopped = second_reading_recipe(ui)["turns"]
+    time.sleep(.95)
+    assert second_reading_recipe(ui)["turns"] == stopped
+    assert ui.locator("#process-play").text_content() == "Play"
+    assert not ui.errors
+
+
+def test_second_reading_capture_cannot_keep_a_temporary_pointer_preview(ui):
+    open_second_reading_bench(ui)
+    ui.click("#process-your-turn")
+    assert ui.is_disabled("#process-keep")
+    paper = ui.locator("#process-canvas").bounding_box()
+    x, y = paper["x"] + paper["width"]*.35, paper["y"] + paper["height"]*.4
+    ui.mouse.move(x, y)
+    ui.mouse.down()
+    ui.mouse.move(x+40, y+20)
+    assert ui.is_disabled("#process-keep")
+    ui.mouse.up()
+    ui.wait_for_function("() => !document.getElementById('process-keep').disabled")
+    assert ui.locator(".process-live-stroke").count() == 0
+    assert not ui.errors
+
+
+def test_second_reading_drafts_survive_close_and_watch_keeps_normal_geometry_frame(ui):
+    open_second_reading_bench(ui)
+    ui.fill("#process-width", "160")
+    ui.fill("#process-height", "120")
+    ui.click("#process-new-drawing")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    ui.click("#process-try-another")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    draft = second_reading_recipe(ui)
+    ui.click("#process-close")
+    ui.click("#btn-bench")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    assert second_reading_recipe(ui) == draft
+    assert ui.locator("#process-branch-select option").count() == 2
+    ui.click("#process-keep")
+    ui.wait_for_selector("#process-kept-state:not([hidden])")
+    ui.click("#process-close")
+    select_layer(ui, 0)
+    ui.click("#process-watch")
+    ui.wait_for_selector("#process-popup:not([hidden])")
+    assert ui.get_attribute("#process-canvas", "viewBox") == "0 0 300 218"
+    assert ui.is_visible("#process-scrub")
+    assert not ui.errors
+
+
+def test_second_reading_keyboard_undo_targets_the_bench_not_the_kept_layer(ui):
+    open_second_reading_bench(ui)
+    ui.click("#process-keep")
+    ui.wait_for_selector("#process-kept-state:not([hidden])")
+    saved = only_layer(ui)["source"]["params"]
+    ui.click("#process-continue")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    ui.keyboard.press("Control+z")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    assert second_reading_recipe(ui)["turns"] == saved["turns"]
+    assert only_layer(ui)["source"]["params"] == saved
+    ui.keyboard.press("Delete")
+    assert only_layer(ui)["source"]["params"] == saved
+    ui.keyboard.press("Control+Shift+z")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    assert second_reading_recipe(ui)["turns"] == saved["turns"] + 1
+    assert not ui.errors
+
 def test_the_watch_button_appears_only_for_a_process_layer(ui):
     """A time axis is what makes a layer watchable. A polygon has none, and
     offering to play it would describe something that cannot happen."""

@@ -27,6 +27,15 @@
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
 import { renderForm } from "./forms.js";
+import {
+  closeSecondReadingBench,
+  initSecondReadingBench,
+  isSecondReadingBenchOpen,
+  isSecondReadingModule,
+  openSecondReadingBench,
+  stopSecondReadingPlay,
+  toggleSecondReadingPlay,
+} from "./second_reading_bench.js";
 
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
@@ -62,6 +71,10 @@ export function watchableAxis(layer) {
   return moduleAxis(moduleFor(layer));
 }
 
+export function interventionBenchable(layer) {
+  return isSecondReadingModule(moduleFor(layer));
+}
+
 /** What the popup is previewing right now, resolved fresh every render:
  *  in watch mode from the live project (so an edit elsewhere shows up, and a
  *  deleted layer reads as gone), in bench mode from the caller's own params
@@ -79,8 +92,10 @@ export function initProcessPopup() {
   if (wired) return;
   if (!$("process-popup")) return; // stale cached index.html: degrade silently
   wired = true;
+  initSecondReadingBench();
   $("process-close").onclick = close;
-  $("process-play").onclick = () => (playing ? stop() : play());
+  $("process-play").onclick = () => isSecondReadingBenchOpen()
+    ? toggleSecondReadingPlay() : (playing ? stop() : play());
   $("process-prev").onclick = () => nudge(-1);
   $("process-next").onclick = () => nudge(+1);
   $("process-scrub").addEventListener("input", () => render());
@@ -106,6 +121,10 @@ export function initProcessPopup() {
  *  granularity, so an integer step count steps by 1 and a float axis gets 200
  *  positions across whatever its bounds are. */
 function openWith(mod, startValue, title) {
+  renderSerial++;
+  $("process-canvas").setAttribute("viewBox", "0 0 300 218");
+  $("process-canvas").style.aspectRatio = "300 / 218";
+  $("process-play").disabled = false;
   const schema = mod.schema?.properties?.[axis] || {};
   bounds = [schema.minimum ?? 0, schema.maximum ?? 100];
   const scrub = $("process-scrub");
@@ -122,6 +141,8 @@ function openWith(mod, startValue, title) {
 
 export async function openProcessPopup(id) {
   if (!$("process-popup")) return;
+  closeSecondReadingBench(false);
+  stop();
   const layer = (S.state?.project?.layers || []).find((l) => l.id === id);
   axis = watchableAxis(layer);
   if (!axis) return;
@@ -132,12 +153,49 @@ export async function openProcessPopup(id) {
   await openWith(moduleFor(layer), layer.source.params?.[axis], `${layer.name} — ${axis}`);
 }
 
+/** Resume an intervention-capable kept layer as a new working draft. Its
+ *  recipe is copied before the popup opens; Keep always creates another
+ *  ordinary layer and this source layer is never patched. */
+export function openProcessLayerBench(id) {
+  if (!$('process-popup')) return;
+  const layer = (S.state?.project?.layers || []).find((l) => l.id === id);
+  const mod = moduleFor(layer);
+  if (!layer || !isSecondReadingModule(mod)) return;
+  stop();
+  renderSerial++;
+  queued = false;
+  clearTimeout(liveTimer);
+  const moduleId = mod.id;
+  const params = JSON.parse(JSON.stringify(layer.source.params || {}));
+  openSecondReadingBench({
+    mod, params, contextKey: `layer:${layer.id}`,
+    onKeep: async (exact) => {
+      const kept = await api.post("/api/layers/generate", { module: moduleId, params: exact });
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      actions.setSelection([kept.id]);
+      return kept;
+    },
+  });
+}
+
 /** Bench mode. `params` is used BY REFERENCE on purpose: the Generate panel
  *  hands over its own live object, so every edit made here — including the
  *  scrub, which writes the axis back — is already in the panel when the bench
  *  closes, and ＋ Create layer needs no second copy to reconcile. */
 export async function openProcessBench({ mod, params, onCreate, onReroll, onClose }) {
   if (!$("process-popup")) return;
+  if (isSecondReadingModule(mod)) {
+    stop();
+    renderSerial++;
+    queued = false;
+    clearTimeout(liveTimer);
+    openSecondReadingBench({
+      mod, params, contextKey: `new:${mod.id}`, onKeep: onCreate, onClose,
+    });
+    return;
+  }
+  closeSecondReadingBench(false);
   axis = moduleAxis(mod);
   if (!axis) return;
   layerId = null;
@@ -149,6 +207,9 @@ export async function openProcessBench({ mod, params, onCreate, onReroll, onClos
 }
 
 function setBenchChrome(on) {
+  $("process-popup")?.classList.remove("second-reading");
+  const special = $("process-second-reading");
+  if (special) special.hidden = true;
   for (const id of ["process-params", "process-create"]) {
     const el = $(id);
     if (el) el.hidden = !on;
@@ -199,6 +260,12 @@ async function commit() {
 }
 
 function close() {
+  renderSerial++; // orphan a preview reply from the view being closed
+  if (isSecondReadingBenchOpen()) {
+    closeSecondReadingBench();
+    $("process-popup").hidden = true;
+    return;
+  }
   stop();
   queued = false;
   clearTimeout(liveTimer);
@@ -232,6 +299,7 @@ function play() {
 }
 
 function stop() {
+  stopSecondReadingPlay();
   if (playing) clearTimeout(playing);
   playing = null;
   const btn = $("process-play");
@@ -244,7 +312,9 @@ function stop() {
 // exactly the last position of every fast drag, which is the one that matters.)
 let pending = false;
 let queued = false;
+let renderSerial = 0;
 async function render() {
+  if (isSecondReadingBenchOpen()) return;
   const cur = currentSource();
   // the watched layer went away under us (deleted from the layer list while
   // the popup was open): close rather than return, or a running Play leaves
@@ -257,13 +327,16 @@ async function render() {
   // and ＋ Create layer both read this object
   if (benchSrc) benchSrc.params[axis] = value;
   pending = true;
+  const serial = renderSerial;
   try {
     const params = { ...cur.params, [axis]: value };
     const out = await api.post("/api/generators/preview",
                                { module: cur.mod.id, params });
-    draw(out.lines || []);
-    seen.set(value, out.points || 0);
-    drawTelemetry();
+    if (serial === renderSerial && !$("process-popup").hidden && !isSecondReadingBenchOpen()) {
+      draw(out.lines || []);
+      seen.set(value, out.points || 0);
+      drawTelemetry();
+    }
   } catch (e) {
     stop();
     actions.oops(e);

@@ -138,6 +138,7 @@ class SourceModule(ABC):
     #: guessed at. Modules that already have a ``frame`` field need not
     #: declare anything — see ``effective_time_axis``.
     time_axis: str | None = None
+    bench_capabilities: tuple[str, ...] = ()
 
     @abstractmethod
     def generate(self, params: BaseModel) -> PathDocument:
@@ -344,6 +345,7 @@ def describe_modules() -> dict[str, list[dict[str, Any]]]:
             d["category"] = inst.category
         if kind == "source":
             d["time_axis"] = effective_time_axis(inst)
+            d["bench_capabilities"] = list(inst.bench_capabilities)
         return d
 
     return {

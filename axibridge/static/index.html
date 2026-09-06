@@ -399,6 +399,70 @@
         <svg id="process-canvas" viewBox="0 0 300 218" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
     </div>
+    <!-- A score-editing bench, enabled only by a module descriptor carrying
+         both `intervene` and `branch`. Its branch state is app-memory only;
+         #process-recipe is the exact selected recipe used by Preview/Keep. -->
+    <div id="process-second-reading" hidden>
+      <div class="process-state-row">
+        <span id="process-working-state" class="process-state working">Working</span>
+        <span id="process-kept-state" class="process-state kept" hidden>Kept</span>
+        <strong id="process-turn-label">Turn 0</strong>
+        <span id="process-point-count" class="hint">0 points</span>
+        <span id="process-preview-state" class="hint">waiting</span>
+      </div>
+      <div class="process-branch-row">
+        <label for="process-branch-select">reading</label>
+        <select id="process-branch-select"></select>
+        <button id="process-undo" title="undo inside this working bench">Undo</button>
+        <button id="process-redo" title="redo inside this working bench">Redo</button>
+      </div>
+      <div class="process-state-row">
+        <label for="process-turn-scrub">Turn</label>
+        <input id="process-turn-scrub" type="range" min="0" max="64" step="1" value="12"
+               title="inspect any turn; revising an earlier turn preserves this reading as an alternative">
+        <span class="hint">Unkept readings last for this app session.</span>
+      </div>
+      <div class="process-controls">
+        <label>persistence
+          <input id="process-persistence" type="range" min="0" max="1" step="0.01">
+          <output id="process-persistence-value">0.50</output>
+        </label>
+        <label>reach
+          <input id="process-reach" type="range" min="0" max="1" step="0.01">
+          <output id="process-reach-value">0.50</output>
+        </label>
+        <label>recurrence
+          <input id="process-recurrence" type="range" min="0" max="1" step="0.01">
+          <output id="process-recurrence-value">0.50</output>
+        </label>
+        <span id="process-next-turn-note" class="hint">controls at turn 0</span>
+      </div>
+      <div class="process-action-row">
+        <button id="process-continue" class="primary">Continue one turn</button>
+        <button id="process-your-turn"
+                title="draw a stroke; light smoothing keeps deliberate corners">Your turn</button>
+        <button id="process-try-another"
+                title="keep this reading and begin another from the next turn">Try another</button>
+        <button id="process-keep" class="primary">Keep as layer</button>
+      </div>
+      <div class="process-reset-row">
+        <span class="hint">new drawing</span>
+        <label>w <input id="process-width" type="number" min="40" max="300" step="1"></label>
+        <label>h <input id="process-height" type="number" min="40" max="218" step="1"></label>
+        <label>seed <input id="process-seed" type="number" min="0" max="2147483647" step="1"></label>
+        <button id="process-new-drawing"
+                title="apply seed and size, clear every event, and return to turn 0">New drawing</button>
+      </div>
+      <details id="process-details">
+        <summary>Process details</summary>
+        <dl class="kv process-summary">
+          <dt>action</dt><dd id="process-action">—</dd>
+          <dt>passages</dt><dd id="process-targets">—</dd>
+        </dl>
+        <dl id="process-internal-telemetry" class="kv"></dl>
+        <output id="process-recipe" hidden></output>
+      </details>
+    </div>
     <div class="row">
       <button id="process-play" class="primary">Play</button>
       <button id="process-prev">← Step</button>
@@ -411,7 +475,7 @@
       <button id="process-create" class="primary" hidden
               title="create a layer from these params, stopped at the step on screen">＋ Create layer</button>
     </div>
-    <div class="row">
+    <div class="row" id="process-telemetry-row">
       <!-- Points-so-far against the axis: the growth curve of whatever has
            actually been previewed. Filled in from the same replies that draw
            the canvas, so it costs no extra request. -->

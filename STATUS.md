@@ -1,19 +1,38 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-04
+updated: 2026-09-06
 machine: mac+pi
-summary: Pass 4's A2 — the homeostat — is built, reviewed, pushed and seen in the bench, with self-surprise and Ashby's second loop on top; nothing from the whole pass has touched paper yet.
+summary: Second Reading bench is implemented; Ian prefers the first response version. Next session recovers that baseline and tests shape, awareness, controls and element boundaries with a Sol reviewer.
 next:
-  - "Plot something. Nothing from pass 4 has met a pen — not the homeostat, not venation, not the cymatic fill — and the homeostat draws ONE continuous stroke, which should plot unusually cleanly"
-  - "At the bench: measure=surprise (band ~0.30 +- 0.20) against the default crowding on one seed; then escalation 0.4 with variety STARTING low (~0.35), watching the variety trace"
-  - "Hand docs/BRIEF-new-generator.md to Astra and let it build a generator; its section 6 is the honest critique of what the homeostat cannot do"
-  - "The biggest opening in that critique: every variable the homeostat can measure is a first-order statistic of INK. It has no vocabulary of relations between marks — parallelism, enclosure, alignment, rhyme — which is what makes a drawing read as drawn"
-  - "Older, still open: colour separation's CHECKME.md 2026-08-17 section, and bench/hardware eye-checks back to 2026-07-13; the multi-pen swap queue has never touched a real AxiDraw"
+  - "Start with docs/plans/second-reading-next-session.md — latest user correction and agreed experiment, not the older optimistic study verdicts"
+  - "Recover the first response baseline honestly; no selectable restoration or new Attention/Departure/Scale controls are implemented yet"
+  - "Use project skill drawing-review for a bounded Sol second eye on whole iteration sheets; calibrate it and retain primary-agent ownership"
+  - "Paper and older bench/hardware eye-checks remain outstanding; do not plot automatically"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-09-05–06: Second Reading bench and aesthetic experiments.**
+
+Interactive human/machine turns, exact replay, branches, Keep/Resume and capture
+smoothing are implemented. Several generator revisions and reproducible studies
+are retained. **Ian's latest judgement: the first version was more responsive;
+later iterations made little progress.** Mechanical completion is not aesthetic
+acceptance. Current source remains the encounter revision.
+
+The next experiment is agreed, not implemented: recover the first baseline,
+improve shapes/proportions, include occasional homeostat gestures, reconsider
+awareness/controls and element-friendly boundaries. Project skill `drawing-review`
+defines Sol's bounded aesthetic role, with the primary agent in charge. Start
+at `docs/plans/second-reading-next-session.md`; see
+`docs/reviews/drawing-review-skill-trial.md` for the initial reviewer trial.
+No hardware commands were sent. Wrapup verification: **1,239 tests passed**;
+frontend build/typecheck and a separate three-case capture–Keep–Resume Playwright
+smoke passed on a throwaway isolated server. The project skill validated and
+its Sol forward-test is recorded with a specific limitation. Commit closes this session;
+original and later studies remain in `shots/second-reading*/` as evidence.
 
 **Session 2026-09-04 (Opus 5): pass 4's A2 — the homeostat — designed, built,
 reviewed, extended twice, and pushed.**

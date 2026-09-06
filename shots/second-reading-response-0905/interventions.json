@@ -1,0 +1,1310 @@
+[
+  {
+    "case": "Long crossing",
+    "view": "Shared prefix",
+    "params": {
+      "turns": 4,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": []
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      }
+    ]
+  },
+  {
+    "case": "Long crossing",
+    "view": "Long crossing",
+    "params": {
+      "turns": 5,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              40.0,
+              145.0
+            ],
+            [
+              105.0,
+              117.0
+            ],
+            [
+              174.0,
+              95.0
+            ],
+            [
+              245.0,
+              65.0
+            ]
+          ],
+          "smoothing": 0.6
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      }
+    ]
+  },
+  {
+    "case": "Long crossing",
+    "view": "One answer",
+    "params": {
+      "turns": 6,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              40.0,
+              145.0
+            ],
+            [
+              105.0,
+              117.0
+            ],
+            [
+              174.0,
+              95.0
+            ],
+            [
+              245.0,
+              65.0
+            ]
+          ],
+          "smoothing": 0.6
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          6,
+          4
+        ],
+        "passage_id": 7
+      }
+    ]
+  },
+  {
+    "case": "Long crossing",
+    "view": "Four answers",
+    "params": {
+      "turns": 9,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              40.0,
+              145.0
+            ],
+            [
+              105.0,
+              117.0
+            ],
+            [
+              174.0,
+              95.0
+            ],
+            [
+              245.0,
+              65.0
+            ]
+          ],
+          "smoothing": 0.6
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          6,
+          4
+        ],
+        "passage_id": 7
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 8
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          8
+        ],
+        "passage_id": 9
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          9
+        ],
+        "passage_id": 10
+      }
+    ]
+  },
+  {
+    "case": "Long crossing",
+    "view": "Alternative four answers",
+    "params": {
+      "turns": 9,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              40.0,
+              145.0
+            ],
+            [
+              105.0,
+              117.0
+            ],
+            [
+              174.0,
+              95.0
+            ],
+            [
+              245.0,
+              65.0
+            ]
+          ],
+          "smoothing": 0.6
+        },
+        {
+          "kind": "branch",
+          "turn": 6,
+          "seed": 29
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 7
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 8
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          8
+        ],
+        "passage_id": 9
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          9
+        ],
+        "passage_id": 10
+      }
+    ]
+  },
+  {
+    "case": "Open hook",
+    "view": "Shared prefix",
+    "params": {
+      "turns": 4,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": []
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      }
+    ]
+  },
+  {
+    "case": "Open hook",
+    "view": "Open hook",
+    "params": {
+      "turns": 5,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              65.0,
+              140.0
+            ],
+            [
+              80.0,
+              105.0
+            ],
+            [
+              115.0,
+              88.0
+            ],
+            [
+              148.0,
+              105.0
+            ],
+            [
+              144.0,
+              137.0
+            ],
+            [
+              118.0,
+              151.0
+            ]
+          ],
+          "smoothing": 0.6
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      }
+    ]
+  },
+  {
+    "case": "Open hook",
+    "view": "One answer",
+    "params": {
+      "turns": 6,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              65.0,
+              140.0
+            ],
+            [
+              80.0,
+              105.0
+            ],
+            [
+              115.0,
+              88.0
+            ],
+            [
+              148.0,
+              105.0
+            ],
+            [
+              144.0,
+              137.0
+            ],
+            [
+              118.0,
+              151.0
+            ]
+          ],
+          "smoothing": 0.6
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 7
+      }
+    ]
+  },
+  {
+    "case": "Open hook",
+    "view": "Four answers",
+    "params": {
+      "turns": 9,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              65.0,
+              140.0
+            ],
+            [
+              80.0,
+              105.0
+            ],
+            [
+              115.0,
+              88.0
+            ],
+            [
+              148.0,
+              105.0
+            ],
+            [
+              144.0,
+              137.0
+            ],
+            [
+              118.0,
+              151.0
+            ]
+          ],
+          "smoothing": 0.6
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 7
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 8
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 9
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 10
+      }
+    ]
+  },
+  {
+    "case": "Open hook",
+    "view": "Alternative four answers",
+    "params": {
+      "turns": 9,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              65.0,
+              140.0
+            ],
+            [
+              80.0,
+              105.0
+            ],
+            [
+              115.0,
+              88.0
+            ],
+            [
+              148.0,
+              105.0
+            ],
+            [
+              144.0,
+              137.0
+            ],
+            [
+              118.0,
+              151.0
+            ]
+          ],
+          "smoothing": 0.6
+        },
+        {
+          "kind": "branch",
+          "turn": 6,
+          "seed": 29
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 7
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 8
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          6,
+          4
+        ],
+        "passage_id": 9
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 10
+      }
+    ]
+  },
+  {
+    "case": "Small interruption",
+    "view": "Shared prefix",
+    "params": {
+      "turns": 4,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": []
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      }
+    ]
+  },
+  {
+    "case": "Small interruption",
+    "view": "Small interruption",
+    "params": {
+      "turns": 5,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              139.0,
+              97.0
+            ],
+            [
+              149.0,
+              108.0
+            ],
+            [
+              145.0,
+              120.0
+            ]
+          ],
+          "smoothing": 0.6
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      }
+    ]
+  },
+  {
+    "case": "Small interruption",
+    "view": "One answer",
+    "params": {
+      "turns": 6,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              139.0,
+              97.0
+            ],
+            [
+              149.0,
+              108.0
+            ],
+            [
+              145.0,
+              120.0
+            ]
+          ],
+          "smoothing": 0.6
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          6,
+          4
+        ],
+        "passage_id": 7
+      }
+    ]
+  },
+  {
+    "case": "Small interruption",
+    "view": "Four answers",
+    "params": {
+      "turns": 9,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              139.0,
+              97.0
+            ],
+            [
+              149.0,
+              108.0
+            ],
+            [
+              145.0,
+              120.0
+            ]
+          ],
+          "smoothing": 0.6
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          6,
+          4
+        ],
+        "passage_id": 7
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 8
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 9
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 10
+      }
+    ]
+  },
+  {
+    "case": "Small interruption",
+    "view": "Alternative four answers",
+    "params": {
+      "turns": 9,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              139.0,
+              97.0
+            ],
+            [
+              149.0,
+              108.0
+            ],
+            [
+              145.0,
+              120.0
+            ]
+          ],
+          "smoothing": 0.6
+        },
+        {
+          "kind": "branch",
+          "turn": 6,
+          "seed": 29
+        }
+      ]
+    },
+    "actions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          0
+        ],
+        "passage_id": 2
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "passage_id": 3
+      },
+      {
+        "action": "surround",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "passage_id": 6
+      },
+      {
+        "action": "concentrate",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 7
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 8
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "passage_id": 9
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          9
+        ],
+        "passage_id": 10
+      }
+    ]
+  }
+]

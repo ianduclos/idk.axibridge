@@ -6,7 +6,7 @@ import hashlib
 import json
 import threading
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
@@ -26,6 +26,7 @@ class Trajectory:
     steps: list[list[Path]]
     telemetry: list[dict[str, float]]
     accumulative: bool
+    metadata: list[dict] = field(default_factory=list)
 
     def state(self, n: int) -> list[Path]:
         """The drawing as it stands at step ``n``."""
@@ -55,12 +56,14 @@ def _run(module: "ProcessModule", params: BaseModel) -> Trajectory:
     last = int(bounds[1]) if bounds else int(getattr(params, module.time_axis))
     steps: list[list[Path]] = []
     telemetry: list[dict[str, float]] = []
+    metadata: list[dict] = []
     for i, step in enumerate(module.run(params)):
         steps.append(list(step.paths))
         telemetry.append(dict(step.telemetry or {}))
+        metadata.append(dict(step.metadata or {}))
         if i >= last:
             break
-    return Trajectory(steps, telemetry, module.accumulative)
+    return Trajectory(steps, telemetry, module.accumulative, metadata)
 
 
 #: Cached trajectory points before LRU eviction. A trajectory of an
