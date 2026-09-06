@@ -1,3 +1,8 @@
+> Continued on 6 September 2026. First is now recovered and checked against all
+> 30 original cells; the agreed experiment is implemented separately. This file
+> preserves the starting brief. Current findings and remaining judgement:
+> [lead report](../reviews/second-reading-0906-lead.md).
+
 # Second Reading — agreed next experiment, 6 September 2026
 
 ## Read this before continuing implementation

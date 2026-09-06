@@ -1,0 +1,1645 @@
+[
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 4,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "response": null,
+        "passage_id": 5
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 8,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "response": null,
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 7
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          4,
+          0
+        ],
+        "response": "open interval",
+        "passage_id": 8
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          8
+        ],
+        "response": null,
+        "passage_id": 9
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "response": null,
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 7
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          4,
+          0
+        ],
+        "response": "open interval",
+        "passage_id": 8
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          8
+        ],
+        "response": null,
+        "passage_id": 9
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 10
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          10
+        ],
+        "response": null,
+        "passage_id": 11
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          5
+        ],
+        "response": null,
+        "passage_id": 12
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          12,
+          11
+        ],
+        "response": "open interval",
+        "passage_id": 13
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 20,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 12,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "response": null,
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 7
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          4,
+          0
+        ],
+        "response": "open interval",
+        "passage_id": 8
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          8
+        ],
+        "response": null,
+        "passage_id": 9
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 10
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          10
+        ],
+        "response": null,
+        "passage_id": 11
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          5
+        ],
+        "response": null,
+        "passage_id": 12
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          12,
+          11
+        ],
+        "response": "open interval",
+        "passage_id": 13
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          13,
+          5
+        ],
+        "response": "open interval",
+        "passage_id": 14
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          0
+        ],
+        "response": null,
+        "passage_id": 15
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          15
+        ],
+        "response": null,
+        "passage_id": 16
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          13
+        ],
+        "response": null,
+        "passage_id": 17
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          17
+        ],
+        "response": null,
+        "passage_id": 18
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          18
+        ],
+        "response": null,
+        "passage_id": 19
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          13
+        ],
+        "response": null,
+        "passage_id": 20
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          20
+        ],
+        "response": "wandering guide",
+        "passage_id": 21
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 4,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 23,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          0
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          4,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 5
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 8,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 23,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          0
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          4,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          6,
+          4
+        ],
+        "response": "wandering guide",
+        "passage_id": 7
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          7
+        ],
+        "response": null,
+        "passage_id": 8
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          8
+        ],
+        "response": null,
+        "passage_id": 9
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 23,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          0
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          4,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          6,
+          4
+        ],
+        "response": "wandering guide",
+        "passage_id": 7
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          7
+        ],
+        "response": null,
+        "passage_id": 8
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          8
+        ],
+        "response": null,
+        "passage_id": 9
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 10
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          10
+        ],
+        "response": null,
+        "passage_id": 11
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          11
+        ],
+        "response": null,
+        "passage_id": 12
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          12
+        ],
+        "response": null,
+        "passage_id": 13
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 20,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 23,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          0
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          4,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          6,
+          4
+        ],
+        "response": "wandering guide",
+        "passage_id": 7
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          7
+        ],
+        "response": null,
+        "passage_id": 8
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          8
+        ],
+        "response": null,
+        "passage_id": 9
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 10
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          10
+        ],
+        "response": null,
+        "passage_id": 11
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          11
+        ],
+        "response": null,
+        "passage_id": 12
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          12
+        ],
+        "response": null,
+        "passage_id": 13
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          10
+        ],
+        "response": null,
+        "passage_id": 14
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          14
+        ],
+        "response": null,
+        "passage_id": 15
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          15
+        ],
+        "response": null,
+        "passage_id": 16
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          14
+        ],
+        "response": null,
+        "passage_id": 17
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          17
+        ],
+        "response": null,
+        "passage_id": 18
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          18,
+          2
+        ],
+        "response": "wandering guide",
+        "passage_id": 19
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          19
+        ],
+        "response": null,
+        "passage_id": 20
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          20,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 21
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 4,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 42,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          1
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "response": null,
+        "passage_id": 5
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 8,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 42,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          1
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "response": null,
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 7
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          5
+        ],
+        "response": null,
+        "passage_id": 8
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 9
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 12,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 42,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          1
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "response": null,
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 7
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          5
+        ],
+        "response": null,
+        "passage_id": 8
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 9
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 10
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          10
+        ],
+        "response": null,
+        "passage_id": 11
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "response": null,
+        "passage_id": 12
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          12
+        ],
+        "response": null,
+        "passage_id": 13
+      }
+    ]
+  },
+  {
+    "params": {
+      "reading": "responsive",
+      "historical_stacks": false,
+      "boundary": "clip",
+      "attention": 0.5,
+      "departure": 0.5,
+      "scale": 0.5,
+      "turns": 20,
+      "width": 280,
+      "height": 198,
+      "persistence": 0.5,
+      "reach": 0.5,
+      "recurrence": 0.5,
+      "seed": 42,
+      "events": [
+        {
+          "kind": "stroke",
+          "turn": 5,
+          "points": [
+            [
+              42.0,
+              147.0
+            ],
+            [
+              112.0,
+              120.0
+            ],
+            [
+              184.0,
+              138.0
+            ],
+            [
+              242.0,
+              72.0
+            ]
+          ],
+          "smoothing": 0.8
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "action": "opening",
+        "target_passage_ids": []
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          0,
+          1
+        ],
+        "response": "open interval",
+        "passage_id": 2
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          1
+        ],
+        "response": null,
+        "passage_id": 3
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          3
+        ],
+        "response": null,
+        "passage_id": 4
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "response": null,
+        "passage_id": 5
+      },
+      {
+        "action": "human",
+        "target_passage_ids": [],
+        "response": null,
+        "passage_id": 6
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          6
+        ],
+        "response": null,
+        "passage_id": 7
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          5
+        ],
+        "response": null,
+        "passage_id": 8
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 9
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          9
+        ],
+        "response": null,
+        "passage_id": 10
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          10
+        ],
+        "response": null,
+        "passage_id": 11
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          4
+        ],
+        "response": null,
+        "passage_id": 12
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          12
+        ],
+        "response": null,
+        "passage_id": 13
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          2
+        ],
+        "response": null,
+        "passage_id": 14
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          14
+        ],
+        "response": null,
+        "passage_id": 15
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          14,
+          8
+        ],
+        "response": "open interval",
+        "passage_id": 16
+      },
+      {
+        "action": "echo",
+        "target_passage_ids": [
+          16
+        ],
+        "response": null,
+        "passage_id": 17
+      },
+      {
+        "action": "traverse",
+        "target_passage_ids": [
+          14,
+          8
+        ],
+        "response": "open interval",
+        "passage_id": 18
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          18
+        ],
+        "response": null,
+        "passage_id": 19
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          19
+        ],
+        "response": null,
+        "passage_id": 20
+      },
+      {
+        "action": "extend",
+        "target_passage_ids": [
+          20
+        ],
+        "response": "wandering guide",
+        "passage_id": 21
+      }
+    ]
+  }
+]

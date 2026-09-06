@@ -324,3 +324,15 @@ Register in `MachineManager.__init__` (`axibridge/machine.py`). Rules:
 - [ ] Coordinates mm; sources non-negative; `filled`/closure preserved.
 - [ ] Optional deps via `available()`.
 - [ ] A test in `tests/` — the simulator keeps backend tests hardware-free.
+
+### Optional bounded element placement
+
+A source may implement `placement_frame(params) -> (width, height)` when its
+output document is guaranteed to lie inside that physical frame. Session creation
+then uniformly fits the entire frame to the bed, including portrait orientation;
+the stored layer affine is what the single resolve consumes. View toggles compose
+the relative old/new frame placements so roundtrips preserve scale. Default is
+`None`, preserving existing generator placement. Second Reading is the first
+user: whole-element fitting happens in its document, and this hook prevents the
+canvas's later quarter-turn from making the kept element exceed the bed. It does
+not constrain manual layer transforms or effects.

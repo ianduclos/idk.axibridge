@@ -3,36 +3,35 @@ project: idk.axibridge
 state: active
 updated: 2026-09-06
 machine: mac+pi
-summary: Second Reading bench is implemented; Ian prefers the first response version. Next session recovers that baseline and tests shape, awareness, controls and element boundaries with a Sol reviewer.
+summary: Second Reading now defaults to Responsive without thick reinforcement stacks; visible per-stroke smoothing, seed randomization and explicit boundary state are implemented.
 next:
-  - "Start with docs/plans/second-reading-next-session.md — latest user correction and agreed experiment, not the older optimistic study verdicts"
-  - "Recover the first response baseline honestly; no selectable restoration or new Attention/Departure/Scale controls are implemented yet"
-  - "Use project skill drawing-review for a bounded Sol second eye on whole iteration sheets; calibrate it and retain primary-agent ownership"
-  - "Paper and older bench/hardware eye-checks remain outstanding; do not plot automatically"
+  - "Use docs/plans/second-reading-quick-guide.md for current controls; Responsive removes thick reinforcement stacks"
+  - "Reading/control changes take effect next turn; Boundary applies through New drawing; Overshoot + fit preserves the whole element on Keep"
+  - "Whole sheets retain weak cases; no claim of artistic acceptance or paper success"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
 
-**Session 2026-09-05–06: Second Reading bench and aesthetic experiments.**
+**Session 2026-09-06: Second Reading recovery and agreed experiment.**
 
-Interactive human/machine turns, exact replay, branches, Keep/Resume and capture
-smoothing are implemented. Several generator revisions and reproducible studies
-are retained. **Ian's latest judgement: the first version was more responsive;
-later iterations made little progress.** Mechanical completion is not aesthetic
-acceptance. Current source remains the encounter revision.
+First was recovered from prior tool history. After Ian’s follow-up, Responsive is the default; ordinary readings no longer make thick reinforcement stacks. All 30
+original study cells match saved geometry precision and decisions. Shape and
+Relation experiments are selectable, with separate Attention/Departure/Scale
+meanings, occasional guided wandering, and clip / containment / whole-element-fit
+boundaries. Reading changes are recorded next-turn events. The existing bench,
+branches, capture smoothing and Keep/Resume remain.
 
-The next experiment is agreed, not implemented: recover the first baseline,
-improve shapes/proportions, include occasional homeostat gestures, reconsider
-awareness/controls and element-friendly boundaries. Project skill `drawing-review`
-defines Sol's bounded aesthetic role, with the primary agent in charge. Start
-at `docs/plans/second-reading-next-session.md`; see
-`docs/reviews/drawing-review-skill-trial.md` for the initial reviewer trial.
-No hardware commands were sent. Wrapup verification: **1,239 tests passed**;
-frontend build/typecheck and a separate three-case capture–Keep–Resume Playwright
-smoke passed on a throwaway isolated server. The project skill validated and
-its Sol forward-test is recorded with a specific limitation. Commit closes this session;
-original and later studies remain in `shots/second-reading*/` as evidence.
+A bounded Sol image-first review included neutral populations and altered
+variants, followed by isolated sequences and a provenance correction. The lead
+then changed only the sampling-dependent echo deformation. Iteration sheets,
+weak cases and actual lead-driven alternating captures are preserved under
+`shots/second-reading-recovery{,-final}-0906/`. The final placement fix fits the
+whole source frame through portrait/landscape creation and view changes, preserving
+physical bed bounds. No hardware or Ian's running app was used.
+
+Read `docs/reviews/second-reading-0906-lead.md` for judgement and limitations.
+The latest cleanup adds visible Pen smoothing (including during capture), Randomize for the next seed, persistent pending new-drawing settings, active/pending boundary labels and a dashed nominal sheet in overshoot mode. Turn inside now actually returns inward instead of squeezing against the edge. Historical geometry remains reproducible with the internal historical_stacks recipe flag. Final verification: **1,262 passed, 1 skipped**; frontend build/typecheck and a separate exact-recipe Resume/placed-canvas check passed.
 
 **Session 2026-09-04 (Opus 5): pass 4's A2 — the homeostat — designed, built,
 reviewed, extended twice, and pushed.**

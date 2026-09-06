@@ -1,0 +1,15 @@
+{
+  "reading": "shapes",
+  "boundary": "fit",
+  "attention": 0.5,
+  "departure": 0.5,
+  "scale": 0.5,
+  "turns": 4,
+  "width": 280,
+  "height": 198,
+  "persistence": 0.5,
+  "reach": 0.5,
+  "recurrence": 0.5,
+  "seed": 12,
+  "events": []
+}

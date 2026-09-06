@@ -11,6 +11,7 @@ const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
 const MAX_EVENTS = 128;
 const MAX_POINTS = 20_000;
+const CONTROL_KEYS = ["persistence", "reach", "recurrence", "attention", "departure", "scale", "reading"];
 const ORDER = { controls: 0, branch: 1, stroke: 2 };
 
 // Deliberately memory-only. A draft survives closing and reopening the popup
@@ -95,13 +96,17 @@ function pointCount(events) {
 
 function effectiveControls(b) {
   const base = {
+    reading: b.params.reading ?? "responsive",
+    attention: Number(b.params.attention ?? .5),
+    departure: Number(b.params.departure ?? .5),
+    scale: Number(b.params.scale ?? .5),
     persistence: Number(b.params.persistence ?? .5),
     reach: Number(b.params.reach ?? .5),
     recurrence: Number(b.params.recurrence ?? .5),
   };
   for (const e of normalizeEvents(b.params.events)) {
     if (e.turn > b.turn || e.kind !== "controls") continue;
-    for (const k of Object.keys(base)) if (e[k] != null) base[k] = Number(e[k]);
+    for (const k of Object.keys(base)) if (e[k] != null) base[k] = k === "reading" ? e[k] : Number(e[k]);
   }
   return base;
 }
@@ -114,16 +119,16 @@ function ensureStaged(b) {
 function commitStagedControls(b, turn) {
   const staged = ensureStaged(b);
   const current = effectiveControls(b);
-  const changed = ["persistence", "reach", "recurrence"].some(
-    (k) => Number(staged[k]) !== Number(current[k]));
+  const changed = CONTROL_KEYS.some(
+    (k) => staged[k] !== current[k]);
   return !changed || replaceEvent(b, { kind: "controls", turn, ...copy(staged) });
 }
 
 function controlsChanged(b) {
   const staged = ensureStaged(b);
   const current = effectiveControls(b);
-  return ["persistence", "reach", "recurrence"].some(
-    (k) => Number(staged[k]) !== Number(current[k]));
+  return CONTROL_KEYS.some(
+    (k) => staged[k] !== current[k]);
 }
 
 function canRecord(b, kinds, turn) {
@@ -146,6 +151,7 @@ function forkPrefix(source, label) {
   params.events = params.events.filter(e => e.turn <= source.turn);
   const next = freshBranch(params, `branch-${++active.draft.serial}`, label);
   next.staged = copy(ensureStaged(source));
+  next.penSmoothing = source.penSmoothing ?? lastStrokeSmoothing(source);
   active.draft.branches.push(next);
   active.draft.active = next.id;
   return next;
@@ -199,6 +205,11 @@ export function initSecondReadingBench() {
   $("process-redo").onclick = redo;
   $("process-keep").onclick = keep;
   $("process-new-drawing").onclick = newDrawing;
+  $("process-randomize-seed").onclick = randomizePendingSeed;
+  for (const id of ["process-boundary", "process-width", "process-height", "process-seed"]) {
+    $(id).oninput = renderNewDrawingState;
+    $(id).onchange = renderNewDrawingState;
+  }
   $("process-turn-scrub").oninput = () => {
     const b = branch();
     if (!b) return;
@@ -215,6 +226,19 @@ export function initSecondReadingBench() {
   wireRange("process-persistence", "persistence");
   wireRange("process-reach", "reach");
   wireRange("process-recurrence", "recurrence");
+  for (const key of ["attention", "departure", "scale"]) wireRange(`process-${key}`, key);
+  const smoothing = $("process-pen-smoothing");
+  smoothing.oninput = () => updateReadout("process-pen-smoothing", smoothing.value);
+  smoothing.onchange = () => {
+    const b = branch();
+    if (!b) return;
+    b.penSmoothing = clamp(Number(smoothing.value), 0, 1);
+    renderChrome();
+  };
+  $("process-reading").onchange = () => {
+    const b = branch(); if (!b) return;
+    remember(); ensureStaged(b).reading = $("process-reading").value; renderChrome();
+  };
 
   const svg = $("process-canvas");
   svg.addEventListener("pointerdown", pointerDown);
@@ -246,7 +270,14 @@ function freshBranch(params, id = "branch-1", label = "Reading 1") {
   const b = { id, label, params: p, turn, furthest: turn,
     staged: null, renderedKey: null, rendered: null, awaiting: false };
   b.staged = effectiveControls(b);
+  b.penSmoothing = lastStrokeSmoothing(b);
   return b;
+}
+
+function lastStrokeSmoothing(b) {
+  const stroke = [...normalizeEvents(b.params.events)].reverse()
+    .find((event) => event.kind === "stroke" && event.turn <= b.turn);
+  return clamp(Number(stroke?.smoothing ?? .6), 0, 1);
 }
 
 export function openSecondReadingBench({ mod, params, contextKey, onKeep, onClose }) {
@@ -260,6 +291,7 @@ export function openSecondReadingBench({ mod, params, contextKey, onKeep, onClos
     drafts.set(key, draft);
   }
   active = { mod, external: params, contextKey: key, draft, onKeep, onClose };
+  loadPendingNewDrawing();
   openSerial++;
   $("process-popup").classList.add("second-reading");
   $("process-popup").hidden = false;
@@ -316,7 +348,11 @@ function renderChrome() {
   $("process-preview-state").textContent = b.awaiting ? "resolving" :
     (b.renderedKey === recipeKey(b) ? "rendered" : "not rendered");
   $("process-recipe").textContent = JSON.stringify(recipe(b));
-  for (const key of ["persistence", "reach", "recurrence"]) {
+  $("process-reading").value = staged.reading;
+  const experimental = ["responsive", "shapes", "relations"].includes(staged.reading);
+  for (const key of ["persistence", "reach", "recurrence"]) $(`process-${key}`).closest("label").hidden = experimental;
+  for (const key of ["attention", "departure", "scale"]) $(`process-${key}`).closest("label").hidden = !experimental || (key === "attention" && !["relations", "responsive"].includes(staged.reading));
+  for (const key of CONTROL_KEYS.filter(k => k !== "reading")) {
     const input = $(`process-${key}`);
     input.value = String(staged[key]);
     updateReadout(`process-${key}`, staged[key]);
@@ -351,10 +387,48 @@ function renderChrome() {
     ? "wait until this exact working recipe is on screen" : "keep the drawing on screen as an ordinary layer";
   $("process-play").disabled = !playTimer && (atEnd || b.awaiting);
   $("process-play").textContent = playTimer ? "Pause" : "Play";
-  $("process-width").value = String(b.params.width ?? 280);
-  $("process-height").value = String(b.params.height ?? 198);
-  $("process-seed").value = String(b.params.seed ?? 0);
+  $("process-pen-smoothing").value = String(b.penSmoothing ?? lastStrokeSmoothing(b));
+  updateReadout("process-pen-smoothing", b.penSmoothing ?? lastStrokeSmoothing(b));
+  renderNewDrawingState();
   syncExternal();
+}
+
+function boundaryLabel(value) {
+  return ({ clip: "Clip", contain: "Turn inside", fit: "Overshoot + fit element" })[value] || value;
+}
+
+function loadPendingNewDrawing() {
+  if (!active) return;
+  const b = branch();
+  const pending = active.draft.pendingNewDrawing ||= {
+    boundary: b?.params.boundary ?? "clip",
+    width: b?.params.width ?? 280,
+    height: b?.params.height ?? 198,
+    seed: b?.params.seed ?? 0,
+  };
+  $("process-boundary").value = pending.boundary;
+  $("process-width").value = String(pending.width);
+  $("process-height").value = String(pending.height);
+  $("process-seed").value = String(pending.seed);
+}
+
+function pendingNewDrawing() {
+  if (!active) return null;
+  const pending = active.draft.pendingNewDrawing ||= {};
+  pending.boundary = $("process-boundary").value;
+  pending.width = clamp(Math.round(Number($("process-width").value) || 280), 40, 300);
+  pending.height = clamp(Math.round(Number($("process-height").value) || 198), 40, 218);
+  pending.seed = clamp(Math.round(Number($("process-seed").value) || 0), 0, 2147483647);
+  return pending;
+}
+
+function renderNewDrawingState() {
+  if (!active) return;
+  const pending = pendingNewDrawing();
+  const b = branch();
+  if (!pending || !b) return;
+  $("process-boundary-note").textContent =
+    `Active: ${boundaryLabel(b.params.boundary ?? "clip")}. Selected for new drawing: ${boundaryLabel(pending.boundary)} — press New drawing.`;
 }
 
 function syncExternal() {
@@ -386,6 +460,16 @@ export function stopSecondReadingPlay() {
 
 function randomSeed() {
   return Math.floor(Math.random() * 2147483648);
+}
+
+function randomizePendingSeed() {
+  const pending = pendingNewDrawing();
+  if (!pending) return;
+  let seed = randomSeed();
+  if (seed === pending.seed) seed = (seed + 1) % 2147483648;
+  pending.seed = seed;
+  $("process-seed").value = String(seed);
+  renderNewDrawingState();
 }
 
 function tryAnother() {
@@ -459,20 +543,21 @@ async function keep() {
 function newDrawing() {
   const old = branch();
   if (!old || old.awaiting) return;
-  const width = clamp(Math.round(Number($("process-width").value) || 280), 40, 300);
-  const height = clamp(Math.round(Number($("process-height").value) || 198), 40, 218);
-  const seed = clamp(Math.round(Number($("process-seed").value) || 0), 0, 2147483647);
+  const pending = pendingNewDrawing();
+  const { width, height, seed, boundary } = pending;
   const controls = copy(ensureStaged(old));
   remember();
   stopSecondReadingPlay();
   cancelCapture();
   const params = copy(old.params);
-  Object.assign(params, controls, { width, height, seed });
+  Object.assign(params, controls, { width, height, seed, boundary });
   params.turns = 0;
   params.events = [];
   const first = freshBranch(params, `branch-${++active.draft.serial}`, "New drawing");
+  first.penSmoothing = old.penSmoothing ?? lastStrokeSmoothing(old);
   active.draft.branches = [first];
   active.draft.active = first.id;
+  active.draft.pendingNewDrawing = { width, height, seed, boundary };
   $("process-kept-state").hidden = true;
   renderChrome();
   requestPreview();
@@ -497,8 +582,8 @@ function svgPoint(e) {
   const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
   const b = branch();
   return [
-    Number(clamp(p.x, 0, Number(b.params.width ?? 280)).toFixed(2)),
-    Number(clamp(p.y, 0, Number(b.params.height ?? 198)).toFixed(2)),
+    Number(clamp(p.x, b.params.boundary === "fit" ? -b.params.width*.5 : 0, Number(b.params.width ?? 280)*(b.params.boundary === "fit" ? 1.5 : 1)).toFixed(2)),
+    Number(clamp(p.y, b.params.boundary === "fit" ? -b.params.height*.5 : 0, Number(b.params.height ?? 198)*(b.params.boundary === "fit" ? 1.5 : 1)).toFixed(2)),
   ];
 }
 
@@ -530,7 +615,22 @@ function pointerMove(e) {
     return;
   }
   capture.points.push(p);
-  capture.line.setAttribute("points", capture.points.map((q) => q.join(",")).join(" "));
+  capture.line.setAttribute("points", smoothLivePoints(capture.points, branch()?.penSmoothing ?? .6).map((q) => q.join(",")).join(" "));
+}
+
+function smoothLivePoints(points, amount) {
+  if (points.length < 3 || amount <= 0) return points;
+  return points.map((point, index) => {
+    if (index === 0 || index === points.length - 1) return point;
+    const before = points[index - 1], after = points[index + 1];
+    const ax = point[0] - before[0], ay = point[1] - before[1];
+    const bx = after[0] - point[0], by = after[1] - point[1];
+    const lengths = Math.hypot(ax, ay) * Math.hypot(bx, by);
+    // A sharp turn is intentional. Smooth only shallow, hand-drawn corners.
+    if (!lengths || (ax * bx + ay * by) / lengths < .5) return point;
+    const midpoint = [(before[0] + after[0]) / 2, (before[1] + after[1]) / 2];
+    return [point[0] + (midpoint[0] - point[0]) * amount, point[1] + (midpoint[1] - point[1]) * amount];
+  });
 }
 
 function pointerUp(e) {
@@ -548,7 +648,7 @@ function pointerUp(e) {
   remember();
   if (hasFuture(b)) b = forkPrefix(b, "Human revision");
   commitStagedControls(b, turn);
-  replaceEvent(b, { kind: "stroke", turn, points, smoothing: .6 });
+  replaceEvent(b, { kind: "stroke", turn, points, smoothing: b.penSmoothing ?? lastStrokeSmoothing(b) });
   b.turn = turn;
   b.furthest = Math.max(b.furthest, turn);
   b.params.turns = turn;
@@ -600,14 +700,23 @@ function drawPreview(out) {
   const b = branch();
   const width = Number(out.width ?? b.params.width ?? 280);
   const height = Number(out.height ?? b.params.height ?? 198);
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  const frame = out.process?.work_frame || [0, 0, width, height];
+  const [scale, dx, dy] = out.process?.element_transform || [1, 0, 0];
+  svg.setAttribute("viewBox", frame.join(" "));
   svg.dataset.renderedRecipe = JSON.stringify(recipe(b));
   svg.style.aspectRatio = `${width} / ${height}`;
   svg.replaceChildren();
+  if (b.params.boundary === "fit") {
+    const sheet = document.createElementNS(NS, "rect");
+    sheet.setAttribute("class", "process-nominal-sheet");
+    sheet.setAttribute("x", "0"); sheet.setAttribute("y", "0");
+    sheet.setAttribute("width", String(width)); sheet.setAttribute("height", String(height));
+    svg.appendChild(sheet);
+  }
   for (const line of out.lines || []) {
     if (line.length < 2) continue;
     const el = document.createElementNS(NS, "polyline");
-    el.setAttribute("points", line.map(([x, y]) => `${x},${y}`).join(" "));
+    el.setAttribute("points", line.map(([x, y]) => `${(x-dx)/scale},${(y-dy)/scale}`).join(" "));
     el.setAttribute("class", "draw-line");
     svg.appendChild(el);
   }

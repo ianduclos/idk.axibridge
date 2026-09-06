@@ -128,7 +128,7 @@ def test_a_branch_preserves_its_exact_prefix_then_changes_its_continuation():
 def test_a_human_stroke_occupies_its_turn_and_is_directly_targetable():
     stroke = [[33.0, 44.0], [88.0, 52.0], [117.0, 96.0]]
     traj = _source().trajectory(SecondReadingParams(
-        turns=16, seed=6, recurrence=0, events=[
+        turns=16, seed=6, attention=0, events=[
             _event("stroke", 8, points=stroke),
         ]))
     assert tuple(map(tuple, stroke)) in [tuple(path.points) for path in traj.steps[8]]
@@ -136,7 +136,7 @@ def test_a_human_stroke_occupies_its_turn_and_is_directly_targetable():
 
     assert traj.metadata[8]["action"] == "human"
     human_id = traj.metadata[8]["passage_id"]
-    # Recurrence zero explicitly attends the latest passage, independent of
+    # Attention zero explicitly attends the latest passage, independent of
     # the gesture's geometry and of arbitrary branch seed coincidences.
     target_ids = traj.metadata[9].get("target_passage_ids", [])
     assert human_id in target_ids, "a later machine turn must be able to target a human passage"
@@ -538,9 +538,130 @@ def test_context_can_move_an_accent_without_changing_its_random_geometry():
 
 
 def test_encounter_context_is_declared_in_replay_metadata():
-    params = SecondReadingParams(seed=12,turns=32)
+    params = SecondReadingParams(seed=12,turns=32,reading="encounters",historical_stacks=True)
     traj = _source().trajectory(params)
     responses = [m for m in traj.metadata[:33] if m.get('response')]
     assert responses
     assert all(m['target_passage_ids'] for m in responses)
     assert {m['response'] for m in responses} <= {'yield at crossing','accent encounter'}
+
+
+@pytest.mark.parametrize('reading', ['first','shapes','relations','encounters'])
+def test_switching_reading_changes_only_future_and_supports_mixed_descriptors(reading):
+    p = SecondReadingParams(seed=23, turns=16, events=[
+        _event('controls',6,reading=reading),
+        _event('stroke',8,points=[[40,60],[90,90],[160,70]],smoothing=.6),
+        _event('controls',10,reading='encounters'),
+        _event('controls',13,reading='first')])
+    traj = _source().trajectory(p)
+    assert traj.state(5) == _source().trajectory(SecondReadingParams(seed=23)).state(5)
+    trajectory.clear_cache()
+    assert traj.steps == _source().trajectory(p).steps
+    assert all(traj.steps)
+
+
+def test_recovered_first_matches_all_thirty_saved_study_cells():
+    import json
+    import xml.etree.ElementTree as ET
+    from pathlib import Path as FilePath
+    root = FilePath(__file__).resolve().parents[1]/'shots/second-reading-0905'
+    for recipe_file in root.glob('seed-*.json'):
+        for i, recipe in enumerate(json.loads(recipe_file.read_text())):
+            p = SecondReadingParams(**recipe['params'], reading='first', historical_stacks=True)
+            doc = _source().generate(p)
+            saved = ET.parse(recipe_file.with_name(f'{recipe_file.stem}-{i}.svg')).getroot()
+            paths = [element.attrib['points'].split() for element in saved.iter()
+                     if element.tag.endswith('polyline')]
+            assert len(doc.layers[0].paths) == len(paths)
+            for actual,old in zip(doc.layers[0].paths,paths):
+                assert len(actual.points) == len(old)
+                for point,coord in zip(actual.points,old):
+                    assert point == pytest.approx(tuple(map(float,coord.split(','))),abs=5.1e-7)
+            assert all(all(actual.get(k)==v for k,v in old.items()) for actual,old in
+                       zip(_source().trajectory(p).metadata,recipe['decisions']))
+
+
+@pytest.mark.parametrize('boundary', ['clip','contain','fit'])
+def test_experiment_bounds_and_fitting_preserve_working_prefix_and_passage_ratios(boundary):
+    p = SecondReadingParams(seed=42,turns=32,reading='relations',boundary=boundary,scale=1,
+            events=[_event('stroke',7,points=[[0,0],[280,198]])])
+    run = _source().trajectory(p)
+    before = [list(path.points) for path in run.state(6)]
+    doc = _source().generate(p)
+    assert all(0 <= x <= p.width and 0 <= y <= p.height for path in doc.layers[0].paths for x,y in path.points)
+    assert [path.points for path in run.state(6)] == before
+    if boundary == 'fit':
+        scale, dx, dy = run.metadata[32]['element_transform']
+        assert 0 < scale <= 1
+        for raw,fitted in zip(run.state(32),doc.layers[0].paths):
+            assert fitted.length() == pytest.approx(raw.length()*scale)
+            for (x,y),(u,v) in zip(raw.points,fitted.points):
+                assert ((u-dx)/scale,(v-dy)/scale) == pytest.approx((x,y))
+        assert run.metadata[6]['work_frame'] == run.metadata[32]['work_frame']
+
+
+def test_fit_capture_can_overshoot_and_kept_layer_resolves_the_fitted_document():
+    from fastapi.testclient import TestClient
+    from axibridge.app import create_app
+    params=dict(seed=12,turns=8,reading='shapes',boundary='fit',events=[
+        _event('stroke',5,points=[[-100,-50],[40,20],[370,250]],smoothing=.6)])
+    expected=_source().generate(SecondReadingParams(**params)).layers[0].paths
+    with TestClient(create_app()) as client:
+        preview=client.post('/api/generators/preview',json=dict(module='second_reading',params=params))
+        assert preview.status_code == 200
+        assert preview.json()['process']['work_frame'] == [-140,-99,560,396]
+        layer=client.post('/api/layers/generate',json=dict(module='second_reading',params=params)).json()
+        resolved=client.get('/api/compose/resolved').json()['layers']
+        from axibridge.compose import Affine
+        transform = Affine(**layer["transform"])
+        actual=next(l for l in resolved if l['id']==layer['id'])['paths']
+        for a,b in zip(actual,expected):
+            for u,v in zip(a['points'],b.points):
+                assert u == pytest.approx(transform.apply(*v),abs=1e-6)
+
+
+@pytest.mark.parametrize('view',['portrait','landscape'])
+@pytest.mark.parametrize('boundary',['clip','contain','fit'])
+def test_whole_element_keep_and_view_roundtrip_stay_inside_physical_bed(view,boundary):
+    from axibridge.session import Session
+    from axibridge.compose import Project
+    session=Session()
+    session.project=Project(view=view)
+    p=dict(seed=12,turns=16,reading='relations',boundary=boundary,scale=1,
+           events=[_event('stroke',8,points=[[0,0],[280,198]])])
+    layer=session.add_generated_layer('second_reading',p)
+    before=layer.transform.model_copy()
+    def assert_bounds():
+        doc=session.resolved_document()
+        points=[point for _l,path in doc.iter_paths() for point in path.points]
+        assert points
+        assert all(-1e-8 <= x <= 300+1e-8 and -1e-8 <= y <= 218+1e-8 for x,y in points)
+    assert_bounds()
+    session.set_view('landscape' if view=='portrait' else 'portrait')
+    assert_bounds()
+    session.set_view(view)
+    assert_bounds()
+    assert layer.transform.model_dump() == pytest.approx(before.model_dump())
+
+
+@pytest.mark.parametrize('reading',['responsive','first','shapes','relations','encounters'])
+def test_ordinary_readings_do_not_make_reinforcement_stacks(reading):
+    run=_source().trajectory(SecondReadingParams(seed=12,reading=reading,turns=32))
+    assert all(m.get('action') != 'concentrate' for m in run.metadata)
+    for i,m in enumerate(run.metadata[:-1]):
+        if m.get('action') in ('echo','traverse'):
+            assert run.telemetry[i]['commitment_remaining'] == 0
+
+
+def test_boundary_modes_show_distinct_geometry_and_containment_returns_inward():
+    from axibridge.sources._second_reading_experiment import contain
+    raw=[Path(points=[(80,50),(140,50)])]
+    clip=contain(raw,100,100,'clip')
+    turn=contain(raw,100,100,'contain')
+    fit=contain(raw,100,100,'fit')
+    assert clip[-1].points[-1] == (100,50)
+    assert fit[-1].points[-1] == (140,50)
+    assert turn[-1].points[-1] == (60,50)
+    xs=[x for p in turn for x,y in p.points]
+    assert max(xs)>90 and max(xs)<100
+    assert raw[0].points == [(80,50),(140,50)]

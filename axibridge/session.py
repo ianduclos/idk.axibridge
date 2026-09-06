@@ -556,6 +556,18 @@ class Session:
         can't quietly drift apart the way this bug started as."""
         return Affine(a=0.0, b=-1.0, c=1.0, d=0.0, e=0.0, f=compose.BED_HEIGHT)
 
+    @staticmethod
+    def _fit_frame_placement(frame: tuple[float, float], view: str) -> Affine:
+        """One affine for an element's entire declared physical frame."""
+        width, height = frame
+        bw, bh = compose.BED_WIDTH, compose.BED_HEIGHT
+        if view == "portrait":
+            scale = min(1., bw / height, bh / width)
+            return Affine(a=0., b=-scale, c=scale, d=0.,
+                          e=(bw-scale*height)/2, f=(bh+scale*width)/2)
+        scale = min(1., bw / width, bh / height)
+        return Affine(a=scale, d=scale, e=(bw-scale*width)/2, f=(bh-scale*height)/2)
+
     def _placement_transform(
         self, generator_id: str, params: dict[str, Any], doc: PathDocument,
         paths: list[Path],
@@ -574,6 +586,9 @@ class Session:
         dominant axis to get wrong. Nothing downstream reads ``view``: the
         correction is baked into the stored transform, so resolve stays
         byte-identical across a view toggle (test_view_coherence)."""
+        frame = get_source(generator_id).placement_frame(params)
+        if frame is not None:
+            return self._fit_frame_placement(frame, self.project.view)
         base = self._centering_transform(generator_id, params, doc)
         if self.project.view != "portrait":
             return base
@@ -639,7 +654,16 @@ class Session:
             if old == "portrait":  # portrait -> landscape undoes the turn
                 step = _invert_affine(step)
             for layer in targets:
-                layer.transform = _mul_affine(step, layer.transform)
+                frame = get_source(layer.source.generator).placement_frame(layer.source.params)
+                if frame is not None:
+                    # Relative frame placements are invertible: toggling back
+                    # restores the exact scale instead of shrinking every time.
+                    before = self._fit_frame_placement(frame, old)
+                    after = self._fit_frame_placement(frame, view)
+                    delta = _mul_affine(after, _invert_affine(before))
+                else:
+                    delta = step
+                layer.transform = _mul_affine(delta, layer.transform)
 
     def add_generated_layer(self, generator_id: str, params: dict[str, Any]) -> CanvasLayer:
         src = get_source(generator_id)

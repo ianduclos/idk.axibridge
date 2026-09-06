@@ -293,7 +293,7 @@ def reconsider(commitment: Commitment, memory: list[Passage], rng: random.Random
 
 def make_action(commitment: Commitment, memory: list[Passage], reach: float,
                 width: float, height: float, rng: random.Random,
-                consider_context: bool = True) -> tuple[list[Path], str]:
+                consider_context: bool = True, boundary=None) -> tuple[list[Path], str]:
     from ._second_reading_encounters import encounters, yield_at
     from ._second_reading_responses import transfer, depart, surround, bridge, insist
     by_id = {p.id: p for p in memory}
@@ -328,7 +328,7 @@ def make_action(commitment: Commitment, memory: list[Passage], reach: float,
             paths = yield_at(paths[0], contact, gap=context_rng.uniform(2.2, 4.5)) + paths[1:]
             commitment.context_ids = (contact.other_id,)
             commitment.response = "yield at crossing"
-    clipped = clip_paths(paths, width, height)[:6]
+    clipped = (boundary(paths) if boundary else clip_paths(paths, width, height))[:6]
     per_path = MAX_MACHINE_POINTS // max(1, len(clipped))
     bounded = [Path(points=resample(p.points, per_path)) for p in clipped]
     return bounded, target.construction

@@ -423,6 +423,7 @@
         <span class="hint">Unkept readings last for this app session.</span>
       </div>
       <div class="process-controls">
+        <label title="Responsive and Relation readings use the experimental response controls.">Reading <select id="process-reading"><option value="responsive">Responsive</option><option value="first">First response policy</option><option value="shapes">Shape experiment</option><option value="relations">Relation experiment</option><option value="encounters">Encounters · previous</option></select></label>
         <label>persistence
           <input id="process-persistence" type="range" min="0" max="1" step="0.01">
           <output id="process-persistence-value">0.50</output>
@@ -435,6 +436,10 @@
           <input id="process-recurrence" type="range" min="0" max="1" step="0.01">
           <output id="process-recurrence-value">0.50</output>
         </label>
+        <label hidden>Attention<input id="process-attention" type="range" min="0" max="1" step="0.01"><output id="process-attention-value">0.50</output></label>
+        <label hidden>Departure<input id="process-departure" type="range" min="0" max="1" step="0.01"><output id="process-departure-value">0.50</output></label>
+        <label hidden>Scale<input id="process-scale" type="range" min="0" max="1" step="0.01"><output id="process-scale-value">0.50</output></label>
+        <label>Pen smoothing<input id="process-pen-smoothing" type="range" min="0" max="1" step="0.01" value="0.6" title="Applies to the next captured stroke. Existing strokes keep the smoothing recorded with them."><output id="process-pen-smoothing-value">0.60</output></label>
         <span id="process-next-turn-note" class="hint">controls at turn 0</span>
       </div>
       <div class="process-action-row">
@@ -447,12 +452,19 @@
       </div>
       <div class="process-reset-row">
         <span class="hint">new drawing</span>
+        <label>Boundary <select id="process-boundary"><option value="clip">Clip</option><option value="contain">Turn inside</option><option value="fit">Overshoot + fit element</option></select></label>
+        <span id="process-boundary-note" class="hint"></span>
         <label>w <input id="process-width" type="number" min="40" max="300" step="1"></label>
         <label>h <input id="process-height" type="number" min="40" max="218" step="1"></label>
         <label>seed <input id="process-seed" type="number" min="0" max="2147483647" step="1"></label>
+        <button id="process-randomize-seed" title="Choose a different seed for the next new drawing">Randomize</button>
         <button id="process-new-drawing"
                 title="apply seed and size, clear every event, and return to turn 0">New drawing</button>
       </div>
+      <details id="process-how-it-works">
+        <summary>How it works</summary>
+        <p>Controls queue for the next turn. Attention changes how widely a response looks across the drawing; Departure changes how far it moves away. Scale controls the length of new extensions and breadth of connections; copied motifs keep their original size relationship. Pen smoothing is saved with each new stroke. Boundary, size, and seed are selected for a new drawing; press New drawing to apply them.</p>
+      </details>
       <details id="process-details">
         <summary>Process details</summary>
         <dl class="kv process-summary">

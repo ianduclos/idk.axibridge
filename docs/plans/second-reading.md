@@ -181,3 +181,75 @@ it is not a new user control or alternate plotting path. Encounter geometry,
 selection and the response constructions remain separate modules. The detail
 study freezes the prefix/action/stream, unlike historical whole-engine studies.
 See `shots/second-reading-encounters-0905/README.md`.
+
+## Recovery experiment — 6 September 2026 (current)
+
+The corrections in `second-reading-next-session.md` supersede earlier optimistic
+study readings. `reading=first` is now the default, recovered from prior tool
+history and checked against all 30 original saved cells. `encounters` retains
+the preceding engine. `shapes` retains the first selection/commitment policy;
+`relations` additionally broadens attention and constructs an open interval
+between selected passages. No claim of aesthetic superiority.
+
+Controls events may now include `reading`, `attention`, `departure`, `scale` as
+well as the legacy fields. A reading/attention change releases commitment at
+that event; previous turns remain exact. Attention selects current versus wider
+material in Relations. Departure changes the degree of geometric transformation;
+Scale changes answer extent (extension/pocket size or concentration interval),
+not the old drawing. Reach/Persistence/Recurrence keep their original meanings
+and values; the custom bench shows legacy controls for First/Encounters and the
+experimental controls for Shape/Relation. Changing a reading in the bench is a
+next-turn event; setting its initial value in the Generate form selects its
+opening as well. The first opening remains in Shape/Relation comparisons.
+
+`boundary` is a recipe-wide new-drawing choice. Clip preserves the first baseline.
+Contain softly turns overshooting coordinates inward and can produce squeezed
+edge runs. Fit allows a fixed work frame `[-w/2,-h/2,2w,2h]`; captures are validated
+inside it. Memory remains in that coordinate frame, with bounded clipping only
+at its outer limit. `document()` fits all visible passages using one uniform
+shrink-only affine and a 4 mm inset. The bench inversely displays the authoritative
+preview lines, using `element_transform`/`work_frame` metadata; captures never
+follow an automatically moving view. Keep and Generate use the same document.
+The module declares its physical placement frame so the layer's stored affine
+also fits that whole frame after the main canvas's portrait orientation. View
+roundtrips invert that affine instead of repeatedly shrinking the drawing.
+
+A later control event cannot alter an earlier raw prefix. When later ink extends
+the element, the fitted document can rescale all of it together; this is deliberate,
+not a violation of capture history. Manual layer transforms/effects remain normal
+user operations and can subsequently move geometry outside the bed.
+
+Pre-recovery recipes did not pin an engine revision. Their stored layer geometry
+is still the saved drawing; regenerating an unversioned recipe now uses First.
+To reproduce the immediately preceding engine from its opening, explicitly set
+`reading=encounters`. Historical SVGs remain the independent record for other
+intermediate revisions. All newly authored bench recipes include reading.
+
+Evidence and scripts: `shots/second-reading-recovery{,-final}-0906/`,
+`tools/second_reading_recovery_study.py`, and
+`docs/reviews/second-reading-0906-{sol,lead}.md`.
+
+## Follow-up cleanup — 6 September 2026
+
+Ian requested visible user-pen smoothing, removal of thick parallel reinforcement,
+a seed randomizer, clearer/working boundaries, and a short parameter guide.
+Responsive is now the default (the relational policy). All ordinary readings
+replace concentrate's multi-pass reinforcement with a departure and make held
+transfers/bridges single-turn choices. The recovered first engine itself remains
+available for historical verification through hidden `historical_stacks=True`;
+archival study tools set that flag explicitly. This is not a visible option to
+reintroduce the rejected stacks into normal use.
+
+Smoothing was still replayed, but live strokes were raw and its setting was hidden.
+The bench now shows Pen smoothing, draws a light corner-aware live preview, saves
+its selected value with each stroke, and restores it from captured history on
+Resume. Raw points and prior events are preserved; the server remains authoritative.
+Randomize changes only the pending seed. Pending seed/size/boundary settings survive
+unrelated renders; New drawing applies them together. The boundary note distinguishes
+active from pending settings; a dashed nominal sheet makes fit-mode overshoot visible.
+Containment now reflects excursions inward with rounded turnarounds, rather than
+compressing them onto a boundary. Clip/contain/fit have independent geometry checks.
+
+Plain-language guide: `second-reading-quick-guide.md`. New screenshots/recipes:
+`shots/second-reading-cleanup-0906/`. The general primary/Sol/Terra protocol is
+recorded in root AGENTS.md, leaving CLAUDE.md authoritative for repo operations.

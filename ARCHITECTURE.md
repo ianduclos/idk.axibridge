@@ -495,3 +495,15 @@ surprise.
   occlusion masks union filled paths — holes read as solid to layers below.
 - `POST /api/server/restart` re-execs the process in place (same argv/env);
   the in-memory project does not survive it.
+
+### Bounded element placement (Second Reading, 2026-09-06)
+
+`SourceModule.placement_frame(params)` optionally declares a guaranteed source
+frame. `_placement_transform` fits that whole frame uniformly to the physical
+bed, including its portrait quarter-turn; `_fit_frame_placement` is shared by
+creation and relative view-toggle transforms. Unlike the ordinary nudge, it can
+handle a frame wider than the portrait bed. Default sources retain their existing
+placement. Second Reading opts in: its overshoot workspace stays private to
+replay; `document()` fits all visible ink together, and the stored layer affine
+then places that document. Resolve/estimate/plot still consume the same geometry.
+Manual transformations/effects remain unconstrained authoring operations.

@@ -4,31 +4,33 @@ updated: 2026-09-06
 entries: 13
 ---
 
-### Interactive drawing machine: Second Reading — opened 2026-09-05, owner: ian
+### Interactive drawing machine: Second Reading — updated 2026-09-06, owner: ian
 
-- done: interactive bench and experimental generator, deterministic human/control/
-  branch events, Keep/Resume, smoothing, comparison sheets and independent checks.
-  Project skill `drawing-review` captures the agreed Sol aesthetic-review role.
-- correction: Ian still prefers the FIRST version's responsiveness. Later passes
-  made little progress. Current code is the encounter experiment, not a restored
-  first baseline or an aesthetically accepted endpoint.
-- next: **start at `docs/plans/second-reading-next-session.md`**. Recover/preserve
-  the first baseline; improve proportions, allow occasional homeostat gestures,
-  explore element-friendly borders and Attention/Departure/Scale, then compare
-  added awareness with the simpler response. Those changes are not implemented.
-  Read the skill and calibrate Sol on iteration sheets/variants before leaning
-  on its judgements; the primary agent retains direction and acceptance.
-- recovery: first engine was never separately committed; original JSON/SVG studies
-  survive in `shots/second-reading-0905/`. Use prior task history if available;
-  label reconstruction honestly. Historical recipes aren't engine-version pinned.
-- verification: 1,239 tests passed; build/typecheck and three-case temporary-server
-  capture–Keep–Resume smoke passed. Skill validation and independent Sol trial
-  completed (with a provenance limitation documented in its review). No hardware commands. Save projects after Keep for
-  durable recipes. Retained alternatives alone last only the app session.
-- context: `docs/IDEAS-drawing-machine-session-2026-09-05.md`,
-  `docs/plans/second-reading.md`, `.agents/skills/drawing-review/SKILL.md`,
-  `docs/reviews/drawing-review-skill-trial.md`. Original bench/testing assistance
-  used Sol/Terra; primary agent completed integration and subsequent experiments.
+- done: First recovered from prior tool output; all 30 original geometry/decision
+  fixtures match with historical replay enabled. Responsive is now the default;
+  thick reinforcement stacks are removed from ordinary readings. Shape and
+  Relation experiments preserve baseline choices while varying geometry and
+  optional wider relationships. Attention/Departure/Scale are experimental.
+- boundaries: Clip, Turn inside, Overshoot + fit element. Boundary is a new-drawing
+  choice; capture frame stays fixed, raw events replay exactly, one whole-element
+  affine produces the kept document, and source frame placement fits the bed in
+  portrait and landscape. Layers can still be manually moved/scaled afterwards.
+- review: bounded Sol neutral populations + calibration variants + sequences;
+  lead kept the small original cusp and removed repeated sampling-dependent
+  hooks. Terra prepared an iteration sheet from actual recorded bench exchanges.
+- latest user fixes: visible smoothing with live preview, Randomize seed, persistent
+  pending new-drawing fields, explicit active boundary and nominal sheet outline.
+  Turn inside now reflects inward with a rounded turn. Agent protocol in AGENTS.md.
+- judgement: First remains available for response-policy comparison. Relations has some useful openings, not
+  demonstrated overall superiority. Containment can press runs against edges;
+  whole-fit keeps proportions but a broad excursion may diminish an older knot.
+- next: alternate at the bench and compare the offers, including ignored inputs.
+  No paper test yet. Start with `docs/reviews/second-reading-0906-lead.md` and the
+  final iteration/alternating sheets. No hardware or running user app touched.
+- verification: 1,262 passed, 1 skipped; build/typecheck and independent final Resume/placement browser check passed.
+- context: `docs/plans/second-reading-next-session.md` retains the agreed brief;
+  `docs/plans/second-reading.md` records current contracts. Old unversioned recipes
+  are historical evidence; explicit `reading` now selects the retained engine.
 
 ### Bench + paper: the homeostat (A2) — opened 2026-09-04, owner: ian
 

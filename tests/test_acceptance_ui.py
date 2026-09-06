@@ -2735,6 +2735,70 @@ def test_second_reading_new_drawing_applies_entered_settings_and_queued_controls
     assert not ui.errors
 
 
+def test_second_reading_pending_new_drawing_settings_survive_work_and_apply_together(ui):
+    open_second_reading_bench(ui)
+    before = second_reading_recipe(ui)
+    ui.fill("#process-width", "190")
+    ui.fill("#process-height", "170")
+    ui.fill("#process-seed", "314")
+    ui.select_option("#process-boundary", "fit")
+    ui.click("#process-randomize-seed")
+    pending_seed = int(ui.input_value("#process-seed"))
+    assert pending_seed != 314
+    assert second_reading_recipe(ui) == before, "pending settings do not alter the current recipe"
+    assert "Active: Clip" in ui.locator("#process-boundary-note").text_content()
+    assert "Selected for new drawing: Overshoot + fit element" in ui.locator("#process-boundary-note").text_content()
+
+    # A queued control causes a normal chrome render; it must not reset the
+    # pending new-drawing fields to the currently active recipe.
+    ui.eval_on_selector("#process-reach", "el => { el.value='.8'; el.dispatchEvent(new Event('change')); }")
+    ui.click("#process-continue")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    assert (ui.input_value("#process-width"), ui.input_value("#process-height"),
+            int(ui.input_value("#process-seed")), ui.input_value("#process-boundary")) == ("190", "170", pending_seed, "fit")
+    assert second_reading_recipe(ui)["boundary"] == "clip"
+
+    ui.click("#process-new-drawing")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    recipe = second_reading_recipe(ui)
+    assert (recipe["width"], recipe["height"], recipe["seed"], recipe["boundary"], recipe["turns"]) == (190, 170, pending_seed, "fit", 0)
+    assert "Active: Overshoot + fit element" in ui.locator("#process-boundary-note").text_content()
+    assert not ui.errors
+
+
+def test_second_reading_records_chosen_pen_smoothing_and_restores_it_on_resume(ui):
+    open_second_reading_bench(ui)
+    paper = ui.locator("#process-canvas").bounding_box()
+
+    def capture(dx, dy):
+        ui.click("#process-your-turn")
+        x, y = paper["x"] + paper["width"]*.35, paper["y"] + paper["height"]*.4
+        ui.mouse.move(x, y); ui.mouse.down()
+        ui.mouse.move(x + dx*.5, y + dy*.5)
+        ui.mouse.move(x + dx, y + dy)
+        ui.mouse.up()
+        ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+
+    capture(45, 20)
+    first = second_reading_recipe(ui)["events"][-1]
+    assert first["smoothing"] == .6
+    ui.eval_on_selector("#process-pen-smoothing", "el => { el.value='.9'; el.dispatchEvent(new Event('change')); }")
+    capture(54, 32)
+    recipe = second_reading_recipe(ui)
+    strokes = [event for event in recipe["events"] if event["kind"] == "stroke"]
+    assert strokes[-1]["smoothing"] == .9
+    assert strokes[0] == first, "choosing later smoothing never rewrites an older event"
+
+    ui.click("#process-keep")
+    ui.wait_for_selector("#process-kept-state:not([hidden])")
+    ui.click("#process-close")
+    select_layer(ui, 0)
+    ui.click("#process-resume")
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    assert float(ui.input_value("#process-pen-smoothing")) == .9
+    assert not ui.errors
+
+
 def test_second_reading_scrubbed_revision_preserves_original_future(ui):
     open_second_reading_bench(ui)
     original = second_reading_recipe(ui)
@@ -3010,3 +3074,54 @@ def test_merging_two_layers_leaves_one_row_and_the_same_drawing(ui):
         "() => document.querySelectorAll('#layer-list .layer-row').length === 1",
         timeout=10_000)
     assert ui.evaluate(ink) == before
+
+
+def test_second_reading_fit_keeps_capture_frame_stable_and_resumes_its_recipe(ui):
+    open_second_reading_bench(ui)
+    ui.select_option('#process-reading','shapes')
+    ui.select_option('#process-boundary','fit')
+    ui.fill('#process-seed','12')
+    ui.click('#process-new-drawing')
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    frame=ui.locator('#process-canvas').get_attribute('viewBox')
+    assert frame == '-140 -99 560 396'
+    nominal = ui.locator('#process-canvas .process-nominal-sheet')
+    assert nominal.count() == 1
+    assert nominal.get_attribute('stroke-dasharray') is None, "the dashed treatment belongs to CSS, never plotted geometry"
+    assert (nominal.get_attribute('x'), nominal.get_attribute('y'),
+            nominal.get_attribute('width'), nominal.get_attribute('height')) == ('0', '0', '280', '198')
+    for stroke in (((-.25,-.2),(.4,.4),(1.25,1.2)), ((.2,.8),(.5,.1),(.9,.3))):
+        ui.click('#process-your-turn')
+        positions=ui.eval_on_selector('#process-canvas', '''(svg, points) => {
+            const m=svg.getScreenCTM();
+            return points.map(([x,y]) => {const p=new DOMPoint(x*280,y*198).matrixTransform(m); return [p.x,p.y];});
+        }''', stroke)
+        ui.mouse.move(*positions[0]);ui.mouse.down()
+        for position in positions[1:]:ui.mouse.move(*position,steps=12)
+        ui.mouse.up()
+        ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+        assert ui.locator('#process-canvas').get_attribute('viewBox') == frame
+        ui.click('#process-continue')
+        ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    recipe=second_reading_recipe(ui)
+    strokes=[e for e in recipe['events'] if e['kind']=='stroke']
+    assert strokes[0]['points'][0] == pytest.approx([-70,-39.6],abs=.1)
+    assert strokes[0]['points'][-1] == pytest.approx([350,237.6],abs=.1)
+    ui.click('#process-keep')
+    ui.wait_for_function("() => !document.getElementById('process-kept-state').hidden")
+    layers=ui.request.get(ui.url+'api/project').json()['layers']
+    assert layers[-1]['source']['params']==recipe
+    resolved=ui.request.get(ui.url+'api/compose/resolved').json()['layers']
+    assert all(0 <= x <= 300 and 0 <= y <= 218 for layer in resolved
+               for path in layer['paths'] for x,y in path['points'])
+    ui.click('#process-close')
+    select_layer(ui,0)
+    ui.click('#process-resume')
+    ui.wait_for_function("() => document.getElementById('process-preview-state').textContent === 'rendered'")
+    assert second_reading_recipe(ui)==recipe
+    assert ui.locator('#process-canvas').get_attribute('viewBox') == frame
+    assert ui.locator('#process-boundary').input_value() == 'fit'
+    assert not ui.locator('#process-attention').is_visible()
+    assert not ui.locator('#process-persistence').is_visible()
+    assert ui.locator('#process-departure').is_visible()
+    assert not ui.errors

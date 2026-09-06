@@ -1,0 +1,152 @@
+[
+  {
+    "cell": "seed-01-0",
+    "max_coordinate_error": 4.997153624231032e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-01-1",
+    "max_coordinate_error": 4.999563074647995e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-01-2",
+    "max_coordinate_error": 4.999924669846223e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-01-3",
+    "max_coordinate_error": 4.997153624231032e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-01-4",
+    "max_coordinate_error": 4.997153624231032e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-04-0",
+    "max_coordinate_error": 4.990193644971441e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-04-1",
+    "max_coordinate_error": 4.990193644971441e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-04-2",
+    "max_coordinate_error": 4.997451981125778e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-04-3",
+    "max_coordinate_error": 4.990193644971441e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-04-4",
+    "max_coordinate_error": 4.990193644971441e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-12-0",
+    "max_coordinate_error": 4.994949165393336e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-12-1",
+    "max_coordinate_error": 4.999941438654787e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-12-2",
+    "max_coordinate_error": 4.994949165393336e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-12-3",
+    "max_coordinate_error": 4.999296550067811e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-12-4",
+    "max_coordinate_error": 4.999007074957262e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-23-0",
+    "max_coordinate_error": 4.951913865625102e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-23-1",
+    "max_coordinate_error": 4.951913865625102e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-23-2",
+    "max_coordinate_error": 4.995742415303539e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-23-3",
+    "max_coordinate_error": 4.951913865625102e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-23-4",
+    "max_coordinate_error": 4.953469527890775e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-42-0",
+    "max_coordinate_error": 4.998858287308394e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-42-1",
+    "max_coordinate_error": 4.998858287308394e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-42-2",
+    "max_coordinate_error": 4.998858287308394e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-42-3",
+    "max_coordinate_error": 4.998858287308394e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-42-4",
+    "max_coordinate_error": 4.998858287308394e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-91-0",
+    "max_coordinate_error": 4.966172184595052e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-91-1",
+    "max_coordinate_error": 4.969922287045847e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-91-2",
+    "max_coordinate_error": 4.998004214940011e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-91-3",
+    "max_coordinate_error": 4.999486264978259e-07,
+    "decisions_match": true
+  },
+  {
+    "cell": "seed-91-4",
+    "max_coordinate_error": 4.999085660983837e-07,
+    "decisions_match": true
+  }
+]

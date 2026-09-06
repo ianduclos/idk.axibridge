@@ -22,20 +22,22 @@ and subsequent experiments. These are mechanically verified, not an aesthetic
 completion. Ian's judgement: the first version was more responsive; later
 revisions made little progress. Do not treat the latest mechanism as the winner.
 
-**Agreed next experiment:** recover the first response baseline, improve shapes
-and unequal proportions, retain occasional homeostat-like gestures, then test
-more selective awareness of existing material. Explore Attention/Departure/Scale
-as distinct controls. The workflow is “create interesting elements to then send
-to the main canvas”: investigate containment or whole-element fitting instead
-of default hard clipping. Preserve stable human capture and physical plot bounds.
-Tapered multi-line finish is deferred to an effect; avoid using it as a substitute
-for responsive drawing. Interesting results are not expected all the time.
+**2026-09-06 implemented, ready for Ian to check:** first engine recovered from
+prior tool history and matched against all 30 original cells. Separate geometry
+and relation experiments, Attention/Departure/Scale, occasional wandering,
+whole-element fitting and rounded inward boundary turns are available. A bounded
+Sol review included neutral populations, altered variants and sequence calibration.
+The lead removed sampling-dependent echo hooks; Ian then requested removal of
+thick parallel reinforcement. Responsive is now the normal starting policy,
+without those stacks. Visible/live pen smoothing and seed randomization are added.
 
-Project skill `.agents/skills/drawing-review/SKILL.md` defines a bounded Sol
-second eye for iteration sheets and exchanges. Lead keeps direction/integration;
-reviewer calibration and a midway review are part of the next experiment, not
-an automatic score or acceptance gate. Detailed preparation and baseline recovery
-limits: `docs/plans/second-reading-next-session.md`.
+**Still open:** Ian’s own alternating-use judgement, especially whether ignoring
+new ink offers a consequential next move, and whether boundaries/smoothing feel
+right in the hand. Scale affects extensions/connections but remains quiet on
+copied motifs. Tapered multi-line finish stays deferred to a separate effect.
+No paper test yet; no general aesthetic success claim. Current controls:
+`docs/plans/second-reading-quick-guide.md`; retained evidence and limits:
+`docs/reviews/second-reading-0906-lead.md` and `shots/second-reading-cleanup-0906/`.
 
 ## Near term — make what exists comfortable
 

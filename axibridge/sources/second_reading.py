@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from ..model import Layer, Path, PathDocument
 from ..process import ProcessModule, Step
 from ..registry import register_source
-from . import _second_reading as engine
+from . import _second_reading as encounter_engine
 
 MAX_SEED = 2_147_483_647
 
@@ -33,14 +33,18 @@ class ControlsEvent(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     kind: Literal["controls"]
     turn: int = Field(ge=1, le=64)
+    reading: Literal["responsive", "first", "shapes", "relations", "encounters"] | None = None
+    attention: float | None = Field(default=None, ge=0, le=1)
+    departure: float | None = Field(default=None, ge=0, le=1)
+    scale: float | None = Field(default=None, ge=0, le=1)
     persistence: float | None = Field(default=None, ge=0, le=1)
     reach: float | None = Field(default=None, ge=0, le=1)
     recurrence: float | None = Field(default=None, ge=0, le=1)
 
     @model_validator(mode="after")
     def has_change(self):
-        if self.persistence is None and self.reach is None and self.recurrence is None:
-            raise ValueError("A controls event must specify persistence, reach or recurrence")
+        if all(getattr(self, k) is None for k in ("persistence", "reach", "recurrence", "attention", "departure", "scale", "reading")):
+            raise ValueError("A controls event must specify a reading or a control")
         return self
 
 
@@ -56,6 +60,12 @@ Event = Annotated[StrokeEvent | ControlsEvent | BranchEvent, Field(discriminator
 
 class SecondReadingParams(BaseModel):
     model_config = ConfigDict(allow_inf_nan=False)
+    reading: Literal["responsive", "first", "shapes", "relations", "encounters"] = Field(default="responsive", title="Reading")
+    historical_stacks: bool = Field(default=False, json_schema_extra={"hidden": True})
+    boundary: Literal["clip", "contain", "fit"] = Field(default="clip", title="Boundary", description="Clip; turn inside the edge; or overshoot and fit the whole element")
+    attention: float = Field(default=.5, ge=0, le=1, title="Attention", description="Relations: current passage to wider drawing")
+    departure: float = Field(default=.5, ge=0, le=1, title="Departure", description="Shape experiment: close relation to substantial transformation")
+    scale: float = Field(default=.5, ge=0, le=1, title="Scale", description="Shape experiment: local to broad answer")
     turns: int = Field(default=12, ge=0, le=64, title="Turns")
     width: float = Field(default=280, ge=40, le=300, title="Width (mm)")
     height: float = Field(default=198, ge=40, le=218, title="Height (mm)")
@@ -91,7 +101,8 @@ class SecondReadingParams(BaseModel):
                 if count > 20_000:
                     raise ValueError("A recipe can contain at most 20,000 captured points; keep this drawing and start another")
                 if any(not (math.isfinite(x) and math.isfinite(y) and
-                            0 <= x <= self.width and 0 <= y <= self.height)
+                            (-self.width*.5 if self.boundary == "fit" else 0) <= x <= self.width*(1.5 if self.boundary == "fit" else 1) and
+                            (-self.height*.5 if self.boundary == "fit" else 0) <= y <= self.height*(1.5 if self.boundary == "fit" else 1))
                        for x, y in event.points):
                     raise ValueError("Captured points must be finite and inside the drawing's width and height")
                 if not any(a != b for a, b in zip(event.points, event.points[1:])):
@@ -111,17 +122,30 @@ class SecondReading(ProcessModule):
 
     def run(self, params: SecondReadingParams):
         p = params
+        from . import _second_reading_experiment as experiment
+        from . import _second_reading_first
+        engine = _second_reading_first if p.reading != "encounters" else encounter_engine
         memory = engine.opening(p.width, p.height, engine.turn_rng(p.seed, 0, 0))
-        controls = {key: getattr(p, key) for key in ("persistence", "reach", "recurrence")}
+        # Shared descriptors let a recorded reading switch use older passages
+        # without changing their geometry or ancestry.
+        memory = [encounter_engine.describe(item.id,item.paths,item.construction,item.action,
+                  item.targets,item.ancestry) for item in memory]
+        controls = {key: getattr(p, key) for key in ("persistence", "reach", "recurrence", "attention", "departure", "scale", "reading")}
         events = {}
         for event in p.events:
             events.setdefault(event.turn, []).append(event)
         commitment = None
         branch = 0
+        all_paths = [path for item in memory for path in item.paths]
+        def view_metadata():
+            if p.boundary != "fit":
+                return {}
+            return {"element_transform": experiment.fit_transform(all_paths,p.width,p.height),
+                    "work_frame": experiment.frame(p.width,p.height,p.boundary)}
         total_length = sum(x.length for x in memory)
         yield Step(paths=[path for item in memory for path in item.paths],
                    telemetry={"passages": 2.0, "ink_mm": total_length},
-                   metadata={"action": "opening", "target_passage_ids": []})
+                   metadata={"action": "opening", "target_passage_ids": [], **view_metadata()})
         for turn in range(1, 65):
             human = None
             for event in events.get(turn, []):
@@ -134,49 +158,81 @@ class SecondReading(ProcessModule):
                 elif isinstance(event, ControlsEvent):
                     changes = {k: v for k, v in event.model_dump().items()
                                if k in controls and v is not None}
-                    if any(controls[k] != v for k, v in changes.items()
+                    if any(controls[k] != v for k,v in changes.items() if k in ("reading", "attention")):
+                        commitment = None
+                    if controls["reading"] == "encounters" and any(controls[k] != v for k, v in changes.items()
                            if k in ("persistence", "recurrence")):
                         commitment = None
                     controls.update(changes)
                 else:
                     human = event
+            reading = controls["reading"]
+            engine = encounter_engine if reading == "encounters" else _second_reading_first
             rng = engine.turn_rng(p.seed, turn, branch)
+            shape_rng = engine.turn_rng(p.seed, turn, branch+2_147_483_648)
+            def choose():
+                if reading in ("responsive", "shapes", "relations"):
+                    c = experiment.choose(memory,controls,rng,reading in ("responsive", "relations"))
+                else:
+                    c = engine.choose(memory,controls["recurrence"],controls["persistence"],rng)
+                if not p.historical_stacks:
+                    # Reinforcement used to mean four/six parallel passes,
+                    # repeated for several turns. Ordinary use now offers a
+                    # departure instead; transfers/bridges happen once.
+                    if c.action == "concentrate":
+                        c.action = "extend"
+                        c.target_ids = c.target_ids[:1]
+                    if c.action in ("echo", "traverse"):
+                        c.remaining = 1
+                return c
+            def make():
+                if reading in ("responsive", "shapes", "relations"):
+                    return experiment.make_action(commitment,memory,controls,p.width,p.height,shape_rng,p.boundary,reading in ("responsive", "relations"))
+                return engine.make_action(commitment,memory,controls["reach"],p.width,p.height,rng,
+                    boundary=(lambda paths: experiment.contain(paths,p.width,p.height,p.boundary)) if p.boundary != "clip" else None)
             targets = ()
             if human is not None:
                 from ._second_reading_gestures import smooth_capture
                 paths = [Path(points=smooth_capture(human.points, human.smoothing))]
-                action, construction = "human", "organic"
+                action, construction = "human", ("organic" if reading == "encounters" else "angular")
                 commitment = None
             else:
                 if commitment is None or commitment.remaining <= 0:
-                    commitment = engine.choose(memory, controls["recurrence"], controls["persistence"], rng)
-                elif commitment.iteration:
+                    commitment = choose()
+                elif reading == "encounters" and commitment.iteration:
                     engine.reconsider(commitment, memory, rng)
+                    if not p.historical_stacks:
+                        if commitment.action == "concentrate":
+                            commitment.action = "extend"
+                            commitment.target_ids = commitment.target_ids[:1]
+                        if commitment.action in ("echo", "traverse"):
+                            commitment.remaining = 1
                 targets = commitment.target_ids
                 action = commitment.action
-                paths, construction = engine.make_action(commitment, memory, controls["reach"], p.width, p.height, rng)
+                paths, construction = make()
                 # A fully clipped proposal is not a passage. Search a bounded
                 # three alternatives, then make an inward echo that is known
                 # to fit. This avoids both blank turns and boundary bouncing.
                 for _ in range(3):
                     if paths:
                         break
-                    commitment = engine.choose(memory, controls["recurrence"], controls["persistence"], rng)
+                    commitment = choose()
                     targets, action = commitment.target_ids, commitment.action
-                    paths, construction = engine.make_action(commitment, memory, controls["reach"], p.width, p.height, rng)
+                    paths, construction = make()
                 if not paths:
                     target = memory[-1]
                     paths = engine.echo(target, (0.0, 0.0), .9)
                     construction, action, targets = target.construction, "echo", (target.id,)
                     commitment = engine.Commitment(action, targets, 1, 1)
-                targets = tuple(dict.fromkeys((*targets, *commitment.context_ids)))
+                targets = tuple(dict.fromkeys((*targets, *getattr(commitment, "context_ids", ()))))
                 commitment.remaining -= 1
                 commitment.iteration += 1
             if paths:
                 ancestry = tuple(dict.fromkeys(a for item in memory if item.id in targets
                                                 for a in (*item.ancestry, item.id)))
-                passage = engine.describe(turn+1, paths, construction, action, targets, ancestry)
+                passage = encounter_engine.describe(turn+1, paths, construction, action, targets, ancestry)
                 memory.append(passage)
+                all_paths.extend(paths)
                 total_length += passage.length
                 if human is None and commitment.action == "extend":
                     commitment.target_ids = (passage.id,)
@@ -188,10 +244,16 @@ class SecondReading(ProcessModule):
                        telemetry={"passages": float(len(memory)), "ink_mm": total_length,
                                   "commitment_remaining": float(commitment.remaining if commitment else 0)},
                        metadata={"action": action, "target_passage_ids": list(targets),
-                                 "response": commitment.response if commitment else None,
-                                 "passage_id": turn+1 if paths else None})
+                                 "response": getattr(commitment, "response", None),
+                                 "passage_id": turn+1 if paths else None, **view_metadata()})
+
+    def placement_frame(self, params: dict) -> tuple[float, float] | None:
+        return float(params.get("width", 280)), float(params.get("height", 198))
 
     def document(self, params: SecondReadingParams, paths: list[Path]) -> PathDocument:
+        if params.boundary == "fit":
+            from ._second_reading_experiment import fit_transform, transformed
+            paths = transformed(paths, fit_transform(paths,params.width,params.height))
         return PathDocument(layers=[Layer(id=1, name="Second Reading", color="#26241f", paths=list(paths))],
                             width=params.width, height=params.height,
                             source=f"second_reading @ {params.turns}")

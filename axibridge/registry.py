@@ -102,6 +102,15 @@ class SourceModule(ABC):
     description: str = ""
     Params: type[BaseModel] = ModuleParams
 
+    def placement_frame(self, params: dict) -> tuple[float, float] | None:
+        """Optional physical frame fitted uniformly when placed on the bed.
+
+        Opt in only when the source guarantees its document lies inside this
+        frame. The stored layer affine owns orientation and scale; generation
+        and capture coordinates remain independent of the canvas view.
+        """
+        return None
+
     #: How this generator's output relates to the sheet's orientation.
     #: **Every source must state this** — `tests/test_orientation.py` fails on
     #: a module that leaves it ``None``, which is the regression guard the
