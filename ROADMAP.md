@@ -21,7 +21,13 @@ surface and architectural optimizations while preserving its experimental
 philosophy. The [illustrated report](docs/reviews/ui-review-2026-09-07/index.html)
 and [editable review](docs/reviews/ui-review-2026-09-07/REVIEW.md) are complete.
 
-This is a proposal set, **not an implementation decision**. M1-M6 sequence
+**7 September: Ian approved the first cosmetics pass.** Flexoki, mono hierarchy,
+shared controls/icons, pending state styling and Second Reading sheet fit are
+implemented; [captures and limits](docs/reviews/ui-review-2026-09-07/cosmetics/README.md)
+are ready for him to check. Deeper workflow/architecture work stays deferred
+until that visual judgement and a further scope choice.
+
+The remaining review is a proposal set. M1-M6 sequence
 viewing/interaction confidence, preservation, everyday composition, sustained
 development, output/performance and bounded spatial experiments. The report
 reproduces sheet clipping, volatile working alternatives, modal focus/error

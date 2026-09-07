@@ -1116,7 +1116,7 @@ export function renderLayerList() {
       occ.title = `occluder into group(s) ${layer.occlude_groups.join(", ")}: masks only their receivers`;
     }
 
-    const dup = btn("⧉", "duplicate layer (or ⌥-drag)", () => duplicate(layer.id));
+    const dup = iconButton(COPY, "duplicate layer (or ⌥-drag)", () => duplicate(layer.id));
     // two-click delete — native confirm() dialogs are blockable/suppressible
     // by the browser, which reads as "the button does nothing"
     const deleteTitle = isAnimateKeyframe
@@ -1126,14 +1126,16 @@ export function renderLayerList() {
         : isTween
           ? "delete interpolation layer (click twice)"
         : "delete layer (click twice)";
-    const del = btn("✕", deleteTitle, async () => {
+    const del = iconButton(TRASH, deleteTitle, async () => {
       if (!del.dataset.armed) {
         del.dataset.armed = "1";
         del.textContent = isAnimateTween ? "restore?" : "sure?";
+        del.setAttribute("aria-label", `${deleteTitle}; click again to confirm`);
         del.style.color = "var(--rust)";
         setTimeout(() => {
           delete del.dataset.armed;
-          del.textContent = "✕";
+          del.replaceChildren(icon(TRASH));
+          del.setAttribute("aria-label", deleteTitle);
           del.style.color = "";
         }, 2500);
         return;
@@ -1208,6 +1210,20 @@ const EYE_OFF = [
   'M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143',
   'm2 2 20 20',
 ];
+// Supplementary project-authored action icons share the same stroke system.
+const COPY = [
+  'M9 9h12v12H9Z',
+  'M5 15H3V3h12v2',
+];
+const TRASH = [
+  'M3 6h18',
+  'M8 6V4h8v2',
+  'M19 6l-1 15H6L5 6',
+  'M10 11v6',
+  'M14 11v6',
+];
+const CHEVRON_UP = ['m18 15-6-6-6 6'];
+const CHEVRON_DOWN = ['m6 9 6 6 6-6'];
 
 function icon(paths) {
   const NS = "http://www.w3.org/2000/svg";
@@ -1234,6 +1250,13 @@ function btn(txt, title, fn) {
   b.textContent = txt;
   b.title = title;
   b.onclick = (e) => { e.stopPropagation(); fn(); };
+  return b;
+}
+
+function iconButton(paths, title, fn) {
+  const b = btn("", title, fn);
+  b.setAttribute("aria-label", title);
+  b.append(icon(paths));
   return b;
 }
 
@@ -1610,19 +1633,18 @@ function renderKeyframeList(container, layer, keys, nameOf) {
     select.oncontextmenu = (e) => openKeyframeContextMenu(e, id);
 
     const canRemove = keys.length > 2;
-    const remove = document.createElement("button");
-    remove.textContent = "✕";
-    remove.disabled = !canRemove;
-    remove.title = canRemove
-      ? `remove keyframe ${k + 1} (${nameOf(id)})`
-      : "an interpolation layer needs at least two keyframes — delete the layer itself to un-animate";
-    remove.onclick = async () => {
+    const remove = iconButton(TRASH, `remove keyframe ${k + 1} (${nameOf(id)})`, async () => {
       try {
         await api.del(`/api/layers/${layer.id}/chain/keyframe/${id}`);
         await actions.refreshProject();
         await actions.refreshResolved();
       } catch (e) { actions.oops(e); }
-    };
+    });
+    remove.disabled = !canRemove;
+    remove.title = canRemove
+      ? `remove keyframe ${k + 1} (${nameOf(id)})`
+      : "an interpolation layer needs at least two keyframes — delete the layer itself to un-animate";
+    remove.setAttribute("aria-label", remove.title);
 
     row.append(select, remove);
     attachKeyframeDrag(row, id, layer.id);
@@ -2001,9 +2023,9 @@ export function renderLayerDetail() {
       open ? expandedSteps.delete(key) : expandedSteps.add(key);
       renderLayerDetail();
     };
-    const up = btn("↑", "earlier", () => swapEffects(layer, i, i - 1));
-    const dn = btn("↓", "later", () => swapEffects(layer, i, i + 1));
-    const rm = btn("✕", "remove", () => {
+    const up = iconButton(CHEVRON_UP, "move effect earlier", () => swapEffects(layer, i, i - 1));
+    const dn = iconButton(CHEVRON_DOWN, "move effect later", () => swapEffects(layer, i, i + 1));
+    const rm = iconButton(TRASH, "remove effect", () => {
       const effects = layer.effects.filter((_, j) => j !== i);
       actions.patchLayer(layer.id, { effects });
     });

@@ -3,15 +3,30 @@ project: idk.axibridge
 state: active
 updated: 2026-09-07
 machine: mac+pi
-summary: Holistic UI review is ready for Ian, with reproduced trust issues, design sketches and a phased proposal; application behaviour is unchanged.
+summary: First approved UI cosmetics pass is ready for Ian to check; Flexoki, mono hierarchy, shared controls and Second Reading sheet fit are implemented.
 next:
-  - "Read docs/reviews/ui-review-2026-09-07/index.html; choose the first implementation scope from M1-M6"
-  - "Review F01-F05 first: sheet fit, preservation, undo, local errors and modal focus"
+  - "Try the cosmetics pass in the app; visual evidence is in docs/reviews/ui-review-2026-09-07/cosmetics/README.md"
+  - "Choose any next functional scope from the review: preservation, undo, local errors and modal focus remain open"
   - "Second Reading still needs Ian's alternating-use and paper judgement; see its existing handoff"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-09-07: approved cosmetics pass, ready for Ian to check.**
+
+Flexoki surfaces and contrast, clearer mono labels, consistent controls and SVG
+action icons, stronger focus, and visible pending slider states. Second Reading
+now fits the complete working frame inside its stage, including when help grows;
+small windows scroll once the stage reaches its minimum. No generator policy,
+workflow architecture, hardware or saved-project changes.
+
+[Implementation and captures](docs/reviews/ui-review-2026-09-07/cosmetics/README.md).
+The full hardware-free suite passed **1,267 tests**; build/typecheck and isolated
+built/source browser checks passed. All **96 UI tests** passed again after the
+final label/hover polish.
+Native macOS and Pi appearance/input feel remain for Ian to judge. No push or
+running-app restart.
 
 **Session 2026-09-07: holistic UI review, documentation only.**
 

@@ -704,7 +704,8 @@ function drawPreview(out) {
   const [scale, dx, dy] = out.process?.element_transform || [1, 0, 0];
   svg.setAttribute("viewBox", frame.join(" "));
   svg.dataset.renderedRecipe = JSON.stringify(recipe(b));
-  svg.style.aspectRatio = `${width} / ${height}`;
+  svg.style.aspectRatio = `${frame[2]} / ${frame[3]}`;
+  svg.style.setProperty("--process-aspect", String(frame[2] / frame[3]));
   svg.replaceChildren();
   if (b.params.boundary === "fit") {
     const sheet = document.createElementNS(NS, "rect");

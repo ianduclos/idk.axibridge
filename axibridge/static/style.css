@@ -1,3 +1,5 @@
+@import url("./css/flexoki.css");
+
 /* axibridge v2 — "bench & bed".
 
    Two materials, not one grey. The BED is the sheet: warm paper under a lamp,
@@ -36,49 +38,34 @@
 }
 
 :root {
-  /* bench — the machined housing */
-  --bench: #1c1b19;        /* the ground */
-  --bench-deep: #131211;   /* recesses: canvas well, tab strip, inputs */
-  --bench-rise: #262420;   /* raised: buttons, rows, cards */
-  --bench-edge: #38352f;   /* hairlines and engraved rules */
+  /* Flexoki dark roles (stephango.com/flexoki): bg / bg-2 / ui / ui-2.
+     Essential secondary labels use 400, rather than the faint 500 role,
+     so they remain readable on raised and selected surfaces. */
+  --bench: var(--flexoki-950);
+  --bench-deep: var(--flexoki-black);
+  --bench-rise: var(--flexoki-900);
+  --bench-edge: var(--flexoki-850);
+  --bench-tint: var(--flexoki-900);
+  --sheet: var(--flexoki-paper);
+  --sheet-ink: var(--flexoki-950);
+  --ink: var(--flexoki-200);
+  --ink-hi: var(--flexoki-50);
+  --ink-soft: var(--flexoki-400);
 
-  /* bed — the output */
-  --sheet: #faf7ef;        /* paper. do not touch: it is the colour of the ink's ground */
-  --sheet-ink: #26241f;    /* ink drawn ON the sheet */
-
-  /* Ink. Body ink is deliberately NOT the brightest value available: when
-     every label sat at #ece7da there was no headroom left to mark the thing
-     you are acting on. --ink-hi is that headroom and is spent in two places
-     only — the focused element, and the filled primary button, where it is
-     also required: #d8d2c4 on --live-fill measures 4.42:1, under AA, while
-     #ece7da holds the 5.40:1 that --live-fill was chosen for. */
-  --ink: #d8d2c4;
-  --ink-hi: #ece7da;
-  --ink-soft: #8e877a;
-
-  /* reserved — meaning only, never decoration */
-  --live: #7396ac;         /* selection / you-are-here / the primary path */
-  --live-soft: #9eb2bf;
-  --live-fill: #35617c;    /* filled primary control — deliberately DARKER than
-                              the sheet (6.2:1) so a button never outshines the
-                              paper; 5.4:1 against --ink for its label */
-  --live-fill-hi: #3f6f8c;
-  --live-deep: #24455a;    /* the shaded edge under a filled control */
-  --fader: #456d84;        /* a fader's travelled groove. Tinted, not lit: the
-                              earlier all-graphite groove was too dead, but
-                              full --live on three sliders at once said "you
-                              are here" three times. This sits between
-                              --live-deep and --live-fill — clearly colour,
-                              clearly below selection. */
-  --fader-hot: #5c8ba6;    /* the groove of the fader under the hand */
-  --bench-tint: #201e1b;   /* a foldable section nested INSIDE a panel — one
-                              step up from --bench, well under --bench-rise.
-                              A tint, not a card: no border, no radius, no
-                              shadow, so it groups without competing with the
-                              panel that contains it. */
-  --ochre: #c79c4a;        /* in motion, guides, warnings */
-  --rust: #c0644c;         /* danger, origin, subtract */
-  --moss: #8aa06e;         /* connected, ok */
+  /* 400 accents mark state. Lighter variants carry small text; the darker
+     primary fill preserves contrast with its label and defers to the paper. */
+  --live: var(--flexoki-blue-400);
+  --live-soft: var(--flexoki-blue-200);
+  --live-fill: var(--flexoki-blue-600);
+  --live-fill-hi: var(--flexoki-blue-700);
+  --live-deep: var(--flexoki-blue-850);
+  --fader: var(--flexoki-blue-850);
+  --fader-hot: var(--flexoki-blue-700);
+  --ochre: var(--flexoki-yellow-400);
+  --rust: var(--flexoki-red-300);
+  --moss: var(--flexoki-green-400);
+  --control-h: 30px;
+  --compact-h: 24px;
 
   /* legacy aliases — older rules and a few JS-set styles still read these */
   --paper: var(--bench);
@@ -134,9 +121,9 @@
 .form-group > summary,
 details:not(.form-group) > summary,
 button.primary.big {
-  font-size: var(--engraved-size, 10px);
+  font-size: var(--engraved-size, 11px);
   font-weight: var(--engraved-weight, 700);
-  letter-spacing: var(--engraved-track, 1.6px);
+  letter-spacing: var(--engraved-track, 1px);
   text-transform: var(--engraved-case, uppercase);
 }
 .engraved { color: var(--ink); }
@@ -178,7 +165,7 @@ body {
 /* the app is driven by keyboard as much as pointer (⌘Z, tool letters, arrow
    jogs) — every focusable thing must show where focus is. */
 :focus-visible {
-  outline: 1px solid var(--live); outline-offset: 1px;
+  outline: 2px solid var(--live); outline-offset: 2px;
   color: var(--ink-hi);
 }
 
@@ -306,7 +293,7 @@ main {
 }
 #layers-dock-title {
   display: flex; align-items: center; gap: 9px;
-  --engraved-size: 11px; --engraved-track: 2px;
+  --engraved-size: 12px; --engraved-track: 1.2px;
   color: var(--ink); margin: 12px 0 8px;
   cursor: pointer; user-select: none; flex: none;
 }
@@ -567,7 +554,7 @@ main {
   margin-bottom: 26px;
 }
 .panel > h2 {
-  --engraved-size: 11px; --engraved-track: 2px;
+  --engraved-size: 12px; --engraved-track: 1.2px;
   display: flex; align-items: center; gap: 9px;
   color: var(--ink); margin: 0 0 12px;
   cursor: pointer; user-select: none;
@@ -609,8 +596,8 @@ details:not(.form-group) > summary .hint {
    sub-heading from its rows without a second silkscreen. Still mono — the
    machine keeps one voice; only the shouting goes. */
 .panel h3 {
-  font-size: 11.5px; font-weight: 700;
-  margin: 14px 0 6px; color: var(--ink-soft);
+  font-size: 12px; font-weight: 700;
+  margin: 16px 0 8px; color: var(--ink);
 }
 
 .tag {
@@ -621,7 +608,7 @@ details:not(.form-group) > summary .hint {
 /* display:flex beats the UA's [hidden]{display:none} — restore it (the
    lineart "Create stack" row was showing for every generator) */
 .row[hidden] { display: none; }
-.row > label { color: var(--ink-soft); font-size: 11.5px; }
+.row > label { color: var(--ink); font-size: 12px; }
 .hint { color: var(--ink-soft); font-size: 11.5px; margin-top: 4px; overflow-wrap: anywhere; }
 .hint.warn { color: var(--ochre); }
 .asset-tool { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--bench-edge); }
@@ -631,11 +618,12 @@ details:not(.form-group) > summary .hint {
 button {
   background: var(--bench-rise); color: var(--ink); border: 1px solid var(--bench-edge);
   border-radius: var(--r); padding: 4px 11px; cursor: pointer;
-  font-family: inherit; font-size: 12.5px;
+  font-family: inherit; font-size: 12px; line-height: 1.4;
+  min-height: var(--control-h);
 }
 button:hover { border-color: var(--ink-soft); background: var(--bench-edge); }
 button:active { box-shadow: var(--recess); }
-button:disabled { opacity: .3; cursor: default; border-color: var(--bench-edge); background: var(--bench-rise); box-shadow: none; }
+button:disabled { opacity: .45; cursor: default; border-color: var(--bench-edge); background: var(--bench-rise); box-shadow: none; }
 /* A disabled <select>/<input> read almost identically to a live one, which
    matters the moment a control is switched off to MEAN something — the plot
    target picker greys out on a sheet/tray view because the passes carry their
@@ -670,8 +658,10 @@ input, select, textarea {
   background: var(--bench-deep); color: var(--ink); border: 1px solid var(--bench-edge);
   border-radius: var(--r-sm); padding: 3px 7px; font-family: inherit; font-size: 12.5px;
   max-width: 100%; box-shadow: var(--recess);
+  line-height: 1.4;
 }
 input[type="number"] { font-variant-numeric: tabular-nums; }
+input:not([type="range"]):not([type="checkbox"]):not([type="color"]), select { min-height: var(--control-h); }
 /* keep the spinner arrows permanently visible — on a dark field the
    show-on-hover default is effectively a hidden control */
 input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
@@ -684,33 +674,22 @@ input[type="color"] { padding: 1px; width: 36px; height: 24px; }
    machined bar for the thumb. --fill is painted by main.js (paintRange) so the
    filled portion tracks the value; it falls back to 0% before the first paint.
    Shift-drag and shift-arrow fine-tune are wired there too. */
-/* Faders, not hairlines. The groove was 4px under a 7px thumb — mass wildly
-   out of proportion to a control that sets millimetres on an open-loop
-   machine, and the thinnest thing on screen was one of the most consequential.
-   12px groove, 14x24 machined thumb.
-
-   The fill keeps its colour, at a lower level. Making it graphite to stop
-   three sliders all shouting --live overcorrected — it killed the one warm
-   signal on a panel of grey rows. The fix is level, not hue: --fader sits
-   between --live-deep and --live-fill, so a 12px groove carries about the
-   same amount of colour the old 4px --live hairline did, and hover lifts it
-   to --fader-hot so only the fader under your hand is fully lit. The number
-   field stays: on an open-loop machine the typed millimetre is the contract,
-   and a 400px groove over 0-300mm is 0.75mm per pixel. */
+/* A quiet eight-pixel groove retains a generous 26px interaction area.
+   The neutral cap carries position; only hover and pending work add emphasis. */
 input[type="range"] {
   -webkit-appearance: none; appearance: none;
   padding: 0; flex: 1; height: 26px; background: transparent;
   border: none; box-shadow: none; cursor: pointer; min-width: 80px;
 }
 input[type="range"]::-webkit-slider-runnable-track {
-  height: 12px; border-radius: 999px;
+  height: 8px; border-radius: 2px;
   background:
     linear-gradient(90deg, var(--fader) 0 var(--fill, 0%), transparent var(--fill, 0%) 100%),
     var(--bench-deep);
   box-shadow: inset 0 1px 3px rgba(0,0,0,.55);
 }
 input[type="range"]::-moz-range-track {
-  height: 12px; border-radius: 999px;
+  height: 8px; border-radius: 2px;
   background:
     linear-gradient(90deg, var(--fader) 0 var(--fill, 0%), transparent var(--fill, 0%) 100%),
     var(--bench-deep);
@@ -719,17 +698,16 @@ input[type="range"]::-moz-range-track {
 /* the cap is FLAT — one solid value, a dark edge, no gradient and no cast
    shadow. The moulded-plastic version read as a picture of a fader rather
    than a control, and it was the only object in the app pretending to be lit
-   from somewhere; everything else here is matte. It stays 14x24 because the
-   size is what makes it grippable — that was never the gradient's doing. */
+   from somewhere; everything else here is matte. The 12x22 cap stays easy to locate within the larger hit area. */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 14px; height: 24px; margin-top: -6px; border-radius: 2px;
+  width: 12px; height: 22px; margin-top: -7px; border-radius: 2px;
   background: var(--ink-soft);
   border: 1px solid var(--bench-deep);
   box-shadow: none;
 }
 input[type="range"]::-moz-range-thumb {
-  width: 14px; height: 24px; border-radius: 2px;
+  width: 12px; height: 22px; border-radius: 2px;
   background: var(--ink-soft);
   border: 1px solid var(--bench-deep);
   box-shadow: none;
@@ -892,9 +870,17 @@ input[type="range"].fine::-moz-range-thumb {
 /* Second Reading's working bench. It keeps the paper dominant, then puts the
    score controls in three short rows underneath so pointer drawing still has
    enough physical room on an ordinary laptop display. */
-.second-reading .preview-modal { width: min(1060px, 96vw); overflow-y: auto; }
-.second-reading .process-body { min-height: 230px; }
-.second-reading #process-canvas { height: min(49vh, 520px); touch-action: none; }
+.second-reading .preview-modal { width: min(1060px, 100%); max-height: 100%; overflow-y: auto; }
+/* The stage can shrink to make room for controls, then the modal scrolls.
+   The paper always fits the available space. Container sizing fits both axes,
+   including portrait sheets, without changing the SVG coordinate system. */
+.second-reading .process-body { flex: 1 1 auto; height: clamp(230px, 49vh, 520px); min-height: 230px; }
+.second-reading .preview-stage { min-height: 0; padding: 12px; container-type: size; }
+.second-reading #process-canvas {
+  width: min(100cqw, calc(100cqh * var(--process-aspect, 1.376147)));
+  height: auto; max-height: 100%; touch-action: none;
+}
+.second-reading .preview-head { padding-bottom: 10px; border-bottom: 1px solid var(--bench-edge); }
 #process-second-reading { border-top: 1px solid var(--bench-edge); margin-top: 10px; padding-top: 8px; }
 #process-second-reading[hidden] { display: none; }
 .process-state-row, .process-branch-row, .process-action-row, .process-reset-row {
@@ -918,9 +904,12 @@ input[type="range"].fine::-moz-range-thumb {
 .process-controls label { display: grid; grid-template-columns: auto 1fr 3.2em; align-items: center; gap: 7px; }
 .process-controls label[hidden] { display: none; }
 .process-controls output { color: var(--ink-soft); text-align: right; font-variant-numeric: tabular-nums; }
-.process-controls input.staged { accent-color: var(--ochre); }
+.process-controls input.staged,
+.process-controls input.staged:hover { --fader: var(--flexoki-yellow-850); }
+.process-controls input.staged::-webkit-slider-thumb { background: var(--ochre); }
+.process-controls input.staged::-moz-range-thumb { background: var(--ochre); }
 .process-action-row #process-keep { margin-left: auto; }
-.process-reset-row { color: var(--ink-soft); font-size: 11px; }
+.process-reset-row { color: var(--ink-soft); font-size: 12px; padding-top: 8px; border-top: 1px solid var(--bench-edge); }
 .process-reset-row label { display: flex; align-items: center; gap: 4px; }
 .process-reset-row input { width: 5.2em; }
 #process-seed { width: 9.5em; }
@@ -1021,7 +1010,7 @@ details:not(.form-group) > summary {
   cursor: pointer; user-select: none; color: var(--ink-soft);
 }
 details:not(.form-group) > summary:hover { color: var(--ink); }
-.form .field > label { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-soft); }
+.form .field > label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink); }
 .form .ctl { display: flex; gap: 8px; align-items: center; }
 /* 6.2em, not 5.2: "279.4" plus the spinner was clipping its last digit, and a
    machine value you can't read in full is worse than a wide control */
@@ -1061,7 +1050,7 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
    step wherever the row is. A named colour would have to be picked for one
    of the three and would disappear against another. */
 .layer-row button {
-  padding: 0 6px; font-size: 11px;
+  padding: 0 5px; min-width: var(--compact-h); min-height: var(--compact-h); font-size: 11px;
   background: rgba(0, 0, 0, .22); border-color: transparent;
 }
 .layer-row button:hover { background: var(--bench-rise); border-color: var(--bench-edge); }
@@ -1082,7 +1071,7 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
   background: var(--bench-deep); color: var(--ink);
   border: 1px solid var(--live); border-radius: var(--r-sm);
 }
-.layer-row .fold { width: 18px; flex: none; text-align: center; }
+.layer-row .fold { width: var(--compact-h); flex: none; text-align: center; }
 /* the fold marker is a disclosure triangle, not a control with a face */
 .layer-row .fold { background: none; }
 .layer-row .tool-icon { width: 14px; height: 14px; }
@@ -1190,7 +1179,7 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
   border-radius: 999px; font-size: 11.5px; padding: 2px 10px;
   max-width: 15em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.latch-chip:hover { color: var(--live); background: transparent; border-color: var(--live-soft); }
+.latch-chip:hover { color: var(--ink-hi); background: transparent; border-color: var(--live-soft); }
 
 /* canvas drop target: an image/video file is hovering over the sheet */
 #canvas-wrap.dropping {
@@ -1247,3 +1236,10 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
    not with the single-layer bake in the effects panel. */
 #layer-actions { padding: 0 6px 6px; }
 #layer-actions button { width: 100%; }
+
+/* Compact transport and inline actions share a usable target without making
+   the status line as tall as the main toolbar. */
+#playback button, #machine-state button, #timeline-bar button,
+.kf-row button, .step .head button { min-height: var(--compact-h); min-width: var(--compact-h); }
+#playback input[type="number"] { min-height: var(--compact-h); }
+.seg button:focus-visible { outline-offset: -3px; }

@@ -2556,6 +2556,26 @@ def second_reading_recipe(page) -> dict:
     return json.loads(page.locator("#process-recipe").text_content())
 
 
+@pytest.mark.parametrize("viewport", [(1440, 1000), (1100, 750), (900, 650), (700, 650)])
+def test_second_reading_paper_fits_its_stage_when_controls_grow(ui, viewport):
+    ui.set_viewport_size(dict(zip(("width", "height"), viewport)))
+    open_second_reading_bench(ui)
+    for expanded in (False, True):
+        if expanded:
+            ui.locator("#process-how-it-works summary").click()
+        ui.locator("#process-canvas").scroll_into_view_if_needed()
+        paper = ui.locator("#process-canvas").bounding_box()
+        stage = ui.locator(".second-reading .preview-stage").bounding_box()
+        assert paper and stage
+        for axis, size in (("x", "width"), ("y", "height")):
+            assert paper[axis] >= stage[axis] - 1
+            assert paper[axis] + paper[size] <= stage[axis] + stage[size] + 1
+        frame = ui.locator("#process-canvas").get_attribute("viewBox").split()
+        assert paper["width"] / paper["height"] == pytest.approx(
+            float(frame[2]) / float(frame[3]), rel=0.01)
+    assert not ui.errors
+
+
 def preview_canvas_points(page) -> list[float]:
     """The visible preview, flattened for a numerical comparison to the API."""
     return page.eval_on_selector_all(

@@ -4,17 +4,17 @@ updated: 2026-09-07
 entries: 14
 ---
 
-### Holistic UI review — opened 2026-09-07, owner: ian
+### Holistic UI review and first cosmetics pass — updated 2026-09-07, owner: ian
 
-- done: Detailed review with 18 UI findings, five architecture proposals, three
-  sketches and isolated browser/API evidence; full isolated baseline 1,263 passed.
-- next: Read the illustrated report and choose the first bounded implementation
-  scope; F01-F05 concern viewing confidence, preservation, undo, errors and focus.
-- blockers: none for the review; implementation/design choices await Ian.
-- context: docs/reviews/ui-review-2026-09-07/REVIEW.md (canonical), index.html
-  (illustrated reader), EVIDENCE.md (captures and supporting audits). Current app
-  behaviour is unchanged. Start implementation in a fresh session from these
-  artifacts; architecture races remain hypotheses pending reproduction.
+- done: Detailed review with 18 UI findings, five architecture proposals and three
+  sketches. Ian then approved cosmetics: Flexoki, mono hierarchy, shared controls,
+  SVG actions and the Second Reading clipped-sheet repair are implemented.
+- next: Try the appearance and control feel in the native app; choose any next
+  functional scope from the review after that judgement.
+- blockers: none for implementation; native/physical verification awaits Ian.
+- context: docs/reviews/ui-review-2026-09-07/cosmetics/README.md records the pass
+  and captures. REVIEW.md and index.html remain the broader proposal set.
+  Preservation, undo, modal errors/focus and architecture work are deferred.
 
 ### Interactive drawing machine: Second Reading — updated 2026-09-06, owner: ian
 

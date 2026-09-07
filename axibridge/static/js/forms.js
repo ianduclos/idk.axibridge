@@ -11,6 +11,27 @@ import { api } from "./api.js";
 import { S, actions, rememberDetails } from "./main.js";
 import { rotToDisplay, rotToStored, sizeFactor } from "./viewmap.js";
 
+const UPLOAD = ['M12 16V4', 'm7 9 5-5 5 5', 'M20 16v4H4v-4'];
+
+function uploadButton(title, onClick) {
+  const NS = "http://www.w3.org/2000/svg";
+  const button = document.createElement("button");
+  button.title = title;
+  button.setAttribute("aria-label", title);
+  button.onclick = onClick;
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("class", "tool-icon");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  for (const d of UPLOAD) {
+    const path = document.createElementNS(NS, "path");
+    path.setAttribute("d", d);
+    svg.append(path);
+  }
+  button.append(svg);
+  return button;
+}
+
 // Advanced-field <details> groups collapse on every re-render by default
 // (fresh DOM, no `open` attribute). Callers pass a stable opts.stateKey to
 // namespace groups as `${stateKey}:${group}`, which survives both re-renders
@@ -133,9 +154,8 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
       file.type = "file"; file.multiple = true;
       file.accept = "image/png,image/jpeg,video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-msvideo";
       file.hidden = true;
-      const up = document.createElement("button");
-      up.textContent = "⤒"; up.title = "upload an image, several images, or a video (frame sequence)";
-      up.onclick = (e) => { e.preventDefault(); file.click(); };
+      const up = uploadButton("upload an image, several images, or a video (frame sequence)",
+        (e) => { e.preventDefault(); file.click(); });
       file.onchange = async () => {
         const fs = [...file.files];
         if (!fs.length) return;
@@ -202,9 +222,8 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
       file.type = "file";
       file.accept = ".ttf,.otf,.ttc,font/ttf,font/otf,font/collection";
       file.hidden = true;
-      const up = document.createElement("button");
-      up.textContent = "⤒"; up.title = "upload a font file (.ttf/.otf/.ttc)";
-      up.onclick = (e) => { e.preventDefault(); file.click(); };
+      const up = uploadButton("upload a font file (.ttf/.otf/.ttc)",
+        (e) => { e.preventDefault(); file.click(); });
       file.onchange = async () => {
         const f = file.files[0];
         if (!f) return;

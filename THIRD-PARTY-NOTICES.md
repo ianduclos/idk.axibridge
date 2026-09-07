@@ -4,6 +4,16 @@ Vendored assets shipped inside this repo, with the notices their licences
 require. Code dependencies are declared in `pyproject.toml` and are not
 vendored — this file covers things copied into the tree.
 
+## Flexoki palette — MIT
+
+`axibridge/static/css/flexoki.css` vendors the raw scale from
+https://github.com/kepano/flexoki/blob/main/css/flexoki.css. The complete
+MIT notice is beside it in `flexoki-LICENSE`. Semantic UI roles are assigned
+in `style.css`; essential secondary text uses a brighter tier for contrast.
+
+The supplementary copy, trash, reorder, upload and dice line icons added in
+September 2026 are project-authored SVG geometry, styled alongside Lucide.
+
 ## Lucide icons — ISC
 
 The tool icons are Lucide icon path data, inlined as SVG — six in the canvas
@@ -88,4 +98,3 @@ This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
 http://scripts.sil.org/OFL
 ```
-

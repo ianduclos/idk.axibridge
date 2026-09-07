@@ -149,7 +149,7 @@ export function initPlotTab() {
         strokes cut mid-line where the pen lifted — into a new layer</div>
       <div class="row">
         <label>seed</label><input type="number" id="interrupt-seed" min="0" max="99999" step="1" style="width:6em">
-        <button id="interrupt-reroll" title="new random seed">🎲</button>
+        <button id="interrupt-reroll" title="new random seed" aria-label="New random seed"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"/></svg></button>
         <label class="hint" style="cursor:pointer"
           title="slice in the order the machine would draw (plot-pass optimisation applied); off = layer z-order">
           <input type="checkbox" id="interrupt-optimized" checked> machine order</label>
