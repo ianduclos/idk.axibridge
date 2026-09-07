@@ -4,17 +4,22 @@ updated: 2026-09-07
 entries: 14
 ---
 
-### Holistic UI review and first cosmetics pass — updated 2026-09-07, owner: ian
+### Compose and open benches design — updated 2026-09-07, owner: ian
 
-- done: Detailed review with 18 UI findings, five architecture proposals and three
-  sketches. Ian then approved cosmetics: Flexoki, mono hierarchy, shared controls,
-  SVG actions and the Second Reading clipped-sheet repair are implemented.
-- next: Try the appearance and control feel in the native app; choose any next
-  functional scope from the review after that judgement.
-- blockers: none for implementation; native/physical verification awaits Ian.
-- context: docs/reviews/ui-review-2026-09-07/cosmetics/README.md records the pass
-  and captures. REVIEW.md and index.html remain the broader proposal set.
-  Preservation, undo, modal errors/focus and architecture work are deferred.
+- done: Holistic review and cosmetics are committed (`7bc46fb`, `0d97df5`).
+  Ten-question interview settled the layout direction; Ian added the requirement
+  for a common bench identity supporting specialised interactions and future
+  complex exchanges with the application.
+- next: In a fresh session, follow docs/plans/ui-benches-next-session.md to produce
+  Compose, Second Reading and Homeostat mockups plus an open bench architecture
+  proposal. Review radical changes with Ian before implementation.
+- blockers: none for design; expandable presentation is a candidate, not a
+  requirement. Native appearance/input feel and paper judgement remain pending.
+- context: docs/plans/ui-benches-next-session.md is the accepted next-session
+  brief. docs/reviews/ui-review-2026-09-07/REVIEW.md is the broader proposal set;
+  cosmetics/README.md under that directory holds implementation evidence.
+  Existing verification: 1,267 full-suite tests and final 96 UI tests passed;
+  this documentation-only wrap-up did not rerun them. No push.
 
 ### Interactive drawing machine: Second Reading — updated 2026-09-06, owner: ian
 

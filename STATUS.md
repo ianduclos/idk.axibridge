@@ -3,15 +3,27 @@ project: idk.axibridge
 state: active
 updated: 2026-09-07
 machine: mac+pi
-summary: First approved UI cosmetics pass is ready for Ian to check; Flexoki, mono hierarchy, shared controls and Second Reading sheet fit are implemented.
+summary: Cosmetics are committed; the next session is briefed to design Compose and benches together and propose an open bench architecture.
 next:
-  - "Try the cosmetics pass in the app; visual evidence is in docs/reviews/ui-review-2026-09-07/cosmetics/README.md"
-  - "Choose any next functional scope from the review: preservation, undo, local errors and modal focus remain open"
-  - "Second Reading still needs Ian's alternating-use and paper judgement; see its existing handoff"
+  - "Start from docs/plans/ui-benches-next-session.md; produce Compose, Second Reading and Homeostat mockups plus an open bench architecture proposal"
+  - "Review radical reorganisation with Ian before implementation; expandable presentation remains a candidate"
+  - "Ian to judge the cosmetics in the native app and continue Second Reading's alternating-use and paper review"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-09-07: design interview complete; fresh-session handoff saved.**
+
+[Next-session brief](docs/plans/ui-benches-next-session.md) records the agreed
+layout direction and Ian's request for an open bench architecture. Compose and
+benches are to be designed together, preserving specialised bench interactions
+and allowing richer exchanges with the application in future. Next deliverables
+are mockups and an architecture proposal, not implementation. Broader
+reorganisation is welcome, with radical changes reviewed with Ian first.
+
+This wrap-up changes documentation only. Existing verification is recorded below
+and was not rerun; native-app judgement remains pending. No push.
 
 **Session 2026-09-07: approved cosmetics pass, ready for Ian to check.**
 

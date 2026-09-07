@@ -14,7 +14,7 @@ Cohen-line direction, plus how the involved ones should meet the UI) live in
 Shipped work has been pruned from this file (2026-08-17) — see `git log` /
 `STATUS.md` for what landed and when. This file tracks what's still open.
 
-## Review ready — holistic UI and interaction direction (2026-09-07)
+## Next design — Compose and an open bench architecture (2026-09-07)
 
 Ian asked for a thorough review to lift the tool's look and feel, including
 surface and architectural optimizations while preserving its experimental
@@ -24,8 +24,19 @@ and [editable review](docs/reviews/ui-review-2026-09-07/REVIEW.md) are complete.
 **7 September: Ian approved the first cosmetics pass.** Flexoki, mono hierarchy,
 shared controls/icons, pending state styling and Second Reading sheet fit are
 implemented; [captures and limits](docs/reviews/ui-review-2026-09-07/cosmetics/README.md)
-are ready for him to check. Deeper workflow/architecture work stays deferred
-until that visual judgement and a further scope choice.
+are ready for him to check.
+
+**Next-session design scope agreed:** [the handoff brief](docs/plans/ui-benches-next-session.md)
+records the interview decisions. Design Compose and benches together, using
+collapsible groups, a compact persistent Compose layer list and a Benches group
+in the generator picker. Benches favour drawing space on small windows; Compose
+keeps more editing controls exposed. Produce Compose, Second Reading and
+Homeostat mockups, plus an open bench architecture proposal covering shared
+identity/lifecycle, specialised interaction, application exchanges and state/
+undo ownership. Richer future interactions must remain possible within the bench
+family. Expandable presentation is a candidate, not a requirement. Radical
+reorganisation goes back to Ian before implementation; the next design itself
+is not implemented by this handoff.
 
 The remaining review is a proposal set. M1-M6 sequence
 viewing/interaction confidence, preservation, everyday composition, sustained
