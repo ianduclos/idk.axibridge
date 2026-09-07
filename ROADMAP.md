@@ -14,6 +14,22 @@ Cohen-line direction, plus how the involved ones should meet the UI) live in
 Shipped work has been pruned from this file (2026-08-17) — see `git log` /
 `STATUS.md` for what landed and when. This file tracks what's still open.
 
+## Review ready — holistic UI and interaction direction (2026-09-07)
+
+Ian asked for a thorough review to lift the tool's look and feel, including
+surface and architectural optimizations while preserving its experimental
+philosophy. The [illustrated report](docs/reviews/ui-review-2026-09-07/index.html)
+and [editable review](docs/reviews/ui-review-2026-09-07/REVIEW.md) are complete.
+
+This is a proposal set, **not an implementation decision**. M1-M6 sequence
+viewing/interaction confidence, preservation, everyday composition, sustained
+development, output/performance and bounded spatial experiments. The report
+reproduces sheet clipping, volatile working alternatives, modal focus/error
+problems and guide-undo inconsistency; concurrent-response risks remain untested.
+Retain bench-and-bed and the mono voice. Workspace promotion, comparison,
+recovery ownership, node editing and framework changes need their stated
+criteria and Ian's scope decision before implementation.
+
 ## Near term — Second Reading: recover responsiveness, make elements
 
 **2026-09-05–06 shipped:** interactive process bench with recorded human turns,

@@ -1,17 +1,38 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-06
+updated: 2026-09-07
 machine: mac+pi
-summary: Second Reading now defaults to Responsive without thick reinforcement stacks; visible per-stroke smoothing, seed randomization and explicit boundary state are implemented.
+summary: Holistic UI review is ready for Ian, with reproduced trust issues, design sketches and a phased proposal; application behaviour is unchanged.
 next:
-  - "Use docs/plans/second-reading-quick-guide.md for current controls; Responsive removes thick reinforcement stacks"
-  - "Reading/control changes take effect next turn; Boundary applies through New drawing; Overshoot + fit preserves the whole element on Keep"
-  - "Whole sheets retain weak cases; no claim of artistic acceptance or paper success"
+  - "Read docs/reviews/ui-review-2026-09-07/index.html; choose the first implementation scope from M1-M6"
+  - "Review F01-F05 first: sheet fit, preservation, undo, local errors and modal focus"
+  - "Second Reading still needs Ian's alternating-use and paper judgement; see its existing handoff"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-09-07: holistic UI review, documentation only.**
+
+The [illustrated report](docs/reviews/ui-review-2026-09-07/index.html) and
+[editable source](docs/reviews/ui-review-2026-09-07/REVIEW.md) contain about
+11,000 words, 18 UI findings, five architectural proposals, three structural
+sketches, source/visual evidence and a phased roadmap. The review preserves
+bench-and-bed and the mono voice while proposing explicit editing scope,
+recovery and visual comparison of alternatives. Implementation is not approved
+by this review alone.
+
+Live inspection used an isolated built copy, temporary config/projects and
+simulator only. Reproduced: Second Reading stage clipping at smaller windows,
+volatile unkept alternatives, modal focus escape and preview errors behind the
+modal. A separate hardware-free API check confirmed guide edits bypass undo.
+Concurrency and rendering proposals retain their source-only/measurement limits.
+The full isolated baseline finished **1,263 passed**, with one dependency
+warning. The report reader was checked at desktop and narrow sizes, with local
+links and navigation verified. No hardware, running user app or user project
+was touched. No application source changed.
+
 
 **Session 2026-09-06: Second Reading recovery and agreed experiment.**
 

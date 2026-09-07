@@ -1,0 +1,48 @@
+[
+  {
+    "dialog": "Save project as:"
+  },
+  {
+    "saved": "ui-review-study"
+  },
+  {
+    "process_readout": "324"
+  },
+  {
+    "focus_after_last_control": {
+      "id": "",
+      "tag": "BODY",
+      "inside": false
+    }
+  },
+  {
+    "focus_next": {
+      "id": "",
+      "text": "File",
+      "inside": false
+    }
+  },
+  {
+    "preview_failure": {
+      "global_error": "\u2717 Review simulated unavailable preview",
+      "popup_text": "ing 1 \u00b7 turn 13\nUndo\nRedo\nTurn\nUnkept readings last for this app session.\nReading\nResponsive\nFirst response policy\nShape experiment\nRelation experiment\nEncounters \u00b7 previous\nAttention\n0.50\nDeparture\n0.50\nScale\n0.50\nPen smoothing\n0.60\ncontrols at turn 13\nContinue one turn\nYour turn\nTry another\nKeep as layer\nnew drawing\nBoundary\nClip\nTurn inside\nOvershoot + fit element\nActive: Clip. Selected for new drawing: Clip \u2014 press New drawing.\nw\nh\nseed\nRandomize\nNew drawing\nHow it works\nProcess details\nPlay",
+      "keep_disabled": true
+    }
+  },
+  {
+    "dialog": "Start a new empty project? Unsaved changes are lost."
+  },
+  {
+    "loaded_layers": 3
+  },
+  {
+    "pause_status": "nothing selected\n0%\n293m 30s left\nX 102.8 Y 202.3\npen up\nPause\nResume\nStop \u2302\n\u2717 Review simulated unavailable preview\n\u25b6 Animate plot\nspeed \u00d7"
+  },
+  {
+    "stage": "plot all layers \u00b7 plot \u00b7 1 sheet\n\u21bb Re-bake\nRename\n\u2191\n\u2193\nDuplicate\nExport\nDelete\nPreview sheet 1\nInsert as layers\nno pen \u00b7 6406 paths"
+  },
+  {
+    "tray_label": "tray \"plot all layers\" \u00b7 sheet 1/1",
+    "plot_target": "\u25b6 Plot will plot: tray \"plot all layers\" \u00b7 sheet 1/1 \u00b7 1 pass"
+  }
+]

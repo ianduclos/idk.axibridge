@@ -1,0 +1,641 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AxiBridge — Holistic UI Review</title><link rel="stylesheet" href="assets/flexoki.css"><style>
+:root{--bg:var(--flexoki-black);--bg2:var(--flexoki-950);--ui:var(--flexoki-900);--ui2:var(--flexoki-850);--tx:var(--flexoki-200);--muted:var(--flexoki-500);--link:var(--flexoki-blue-400);color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--tx)}*{box-sizing:border-box}body{margin:0}a{color:var(--link);text-decoration-thickness:1px;text-underline-offset:3px}a:hover{color:var(--flexoki-blue-300)}a:focus-visible,button:focus-visible{outline:2px solid var(--flexoki-cyan-400);outline-offset:4px}.top{position:relative;border-bottom:1px solid var(--ui2);padding:23px 36px;display:flex;justify-content:space-between;align-items:center;gap:24px;font-size:13px}.brand{font-weight:650;letter-spacing:.08em}.tag{color:var(--flexoki-yellow-400);font-size:12px}.top-links{display:flex;gap:20px}.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1510px;margin:0 auto}aside{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:38px 20px 40px 30px}aside .label{text-transform:uppercase;letter-spacing:.14em;font-size:11px;color:var(--muted);margin-bottom:17px}aside a{display:block;padding:8px 10px;margin:2px 0;border-left:1px solid var(--ui2);text-decoration:none;color:var(--tx);font-size:13px;line-height:1.5}aside a:hover{border-left-color:var(--link);background:var(--bg2)}main{min-width:0;padding:54px 60px 100px;border-left:1px solid var(--ui);font-size:17px;line-height:1.72}article{max-width:900px;margin:0 auto}h1{font-size:clamp(36px,4.2vw,59px);font-weight:620;letter-spacing:-.045em;line-height:1.08;margin:0 0 28px;max-width:820px;color:var(--flexoki-paper)}h2{font-size:29px;font-weight:620;letter-spacing:-.02em;line-height:1.25;margin:76px 0 27px;padding-top:26px;border-top:1px solid var(--ui2);scroll-margin-top:25px;color:var(--flexoki-paper)}h3{font-size:21px;line-height:1.35;font-weight:620;margin:42px 0 17px;color:var(--flexoki-100);scroll-margin-top:22px}p{margin:0 0 22px}strong{font-weight:650;color:var(--flexoki-100)}li{padding-left:5px;margin:9px 0}ol,ul{padding-left:25px;margin-bottom:26px}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.84em;background:var(--bg2);padding:2px 5px;border-radius:3px;overflow-wrap:anywhere}.table-scroll{overflow-x:auto;margin:27px 0 36px;border:1px solid var(--ui2);border-radius:4px}table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.5}th{background:var(--bg2);text-align:left;color:var(--flexoki-100);font-size:12px;letter-spacing:.025em}th,td{padding:13px 15px;vertical-align:top;border-bottom:1px solid var(--ui)}tr:last-child td{border-bottom:0}td:first-child{white-space:nowrap;font-weight:600}img{width:100%;height:auto;display:block;border:1px solid var(--ui2);border-radius:4px}.figure-link{display:block;margin:32px 0 0}.caption{display:block;font-size:13px;line-height:1.55;color:var(--muted);margin:10px 0 32px}article>p:nth-child(2){font-size:14px;line-height:1.8;color:var(--muted);border-left:2px solid var(--flexoki-cyan-400);padding-left:17px}footer{border-top:1px solid var(--ui2);margin-top:75px;padding-top:20px;font-size:13px;color:var(--muted)}.skip{position:absolute;left:15px;top:-60px;z-index:5;background:var(--bg2);padding:12px}.skip:focus{top:10px}@media(max-width:1000px){.layout{grid-template-columns:220px minmax(0,1fr)}main{padding:40px 28px 70px}aside{padding-left:14px}h1{font-size:42px}}@media(max-width:720px){.layout{display:block}aside{position:relative;max-height:240px;border-bottom:1px solid var(--ui2);padding:20px}main{border:0;padding:30px 20px 70px;font-size:16px}h1{font-size:37px}h2{font-size:25px}h3{font-size:20px}.top{padding:18px 20px;flex-wrap:wrap}.top-links{gap:14px}td,th{padding:10px;min-width:95px}}@media print{aside,.top,.skip{display:none}.layout{display:block}main{border:0;padding:0;color:var(--flexoki-black);background:var(--flexoki-paper);font-size:10pt}h1,h2,h3,strong{color:var(--flexoki-black)}h2{break-before:page}a{color:var(--flexoki-blue-600)}table{font-size:8pt}img{max-height:210mm;object-fit:contain}.table-scroll{overflow:visible}body,:root{background:var(--flexoki-paper)}h2,h3{break-after:avoid}tr{break-inside:avoid}}
+</style></head><body><a class="skip" href="#review">Skip to review</a><header class="top"><div><span class="brand">AXIBRIDGE / DESIGN STUDY</span> <span class="tag">07 SEPTEMBER 2026</span></div><nav class="top-links" aria-label="Document files"><a href="REVIEW.md">Markdown</a><a href="EVIDENCE.md">Evidence</a></nav></header><div class="layout"><aside aria-label="Contents"><div class="label">The review · 13 chapters</div><a href="#1-the-central-judgement">1. The central judgement</a><a href="#2-scope-evidence-and-limitations">2. Scope, evidence and limitations</a><a href="#3-what-the-experimental-philosophy-should-protect">3. What the experimental philosophy should protect</a><a href="#4-strengths-to-retain-deliberately">4. Strengths to retain deliberately</a><a href="#5-trust-recovery-and-accessibility-repairs">5. Trust, recovery and accessibility repairs</a><a href="#6-everyday-work-from-accumulated-controls-to-a-coherent-bench">6. Everyday work: from accumulated controls to a coherent bench</a><a href="#7-visual-direction-evolve-bench-and-bed">7. Visual direction: evolve bench and bed</a><a href="#8-architectural-work-justified-by-the-experience">8. Architectural work justified by the experience</a><a href="#9-contemporary-references-and-what-to-borrow">9. Contemporary references and what to borrow</a><a href="#10-recommended-sequence-and-decision-gates">10. Recommended sequence and decision gates</a><a href="#11-questions-worth-taking-to-the-bench">11. Questions worth taking to the bench</a><a href="#12-acceptance-through-actual-practice">12. Acceptance through actual practice</a><a href="#13-evidence-record-and-verification">13. Evidence record and verification</a></aside><main id="review"><article><h1>AxiBridge: a more capable experimental instrument</h1>
+<p><strong>Holistic UI and interaction review · 7 September 2026</strong><br>
+<strong>Status:</strong> evidence-backed proposals for discussion; no application changes.<br>
+<strong>Baseline:</strong> <code>aa309b4</code> — Second Reading recovery, pen and boundary controls.<br>
+<strong>Audience assumption:</strong> Ian’s personal experimental practice. The planning question received no separate answer; this follows the recommended default approved with the review run.</p>
+<h2 id="1-the-central-judgement">1. The central judgement</h2>
+<p>AxiBridge already has an identity worth developing. Its warm sheet, dark housing, restrained colour and monospaced controls describe a drawing instrument with unusual conviction. Its strongest interaction ideas are also specific: effects in physical units, a common geometry authority for preview and plotting, process scrubbing, alternatives that retain prior commitments, and a human turn that becomes part of a reproducible recipe. These are a stronger foundation for a contemporary tool than a fashionable replacement skin.</p>
+<p>The gap is that the interface has grown through useful local additions faster than its overall organization has developed. “Generate” can mean prepare a new object or edit an existing one. “Plot” includes connection setup, fabrication, animation, experimental interruption, and a store of captures. Second Reading is a substantial creative workspace inside a modal whose layout can hide part of its drawing. The interface presents many accurate details, but the user must assemble their relationships mentally.</p>
+<p><strong>The recommended direction is a coherent bench with explicit editing scope, protected working material and a much stronger visual comparison practice.</strong> Keep the physical and experimental character. Make the interface more exact about what a gesture changes, when it changes it, where that change lives, and how it can be recovered. Then invest in side-by-side alternatives, continuation history and carefully chosen direct manipulation.</p>
+<p>The most consequential findings are these:</p>
+<ol>
+<li><strong>F01 — A smaller Second Reading window hides part of the sheet.</strong> At 1100 × 750, the SVG measured 367.5 px high inside an overflow-hidden stage only 274.19 px high. This is display clipping, independently of the selected generative boundary.</li>
+<li><strong>F02 — Recovery is weaker than the exploratory workflow needs.</strong> Working alternatives survive closing the popup but disappear on page reload. Keeping a layer and saving a project are different commitments, with insufficient persistent communication of that distinction.</li>
+<li><strong>F03 — Project-level undo is inconsistent.</strong> A paper-guide change adds no undo entry. A reproduced sequence showed Undo removing the preceding layer instead of treating the guide edit as the latest action.</li>
+<li><strong>F04 — Modal errors can be reported behind the modal.</strong> A deliberately failed preview disabled Keep correctly, but the useful error appeared in the dimmed global status strip rather than beside the failed operation.</li>
+<li><strong>F05 — Keyboard focus escapes the working bench.</strong> Tabbing after its last control reached the page body and then the obscured File menu. This is a foundation problem, not a request for a different aesthetic.</li>
+<li><strong>F09–F12 — Everyday creative work needs a clearer grammar.</strong> Creation, selected-layer editing, temporal development, variants and staging should have recognizable relationships and stable homes.</li>
+</ol>
+<p>There is no evidence here that replacing the frontend framework would, by itself, deliver these improvements. Some architectural work is justified; its purpose should be continuity, correctness and expressive room. The report distinguishes that work from visual changes and from proposals that need bench trials.</p>
+<h2 id="2-scope-evidence-and-limitations">2. Scope, evidence and limitations</h2>
+<p>The review used the current source and project history, an existing Graphify map for orientation, an isolated built frontend, a temporary server with its own configuration and project directories, and Chromium driven through Playwright. Automatic hardware connection was disabled. Simulator connection and plot controls were exercised only against this isolated server. Ian’s running application and saved projects were not used.</p>
+<p>The primary reviewer owned live inspection, design interpretation and synthesis. Terra supplied a bounded architecture review and a hardware-free guide/undo reproduction. Sol supplied a written interaction/accessibility review and screenshot-based cautions. Those reports were treated as evidence, not votes. Their findings have been consolidated here; source-only risks have not been promoted to reproduced failures.</p>
+<h3 id="2-1-evidence-vocabulary">2.1 Evidence vocabulary</h3>
+<ol>
+<li><strong>Observed:</strong> a visible behaviour or measurement reproduced during this review.</li>
+<li><strong>Source-confirmed:</strong> the relevant implementation is present, but the full resulting user experience was not independently exercised.</li>
+<li><strong>Hypothesis:</strong> a plausible failure or improvement requiring a targeted trial.</li>
+<li><strong>Proposal:</strong> a design judgement, not a claim about current implementation.</li>
+</ol>
+<p>A severity expresses consequence: <strong>critical</strong> concerns loss of work or misleading authority; <strong>high</strong> substantially obstructs making or operating; <strong>medium</strong> creates recurring friction; <strong>exploratory</strong> describes an opportunity. Effort estimates are relative: <strong>S</strong> is local, <strong>M</strong> crosses several cooperating components, <strong>L</strong> changes persistent state or workspace organization. These are scoping aids, not delivery promises.</p>
+<h3 id="2-2-what-was-exercised">2.2 What was exercised</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Journey</th>
+<th>Evidence and coverage</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>J01</td>
+<td>Empty project → generate → select</td>
+<td>Created a flow-field layer; inspected generation latch, selected-layer controls and economics.</td>
+</tr>
+<tr>
+<td>J02</td>
+<td>Process bench</td>
+<td>Opened Homeostat, played and paused its process; inspected parameter and telemetry layout.</td>
+</tr>
+<tr>
+<td>J03</td>
+<td>Alternating drawing</td>
+<td>Advanced Second Reading, created another alternative, captured a pointer stroke, queued a control change, continued, and kept a layer.</td>
+</tr>
+<tr>
+<td>J04</td>
+<td>Close, reopen, reload</td>
+<td>Verified in-run alternatives survived popup closure; page reload returned to one fresh working alternative while kept project layers survived.</td>
+</tr>
+<tr>
+<td>J05</td>
+<td>Save and open</td>
+<td>Used Save As, New, and Load against temporary projects; previously saved layers returned.</td>
+</tr>
+<tr>
+<td>J06</td>
+<td>Import and density</td>
+<td>Imported synthetic SVG stripes through the visible file-upload UI. The final view contained 12,410 SVG path elements across four layers.</td>
+</tr>
+<tr>
+<td>J07</td>
+<td>Plot operation</td>
+<td>Connected the simulator, started, paused, resumed and stopped a job; inspected always-visible machine status.</td>
+</tr>
+<tr>
+<td>J08</td>
+<td>Staged output</td>
+<td>Captured a plot and previewed the tray sheet; verified the displayed plot-target sentence named that tray and its pass count.</td>
+</tr>
+<tr>
+<td>J09</td>
+<td>Failure</td>
+<td>Injected a 503 preview response through the test browser, observed the error and disabled Keep, then restored successful preview requests.</td>
+</tr>
+<tr>
+<td>J10</td>
+<td>Adaptation and focus</td>
+<td>Inspected 1440 × 1000, 1100 × 750 and 900 × 650 layouts; also a synthetic 200% CSS-zoom stress case and keyboard traversal out of a modal.</td>
+</tr>
+<tr>
+<td>J11</td>
+<td>Undo boundary</td>
+<td>Separate TestClient sequence demonstrated a guide mutation without an undo checkpoint.</td>
+</tr>
+</tbody></table></div>
+<p>The 200% case used CSS zoom as a layout stress probe. It is not a substitute for native browser text zoom, operating-system scaling or a VoiceOver session. The density fixture is deliberately repetitive geometry; it tests delivery and layout, not artistic quality. Its measured import interval includes a settling wait and is not a latency benchmark.</p>
+<h3 id="2-3-important-remaining-coverage">2.3 Important remaining coverage</h3>
+<p>Native macOS shell behaviour, live VoiceOver output, physical pen swaps, registration, carriage motion, paper results, actual hand comfort, long-session fatigue and multi-monitor use remain unverified. Timeline/keyframe and multi-pen queue paths have source and existing acceptance-test coverage; this review did not independently exhaust their manual journeys. Image/video asset conversion and every generator/effect combination were not explored. Pens and settings were inspected, but a complete calibration session was intentionally excluded.</p>
+<p>The tests and captures establish evidence for review. All proposals remain <strong>ready for Ian to check</strong>, not artistically accepted or proven comfortable in use.</p>
+<h2 id="3-what-the-experimental-philosophy-should-protect">3. What the experimental philosophy should protect</h2>
+<p>The recent project notes are especially important because they correct an easy review mistake. Mechanisms named fatigue, attention, crisis or relation do not establish what a drawing achieves. Neither smoothness nor discontinuity guarantees interest. Repetition, texture, scatter and prettiness are not forbidden. A UI review should not smuggle those rejected aesthetic restrictions back in as interface rules.</p>
+<p>The older “canvas is the instrument, panels are its controls” framing remains productive. It implies that control organization must serve seeing and acting on the drawing. A region of the interface earns permanent space through its role in practice, not simply because a feature exists. It also makes cropping the visible sheet a first-order problem: the workspace must let the maker inspect the thing being judged.</p>
+<h3 id="3-1-proposed-principles">3.1 Proposed principles</h3>
+<ol>
+<li><strong>Freedom of result, precision of operation.</strong> A response can be surprising, indifferent or difficult to interpret. The scope of an edit, save or plot command should still be explicit. Uncertainty about the machine’s next artistic move can be useful; uncertainty about which layer was changed is avoidable cost.</li>
+<li><strong>Reversibility supports risk-taking.</strong> Trying an extreme value becomes more interesting when returning is easy. Preservation should cover working alternatives, not only finished output. Recovery is part of the instrument’s expressive capability.</li>
+<li><strong>The sheet remains the visual authority.</strong> Parameter values, labels and telemetry explain operations, but they do not grade the drawing. The visible work should retain enough scale and quiet around it to support judgement.</li>
+<li><strong>Commitment has several meanings.</strong> A captured stroke, next-turn intervention, kept layer, explicit save, staged sheet and physical plot have different consequences. The interface should help distinguish them without turning each into a ceremonial approval step.</li>
+<li><strong>Expose causality selectively.</strong> It is useful to see where a human stroke entered or a response mode changed. It is less useful to cover the drawing in internal variables at all times. Explanation should be available and accurately labelled, with the drawing as the default view.</li>
+<li><strong>Preserve partial and awkward work.</strong> A comparison system should accommodate inconclusive alternatives and local passages worth revisiting. It should not require each thumbnail to be a polished “result,” or rank work with a universal score.</li>
+</ol>
+<h3 id="3-2-what-cutting-edge-can-mean-here">3.2 What “cutting-edge” can mean here</h3>
+<p>The distinctive opportunity is continuity between improvisation and deliberate composition. Imagine interrupting a process, keeping two divergent continuations, comparing their implications at the same physical scale, drawing into one, placing it on the composition, and later reopening its exact recipe. That is a meaningful advance in capability and feel. It can be expressed with calm, modest controls.</p>
+<p>The visual ambition is equally real: a consistent rhythm of controls, strong editing scope, confident line work, quiet but readable status, responsive layouts and animation that communicates change. A polished instrument can feel highly contemporary without becoming glossy. The current metaphor can become more precise and tactile through fit, alignment and response rather than ornamental depth.</p>
+<p>Sources for the project philosophy: <a href="../../../docs/IDEAS-drawing-machine-session-2026-09-05.md">drawing-machine session notes</a>, <a href="../../../docs/IDEAS-ui-revamp.md">earlier UI ideas</a>, <a href="../../../docs/plans/ui-redesign.md">settled August redesign</a>, and the opening comment in <a href="../../../axibridge/static/style.css">style.css</a>. Historical suggestions in those documents are not descriptions of every current feature.</p>
+<h2 id="4-strengths-to-retain-deliberately">4. Strengths to retain deliberately</h2>
+<h3 id="p01-bench-and-bed">P01 — Bench and bed</h3>
+<p>The only large light surface is the paper, and this creates immediate hierarchy. The surrounding housing recedes while still having a material character. The source specifies one typographic voice and a limited set of semantic accents. The empty-state capture is spare rather than promotional. Preserve this discipline when adding comparison, recovery or more descriptive controls.</p>
+<p><a class="figure-link" href="assets/01-empty-compose.png" target="_blank" rel="noopener"><img src="assets/01-empty-compose.png" alt="Empty composition: the sheet has unmistakable visual priority." loading="lazy"></a><span class="caption">Empty composition: the sheet has unmistakable visual priority.</span></p>
+<h3 id="p02-geometry-and-physical-consequence">P02 — Geometry and physical consequence</h3>
+<p>Preview and plotting share server-side resolution, and effects operate in paper space. These are essential conceptual assets. Physical units make material decisions intelligible: a millimetre remains a millimetre even when the interface zoom changes. Layout changes must continue to distinguish view transforms from drawing transforms.</p>
+<p>The main UI already displays estimated duration, ink distance and lifts. An old proposal to “add plot economics” has substantially been fulfilled. The next question is prominence, readability and explanatory context, not whether the numbers exist. The current estimator presents an uncertainty statement in Plot; physical accuracy was not tested here.</p>
+<h3 id="p03-a-useful-first-version-of-creative-continuity">P03 — A useful first version of creative continuity</h3>
+<p>Second Reading’s next-turn changes, event capture, alternatives and exact-recipe Keep guard are unusually relevant to this project. The live test confirmed an intervention was recorded as a stroke with its smoothing value and a later control change was queued for a named turn. Keep was unavailable when the visible recipe could not be trusted after a failed preview.</p>
+<p>These are good semantics. The recommendation is to give them more room and clearer representation, not to replace them with generic sliders that rewrite the whole drawing on every movement.</p>
+<h3 id="p04-persistent-access-to-the-layer-list-and-machine-state">P04 — Persistent access to the layer list and machine state</h3>
+<p>The layer dock persists across inspector tabs, and machine status plus Pause/Resume/Stop live under the sheet. These avoid important navigation traps. A tray preview also produced a useful sentence stating which tray and sheet Plot would use. Preserve those cross-workspace facts even if the tab structure changes.</p>
+<h3 id="p05-a-modular-technical-base">P05 — A modular technical base</h3>
+<p>Module metadata already drives scalar parameter forms. Tool activation has a central broker. Generic process watching and specialized recorded interaction are separated. These afford incremental improvement: shared dialog behaviour, stronger control metadata and coordinated async presentation can be added without deciding every distant architecture question.</p>
+<h2 id="5-trust-recovery-and-accessibility-repairs">5. Trust, recovery and accessibility repairs</h2>
+<h3 id="f01-fit-the-complete-drawing-into-the-actual-available-stage">F01 — Fit the complete drawing into the actual available stage</h3>
+<p><strong>Observed · High · S/M · Confidence: high.</strong> At 1100 × 750, Second Reading’s stage was 274.19 px high while its SVG remained 367.5 px high. The stage hides overflow, concealing approximately 93 px, about a quarter of that SVG’s height. At 900 × 650, the SVG was 318.5 px high against a 260 px stage, while the modal also needed scrolling. At 1440 × 1000, the tested 280 × 198 recipe had a complete 490 px stage.</p>
+<p>The cause is a layout conflict, not a generative boundary decision. <code>style.css:853</code> establishes a clipped stage; <code>:864–874</code> gives the SVG viewport-relative height; <code>:895–897</code> adds Second Reading’s modal/stage sizing. The drawing gets sized from the window while the stage gets the space left after controls. Both calculations can be individually reasonable and collectively wrong.</p>
+<p><strong>Recommendation.</strong> Make the stage’s available width and height the source of the fit calculation. Preserve aspect ratio within both bounds. Let secondary controls scroll in their own area, and keep a compact action row reachable. Introduce an explicit fit command and distinguish it from life-size viewing. Before creating a larger workspace redesign, this is a local repair worth isolating.</p>
+<p><strong>Trade-off.</strong> A complete sheet may appear smaller on a short window. That is an honest fit; provide deliberate zoom/pan for inspection rather than silently hiding part of it.</p>
+<p><strong>Acceptance.</strong> At the tested sizes, in both portrait-like and landscape-like frames, all four sheet edges remain inspectable at Fit. Expanding help and process details cannot silently crop the drawing. Pointer coordinates continue mapping to the same recipe frame. Overshoot mode still distinguishes the nominal sheet from the larger work frame.</p>
+<p><a class="figure-link" href="assets/09-second-1100.png" target="_blank" rel="noopener"><img src="assets/09-second-1100.png" alt="At 1100 × 750, the stage clips the lower part of the independently sized SVG." loading="lazy"></a><span class="caption">At 1100 × 750, the stage clips the lower part of the independently sized SVG.</span></p>
+<h3 id="f02-protect-working-material-and-make-durability-explicit">F02 — Protect working material and make durability explicit</h3>
+<p><strong>Observed + source-confirmed · Critical consequence · M/L · Confidence: high.</strong> The draft map in <code>second_reading_bench.js:17–26</code> is browser memory. Our two alternatives survived Close/reopen, then reload returned to <code>Reading 1 · turn 12</code>; the kept layer remained in the project. Project Load directly replaces current state without a dirty-work guard (<code>settings.js:196–203</code>), whereas New has a warning. There is no persistent saved/edited indicator in the header.</p>
+<p>This is not one missing Save button. There are two lifetimes: a working bench and the server-held project. A page reload does not mean the same thing as a server restart. “Unkept readings last for this app session” is an honest hint, but the phrase app session does not teach the browser/server distinction. “Kept” is accurate as promotion into a layer; it does not establish disk persistence.</p>
+<p><strong>Recommendation.</strong> First establish project revision and saved revision, plus a separate dirty state for working drafts. Show a quiet persistent <code>Edited</code>/<code>Saved</code> state beside the project name and <code>Working draft</code>/<code>Kept in project</code> in the bench. Make New, Load, Import and Restart use the same preservation policy. Then add an atomic recovery slot separate from explicitly named saves, with a scoped draft-recovery record for alternatives and pending settings.</p>
+<p>Retain <strong>Keep as layer</strong>. It is a good studio verb. Pair it with “Project edited” until explicit save. For an unsaved working alternative, say “Working draft · not recovered after reload” until recovery is implemented. Afterward, say what actually persists rather than silently inheriting an optimistic label.</p>
+<p><strong>Trade-off.</strong> Recovery needs format/version rules, ownership and cleanup. It must not overwrite a deliberately saved edition. A local browser draft slot is smaller initially but does not travel with projects and is unavailable from a second device; project-owned draft records are more portable but enlarge the saved model. Choose the boundary explicitly.</p>
+<p><strong>Acceptance.</strong> Recovery restores a recipe, its event order, alternative links, staged next-turn controls and pending new-drawing choices. Recovery does not move hardware, alter the last named save or falsely mark material as plotted. Canceling a destructive switch leaves the complete working state available.</p>
+<h3 id="f03-give-every-document-edit-a-predictable-undo-unit">F03 — Give every document edit a predictable undo unit</h3>
+<p><strong>Observed in isolated API reproduction · High · M · Confidence: high.</strong> <code>PUT /project</code> directly assigns guide, name and plot options outside the ordinary session checkpoint path (<code>api.py:2012–2023</code>). In Terra’s test, create layer → guide x 0 to 17 → Undo removed the layer and incidentally reset the guide with the older snapshot. In a sequence with a later checkpoint, Undo left the guide at 17. The guide edit itself had no recoverable step.</p>
+<p>The interface cannot explain Undo consistently when visually ordinary edits have different histories. Guide position can affect how the maker interprets and crops output; it deserves the same seriousness as layer movement. View-only changes need a deliberate policy, since some view changes also reorient qualifying layers.</p>
+<p><strong>Recommendation.</strong> Introduce one session-owned, validated project-update operation. Checkpoint actual document mutations under the session lock, with a single coalesced undo unit for a continuous drag. Keep presentation-only zoom outside document history. Name undoable operations where practical, such as <code>Undo move paper guide</code>, to make the boundary visible.</p>
+<p><strong>Trade-off.</strong> Checkpointing every intermediate input event would flood history. Reuse the existing coalescing discipline, and avoid creating entries for no-op changes. Do not assume every preference belongs in project undo.</p>
+<p><strong>Acceptance.</strong> Move a guide, change crop, move a layer and change an effect in sequence. Four undos reverse those actions in order. Redo restores them. Save/load preserves the intended result, and ordinary screen zoom does not consume the sequence.</p>
+<h3 id="f04-report-failure-at-the-place-of-action">F04 — Report failure at the place of action</h3>
+<p><strong>Observed with injected failure · High · S/M · Confidence: high.</strong> During a deliberately unavailable Second Reading preview, Keep correctly became disabled and the bench reported <code>not rendered</code>. The explanatory text, “Review simulated unavailable preview,” appeared in <code>#global-error</code> behind the dark modal. The same global error remained visible during a subsequent simulator workflow until its timer expired. This is a test failure injection, not evidence that the preview service failed spontaneously.</p>
+<p><strong>Recommendation.</strong> Add a small inline failure region to each asynchronous creative surface. State the failed operation, whether the previous picture remains visible, and offer <strong>Retry this turn</strong> without advancing or losing the recipe. Keep the last successful image with a clear stale label. Dismiss the failure on successful retry or explicit dismissal. Use the global strip for cross-workspace machine events, with local errors also recorded in a quiet history.</p>
+<p><strong>Trade-off.</strong> More status can crowd the bench. Show detailed text only on failure; reserve the normal row for a compact state. Do not keep a stale warning attached to an unrelated later operation.</p>
+<p><strong>Acceptance.</strong> Inject a failed preview and recover it without creating another turn. The user can identify whether the image is current, Keep cannot commit an unrendered recipe, and the error is reachable by keyboard and announced once by assistive technology.</p>
+<h3 id="f05-give-dialogs-real-boundaries-and-focus-ownership">F05 — Give dialogs real boundaries and focus ownership</h3>
+<p><strong>Observed + source-confirmed · High · S/M · Confidence: high.</strong> Tabbing beyond Second Reading’s Play control reached the page body and then File behind the overlay. Both popup structures are plain backdrops without dialog semantics (<code>index.html:332–374</code>, <code>:388–498</code>). Opening and closing do not establish a shared focus lifecycle. Escape closed the process popup in our test, which should be preserved.</p>
+<p><strong>Recommendation.</strong> Use one small modal controller: title association, meaningful initial focus, background inertness, forward/reverse focus containment and restoration to the invoking control. Match Escape to the active gesture: first cancel an armed or in-progress drawing gesture, then close the workspace only when appropriate. Explicitly decide whether the larger future bench should remain modal; do not use an ARIA label as a substitute for that product decision.</p>
+<p><strong>Trade-off.</strong> Dynamic forms make manual focus lists brittle. Use a shared lifecycle and native dialog behaviour where compatible, with real browser and shell testing. Keep hardware Stop accessible through the appropriate global/native route if a creative surface can remain open during plotting.</p>
+<p><strong>Acceptance.</strong> Bench, Watch and Render can be entered, traversed, canceled and exited using keyboard only. No background command receives focus while a modal owns interaction. Closing returns to its opener, and native shell behaviour is separately checked.</p>
+<h3 id="f06-repair-the-keyboard-and-accessible-state-foundation">F06 — Repair the keyboard and accessible-state foundation</h3>
+<p><strong>Source-confirmed, with partial live traversal · High · M · Confidence: high for missing structure.</strong> Layer rows are draggable divs with click selection and double-click rename (<code>compose.js:1023–1104</code>); folds and resize handles depend on pointer handling; selected tabs and tools primarily communicate state through classes. Browser menu panels claim menu roles without a full menu keyboard model. These are manageable infrastructure gaps, but adding shortcuts alone will not resolve them.</p>
+<p><strong>Recommendation.</strong> Give the layer list a coherent keyboard model: focus a row, select/range-select, rename, reorder through commands, toggle visibility, and act on selection. Make folds real buttons with expanded state. Give tabs and tools accessible selected/pressed state. Choose either complete browser-menu behaviour or simpler disclosure semantics that match the implementation. Provide keyboard alternatives to resizing.</p>
+<p>Keep freehand pointer drawing as a specific input modality. A screen-reader description of sheet size, layer selection, armed capture and current turn is useful; narrating thousands of paths would not substitute for viewing a drawing. Import and numeric shape controls provide practical alternative entry points without pretending they are identical experiences.</p>
+<p><strong>Trade-off.</strong> Full keyboard parity for every geometric gesture is a large project. Prioritize navigation, scope, cancellation, selection and consequential commands. Make the remaining modality limits explicit and avoid trapping someone inside a pointer-only state.</p>
+<p><strong>Acceptance.</strong> Complete a layer edit, a process turn, a save and an export without touching the pointer. Inspect names and selected states with an accessibility tree, then conduct a real VoiceOver pass. Do not claim accessibility compliance from DOM inspection alone.</p>
+<h3 id="f07-make-help-stable-across-input-modes">F07 — Make help stable across input modes</h3>
+<p><strong>Source-confirmed · Medium/High · S · Confidence: high.</strong> The tooltip broker moves <code>title</code> into <code>data-tip</code> on first hover and removes <code>title</code> (<code>main.js:803–823</code>). It responds to pointer events, not focus. Icon-only controls can lose a fallback accessible name, and tooltip help becomes unavailable through the very keyboard path it should support. The copied text can also become stale when a dynamic control later changes meaning.</p>
+<p><strong>Recommendation.</strong> Assign stable accessible names independently of tooltips. Show concise help on focus as well as hover, with a shared description relationship. Use the visible control label for the action; use the tooltip for the extra consequence or shortcut. For longer conceptual material, offer persistent contextual help that can be read without holding the pointer still.</p>
+<p><strong>Trade-off.</strong> Native and custom tooltips can duplicate one another. Solve this in one control helper, with naming independent from visual tooltip suppression. Do not replace all useful explanations with terse labels in the name of cleanliness.</p>
+<p><strong>Acceptance.</strong> Hover, focus and change the state of visibility, duplicate, delete and shape controls. Their names stay correct. Keyboard users receive the same consequence and shortcut information.</p>
+<h3 id="f08-improve-legibility-and-target-comfort-without-losing-density">F08 — Improve legibility and target comfort without losing density</h3>
+<p><strong>Measured + source-confirmed · Medium/High · S/M · Confidence: high for dimensions; comfort provisional.</strong> Layer action controls measured roughly 17–18 px high, with some widths near 21–23 px. Main body size is 13 px; engraved headings default to 10 px; consequential hints often use 11–11.5 px. At 1100 px wide, the default inspector still occupied 540 px, leaving a 528 px canvas well. At 900 px the interface changed to a stacked layout, substantially shortening the drawing area.</p>
+<p>Small targets are a motor-comfort concern. A size below 24 CSS px is not automatically a WCAG failure: spacing and other exceptions must be assessed. Use <a href="https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html">WCAG’s target-size guidance</a> as the precise reference, not a blanket mobile-sized-control rule. For small text, assess actual contrast pairs using <a href="https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum">WCAG contrast guidance</a>.</p>
+<p>The current rust token <code>#c0644c</code> measures approximately 4.24:1 against the bench and 3.81:1 against the raised surface. This is insufficient for ordinary small text at 4.5:1. Preserve rust as an edge or icon accent while giving critical wording a stronger neutral text colour, or select a verified brighter accent. Disabled controls require separate assessment and should not be included indiscriminately in failure counts.</p>
+<p><strong>Recommendation.</strong> First solve layout allocation, then increase the hit areas and the most consequential labels. Retain mono as the default voice. Use a small set of type, line-height, target and spacing tokens; consider Compact/Comfortable only if two complete density treatments remain coherent. Add increased-contrast support. Avoid enlarging every label while leaving fixed panel widths unchanged.</p>
+<p><strong>Trade-off.</strong> Larger controls can reduce the visible parameter population. Group advanced fields and reclaim redundant status before spending more drawing space. Comfort must be judged on the actual bench display, with Ian’s viewing distance and input device.</p>
+<p><strong>Acceptance.</strong> All important state and actions remain reachable at small windows and enlarged text. Dangerous labels and focus indicators meet their relevant contrast requirements. An extended parameter-tuning session does not require precision clicks on tiny symbols.</p>
+<h2 id="6-everyday-work-from-accumulated-controls-to-a-coherent-bench">6. Everyday work: from accumulated controls to a coherent bench</h2>
+<h3 id="f09-separate-creating-an-element-from-inspecting-a-selection">F09 — Separate creating an element from inspecting a selection</h3>
+<p><strong>Observed + source-confirmed · High · M · Confidence: high for current behaviour; proposal needs trial.</strong> After creating a Flow field, the Generate panel retained its controls, its primary button became <code>New layer</code>, and a small latch chip identified the layer being edited. The actual Layer section was below generation and import controls. On a 1000 px-high window, much of the selected-layer inspector lay below the visible region. A useful mechanism exists, but its scope is communicated late and in a small chip.</p>
+<p>The latch saves repeated setup and makes generation fluid. Removing it would discard a genuine efficiency. The problem is that a panel headed Generate has changed from preparing a new object to changing an existing one while retaining almost the same spatial structure. The surface should make that transition as apparent as the selected layer on the canvas.</p>
+<p><strong>Recommendation.</strong> Give the upper inspector a persistent scope header: <code>New element · Flow field</code> or <code>Editing layer · Flow field</code>. Within selection mode, place Source, Placement and Effects in one ordered inspector with the layer’s name and pen. Keep a clear <strong>New element</strong> entry that opens a creation surface using the last parameters. If the current Generate panel remains, elevate its latch state into the heading and make “release this edit target” an explicit secondary action.</p>
+<p><strong>Trade-off.</strong> A context-sensitive inspector can move controls unexpectedly when selection changes. Preserve panel scroll and disclosure state by object and section; distinguish explicit selection from incidental hover. Do not reset a long form to its top after every parameter update.</p>
+<p><strong>Acceptance.</strong> Create two different generators, select the first, change its seed, then prepare a third without changing either existing layer. Ian should be able to predict the target before moving a slider, without reading a tooltip. A changed context should never silently retain the previous edit target.</p>
+<p><a class="figure-link" href="assets/02-flow-selected.png" target="_blank" rel="noopener"><img src="assets/02-flow-selected.png" alt="After creation, the generator form remains prominent while selected-layer details sit farther down." loading="lazy"></a><span class="caption">After creation, the generator form remains prominent while selected-layer details sit farther down.</span></p>
+<h3 id="f10-give-creation-a-searchable-visual-entry-point">F10 — Give creation a searchable, visual entry point</h3>
+<p><strong>Observed inventory · Medium / exploratory · M · Confidence: high for inventory, medium for value.</strong> The generator picker exposed 34 choices in two broad groups. It included direct-input constructions, procedural generators, image-driven operations and processes. Many carry rich conceptual names, but discovering them requires opening a text select and interpreting a label. The empty project starts with Pen anchors and a flatten-tolerance parameter, which communicates implementation before a creative invitation.</p>
+<p><strong>Recommendation.</strong> Add a compact browser for making a new element: searchable names, a one-line behaviour description, a few personally useful favourites, and small neutral previews where reliable. Use capability cues such as <strong>draw</strong>, <strong>image required</strong>, <strong>process</strong>, or <strong>interactive bench</strong>. Keep keyboard selection fast and let the existing dropdown remain as an expert compact view if it earns its space.</p>
+<p>A preview should represent a family of possibilities, not a promise of an ideal result. Use two or three varied examples for a generator where one thumbnail would be misleading; retain difficult cases in the documentation. Search should match both the displayed name and practical terms like hatch, contour, text, growth or drawn stroke.</p>
+<p><strong>Trade-off.</strong> A gallery can become a distracting catalogue and make every choice feel like shopping. Keep it temporary, compact and personal. Avoid decorative promotional cards or endless example carousels. Generated thumbnails need cache and version rules.</p>
+<p><strong>Acceptance.</strong> Find a known generator through the keyboard in a few actions, discover an unfamiliar capability without reading source, and enter its appropriate workspace. The browser closes cleanly into the selected task, with the drawing again dominant.</p>
+<h3 id="f11-give-temporal-development-enough-space-to-be-the-main-activity">F11 — Give temporal development enough space to be the main activity</h3>
+<p><strong>Observed + proposal · High opportunity · M/L · Confidence: medium.</strong> The Homeostat bench has a parameter column beside a stage and a transport below. Second Reading replaces that arrangement with several full-width rows underneath the stage. It now supports sustained authorship, alternatives, capture and preservation, yet still inherits popup furniture. The modal dims the entire composition while presenting a second sheet.</p>
+<p><strong>Recommendation.</strong> Prototype a <strong>Develop</strong> workspace that occupies the central working area, with an explicit return to the composition and a visible link to the originating layer or draft. This is a spatial proposal, not a demand to merge all code into one editor. Keep generic process watching lightweight; a brief Watch interaction can remain a popup. Let the sustained interactive bench graduate into a full working surface.</p>
+<p>Arrange the principal actions near the stage: Continue, Your turn, Try another and Keep. Put new-drawing setup in a clearly separate area that can fold away after creation. Keep the effect of next-turn changes visible. The workspace header should identify the active alternative and whether it is a fresh draft or a continuation from a layer.</p>
+<p><strong>Trade-off.</strong> Another workspace can introduce navigation overhead and mode blindness. Use a stable sheet area, explicit scope title and predictable return. A maximized bench mode is a lower-cost intermediate experiment if a new workspace proves unnecessary.</p>
+<p><strong>Acceptance.</strong> Spend twenty minutes alternating human and machine turns without repeatedly managing the popup or losing the composition context. Compare a short Watch visit with sustained Develop use. If the full workspace adds navigation without improving seeing, capture or comparison, retain the modal with the layout repaired.</p>
+<h3 id="f12-turn-alternatives-into-something-that-can-be-seen-and-compared">F12 — Turn alternatives into something that can be seen and compared</h3>
+<p><strong>Observed limitation + proposal · Exploratory · M/L · Confidence: medium.</strong> Working alternatives are presented as a text select. It records enough names and turns to switch, but their visual differences have to be held in memory. For an instrument whose artistic decisions concern relationships, that is a severe burden. A number or turn label is not a substitute for seeing the two offers together.</p>
+<p><strong>Recommendation.</strong> Begin with an optional two-up comparison of the current alternative and one pinned reference, synchronized by physical scale or explicitly labelled independent fit. Add a small shelf of saved views only after that proves useful. Show human interventions and branch points as sparse markers that can reveal provenance on demand. Let an alternative carry a short personal note such as “keep this knot” without requiring a rating.</p>
+<p>Keep the comparison frame honest. If each drawing is independently enlarged to fill its thumbnail, a small concentrated result can appear equal in scale to a large sparse one. Label fitted thumbnails and offer shared framing for actual judgement. Allow comparing the same turn, the latest turn, or a deliberately chosen pair; do not force a synchronized timeline onto unequal developments.</p>
+<p><strong>Trade-off.</strong> Comparison divides visual area and may encourage searching many seeds instead of developing one drawing. Make pinning and returning cheap, while keeping single-sheet development the default. Do not add ranking, automatic “best” selection or similarity metrics that impersonate taste.</p>
+<p><strong>Acceptance.</strong> Compare two alternatives, return to one, and identify exactly which intervention produced the divergence. Weak and ambiguous alternatives remain available. Keep can promote either exact recipe without changing its sibling.</p>
+<h3 id="f13-clarify-temporal-language-and-show-actual-versus-queued-changes">F13 — Clarify temporal language and show actual versus queued changes</h3>
+<p><strong>Observed + source-confirmed · Medium/High · S/M · Confidence: high.</strong> Second Reading uses <code>reading</code> for the alternative selector and <code>Reading</code> for the response policy. A staged control displays its proposed number, while one shared sentence says a control change is queued for the next turn. Boundary communicates active and pending choices more explicitly. The latter is useful semantics expressed with too much repetitive text when nothing differs.</p>
+<p><strong>Recommendation.</strong> Keep the name <strong>Second Reading</strong> and the action <strong>Keep as layer</strong>. Label the alternative selector <strong>Alternative</strong> and the policy selector <strong>Response mode</strong>. For changed controls only, show a small actual-to-next value such as <code>0.50 → 0.80 · turn 18</code>. Provide a visible way to discard queued changes. When Boundary is unchanged, show <code>Boundary: Clip</code>; expand to <code>Active: Clip · New drawing: Overshoot + fit</code> only when there is a difference.</p>
+<p>Keep terminology precise across distinct time systems: <strong>Turn</strong> for recorded interaction, <strong>Step</strong> for a generator’s process axis when appropriate, <strong>Frame</strong> for timeline sampling, and <strong>Animate plot</strong> for pen-path replay. Do not unify these under a single unlabeled Play icon. Context should explain which kind of time is being manipulated.</p>
+<p><strong>Trade-off.</strong> Dual values can create numerical clutter and direct too much attention toward optimization. Show the difference only while a pending change exists. Preserve the optional details view for the full event record.</p>
+<p><strong>Acceptance.</strong> After changing several controls and scrubbing backward, the user can identify what produced the visible drawing and what the next action will change. Switching alternatives cannot silently carry queued changes to the wrong history.</p>
+<h3 id="f14-reorganize-output-preparation-around-intent">F14 — Reorganize output preparation around intent</h3>
+<p><strong>Observed + source-confirmed · Medium/High · M · Confidence: medium.</strong> The Plot tab starts with four backend descriptions, then a plot target and controls, followed by interrupted-plot generation, animation/grid sheets and staging. This is understandable as a feature history, but it mixes choosing a machine with deciding how to develop and collect drawings. Repeated setup occupies premium space while current output state can be lower down.</p>
+<p><strong>Recommendation.</strong> Give <strong>Output</strong> a compact active-machine summary with Change/Connect as needed, then the exact visible target, pen passes, material choices and estimated costs. Put connection architecture and calibration in Settings or a machine detail surface. Place interrupted-plot creation with the other experimental transformations, while retaining a shortcut from output when useful. Give captures and tray sheets a recognizable collection surface or foldable shelf shared with composition.</p>
+<p>Retain the existing target contract. Our tray capture displayed <code>Plot will plot: tray “plot all layers” · sheet 1/1 · 1 pass</code>. That specificity is valuable. Any new organization must still let the person know whether the sheet is live or frozen, which pen pass is next, and what changing the composition will or will not update.</p>
+<p><strong>Trade-off.</strong> Moving controls breaks learned locations. Keep transitional menu commands and avoid renaming every operation at once. The machine summary must still make disconnected and unsupported capabilities visible; a compact layout must not imply that all backends behave identically.</p>
+<p><strong>Acceptance.</strong> From a composed sheet, inspect target, choose the pen, estimate and start a simulator job with no ambiguity. From any creative workspace, pause/stop remains reachable. A frozen tray never silently becomes the live project.</p>
+<p><a class="figure-link" href="assets/13-tray.png" target="_blank" rel="noopener"><img src="assets/13-tray.png" alt="The tray preview names the exact output; preserve this clarity in any reorganization." loading="lazy"></a><span class="caption">The tray preview names the exact output; preserve this clarity in any reorganization.</span></p>
+<h3 id="f15-improve-the-layer-dock-as-a-composition-instrument">F15 — Improve the layer dock as a composition instrument</h3>
+<p><strong>Observed + source-confirmed · Medium/High · M · Confidence: medium.</strong> The persistent dock is already a major asset. Its rows combine eye, pen swatch, name, estimate, occlusion state, duplicate and delete in a compact strip. The helper explains top-to-bottom drawing order, but relationships such as region, occluder and receiver require the inspector and textual interpretation. The selected-row action targets are particularly small.</p>
+<p><strong>Recommendation.</strong> Preserve the dock and its order. Add stable row focus, readable type badges for region/tween/source when relevant, and explicit controls for solo and reversible effect bypass if current workflows justify them. Separate row selection from the most destructive action by space or an action menu. Consider a temporary relationship overlay: selecting a region can highlight the layers it affects without changing their visibility.</p>
+<p>A thumbnail is useful only if it can be generated cheaply and accurately at that layer’s role. A mask thumbnail that looks like visible ink could mislead. Prefer a simple role mark before adding expensive miniatures to every row. Keep real pen colour distinct from role/selection accents.</p>
+<p><strong>Trade-off.</strong> Rich rows grow taller and reduce the visible population. Offer detail on selection or hover/focus, and preserve a compact list. Layer groups and a new nesting model are separate structural decisions; this review does not authorize them as a cosmetic follow-on.</p>
+<p><strong>Acceptance.</strong> With a mixed stack, identify the selected object, what it affects, what obscures it and which pen will draw it. Reorder without pointer drag, temporarily isolate a layer, then restore the previous view without corrupting visibility or undo history.</p>
+<h3 id="f16-treat-parameter-design-as-part-of-the-module-not-only-its-validation">F16 — Treat parameter design as part of the module, not only its validation</h3>
+<p><strong>Observed + source-confirmed · Medium opportunity · M · Confidence: medium.</strong> The auto-form is a powerful extension seam, but equally sized sliders give width, seed, numerical trace precision and conceptual behaviour similar visual weight. Generic fields often disclose their implementation order rather than the maker’s decision order. Descriptions are largely tooltips, which is insufficient for new experimental controls.</p>
+<p><strong>Recommendation.</strong> Extend the supported parameter metadata conservatively: primary versus advanced group, physical unit, useful step and fine step, linear versus log scale where justified, neutral/default marker, reset affordance and concise visible consequence. A seed benefits from an exact numeric value and reroll/lock actions rather than an enormous continuous range. A technical tolerance belongs in advanced controls unless it is the current creative subject.</p>
+<p>For a process, make it explicit whether a change regenerates the entire trajectory, affects only the next turn or establishes a new drawing. The schema can declare this interaction contract, but the domain implementation must actually support it. Do not infer temporal semantics from a label alone.</p>
+<p><strong>Trade-off.</strong> An elaborate metadata language can become a second UI framework. Add one or two fields against real modules and validate their usefulness. Specialized controls remain appropriate when a generic slider would distort the operation.</p>
+<p><strong>Acceptance.</strong> Configure a familiar module quickly, understand one unfamiliar primary parameter, reset a changed value, and reach advanced precision controls without losing the current result. No unsupported nested object should masquerade as a valid scalar text field.</p>
+<h3 id="f17-add-direct-manipulation-where-it-makes-a-relationship-visible">F17 — Add direct manipulation where it makes a relationship visible</h3>
+<p><strong>Proposal grounded in current physical controls · Exploratory · M/L · Confidence: medium/low until tried.</strong> Placement already has canvas handles and numeric values. Other parameters describe spatial relationships that may benefit from on-sheet affordances: a source position, region reach, margin, orientation or a direction field. The opportunity is to make intent tangible rather than to put every parameter on the drawing.</p>
+<p><strong>Recommendation.</strong> Prototype one high-value spatial control for one well-understood module. Keep its physical value readable, allow fine adjustment and cancellation, and hide the handle when the maker is judging the result. Use a clear preview versus committed-state convention. Offer the same operation numerically so a gesture is not the only route.</p>
+<p><strong>Trade-off.</strong> Handles can obscure the marks under judgement, imply causality the generator does not possess, and introduce coordinate errors in rotated views. The control should represent a real parameter with an exact inverse mapping, not an attractive metaphor over unrelated computation.</p>
+<p><strong>Acceptance.</strong> Moving the handle and entering the equivalent number yield identical resolved output in portrait and landscape. Cancel restores the prior state; one continuous gesture yields one undo unit. Ian prefers it to the original control for that actual task.</p>
+<h3 id="f18-make-feedback-precise-quiet-and-durable">F18 — Make feedback precise, quiet and durable</h3>
+<p><strong>Observed + source-confirmed · Medium · S/M · Confidence: high.</strong> The global error clears after eight seconds (<code>main.js:115–125</code>). Delete and restart confirmation states expire after 2.5 seconds. Save temporarily replaces the menu item’s entire text, removing the child shortcut label (<code>main.js:483–493</code>). A successful command can be difficult to distinguish from a changed mode or a persistent saved state.</p>
+<p><strong>Recommendation.</strong> Use persistent state for things that remain true, transient acknowledgment for completed low-stakes actions, and explicit resolution for failures. Save should update the document state while leaving the command and shortcut intact. Undoable deletion can be immediate with a clear undo affordance; irreversible replacement needs a stable decision, not a countdown. Announce coarse machine and process phases, not every position or rendered frame.</p>
+<p><strong>Trade-off.</strong> Permanent notifications can accumulate. Limit status to the currently relevant fact, with a small history for details. A fresh success should clear the failure it actually resolves, not all unrelated warnings.</p>
+<p><strong>Acceptance.</strong> Save twice and retain the shortcut label. Wait ten seconds while deciding a destructive action and still be able to complete or cancel it. A screen-reader user receives meaningful connection, hold, completion and error events without coordinate chatter.</p>
+<h2 id="7-visual-direction-evolve-bench-and-bed">7. Visual direction: evolve bench and bed</h2>
+<p>The desired visual lift is systematic. Keep the recognizable warmth and mono rhythm, then reduce competition among labels, controls and status. The current surface is strong enough that inconsistent details are more noticeable: a dice emoji among otherwise restrained tools, closely packed small action glyphs, long technical explanations competing with ordinary instructions, and several primary blue buttons in one temporal workspace.</p>
+<h3 id="7-1-surface-and-palette">7.1 Surface and palette</h3>
+<p>Use the project-wide Flexoki standard for the proposed direction and this report. The current app’s bench-and-bed tokens are custom warm colours, not the exact Flexoki scale. Migrating them is a proposal, not a correction already made. Preserve the distinction between paper and housing, and distinguish actual pen colours from interface semantics.</p>
+<p>Flexoki’s published dark roles map background to black, raised background to base-950, interface states to base-900/850/800, primary text to base-200 and secondary text to base-500; its main dark accents use the 400 scale. The raw values used for this report are in <a href="assets/flexoki.css">the vendored CSS</a>, with <a href="https://stephango.com/flexoki">the upstream mapping</a> and MIT license retained. Faint text is not automatically suitable for consequential instructions. Verify every foreground/background combination after mapping.</p>
+<p>A literal palette swap is insufficient. Preserve the strong separation between paper and bench, assign status meanings once, and keep active selection distinguishable from “can be clicked.” For example, a quiet button edge can identify availability while a filled control marks the next primary action. Pending values need a separate cue from selected controls, with text as well as colour.</p>
+<h3 id="7-2-typography-and-hierarchy">7.2 Typography and hierarchy</h3>
+<p>Retain Roboto Mono in the application, consistent with Ian’s earlier decision. Propose three practical roles: section identity, working label and exact readout. Use weight, spacing and grouping before shrinking secondary text. Keep uppercase engraved labels for stable sections; use normal case for instructions and meaningful state.</p>
+<p>This report uses system fonts for long reading, because its task differs from the instrument. That is not a proposal to replace the application’s mono voice. <a href="https://developer.apple.com/design/human-interface-guidelines/typography">Apple’s typography guidance</a> supports legibility, a restrained number of typefaces and a consistent hierarchy; it does not establish a single correct aesthetic for AxiBridge.</p>
+<h3 id="7-3-controls-and-interaction-feel">7.3 Controls and interaction feel</h3>
+<p>Use a shared rhythm for label, value, track, reset and help. Fine adjustment should have the same meaning wherever it exists. Increase the invisible hit region where a small visible glyph is appropriate, but do not allow overlapping targets. Align numeric values and units so a form can be scanned vertically. Avoid using disabled-looking low contrast for an enabled ordinary action.</p>
+<p>Motion should clarify change: a brief indication that an alternative has been added, a pending value becoming committed, or a selection moving to another scope. Do not crossfade different drawings by default; a blend can conceal a meaningful difference and briefly show a third drawing that was never generated. Use immediate replacement or an explicit comparison mode for exact visual judgement. Preserve reduced-motion support.</p>
+<h3 id="7-4-proposed-structural-sketches">7.4 Proposed structural sketches</h3>
+<p>The following sketches are deliberately schematic. They show scope, relative allocation and action placement; they are not implementation-ready layouts or new drawings. Empty paper placeholders avoid biasing a layout judgement with a more appealing artistic sample.</p>
+<p><a class="figure-link" href="assets/concept-compose.svg" target="_blank" rel="noopener"><img src="assets/concept-compose.svg" alt="Concept A: a familiar composition with a clearly scoped inspector and a temporary creation surface." loading="lazy"></a><span class="caption">Concept A: a familiar composition with a clearly scoped inspector and a temporary creation surface.</span></p>
+<p><strong>Concept A — composed evolution.</strong> Keep the horizontal tools, sheet and right-side inspector. Move creation into a temporary browser and make the inspector identify its selected layer. The dock persists. A compact machine summary and document state stay visible. This is the lowest-disruption direction and the recommended first prototype.</p>
+<p><a class="figure-link" href="assets/concept-develop.svg" target="_blank" rel="noopener"><img src="assets/concept-develop.svg" alt="Concept B: a full development workspace with one large stage, compact actions and an optional alternative shelf." loading="lazy"></a><span class="caption">Concept B: a full development workspace with one large stage, compact actions and an optional alternative shelf.</span></p>
+<p><strong>Concept B — development as a workspace.</strong> Give an interactive process the main working area. Keep the composition one explicit return away. Move new-drawing setup out of the active turn controls. Alternatives are optional and visual, with two-up comparison available when requested. This is the strongest candidate for an experiential leap, after F01–F08 are addressed.</p>
+<p><a class="figure-link" href="assets/concept-lifetimes.svg" target="_blank" rel="noopener"><img src="assets/concept-lifetimes.svg" alt="Concept C: distinguish working recipe, kept layer, saved project and frozen output." loading="lazy"></a><span class="caption">Concept C: distinguish working recipe, kept layer, saved project and frozen output.</span></p>
+<p><strong>Concept C — visible lifetimes.</strong> The important architecture can be communicated with a few precise states. Working material can be recovered; Keep creates a layer; Save records the project; staging freezes output. Editing a source does not silently alter a frozen tray. These relationships should be visible in language and small affordances, not as a compulsory diagram in the product.</p>
+<h2 id="8-architectural-work-justified-by-the-experience">8. Architectural work justified by the experience</h2>
+<p>Architecture findings here are proposals for investigation and implementation sequencing. They are not permission to rewrite the application. Their value is measured by what they make possible or reliable for the maker.</p>
+<h3 id="a01-one-mutation-boundary-and-explicit-revisions">A01 — One mutation boundary and explicit revisions</h3>
+<p><strong>Source-confirmed; guide/undo subset reproduced · M/L.</strong> The direct project update and the stronger layer-session mutation path coexist. Route document changes through one session-owned transaction boundary, increment a project revision after successful mutation, and retain a saved revision. This supports correct undo, dirty state, recovery and response provenance at once.</p>
+<p>Keep global machine settings and browser display preferences distinct from document mutations. Do not turn carriage state into an undoable project property. A saved revision should describe durable document content, not imply that the drawing has physically been plotted.</p>
+<p>An alternative is frontend-only dirty tracking. It is cheaper initially, but API calls, another browser and server-side operations can bypass it. Given the existing API-first model, a server-owned revision is the more defensible boundary. Start with known document mutators and define no-op/coalescing behaviour before exposing the state in the header.</p>
+<h3 id="a02-coordinate-asynchronous-presentation-by-user-intent">A02 — Coordinate asynchronous presentation by user intent</h3>
+<p><strong>Source-confirmed gap; races not reproduced · M.</strong> <code>main.js:247–268</code> always assigns the arriving resolved response. <code>showDocPreview</code> at <code>:282–290</code> likewise accepts a sheet response without a shared presentation-generation guard. Exiting a preview does not invalidate an older pending preview request. Local generator and Second Reading previews already have serial/single-flight guards.</p>
+<p>A plausible consequence is an older response painting after a newer edit or after leaving a tray. This remains a risk to test, not a demonstrated screen failure. A request coordinator should associate each presentation with its intent, project revision and view kind. Only the current intent may install geometry and target labels. Canceling work is optional; rejecting stale presentation is necessary.</p>
+<p>Do not collapse every request into one queue. A destructive mutation must complete reliably; a superseded preview can be ignored; plot progress remains a stream. Extract the smallest shared guard and preserve the distinct semantics of each operation.</p>
+<p><strong>Acceptance probe:</strong> delay an older resolved or tray response, change the live state, then release it last. Geometry, view label and Plot targeting must remain on the newest intended state. If the current behaviour already survives a particular sequence, retain that evidence and refine the scope rather than claiming the entire system is broken.</p>
+<h3 id="a03-return-an-internally-consistent-resolved-snapshot">A03 — Return an internally consistent resolved snapshot</h3>
+<p><strong>Source-confirmed boundary gap; concurrency failure untested · M.</strong> <code>Session.resolved()</code> protects resolution, but the API subsequently reads live project metadata and region display paths while assembling its response (<code>api.py:1104–1168</code>). These synchronous endpoints can run in worker threads, so simultaneous mutation is plausible. The risk is a response assembled from different logical revisions, not a claim that every resolve does so.</p>
+<p>Build the complete immutable display snapshot at the session boundary, including the region silhouettes needed by the client, and tag it with the document revision. Serialize afterward. This strengthens the existing geometry authority. It must not create a parallel client geometry pipeline.</p>
+<p>The cost is holding or copying a coherent snapshot, plus careful treatment of large geometry references. The existing purity and replacement rules make shared immutable geometry practical. Test deletion, project replacement and region changes during a delayed resolve, then measure the overhead before broadening the design.</p>
+<h3 id="a04-measure-the-whole-preview-pipeline-before-changing-the-renderer">A04 — Measure the whole preview pipeline before changing the renderer</h3>
+<p><strong>Observed dense fixture + source-confirmed scaling · M, potentially L.</strong> The final synthetic import produced 12,410 SVG path elements across four layers. The import-to-count interval was 1.673 seconds including a deliberate 600 ms settling wait. It demonstrates a dense DOM and successful completion of that case; it does not establish drag latency, paint latency or a frame-rate ceiling.</p>
+<p>The current renderer recreates path elements during canvas rendering (<code>canvas.js:273–380</code>). Server cache performance does not account for transport, JSON parsing, string assembly, hit paths, DOM replacement and paint. Instrument those phases separately, with representative image-driven and region-heavy projects as well as synthetic geometry.</p>
+<p>First try incremental updates and per-layer path batching where attributes agree. Preserve selection hit testing and the special requirements of draw-order visualization. Only consider raster or GPU display paths if measured costs justify them. A display simplification must be explicit, reversible and clearly separate from exact plot/export geometry; never quietly trade material accuracy for frame rate.</p>
+<p>Proposed acceptance budgets should be agreed against the bench machine: immediate visible gesture feedback, bounded latest-preview latency, and no long interruption of selection or Stop. These are desired qualities, not measured current guarantees. A simpler renderer that meets them is preferable to a more ambitious one with new correctness risks.</p>
+<h3 id="a05-add-a-small-shared-ui-foundation-preserve-domain-specific-benches">A05 — Add a small shared UI foundation, preserve domain-specific benches</h3>
+<p><strong>Source-confirmed · M.</strong> Repeated dialog, tooltip, fold, async-state and control behaviour is a stronger abstraction target than all creative features at once. Introduce shared lifecycle helpers and a small set of semantic controls where they remove repeated failure modes. Generated forms should declare and validate their supported schema profile; unsupported arrays or nested structures should not silently fall through to a misleading text input.</p>
+<p>Keep ordinary process watching separate from recorded intervention. The module guide already explains that declaring capabilities does not teach an arbitrary generator how to interpret a score. If another specialized process arrives, introduce a named bench adapter only when its contract is known. Do not infer that every process wants Second Reading’s exact interface.</p>
+<p>A component library or framework could help later with stable rendering and accessibility, but it carries integration, packaging and source-fallback costs. The current source remains plain modules with a built output and a no-npm serving fallback. A migration must name which recurring problems it removes, preserve that deployment contract or explicitly reopen it, and prove one demanding workflow before expanding.</p>
+<p>The node-editor question remains open. A graph view is justified when users need to inspect or manipulate relationships that the layer/region model cannot express clearly. It is not automatically justified by the word experimental or by the existence of multiple generators. A read-only dependency view is a smaller probe than changing the document model.</p>
+<h2 id="9-contemporary-references-and-what-to-borrow">9. Contemporary references and what to borrow</h2>
+<p>These references were consulted through current primary documentation on 7 September 2026. The comparison is about specific design patterns, not a claim to have tested the latest desktop versions of these products. Each proposed application to AxiBridge is our inference.</p>
+<h3 id="r01-ableton-live-experimentation-and-committed-output-can-coexist">R01 — Ableton Live: experimentation and committed output can coexist</h3>
+<p>Ableton’s Session View organizes clips and scenes for nonlinear performance. Its manual explicitly describes the relationship with Arrangement and the control for returning to Arrangement playback. It also supports capturing a currently playing configuration into a scene. The relevant lesson is that an exploratory surface and a committed composition can coexist if their relationship and current authority remain visible. <a href="https://www.ableton.com/en/manual/session-view/">Ableton Live 12: Session View</a>.</p>
+<p><strong>Borrow:</strong> a clear distinction between developing material and the composition/output it feeds; quick capture without prematurely ending experimentation. <strong>Adapt carefully:</strong> AxiBridge has physical paper and exact recipes, so recording a state is not the same as continuously recording audio. <strong>Do not inherit by default:</strong> transport conventions that imply every creative process runs on one universal clock. This supports F11–F14.</p>
+<h3 id="r02-touchdesigner-expose-who-or-what-controls-a-value">R02 — TouchDesigner: expose who or what controls a value</h3>
+<p>TouchDesigner documents distinct parameter modes, including Constant, Expression, Export and Bind. Binding establishes synchronized values between parameters. The relevant pattern is explicit value ownership: a number is not merely displayed, its means of control can be inspected. <a href="https://derivative.ca/solr/parameter-mode">Derivative: Parameter Mode</a>, <a href="https://derivative.ca/UserGuide/Binding">Binding</a>.</p>
+<p><strong>Borrow:</strong> concise cues for a value controlled by a generator, queued for the next turn, interpolated by the timeline or edited directly. <strong>Adapt carefully:</strong> these cues must reflect actual AxiBridge contracts. <strong>Do not inherit by default:</strong> a full node graph or expression interface for every scalar. This supports F09, F13 and F16.</p>
+<h3 id="r03-bespoke-synth-preserve-discoveries-without-requiring-foresight">R03 — Bespoke Synth: preserve discoveries without requiring foresight</h3>
+<p>Bespoke’s reference documents a rolling audio capture, save/load state, and snapshots that store and restore groups of control values. These are different preservation tools for different moments of practice. <a href="https://www.bespokesynth.com/docs/">Bespoke Synth reference</a>.</p>
+<p><strong>Borrow:</strong> several explicit ways to preserve an interesting state, and a recovery mechanism that does not require predicting which moment will matter. <strong>Adapt carefully:</strong> AxiBridge needs recipe/event identity and physical-scale comparison; an image alone cannot resume a drawing. <strong>Do not inherit by default:</strong> modifier-heavy hidden commands as the only access path. This supports F02 and F12. No rolling recording feature is proposed merely because a music tool has one.</p>
+<h3 id="r04-hig-and-wcag-use-principles-precisely">R04 — HIG and WCAG: use principles precisely</h3>
+<p>Apple’s guidance on <a href="https://developer.apple.com/design/human-interface-guidelines/layout">layout</a>, <a href="https://developer.apple.com/design/human-interface-guidelines/typography">typography</a>, <a href="https://developer.apple.com/design/human-interface-guidelines/color">colour</a> and <a href="https://developer.apple.com/design/human-interface-guidelines/accessibility">accessibility</a> informed the inspection. The local skill references supplied readable versions where the current web pages required client rendering. WCAG’s <a href="https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum">focus-not-obscured guidance</a> is especially relevant to keyboard navigation beneath overlays.</p>
+<p>Use these to ask whether information is perceivable, controls are operable and state is understandable. They do not prescribe a generic appearance, mandatory light mode, card layout or particular font. Accessibility repairs should strengthen the instrument’s actual vocabulary. Any formal compliance claim would need a separate, more complete evaluation.</p>
+<h2 id="10-recommended-sequence-and-decision-gates">10. Recommended sequence and decision gates</h2>
+<p>The order below protects the work first, then improves everyday fluency, then tests the largest experiential opportunities. It is a proposed implementation sequence, not an approved implementation plan. Each phase should end with a usable app and an owner check before wider rollout.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Handle</th>
+<th>Phase</th>
+<th>Included findings</th>
+<th>Exit evidence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>M1</td>
+<td>Restore viewing and interaction confidence</td>
+<td>F01, F03, F04, F05; stable accessible naming from F07</td>
+<td>Complete sheet at representative sizes; correct guide undo; local retry; contained focus and return.</td>
+</tr>
+<tr>
+<td>M2</td>
+<td>Protect experimentation</td>
+<td>F02, F18, A01; scoped recovery design</td>
+<td>Explicit saved/edited state; guarded replacement; tested recovery without overwriting named saves.</td>
+</tr>
+<tr>
+<td>M3</td>
+<td>Strengthen daily composition</td>
+<td>F06–F10, F15–F16, A05</td>
+<td>Keyboard layer workflow; clear edit target; readable controls; creation discovery that stays fast.</td>
+</tr>
+<tr>
+<td>M4</td>
+<td>Prototype sustained development</td>
+<td>F11–F13</td>
+<td>Side-by-side owner trial of repaired modal versus Develop workspace; exact alternatives and shared-scale comparison.</td>
+</tr>
+<tr>
+<td>M5</td>
+<td>Clarify output and larger workloads</td>
+<td>F14, A02–A04</td>
+<td>Correct target under delayed responses; coherent snapshots; measured dense-scene interaction; practical output preparation.</td>
+</tr>
+<tr>
+<td>M6</td>
+<td>Explore spatial authorship</td>
+<td>F17 and any justified graph/adapter experiment</td>
+<td>One bounded prototype demonstrates value in actual use before expanding the model.</td>
+</tr>
+</tbody></table></div>
+<p>Some A02/A03 work may move earlier if targeted race tests reproduce misleading output. Likewise, recovery may precede other M1 repairs if a session is about to rely on long-lived working drafts. Prioritization should respond to evidence and expected use, not a rigid release calendar.</p>
+<h3 id="10-1-recommendation-index">10.1 Recommendation index</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Handle</th>
+<th>Change</th>
+<th>Priority</th>
+<th>Effort</th>
+<th>Confidence / dependency</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>F01</td>
+<td>Stage-constrained sheet fit</td>
+<td>High</td>
+<td>S/M</td>
+<td>Reproduced; preserves coordinate mapping.</td>
+</tr>
+<tr>
+<td>F02</td>
+<td>Draft/project recovery and saved state</td>
+<td>Critical consequence</td>
+<td>M/L</td>
+<td>Reproduced lifetime boundary; requires persistence decision.</td>
+</tr>
+<tr>
+<td>F03</td>
+<td>Consistent project undo</td>
+<td>High</td>
+<td>M</td>
+<td>API reproduction; session mutation boundary.</td>
+</tr>
+<tr>
+<td>F04</td>
+<td>Local failure and retry</td>
+<td>High</td>
+<td>S/M</td>
+<td>Injected failure reproduced; async lifecycle.</td>
+</tr>
+<tr>
+<td>F05</td>
+<td>Modal focus and ownership</td>
+<td>High</td>
+<td>S/M</td>
+<td>Focus escape reproduced; shared controller.</td>
+</tr>
+<tr>
+<td>F06</td>
+<td>Keyboard and accessible states</td>
+<td>High</td>
+<td>M</td>
+<td>Source-confirmed; real assistive-tech check needed.</td>
+</tr>
+<tr>
+<td>F07</td>
+<td>Stable names and help</td>
+<td>Medium/High</td>
+<td>S</td>
+<td>Source-confirmed tooltip mutation.</td>
+</tr>
+<tr>
+<td>F08</td>
+<td>Legibility, hit areas and adaptation</td>
+<td>Medium/High</td>
+<td>S/M</td>
+<td>Measured dimensions/contrast; owner comfort check.</td>
+</tr>
+<tr>
+<td>F09</td>
+<td>Clear creation versus selection scope</td>
+<td>High</td>
+<td>M</td>
+<td>Observed; preserve latch efficiency.</td>
+</tr>
+<tr>
+<td>F10</td>
+<td>Searchable creation browser</td>
+<td>Medium</td>
+<td>M</td>
+<td>Proposal; test speed against dropdown.</td>
+</tr>
+<tr>
+<td>F11</td>
+<td>Sustained development workspace</td>
+<td>Exploratory</td>
+<td>M/L</td>
+<td>Owner trial; follows stage repair.</td>
+</tr>
+<tr>
+<td>F12</td>
+<td>Visual comparison and alternatives</td>
+<td>Exploratory</td>
+<td>M/L</td>
+<td>Recipe identity, storage and frame policy.</td>
+</tr>
+<tr>
+<td>F13</td>
+<td>Temporal language and queued values</td>
+<td>Medium/High</td>
+<td>S/M</td>
+<td>Observed; preserve next-turn semantics.</td>
+</tr>
+<tr>
+<td>F14</td>
+<td>Intent-led output preparation</td>
+<td>Medium/High</td>
+<td>M</td>
+<td>Preserve live/tray/pass authority.</td>
+</tr>
+<tr>
+<td>F15</td>
+<td>Layer dock relationships and commands</td>
+<td>Medium/High</td>
+<td>M</td>
+<td>Keyboard model; avoid implicit grouping redesign.</td>
+</tr>
+<tr>
+<td>F16</td>
+<td>Better parameter metadata and affordances</td>
+<td>Medium</td>
+<td>M</td>
+<td>Supported schema profile; bounded examples.</td>
+</tr>
+<tr>
+<td>F17</td>
+<td>One spatial-control prototype</td>
+<td>Exploratory</td>
+<td>M/L</td>
+<td>Exact inverse mapping; view invariants.</td>
+</tr>
+<tr>
+<td>F18</td>
+<td>Quiet, durable feedback</td>
+<td>Medium</td>
+<td>S/M</td>
+<td>Source-confirmed; state lifecycle.</td>
+</tr>
+<tr>
+<td>A01</td>
+<td>Transaction boundary and revisions</td>
+<td>High enabling work</td>
+<td>M/L</td>
+<td>Undo, dirty tracking, recovery.</td>
+</tr>
+<tr>
+<td>A02</td>
+<td>Latest-intent presentation guard</td>
+<td>High risk to test</td>
+<td>M</td>
+<td>Race reproduction pending.</td>
+</tr>
+<tr>
+<td>A03</td>
+<td>Coherent versioned snapshots</td>
+<td>High risk to test</td>
+<td>M</td>
+<td>Concurrency reproduction pending.</td>
+</tr>
+<tr>
+<td>A04</td>
+<td>Measure and optimize preview pipeline</td>
+<td>Medium</td>
+<td>M/L</td>
+<td>Dense fixture exists; profiling still needed.</td>
+</tr>
+<tr>
+<td>A05</td>
+<td>Shared UI foundation and bounded adapters</td>
+<td>Medium</td>
+<td>M</td>
+<td>Start with repeated behaviours.</td>
+</tr>
+</tbody></table></div>
+<h3 id="10-2-what-not-to-bundle-into-the-first-implementation">10.2 What not to bundle into the first implementation</h3>
+<ol>
+<li><strong>A framework migration.</strong> First prove which state, focus or rendering failures demand it. Do not make small trust repairs wait for a new stack.</li>
+<li><strong>A new graph-based document model.</strong> Keep this as a separately argued response to real relationship-editing needs.</li>
+<li><strong>A complete generator aesthetic overhaul.</strong> This report reviews the instrument. Drawings need their own review with whole populations, weak cases and human exchanges.</li>
+<li><strong>A public-product onboarding programme.</strong> The chosen assumption is personal practice. A creation browser and understandable scope are useful to Ian without introducing tours, accounts or promotional empty states.</li>
+<li><strong>Universal scoring of alternatives.</strong> Comparison should enlarge judgement, not supply a proxy for it.</li>
+<li><strong>A blanket parameter reduction.</strong> Advanced controls can be useful experimental material. Their location and meaning need improvement more often than their removal.</li>
+</ol>
+<h2 id="11-questions-worth-taking-to-the-bench">11. Questions worth taking to the bench</h2>
+<p>These are addressable design questions, not blockers on this completed review. The recommended starting answers are explicit so the next conversation can focus on disagreement.</p>
+<ol>
+<li><strong>Q01 — What kind of continuity matters most?</strong> Recovering exactly where you stopped, comparing divergent readings, or keeping a personal library of reusable fragments? Recommendation: recovery first, then two-up comparison. A library needs stronger evidence of repeated reuse.</li>
+<li><strong>Q02 — Does development want the main sheet?</strong> Would you rather enter a sustained workspace or keep the bench as a maximizable popup? Recommendation: compare both with the same twenty-minute human/machine session, after fixing fit.</li>
+<li><strong>Q03 — How much comparison is enough?</strong> Two pinned alternatives, a small contact sheet, or a richer branch history? Recommendation: two pinned alternatives with clear framing, then expand only if the select remains a bottleneck.</li>
+<li><strong>Q04 — What should remain strange?</strong> Which terms and gestures feel like the instrument’s own language? Recommendation: retain Keep, Your turn and Second Reading; clarify overloaded reading and hidden latch scope.</li>
+<li><strong>Q05 — Which controls should be physically direct?</strong> Is there a parameter you repeatedly understand by pointing at the drawing rather than by entering a number? Recommendation: choose that one for F17; do not add a universal overlay system first.</li>
+<li><strong>Q06 — How much of the machine’s account is useful while judging?</strong> Always-visible event markers, an optional history, or an inspect-on-demand explanation? Recommendation: optional sparse event markers and persistent recipe access, with raw telemetry folded away.</li>
+<li><strong>Q07 — How tightly should experiments travel with projects?</strong> Should saved projects include all working alternatives, or only explicitly attached drafts? Recommendation: automatic local recovery plus explicit project attachment initially, with clear limits when moving machines.</li>
+<li><strong>Q08 — How much visual change feels like a lift?</strong> Does a refined mono bench with stronger hierarchy meet the ambition, or do you want a more radical spatial departure? Recommendation: preserve the voice and test A/B workspace sketches before changing the aesthetic language.</li>
+</ol>
+<p>A useful owner trial should allow disagreement with the review. For example, if the repaired popup supports sustained work perfectly well, that is evidence against a separate Develop workspace. If two-up comparison interrupts momentum, pinning a reference in place may be enough. The report is intended to make those judgements concrete.</p>
+<h2 id="12-acceptance-through-actual-practice">12. Acceptance through actual practice</h2>
+<p>Use the same starting material when comparing old and proposed interfaces. Keep a small set of representative projects: a sparse procedural layer, a dense image-driven drawing, a mixed region/occlusion stack, a Second Reading recipe with human events, and a multi-pen staged sheet. The synthetic stripe fixture is useful for technical stress but should not replace these real materials.</p>
+<h3 id="t01-the-ordinary-composition-session">T01 — The ordinary composition session</h3>
+<p>Open a project, create another element, switch between two layers, alter a source parameter, add and reorder an effect, adjust physical placement, save under a new name, and reopen it. Record scope surprises, lost scroll position, unintended edits and recovery friction. Compare time only after the steps are understood; raw click count misses the cost of uncertainty.</p>
+<h3 id="t02-the-experimental-conversation">T02 — The experimental conversation</h3>
+<p>Develop one drawing for twenty minutes. Make at least three human turns, change response controls, revisit an earlier turn, branch and keep two alternatives. Leave one awkward alternative unkept. Close, reopen and recover the session. Record whether interface management interrupts attention to the drawing, and whether comparisons reveal something useful without encouraging endless seed browsing.</p>
+<h3 id="t03-the-material-transition">T03 — The material transition</h3>
+<p>Choose a live frame, then a frozen tray sheet. Confirm what will plot, which pen is next and what remains editable. Exercise simulator hold/resume/stop first, then conduct a separate supervised physical trial. Judge screen ergonomics and material truth separately. A green simulator test cannot establish registration, ink behaviour or physical stop performance.</p>
+<h3 id="t04-the-failure-and-access-session">T04 — The failure and access session</h3>
+<p>Delay a preview, fail one request, cancel an operation, lose a connection and attempt to replace unsaved work. Repeat navigation using keyboard and with VoiceOver. Inspect the short-window and enlarged-text treatments. Recovery and error messages should name the same underlying state across all routes. Include a deliberately slow reader in the timing of confirmations, even if the owner usually operates rapidly.</p>
+<h3 id="t05-the-visual-judgement-session">T05 — The visual judgement session</h3>
+<p>Compare the old and proposed layouts with neutral names and the same drawing at the same scale. Ask where attention goes first, what controls appear available, and which state is uncertain. Do not tell a reviewer which design is newer or which mechanism it uses until the initial observations are recorded. No beauty scores are required. Keep useful disagreements, especially when a more orderly layout feels less inviting to work in.</p>
+<h2 id="13-evidence-record-and-verification">13. Evidence record and verification</h2>
+<h3 id="13-1-baseline-checks">13.1 Baseline checks</h3>
+<p>The complete isolated baseline finished with <strong>1,263 tests passed</strong>, with one existing Starlette/httpx deprecation warning. Its acceptance fixture built the frontend. The review’s earlier incomplete-copy runs failed because the temporary copy initially omitted the launcher, then lacked the local <code>.venv</code> path expected by a launcher test. Those were corrected in the review harness; no application fix was made. The final complete run is the evidence for the passing baseline.</p>
+<p>Several live scripts were exploratory and were adjusted when a locator assumed visible layer rows in a hidden/collapsed dock or assumed that an imported SVG used its filename as a layer name. These were harness assumptions, not product failures. Final recorded flows use the actual resulting state. Save/load and the dense fixture were rerun after the early overlap between two walkthrough scripts; no concurrency defect is claimed from that overlap.</p>
+<p>Passing the baseline does not invalidate the defects in this report: the new cases are not all covered by the existing assertions. Conversely, source-level risks do not become defects merely because they would be useful tests. Application code was not modified during the review.</p>
+<h3 id="13-2-local-evidence-files">13.2 Local evidence files</h3>
+<ol>
+<li><a href="assets/second-reading-evidence.json">Second Reading evidence</a>: complete stage rectangles, recorded human stroke, queued value, alternatives, Keep, closure/reload behaviour.</li>
+<li><a href="assets/workflow-evidence.json">Workflow evidence</a>: save/load, generic process playback, focus escape, injected preview failure, simulator operation and tray targeting.</li>
+<li><a href="assets/measurement-evidence.json">Measurements</a>: computed control geometry, type/colour values, layout rectangles, CSS-zoom probe and dense import count.</li>
+<li><a href="EVIDENCE.md">Evidence catalogue</a>: screenshot descriptions, baseline log and supporting source audits.</li>
+<li><a href="assets/concept-compose.svg">Design sketches</a>: schematic proposals; the linked report also includes development and lifetime diagrams.</li>
+</ol>
+<h3 id="13-3-source-map-for-follow-up">13.3 Source map for follow-up</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Handle</th>
+<th>Source starting points</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>S01</td>
+<td><a href="../../../axibridge/static/style.css">style.css</a>, lines 1–141, 289, 834–939</td>
+<td>Visual system, default allocation, modal/stage sizing.</td>
+</tr>
+<tr>
+<td>S02</td>
+<td><a href="../../../axibridge/static/index.html">index.html</a>, lines 213–252, 332–498</td>
+<td>Shared machine state, preview dialogs, Second Reading controls.</td>
+</tr>
+<tr>
+<td>S03</td>
+<td><a href="../../../axibridge/static/js/main.js">main.js</a>, lines 115–125, 247–297, 483–524, 699–775, 803–834</td>
+<td>Errors, async presentation, save feedback, tool broker, tooltips.</td>
+</tr>
+<tr>
+<td>S04</td>
+<td><a href="../../../axibridge/static/js/compose.js">compose.js</a>, lines 175–330, 1023–1288</td>
+<td>Generate/latch behaviour, layer interaction and controls.</td>
+</tr>
+<tr>
+<td>S05</td>
+<td><a href="../../../axibridge/static/js/second_reading_bench.js">second_reading_bench.js</a>, lines 17–38, 304–432, 519–540, 670–714</td>
+<td>Draft lifetime, queued state, Keep identity and stage rendering.</td>
+</tr>
+<tr>
+<td>S06</td>
+<td><a href="../../../axibridge/static/js/process.js">process.js</a>, lines 1–25, 91–139, 182–206, 309–347</td>
+<td>Generic Watch/Bench scope and async lifecycle.</td>
+</tr>
+<tr>
+<td>S07</td>
+<td><a href="../../../axibridge/static/js/settings.js">settings.js</a>, lines 137–155, 189–214</td>
+<td>Restart, New, Load and Import preservation policies.</td>
+</tr>
+<tr>
+<td>S08</td>
+<td><a href="../../../axibridge/api.py">api.py</a>, lines 1104–1168, 2012–2023, 2051–2099</td>
+<td>Payload coherence, project mutation and save/load.</td>
+</tr>
+<tr>
+<td>S09</td>
+<td><a href="../../../axibridge/session.py">session.py</a>, lines 634–651, 806–830, 2888–2917</td>
+<td>View policy, mutation discipline and geometry authority.</td>
+</tr>
+<tr>
+<td>S10</td>
+<td><a href="../../../axibridge/static/js/forms.js">forms.js</a>, lines 64–96, 223–341; <a href="../../../docs/MODULES.md">module guide</a></td>
+<td>Parameter dialect and future control semantics.</td>
+</tr>
+<tr>
+<td>S11</td>
+<td><a href="../../../axibridge/static/js/canvas.js">canvas.js</a>, lines 273–380</td>
+<td>Dense rendering and hit-path cost.</td>
+</tr>
+<tr>
+<td>S12</td>
+<td><a href="../../../tests/test_acceptance_ui.py">acceptance suite</a></td>
+<td>Existing user-visible regression contracts.</td>
+</tr>
+</tbody></table></div>
+<p>The linked source is authoritative for the inspected baseline. If implementation starts from a later revision, re-check these locations and the relevant behaviour before applying a recommendation. Historical roadmap prose contains superseded details; this review does not reactivate them as requirements.</p>
+<footer>Review proposals only. No application implementation or hardware work. Canonical editable source: REVIEW.md.</footer></article></main></div></body></html>

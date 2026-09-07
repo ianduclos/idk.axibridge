@@ -1,8 +1,20 @@
 ---
 project: idk.axibridge
-updated: 2026-09-06
-entries: 13
+updated: 2026-09-07
+entries: 14
 ---
+
+### Holistic UI review — opened 2026-09-07, owner: ian
+
+- done: Detailed review with 18 UI findings, five architecture proposals, three
+  sketches and isolated browser/API evidence; full isolated baseline 1,263 passed.
+- next: Read the illustrated report and choose the first bounded implementation
+  scope; F01-F05 concern viewing confidence, preservation, undo, errors and focus.
+- blockers: none for the review; implementation/design choices await Ian.
+- context: docs/reviews/ui-review-2026-09-07/REVIEW.md (canonical), index.html
+  (illustrated reader), EVIDENCE.md (captures and supporting audits). Current app
+  behaviour is unchanged. Start implementation in a fresh session from these
+  artifacts; architecture races remain hypotheses pending reproduction.
 
 ### Interactive drawing machine: Second Reading — updated 2026-09-06, owner: ian
 
