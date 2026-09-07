@@ -5,8 +5,8 @@ updated: 2026-09-08
 machine: mac+pi
 summary: Compose and bench mockups plus an open architecture proposal are ready for owner review; application implementation is not approved.
 next:
-  - "Review docs/design/ui-benches-2026-09-07/index.html and PROPOSAL.md; choose workspace versus expandable popup and confirm Compose hierarchy"
-  - "Review radical reorganisation with Ian before implementation; expandable presentation remains a candidate"
+  - "Review docs/design/ui-benches-2026-09-07/index.html and PROPOSAL.md; popup default with expansion is accepted; confirm Compose hierarchy"
+  - "Review remaining reorganisation with Ian before implementation; popup default with expansion is accepted"
   - "Ian to judge the cosmetics in the native app and continue Second Reading's alternating-use and paper review"
 handoff_for: ian
 ---
@@ -20,7 +20,8 @@ Second Reading and Homeostat at desktop, 900px and 700px, including workspace
 and expandable-popup options. [Architecture proposal](docs/design/ui-benches-2026-09-07/PROPOSAL.md)
 separates bench identity, lifecycle/presentation, specialised adapters, explicit
 application operations and state/history. It records current compatibility
-constraints and a bounded implementation sequence. Decisions D1–D4 remain proposals.
+constraints and a bounded implementation sequence. D1 is accepted: popup by default, with expansion preserving working state.
+D2–D4 remain proposals.
 
 Fifteen browser layout combinations and the mocked interaction flow were checked;
 [verification and captures](docs/design/ui-benches-2026-09-07/VERIFICATION.md).

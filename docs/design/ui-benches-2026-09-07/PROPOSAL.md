@@ -9,6 +9,11 @@ stored generator output. No application server or hardware is involved.
 
 ## Recommendation and decisions
 
+**D1 accepted, 8 September:** Ian chose “default to popup, can expand.”
+Benches open as popups, with Expand/Restore changing presentation while preserving
+the working session. The embedded alternative remains in the study for reference.
+This settles presentation, not approval to implement the entire proposal.
+
 A bench should be an identifiable working environment with its own interaction
 model. Its presentation and optional time axis should be independent choices.
 Keep the vanilla module architecture, introduce a small lifecycle/adapter seam,
@@ -16,14 +21,14 @@ and make all project effects explicit application operations.
 
 | # | Decision for Ian | Recommended direction | Cost or alternative |
 |---|---|---|---|
-| D1 | Where sustained bench work lives | A: replace the Compose working area temporarily, retaining the app frame and an explicit return | B: an expandable popup preserves visible composition context but spends space on two frames; both are mocked. No new top-level tab. |
+| D1 · accepted | Where sustained bench work lives | B: popup by default, with Expand/Restore | Preserve working state across expansion. No new top-level tab; embedded workspace remains a study alternative. |
 | D2 | Compose's editing hierarchy | Selected layer first, folded New material below; persistent expandable layers | Moves familiar Generate controls. Preserve the existing live-edit latch in the selected-layer area; do not silently change its write semantics. |
 | D3 | Bench identity | Explicit bench descriptor, independent of time; a compatibility adapter preserves today's axis-based access | Slightly more metadata, but no special treatment of Second Reading in the shared host. |
 | D4 | Working-state lifetime in the first migration | Preserve same-page close/reopen; say “memory only”; keep durable recovery a separately approved increment | Reload still loses unkept work. Recovery needs a storage/version/cleanup decision, not optimistic labels. |
 
-These decisions can be accepted independently. D1/D2 change spatial habits and
-need owner review before application coding. The existing brief authorizes the
-mockups and this proposal; it does not choose either presentation.
+These decisions can be accepted independently. D1 is settled; D2–D4 remain
+proposals. The existing brief authorizes design work, and the later D1 decision
+selects popup presentation. Application implementation remains a separate step.
 
 ## What the study carries forward
 
@@ -313,9 +318,9 @@ UI says “Recovered.” This proposal does not add recovery to the project form
 
 ## Bounded implementation sequence, after review
 
-1. **P1 — settle the layout choice.** Ian compares workspace and popup using the
-   same fixture and compact sizes. Confirm selected-layer-first ordering, action
-   placement and control shelf. Revise the study before touching app layout.
+1. **P1 — refine the selected popup.** Popup by default with expansion is accepted.
+   Confirm selected-layer-first ordering, action placement and compact control
+   shelf. Revise the study before touching app layout.
 2. **P2 — extract lifecycle without changing presentation.** Wrap current entry
    callbacks, memory drafts and view ownership. Add close/return, gesture/focus and
    latest-preview guards. Keep existing picker eligibility and creation semantics.

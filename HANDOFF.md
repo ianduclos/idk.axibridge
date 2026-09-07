@@ -11,7 +11,8 @@ entries: 14
   desktop/900px/700px, with workspace and expandable-popup variants. Wrote an
   open bench architecture proposal and bounded implementation sequence.
 - next: Review docs/design/ui-benches-2026-09-07/index.html and PROPOSAL.md.
-  D1 asks workspace versus popup; D2 asks selected-layer-first Compose hierarchy;
+  D1 is accepted: popup by default, with expansion; the study now defaults to it.
+  D2 asks selected-layer-first Compose hierarchy;
   D3 proposes identity independent of time; D4 preserves current memory lifetime
   before separately designing durable recovery. Revise before application coding.
 - blockers: no design blocker; application implementation requires the layout
