@@ -1,17 +1,33 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-07
+updated: 2026-09-08
 machine: mac+pi
-summary: Cosmetics are committed; the next session is briefed to design Compose and benches together and propose an open bench architecture.
+summary: Compose and bench mockups plus an open architecture proposal are ready for owner review; application implementation is not approved.
 next:
-  - "Start from docs/plans/ui-benches-next-session.md; produce Compose, Second Reading and Homeostat mockups plus an open bench architecture proposal"
+  - "Review docs/design/ui-benches-2026-09-07/index.html and PROPOSAL.md; choose workspace versus expandable popup and confirm Compose hierarchy"
   - "Review radical reorganisation with Ian before implementation; expandable presentation remains a candidate"
   - "Ian to judge the cosmetics in the native app and continue Second Reading's alternating-use and paper review"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-09-07–08: Compose and open benches design study, ready for Ian to check.**
+
+[Interactive mockups](docs/design/ui-benches-2026-09-07/index.html) cover Compose,
+Second Reading and Homeostat at desktop, 900px and 700px, including workspace
+and expandable-popup options. [Architecture proposal](docs/design/ui-benches-2026-09-07/PROPOSAL.md)
+separates bench identity, lifecycle/presentation, specialised adapters, explicit
+application operations and state/history. It records current compatibility
+constraints and a bounded implementation sequence. Decisions D1–D4 remain proposals.
+
+Fifteen browser layout combinations and the mocked interaction flow were checked;
+[verification and captures](docs/design/ui-benches-2026-09-07/VERIFICATION.md).
+Real generator fixtures, illustrative telemetry, no live project or hardware.
+Application suite/build/typecheck were not rerun for this documentation-only study;
+application sources are unchanged. Native feel and layout acceptance remain with Ian.
+
 
 **Session 2026-09-07: design interview complete; fresh-session handoff saved.**
 

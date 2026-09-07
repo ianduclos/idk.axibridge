@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AxiBridge · Compose & benches study</title><link rel="stylesheet" href="study.css"></head>
+<body>
+<header class="study-head"><div><strong>AxiBridge / Compose & benches</strong><p>Design study · 7 September 2026 · proposed layouts, recorded example drawings</p></div><a href="PROPOSAL.md">Architecture & review notes ↗</a></header>
+<nav class="study-nav" aria-label="Design study controls">
+<div class="seg" aria-label="Mockup"><button data-view="compose" aria-pressed="true">1 Compose</button><button data-view="second" aria-pressed="false">2 Second Reading</button><button data-view="homeostat" aria-pressed="false">3 Homeostat</button></div>
+<label>Window <select id="size"><option value="desktop">Desktop · available width</option><option value="compact">Compact · 900 × 650</option><option value="small">Small · 700 × 650</option></select></label>
+<label>Bench <select id="presentation"><option value="embedded">A · In the workspace</option><option value="popup">B · Expandable popup</option></select></label>
+<button id="fail">Show preview failure</button></nav>
+<div class="study-caption" id="caption"></div>
+<div id="window" class="desktop"><div class="app-frame">
+<header class="app-header"><span class="brand">axibridge</span><span class="project-name">September studies</span><span class="muted">Simulator · disconnected</span><span class="spacer"></span><span class="muted">Design example</span></header>
+<div class="app-tabs"><strong>Compose</strong><span>Plot</span><span>Pens</span><span>Settings</span><span class="spacer"></span><span id="draft-chip" hidden>Bench paused · <button id="resume">Return to bench</button></span></div>
+<div id="work"></div>
+<footer class="machine"><span><i></i> No machine connected</span><span class="spacer"></span><span id="target">Plot target: composition</span><button disabled>Plot</button><button disabled>Stop</button></footer>
+</div></div>
+<section class="review-notes"><h1 id="note-title"></h1><p id="note-body"></p><p class="muted">Try the generator picker, folded groups, layer-list expansion, Return to Compose, Your turn, Continue, Try another, comparison and Keep. These rehearse a flow using stored drawings; they do not run generators or change a project. Parameter edits are display-only.</p><div id="notice" role="status" aria-live="polite"></div></section>
+<script src="study.js"></script></body></html>

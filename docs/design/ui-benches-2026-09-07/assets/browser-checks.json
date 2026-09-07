@@ -1,0 +1,261 @@
+{
+  "layouts": [
+    {
+      "size": "desktop",
+      "view": "compose",
+      "presentation": "embedded",
+      "windowWidth": 1438,
+      "overflow": 0,
+      "stage": [
+        1108,
+        650
+      ],
+      "paper": [
+        437.453125,
+        601.984375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "desktop",
+      "view": "second",
+      "presentation": "embedded",
+      "windowWidth": 1438,
+      "overflow": 0,
+      "stage": [
+        1138,
+        533.5
+      ],
+      "paper": [
+        686.5625,
+        485.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "desktop",
+      "view": "second",
+      "presentation": "popup",
+      "windowWidth": 1438,
+      "overflow": 0,
+      "stage": [
+        758,
+        499.5
+      ],
+      "paper": [
+        638.484375,
+        451.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "desktop",
+      "view": "homeostat",
+      "presentation": "embedded",
+      "windowWidth": 1438,
+      "overflow": 0,
+      "stage": [
+        1138,
+        533.5
+      ],
+      "paper": [
+        668.109375,
+        485.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "desktop",
+      "view": "homeostat",
+      "presentation": "popup",
+      "windowWidth": 1438,
+      "overflow": 0,
+      "stage": [
+        758,
+        499.5
+      ],
+      "paper": [
+        621.328125,
+        451.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "compact",
+      "view": "compose",
+      "presentation": "embedded",
+      "windowWidth": 898,
+      "overflow": 0,
+      "stage": [
+        608,
+        450
+      ],
+      "paper": [
+        305.1875,
+        419.96875
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "compact",
+      "view": "second",
+      "presentation": "embedded",
+      "windowWidth": 898,
+      "overflow": 0,
+      "stage": [
+        898,
+        343.5
+      ],
+      "paper": [
+        443.328125,
+        313.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "compact",
+      "view": "second",
+      "presentation": "popup",
+      "windowWidth": 898,
+      "overflow": 0,
+      "stage": [
+        876,
+        321.5
+      ],
+      "paper": [
+        412.21875,
+        291.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "compact",
+      "view": "homeostat",
+      "presentation": "embedded",
+      "windowWidth": 898,
+      "overflow": 0,
+      "stage": [
+        898,
+        343.5
+      ],
+      "paper": [
+        431.421875,
+        313.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "compact",
+      "view": "homeostat",
+      "presentation": "popup",
+      "windowWidth": 898,
+      "overflow": 0,
+      "stage": [
+        876,
+        321.5
+      ],
+      "paper": [
+        401.140625,
+        291.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "small",
+      "view": "compose",
+      "presentation": "embedded",
+      "windowWidth": 698,
+      "overflow": 0,
+      "stage": [
+        438,
+        450
+      ],
+      "paper": [
+        305.1875,
+        419.96875
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "small",
+      "view": "second",
+      "presentation": "embedded",
+      "windowWidth": 698,
+      "overflow": 0,
+      "stage": [
+        698,
+        347.5
+      ],
+      "paper": [
+        448.984375,
+        317.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "small",
+      "view": "second",
+      "presentation": "popup",
+      "windowWidth": 698,
+      "overflow": 0,
+      "stage": [
+        676,
+        325.5
+      ],
+      "paper": [
+        417.875,
+        295.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "small",
+      "view": "homeostat",
+      "presentation": "embedded",
+      "windowWidth": 698,
+      "overflow": 0,
+      "stage": [
+        698,
+        347.5
+      ],
+      "paper": [
+        436.921875,
+        317.484375
+      ],
+      "contained": true,
+      "images": true
+    },
+    {
+      "size": "small",
+      "view": "homeostat",
+      "presentation": "popup",
+      "windowWidth": 698,
+      "overflow": 0,
+      "stage": [
+        676,
+        325.5
+      ],
+      "paper": [
+        406.640625,
+        295.484375
+      ],
+      "contained": true,
+      "images": true
+    }
+  ],
+  "page_errors": [],
+  "flows": "capture cancellation, continue, alternative, comparison, failed-preview keep gate/retry, keep, return/resume, popup expansion, expanded layers, picker discovery, Homeostat sampled playback, actual narrow viewport"
+}

@@ -1,25 +1,26 @@
 ---
 project: idk.axibridge
-updated: 2026-09-07
+updated: 2026-09-08
 entries: 14
 ---
 
-### Compose and open benches design — updated 2026-09-07, owner: ian
+### Compose and open benches design — updated 2026-09-08, owner: ian
 
-- done: Holistic review and cosmetics are committed (`7bc46fb`, `0d97df5`).
-  Ten-question interview settled the layout direction; Ian added the requirement
-  for a common bench identity supporting specialised interactions and future
-  complex exchanges with the application.
-- next: In a fresh session, follow docs/plans/ui-benches-next-session.md to produce
-  Compose, Second Reading and Homeostat mockups plus an open bench architecture
-  proposal. Review radical changes with Ian before implementation.
-- blockers: none for design; expandable presentation is a candidate, not a
-  requirement. Native appearance/input feel and paper judgement remain pending.
-- context: docs/plans/ui-benches-next-session.md is the accepted next-session
-  brief. docs/reviews/ui-review-2026-09-07/REVIEW.md is the broader proposal set;
-  cosmetics/README.md under that directory holds implementation evidence.
-  Existing verification: 1,267 full-suite tests and final 96 UI tests passed;
-  this documentation-only wrap-up did not rerun them. No push.
+- done: Read the holistic review, cosmetics evidence and accepted next-session
+  brief. Created interactive Compose, Second Reading and Homeostat mockups at
+  desktop/900px/700px, with workspace and expandable-popup variants. Wrote an
+  open bench architecture proposal and bounded implementation sequence.
+- next: Review docs/design/ui-benches-2026-09-07/index.html and PROPOSAL.md.
+  D1 asks workspace versus popup; D2 asks selected-layer-first Compose hierarchy;
+  D3 proposes identity independent of time; D4 preserves current memory lifetime
+  before separately designing durable recovery. Revise before application coding.
+- blockers: no design blocker; application implementation requires the layout
+  and architectural changes to be reviewed. No decisions inferred from silence.
+- context: docs/plans/ui-benches-next-session.md remains the agreed brief.
+  docs/design/ui-benches-2026-09-07/VERIFICATION.md records fifteen layout checks
+  and the simulated flow, with captures and fixture recipes. No app source,
+  hardware, saved project or running app changed; full app tests not rerun.
+  Broader holistic-review proposals stay open. No push.
 
 ### Interactive drawing machine: Second Reading — updated 2026-09-06, owner: ian
 

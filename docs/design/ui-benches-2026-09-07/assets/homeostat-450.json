@@ -1,0 +1,17 @@
+{
+  "steps": 450,
+  "width": 200.0,
+  "height": 160.0,
+  "step_len": 2.0,
+  "measure": "surprise",
+  "target": 0.3,
+  "tolerance": 0.2,
+  "patience": 8,
+  "variety": 0.35,
+  "memory": 0.0,
+  "escalation": 0.4,
+  "pens": 2,
+  "unit": -1,
+  "lift_on_reroll": false,
+  "seed": 42
+}
