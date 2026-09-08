@@ -45,6 +45,9 @@ Full suite: **1,371 passed, one intentional lifecycle skip**, one existing
 Starlette deprecation warning. Typecheck and built-browser acceptance passed.
 Backend reloaded with the drawing preserved in the distinct
 `ribbon-performance-recovery-20260909-004404` project, then restored. Layer
-manifest fields match before/after; live resolved points and fill flags match
-the accepted `stable.json` drawing exactly (20 strands). Refresh the app window
+manifest fields match before/after. Ian moved the drawing since the saved
+`stable.json` fixture, so that historical output is not the live comparator.
+The current transformed drawing was recomputed with both the prior committed
+and optimized silhouette implementations: points and fill flags match exactly,
+and match the live response (20 strands). Refresh the app window
 to load the new frontend bundle. No push or hardware action.
