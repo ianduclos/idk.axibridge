@@ -531,3 +531,7 @@ presentation only. Unkept drafts remain memory-only. Durable recovery, a unified
 unsaved-work guard, server revision/mutation reconciliation, and the full future
 service/factory API in the design proposal remain separate work. No new saved
 project format or route to hardware is introduced.
+
+The visible working-bench list is currently curated to Venation, Homeostat and
+Second Reading (Ian, 8 September). Time-axis compatibility remains available for
+ordinary layer Watch; it does not place other generators in the Benches category.

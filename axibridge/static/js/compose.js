@@ -1,4 +1,7 @@
-import { benchDescriptor, benchUnavailableReason } from "./bench_registry.js";
+// Current product benches; time-axis capability alone does not promote a source.
+const WORKING_BENCHES = new Set(['venation', 'homeostat', 'second_reading']);
+const isWorkingBench = mod => WORKING_BENCHES.has(mod?.id);
+import { benchUnavailableReason } from "./bench_registry.js";
 // Compose tab: sources (generate / upload), the layer list (z-order,
 // visibility, pen, occlusion), and the selected layer's detail editor
 // (transform numerics, effect stack, generator params).
@@ -276,7 +279,7 @@ export function initComposeTab() {
   for (const m of S.state.modules.sources) {
     const o = document.createElement("option");
     o.value = m.id; o.textContent = m.label; o.title = m.description;
-    optgroups[benchDescriptor(m) ? "benches" : usesImage(m)].appendChild(o);
+    optgroups[isWorkingBench(m) ? "benches" : usesImage(m)].appendChild(o);
   }
   sel.onchange = renderGenForm;
   const live = $("gen-live");
@@ -654,12 +657,11 @@ async function refreshDepthProStatus() {
 // "＋ Create layer", building the whole tonal-band + edges family at once.
 const LINEART_STACK_IDS = new Set(["lineart_edges", "lineart_hatch"]);
 
-// ▷ Bench is offered exactly when the module declares a time axis — the same
-// test the layer panel's ▷ Watch uses, asked of the module instead of a layer.
+// The Bench entry is curated; ordinary time-axis sources retain layer Watch.
 function updateBenchButton(m) {
   const btn = $("btn-bench");
   if (btn) {
-    btn.hidden = !benchDescriptor(m);
+    btn.hidden = !isWorkingBench(m);
     btn.disabled = Boolean(benchUnavailableReason(m));
     btn.title = benchUnavailableReason(m) || 'Open this generator’s working bench';
   }
@@ -868,7 +870,7 @@ export function rollSeed(schema, params) {
 function bindGenForm(m) {
   const sched = () => { benchPreview(); updateLineartStackRow(m); updateSeparateRow(m); };
   updateBenchButton(m);
-  $("gen-fields").open = !benchDescriptor(m);
+  $("gen-fields").open = !isWorkingBench(m);
   const commit = () => { sched(); if (latch) applyLatched(); };
   renderForm($("gen-form"), m.schema, genParams, commit, { onLive: sched, stateKey: `gen:${m.id}` });
   return sched;

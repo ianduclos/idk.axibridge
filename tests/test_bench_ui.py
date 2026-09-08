@@ -20,7 +20,7 @@ from test_acceptance_ui import (  # re-export fixtures for pytest discovery
 )
 
 
-def _choose_bench(page, source: str = "grammar") -> None:
+def _choose_bench(page, source: str = "homeostat") -> None:
     page.select_option("#gen-select", source)
     page.wait_for_selector("#btn-bench:not([hidden])", timeout=10_000)
     page.click("#btn-bench")
@@ -146,8 +146,10 @@ def test_second_reading_keeps_its_exact_recipe_through_expand_and_escape_cancels
 def test_generator_picker_groups_benches_and_layer_list_can_expand(ui):
     benches = ui.eval_on_selector_all(
         '#gen-select optgroup[label="Benches"] option', "els => els.map(e => e.value)")
-    assert "second_reading" in benches
-    assert "grammar" in benches, "declared time axes belong with benchable sources"
+    assert set(benches) == {"venation", "homeostat", "second_reading"}
+    ui.select_option("#gen-select", "grammar")
+    assert ui.locator("#btn-bench").is_hidden()
+    assert ui.locator("#gen-fields").get_attribute("open") is not None
 
     toggle = ui.locator("#layers-dock-expand")
     assert toggle.inner_text() == "Expand list"
@@ -159,19 +161,20 @@ def test_generator_picker_groups_benches_and_layer_list_can_expand(ui):
 def test_descriptor_declared_nonaxis_bench_creates_the_real_source(ui):
     """A bench declaration is discovery metadata, not a second generator API.
 
-    Make Polygon benchable at the state boundary only; its preview and Create
+    Make Homeostat benchable at the state boundary only; its preview and Create
     calls still go to the genuine server implementation.
     """
-    def state_with_polygon_bench(route):
+    def state_with_homeostat_bench(route):
         response = route.fetch()
         state = response.json()
-        polygon = next(m for m in state["modules"]["sources"] if m["id"] == "polygon")
-        polygon["bench"] = {"adapter": "process", "version": 1, "modes": ["new"]}
+        homeostat = next(m for m in state["modules"]["sources"] if m["id"] == "homeostat")
+        homeostat["time_axis"] = None
+        homeostat["bench"] = {"adapter": "process", "version": 1, "modes": ["new"]}
         route.fulfill(response=response, body=json.dumps(state))
 
-    ui.route("**/api/state", state_with_polygon_bench)
+    ui.route("**/api/state", state_with_homeostat_bench)
     reload_app(ui)
-    ui.select_option("#gen-select", "polygon")
+    ui.select_option("#gen-select", "homeostat")
     ui.click("#btn-bench")
     ui.locator('#process-popup[role="dialog"]:not([hidden])').wait_for(timeout=15_000)
     assert ui.locator("#process-scrub").is_hidden(), "a non-axis bench has no invented time control"
@@ -180,7 +183,7 @@ def test_descriptor_declared_nonaxis_bench_creates_the_real_source(ui):
     ui.locator("#process-popup").wait_for(state="hidden", timeout=15_000)
     ui.wait_for_selector("#layer-list .layer-row", timeout=15_000)
     project = _get(f"{ui.base}/api/project")
-    assert project["layers"][-1]["source"]["generator"] == "polygon"
+    assert project["layers"][-1]["source"]["generator"] == "homeostat"
     ui.unroute("**/api/state")
     assert not ui.errors
 
@@ -238,7 +241,7 @@ def test_stale_generic_preview_never_enables_create_before_current_preview(ui):
         return original(...args);
       };
     }""")
-    _choose_bench(ui, "grammar")
+    _choose_bench(ui, "homeostat")
     ui.locator("#process-scrub").evaluate(
         "el => { el.value = String(Number(el.value) + 1); el.dispatchEvent(new Event('input', {bubbles: true})); }")
     ui.evaluate("() => window.__releaseBenchPreviewOne()")
@@ -250,7 +253,7 @@ def test_stale_generic_preview_never_enables_create_before_current_preview(ui):
 
 
 def test_late_create_completion_cannot_close_a_reopened_bench(ui):
-    _choose_bench(ui, "grammar")
+    _choose_bench(ui, "homeostat")
     ui.wait_for_function("() => document.querySelector('#process-create')?.disabled === false", timeout=20_000)
     # Pause the real write before it reaches the server.  This leaves the
     # request's promise outstanding while the user deliberately closes and
@@ -277,12 +280,12 @@ def test_late_create_completion_cannot_close_a_reopened_bench(ui):
     # The earlier operation may refresh the project after completing, but it
     # belongs to the closed view and must not dismiss this newer working view.
     ui.locator('#process-popup[role="dialog"]:not([hidden])').wait_for(timeout=15_000)
-    assert "grammar" in ui.locator("#process-title").inner_text().lower()
+    assert "homeostat" in ui.locator("#process-title").inner_text().lower()
     assert not ui.errors
 
 
 def test_shared_stop_follows_the_visible_machine_stop_control(ui):
-    _choose_bench(ui, "grammar")
+    _choose_bench(ui, "homeostat")
     stop = ui.locator("#process-stop")
     assert stop.is_disabled(), "a hidden machine control cannot make Stop plot available"
     ui.evaluate("""() => {

@@ -15,6 +15,9 @@ handoff_for: ian
 **Session 2026-09-08: approved Compose and benches implementation.**
 
 Ian approved the mockups and architecture direction (“ok i like it. go”).
+Follow-up: visible working benches are only Venation, Homeostat and Second Reading;
+other generators retain normal forms and time-axis layer Watch. This correction
+passed 17 relevant browser tests and typecheck (full suite not repeated).
 Implemented popup default with expansion, compact control shelves, explicit
 selected-source scope, persistent expandable layers, versioned bench descriptors,
 local error/focus lifecycle, Second Reading comparison, and Homeostat grouped

@@ -2958,10 +2958,8 @@ def test_the_watch_button_appears_only_for_a_process_layer(ui):
     assert not ui.errors
 
 
-def test_the_bench_button_appears_only_for_a_process_generator(ui):
-    """▷ Bench is offered on the Generate panel by the same test ▷ Watch uses
-    on a layer — the module declares a time axis — asked before any layer
-    exists, which is the whole point of the bench."""
+def test_the_bench_button_appears_for_the_curated_working_benches(ui):
+    """Working benches are curated separately from layer Watch capability."""
     ui.select_option("#gen-select", "polygon")
     ui.wait_for_function(
         "() => document.getElementById('btn-bench').hidden", timeout=5_000)
