@@ -48,7 +48,7 @@ def run():
         assert page.locator('.ribbon-ink path').count() == 9
         page.locator('#ribbon-guide').check()
         assert page.locator('.ribbon-guide').count() == 3
-        page.select_option('#ribbon-shape','corner')
+        page.select_option('#ribbon-shape','loop')
         for id,value in [('width',24),('steps',10)]:
             page.locator('#ribbon-'+id).evaluate('(e,v)=>{e.value=v;e.dispatchEvent(new Event("input"));}',value)
         page.locator('#ribbon-guide').uncheck()

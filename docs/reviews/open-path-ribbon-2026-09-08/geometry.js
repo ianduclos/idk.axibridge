@@ -282,7 +282,9 @@
     ),
     loop: join(
       cubic([60,180],[220,155],[440,55],[620,40],100),
-      cubic([620,40],[730,30],[740,215],[620,190],65),
+      // Collinear handles at both seams: this fixture is a smooth loop, not
+      // two hidden corners. The tight return also gets finer input sampling.
+      cubic([620,40],[740,30],[740,202],[620,190],260),
       cubic([620,190],[470,175],[200,70],[60,50],100)
     ),
     hairpin: join(

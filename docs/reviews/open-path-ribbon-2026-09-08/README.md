@@ -4,6 +4,9 @@ Exploratory geometry and an interactive comparison based on Ian's A–E sketches
 This is not an installed AxiBridge effect. No application source, project state,
 hardware or running server is involved. Coordinates are study units, not mm.
 
+Latest follow-up: `LOOP-STATUS.md` records the small loop sample correction;
+`STRESS.md` records the 156-case sweep. The effect's width treatment is unchanged.
+
 ## What is being compared
 
 The source is measured by arc length. Two positive width profiles use alternating
