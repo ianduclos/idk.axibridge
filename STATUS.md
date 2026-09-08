@@ -21,6 +21,13 @@ The same field is preserved across each row; finite/bounded geometry is checked.
 This is a visual study only: no generator or bench is registered, and paper
 appearance remains untested. Ian's treatment selection precedes bench design.
 
+**Ribbon hard corners, 8 September:** The live pen-path regression now retains
+21 strands with zero self-intersecting strands or crossing strand pairs (previously
+20 and 53). Overlapping corner supports are swept together; miter-capped radii
+are recovered correctly. The six accepted study fixtures remain unchanged.
+Full suite: 1,326 passed, one intentional lifecycle skip. See
+[comparison and evidence](docs/reviews/ribbon-hard-corners-2026-09-08/README.md).
+
 **Ribbon effect shipping pass, 8 September:** The accepted study is now a
 registered Python effect with paper-space parameters, optional crest softening,
 seeded per-flank softening, a shared outer-pair cutoff, and grouped controls.

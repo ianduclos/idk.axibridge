@@ -20,6 +20,9 @@ entries: 16
   seed blend normalization, independent wavelengths, corner/loop handling,
   inter-path masks, silhouette/outline output, centre-free interpolation, actual
   pen density, optional crest smoothing and a shared outer-pair cutoff.
+- hard corners: Ian’s actual acute pen path is repaired without changing its
+  parameters or strand count. Full suite: 1,326 passed, one lifecycle skip.
+  Evidence: docs/reviews/ribbon-hard-corners-2026-09-08/README.md.
 - next: Check Ribbon from the layer effects picker; the Mac backend now includes
   it after Ian authorized a restart. Review optional per-flank softening on real
   paths/paper. The original inline study is unchanged and remains reference.

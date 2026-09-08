@@ -8,6 +8,7 @@ Shapely only at the boundary where polygon Boolean operations are needed.
 from __future__ import annotations
 
 from collections import defaultdict
+from bisect import bisect_left, bisect_right
 from math import atan2, ceil, cos, floor, hypot, sin, tan
 from typing import Any, Iterable
 
@@ -102,21 +103,35 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
     """Replace sharp offset corners with the selected local swept-strip edge."""
     if not corners:
         return nodes[:]
-    patches = []
-    for k, corner in enumerate(corners):
+    # Overlapping supports must be swept together. Splitting at the midpoint
+    # both revisited a sample and left inner offsets of a neighbouring turn
+    # inside the union, where no boundary route could connect the patch ends.
+    supports = []
+    for corner in corners:
         reach = width * min(4, abs(tan(corner["turn"] / 2))) * 2 + 12
-        lo = max(corner["s"] - reach, (corners[k - 1]["s"] + corner["s"]) / 2 if k else 0)
-        hi = min(corner["s"] + reach, (corners[k + 1]["s"] + corner["s"]) / 2 if k + 1 < len(corners) else stations[-1])
-        start, end = 0, len(stations) - 1
-        while start + 1 < len(stations) and stations[start + 1] < lo:
-            start += 1
-        while end > 0 and stations[end - 1] > hi:
-            end -= 1
+        lo, hi = max(0,corner["s"]-reach), min(stations[-1],corner["s"]+reach)
+        if supports and lo <= supports[-1][1]:
+            supports[-1][1] = max(supports[-1][1],hi)
+        else:
+            supports.append([lo,hi])
+    turns = {corner["s"]:corner["turn"] for corner in corners}
+    frame = frames(spine)
+    ranges = []
+    for lo,hi in supports:
+        start = max(0,bisect_left(stations,lo)-1)
+        end = min(len(stations)-1,bisect_right(stations,hi))
+        # Quantization to source samples can also make disjoint supports touch.
+        if ranges and start <= ranges[-1][1]:
+            ranges[-1][1] = max(ranges[-1][1],end)
+        else:
+            ranges.append([start,end])
+    patches = []
+    for start,end in ranges:
         source: list[Point2] = []
         offset: list[Point2] = []
         ss: list[float] = []
         for i in range(start, end + 1):
-            if stations[i] == corner["s"] and 0 < i < len(spine) - 1:
+            if stations[i] in turns and 0 < i < len(spine) - 1:
                 a, b = spine[i - 1], spine[i]
                 dx, dy = b[0] - a[0], b[1] - a[1]
                 length = hypot(dx, dy)
@@ -124,12 +139,16 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
                     continue
                 nx, ny = -dy / length, dx / length
                 p = _point(nodes[i])
-                w = (p[0] - b[0]) * nx + (p[1] - b[1]) * ny
-                angle, count = atan2(ny, nx), max(4, ceil(abs(corner["turn"]) / .055))
+                # Recover the requested signed distance, including when the
+                # raw frame's miter has been capped on a near reversal.
+                fx,fy = frame[i]
+                w = ((p[0]-b[0])*fx+(p[1]-b[1])*fy)/(fx*fx+fy*fy or 1)
+                turn = turns[stations[i]]
+                angle, count = atan2(ny, nx), max(4, ceil(abs(turn) / .055))
                 for j in range(count + 1):
                     source.append(b)
-                    offset.append((b[0] + w * cos(angle + corner["turn"] * j / count), b[1] + w * sin(angle + corner["turn"] * j / count)))
-                    ss.append(corner["s"])
+                    offset.append((b[0] + w * cos(angle + turn * j / count), b[1] + w * sin(angle + turn * j / count)))
+                    ss.append(stations[i])
             else:
                 source.append(spine[i]); offset.append(_point(nodes[i])); ss.append(stations[i])
         triangles = []
@@ -141,6 +160,7 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
         if not triangles:
             continue
         merged = unary_union(triangles)
+        source_line = LineString(source)
         candidates = list(merged.geoms) if isinstance(merged, MultiPolygon) else [merged]
         chosen = None
         for poly in candidates:
@@ -155,22 +175,25 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
                     path.append(ring[i]); i = (i + step) % len(ring)
                 return path + [ring[ib]]
             one, two = route(1), route(-1)
-            score = lambda path: sum(min(_projection(p, q, r)[1] for q, r in zip(source, source[1:])) for p in path) if len(source) > 1 else 0
+            score = lambda path: sum(source_line.distance(Point(p)) for p in path)
             chosen = one if score(one) > score(two) else two
             break
         if chosen is None:
             continue
+        offset_line = LineString(offset)
+        offset_lengths = [0.0]
+        for a, b in zip(offset,offset[1:]):
+            offset_lengths.append(offset_lengths[-1]+_distance(a,b))
         previous, path = stations[start], []
         for index, p in enumerate(chosen):
             if index == 0:
                 path.append({"p": _point(nodes[start]), "s": stations[start]}); continue
             if index == len(chosen) - 1:
                 path.append({"p": _point(nodes[end]), "s": stations[end]}); continue
-            best_d, best_s = float("inf"), previous
-            for j, (a, b) in enumerate(zip(offset, offset[1:])):
-                t, d = _projection(p, a, b)
-                if d < best_d:
-                    best_d, best_s = d, ss[j] + t * (ss[j + 1] - ss[j])
+            distance = offset_line.project(Point(p))
+            j = min(len(offset)-2,max(0,bisect_right(offset_lengths,distance)-1))
+            t = (distance-offset_lengths[j]) / (offset_lengths[j+1]-offset_lengths[j] or 1)
+            best_s = ss[j]+t*(ss[j+1]-ss[j])
             previous = max(previous, best_s)
             path.append({"p": (float(p[0]), float(p[1])), "s": previous})
         patches.append((start, end, path))
