@@ -51,3 +51,16 @@ geometry at arbitrary curvature or widths.
 
 Reproduce the new population with `.venv/bin/python
  docs/reviews/open-path-ribbon-2026-09-08/crest-evidence.py` (one shell line).
+
+## Stronger maximum variation
+
+Ian requested more dramatic maxima for both controls. Above 50%, spacing now
+progressively expands span ratios with a bounded power curve; height progressively
+increases contrast between small and large swells, with a positive floor. The lower
+half retains the preceding behaviour (compared numerically at 25% and 50%). For
+seed 7 at maximum, five lobe spans changed from roughly 90–150 to 37–215 study
+units, and peak heights from .42–.65 to .24–.90. Width remains an outer bound.
+`crest-maximum.png` records seed 8 at both maxima. The earlier population and
+second-eye report describe the preceding range, not this follow-up. All 24 crest
+configurations and browser checks passed again; the lead inspected the maximum
+render. Ready for Ian to check.

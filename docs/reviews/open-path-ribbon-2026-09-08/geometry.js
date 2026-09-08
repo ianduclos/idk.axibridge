@@ -181,6 +181,13 @@
     const amount = key => clamp(+(opts[key] ?? opts.variation) || 0, 0, 1);
     const spacing = amount('spacingVariation'), height = amount('heightVariation');
     const phrasing = clamp(+(opts.phrasing ?? .7) || 0, 0, 1);
+    // Reserve the upper half for stronger contrast; the lower half is unchanged.
+    const spacingPush = smooth(clamp((spacing-.5)*2,0,1));
+    const heightPush = smooth(clamp((height-.5)*2,0,1));
+    const heightContrast = v => {
+      const power=1+2.5*heightPush, a=Math.pow(v,power), b=Math.pow(1-v,power);
+      return clamp(a/(a+b),.015,1);
+    };
     const wave = Math.max(1, +opts.wavelength || defaults.wavelength);
     const seed = (opts.seed >>> 0);
     const rhythm = rng(seed ^ 0xA341316C), heights = rng(seed ^ 0xC8013EA4);
@@ -202,12 +209,13 @@
       const position = phraseSize - phraseLeft--;
       const localSpan = .4 + rhythm() * 1.2;
       const phraseSpan = pace * motif[position % motif.length];
-      const span = mix(1, mix(localSpan, phraseSpan, phrasing), spacing);
+      const span = clamp(Math.pow(mix(1, mix(localSpan, phraseSpan, phrasing), spacing),
+        1+2.5*spacingPush),.18,3.5);
       const skew = (rhythm() - .5) * .5 * spacing;
       const freeHeight = .38 + heights() * .62;
       const hierarchy = phraseGain * (position === accent ? 1 : .46 + heights() * .3);
-      const peak = mix(.86, mix(freeHeight, hierarchy, phrasing), height);
-      const trough = mix(.21, .07 + heights() * .2, height);
+      const peak = heightContrast(mix(.86, mix(freeHeight, hierarchy, phrasing), height));
+      const trough = heightContrast(mix(.21, .07 + heights() * .2, height));
       events.push({span, skew, peak, trough});
     }
     const scale = Math.max(0, total) / events.reduce((sum,e) => sum+e.span, 0);

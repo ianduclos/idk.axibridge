@@ -69,6 +69,12 @@ def run():
                 page.emulate_media(color_scheme=theme)
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'horizontal overflow'
                 page.locator('#ribbon-study').screenshot(path=str(HERE / f'preview-{size}-{theme}.png'))
+        page.set_viewport_size({'width':736,'height':1200})
+        page.emulate_media(color_scheme='light')
+        page.select_option('#ribbon-shape','straight')
+        for name in ['spacingVariation','heightVariation']:
+            page.locator('#ribbon-'+name).evaluate('(e)=>{e.value=100;e.dispatchEvent(new Event("input"));}')
+        page.locator('#ribbon-study').screenshot(path=str(HERE/'crest-maximum.png'))
         # Neutral labels: mechanisms are kept in review-map.json, not on sheets.
         page.set_viewport_size({'width':1140,'height':1400})
         page.emulate_media(color_scheme='light')
