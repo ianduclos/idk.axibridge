@@ -202,7 +202,7 @@ export function initComposeTab() {
             <option value="tone">Tone bands</option>
           </select>
           <label title="nudge each plate off perfect registration, offset-print style">slop</label>
-          <input id="separate-slop" type="number" min="0" max="3" step="0.1" value="0" style="width:4.5em">
+          <input id="separate-slop" type="number" min="0" max="3" step="0.1" value="0">
           <span class="hint">mm</span>
           <button id="btn-separate">⌗ Separate</button>
         </div>
@@ -235,7 +235,7 @@ export function initComposeTab() {
       </div>
       <div class="row">
         <label>flatten tol.</label>
-        <input type="number" id="quant" value="0.1" min="0.01" max="5" step="0.01" style="width:5em">
+        <input type="number" id="quant" value="0.1" min="0.01" max="5" step="0.01">
         <span class="hint">mm</span>
         <button id="btn-upload" class="primary">Upload</button>
       </div>
@@ -247,9 +247,9 @@ export function initComposeTab() {
         <button id="btn-asset">Add image asset</button>
       </div>
       <div class="row">
-        <label>max frames</label><input type="number" id="asset-frames" min="1" max="240" placeholder="all" style="width:4.5em">
-        <label>start</label><input type="number" id="asset-start" min="0" placeholder="0" style="width:4.5em">
-        <label>every</label><input type="number" id="asset-every" min="1" placeholder="—" style="width:4.5em">
+        <label>max frames</label><input type="number" id="asset-frames" min="1" max="240" placeholder="all">
+        <label>start</label><input type="number" id="asset-start" min="0" placeholder="0">
+        <label>every</label><input type="number" id="asset-every" min="1" placeholder="—">
         <span class="hint">optional max / start / every — video or multiple files import as a frame sequence</span>
       </div>
       <div class="row">
@@ -1811,11 +1811,11 @@ export function renderLayerDetail() {
   const place = ldSection("placement");
   place.innerHTML = `
     <summary>Placement</summary>
-    <div class="row">
-      <label>x</label><input type="number" step="0.1" id="tf-x" value="${t.e.toFixed(2)}" style="width:5.5em">
-      <label>y</label><input type="number" step="0.1" id="tf-y" value="${t.f.toFixed(2)}" style="width:5.5em">
-      <label>scale</label><input type="number" step="0.01" id="tf-s" value="${sc.toFixed(3)}" style="width:5em">
-      <label>rot°</label><input type="number" step="0.5" id="tf-r" value="${rot.toFixed(1)}" style="width:5em">
+    <div class="parameter-grid">
+      <label>x<input type="number" step="0.1" id="tf-x" value="${t.e.toFixed(2)}"></label>
+      <label>y<input type="number" step="0.1" id="tf-y" value="${t.f.toFixed(2)}"></label>
+      <label>scale<input type="number" step="0.01" id="tf-s" value="${sc.toFixed(3)}"></label>
+      <label>rot°<input type="number" step="0.5" id="tf-r" value="${rot.toFixed(1)}"></label>
     </div>`;
   wrap.appendChild(place);
   const commitPlacement = () => {
@@ -1854,7 +1854,7 @@ export function renderLayerDetail() {
       <div class="row">
         <label>${label}</label>
         <input type="number" id="ld-frame-offset" step="${step}" min="${min}" max="${max}"
-          value="${shown}" style="width:5.5em" title="${title}">
+          value="${shown}" title="${title}">
       </div>
       ${frames ? `<label class="hint" style="cursor:pointer"
         title="the master scrubber / frame rendering advances this layer's clip one-for-one; positions never move">
@@ -1905,7 +1905,7 @@ export function renderLayerDetail() {
     </div>
     <div class="row">
       <label>margin</label>
-      <input type="number" id="ld-margin" value="${layer.occlusion_margin_mm}" step="0.25" min="-20" max="20" style="width:5.5em">
+      <input type="number" id="ld-margin" value="${layer.occlusion_margin_mm}" step="0.25" min="-20" max="20">
       <span class="hint">mm — + opens a gap, − bleeds under</span>
     </div>
     <div class="row">
@@ -2134,7 +2134,7 @@ export function renderLayerDetail() {
           timeline" on A and B.</div>
         <div class="row">
           <label>copies</label>
-          <input type="number" id="tw-sweep" min="1" max="60" step="1" style="width:4.5em">
+          <input type="number" id="tw-sweep" min="1" max="60" step="1">
         </div>
       </details>
       <details id="tw-timeline" class="form-group" ${p.follow_master ? "open" : ""}>
@@ -2160,9 +2160,9 @@ export function renderLayerDetail() {
           </div>
           <div class="row" id="tw-window-row" title="this tween holds A before 'active from', animates inside the window, holds B after 'active to' — overlap windows to overlap clips">
             <label>active from</label>
-            <input type="number" id="tw-window-from" min="0" max="1" step="0.01" style="width:4.5em">
+            <input type="number" id="tw-window-from" min="0" max="1" step="0.01">
             <label>to</label>
-            <input type="number" id="tw-window-to" min="0" max="1" step="0.01" style="width:4.5em">
+            <input type="number" id="tw-window-to" min="0" max="1" step="0.01">
           </div>
         </details>
       </details>

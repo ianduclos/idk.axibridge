@@ -40,11 +40,11 @@ export function initSettingsTab() {
         <select id="paper-preset"></select>
         <label><input type="checkbox" id="paper-rotate" checked> rotate to fit bed</label>
       </div>
-      <div class="row">
-        <label>w</label><input type="number" id="guide-w" step="1" style="width:5.5em">
-        <label>h</label><input type="number" id="guide-h" step="1" style="width:5.5em">
-        <label>x</label><input type="number" id="guide-x" step="1" style="width:5.5em">
-        <label>y</label><input type="number" id="guide-y" step="1" style="width:5.5em">
+      <div class="parameter-grid">
+        <label>w<input type="number" id="guide-w" step="1"></label>
+        <label>h<input type="number" id="guide-h" step="1"></label>
+        <label>x<input type="number" id="guide-x" step="1"></label>
+        <label>y<input type="number" id="guide-y" step="1"></label>
       </div>
       <div class="hint">A4 portrait does not fit the 300×218 bed un-rotated — its long edge
         only fits along machine X. Drag the rectangle on the canvas to position it.</div>
@@ -66,10 +66,10 @@ export function initSettingsTab() {
         monitor, so it falls back on the convention that an inch is 96 pixels —
         which is out by a fifth or more on a Retina display. Hold a ruler across
         the bar below and type what it actually reads.</div>
-      <div id="cal-bar" title="the app believes this is 100 mm"></div>
+      <div class="ruler-viewport"><div id="cal-bar" title="the app believes this is 100 mm"></div></div>
       <div class="row">
         <label>measures</label>
-        <input type="number" id="screen-cal-measured" step="0.5" min="10" max="400" style="width:5.5em">
+        <input type="number" id="screen-cal-measured" step="0.5" min="10" max="400">
         <label>mm</label>
         <button id="btn-screen-cal-apply">Apply</button>
         <button id="btn-screen-cal-clear">Reset to nominal</button>
@@ -77,7 +77,7 @@ export function initSettingsTab() {
       <div class="hint" id="screen-cal-state"></div>
       <div class="row">
         <label>schematic line width</label>
-        <input type="number" id="schematic-width" step="0.05" min="0.05" max="5" style="width:5.5em">
+        <input type="number" id="schematic-width" step="0.05" min="0.05" max="5">
         <label>mm</label>
       </div>
       <div class="hint">How thick Schematic-mode hairlines draw on THIS screen

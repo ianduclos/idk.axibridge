@@ -78,8 +78,8 @@ const MACHINE_PANELS = `    <div class="panel" id="panel-pen">
       <h2>Soft limits</h2>
       <label class="row"><input type="checkbox" id="limits-enabled"> guard envelope</label>
       <div class="row">
-        <input type="number" id="limits-w" step="1" min="10" style="width:5.5em"> ×
-        <input type="number" id="limits-h" step="1" min="10" style="width:5.5em"> <span class="hint">mm</span>
+        <input type="number" id="limits-w" step="1" min="10"> ×
+        <input type="number" id="limits-h" step="1" min="10"> <span class="hint">mm</span>
       </div>
       <div class="hint">No limit switches — past the envelope the carriage grinds the frame.</div>
     </div>
@@ -90,11 +90,11 @@ const MACHINE_PANELS = `    <div class="panel" id="panel-pen">
         1) load pen A, plot the mark. 2) load pen B, plot again.
         3) caliper the displacement of mark B relative to mark A (machine axes) and enter everything below.</div>
       <div class="row"><button id="btn-cal-mark">Plot registration mark</button></div>
-      <div class="row">
-        <label>⌀A</label><input type="number" id="cal-d1" step="0.05" style="width:5em">
-        <label>⌀B</label><input type="number" id="cal-d2" step="0.05" style="width:5em">
-        <label>Δx</label><input type="number" id="cal-dx" step="0.05" style="width:5em">
-        <label>Δy</label><input type="number" id="cal-dy" step="0.05" style="width:5em">
+      <div class="parameter-grid">
+        <label>⌀A<input type="number" id="cal-d1" step="0.05"></label>
+        <label>⌀B<input type="number" id="cal-d2" step="0.05"></label>
+        <label>Δx<input type="number" id="cal-dx" step="0.05"></label>
+        <label>Δy<input type="number" id="cal-dy" step="0.05"></label>
       </div>
       <div class="row"><button id="btn-cal-compute" class="primary">Compute & save vector</button></div>
       <div class="hint" id="cal-current"></div>
@@ -148,7 +148,7 @@ export function initPlotTab() {
       <div class="hint">bake a contiguous slice of the whole plot — random start, early stop,
         strokes cut mid-line where the pen lifted — into a new layer</div>
       <div class="row">
-        <label>seed</label><input type="number" id="interrupt-seed" min="0" max="99999" step="1" style="width:6em">
+        <label>seed</label><input type="number" id="interrupt-seed" min="0" max="99999" step="1">
         <button id="interrupt-reroll" title="new random seed" aria-label="New random seed"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"/></svg></button>
         <label class="hint" style="cursor:pointer"
           title="slice in the order the machine would draw (plot-pass optimisation applied); off = layer z-order">
@@ -172,9 +172,9 @@ export function initPlotTab() {
       <h2>Animation &amp; grid sheets</h2>
       <div class="hint">Frames on paper — preview, capture to tray, stepper, export</div>
       <div class="row">
-        <label>frames</label><input type="number" id="anim-frames" min="2" max="240" step="1" style="width:5em">
-        <label>t from</label><input type="number" id="anim-t-from" min="0" max="1" step="0.01" style="width:5.5em">
-        <label>t to</label><input type="number" id="anim-t-to" min="0" max="1" step="0.01" style="width:5.5em">
+        <label>frames</label><input type="number" id="anim-frames" min="2" max="240" step="1">
+        <label>t from</label><input type="number" id="anim-t-from" min="0" max="1" step="0.01">
+        <label>t to</label><input type="number" id="anim-t-to" min="0" max="1" step="0.01">
       </div>
       <div class="hint">for one clip-frame per rendered frame, set frames = the clip's length</div>
       <!-- P2: a follow_master tween whose window is narrower than one frame
@@ -183,9 +183,9 @@ export function initPlotTab() {
       <div class="hint warn" id="anim-narrow-tween-hint" hidden></div>
       <div class="row">
         <label>layout</label>
-        <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1" style="width:4em">
-        <label>rows</label><input type="number" id="anim-rows" min="1" max="12" step="1" style="width:4em">
-        <label>margin</label><input type="number" id="anim-sheet-margin" min="0" max="30" step="0.5" style="width:5em">
+        <label>cols</label><input type="number" id="anim-cols" min="1" max="12" step="1">
+        <label>rows</label><input type="number" id="anim-rows" min="1" max="12" step="1">
+        <label>margin</label><input type="number" id="anim-sheet-margin" min="0" max="30" step="0.5">
       </div>
       <div class="row">
         <label>crop</label>
@@ -202,7 +202,7 @@ export function initPlotTab() {
         <button id="anim-preview-toggle">Live play</button>
         <button id="anim-preview-step">Frame →</button>
         <label title="in-canvas Live play speed only — the render popup has its own fps for playback/export">live fps</label>
-        <input type="number" id="anim-preview-fps" min="1" max="24" step="1" style="width:4em">
+        <input type="number" id="anim-preview-fps" min="1" max="24" step="1">
         <label class="hint" style="cursor:pointer"><input type="checkbox" id="anim-preview-loop"> loop</label>
       </div>
       <div class="row"><span id="anim-preview-label"></span></div>
@@ -218,14 +218,14 @@ export function initPlotTab() {
         <div class="row"><span id="anim-frame-label"></span></div>
         <div class="row" id="anim-start-frame-row">
           <label>frame</label>
-          <input type="number" id="anim-start-frame" min="1" step="1" style="width:5em">
+          <input type="number" id="anim-start-frame" min="1" step="1">
           <span class="hint">of <span id="anim-start-frame-n">…</span></span>
           <button id="anim-start-frame-go"
             title="jump the stepper to this frame and set it as your Reset point">Start here</button>
         </div>
         <div class="row" id="anim-start-sheet-row">
           <label>sheet</label>
-          <input type="number" id="anim-start-sheet" min="1" step="1" style="width:5em">
+          <input type="number" id="anim-start-sheet" min="1" step="1">
           <span class="hint">of <span id="anim-start-sheet-n">…</span></span>
           <button id="anim-start-sheet-go"
             title="jump the stepper to this sheet and set it as your Reset point">Start here</button>
@@ -259,7 +259,7 @@ export function initPlotTab() {
           </div>
           <label>steps</label>
           <input type="number" id="ab-steps" value="5" min="2" max="60" step="1"
-                 title="interpolation steps" style="width:4.5em">
+                 title="interpolation steps">
           <button id="ab-series" disabled>⇄ series</button>
         </div>
       </details>
@@ -276,7 +276,7 @@ export function initPlotTab() {
              nothing on screen said so until now. -->
         <div class="hint">or use A · B · ⇄ above to capture and blend in one pass</div>
         <div class="row">
-          <label>steps</label><input type="number" id="stage-steps" min="2" max="60" step="1" value="5" style="width:4.5em">
+          <label>steps</label><input type="number" id="stage-steps" min="2" max="60" step="1" value="5">
           <button id="stage-interp" class="primary">Generate batch</button>
         </div>
         <!-- P8: interpolateBlocker's reason, visible — it was already
@@ -1338,9 +1338,9 @@ function relayoutRow(g) {
   return `
     <div class="row stage-relayout">
       <label>re-layout</label>
-      <input type="number" data-rl-cols min="1" max="12" step="1" value="${Number(f.cols) || 1}" style="width:3.5em">
+      <input type="number" data-rl-cols min="1" max="12" step="1" value="${Number(f.cols) || 1}">
       <span>×</span>
-      <input type="number" data-rl-rows min="1" max="12" step="1" value="${Number(f.rows) || 1}" style="width:3.5em">
+      <input type="number" data-rl-rows min="1" max="12" step="1" value="${Number(f.rows) || 1}">
       <button data-stage-relayout="${esc(g.id)}" title="re-render this capture at a new grid (new tray group)">apply</button>
     </div>`;
 }

@@ -64,6 +64,16 @@
   --ochre: var(--flexoki-yellow-400);
   --rust: var(--flexoki-red-300);
   --moss: var(--flexoki-green-400);
+  --type-body: 13px;
+  --type-label: 12px;
+  --type-note: 11px;
+  --type-title: 14px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --field-number-w: 7.5em;
   --control-h: 30px;
   --compact-h: 24px;
 
@@ -92,7 +102,7 @@
      -dark and effectively invisible */
   color-scheme: dark;
 
-  font-size: 13px;
+  font-size: var(--type-body);
 }
 
 * { box-sizing: border-box; }
@@ -112,22 +122,22 @@
 
    .readout — numbers that are machine truth (mm, seconds, counts). Tabular so
    digits don't shift as they tick. */
-.engraved,
-#tabs button,
-.panel > h2,
-#layers-dock-title,
-.preview-head h2,
-.seg button,
-.form-group > summary,
-details:not(.form-group) > summary,
-button.primary.big {
-  font-size: var(--engraved-size, 11px);
-  font-weight: var(--engraved-weight, 700);
-  letter-spacing: var(--engraved-track, 1px);
-  text-transform: var(--engraved-case, uppercase);
+/* Navigation keeps the short instrument voice; working sections use sentence case. */
+.engraved, #tabs button {
+  font-size: var(--type-note); font-weight: 700;
+  letter-spacing: .5px; text-transform: uppercase;
+}
+.panel > h2, #layers-dock-title, .form-group > summary,
+details:not(.form-group) > summary {
+  font-size: var(--type-label); font-weight: 700;
+  letter-spacing: 0; text-transform: none;
+}
+.preview-head h2 {
+  font-size: var(--type-title); font-weight: 700;
+  letter-spacing: 0; text-transform: none;
 }
 .engraved { color: var(--ink); }
-.readout { font-variant-numeric: tabular-nums; }
+.readout, output { font-variant-numeric: tabular-nums; }
 
 /* custom scrollbars — slim warm-chrome rails; thumb only, no track chrome.
    ::-webkit rules style WKWebView (the pywebview shell), Safari, Chromium;
@@ -174,7 +184,7 @@ header {
   /* gap/padding tightened (16px/16px -> 8px/10px) when the Settings menu
      became the bar's fifth item (2026-08-11) — the extra trigger pushed the
      one-line width past 900px, which test_the_canvas_top_edge_... pins. */
-  padding: 0 10px; min-height: 40px;
+  padding: 0 var(--space-3); min-height: 40px;
   border-bottom: 1px solid var(--bench-edge);
   background: var(--bench);
 }
@@ -192,12 +202,12 @@ header {
    the whole cluster over — name, lamp, estimate as one group. */
 .project-name {
   margin-left: auto;
-  font-family: inherit; font-size: 13px;
+  font-family: inherit; font-size: var(--type-body);
   max-width: 18em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   color: var(--ink-soft);
 }
 .estimate {
-  color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: 12px;
+  color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: var(--type-label);
 }
 
 /* App-shell chrome. launch/axibridge_app.py sets data-shell="native" once the
@@ -219,7 +229,7 @@ header {
 #menubar .menu { position: relative; }
 #menubar .menu-trigger {
   background: transparent; border: 1px solid transparent; border-radius: 0;
-  padding: 4px 6px; font-family: inherit; font-size: 12.5px; color: var(--ink);
+  padding: 4px 6px; font-family: inherit; font-size: var(--type-body); color: var(--ink);
   cursor: pointer;
 }
 #menubar .menu-trigger:hover,
@@ -232,13 +242,13 @@ header {
 }
 #menubar .menu.open .menu-panel { display: flex; }
 #menubar .menu-item {
-  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+  display: flex; align-items: center; gap: var(--space-2); width: 100%; text-align: left;
   background: transparent; border: none; border-radius: 0; padding: 6px 10px;
-  font-family: inherit; font-size: 12.5px; color: var(--ink); cursor: pointer;
+  font-family: inherit; font-size: var(--type-body); color: var(--ink); cursor: pointer;
   text-decoration: none; white-space: nowrap;
 }
 #menubar .menu-item:hover,
-#menubar .menu-item:focus-visible { background: var(--live); color: var(--bench-deep); outline: none; }
+#menubar .menu-item:focus-visible { background: var(--live-deep); color: var(--ink-hi); outline-offset: -2px; }
 #menubar .menu-check { width: 1em; opacity: 0; flex: none; }
 /* `.on` is what main.js sets on the #view-toggle / #mode-toggle buttons — the
    same controls, just living in the View menu now instead of the canvas
@@ -259,21 +269,22 @@ header {
 /* groups of radio-ish items inside one panel, and the hairline between them */
 #menubar .menu-group { display: flex; flex-direction: column; gap: 1px; }
 #menubar .menu-sep { height: 1px; margin: 4px 6px; background: var(--bench-edge); }
-#menubar .menu-key { margin-left: auto; padding-left: 18px; color: var(--ink-faint, var(--ink-soft)); }
+#menubar .menu-key { flex-shrink: 0; margin-left: auto; padding-left: 18px; color: var(--ink-faint, var(--ink-soft)); }
 #menubar .menu-item:hover .menu-key { color: inherit; }
 
 /* connection lamp — round, because indicator lamps are round. One of two
    things in the app allowed a radius. */
 .pill {
   padding: 2px 12px; border-radius: 999px; background: var(--bench-deep);
-  border: 1px solid var(--bench-edge); color: var(--ink-soft); font-size: 11.5px;
+  border: 1px solid var(--bench-edge); color: var(--ink-soft); font-size: var(--type-note);
 }
 .pill.ok { color: var(--moss); border-color: var(--moss); }
 .pill.busy { color: var(--ochre); border-color: var(--ochre); }
 .pill.err { color: var(--rust); border-color: var(--rust); }
 
 main {
-  flex: 1; display: grid; grid-template-columns: 1fr var(--sidebar-w, 540px);
+  flex: 1; display: grid; grid-template-columns: minmax(0,1fr) var(--sidebar-w,330px);
+  grid-template-rows: minmax(0,1fr);
   gap: 0; min-height: 0;
 }
 
@@ -286,20 +297,20 @@ main {
 #layers-dock {
   position: relative; flex: none;
   display: flex; flex-direction: column; min-height: 0;
-  height: var(--layers-dock-h, 240px);
+  height: var(--layers-dock-h, 160px);
   border-top: 1px solid var(--bench-edge);
   background: var(--bench);
-  padding: 0 16px 10px;
+  padding: 0 var(--space-4) var(--space-2);
 }
 #layers-dock-title {
-  display: flex; align-items: center; gap: 9px;
-  --engraved-size: 12px; --engraved-track: 1.2px;
-  color: var(--ink); margin: 12px 0 8px;
+  display: flex; align-items: center; gap: var(--space-2);
+
+  color: var(--ink); margin: var(--space-3) 0 var(--space-2);
   cursor: pointer; user-select: none; flex: none;
 }
 /* the same −/+ marker the panels use, so the device reads as one language */
 #layers-dock-title::before {
-  content: "−"; color: var(--bench-deep); background: var(--ink-soft);
+  content: "−"; color: var(--ink-soft); background: transparent;
   font-weight: 700; letter-spacing: 0; font-size: var(--t-10, 10px); line-height: 14px;
   width: 14px; height: 14px; text-align: center; flex: none;
 }
@@ -317,7 +328,7 @@ main {
 #layers-dock.collapsed { height: auto; }
 #layers-dock.collapsed #layers-dock-body { display: none; }
 #layers-dock.collapsed #layers-dock-title::before { content: "+"; background: var(--ink); }
-#layers-dock.collapsed #layers-dock-title { margin-bottom: 10px; }
+#layers-dock.collapsed #layers-dock-title { margin-bottom: var(--space-3); }
 #layers-dock.collapsed #layers-dock-resize { display: none; }
 
 /* the grab strip, same shape as #sidebar-resize: a wide hit area over a
@@ -327,6 +338,23 @@ main {
   cursor: row-resize; z-index: 5;
 }
 #layers-dock-resize:hover { background: var(--bench-edge); }
+
+#inspector { min-width:0; border-left:1px solid var(--bench-edge); }
+#tab-compose { overflow-x:hidden; }
+#tab-compose .row { flex-wrap:wrap; }
+#tab-compose .row select { min-width:0; max-width:100%; }
+#gen-fields { margin-top:var(--space-3); }
+#gen-fields > summary { color:var(--ink-soft); }
+#selected-source:empty { display:none; }
+#selected-source #gen-panel { border-left:2px solid var(--live); padding-left:var(--space-3); margin:var(--space-2) 0 var(--space-4); }
+#selected-source #gen-panel > h2 { font-size:var(--type-label); }
+#gen-latch { max-width:100%; }
+#layers-dock { height:var(--layers-dock-h,160px); }
+#layers-dock-title { cursor:default; letter-spacing:0; }
+#layers-dock-title::before { display:none; }
+#layers-dock-title::after { display:none; }
+#layers-dock-expand { margin-left:auto; min-height:var(--compact-h); padding:0 var(--space-2); font-size:var(--type-note); }
+#layers-dock-body > .hint { font-size:var(--type-note); }
 
 /* ---- the bed (the persistent centre workspace) ---- */
 
@@ -347,13 +375,13 @@ main {
 /* the scrollbar would be a rail across the chrome for a bar that rarely
    scrolls; the content still scrolls by wheel/trackpad */
 #canvas-toolbar::-webkit-scrollbar { height: 0; }
-#canvas-toolbar label { color: var(--ink-soft); font-size: 12px; display: flex; gap: 5px; align-items: center; }
+#canvas-toolbar label { color: var(--ink-soft); font-size: var(--type-label); display: flex; gap: 5px; align-items: center; }
 /* zoom lives at the far end of the row: the readout you type into, then fit.
    `margin-left: auto` is the whole placement — the tools keep the left, and
    the pen/brush bars that appear between them push nothing out of the corner. */
-#zoom-group { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+#zoom-group { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
 #zoom-pct { width: 4.4em; }
-.zoom-unit { color: var(--ink-soft); font-size: 12px; margin-left: -3px; }
+.zoom-unit { color: var(--ink-soft); font-size: var(--type-label); margin-left: -3px; }
 #canvas-toolbar input[type="number"] { width: 4.2em; }
 
 /* the screen-calibration ruler: a bar the app believes is 100mm wide, with end
@@ -399,33 +427,35 @@ main {
   display: flex; align-items: center; gap: 12px;
   padding: 4px 6px 4px 12px; border-radius: 0;
   background: var(--bench-deep); border: 1px solid var(--live);
-  color: var(--ink-soft); font-size: 12px; white-space: nowrap;
+  color: var(--ink-soft); font-size: var(--type-label); white-space: nowrap;
   box-shadow: 0 2px 12px rgba(0,0,0,.45);
 }
 #doc-preview-banner[hidden] { display: none; }
 #doc-preview-label { color: var(--live-soft); }
-#doc-preview-exit { padding: 1px 10px; font-size: 11.5px; }
+#doc-preview-exit { padding: 1px 10px; font-size: var(--type-note); }
 /* the playback transport, at the right end of the status line. It used to be
    its own strip under the sheet, which spent a whole row on two controls; it
    reports on the drawing, and so does the line, so it joined it. Sized to the
    line rather than to the toolbar — same button scale as #machine-state, so
    Animate and Stop read as the same class of control. */
 #playback {
+  flex-wrap:wrap; min-width:0;
   display: flex; align-items: center; gap: 8px;
 }
 #playback[hidden] { display: none; }
-#playback button { padding: 1px 9px; font-size: 11px; }
-#playback label { color: var(--ink-soft); font-size: 11px; display: flex; align-items: center; gap: 4px; }
-#playback input[type="number"] { width: 3.6em; padding: 1px 4px; font-size: 11px; }
+#playback button { flex:none; white-space:nowrap; padding: 1px 9px; font-size: var(--type-body); }
+#playback label { color: var(--ink-soft); font-size: var(--type-note); display: flex; align-items: center; gap: 4px; }
+#playback input[type="number"] { width: 3.6em; padding: 1px 4px; font-size: var(--type-note); }
 
 /* the machine strip lives inside the status line — same row, same quiet ink,
    no extra band. Buttons shrink to the line's scale so a persistent Stop does
    not sit there shouting while nothing is running. */
 #machine-state {
+  flex-wrap:wrap; min-width:0;
   display: flex; align-items: center; gap: 14px;
 }
 #machine-state[hidden] { display: none; }
-#machine-state button { padding: 1px 9px; font-size: 11px; }
+#machine-state button { flex:none; white-space:nowrap; padding: 1px 9px; font-size: var(--type-body); }
 #machine-state .readout:empty { display: none; }
 #pen-state.warn { color: var(--ochre); }
 
@@ -436,10 +466,10 @@ main {
    transport family rather than a fifth toolbar row. */
 #timeline-bar {
   display: flex; align-items: center; gap: 8px;
-  padding: 4px 2px; color: var(--ink-soft); font-size: 12px;
+  padding: 4px 2px; color: var(--ink-soft); font-size: var(--type-body);
 }
 #timeline-bar[hidden] { display: none; } /* [hidden] loses to a display rule below it in the cascade — see #layers-dock[hidden] */
-#timeline-bar button { padding: 1px 9px; font-size: 11px; }
+#timeline-bar button { padding: 1px 9px; font-size: var(--type-body); }
 /* S5: #tl-track carries #tl-scrub plus two decoration layers underneath it —
    the shaded [tFrom,tTo] sub-range (Q4a) and one tick per frame-grid position
    (Q4a), a brighter tick for a frame fetched this session. Both sit in the
@@ -461,15 +491,15 @@ main {
    TWEEN_CACHE_BUDGET_POINTS, gencache.py's docstring), so a bright tick can
    still be a miss by the time you land on it again. */
 #tl-ticks .tick.fetched { top: 0; height: 6px; background: var(--live-soft); }
-#tl-t-val, #tl-frame-val { min-width: 5em; font-size: 11px; font-variant-numeric: tabular-nums; }
+#tl-t-val, #tl-frame-val { min-width: 5em; font-size: var(--type-note); font-variant-numeric: tabular-nums; }
 #tl-frame-val:empty { display: none; }
 #tl-checkpoints { display: flex; gap: 4px; }
 #tl-checkpoints[hidden] { display: none; }
-#tl-checkpoints button { padding: 0 6px; font-size: 10px; }
+#tl-checkpoints button { padding: 0 6px; font-size: var(--type-body); }
 
 #canvas-status {
-  display: flex; gap: 18px; padding-top: 8px;
-  color: var(--ink-soft); font-size: 12px; min-height: 1.6em;
+  display: flex; flex-wrap:wrap; gap:var(--space-2) var(--space-4); padding-top:var(--space-2);
+  color: var(--ink-soft); font-size: var(--type-label); min-height: 1.6em;
   font-variant-numeric: tabular-nums;
 }
 .warn { color: var(--ochre); }
@@ -498,7 +528,7 @@ main {
 #tooltip {
   position: fixed; z-index: 100; pointer-events: none;
   background: var(--bench-rise); color: var(--ink); border: 1px solid var(--bench-edge);
-  border-radius: var(--r-sm); padding: 5px 9px; font-size: 11px; line-height: 1.4;
+  border-radius: var(--r-sm); padding: 5px 9px; font-size: var(--type-note); line-height: 1.4;
   max-width: 320px; box-shadow: 0 3px 12px rgba(0,0,0,.5);
 }
 .bed-origin { fill: var(--rust); }
@@ -508,7 +538,7 @@ main {
 }
 .guide-rect:active { cursor: grabbing; }
 .crop-rect { fill: none; stroke: var(--rust); stroke-width: .5; stroke-dasharray: 2 3; pointer-events: none; }
-.server-log { max-height: 320px; overflow-y: auto; font-size: 11px; line-height: 1.5;
+.server-log { max-height: 320px; overflow-y: auto; font-size: var(--type-note); line-height: 1.5;
   white-space: pre-wrap; word-break: break-all; margin: 8px 0 0; opacity: .85; }
 .layer-hit { fill: none; stroke: transparent; stroke-width: 3; pointer-events: stroke; cursor: grab; }
 .layer.selected .layer-hit { cursor: grabbing; }
@@ -539,39 +569,41 @@ main {
   box-shadow: inset 0 2px 0 transparent;
 }
 #tabs button:last-child { border-right: none; }
-#tabs button:hover { color: var(--ink); }
+#tabs button:hover:not(:disabled) { color: var(--ink); }
 #tabs button.on {
   background: var(--bench); color: var(--ink);
   box-shadow: inset 0 2px 0 var(--live);
 }
-.tab-body { flex: 1; overflow-y: auto; padding: 14px 16px 24px; min-height: 0; }
+.tab-body { flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: var(--space-4) var(--space-4) var(--space-6); min-height: 0; min-width: 0; }
 
 /* A panel is a registered area, not a card: engraved label, hairline rule
    running out to the edge, no box. Boxes made every section look equally
    important and turned the sidebar into a field of identical rectangles. */
 .panel {
   border: none; border-radius: 0; padding: 0; background: none;
-  margin-bottom: 26px;
+  margin-bottom: var(--space-6);
 }
 .panel > h2 {
-  --engraved-size: 12px; --engraved-track: 1.2px;
-  display: flex; align-items: center; gap: 9px;
-  color: var(--ink); margin: 0 0 12px;
+
+  display: flex; align-items: center; gap: var(--space-2);
+  color: var(--ink-hi); margin: 0 0 var(--space-3);
+  min-height: var(--compact-h); overflow-wrap: anywhere;
   cursor: pointer; user-select: none;
 }
 /* the marker is the section's own control, engraved: − open, + closed */
 .panel > h2::before {
-  content: "−"; color: var(--bench-deep); background: var(--ink-soft);
-  font-weight: 700; letter-spacing: 0; font-size: 10px; line-height: 14px;
+  content: "−"; color: var(--ink-soft); background: transparent;
+  font-weight: 700; letter-spacing: 0; font-size: var(--type-note); line-height: 14px;
   width: 14px; height: 14px; text-align: center; flex: none;
 }
-.panel > h2:hover::before { background: var(--ink); }
+.panel > h2:hover::before { color: var(--ink-hi); }
 .panel.collapsed > h2::before { content: "+"; }
 /* the engraved rule: fills whatever the label leaves */
 .panel > h2::after {
   content: ""; flex: 1; height: 1px; background: var(--bench-edge);
 }
-.panel > h2:hover::after { background: var(--ink-soft); }
+.panel > h2:hover::after { background: var(--bench-edge); }
 /* a heading may carry a literal (a file path, a unit) in a .hint — never
    case-transform it: "~/.axibridge/settings.json" is not a label, it's a path
    the reader has to be able to type back. */
@@ -585,9 +617,9 @@ details:not(.form-group) > summary .hint {
   text-transform: none; letter-spacing: 0; font-weight: 400;
 }
 .preview-head h2 .hint { margin-top: 0; }
-.panel.collapsed { margin-bottom: 14px; }
+.panel.collapsed { margin-bottom: var(--space-4); }
 .panel.collapsed > h2 { margin-bottom: 0; color: var(--ink-soft); }
-.panel.collapsed > h2::before { background: var(--ink); }
+.panel.collapsed > h2::before { color: var(--ink); }
 .panel.collapsed > *:not(h2) { display: none; }
 /* Sentence case, and out of the engraved family. The silkscreen device
    registers an AREA of the instrument; the layer panel nested four of them
@@ -596,20 +628,20 @@ details:not(.form-group) > summary .hint {
    sub-heading from its rows without a second silkscreen. Still mono — the
    machine keeps one voice; only the shouting goes. */
 .panel h3 {
-  font-size: 12px; font-weight: 700;
+  font-size: var(--type-label); font-weight: 700;
   margin: 16px 0 8px; color: var(--ink);
 }
 
 .tag {
-  font-size: 9.5px; background: var(--bench-deep); border: 1px solid var(--bench-edge);
+  font-size: var(--type-note); background: var(--bench-deep); border: 1px solid var(--bench-edge);
   padding: 0 5px; border-radius: var(--r-sm); color: var(--ochre); letter-spacing: 0;
 }
-.row { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
+.row { display: flex; align-items: center; gap: 8px; margin: var(--space-2) 0; flex-wrap: wrap; }
 /* display:flex beats the UA's [hidden]{display:none} — restore it (the
    lineart "Create stack" row was showing for every generator) */
 .row[hidden] { display: none; }
-.row > label { color: var(--ink); font-size: 12px; }
-.hint { color: var(--ink-soft); font-size: 11.5px; margin-top: 4px; overflow-wrap: anywhere; }
+.row > label { color: var(--ink); font-size: var(--type-label); }
+.hint { color: var(--ink-soft); font-size: var(--type-note); margin-top: 4px; overflow-wrap: anywhere; }
 .hint.warn { color: var(--ochre); }
 .asset-tool { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--bench-edge); }
 .asset-tool select { max-width: 18em; }
@@ -617,12 +649,13 @@ details:not(.form-group) > summary .hint {
 
 button {
   background: var(--bench-rise); color: var(--ink); border: 1px solid var(--bench-edge);
-  border-radius: var(--r); padding: 4px 11px; cursor: pointer;
-  font-family: inherit; font-size: 12px; line-height: 1.4;
+  border-radius: var(--r); padding: var(--space-1) var(--space-3); cursor: pointer;
+  max-width: 100%; overflow-wrap: normal;
+  font-family: inherit; font-size: var(--type-body); line-height: 1.4;
   min-height: var(--control-h);
 }
-button:hover { border-color: var(--ink-soft); background: var(--bench-edge); }
-button:active { box-shadow: var(--recess); }
+button:hover:not(:disabled) { border-color: var(--ink-soft); background: var(--bench-edge); }
+button:active:not(:disabled) { box-shadow: var(--recess); }
 button:disabled { opacity: .45; cursor: default; border-color: var(--bench-edge); background: var(--bench-rise); box-shadow: none; }
 /* A disabled <select>/<input> read almost identically to a live one, which
    matters the moment a control is switched off to MEAN something — the plot
@@ -637,30 +670,30 @@ select:disabled, input:disabled { opacity: .4; cursor: default; }
 button.primary {
   background: var(--live-fill); border-color: var(--live-fill); color: var(--ink-hi);
   font-weight: 400;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 1px 0 var(--live-deep);
+  box-shadow: none;
 }
-button.primary:hover { background: var(--live-fill-hi); border-color: var(--live-fill-hi); }
-button.primary:active { box-shadow: inset 0 1px 3px rgba(0,0,0,.3); }
+button.primary:hover:not(:disabled) { background: var(--live-fill-hi); border-color: var(--live-fill-hi); }
+button.primary:active:not(:disabled) { box-shadow: inset 0 1px 3px rgba(0,0,0,.3); }
 button.danger { background: transparent; border-color: var(--rust); color: var(--rust); box-shadow: none; }
-button.danger:hover { background: var(--rust); color: var(--bench-deep); border-color: var(--rust); }
+button.danger:hover:not(:disabled) { background: var(--rust); color: var(--bench-deep); border-color: var(--rust); }
 /* Plot gets scale, not a different colour — it's the same primary path, taken
    seriously. .big is unique to this button. */
 button.primary.big {
-  --engraved-size: 13px; --engraved-weight: 400; --engraved-track: 1.8px;
-  padding: 11px 26px; border-radius: 4px;
+  font-size: var(--type-body); font-weight: 700; letter-spacing: 0;
+  padding: var(--space-2) var(--space-6); border-radius: var(--r);
 }
-button.primary.big:disabled {
+button.primary:disabled, button.danger:disabled {
   background: var(--bench-rise); border-color: var(--bench-edge); color: var(--ink-soft);
   box-shadow: none;
 }
 
 input, select, textarea {
   background: var(--bench-deep); color: var(--ink); border: 1px solid var(--bench-edge);
-  border-radius: var(--r-sm); padding: 3px 7px; font-family: inherit; font-size: 12.5px;
-  max-width: 100%; box-shadow: var(--recess);
+  border-radius: var(--r); padding: var(--space-1) var(--space-2); font-family: inherit; font-size: var(--type-body);
+  max-width: 100%; min-width: 0; box-shadow: none;
   line-height: 1.4;
 }
-input[type="number"] { font-variant-numeric: tabular-nums; }
+input[type="number"] { font-variant-numeric: tabular-nums; width: var(--field-number-w); flex-shrink: 0; }
 input:not([type="range"]):not([type="checkbox"]):not([type="color"]), select { min-height: var(--control-h); }
 /* keep the spinner arrows permanently visible — on a dark field the
    show-on-hover default is effectively a hidden control */
@@ -668,6 +701,14 @@ input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
 input:hover, select:hover, textarea:hover { border-color: var(--ink-soft); }
 input[type="checkbox"] { accent-color: var(--live); box-shadow: none; }
 input[type="color"] { padding: 1px; width: 36px; height: 24px; }
+
+button, input, select, textarea, summary, .menu-item, .ctx-menu-item {
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+input:not([type="range"]):focus-visible, select:focus-visible, textarea:focus-visible {
+  border-color: var(--live); background: var(--bench-deep);
+}
+button:disabled, input:disabled, select:disabled { transition: none; }
 
 /* ---- sliders --------------------------------------------------------------
    A fader on an instrument: a shallow groove, the travelled part filled, and a
@@ -717,9 +758,9 @@ input[type="range"]:hover::-moz-range-thumb { background: var(--ink); }
 /* under the hand the travelled groove comes up — the value you are changing
    is worth marking, one slider at a time */
 input[type="range"]:hover, input[type="range"]:active { --fader: var(--fader-hot); }
-input[type="range"]:focus-visible { outline: none; }
-input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--live); }
-input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--live); }
+input[type="range"]:focus-visible { outline: 2px solid var(--live); outline-offset: 2px; }
+input[type="range"]:focus-visible::-webkit-slider-thumb { background: var(--ink-hi); }
+input[type="range"]:focus-visible::-moz-range-thumb { background: var(--ink-hi); }
 /* holding shift switches to fine-tune — the thumb narrows to say so */
 /* fine mode narrows the cap to a blade — the one place --live earns a look
    here, because it is a MODE you are in, not a value */
@@ -741,11 +782,11 @@ input[type="range"].fine::-moz-range-thumb {
    wrapped to three rows; obvious once it was one. */
 .seg[hidden] { display: none; }
 .seg button {
-  --engraved-track: 1.2px;
+  font-size: var(--type-body);
   border: none; border-radius: 0; background: transparent; box-shadow: none;
   color: var(--ink-soft); padding: 4px 10px;
 }
-.seg button:hover { background: var(--bench-rise); color: var(--ink); }
+.seg button:hover:not(:disabled) { background: var(--bench-rise); color: var(--ink); }
 /* the occlusion channel groups: four one-letter segments, tight, because they
    are a channel picker rather than four sentences */
 .group-seg button { padding: 3px 9px; min-width: 2.2em; }
@@ -759,7 +800,7 @@ input[type="range"].fine::-moz-range-thumb {
 /* icon-bearing segments keep sentence case — the icon plus a word reads as a
    tool name, not a silkscreened setting */
 .seg button:has(.tool-icon) {
-  --engraved-case: none; --engraved-size: 12px; --engraved-weight: 400; --engraved-track: .3px;
+  font-weight: 400; letter-spacing: 0;
 }
 
 /* inline SVG toolbar icons (vendored Lucide, ISC — see THIRD-PARTY-NOTICES.md;
@@ -768,7 +809,7 @@ input[type="range"].fine::-moz-range-thumb {
    the set stays one system: 2.2 rather than Lucide's stock 2, because a 24px
    grid scaled to 16px thins strokes below what survives at toolbar size. */
 .tool-icon {
-  width: 16px; height: 16px; vertical-align: -3px; margin-right: 3px;
+  width: 16px; height: 16px; vertical-align: -3px; margin-right: var(--space-1);
   fill: none; stroke: currentColor; stroke-width: 2.2;
   stroke-linecap: round; stroke-linejoin: round;
 }
@@ -779,22 +820,22 @@ input[type="range"].fine::-moz-range-thumb {
 /* backend cards — selection is a tick in the margin, not a coloured outline */
 .backend-card {
   border: none; border-left: 2px solid transparent; border-radius: 0;
-  padding: 7px 10px; margin-bottom: 2px; cursor: pointer; background: var(--bench-rise);
-  border-radius: var(--r-sm); box-shadow: var(--lift);
+  padding: var(--space-2) var(--space-3); margin-bottom: var(--space-1); cursor: pointer; background: var(--bench-rise);
+  border-radius: var(--r-sm); box-shadow: none;
 }
 .backend-card:hover { background: var(--bench-edge); }
 .backend-card.active { border-left-color: var(--live); background: var(--bench-rise); }
 .backend-card.active .name { color: var(--live-soft); }
 .backend-card.unavailable { opacity: .45; cursor: default; }
-.backend-card .name { font-weight: 700; font-size: 12.5px; }
-.backend-card .desc { font-size: 11px; color: var(--ink-soft); }
-.backend-card .caps { font-size: 10px; color: var(--ink-soft); margin-top: 2px; letter-spacing: .3px; }
+.backend-card .name { font-weight: 700; font-size: var(--type-body); }
+.backend-card .desc { font-size: var(--type-note); color: var(--ink-soft); }
+.backend-card .caps { font-size: var(--type-note); color: var(--ink-soft); margin-top: 2px; letter-spacing: .3px; }
 .backend-card .caps b { color: var(--moss); font-weight: 700; }
 
 
 /* logs */
 .log {
-  font-size: 11px; background: var(--bench-deep); border: 1px solid var(--bench-edge);
+  font-size: var(--type-note); background: var(--bench-deep); border: 1px solid var(--bench-edge);
   border-radius: var(--r-sm); padding: 6px 9px; height: 100px; overflow-y: auto;
   white-space: pre-wrap; font-variant-numeric: tabular-nums; box-shadow: var(--recess);
 }
@@ -807,7 +848,7 @@ input[type="range"].fine::-moz-range-thumb {
 }
 /* progress is the machine moving — ochre, same as every other "in motion" cue */
 #progress-bar, #gen-progress-bar, #anim-preview-progress {
-  height: 100%; width: 0; background: var(--ochre); transition: width .2s;
+  height: 100%; width: 0; background: var(--ochre); transition: none;
 }
 
 .modal-backdrop {
@@ -816,11 +857,11 @@ input[type="range"].fine::-moz-range-thumb {
 }
 .modal-backdrop[hidden] { display: none; }
 .preview-modal {
-  width: min(1180px, 96vw); max-height: 94vh; display: flex; flex-direction: column;
+  width: min(1180px, 100%); max-height: 100%; overflow:auto; display: flex; flex-direction: column;
   border: 1px solid var(--bench-edge); border-radius: var(--r); background: var(--bench);
-  box-shadow: 0 18px 52px rgba(0,0,0,.6); padding: 12px 14px;
+  box-shadow: 0 18px 52px rgba(0,0,0,.6); padding: var(--space-4);
 }
-.preview-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.preview-head { flex:none; display: flex; align-items: center; gap: 12px; margin-bottom: var(--space-3); }
 .preview-head h2 {
   margin: 0; flex: 1;
   color: var(--ink);
@@ -838,96 +879,64 @@ input[type="range"].fine::-moz-range-thumb {
      sheet rather than dragging it off-corner */
   transform-origin: center center;
 }
-/* Process popup (process.js): the same modal furniture as the render popup,
-   with a vector stage instead of a raster one. The stage is `--bench-deep`
-   and `.draw-line` is dark ink, so the svg carries the sheet itself. */
-#process-canvas {
-  /* the sheet reads as the bed, not as whatever shape the modal happens to
-     be: aspect-ratio here, `meet` on the element, so the paper and the ink
-     agree */
-  display: block; height: min(62vh, 700px); aspect-ratio: 300 / 218; max-width: 100%;
-  background: var(--sheet); box-shadow: 0 3px 18px rgba(0,0,0,.5);
-}
-/* Bench mode: params column beside the stage. The column is fixed-width and
-   scrolls on its own — the stage must not shrink as a generator's form grows,
-   or picking a module with many params would resize the picture you are
-   judging. Watch mode hides the column and the stage takes the row. */
-.process-body { display: flex; gap: 12px; align-items: stretch; min-height: 0; flex: 1; }
-.process-body .preview-stage { flex: 1; min-width: 0; }
-#process-params {
-  width: 260px; flex: none; overflow-y: auto; max-height: min(62vh, 700px);
-  padding-right: 8px; border-right: 1px solid var(--bench-edge);
-}
-#process-params[hidden] { display: none; }
-#process-scrub { flex: 1; min-width: 160px; }
-#process-readout { min-width: 3.5em; text-align: right; font-variant-numeric: tabular-nums; }
-#process-telemetry {
-  flex: 1; height: 44px; background: var(--bench-deep); border: 1px solid var(--bench-edge);
-}
-#process-telemetry polyline { fill: none; stroke: var(--ochre); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-#process-telemetry line { stroke: var(--live); stroke-width: 1; vector-effect: non-scaling-stroke; }
+/* Rendering preserves its fitted image; smaller windows scroll the dialog,
+   rather than clipping the image or letting exports escape the viewport. */
+#anim-preview-stage { flex:none; display:flex; align-items:center; justify-content:center; height:min(68vh,760px); min-height:0; }
+#anim-preview-img { flex:0 1 auto; width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; }
 
-/* Second Reading's working bench. It keeps the paper dominant, then puts the
-   score controls in three short rows underneath so pointer drawing still has
-   enough physical room on an ordinary laptop display. */
-.second-reading .preview-modal { width: min(1060px, 100%); max-height: 100%; overflow-y: auto; }
-/* The stage can shrink to make room for controls, then the modal scrolls.
-   The paper always fits the available space. Container sizing fits both axes,
-   including portrait sheets, without changing the SVG coordinate system. */
-.second-reading .process-body { flex: 1 1 auto; height: clamp(230px, 49vh, 520px); min-height: 230px; }
-.second-reading .preview-stage { min-height: 0; padding: 12px; container-type: size; }
-.second-reading #process-canvas {
-  width: min(100cqw, calc(100cqh * var(--process-aspect, 1.376147)));
-  height: auto; max-height: 100%; touch-action: none;
-}
-.second-reading .preview-head { padding-bottom: 10px; border-bottom: 1px solid var(--bench-edge); }
-#process-second-reading { border-top: 1px solid var(--bench-edge); margin-top: 10px; padding-top: 8px; }
-#process-second-reading[hidden] { display: none; }
+/* Bench layout and complete-frame fitting live in css/benches.css.
+   This sheet owns type, colour and interaction states shared by adapters. */
+.process-body { display:flex; align-items:stretch; }
+#process-params[hidden], #process-second-reading[hidden] { display:none; }
+#process-readout { min-width:3.5em; text-align:right; font-variant-numeric:tabular-nums; }
+#process-telemetry { background:var(--bench-deep); border:1px solid var(--bench-edge); }
+#process-telemetry polyline { fill:none; stroke:var(--ochre); stroke-width:1.5; vector-effect:non-scaling-stroke; }
+#process-telemetry line { stroke:var(--live); stroke-width:1; vector-effect:non-scaling-stroke; }
+#process-canvas { touch-action:none; }
 .process-state-row, .process-branch-row, .process-action-row, .process-reset-row {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: 5px 0;
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: var(--space-2) 0;
 }
 .process-state-row #process-turn-label { margin-left: auto; font-variant-numeric: tabular-nums; }
 .process-state {
   border: 1px solid var(--bench-edge); border-radius: 999px; padding: 2px 9px;
-  font-size: 11px; letter-spacing: .25px;
+  font-size: var(--type-note); letter-spacing: .25px;
 }
 .process-state.working { color: var(--live-soft); border-color: var(--live); }
 .process-state.working.resolving { color: var(--ochre); border-color: var(--ochre); }
 .process-state.kept { color: var(--moss); border-color: var(--moss); }
 .process-branch-row label, .process-reset-row > span { min-width: 6.5em; }
-#process-branch-select { flex: 1; min-width: 180px; }
-#process-turn-scrub { flex: 1; min-width: 140px; }
-.process-controls {
-  display: grid; grid-template-columns: repeat(3, minmax(155px, 1fr)) auto;
-  align-items: center; gap: 9px 14px; margin: 7px 0;
-}
-.process-controls label { display: grid; grid-template-columns: auto 1fr 3.2em; align-items: center; gap: 7px; }
-.process-controls label[hidden] { display: none; }
 .process-controls output { color: var(--ink-soft); text-align: right; font-variant-numeric: tabular-nums; }
 .process-controls input.staged,
 .process-controls input.staged:hover { --fader: var(--flexoki-yellow-850); }
 .process-controls input.staged::-webkit-slider-thumb { background: var(--ochre); }
 .process-controls input.staged::-moz-range-thumb { background: var(--ochre); }
 .process-action-row #process-keep { margin-left: auto; }
-.process-reset-row { color: var(--ink-soft); font-size: 12px; padding-top: 8px; border-top: 1px solid var(--bench-edge); }
+.process-reset-row { color:var(--ink-soft); font-size:var(--type-label); }
 .process-reset-row label { display: flex; align-items: center; gap: 4px; }
-.process-reset-row input { width: 5.2em; }
+.process-reset-row input { width:var(--field-number-w); }
 #process-seed { width: 9.5em; }
-#process-details { margin-top: 7px; padding-left: 8px; border-left: 1px solid var(--bench-edge); }
-#process-how-it-works { margin-top: 7px; padding-left: 8px; border-left: 1px solid var(--bench-edge); }
-#process-how-it-works summary { color: var(--ink-soft); cursor: pointer; font-size: 11px; }
-#process-how-it-works p { max-width: 78em; margin: 5px 0 0; color: var(--ink-soft); font-size: 11px; line-height: 1.35; }
-#process-details summary { color: var(--ink-soft); cursor: pointer; font-size: 11px; }
+#process-how-it-works summary { color: var(--ink-soft); cursor: pointer; }
+#process-how-it-works p { max-width: 78em; margin: 5px 0 0; color: var(--ink-soft); font-size: var(--type-note); line-height: 1.35; }
+#process-details summary { color: var(--ink-soft); cursor: pointer; }
 #process-details .process-summary { margin-top: 6px; }
 #process-canvas.taking-turn { cursor: crosshair; box-shadow: 0 0 0 2px var(--live), 0 3px 18px rgba(0,0,0,.5); }
 #process-your-turn.on { color: var(--ink-hi); box-shadow: inset 0 -2px 0 var(--live); }
 .process-live-stroke { stroke-width: .7; }
 .process-nominal-sheet { fill: none; stroke: var(--live-soft); stroke-width: .65; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; pointer-events: none; }
-@media (max-width: 760px) {
-  .process-controls { grid-template-columns: 1fr; }
-  .process-controls label { grid-template-columns: 7.5em 1fr 3.2em; }
-  .process-action-row #process-keep { margin-left: 0; }
-}
+/* Bench surfaces and type share the application roles; responsive geometry is in benches.css. */
+#process-origin, #process-status, .process-state-row, .bench-machine,
+#process-next-turn-note, #process-comparison-note { font-size: var(--type-note); }
+#process-status { min-height: 32px; }
+#process-point-count { display:inline-block; min-width: 10ch; text-align:right; }
+#process-preview-state { display:inline-block; min-width: 9ch; }
+#bench-controls .process-controls label { font-size: var(--type-label); }
+#process-stop { font-size: var(--type-body); flex:none; white-space:nowrap; }
+#process-popup .preview-modal { background:var(--bench); }
+#process-popup #process-canvas, #process-reference { background:var(--sheet); box-shadow:0 3px 18px rgba(0,0,0,.5); }
+#bench-controls details > summary { color:var(--ink); }
+#bench-controls .process-controls #process-next-turn-note { color:var(--ochre); }
+#process-how-it-works p { line-height:1.6; }
+#process-error { color:var(--rust); }
 
 .stage-list { display: grid; gap: 10px; margin-top: 10px; }
 .stage-group {
@@ -935,9 +944,9 @@ input[type="range"].fine::-moz-range-thumb {
   padding: 2px 0 2px 10px; background: none;
 }
 .stage-head, .stage-sheet {
-  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center;
 }
-.stage-head { margin-bottom: 6px; cursor: pointer; }
+.stage-head { margin-bottom: var(--space-2); cursor: pointer; }
 .stage-head strong { margin-right: auto; }
 /* item 4: clicking a group header selects it (the buttons inside stay their
    own click targets — no cursor change needed, they already read as
@@ -948,7 +957,7 @@ input[type="range"].fine::-moz-range-thumb {
   padding: 5px 0; border-top: 1px solid var(--bench-edge);
 }
 .stage-sheet.on { background: var(--bench-rise); box-shadow: inset 2px 0 0 var(--live); }
-.stage-sheet button { font-size: 11px; padding: 3px 6px; }
+.stage-sheet button { font-size: var(--type-body); padding: 3px 6px; }
 /* S6/P6 — plotted-this-session: dim once every pass of a sheet has fired,
    client-side only, cleared on reload. */
 .stage-sheet.all-done { opacity: .55; }
@@ -958,23 +967,23 @@ input[type="range"].fine::-moz-range-thumb {
    loose capture: the same ochre used elsewhere for "in motion". */
 .stage-group.stage-group-anim { border-left: 2px solid var(--ochre); }
 .stage-relayout { padding: 4px 0; border-top: 1px solid var(--bench-edge); }
-.stage-relayout label { color: var(--ink-soft); font-size: 11.5px; }
-.stage-relayout button { font-size: 11px; padding: 3px 8px; }
+.stage-relayout label { color: var(--ink-soft); font-size: var(--type-note); }
+.stage-relayout button { font-size: var(--type-body); padding: 3px 8px; }
 
 /* live generator preview: dashed transient ghost, never interactive */
 .gen-preview { pointer-events: none; }
 .gen-preview-path { stroke: var(--live); stroke-width: 0.3; stroke-opacity: 0.65; stroke-dasharray: 1.4 1; stroke-linecap: round; }
 
 /* forms (auto-generated from JSON Schema) */
-.form .field { margin: 7px 0; }
+.form .field { margin: var(--space-3) 0; min-width: 0; }
 /* a boolean is one decision, so it gets one line, and the box leads: you scan
    a column of checkboxes to see what's on. Reversing the row puts the control
    first without the renderer having to know about it. */
 .form .field:has(> .ctl > input[type="checkbox"]:only-child) {
   display: flex; flex-direction: row-reverse; justify-content: flex-end;
-  align-items: center; gap: 9px; margin: 5px 0;
+  align-items: center; gap: var(--space-2); margin: var(--space-2) 0;
 }
-.form .field:has(> .ctl > input[type="checkbox"]:only-child) > label { flex: none; }
+.form .field:has(> .ctl > input[type="checkbox"]:only-child) > label { flex: 1; min-width: 0; margin: 0; }
 .form .field:has(> .ctl > input[type="checkbox"]:only-child) > .ctl { flex: none; }
 /* Sections of the layer panel (compose.js `ldSection`). The panel's own
    sub-headings became disclosures, and they are marked by a TINT rather than
@@ -984,48 +993,57 @@ input[type="range"].fine::-moz-range-thumb {
    stacked read as bands of one surface, not as six competing objects. */
 .ld-section {
   background: var(--bench-tint);
-  padding: 7px 10px 9px; margin: 8px 0;
+  padding: var(--space-2) var(--space-3) var(--space-3); margin: var(--space-2) 0;
 }
 .ld-section > summary { color: var(--ink-soft); font-weight: 700; }
-.ld-section[open] > summary { color: var(--ink); margin-bottom: 6px; }
+.ld-section[open] > summary { color: var(--ink); margin-bottom: var(--space-2); }
 /* a form group nested in a section keeps its indent, and drops the tint's
    left padding so its hairline lines up with the summary above it */
 .ld-section .form-group { margin-left: 1px; }
 
 .form-group {
-  margin: 10px 0 4px; border: none; border-left: 1px solid var(--bench-edge);
-  border-radius: 0; padding: 0 0 2px 10px;
+  margin: var(--space-3) 0 var(--space-1); border: 0;
+  border-radius: 0; padding: 0;
 }
 .form-group > summary {
-  --engraved-case: none; --engraved-track: 0; --engraved-size: 11.5px;
   cursor: pointer; user-select: none;
-  color: var(--ink-soft); padding: 2px 0;
+  color: var(--ink-soft); padding: var(--space-1) 0; min-height: var(--compact-h);
 }
 .form-group > summary:hover { color: var(--ink); }
 .form-group[open] > summary { color: var(--ink); margin-bottom: 2px; }
 /* standalone disclosures (the server log) get the same engraved voice as a
    form group, so one section doesn't read as loose body text */
 details:not(.form-group) > summary {
-  --engraved-case: none; --engraved-track: 0; --engraved-size: 11.5px;
   cursor: pointer; user-select: none; color: var(--ink-soft);
 }
 details:not(.form-group) > summary:hover { color: var(--ink); }
-.form .field > label { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink); }
-.form .ctl { display: flex; gap: 8px; align-items: center; }
+.form .field > label { display: flex; justify-content: space-between; gap: var(--space-2);
+  font-size: var(--type-label); color: var(--ink); overflow-wrap: anywhere; margin-bottom: var(--space-1); }
+.form .ctl { display: flex; gap: var(--space-2); align-items: center; min-width: 0; }
+.form .ctl > select { flex: 1; width: 100%; }
+.form .ctl > input[type="range"] { min-width: 32px; }
 /* 6.2em, not 5.2: "279.4" plus the spinner was clipping its last digit, and a
    machine value you can't read in full is worse than a wide control */
-.form .ctl input[type="number"] { width: 6.2em; }
+.form .ctl input[type="number"] { width: var(--field-number-w); }
 .form .ctl input[type="text"] { flex: 1; }
+/* Paired dimensions keep their label and number together at every width. */
+.parameter-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-2) var(--space-3); margin:var(--space-2) 0; }
+.parameter-grid > label { display:grid; min-width:0; gap:var(--space-1); font-size:var(--type-label); color:var(--ink-soft); }
+.parameter-grid input[type="number"] { width:100%; }
+.ruler-viewport { max-width:100%; overflow-x:auto; }
+.pen-row > span:nth-child(2) { min-width:0; overflow-wrap:anywhere; flex:1; }
+.pen-row .meta { max-width:55%; text-align:right; overflow-wrap:anywhere; }
+
 
 /* layer list — the pen swatch is the only saturated thing in the sidebar,
    because it is the only thing standing for a real object (the pen in the
    carriage). Selection is a tick in the margin. */
 .layer-row {
-  display: flex; align-items: center; gap: 7px;
+  display: flex; align-items: center; gap: var(--space-2);
   border: none; border-left: 2px solid transparent; border-radius: 0;
   background: var(--bench-rise);
-  padding: 5px 8px; margin: 2px 0; cursor: pointer; font-size: 12px;
-  border-radius: var(--r-sm); box-shadow: var(--lift);
+  padding: 5px 8px; margin: 2px 0; cursor: pointer; font-size: var(--type-label);
+  border-radius: var(--r-sm); box-shadow: none;
   user-select: none; /* shift/cmd-click selects layers, not label text */
 }
 .layer-row:hover { background: var(--bench-edge); }
@@ -1040,7 +1058,7 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
   flex: none;
 }
 .layer-row .lname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.layer-row .est { color: var(--ink-soft); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.layer-row .est { color: var(--ink-soft); font-size: var(--type-note); font-variant-numeric: tabular-nums; }
 /* The row's controls were fully transparent, which made a row of live
    controls read as a row of decoration — you could not tell what was
    clickable until you were already over it. They get a shallow well instead
@@ -1050,10 +1068,10 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
    step wherever the row is. A named colour would have to be picked for one
    of the three and would disappear against another. */
 .layer-row button {
-  padding: 0 5px; min-width: var(--compact-h); min-height: var(--compact-h); font-size: 11px;
+  padding: 0 5px; min-width: var(--compact-h); min-height: var(--compact-h); font-size: var(--type-body);
   background: rgba(0, 0, 0, .22); border-color: transparent;
 }
-.layer-row button:hover { background: var(--bench-rise); border-color: var(--bench-edge); }
+.layer-row button:hover:not(:disabled) { background: var(--bench-rise); border-color: var(--bench-edge); }
 .layer-row { position: relative; }
 .layer-row.dragging { opacity: .4; }
 /* the drop line is a hairline ON the row you would land beside, not a gap
@@ -1087,21 +1105,21 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
    reorders one chain's TIME order, not the project's draw order. */
 .kf-list { display: flex; flex-direction: column; gap: 2px; margin: 4px 0; }
 .kf-row {
-  display: flex; align-items: center; gap: 7px; position: relative;
-  background: var(--bench-rise); border-radius: var(--r-sm); box-shadow: var(--lift);
+  display: flex; align-items: center; gap: var(--space-2); position: relative;
+  background: var(--bench-rise); border-radius: var(--r-sm); box-shadow: none;
   padding: 4px 6px;
 }
 .kf-row:hover { background: var(--bench-edge); }
 .kf-select {
   flex: 1; display: flex; align-items: center; text-align: left; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap;
-  background: none; border: none; padding: 2px 4px; font-size: 12px; color: var(--ink); cursor: pointer;
+  background: none; border: none; padding: 2px 4px; font-size: var(--type-label); color: var(--ink); cursor: pointer;
 }
 .kf-select .kf-index {
   color: var(--ink-soft); font-variant-numeric: tabular-nums; margin-right: 6px; flex: none;
 }
-.kf-row button { padding: 0 6px; font-size: 11px; background: rgba(0, 0, 0, .22); border-color: transparent; }
-.kf-row button:hover { background: var(--bench-rise); border-color: var(--bench-edge); }
+.kf-row button { padding: 0 6px; font-size: var(--type-body); background: rgba(0, 0, 0, .22); border-color: transparent; }
+.kf-row button:hover:not(:disabled) { background: var(--bench-rise); border-color: var(--bench-edge); }
 .kf-row.dragging { opacity: .4; }
 /* the drop line, same idiom as .layer-row.drop-above/drop-below above */
 .kf-row.drop-above::before,
@@ -1124,11 +1142,12 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 }
 .ctx-menu-item {
   display: flex; width: 100%; text-align: left; background: transparent; border: none;
-  border-radius: 0; padding: 6px 10px; font-family: inherit; font-size: 12.5px;
+  border-radius: 0; padding: 6px 10px; font-family: inherit; font-size: var(--type-body);
   color: var(--ink); cursor: pointer;
 }
 .ctx-menu-item:hover:not(:disabled),
-.ctx-menu-item:focus-visible:not(:disabled) { background: var(--live); color: var(--bench-deep); outline: none; }
+.ctx-menu-item:focus-visible:not(:disabled) { background: var(--live-deep); color: var(--ink-hi); outline-offset: -2px; }
+.ctx-menu-item:focus-visible { outline: 2px solid var(--live); }
 .ctx-menu-item:disabled { opacity: .4; cursor: default; }
 
 /* effect steps */
@@ -1137,35 +1156,34 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
   padding: 5px 0 5px 10px; margin: 6px 0; background: none;
 }
 .step.disabled { opacity: .45; }
-.step .head { display: flex; align-items: center; gap: 6px; }
-.step .head .name { flex: 1; font-weight: 700; font-size: 12px; cursor: pointer; }
-.step .head button { padding: 0 6px; font-size: 11px; }
+.step .head { display: flex; align-items: center; gap: var(--space-2); }
+.step .head .name { flex: 1; font-weight: 700; font-size: var(--type-label); cursor: pointer; }
+.step .head button { padding: 0 6px; font-size: var(--type-body); }
 /* whole-step action (e.g. hatch_fill's "split onto its own layer") — sits
    under the params, full width, so it reads as acting on the step rather
    than being one more parameter */
-.step-action { display: block; width: 100%; margin-top: 6px; font-size: 11.5px; }
+.step-action { display: block; width: 100%; margin-top: 6px; font-size: var(--type-note); }
 
 /* pens */
 .pen-row {
-  display: flex; align-items: center; gap: 9px;
+  display: flex; align-items: center; gap: var(--space-2);
   border: none; border-left: 2px solid transparent; border-radius: 0;
   background: var(--bench-rise);
   padding: 6px 9px; margin: 2px 0; cursor: pointer;
-  border-radius: var(--r-sm); box-shadow: var(--lift);
+  border-radius: var(--r-sm); box-shadow: none;
 }
 .pen-row:hover { background: var(--bench-edge); }
 .pen-row.selected { border-left-color: var(--live); background: var(--bench-edge); }
 .pen-row .swatch { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,.5); flex: none; }
-.pen-row .meta { color: var(--ink-soft); font-size: 11px; margin-left: auto; font-variant-numeric: tabular-nums; }
+.pen-row .meta { color: var(--ink-soft); font-size: var(--type-note); margin-left: auto; font-variant-numeric: tabular-nums; }
 
-.kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-size: 11.5px; }
+.kv { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: var(--space-1) var(--space-4); font-size: var(--type-note); }
 .kv dt { color: var(--ink-soft); }
-.kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+.kv dd { min-width: 0; overflow-wrap: anywhere; margin: 0; font-variant-numeric: tabular-nums; }
 
-@media (max-width: 1000px) {
-  main { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; }
-  #inspector { border-left: none; border-top: 1px solid var(--bench-edge); }
-  header { flex-wrap: wrap; gap: 10px; }
+@media (max-width: 1050px) {
+  main { grid-template-columns: minmax(0,1fr) min(var(--sidebar-w,290px),45vw); }
+  header { flex-wrap: wrap; gap: var(--space-2); }
   .project-name { max-width: 10em; }
 }
 
@@ -1176,7 +1194,7 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 /* bench latch chip (compose.js): the form is live-editing this layer */
 .latch-chip {
   border-color: var(--live); color: var(--live-soft); background: transparent;
-  border-radius: 999px; font-size: 11.5px; padding: 2px 10px;
+  border-radius: 999px; font-size: var(--type-note); padding: 2px 10px;
   max-width: 15em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .latch-chip:hover { color: var(--ink-hi); background: transparent; border-color: var(--live-soft); }
@@ -1228,7 +1246,7 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
    magenta / cyan / black), so without a fixed column the pen and generator
    pickers stagger down the panel. One column each, and the row stops
    wrapping — four plates should read as a small table, not a paragraph. */
-.sep-plate { flex-wrap: nowrap; gap: 6px; margin: 4px 0; }
+.sep-plate { flex-wrap: nowrap; gap: var(--space-2); margin: 4px 0; }
 .sep-plate > label { flex: 0 0 6.5em; display: flex; align-items: center; gap: 5px; }
 .sep-plate .sep-pen, .sep-plate .sep-gen { flex: 1 1 0; min-width: 0; }
 
@@ -1243,3 +1261,9 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 .kf-row button, .step .head button { min-height: var(--compact-h); min-width: var(--compact-h); }
 #playback input[type="number"] { min-height: var(--compact-h); }
 .seg button:focus-visible { outline-offset: -3px; }
+
+@media (max-width: 750px) {
+  main { grid-template-columns:minmax(0,1fr) min(var(--sidebar-w,260px),45vw); }
+  #canvas-area { padding-inline:var(--space-2); }
+  .tab-body, #layers-dock { padding-inline:var(--space-3); }
+}
