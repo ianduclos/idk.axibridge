@@ -3213,3 +3213,32 @@ def test_second_reading_fit_keeps_capture_frame_stable_and_resumes_its_recipe(ui
     assert not ui.locator('#process-persistence').is_visible()
     assert ui.locator('#process-departure').is_visible()
     assert not ui.errors
+
+
+@pytest.mark.parametrize("accept", [False, True])
+def test_restart_menu_uses_visible_confirmation_before_request(ui, accept):
+    """A menu closes on selection, so hidden two-click arming cannot confirm."""
+    requests = []
+    dialogs = []
+
+    def intercept(route):
+        requests.append(route.request.method)
+        route.fulfill(status=200, content_type="application/json",
+                      body='{"restarting":"now"}')
+
+    def answer(dialog):
+        dialogs.append((dialog.type, dialog.message))
+        dialog.accept() if accept else dialog.dismiss()
+
+    ui.route("**/api/server/restart", intercept)
+    ui.on("dialog", answer)
+    ui.locator('[data-menu="settings"] .menu-trigger').click()
+    ui.locator("#btn-restart").click()
+    assert dialogs == [("confirm", "Restart the server? Unsaved project changes will be lost.")]
+    if accept:
+        ui.wait_for_function("document.querySelector('#btn-restart').disabled")
+        assert requests == ["POST"]
+    else:
+        assert requests == []
+        assert ui.locator("#btn-restart").is_enabled()
+    assert not ui.errors

@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-08
 machine: mac+pi
-summary: Ribbon is integrated as a registered effect; production visual acceptance and native app reload remain with Ian.
+summary: Ribbon is integrated as a registered effect; production visual acceptance remains with Ian; the Mac backend now serves Ribbon.
 next:
-  - "Restart the app when ready, then check Ribbon on real drawings"
+  - "Check Ribbon on real drawings"
   - "Check the open Mac app for native appearance and the new scaffold icon"
   - "Continue Second Reading alternating-use and paper review"
 handoff_for: ian
@@ -19,8 +19,9 @@ seeded per-flank softening, a shared outer-pair cutoff, and grouped controls.
 Automatic density uses the actual assigned pen through normal, region, tween,
 preview and consolidation contexts. See
 [production status](docs/reviews/open-path-ribbon-2026-09-08/PRODUCTION-STATUS.md).
-D3 and a popup effect editor are deferred in ROADMAP.md. The running native app
-has not been restarted; Ribbon appears after the backend next starts. User visual
+D3 and a popup effect editor are deferred in ROADMAP.md. The Mac backend was restarted with Ian’s authorization and its live effect
+list includes Ribbon. The Settings restart action now uses a visible confirmation
+dialog; its previous timed second click was hidden when the menu closed. User visual
 and paper acceptance remain outstanding. Final suite: 1,322 passed, one native
 app lifecycle skip; typecheck and built UI acceptance passed. No push or hardware
 action.

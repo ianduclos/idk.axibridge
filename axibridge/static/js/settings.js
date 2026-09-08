@@ -137,17 +137,9 @@ export function initSettingsTab() {
   // static markup, present before initSettingsTab ever runs.
   const restart = $("btn-restart");
   restart.onclick = async () => {
-    if (!restart.dataset.armed) { // two-click arm, same pattern as layer delete
-      restart.dataset.armed = "1";
-      restart.textContent = "sure? unsaved work is lost";
-      restart.style.color = "var(--rust)";
-      setTimeout(() => {
-        delete restart.dataset.armed;
-        restart.textContent = "⟳ Restart server";
-        restart.style.color = "";
-      }, 2500);
-      return;
-    }
+    // Menu selections close immediately, so an armed second click would hide
+    // its own confirmation. Use a dialog that stays visible until answered.
+    if (!confirm("Restart the server? Unsaved project changes will be lost.")) return;
     try {
       await api.post("/api/server/restart");
       restart.textContent = "restarting…";

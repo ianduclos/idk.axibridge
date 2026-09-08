@@ -10,11 +10,11 @@ entries: 15
   seed blend normalization, independent wavelengths, corner/loop handling,
   inter-path masks, silhouette/outline output, centre-free interpolation, actual
   pen density, optional crest smoothing and a shared outer-pair cutoff.
-- next: Save current work and restart the native app when ready; check Ribbon
-  from the layer effects picker. Review optional per-flank softening on real
+- next: Check Ribbon from the layer effects picker; the Mac backend now includes
+  it after Ian authorized a restart. Review optional per-flank softening on real
   paths/paper. The original inline study is unchanged and remains reference.
 - deferred: D3 crossing-envelope effect next; expanded popup editor later, both
-  recorded in ROADMAP.md. No automatic app restart, push or hardware run.
+  recorded in ROADMAP.md. Restart completed with authorization; no push or hardware run.
 - context: docs/plans/ribbon-shipping.md,
   docs/reviews/open-path-ribbon-2026-09-08/PRODUCTION-STATUS.md and
   production-review.html. Tests and visual verification are provisional until

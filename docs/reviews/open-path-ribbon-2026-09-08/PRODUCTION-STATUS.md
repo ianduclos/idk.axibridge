@@ -48,3 +48,12 @@ one existing Starlette warning. This includes built-frontend UI acceptance and
 normal/region/tween/preview/consolidate/merge pen-context regressions. Typecheck
 passed. Profile parity and six full fixture parity checks passed; the shortest
 independent wavelength retains all 20 expected crests in its regression fixture.
+
+
+Restart follow-up: Ian authorized discarding the current session. POSTing the
+existing restart endpoint succeeded, and the live Mac `/api/state` now includes
+Ribbon. The Settings menu had a hidden two-click confirmation: selecting it
+closed the menu before the second click. It now uses an explicit confirmation
+dialog. Both cancel/confirm UI regressions passed against the built frontend;
+typecheck passed. The original shipping pass's no-restart statement above
+records that earlier checkpoint, not the current backend state.
