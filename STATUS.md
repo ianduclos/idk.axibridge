@@ -3,16 +3,22 @@ project: idk.axibridge
 state: active
 updated: 2026-09-09
 machine: mac+pi
-summary: Magnetic field bench is implemented; native and paper acceptance remain with Ian. The Mac backend serves Ribbon.
+summary: Ribbon is accepted and shipped with faster masks and drawing update feedback; Magnetic field bench and other native/paper reviews remain open.
 next:
   - "Try the open Magnetic field bench, including hidden magnets without silhouettes"
-  - "Check Ribbon on real drawings"
   - "Check the open Mac app for native appearance and the new scaffold icon"
   - "Continue Second Reading alternating-use and paper review"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Ribbon session closed, 9 September:** Ian accepted the effect and requested
+commit/push. Corner and edge interpolation repairs, the hidden fractured
+experiment, loading activity and exact-preserving optimization are complete.
+Latest verification: 1,371 tests passed, one lifecycle skip; typecheck and
+built browser smoke passed. Paper output has not been tested. D3 and the
+expanded editor remain deferred in ROADMAP.md.
 
 **Magnetic field bench, 9 September:** Continuous curves are the default in the
 new arrangement bench. Bars and independent poles are editable; seeded scatter,

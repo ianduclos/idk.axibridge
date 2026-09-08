@@ -1,7 +1,7 @@
 ---
 project: idk.axibridge
 updated: 2026-09-09
-entries: 16
+entries: 15
 ---
 
 ### Magnetic field bench acceptance — updated 2026-09-09, owner: ian
@@ -22,39 +22,6 @@ entries: 16
   styles require many lifts; actual paper/time benefit remains untested.
 - context: docs/reviews/magnetic-bench-2026-09-09/README.md and
   docs/plans/magnetic-field-bench.md. Original study remains preserved.
-
-### Ribbon production acceptance — updated 2026-09-09, owner: ian
-
-- done: Registered Ribbon effect ports the accepted study to Python. Includes
-  seed blend normalization, independent wavelengths, corner/loop handling,
-  inter-path masks, silhouette/outline output, centre-free interpolation, actual
-  pen density, optional crest smoothing and a shared outer-pair cutoff.
-- hard corners: Ian’s actual acute pen path is repaired without changing its
-  parameters or strand count. Full suite: 1,326 passed, one lifecycle skip.
-  Evidence: docs/reviews/ribbon-hard-corners-2026-09-08/README.md.
-- edge joins: Regular edge mode stabilizes local side balance through acute
-  joins, preserving total width. The live-path fixture has 20 separate strands
-  without self intersections, crossing pairs or shared interior routes. Hidden
-  `fractured_edges: true` with `interpolation: "edges"` preserves the exact
-  polygon-cutout experiment Ian selected; default remains false. Evidence and
-  tradeoffs: docs/reviews/ribbon-edge-joins-2026-09-09/README.md.
-  Full suite: 1,363 passed, one lifecycle skip. Live backend reloaded and current
-  drawing restored; resolved coordinates match the candidate exactly.
-- performance/status: Drawing updates show an indeterminate bar and elapsed
-  time in the persistent canvas strip. Indexed silhouette lookup reduces the
-  corner fixture median 4.147→2.953 s with exact coordinates. Evidence:
-  docs/reviews/ribbon-performance-2026-09-09/README.md.
-  Full suite 1,371 passed; typecheck passed. Backend reloaded, drawing restored;
-  refresh the app window for the new frontend status strip.
-- next: Check Ribbon from the layer effects picker; the Mac backend now includes
-  it after Ian authorized a restart. Review optional per-flank softening on real
-  paths/paper. The original inline study is unchanged and remains reference.
-- deferred: D3 crossing-envelope effect next; expanded popup editor later, both
-  recorded in ROADMAP.md. Restart completed with authorization; no push or hardware run.
-- context: docs/plans/ribbon-shipping.md,
-  docs/reviews/open-path-ribbon-2026-09-08/PRODUCTION-STATUS.md and
-  production-review.html. Tests and visual verification are provisional until
-  Ian checks the result; existing unrelated acceptance entries remain below.
 
 ### Mac visual and icon acceptance — updated 2026-09-08, owner: ian
 

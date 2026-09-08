@@ -25,6 +25,11 @@ and the no-silhouette treatment inspired by the later filings reference.
 
 ## Ribbon follow-ups (2026-09-08)
 
+Main Ribbon accepted and session closed 9 September: acute/edge joins repaired,
+polygon fractures preserved behind a hidden flag, drawing activity shown in
+the persistent strip, and mask computation reduced by 28.8% on the captured
+fixture with identical coordinates. Paper output remains untested.
+
 1. **D3 as a separate effect next.** One modulating curve alternates across its
    open source path, as in Ian's original sketch. Reuse Ribbon's seeded profile
    and geometry helpers; keep its signed oscillation distinct from the two-sided
