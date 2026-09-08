@@ -1,18 +1,24 @@
 ---
 project: idk.axibridge
-updated: 2026-09-08
+updated: 2026-09-09
 entries: 16
 ---
 
-### Magnetic field visual study — opened 2026-09-08, owner: ian
+### Magnetic field bench acceptance — updated 2026-09-09, owner: ian
 
-- done: Standalone nine-cell SVG/PNG comparison, individual close views,
-  reproducible script, finite/bounded geometry checks and bounded Sol review.
-- next: Ian selects a promising treatment; then continue magnetic bench design
-  with both bar magnets and independent poles. No bench implementation yet.
-- limits: Simplified planar field; chains remain diagrammatic and loose filings
-  lose some long-range structure at sheet scale. Physical output is untested.
-- context: docs/reviews/magnetic-field-2026-09-08/README.md.
+- done: The approved study is now a registered generator and interactive bench.
+  Continuous default, editable bars/poles, seeded scatter, magnet visibility,
+  optional empty silhouettes, whole-route boundary removal, local undo and
+  Keep/Resume. The later filings reference guided the no-silhouette option.
+- verified: 1,360 tests passed, one intentional native-app lifecycle skip;
+  typecheck, built UI and isolated source-only smoke passed. Screens are
+  provisional until Ian checks the native app and paper output.
+- next: Restart the native app when ready; check interaction and paper output.
+  The app has not been restarted and no hardware action was taken here.
+- limits: Simplified planar model; small pole cores remain untraced. Irregular
+  styles require many lifts; actual paper/time benefit remains untested.
+- context: docs/reviews/magnetic-bench-2026-09-09/README.md and
+  docs/plans/magnetic-field-bench.md. Original study remains preserved.
 
 ### Ribbon production acceptance — updated 2026-09-08, owner: ian
 

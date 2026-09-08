@@ -1,5 +1,5 @@
 // Current product benches; time-axis capability alone does not promote a source.
-const WORKING_BENCHES = new Set(['venation', 'homeostat', 'second_reading']);
+const WORKING_BENCHES = new Set(['venation', 'homeostat', 'second_reading', 'magnetic_field']);
 const isWorkingBench = mod => WORKING_BENCHES.has(mod?.id);
 import { benchUnavailableReason } from "./bench_registry.js";
 // Compose tab: sources (generate / upload), the layer list (z-order,

@@ -146,7 +146,7 @@ def test_second_reading_keeps_its_exact_recipe_through_expand_and_escape_cancels
 def test_generator_picker_groups_benches_and_layer_list_can_expand(ui):
     benches = ui.eval_on_selector_all(
         '#gen-select optgroup[label="Benches"] option', "els => els.map(e => e.value)")
-    assert set(benches) == {"venation", "homeostat", "second_reading"}
+    assert set(benches) == {"venation", "homeostat", "second_reading", "magnetic_field"}
     ui.select_option("#gen-select", "grammar")
     assert ui.locator("#btn-bench").is_hidden()
     assert ui.locator("#gen-fields").get_attribute("open") is not None

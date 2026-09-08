@@ -14,6 +14,15 @@ Cohen-line direction, plus how the involved ones should meet the UI) live in
 Shipped work has been pruned from this file (2026-08-17) — see `git log` /
 `STATUS.md` for what landed and when. This file tracks what's still open.
 
+## Magnetic field acceptance (2026-09-09)
+
+The first bench is implemented from Ian's approved study: continuous default,
+optional irregular marks, editable bars/poles, seeded scatter, optional magnet
+bodies and empty silhouettes, whole-route boundary removal, local undo and
+Keep/Resume. [Screen evidence and limits](docs/reviews/magnetic-bench-2026-09-09/README.md).
+Ian's native interaction and paper check remain: pole crowding, lift economy,
+and the no-silhouette treatment inspired by the later filings reference.
+
 ## Ribbon follow-ups (2026-09-08)
 
 1. **D3 as a separate effect next.** One modulating curve alternates across its

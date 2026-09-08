@@ -361,7 +361,16 @@ canvas's later quarter-turn from making the kept element exceed the bed. It does
 not constrain manual layer transforms or effects.
 
 
-Bench adapters currently registered at version 1 are `process`, `homeostat`, and
-`second-reading`. Homeostat owns a grouped form schema in `homeostat_bench.js`;
+Bench adapters currently registered at version 1 are `process`, `homeostat`,
+`second-reading`, and `magnetic-field`. Homeostat owns a grouped form schema in `homeostat_bench.js`;
 its generation recipe is unchanged. Schema groups may set `groupOpen: true` for
 an initially expanded group; a remembered user preference takes precedence.
+
+`magnetic-field` is a non-temporal arrangement editor (`new`, `resume`). Its
+bounded hidden `magnets` list stores explicit bar/pole positions, rotations,
+sizes and strengths. Scattering is a seeded editor action whose results become
+that list. Server generation owns the field; no client field solver or new API
+is involved. `keep_silhouettes=False` only opens body footprints when
+`show_magnets=False`; visible bodies always exclude field ink. Resume copies a
+kept recipe, and Keep creates another layer through the normal creation path.
+The bench uses `placement_frame` to fit its fixed drawing frame to the bed.

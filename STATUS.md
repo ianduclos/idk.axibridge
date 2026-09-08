@@ -1,11 +1,11 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-08
+updated: 2026-09-09
 machine: mac+pi
-summary: Ribbon is integrated as a registered effect; production visual acceptance remains with Ian; the Mac backend now serves Ribbon.
+summary: Magnetic field bench is implemented; native and paper acceptance remain with Ian. The Mac backend serves Ribbon.
 next:
-  - "Choose a magnetic-field drawing treatment from the nine-cell standalone study"
+  - "Restart the app and check the Magnetic field bench, including hidden magnets without silhouettes"
   - "Check Ribbon on real drawings"
   - "Check the open Mac app for native appearance and the new scaffold icon"
   - "Continue Second Reading alternating-use and paper review"
@@ -13,6 +13,15 @@ handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Magnetic field bench, 9 September:** Continuous curves are the default in the
+new arrangement bench. Bars and independent poles are editable; seeded scatter,
+whole-route escape removal, visibility, optional empty silhouettes, local undo
+and Keep/Resume are implemented. Ian's later filings reference informed the
+no-silhouette option. [Evidence and verification](docs/reviews/magnetic-bench-2026-09-09/README.md).
+Full suite: **1,360 passed, one intentional lifecycle skip**; typecheck and
+isolated source-only smoke passed. Native app restart and paper acceptance
+remain with Ian; no hardware action.
 
 **Magnetic field study, 8 September:** Nine standalone drawings compare three
 magnet arrangements with continuous curves, irregular chains and loose filings.

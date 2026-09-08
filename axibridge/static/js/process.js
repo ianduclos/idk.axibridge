@@ -27,6 +27,7 @@
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
 import { homeostatFormSchema } from "./homeostat_bench.js";
+import { initMagneticBench, openMagneticBench, closeMagneticBench } from "./magnetic_bench.js";
 import { renderForm } from "./forms.js";
 import { benchAdapter, benchDescriptor, benchUnavailableReason, registerBenchAdapter } from "./bench_registry.js";
 import { initBenchHost, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from "./bench_host.js";
@@ -79,7 +80,7 @@ export function watchableAxis(layer) {
 }
 
 export function interventionBenchable(layer) {
-  return isSecondReadingModule(moduleFor(layer));
+  return Boolean(benchAdapter(moduleFor(layer), 'resume'));
 }
 
 /** What the popup is previewing right now, resolved fresh every render:
@@ -99,6 +100,7 @@ export function initProcessPopup() {
   if (wired) return;
   if (!$("process-popup")) return; // stale cached index.html: degrade silently
   wired = true;
+  initMagneticBench();
   initSecondReadingBench();
   initBenchHost();
   $("process-trace").onchange = drawTelemetry;
@@ -157,6 +159,7 @@ function openWith(mod, startValue, title) {
 
 export async function openProcessPopup(id) {
   if (!$("process-popup")) return;
+  closeMagneticBench(false);
   closeSecondReadingBench(false);
   stop();
   const layer = (S.state?.project?.layers || []).find((l) => l.id === id);
@@ -176,16 +179,19 @@ export function openProcessLayerBench(id) {
   if (!$('process-popup')) return;
   const layer = (S.state?.project?.layers || []).find((l) => l.id === id);
   const mod = moduleFor(layer);
-  if (!layer || !isSecondReadingModule(mod)) return;
+  const adapter = benchAdapter(mod, 'resume');
+  if (!layer || !adapter) return;
+  closeMagneticBench(false);
+  closeSecondReadingBench(false);
   stop();
   renderSerial++;
   queued = false;
   clearTimeout(liveTimer);
   const moduleId = mod.id;
   const params = JSON.parse(JSON.stringify(layer.source.params || {}));
-  openSecondReadingBench({
+  adapter.open({
     mod, params, contextKey: `layer:${layer.id}`,
-    onKeep: async (exact) => {
+    onCreate: async (exact) => {
       const kept = await api.post("/api/layers/generate", { module: moduleId, params: exact });
       await actions.refreshProject();
       await actions.refreshResolved();
@@ -201,6 +207,7 @@ export function openProcessLayerBench(id) {
  *  closes, and ＋ Create layer needs no second copy to reconcile. */
 export async function openProcessBench(entry) {
   if (!$("process-popup")) return;
+  closeMagneticBench(false);
   const adapter = benchAdapter(entry.mod, 'new');
   if (!adapter) {
     $('process-title').textContent = entry.mod.label;
@@ -217,6 +224,7 @@ export async function openProcessBench(entry) {
 }
 
 async function openGenericBench({ mod, params, onCreate, onReroll, onClose }) {
+  closeMagneticBench(false);
   closeSecondReadingBench(false);
   axis = moduleAxis(mod);
   layerId = null;
@@ -230,14 +238,19 @@ registerBenchAdapter('process', 1, { open: openGenericBench });
 registerBenchAdapter('homeostat', 1, { open: entry => openGenericBench({
   ...entry, mod: { ...entry.mod, schema: homeostatFormSchema(entry.mod.schema) },
 }) });
-registerBenchAdapter('second-reading', 1, { open: ({ mod, params, onCreate, onClose }) => {
-  openSecondReadingBench({ mod, params, contextKey: `new:${mod.id}`, onKeep: onCreate, onClose });
+registerBenchAdapter('second-reading', 1, { open: ({ mod, params, contextKey, onCreate, onClose }) => {
+  openSecondReadingBench({ mod, params, contextKey: contextKey || `new:${mod.id}`, onKeep: onCreate, onClose });
+} });
+registerBenchAdapter('magnetic-field', 1, { open: ({ mod, params, contextKey, onCreate, onClose }) => {
+  closeSecondReadingBench(false);
+  openMagneticBench({ mod, params, contextKey: contextKey || `new:${mod.id}`, onKeep: onCreate, onClose });
 } });
 
 function setBenchChrome(on) {
   $("process-popup")?.classList.remove("second-reading");
   $("process-popup")?.classList.toggle("watch-only", !on);
   $("process-status").hidden = false;
+  $("process-telemetry-row").hidden = false;
   const special = $("process-second-reading");
   if (special) special.hidden = true;
   for (const id of ["process-params", "process-create"]) {

@@ -51,6 +51,25 @@
 .second-only { display:none; }
 .second-reading .second-only { display:block; }
 .second-reading .process-generic-actions, .watch-only .process-generic-actions { display:none; }
+.magnetic-field .bench-transport, .magnetic-field .process-generic-actions { display:none; }
+#magnetic-actions { display:flex; gap:var(--space-2); flex-wrap:wrap; align-items:center; padding:var(--space-3); border-top:1px solid var(--bench-edge); }
+#magnetic-actions[hidden], #process-magnetic[hidden] { display:none; }
+#magnetic-keep { margin-left:auto; }
+.magnetic-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-2); border:0; padding:var(--space-2) 0; margin:0; min-width:0; }
+.magnetic-fields label, label.magnetic-field { display:flex; flex-direction:column; gap:var(--space-1); margin:var(--space-2) 0; }
+.magnetic-fields label[hidden] { display:none; }
+.magnetic-fields input, .magnetic-fields select, label.magnetic-field input, label.magnetic-field select { width:100%; min-width:0; box-sizing:border-box; }
+.magnetic-row { display:flex; flex-wrap:wrap; gap:var(--space-1); margin:var(--space-2) 0; }
+.magnetic-check { display:flex; align-items:center; gap:var(--space-2); margin:var(--space-3) 0; }
+.magnetic-check[hidden] { display:none; }
+.magnetic-check input { flex:none; }
+.magnetic-field #process-canvas { touch-action:none; }
+.magnetic-hit { fill:transparent; stroke:none; pointer-events:all; cursor:grab; }
+.magnetic-selected .magnetic-hit { stroke:var(--accent); stroke-width:.45; stroke-dasharray:1.5 1; }
+.magnetic-center, .magnetic-arm { fill:none; stroke:var(--accent); stroke-width:.35; pointer-events:none; }
+.magnetic-arm { stroke-dasharray:1 1; }
+.magnetic-rotate { fill:var(--accent); stroke:var(--bench); stroke-width:.5; cursor:crosshair; }
+.magnetic-pending .magnetic-ink { opacity:.3; }
 .watch-only .bench-layout { grid-template-columns:minmax(0,1fr) 260px; }
 #process-error { display:flex; align-items:center; gap:8px; padding:9px 12px; border-top:1px solid var(--rust); flex:none; }
 #process-error[hidden] { display:none; }
