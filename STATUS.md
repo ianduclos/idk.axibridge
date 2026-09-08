@@ -3,14 +3,30 @@ project: idk.axibridge
 state: active
 updated: 2026-09-08
 machine: mac+pi
-summary: Approved Compose and expandable popup benches are implemented locally and ready for owner checks.
+summary: Whole-app visual precision pass is implemented locally with matched evidence, ready for owner checks.
 next:
-  - "Check the implemented popup, expansion, compact controls and comparison in the native app"
+  - "Review docs/reviews/ui-precision-2026-09-08/report.html and check the updated native app"
   - "Continue Second Reading alternating-use and paper review"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Session 2026-09-08: whole-app visual precision pass.**
+
+Implemented Ian's approved precision-instrument direction across Compose, all
+three benches, Plot, Pens, Settings, menus and shared controls. Shared type/spacing,
+paired values, quieter structure, action priority and focus states retain Flexoki
+and offline mono. Compact boolean labels and zoomed popup reachability are fixed;
+the calibration ruler retains its physical length in a local scroll container.
+
+[Matched before/after evidence](docs/reviews/ui-precision-2026-09-08/report.html)
+and [implementation record](docs/plans/ui-precision-IMPLEMENTATION.md).
+Full suite **1,290 passed**, including 112 browser regressions, after the final
+dialog fit correction.
+Typecheck/build and source-only evidence checks passed. Zoom evidence explicitly
+uses CSS approximation and reduced viewport/DPR emulation. Native macOS/Pi feel
+and physical output remain for Ian. No push, hardware use or running-app restart.
 
 **Session 2026-09-08: approved Compose and benches implementation.**
 

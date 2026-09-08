@@ -35,6 +35,12 @@ controls/observed telemetry are implemented. See
 acceptance remains with Ian. Durable recovery, unified unsaved-work prompts and
 richer application services remain deferred pending their own design.
 
+**8 September: whole-app precision pass implemented.** Shared type/spacing,
+quieter hierarchy, paired values and consistent states now carry across all tabs
+and benches. [Matched evidence](docs/reviews/ui-precision-2026-09-08/report.html)
+is ready for owner judgement; native/paper acceptance remains open. Existing
+workflows and the mono/Flexoki identity are retained.
+
 The remaining review is a proposal set. M1-M6 sequence
 viewing/interaction confidence, preservation, everyday composition, sustained
 development, output/performance and bounded spatial experiments. The report

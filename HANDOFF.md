@@ -4,18 +4,19 @@ updated: 2026-09-08
 entries: 14
 ---
 
-### Compose and open benches acceptance — updated 2026-09-08, owner: ian
+### Visual precision and benches acceptance — updated 2026-09-08, owner: ian
 
-- done: Approved implementation now includes popup/expand, compact controls,
-  source-scope Compose hierarchy, expandable layers, versioned adapters, exact
-  preview gates, local errors, Second Reading comparison and Homeostat telemetry.
-- next: Check native interaction and layout; use the normal app restart path to
-  load the new build when ready. Running app was not restarted in this session.
-- blockers: none for local implementation; owner acceptance remains provisional.
-- context: shots/ui-benches-0908/README.md records verification and limits;
-  docs/plans/ui-benches-IMPLEMENTATION.md records scope. Durable recovery, unified
-  unsaved-work prompts and future service/revision APIs remain separate work.
-  No push or hardware use.
+- done: Approved whole-app visual polish, including consistent type/spacing,
+  aligned dimensions, control states and compact/zoom fit. Prior popup/expand,
+  comparison and explicit source scope remain. Working benches are only Venation,
+  Homeostat and Second Reading.
+- next: Review docs/reviews/ui-precision-2026-09-08/report.html, then check native
+  appearance and input feel. Use the normal app restart path when ready.
+- blockers: none for local implementation; aesthetic/native acceptance remains Ian's.
+- context: docs/plans/ui-precision-IMPLEMENTATION.md and the evidence README record
+  exact verification and limits. Full suite 1,290 passed; 112 browser regressions included.
+  No push, hardware use or running-app restart. Durable recovery and future bench
+  services remain separately deferred.
 
 ### Interactive drawing machine: Second Reading — updated 2026-09-06, owner: ian
 
