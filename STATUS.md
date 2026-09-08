@@ -25,8 +25,9 @@ and [implementation record](docs/plans/ui-precision-IMPLEMENTATION.md).
 Full suite **1,290 passed**, including 112 browser regressions, after the final
 dialog fit correction.
 Typecheck/build and source-only evidence checks passed. Zoom evidence explicitly
-uses CSS approximation and reduced viewport/DPR emulation. Native macOS/Pi feel
-and physical output remain for Ian. No push, hardware use or running-app restart.
+uses CSS approximation and reduced viewport/DPR emulation. UI acceptance is
+Mac-only: the Pi does not run the UI. Native Mac feel and physical output remain
+for Ian. No push, hardware use or running-app restart.
 
 **Session 2026-09-08: approved Compose and benches implementation.**
 

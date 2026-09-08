@@ -45,5 +45,6 @@ before/after captures under ../reviews/ui-precision-2026-09-08/.
 Desktop and compact coverage uses 1440x1000, 1100x750, 900x650 and 700x650.
 Enlargement is checked as an explicitly labelled 2x CSS zoom approximation plus
 720x450 CSS viewport at DPR2 (200%-zoom-equivalent layout). This is not a claim
-that native browser/menu zoom or macOS/Pi input feel was manually accepted.
+that native browser/menu zoom or macOS input feel was manually accepted.
+UI acceptance is Mac-only; the Pi does not run the UI.
 Native appearance, sustained interaction and physical output remain Ian's checks.
