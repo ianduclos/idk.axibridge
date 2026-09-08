@@ -13,8 +13,11 @@ entries: 16
 - verified: 1,360 tests passed, one intentional native-app lifecycle skip;
   typecheck, built UI and isolated source-only smoke passed. Screens are
   provisional until Ian checks the native app and paper output.
-- next: Restart the native app when ready; check interaction and paper output.
-  The app has not been restarted and no hardware action was taken here.
+- next: Try the open native bench and check paper output. The app and backend
+  were restarted at Ian's request on 9 September; Ribbon was recovered from a
+  separate `before-magnetic-bench-20260909-002530` project. The bench is open
+  with continuous curves and both magnet bodies and silhouettes hidden.
+  No hardware action was taken.
 - limits: Simplified planar model; small pole cores remain untraced. Irregular
   styles require many lifts; actual paper/time benefit remains untested.
 - context: docs/reviews/magnetic-bench-2026-09-09/README.md and

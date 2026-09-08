@@ -5,7 +5,7 @@ updated: 2026-09-09
 machine: mac+pi
 summary: Magnetic field bench is implemented; native and paper acceptance remain with Ian. The Mac backend serves Ribbon.
 next:
-  - "Restart the app and check the Magnetic field bench, including hidden magnets without silhouettes"
+  - "Try the open Magnetic field bench, including hidden magnets without silhouettes"
   - "Check Ribbon on real drawings"
   - "Check the open Mac app for native appearance and the new scaffold icon"
   - "Continue Second Reading alternating-use and paper review"
@@ -22,6 +22,12 @@ no-silhouette option. [Evidence and verification](docs/reviews/magnetic-bench-20
 Full suite: **1,360 passed, one intentional lifecycle skip**; typecheck and
 isolated source-only smoke passed. Native app restart and paper acceptance
 remain with Ian; no hardware action.
+
+**Native launch follow-up, 9 September:** At Ian's request, saved a separate
+`before-magnetic-bench-20260909-002530` recovery project, restarted the backend
+and reopened the native app. The saved Ribbon layer manifest matches the
+restored project. Magnetic field is open with continuous curves, magnet bodies
+hidden and empty silhouettes off. User judgement and paper output remain pending.
 
 **Magnetic field study, 8 September:** Nine standalone drawings compare three
 magnet arrangements with continuous curves, irregular chains and loose filings.
