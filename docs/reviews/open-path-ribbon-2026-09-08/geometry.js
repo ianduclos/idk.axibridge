@@ -390,7 +390,7 @@
       result={...visible,left,right,spine,diagnostics};
     } else result={strands:paths.map(nodes=>nodes.map(n=>n.p)),left,right,spine,diagnostics};
     const mode=opts.outputMode||'strands';
-    if(mode!=='strands'||opts.solidOccluder) {
+    if(mode!=='strands'||opts.solidOccluder||opts.maskAcrossPaths) {
       if(!root.RibbonSilhouette)throw Error('Ribbon silhouette helper missing');
       const spineNodes=spine.map((p,i)=>({p,s:sampled.ss[i]}));
       result.silhouette=root.RibbonSilhouette.fromNodes(leftNodes,rightNodes,spineNodes,{mergeOverlaps:true});
@@ -407,7 +407,20 @@
     const lengths=inputs.map(p=>{const clean=sanitize(p);return clean.length>1&&!same(clean[0],clean.at(-1))?length(clean):0;});
     const longest=Math.max(0,...lengths), steps=Math.max(1,Math.floor(+options.steps||defaults.steps));
     const counts=lengths.map(l=>options.widthByLength&&longest>0 ? Math.max(1,Math.ceil(steps*l/longest-1e-10)) : steps);
-    const items=inputs.map((p,i)=>generate(p,{...options,retainedSteps:counts[i]}));
+    const maskAcrossPaths=!!options.maskLoops&&inputs.length>1&&(!options.outputMode||options.outputMode==='strands');
+    const items=inputs.map((p,i)=>generate(p,{...options,retainedSteps:counts[i],maskAcrossPaths}));
+    if(maskAcrossPaths)items.forEach((item,index)=>{
+      if(item.diagnostics.skipped)return;
+      const blockers=root.RibbonSilhouette.union(items.filter((_,j)=>options.reverseOrder?j<index:j>index).map(r=>r.silhouette??[]));
+      if(!blockers.length)return;
+      const strands=[],strandIndices=[];
+      item.strands.forEach((path,i)=>{
+        const pieces=root.RibbonSilhouette.clipPaths([path],blockers);
+        strands.push(...pieces);
+        strandIndices.push(...pieces.map(()=>item.strandIndices?.[i]??i));
+      });
+      item.strands=strands;item.strandIndices=strandIndices;item.drawingPaths=strands;
+    });
     const result={items,retainedSteps:counts,strands:items.flatMap(r=>r.strands),
       spines:items.map(r=>r.spine),drawingPaths:items.flatMap(r=>r.drawingPaths??r.strands)};
     if(items.some(r=>r.silhouette)) {

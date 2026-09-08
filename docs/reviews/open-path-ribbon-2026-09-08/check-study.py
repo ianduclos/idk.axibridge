@@ -100,6 +100,18 @@ def run():
         page.select_option('#ribbon-outputMode','strands')
         page.locator('#ribbon-solidOccluder').uncheck()
         page.locator('#ribbon-background').uncheck()
+        page.select_option('#ribbon-shape','crossing')
+        for name,value in [('width',32),('steps',10)]:
+            page.locator('#ribbon-'+name).evaluate('(e,v)=>{e.value=v;e.dispatchEvent(new Event("input"));}',value)
+        page.locator('#ribbon-guide').uncheck()
+        crossingRaw=page.locator('.ribbon-ink').first.inner_html()
+        page.locator('#ribbon-mask').check()
+        crossingMasked=page.locator('.ribbon-ink').first.inner_html()
+        assert crossingMasked!=crossingRaw
+        page.locator('#ribbon-reverse').uncheck()
+        assert page.locator('.ribbon-ink').first.inner_html()!=crossingMasked
+        page.locator('#ribbon-study').screenshot(path=str(HERE/'cross-path-masking.png'))
+        page.locator('#ribbon-mask').uncheck()
         page.select_option('#ribbon-shape','many')
         page.locator('#ribbon-steps').evaluate('(e)=>{e.value=10;e.dispatchEvent(new Event("input"));}')
         assert page.locator('.ribbon-ink path').count()==252

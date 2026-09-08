@@ -60,3 +60,20 @@ seed-blend numerical checks passed too. The lead inspected `outline-occlusion.pn
 `solid-occlusion.png` and `length-width.png`. Ready for Ian to check; no physical
 output or full application suite was run. Installing the effect requires the
 separate Python/Path integration already noted in the study README.
+
+## Mask overlaps across source paths
+
+Ian requested that loop masking also work between paths. The UI control is now
+**Mask overlaps** (engine option `maskLoops` retained for compatibility).
+`generateMany` first applies each path's existing self-loop masking, then clips
+its surviving strands against the union of all later input silhouettes. Reverse
+order switches both the inter-path order and the within-path passage order.
+The full retained-width silhouettes are blockers; individual strand gaps do not
+leak lower paths. Per-fragment strand indices are retained. Closed bypassed paths
+remain outside this open-ribbon masking policy.
+
+The new Crossing paths fixture demonstrates the order change. `multi-mask-check`
+passes inter-path cuts, intact top path, reversal, unchanged silhouette, provenance,
+determinism and single-path compatibility. Length/output checks pass too. Browser
+checks cover the new fixture, mask toggling and reversal; `cross-path-masking.png`
+records the preview. These are study checks, not installed-app validation.
