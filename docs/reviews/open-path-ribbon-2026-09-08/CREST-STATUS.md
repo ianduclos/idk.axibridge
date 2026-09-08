@@ -80,3 +80,29 @@ geometry are unchanged. This smoothing also applies to the lower variation range
 at knot seams, endpoints and width bounds across four maximum-variation seeds.
 The 24 crest configurations and browser suite passed again. The lead inspected
 the regenerated `crest-maximum.png`; visual acceptance remains with Ian.
+
+## Seed blend and independent side wavelengths
+
+The study now accepts Seed A, Seed B and a 0–100% blend. It interpolates the two
+positive width functions pointwise along arc length, before strand construction,
+corner joins and overlap clipping. This is a profile crossfade: crests may merge
+or fade, rather than moving one-to-one between assigned landmarks. End settings
+select their seed exactly. Shared endpoints and width bounds remain intact.
+Mask visibility and corner-union topology can still change as geometry moves;
+continuous profiles are not a promise of unchanged output fragment counts.
+
+Independent wavelengths reveals a right-side wavelength, retaining the existing
+wavelength as the left setting. Related sides run their shared seeded pattern at
+their respective wavelengths before the usual bounded perturbation. The first
+comparison uses the same seeded pattern at each wavelength; its label changes to
+“Same pattern, unequal wavelengths” because it is no longer literally mirrored.
+Independent sides also retain their distinct random streams. Equal wavelengths
+preserve the earlier result. Engine options: `seedB`, `seedBlend` (0–1),
+`independentWavelengths`, `wavelengthRight`; omitted options preserve prior output.
+
+`seed-blend-check.cjs` passes exact endpoints, same-seed invariance, pointwise
+straight blending and continuity, right-side isolation, equal-wavelength backwards
+compatibility, and six unequal-wavelength fixtures with masking in both orders.
+The existing geometry/crest/smoothing checks and browser interactions/layouts
+also pass. The lead inspected the 736/360 layouts with both new features active.
+No paper or installed-app testing; ready for Ian to check.

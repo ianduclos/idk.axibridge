@@ -28,6 +28,23 @@ def run():
         page.locator('#ribbon-next').click()
         assert page.locator('#ribbon-study').get_attribute('data-seed') == '8'
         assert page.locator('.ribbon-ink').first.inner_html() != before
+        a=page.locator('.ribbon-ink').first.inner_html()
+        page.locator('#ribbon-nextB').click()
+        assert page.locator('.ribbon-ink').first.inner_html()==a
+        page.locator('#ribbon-seedBlend').evaluate('(e)=>{e.value=50;e.dispatchEvent(new Event("input"));}')
+        middle=page.locator('.ribbon-ink').first.inner_html()
+        assert middle!=a
+        page.locator('#ribbon-seedBlend').evaluate('(e)=>{e.value=100;e.dispatchEvent(new Event("input"));}')
+        assert page.locator('.ribbon-ink').first.inner_html()!=middle
+        page.locator('#ribbon-seedBlend').evaluate('(e)=>{e.value=0;e.dispatchEvent(new Event("input"));}')
+        assert page.locator('.ribbon-ink').first.inner_html()==a
+        page.locator('#ribbon-independentWavelengths').check()
+        assert page.locator('#ribbon-wavelengthRight').is_visible()
+        assert 'unequal wavelengths' in page.locator('.ribbon-label').first.inner_text()
+        assert page.locator('.ribbon-ink').first.inner_html()!=a
+        page.locator('#ribbon-independentWavelengths').uncheck()
+        assert not page.locator('#ribbon-wavelengthRight').is_visible()
+        assert page.locator('.ribbon-ink').first.inner_html()==a
         for name in ['spacingVariation','heightVariation','phrasing']:
             before=page.locator('.ribbon-ink').first.inner_html()
             page.locator('#ribbon-'+name).evaluate('(e)=>{e.value=0;e.dispatchEvent(new Event("input"));}')
@@ -63,6 +80,8 @@ def run():
         for id,value in [('width',24),('steps',10)]:
             page.locator('#ribbon-'+id).evaluate('(e,v)=>{e.value=v;e.dispatchEvent(new Event("input"));}',value)
         page.locator('#ribbon-guide').uncheck()
+        page.locator('#ribbon-independentWavelengths').check()
+        page.locator('#ribbon-seedBlend').evaluate('(e)=>{e.value=50;e.dispatchEvent(new Event("input"));}')
         for size in [736,360]:
             page.set_viewport_size({'width':size,'height':1200})
             for theme in ['light','dark']:
@@ -72,6 +91,8 @@ def run():
         page.set_viewport_size({'width':736,'height':1200})
         page.emulate_media(color_scheme='light')
         page.select_option('#ribbon-shape','straight')
+        page.locator('#ribbon-independentWavelengths').uncheck()
+        page.locator('#ribbon-seedBlend').evaluate('(e)=>{e.value=0;e.dispatchEvent(new Event("input"));}')
         for name in ['spacingVariation','heightVariation']:
             page.locator('#ribbon-'+name).evaluate('(e)=>{e.value=100;e.dispatchEvent(new Event("input"));}')
         page.locator('#ribbon-study').screenshot(path=str(HERE/'crest-maximum.png'))
@@ -116,7 +137,7 @@ def run():
                     page.locator('#'+c['id']+' svg').evaluate('(e)=>e.style.height="175px"')
         browser.close()
     assert not errors, errors
-    print('PASS: controls, 12 shape/width states, strand counts, seed changes, mask/inversion, finite SVG, 360/736 layouts in light/dark; captured 27 neutral study cells.')
+    print('PASS: seed blend and independent wavelengths, controls, 12 shape/width states, strand counts, seed changes, mask/inversion, finite SVG, 360/736 layouts in light/dark; captured 27 neutral study cells.')
     print(OUT)
 
 

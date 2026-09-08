@@ -304,23 +304,38 @@
     const spine = sampled.points.map(p => p.slice());
     const frame = frames(spine);
     const corners = sharpCorners(spine,sampled.ss);
-    const leftRandom = rng(opts.seed);
-    const phrased = opts.rhythm === "phrased";
-    const leftProfile = phrased ? crestProfile(sampled.total, opts) : knotProfile(sampled.total, opts, leftRandom);
-    let rightProfile;
-    if (opts.relation === "mirrored") rightProfile = leftProfile;
-    else if (opts.relation === "independent") rightProfile = phrased
-      ? crestProfile(sampled.total, {...opts,seed:(opts.seed>>>0)^0x9E3779B9})
-      : knotProfile(sampled.total, opts, rng((opts.seed >>> 0) ^ 0x9E3779B9));
-    else if (phrased) rightProfile = relatedCrests(leftProfile, sampled.total, opts);
-    else {
-      const relatedRandom = rng((opts.seed >>> 0) ^ 0x85EBCA6B);
-      const guide = leftProfile.knots.slice(1).map(k => ({
-        spacing: clamp(k.spacing + (relatedRandom() - 0.5) * 0.16 * opts.variation, 0.65, 1.35),
-        amplitude: clamp(k.amplitude * (1 + (relatedRandom() - 0.5) * 0.28 * opts.variation), 0.12, 1)
-      }));
-      rightProfile = knotProfile(sampled.total, opts, relatedRandom, guide);
+    function profiles(seed) {
+      const opts={...optionsForProfiles,seed};
+      const leftRandom = rng(opts.seed);
+      const phrased = opts.rhythm === "phrased";
+      const leftProfile = phrased ? crestProfile(sampled.total, opts) : knotProfile(sampled.total, opts, leftRandom);
+      const rightOpts={...opts,wavelength:opts.independentWavelengths ? Math.max(1,+opts.wavelengthRight||opts.wavelength) : opts.wavelength};
+      const rightBase=rightOpts.wavelength===opts.wavelength ? leftProfile :
+        (phrased ? crestProfile(sampled.total,rightOpts) : knotProfile(sampled.total,rightOpts,rng(opts.seed)));
+      let rightProfile;
+      if (opts.relation === "mirrored") rightProfile = rightBase;
+      else if (opts.relation === "independent") rightProfile = phrased
+        ? crestProfile(sampled.total, {...rightOpts,seed:(opts.seed>>>0)^0x9E3779B9})
+        : knotProfile(sampled.total, rightOpts, rng((opts.seed >>> 0) ^ 0x9E3779B9));
+      else if (phrased) rightProfile = relatedCrests(rightBase, sampled.total, rightOpts);
+      else {
+        const relatedRandom = rng((opts.seed >>> 0) ^ 0x85EBCA6B);
+        const guide = rightBase.knots.slice(1).map(k => ({
+          spacing: clamp(k.spacing + (relatedRandom() - 0.5) * 0.16 * opts.variation, 0.65, 1.35),
+          amplitude: clamp(k.amplitude * (1 + (relatedRandom() - 0.5) * 0.28 * opts.variation), 0.12, 1)
+        }));
+        rightProfile = knotProfile(sampled.total, rightOpts, relatedRandom, guide);
+      }
+
+      return [leftProfile,rightProfile];
     }
+    const optionsForProfiles=opts;
+    const blend=clamp(+opts.seedBlend||0,0,1);
+    const seedB=opts.seedB ?? opts.seed;
+    const aProfiles=profiles(blend===1?seedB:opts.seed);
+    const bProfiles=blend>0&&blend<1 ? profiles(seedB) : aProfiles;
+    const [leftProfile,rightProfile]=aProfiles.map((a,i)=>
+      blend>0&&blend<1 ? s=>mix(a(s),bProfiles[i](s),blend) : a);
 
     function outerWidths(profile) {
       return spine.map((p, i) => {

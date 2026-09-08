@@ -19,8 +19,11 @@
     <label class="form-label">Width <output id="ribbon-width-value">24</output>
       <input class="form-range" id="ribbon-width" type="range" min="5" max="90" value="24" step="1">
     </label>
-    <label class="form-label">Wavelength <output id="ribbon-wavelength-value">120</output>
+    <label class="form-label"><span id="ribbon-wave-label">Wavelength</span> <output id="ribbon-wavelength-value">120</output>
       <input class="form-range" id="ribbon-wavelength" type="range" min="45" max="240" value="120" step="5">
+    </label>
+    <label class="form-label" id="ribbon-right-wave-control" hidden>Right wavelength <output id="ribbon-wavelengthRight-value">180</output>
+      <input class="form-range" id="ribbon-wavelengthRight" type="range" min="45" max="240" value="180" step="5">
     </label>
     <label class="form-label" id="ribbon-legacy-controls" hidden>Variation <output id="ribbon-variation-value">75%</output>
       <input class="form-range" id="ribbon-variation" type="range" min="0" max="100" value="75" step="5">
@@ -38,9 +41,17 @@
       <input class="form-range" id="ribbon-steps" type="range" min="1" max="32" value="10" step="1">
     </label>
   </div>
+  <div class="viz-controls">
+    <label class="form-label">Seed A <input class="form-control" id="ribbon-seedA" type="number" min="0" max="4294967295" step="1" value="7"></label>
+    <label class="form-label">Seed B <input class="form-control" id="ribbon-seedB" type="number" min="0" max="4294967295" step="1" value="19"></label>
+    <label class="form-label">Blend A → B <output id="ribbon-seedBlend-value">0%</output>
+      <input class="form-range" id="ribbon-seedBlend" type="range" min="0" max="100" value="0" step="1">
+    </label>
+  </div>
   <div class="viz-row">
-    <button class="btn" id="ribbon-next" type="button">New seed</button>
-    <span class="text-small" id="ribbon-seed">Seed 7</span>
+    <label class="form-check"><input class="form-check-input" id="ribbon-independentWavelengths" type="checkbox"><span class="form-check-label">Independent wavelengths</span></label>
+    <button class="btn" id="ribbon-next" type="button">New A</button>
+    <button class="btn" id="ribbon-nextB" type="button">New B</button>
     <label class="form-check"><input class="form-check-input" id="ribbon-mask" type="checkbox"><span class="form-check-label">Mask loops</span></label>
     <label class="form-check"><input class="form-check-input" id="ribbon-reverse" type="checkbox" disabled><span class="form-check-label">Reverse order</span></label>
     <label class="form-check"><input class="form-check-input" id="ribbon-guide" type="checkbox"><span class="form-check-label">Highlight original</span></label>
@@ -67,24 +78,29 @@
   const root = document.getElementById('ribbon-study');
   const find = id => root.querySelector('#ribbon-' + id);
   const relations = [['mirrored','1 · Mirrored'],['related','2 · Related, unequal'],['independent','3 · Independent']];
-  let seed = 7;
+
   const pathData = points => points.map((p,i) => (i ? 'L' : 'M') + p.map(n => n.toFixed(3)).join(' ')).join(' ');
   function draw() {
-    const options = { seed, rhythm:find('rhythm').value,
+    const seed=(+find('seedA').value||0)>>>0;
+    const options = { seed, seedB:(+find('seedB').value||0)>>>0, seedBlend:+find('seedBlend').value/100,
+      independentWavelengths:find('independentWavelengths').checked,wavelengthRight:+find('wavelengthRight').value, rhythm:find('rhythm').value,
       spacingVariation:+find('spacingVariation').value/100, heightVariation:+find('heightVariation').value/100,
       phrasing:+find('phrasing').value/100, width: +find('width').value, wavelength: +find('wavelength').value,
       variation: +find('variation').value / 100, steps: +find('steps').value,
       taper:.12,maskLoops:find('mask').checked,reverseOrder:find('reverse').checked };
+    find('right-wave-control').hidden=!options.independentWavelengths;
+    find('wave-label').textContent=options.independentWavelengths?'Left wavelength':'Wavelength';
+    find('wavelengthRight-value').textContent=options.wavelengthRight;
+    find('seedBlend-value').textContent=Math.round(options.seedBlend*100)+'%';
     find('legacy-controls').hidden=options.rhythm!=='legacy';
     root.querySelectorAll('[data-phrase-control]').forEach(el=>el.hidden=options.rhythm==='legacy');
     for(const key of ['spacingVariation','heightVariation','phrasing']) find(key+'-value').textContent=Math.round(options[key]*100)+'%';
     find('reverse').disabled=!options.maskLoops;
     for (const key of ['width','wavelength','steps']) find(key+'-value').textContent = options[key];
     find('variation-value').textContent = Math.round(options.variation*100)+'%';
-    find('seed').textContent = 'Seed ' + seed;
     const fixtures = typeof RibbonStudy.fixtures === 'function' ? RibbonStudy.fixtures() : RibbonStudy.fixtures;
     const points = fixtures[find('shape').value];
-    const results = relations.map(([relation,label]) => ({label, ...RibbonStudy.generate(points,{...options,relation})}));
+    const results = relations.map(([relation,label]) => ({label:relation==='mirrored'&&options.independentWavelengths&&options.wavelengthRight!==options.wavelength?'1 · Same pattern, unequal wavelengths':label, ...RibbonStudy.generate(points,{...options,relation})}));
     // The same framing for every relation preserves the comparison's scale.
     let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
     for (const r of results) for (const strand of r.strands) for(const [x,y] of strand) {
@@ -97,7 +113,8 @@
     root.dataset.seed = String(seed);
   }
   root.querySelectorAll('input,select').forEach(el => el.addEventListener('input',draw));
-  find('next').addEventListener('click',() => {seed++;draw();});
+  find('next').addEventListener('click',() => {find('seedA').value=((+find('seedA').value||0)+1)>>>0;draw();});
+  find('nextB').addEventListener('click',() => {find('seedB').value=((+find('seedB').value||0)+1)>>>0;draw();});
   draw();
 })();
 </script>
