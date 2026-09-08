@@ -122,3 +122,19 @@ seeds 7/19/43 at identical 75% settings. S01–03 are before, S04–06 after; se
 contrasts while S06 remains more even, retaining variety across the population.
 The crest, seed-blend, smoothing and browser checks passed. Ready for Ian to check;
 no installed-app or paper validation.
+
+## Normalize seed blend amplitude
+
+Ian identified a loss of amplitude around the A/B midpoint. Intermediate blends
+now receive one uniform gain per side, targeting the linear interpolation of
+that side's A/B peak widths (measured after endpoint taper and before corner
+joins). Thus a midpoint retains the mean endpoint peak amplitude even when crests
+are misaligned. Local quiet/prominent proportions are retained; seed endpoints
+and same-seed blends remain exact. This supersedes the unnormalized crossfade
+above. It normalizes peak width, not area or perceived ink density.
+
+The seed-blend regression first reproduced the peak loss, then passed normalized
+amplitude and uniformly scaled profile checks at .001, .499, .5, .501 and .999.
+Existing side independence, exact A/B, same-seed, masking and six-fixture checks
+pass, as do the crest and browser suites. Lead inspected the 50% preview; ready
+for Ian to check.

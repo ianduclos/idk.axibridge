@@ -43,14 +43,21 @@ function assertFinite(result, source, message) {
   }
 }
 
-function assertPointwiseMix(actual, a, b, t, message, tolerance = 2e-12) {
+function assertNormalizedMix(actual, a, b, t, message, tolerance = 2e-12) {
   assert.equal(actual.length, a.length, `${message}: path count`);
   assert.equal(actual.length, b.length, `${message}: matching path count`);
   for (let i = 0; i < actual.length; i++) {
     assert.equal(actual[i].length, a[i].length, `${message}: point count at path ${i}`);
     assert.equal(actual[i].length, b[i].length, `${message}: matching point count at path ${i}`);
+    const centre=R.fixtures.straight[0][1];
+    const peak=path=>Math.max(...path.map(p=>Math.abs(p[1]-centre)));
+    const raw=a[i].map((p,j)=>[p[0],p[1]+(b[i][j][1]-p[1])*t]);
+    const target=peak(a[i])+(peak(b[i])-peak(a[i]))*t;
+    const gain=peak(raw)>1e-12 ? target/peak(raw) : 1;
+    assert.ok(Math.abs(peak(actual[i])-target)<2e-12,'blend retains interpolated peak amplitude');
     for (let j = 0; j < actual[i].length; j++) for (let axis = 0; axis < 2; axis++) {
-      const expected = a[i][j][axis] + (b[i][j][axis] - a[i][j][axis]) * t;
+      const mixed = a[i][j][axis] + (b[i][j][axis] - a[i][j][axis]) * t;
+      const expected = axis===1 ? centre+(mixed-centre)*gain : mixed;
       assert.ok(Math.abs(actual[i][j][axis] - expected) <= tolerance,
         `${message}: path ${i}, point ${j}, axis ${axis}`);
     }
@@ -80,15 +87,15 @@ for (const relation of relations) {
 }
 
 // A straight path has no nonlinear corner join. Its complete strand geometry
-// therefore exposes the intended pointwise profile interpolation directly.
+// therefore exposes the intended pointwise profile interpolation plus one uniform amplitude gain per side.
 for (const relation of relations) {
   const options = { ...base, relation, maskLoops: false };
   const a = R.generate(R.fixtures.straight, { ...options, seedBlend: 0 });
   const b = R.generate(R.fixtures.straight, { ...options, seedBlend: 1 });
-  for (const t of [0.499, 0.5, 0.501]) {
+  for (const t of [0.001, 0.499, 0.5, 0.501, 0.999]) {
     const blended = R.generate(R.fixtures.straight, { ...options, seedBlend: t });
-    assertPointwiseMix(blended.strands, a.strands, b.strands, t,
-      `${relation}: straight blend is continuous and linear at ${t}`);
+    assertNormalizedMix(blended.strands, a.strands, b.strands, t,
+      `${relation}: straight blend is normalized profile interpolation at ${t}`);
   }
 }
 

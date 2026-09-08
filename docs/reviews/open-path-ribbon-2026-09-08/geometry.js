@@ -342,17 +342,31 @@
     const [leftProfile,rightProfile]=aProfiles.map((a,i)=>
       blend>0&&blend<1 ? s=>mix(a(s),bProfiles[i](s),blend) : a);
 
-    function outerWidths(profile) {
-      return spine.map((p, i) => {
+    function outerWidths(profile, sideIndex) {
+      const widths = spine.map((p, i) => {
         if (i === 0 || i === spine.length - 1) return 0;
         const base = profile(sampled.ss[i]);
         const requested = opts.width * base * taperAt(sampled.ss[i], sampled.total, opts.taper);
         return requested;
       });
+      if(blend>0&&blend<1&&opts.seed!==seedB) {
+        let peakA=0,peakB=0,peakMixed=0;
+        for(let i=1;i<spine.length-1;i++) {
+          const s=sampled.ss[i], envelope=opts.width*taperAt(s,sampled.total,opts.taper);
+          peakA=Math.max(peakA,aProfiles[sideIndex](s)*envelope);
+          peakB=Math.max(peakB,bProfiles[sideIndex](s)*envelope);
+          peakMixed=Math.max(peakMixed,widths[i]);
+        }
+        // Misaligned peaks otherwise cancel during a profile crossfade. One
+        // gain per side preserves the local rhythm and strand spacing.
+        const gain=peakMixed>1e-12 ? mix(peakA,peakB,blend)/peakMixed : 1;
+        return widths.map(w=>w*gain);
+      }
+      return widths;
     }
 
-    const leftWidths = outerWidths(leftProfile);
-    const rightWidths = outerWidths(rightProfile);
+    const leftWidths = outerWidths(leftProfile,0);
+    const rightWidths = outerWidths(rightProfile,1);
     function side(sign, widths, level) {
       const nodes=spine.map((p, i) => {
         if (i === 0) return {p:source[0].slice(),s:sampled.ss[i]};
