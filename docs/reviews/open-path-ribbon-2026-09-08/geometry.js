@@ -195,7 +195,7 @@
     // Use a whole number of lobes, including short paths. Distribute the
     // terminal remainder across the path instead of chopping the last lobe.
     const count = Math.max(1, Math.min(4096, Math.round(total / wave)));
-    const motif = Array.from({length: 3}, () => .65 + structure() * .7);
+    const motif = Array.from({length: 3}, () => .4 + structure() * 1.1);
     const events = [];
     let phraseLeft = 0, phraseSize = 0, accent = 0, phraseGain = 1, pace = 1;
     for (let i = 0; i < count; i++) {
@@ -203,21 +203,24 @@
         phraseSize = 3 + Math.floor(structure() * 3);
         phraseLeft = phraseSize;
         accent = Math.floor(structure() * Math.min(phraseSize, count-i));
-        phraseGain = .68 + structure() * .32;
-        pace = .72 + structure() * .56;
+        phraseGain = .82 + structure() * .18;
+        pace = .65 + structure() * .7;
       }
       const position = phraseSize - phraseLeft--;
-      const localSpan = .4 + rhythm() * 1.2;
+      const localSpan = .25 + rhythm() * 1.5;
       const phraseSpan = pace * motif[position % motif.length];
       const span = clamp(Math.pow(mix(1, mix(localSpan, phraseSpan, phrasing), spacing),
         1+2.5*spacingPush),.18,3.5);
       const skew = (rhythm() - .5) * .5 * spacing;
-      const freeHeight = .38 + heights() * .62;
-      const hierarchy = phraseGain * (position === accent ? 1 : .46 + heights() * .3);
+      const freeHeight = .08 + heights() * .92;
+      const hierarchy = phraseGain * (position === accent ? 1 : .12 + heights() * .73);
       const peak = heightContrast(mix(.86, mix(freeHeight, hierarchy, phrasing), height));
       const trough = heightContrast(mix(.21, .07 + heights() * .2, height));
       events.push({span, skew, peak, trough});
     }
+    // Quiet crests can now be very small; keep their neighbouring troughs
+    // below both peaks rather than accidentally introducing extra extrema.
+    events.forEach((e,i)=>{e.trough=Math.min(e.trough,.65*e.peak,.65*(events[i+1]?.peak??e.peak));});
     const scale = Math.max(0, total) / events.reduce((sum,e) => sum+e.span, 0);
     const knots = [{s:0,v:0}];
     let s = 0;
@@ -272,6 +275,8 @@
       return {s:k.s+(random()-.5)*.55*spacing*room,
         v:clamp(k.v*(1+(random()-.5)*.55*height),.035,1)};
     });
+    for(let i=2;i<knots.length-1;i+=2)
+      knots[i].v=Math.min(knots[i].v,.65*knots[i-1].v,.65*knots[i+1].v);
     return profileFromKnots(knots,left.smoothingRadius);
   }
 

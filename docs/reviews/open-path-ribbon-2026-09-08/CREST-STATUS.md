@@ -106,3 +106,19 @@ compatibility, and six unequal-wavelength fixtures with masking in both orders.
 The existing geometry/crest/smoothing checks and browser interactions/layouts
 also pass. The lead inspected the 736/360 layouts with both new features active.
 No paper or installed-app testing; ready for Ian to check.
+
+## More distinct seed patterns
+
+Ian clarified that slider amounts should stay fixed while different seeds produce
+more distinct heights and spacing. Broadened seeded span motifs/local spans and
+the subordinate crest height range. Group accents remain strong; non-accent crests
+can now become much quieter. Troughs are bounded below neighbouring peaks in both
+the base and related profiles, avoiding extra extrema when a crest is suppressed.
+Seed selection still does not move UI sliders. Zero variation remains regular.
+
+`seed-contrast-evidence.py` compares immutable 10713ec with this revision for
+seeds 7/19/43 at identical 75% settings. S01–03 are before, S04–06 after; see
+`seed-contrast.png`. The lead inspected it: S04/S05 show stronger quiet/prominent
+contrasts while S06 remains more even, retaining variety across the population.
+The crest, seed-blend, smoothing and browser checks passed. Ready for Ian to check;
+no installed-app or paper validation.

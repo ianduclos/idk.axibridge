@@ -1,0 +1,50 @@
+[
+  {
+    "id": "S01",
+    "seed": 7,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0.7,
+    "variant": "before"
+  },
+  {
+    "id": "S02",
+    "seed": 19,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0.7,
+    "variant": "before"
+  },
+  {
+    "id": "S03",
+    "seed": 43,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0.7,
+    "variant": "before"
+  },
+  {
+    "id": "S04",
+    "seed": 7,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0.7,
+    "variant": "after"
+  },
+  {
+    "id": "S05",
+    "seed": 19,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0.7,
+    "variant": "after"
+  },
+  {
+    "id": "S06",
+    "seed": 43,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0.7,
+    "variant": "after"
+  }
+]
