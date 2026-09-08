@@ -1,3 +1,4 @@
+import { beginDrawingUpdate } from "./drawing_status.js";
 // Current product benches; time-axis capability alone does not promote a source.
 const WORKING_BENCHES = new Set(['venation', 'homeostat', 'second_reading', 'magnetic_field']);
 const isWorkingBench = mod => WORKING_BENCHES.has(mod?.id);
@@ -93,6 +94,7 @@ const preview = {
     this.next = null;
     this.inflight = true;
     const seq = ++this.seq;
+    const finishUpdate = beginDrawingUpdate();
     const p = $("gen-progress");
     if (p && !busyBtn) p.hidden = false;  // ride the same bar, unless a real generate owns it
     try {
@@ -104,6 +106,7 @@ const preview = {
     } catch (e) {
       if (seq === this.seq) note(e.message); // quiet inline note, no toast spam mid-drag
     } finally {
+      finishUpdate();
       this.inflight = false;
       if (p && !busyBtn) p.hidden = true;
       if (this.next) this._run();           // params moved meanwhile: run once more

@@ -223,6 +223,10 @@
          machine was the wrong place for them. Plot itself stays in the Plot
          tab — starting a job is a deliberate act, stopping one is not. -->
     <div id="canvas-status">
+      <span id="drawing-status" role="status" hidden>
+        <span class="drawing-activity" role="progressbar" aria-label="Updating drawing"></span>
+        <span>Updating drawing…</span><span id="drawing-elapsed" aria-hidden="true"></span>
+      </span>
       <span id="sel-readout">nothing selected</span>
       <!-- 7a (docs/plans/timeline-v2.md §2c "Trays"): always-visible — what
            the canvas shows right now: "live · sheet n/N" (the live grid-sheet

@@ -3242,3 +3242,33 @@ def test_restart_menu_uses_visible_confirmation_before_request(ui, accept):
         assert requests == []
         assert ui.locator("#btn-restart").is_enabled()
     assert not ui.errors
+
+
+def test_drawing_update_status_covers_overlapping_resolves_and_failure(ui, tmp_path):
+    """Slow effect edits stay visible until every update settles, even on error."""
+    add_layer(ui, "grid", {"cols": 2, "rows": 2})
+    reload_app(ui)
+    wait_for_ink(ui)
+    select_layer(ui)
+    ui.wait_for_selector('#drawing-status', state='hidden')
+    ui.select_option('#fx-select', 'ribbon')
+    held = []
+    ui.route('**/api/compose/resolved*', lambda route: held.append(route))
+    ui.click('#fx-add')
+    ui.wait_for_selector('#drawing-status:not([hidden])')
+    assert 'Updating drawing' in ui.locator('#drawing-status').inner_text()
+    assert ui.get_by_role('progressbar', name='Updating drawing').is_visible()
+    ui.wait_for_function("document.querySelector('#drawing-elapsed').textContent.includes('s')")
+    assert len(held) == 1
+    ui.screenshot(path=str(tmp_path / "drawing-status.png"))
+    with ui.expect_request('**/api/compose/resolved*'):
+        ui.click('#fx-add')
+    ui.wait_for_timeout(100)  # dispatch the intercepted request callback
+    assert len(held) == 2
+    with ui.expect_response('**/api/compose/resolved*'):
+        held[0].continue_()
+    assert ui.locator('#drawing-status').is_visible()
+    held[1].fulfill(status=503, content_type='application/json', body='{"detail":"Test resolve unavailable"}')
+    ui.wait_for_selector('#drawing-status', state='hidden')
+    ui.wait_for_function("document.querySelector('#global-error').textContent.includes('Test resolve unavailable')")
+    assert not [e for e in ui.errors if '503' not in e and 'Test resolve unavailable' not in e]

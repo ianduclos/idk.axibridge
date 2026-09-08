@@ -40,6 +40,12 @@ entries: 16
   tradeoffs: docs/reviews/ribbon-edge-joins-2026-09-09/README.md.
   Full suite: 1,363 passed, one lifecycle skip. Live backend reloaded and current
   drawing restored; resolved coordinates match the candidate exactly.
+- performance/status: Drawing updates show an indeterminate bar and elapsed
+  time in the persistent canvas strip. Indexed silhouette lookup reduces the
+  corner fixture median 4.147→2.953 s with exact coordinates. Evidence:
+  docs/reviews/ribbon-performance-2026-09-09/README.md.
+  Full suite 1,371 passed; typecheck passed. Backend reloaded, drawing restored;
+  refresh the app window for the new frontend status strip.
 - next: Check Ribbon from the layer effects picker; the Mac backend now includes
   it after Ian authorized a restart. Review optional per-flank softening on real
   paths/paper. The original inline study is unchanged and remains reference.

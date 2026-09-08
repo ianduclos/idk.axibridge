@@ -1272,3 +1272,11 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
   #canvas-area { padding-inline:var(--space-2); }
   .tab-body, #layers-dock { padding-inline:var(--space-3); }
 }
+
+/* Drawing changes can outlast the edit gesture. Keep activity in the persistent
+   strip, without obscuring the previous drawing or borrowing plot progress. */
+#drawing-status:not([hidden]) { display: inline-flex; align-items: center; flex-shrink: 0; color: var(--ink); }
+.drawing-activity { width: 42px; height: 3px; margin-right: 8px; overflow: hidden; background: var(--flexoki-800); border-radius: 2px; }
+.drawing-activity::after { content: ""; display: block; width: 45%; height: 100%; background: var(--flexoki-cyan-400); animation: drawing-activity 1.2s ease-in-out infinite alternate; }
+@keyframes drawing-activity { from { transform: translateX(-100%); } to { transform: translateX(225%); } }
+@media (prefers-reduced-motion: reduce) { .drawing-activity::after { animation: none; width: 100%; } }

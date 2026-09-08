@@ -36,6 +36,16 @@ The same field is preserved across each row; finite/bounded geometry is checked.
 This is a visual study only: no generator or bench is registered, and paper
 appearance remains untested. Ian's treatment selection precedes bench design.
 
+**Ribbon update feedback and speed, 9 September:** A persistent animated
+activity bar and elapsed time now cover effect edits, live previews and drawing
+refreshes, including overlapping requests and failures. The silhouette lookup
+reuses and indexes its spine: the actual corner fixture improved from 4.147 s
+to 2.953 s (28.8%) with exact coordinate equality.
+[Benchmark and UI evidence](docs/reviews/ribbon-performance-2026-09-09/README.md).
+Full suite: 1,371 passed, one lifecycle skip; typecheck passed. Backend reloaded
+with drawing restored and exact live geometry verified. Refresh the window for
+the new status strip; native acceptance remains with Ian.
+
 **Ribbon edge joins, 9 September:** Edge interpolation now stabilizes the
 left/right width allocation through acute corner joins while preserving total
 width modulation. The captured drawing retains 20 distinct, non-crossing

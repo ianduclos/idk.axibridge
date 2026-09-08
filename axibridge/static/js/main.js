@@ -1,3 +1,4 @@
+import { beginDrawingUpdate } from "./drawing_status.js";
 // axibridge v2 frontend orchestrator. Zero-build ES modules on purpose: no
 // toolchain on the Pi, view-source debuggable, and every control surface is
 // rendered from server-declared schemas (see forms.js).
@@ -245,26 +246,29 @@ export const actions = {
   // so does any scrub/jump (opts.scrub) per Ian's ruling that timeline
   // interactions may still switch views as they do today.
   async refreshResolved(master_t = S.masterT, opts = {}) {
-    const stickySheet = !opts.scrub && S.docPreview?.kind === "sheet" ? S.docPreview : null;
-    // A live refresh (edits, SSE re-hydrate) supersedes any OTHER transient
-    // preview — drop it and its banner rather than fight over the canvas.
-    if (S.docPreview && !stickySheet) clearDocPreviewState();
-    S.masterT = master_t;
-    let q = master_t == null ? "" : `?t=${encodeURIComponent(master_t)}`;
-    if (opts.stats === false) q += q ? "&stats=false" : "?stats=false";
-    S.resolved = await api.get(`/api/compose/resolved${q}`);
-    if (stickySheet) {
-      // re-issue the SAME sheet query — same layout params, fresh geometry.
-      await actions.showDocPreview(stickySheet.kind, stickySheet.label, stickySheet.query, {
-        sheetIndex: stickySheet.sheetIndex, sheetCount: stickySheet.sheetCount,
-      });
-    } else {
-      canvas.setData({ layers: S.resolved.layers, images: mapGhosts() });
-    }
-    renderLayerList();
-    renderSelReadout();
-    refreshPenOverlay(); // pen's anchor/handle overlay tracks undo/redo and any other external edit
-    if (opts.plan !== false) await actions.refreshPlan();
+    const finishUpdate = beginDrawingUpdate();
+    try {
+      const stickySheet = !opts.scrub && S.docPreview?.kind === "sheet" ? S.docPreview : null;
+      // A live refresh (edits, SSE re-hydrate) supersedes any OTHER transient
+      // preview — drop it and its banner rather than fight over the canvas.
+      if (S.docPreview && !stickySheet) clearDocPreviewState();
+      S.masterT = master_t;
+      let q = master_t == null ? "" : `?t=${encodeURIComponent(master_t)}`;
+      if (opts.stats === false) q += q ? "&stats=false" : "?stats=false";
+      S.resolved = await api.get(`/api/compose/resolved${q}`);
+      if (stickySheet) {
+        // re-issue the SAME sheet query — same layout params, fresh geometry.
+        await actions.showDocPreview(stickySheet.kind, stickySheet.label, stickySheet.query, {
+          sheetIndex: stickySheet.sheetIndex, sheetCount: stickySheet.sheetCount,
+        });
+      } else {
+        canvas.setData({ layers: S.resolved.layers, images: mapGhosts() });
+      }
+      renderLayerList();
+      renderSelReadout();
+      refreshPenOverlay(); // pen's anchor/handle overlay tracks undo/redo and any other external edit
+      if (opts.plan !== false) await actions.refreshPlan();
+    } finally { finishUpdate(); }
   },
 
   // Swap the centre canvas to a transient sheet/staged document (grid-sheet
@@ -390,11 +394,13 @@ function mapGhosts() {
 }
 
 async function commitPatch(id, patch) {
+  const finishUpdate = beginDrawingUpdate();
   try {
     await api.patch(`/api/layers/${id}`, patch);
     await actions.refreshResolved();
     renderLayerDetail();
   } catch (e) { oops(e); }
+  finally { finishUpdate(); }
 }
 
 // ---- the machine strip (persistent, in #canvas-status) ---------------------------

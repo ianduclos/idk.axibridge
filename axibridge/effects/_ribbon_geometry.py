@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from bisect import bisect_left, bisect_right
-from math import atan2, ceil, cos, floor, hypot, sin, tan
+from math import atan2, ceil, cos, floor, hypot, nextafter, sin, tan
 from typing import Any, Iterable
 
 from shapely.geometry import GeometryCollection, LineString, MultiPolygon, Point, Polygon
@@ -243,12 +243,29 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
     return result + nodes[cursor:]
 
 
-def _spine_at(spine: list[Any], s: float, hint: float) -> Point2:
-    values = [_node(x) for x in spine]
-    exact = [i for i, (_, station) in enumerate(values) if abs(station - s) <= EPS]
+def _spine_at(values: list[tuple[Point2, float]], stations: list[float], s: float, hint: float) -> Point2:
+    """Locate a station in an already-normalized spine.
+
+    Silhouette queries the same spine thousands of times.  Keep the original
+    tolerance and first-containing-segment semantics, but restrict each search
+    to the station range that can possibly match.
+    """
+    # Round the index bounds outward, then retain the original abs() predicate.
+    # Bisect therefore includes complete duplicate runs even at an EPS boundary.
+    lower = nextafter(s - EPS, -float("inf"))
+    upper = nextafter(s + EPS, float("inf"))
+    insertion_lo = bisect_left(stations, lower)
+    lo = insertion_lo
+    hi = bisect_right(stations, upper)
+    exact = [i for i in range(lo, hi) if abs(stations[i] - s) <= EPS]
     if exact:
         return values[min(exact, key=lambda i: abs(i - hint))][0]
-    for (a, sa), (b, sb) in zip(values, values[1:]):
+    start = max(0, insertion_lo - 2)
+    for i in range(start, len(values) - 1):
+        a, sa = values[i]
+        b, sb = values[i + 1]
+        if sa - EPS > s:
+            break
         if sa - EPS <= s <= sb + EPS and sb > sa + EPS:
             t = max(0.0, min(1.0, (s - sa) / (sb - sa)))
             return (_mix(a[0], b[0], t), _mix(a[1], b[1], t))
@@ -260,12 +277,14 @@ def silhouette(left_nodes: list[Any], right_nodes: list[Any], spine_nodes: list[
     if not left_nodes or not right_nodes or not spine_nodes:
         return GeometryCollection()
     pieces = []
+    spine_values = [_node(x) for x in spine_nodes]
+    spine_stations = [station for _, station in spine_values]
     for nodes in (left_nodes, right_nodes):
         denom = max(1, len(nodes) - 1)
         for i, (first, second) in enumerate(zip(nodes, nodes[1:])):
             a, sa = _node(first); b, sb = _node(second)
-            ca = _spine_at(spine_nodes, sa, i / denom * max(0, len(spine_nodes) - 1))
-            cb = _spine_at(spine_nodes, sb, (i + 1) / denom * max(0, len(spine_nodes) - 1))
+            ca = _spine_at(spine_values, spine_stations, sa, i / denom * max(0, len(spine_nodes) - 1))
+            cb = _spine_at(spine_values, spine_stations, sb, (i + 1) / denom * max(0, len(spine_nodes) - 1))
             for tri in ((ca, cb, b), (ca, b, a)):
                 poly = Polygon(tri)
                 if abs(poly.area) > EPS:
