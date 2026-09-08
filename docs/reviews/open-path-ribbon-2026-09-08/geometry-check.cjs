@@ -1,3 +1,4 @@
+require('./load-join.cjs');
 "use strict";
 
 const assert = require("node:assert/strict");

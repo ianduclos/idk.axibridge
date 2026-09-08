@@ -9,7 +9,8 @@ OUT = Path('/Users/ianduclos/.codex/visualizations/2026/09/08/01a0829a-4f4d-7ca2
 
 
 def run():
-    fragment = (HERE / 'study-template.html').read_text().replace('/* GEOMETRY_INSERT */', (HERE / 'geometry.js').read_text())
+    join_script = '/*'+(HERE/'vendor/polygon-clipping-LICENSE.md').read_text()+'*/\n'+(HERE/'vendor/polygon-clipping-0.15.7.js').read_text()+'\n'+(HERE/'corner-envelope.js').read_text()
+    fragment = (HERE / 'study-template.html').read_text().replace('/* JOIN_INSERT */',join_script).replace('/* MASKING_INSERT */', (HERE / 'masking.js').read_text()).replace('/* GEOMETRY_INSERT */', (HERE / 'geometry.js').read_text())
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(fragment)
     css = (KIT / 'assets/visualize.css').read_text()
@@ -27,17 +28,27 @@ def run():
         page.locator('#ribbon-next').click()
         assert page.locator('#ribbon-study').get_attribute('data-seed') == '8'
         assert page.locator('.ribbon-ink').first.inner_html() != before
-        for shape in ['straight','arch','sCurve','corner','hairpin']:
+        for shape in ['straight','arch','sCurve','corner','hairpin','loop']:
             page.select_option('#ribbon-shape',shape)
             for width in [24,90]:
                 page.locator('#ribbon-width').evaluate('(e,v)=>{e.value=v;e.dispatchEvent(new Event("input"));}',width)
                 assert page.locator('.ribbon-ink path').count() == 63
                 assert not page.locator('#ribbon-drawings').evaluate('(e)=>/NaN|Infinity/.test(e.innerHTML)')
+        page.select_option('#ribbon-shape','loop')
+        unmasked=page.locator('.ribbon-ink').first.inner_html()
+        page.locator('#ribbon-mask').check()
+        masked=page.locator('.ribbon-ink').first.inner_html()
+        assert unmasked!=masked
+        page.locator('#ribbon-reverse').check()
+        assert page.locator('.ribbon-ink').first.inner_html()!=masked
+        assert 'Earlier passages on top' in page.locator('#ribbon-detail').inner_text()
+        page.locator('#ribbon-mask').uncheck()
+        assert page.locator('#ribbon-reverse').is_disabled()
         page.locator('#ribbon-steps').evaluate('(e)=>{e.value=1;e.dispatchEvent(new Event("input"));}')
         assert page.locator('.ribbon-ink path').count() == 9
         page.locator('#ribbon-guide').check()
         assert page.locator('.ribbon-guide').count() == 3
-        page.select_option('#ribbon-shape','sCurve')
+        page.select_option('#ribbon-shape','corner')
         for id,value in [('width',24),('steps',10)]:
             page.locator('#ribbon-'+id).evaluate('(e,v)=>{e.value=v;e.dispatchEvent(new Event("input"));}',value)
         page.locator('#ribbon-guide').uncheck()
@@ -88,7 +99,7 @@ def run():
                     page.locator('#'+c['id']+' svg').evaluate('(e)=>e.style.height="175px"')
         browser.close()
     assert not errors, errors
-    print('PASS: controls, 10 shape/width states, strand counts, seed changes, finite SVG, 360/736 layouts in light/dark; captured 27 neutral study cells.')
+    print('PASS: controls, 12 shape/width states, strand counts, seed changes, mask/inversion, finite SVG, 360/736 layouts in light/dark; captured 27 neutral study cells.')
     print(OUT)
 
 

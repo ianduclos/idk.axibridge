@@ -73,6 +73,79 @@
     return result;
   }
 
+  const cross = (a,b) => a[0]*b[1]-a[1]*b[0];
+  const sub = (a,b) => [a[0]-b[0],a[1]-b[1]];
+  function sharpCorners(points, ss) {
+    const result=[];
+    for(let i=1;i<points.length-1;i++) {
+      const a=sub(points[i],points[i-1]),b=sub(points[i+1],points[i]);
+      const turn=Math.atan2(cross(a,b),a[0]*b[0]+a[1]*b[1]);
+      if(Math.abs(turn)>.4)result.push({s:ss[i],turn});
+    }
+    return result;
+  }
+
+  function maskPassages(paths,left,right,stations,corners,width,reverse) {
+    if(!root.RibbonMask)throw new Error('Ribbon masking helper is missing');
+    function resample(nodes) {
+      let i=0;
+      return stations.map(s=>{
+        while(i+1<nodes.length-1 && nodes[i+1].s<s)i++;
+        const a=nodes[i],b=nodes[Math.min(i+1,nodes.length-1)];
+        const t=clamp((s-a.s)/(b.s-a.s||1),0,1);
+        return [mix(a.p[0],b.p[0],t),mix(a.p[1],b.p[1],t)];
+      });
+    }
+    const l=resample(left),r=resample(right),faces=[],grid=new Map();
+    const cell=Math.max(16,width*2);
+    function keys(x0,y0,x1,y1) {
+      const out=[];
+      for(let x=Math.floor(x0/cell);x<=Math.floor(x1/cell);x++)
+        for(let y=Math.floor(y0/cell);y<=Math.floor(y1/cell);y++)out.push(x+','+y);
+      return out;
+    }
+    for(let i=0;i<stations.length-1;i++) {
+      const polygon=[l[i],l[i+1],r[i+1],r[i]];
+      const x0=Math.min(...polygon.map(p=>p[0])),x1=Math.max(...polygon.map(p=>p[0]));
+      const y0=Math.min(...polygon.map(p=>p[1])),y1=Math.max(...polygon.map(p=>p[1]));
+      faces.push({polygon,start:stations[i],end:stations[i+1],x0,x1,y0,y1});
+      for(const key of keys(x0,y0,x1,y1)) {if(!grid.has(key))grid.set(key,[]);grid.get(key).push(i);}
+    }
+    const joinRegions=corners.map(c=>({s:c.s,reach:width*Math.min(4,Math.abs(Math.tan(c.turn/2)))*2+8}));
+    const strands=[],strandIndices=[];
+    paths.forEach((nodes,strandIndex)=>{
+      let run=[];
+      const finish=()=>{if(run.length>1){strands.push(run);strandIndices.push(strandIndex);}run=[];};
+      for(let i=0;i<nodes.length-1;i++) {
+        const a=nodes[i],b=nodes[i+1];
+        const x0=Math.min(a.p[0],b.p[0]),x1=Math.max(a.p[0],b.p[0]);
+        const y0=Math.min(a.p[1],b.p[1]),y1=Math.max(a.p[1],b.p[1]);
+        const candidates=new Set(keys(x0,y0,x1,y1).flatMap(k=>grid.get(k)||[]));
+        const blockers=[];
+        for(const j of candidates) {
+          const f=faces[j];
+          // Adjacent cross sections belong to this passage, not an overpass.
+          if(reverse ? f.end>=a.s-4 : f.start<=b.s+4)continue;
+          if(f.x1<x0 || f.x0>x1 || f.y1<y0 || f.y0>y1)continue;
+          if(joinRegions.some(c=>Math.abs((a.s+b.s)/2-c.s)<c.reach && Math.abs((f.start+f.end)/2-c.s)<c.reach))continue;
+          blockers.push(f.polygon);
+        }
+        const intervals=blockers.length?root.RibbonMask.visibleIntervals(a.p,b.p,blockers):[[0,1]];
+        if(!intervals.length){finish();continue;}
+        for(const [lo,hi] of intervals) {
+          const first=[mix(a.p[0],b.p[0],lo),mix(a.p[1],b.p[1],lo)];
+          const last=[mix(a.p[0],b.p[0],hi),mix(a.p[1],b.p[1],hi)];
+          if(lo>1e-9 || (run.length && dist(run.at(-1),first)>1e-7))finish();
+          if(!run.length)run.push(first);
+          if(dist(run.at(-1),last)>1e-9)run.push(last);
+          if(hi<1-1e-9)finish();
+        }
+      }
+      finish();
+    });
+    return {strands,strandIndices};
+  }
+
   function knotProfile(total, opts, random, guide) {
     if (total <= 0) return () => 0;
     const knots = [{ s: 0, v: 0 }];
@@ -129,6 +202,7 @@
     const sampled = samplePolyline(source, Math.min(2, opts.wavelength / 12));
     const spine = sampled.points.map(p => p.slice());
     const frame = frames(spine);
+    const corners = sharpCorners(spine,sampled.ss);
     const leftRandom = rng(opts.seed);
     const leftProfile = knotProfile(sampled.total, opts, leftRandom);
     let rightProfile;
@@ -155,19 +229,26 @@
     const leftWidths = outerWidths(leftProfile);
     const rightWidths = outerWidths(rightProfile);
     function side(sign, widths, level) {
-      return spine.map((p, i) => {
-        if (i === 0) return source[0].slice();
-        if (i === spine.length - 1) return source[source.length - 1].slice();
+      const nodes=spine.map((p, i) => {
+        if (i === 0) return {p:source[0].slice(),s:sampled.ss[i]};
+        if (i === spine.length - 1) return {p:source[source.length - 1].slice(),s:sampled.ss[i]};
         const width = widths[i] * level;
-        return [p[0] + sign * frame[i].nx * width, p[1] + sign * frame[i].ny * width];
+        return {p:[p[0] + sign * frame[i].nx * width, p[1] + sign * frame[i].ny * width],s:sampled.ss[i]};
       });
+      return corners.length ? root.RibbonJoin.envelope(nodes,spine,sampled.ss,corners,opts.width) : nodes;
     }
 
     const leftLevels = [], rightLevels = [];
     for (let i = opts.steps; i >= 1; i--) leftLevels.push(side(1, leftWidths, i / opts.steps));
     for (let i = 1; i <= opts.steps; i++) rightLevels.push(side(-1, rightWidths, i / opts.steps));
-    const left = leftLevels[0], right = rightLevels[rightLevels.length - 1];
-    return { strands: leftLevels.concat([spine], rightLevels), left, right, spine, diagnostics };
+    const leftNodes=leftLevels[0],rightNodes=rightLevels[rightLevels.length-1];
+    const paths=leftLevels.concat([spine.map((p,i)=>({p,s:sampled.ss[i]}))],rightLevels);
+    const left=leftNodes.map(n=>n.p),right=rightNodes.map(n=>n.p);
+    if(opts.maskLoops) {
+      const visible=maskPassages(paths,leftNodes,rightNodes,sampled.ss,corners,opts.width,!!opts.reverseOrder);
+      return {...visible,left,right,spine,diagnostics};
+    }
+    return { strands: paths.map(nodes=>nodes.map(n=>n.p)), left, right, spine, diagnostics };
   }
 
   function cubic(a, b, c, d, count) {
@@ -199,6 +280,11 @@
       cubic([35, 180], [135, 80], [330, 55], [430, 142], 120),
       [[430, 142], [655, 42]]
     ),
+    loop: join(
+      cubic([60,180],[220,155],[440,55],[620,40],100),
+      cubic([620,40],[730,30],[740,215],[620,190],65),
+      cubic([620,190],[470,175],[200,70],[60,50],100)
+    ),
     hairpin: join(
       cubic([35, 185], [120, 50], [310, 25], [490, 55], 80),
       cubic([490, 55], [610, 75], [600, 190], [490, 195], 60),
@@ -210,7 +296,7 @@
     description: "Alternating crest/trough knots joined by cubic smoothstep segments",
     widthMeaning: "Approximate maximum outer-side distance from the spine",
     variationMeaning: "Amount of spacing, height, quiet-phrase, and related-side irregularity; zero is regular",
-    limitations: ["sharp corners use a capped miter and may fold at extreme widths", "no global intersection guarantee", "closed paths bypassed"]
+    limitations: ["corner strips use a local union boundary with round outer turns", "no global intersection guarantee", "closed paths bypassed"]
   });
 
   const api = Object.freeze({ generate, fixtures, profile });

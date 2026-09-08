@@ -15,7 +15,8 @@ Mirrored sides share a profile. Related sides share a rhythm with small height
 and spacing deviations. Independent sides use separate deterministic streams.
 Variation changes irregularity; zero keeps a regular swelling rhythm. A fixed
 strand count naturally makes pinches darker than wide passages. The prototype
-uses a short fixed endpoint taper and bounded miter joins at distinct corners.
+uses a short fixed endpoint taper. Sharp corners now use a local swept-strip
+boundary with a rounded outside turn; see CORNER-STATUS.md for the follow-up.
 
 The profiles include occasional suppressed crests. They do not yet implement
 a developed grammar of correlated phrases, editable anchors, or manual crest
@@ -62,17 +63,24 @@ headless Chromium with the installed visualization style kit. It records layouts
 control behaviour and neutral comparison images. The kit/output paths are local
 to this Mac and task. `geometry-check.cjs` verifies the numerical contract.
 
+The corner/masking follow-up adds `corner-check.cjs`, `masking-check.cjs` and
+`overlap-check.cjs`, plus matched images from `corner-evidence.py`.
+
 Run from the repository root:
 
 ```sh
 node docs/reviews/open-path-ribbon-2026-09-08/geometry-check.cjs
+node docs/reviews/open-path-ribbon-2026-09-08/corner-check.cjs
+node docs/reviews/open-path-ribbon-2026-09-08/masking-check.cjs
+node docs/reviews/open-path-ribbon-2026-09-08/overlap-check.cjs
 .venv/bin/python docs/reviews/open-path-ribbon-2026-09-08/check-study.py
 ```
 
 Final geometry checks pass: deterministic output, input purity, finite points,
 shared endpoints, mirrored correspondence, regular zero-variation profiles,
 sampling bounds, exact stress-case interpolation, and closed/degenerate inputs.
-Browser checks pass for five fixtures at two widths,
+Browser checks pass for six fixtures at two widths, including optional
+overlap masking and order inversion,
 seed changes, strand count, source highlighting, finite SVG coordinates and
 360/736-pixel layouts in light/dark appearance. The lead inspected current
 drawings and enlarged corner/return views. These checks do not establish visual
