@@ -48,6 +48,9 @@
   --bench-tint: var(--flexoki-900);
   --sheet: var(--flexoki-paper);
   --sheet-ink: var(--flexoki-950);
+  --sheet-edge: var(--flexoki-100);
+  --quiet-edge: color-mix(in srgb, var(--bench-edge) 70%, var(--bench-rise));
+  --sheet-shadow: 0 0 0 1px var(--sheet-edge), 0 4px 16px rgba(0,0,0,.32), 0 12px 32px rgba(0,0,0,.18);
   --ink: var(--flexoki-200);
   --ink-hi: var(--flexoki-50);
   --ink-soft: var(--flexoki-400);
@@ -91,10 +94,8 @@
   --r: 3px;
   --r-sm: 2px;
 
-  /* Depth, kept subtle. --lift is for list rows only: on buttons the top
-     highlight read as a stray line across the chrome (the underline marking an
-     active tab/segment is the one horizontal rule that earns its place). */
-  --lift: inset 0 1px 0 rgba(255, 250, 235, .045);
+  /* A faint warm upper edge catches light on raised controls and dialogs. */
+  --lift: inset 0 1px 0 color-mix(in srgb, var(--sheet) 4.5%, transparent);
   --recess: inset 0 1px 2px rgba(0, 0, 0, .38);
 
   /* native controls (number spinners, selects, checkboxes) must render in
@@ -138,6 +139,8 @@ details:not(.form-group) > summary {
 }
 .engraved { color: var(--ink); }
 .readout, output { font-variant-numeric: tabular-nums; }
+.readout { word-spacing: .04em; }
+summary::marker { font-size: .85em; }
 
 /* custom scrollbars — slim warm-chrome rails; thumb only, no track chrome.
    ::-webkit rules style WKWebView (the pywebview shell), Safari, Chromium;
@@ -275,7 +278,8 @@ header {
 /* connection lamp — round, because indicator lamps are round. One of two
    things in the app allowed a radius. */
 .pill {
-  padding: 2px 12px; border-radius: 999px; background: var(--bench-deep);
+  padding: 2px 8px; border-radius: 999px; background: var(--bench-deep);
+  line-height: 1.5; font-variant-numeric: tabular-nums;
   border: 1px solid var(--bench-edge); color: var(--ink-soft); font-size: var(--type-note);
 }
 .pill.ok { color: var(--moss); border-color: var(--moss); }
@@ -520,8 +524,9 @@ main {
    shadow scales with the zoom, which is what you want: it stays a sheet
    sitting on a bed rather than a div with a box-shadow. */
 .bed-rect {
-  fill: var(--sheet); stroke: none;
-  filter: drop-shadow(0.7px 1px 1.4px rgba(0,0,0,.55));
+  fill: var(--sheet); stroke: var(--sheet-edge); stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0.4px 0.8px 1.6px rgba(0,0,0,.32));
 }
 .map-ghost { opacity: .4; pointer-events: none; }
 
@@ -648,11 +653,11 @@ details:not(.form-group) > summary .hint {
 .asset-tool input[type="number"] { width: 4.8em; }
 
 button {
-  background: var(--bench-rise); color: var(--ink); border: 1px solid var(--bench-edge);
+  background: var(--bench-rise); color: var(--ink); border: 1px solid var(--quiet-edge);
   border-radius: var(--r); padding: var(--space-1) var(--space-3); cursor: pointer;
   max-width: 100%; overflow-wrap: normal;
   font-family: inherit; font-size: var(--type-body); line-height: 1.4;
-  min-height: var(--control-h);
+  min-height: var(--control-h); box-shadow: var(--lift);
 }
 button:hover:not(:disabled) { border-color: var(--ink-soft); background: var(--bench-edge); }
 button:active:not(:disabled) { box-shadow: var(--recess); }
@@ -809,7 +814,7 @@ input[type="range"].fine::-moz-range-thumb {
    the set stays one system: 2.2 rather than Lucide's stock 2, because a 24px
    grid scaled to 16px thins strokes below what survives at toolbar size. */
 .tool-icon {
-  width: 16px; height: 16px; vertical-align: -3px; margin-right: var(--space-1);
+  width: 16px; height: 16px; vertical-align: -2px; margin-right: var(--space-1);
   fill: none; stroke: currentColor; stroke-width: 2.2;
   stroke-linecap: round; stroke-linejoin: round;
 }
@@ -859,7 +864,7 @@ input[type="range"].fine::-moz-range-thumb {
 .preview-modal {
   width: min(1180px, 100%); max-height: 100%; overflow:auto; display: flex; flex-direction: column;
   border: 1px solid var(--bench-edge); border-radius: var(--r); background: var(--bench);
-  box-shadow: 0 18px 52px rgba(0,0,0,.6); padding: var(--space-4);
+  box-shadow: var(--lift), 0 18px 52px rgba(0,0,0,.6); padding: var(--space-4);
 }
 .preview-head { flex:none; display: flex; align-items: center; gap: 12px; margin-bottom: var(--space-3); }
 .preview-head h2 {
@@ -873,7 +878,7 @@ input[type="range"].fine::-moz-range-thumb {
 .preview-stage img {
   display: block; max-width: 100%; max-height: min(68vh, 760px);
   background: var(--sheet); object-fit: contain;
-  box-shadow: 0 3px 18px rgba(0,0,0,.5);
+  box-shadow: var(--sheet-shadow);
   /* wheel-zoom/drag-pan (plot.js initRasterZoomPan) drives transform inline;
      transform-origin stays centered so zoom feels like it's zooming INTO the
      sheet rather than dragging it off-corner */
@@ -919,7 +924,7 @@ input[type="range"].fine::-moz-range-thumb {
 #process-how-it-works p { max-width: 78em; margin: 5px 0 0; color: var(--ink-soft); font-size: var(--type-note); line-height: 1.35; }
 #process-details summary { color: var(--ink-soft); cursor: pointer; }
 #process-details .process-summary { margin-top: 6px; }
-#process-canvas.taking-turn { cursor: crosshair; box-shadow: 0 0 0 2px var(--live), 0 3px 18px rgba(0,0,0,.5); }
+#process-canvas.taking-turn { cursor: crosshair; box-shadow: 0 0 0 2px var(--live), var(--sheet-shadow); }
 #process-your-turn.on { color: var(--ink-hi); box-shadow: inset 0 -2px 0 var(--live); }
 .process-live-stroke { stroke-width: .7; }
 .process-nominal-sheet { fill: none; stroke: var(--live-soft); stroke-width: .65; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; pointer-events: none; }
@@ -932,7 +937,7 @@ input[type="range"].fine::-moz-range-thumb {
 #bench-controls .process-controls label { font-size: var(--type-label); }
 #process-stop { font-size: var(--type-body); flex:none; white-space:nowrap; }
 #process-popup .preview-modal { background:var(--bench); }
-#process-popup #process-canvas, #process-reference { background:var(--sheet); box-shadow:0 3px 18px rgba(0,0,0,.5); }
+#process-popup #process-canvas, #process-reference { background:var(--sheet); box-shadow:var(--sheet-shadow); }
 #bench-controls details > summary { color:var(--ink); }
 #bench-controls .process-controls #process-next-turn-note { color:var(--ochre); }
 #process-how-it-works p { line-height:1.6; }
@@ -1046,7 +1051,7 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
   border-radius: var(--r-sm); box-shadow: none;
   user-select: none; /* shift/cmd-click selects layers, not label text */
 }
-.layer-row:hover { background: var(--bench-edge); }
+.layer-row:hover { background: color-mix(in srgb, var(--bench-rise) 55%, var(--bench-edge)); }
 .layer-row.keyframe-row {
   margin-left: 16px;
   background: var(--bench-deep);

@@ -1,0 +1,13 @@
+{
+  "scenarios": 28,
+  "stableRecipeAndGeometryPairsEqual": 28,
+  "pageErrors": [],
+  "horizontalOverflow": false,
+  "consoleErrors": [
+    "TypeError: Failed to fetch\n    at req (http://127.0.0.1:62385/js/api.js:10:21)\n    at Object.get (http://127.0.0.1:62385/js/api.js:21:17)\n    at http://127.0.0.1:62385/js/main.js:303:27\n    at http://127.0.0.1:62385/js/main.js:101:63",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "note": "Live simulator readouts excluded from stable equality; deliberate reload and injected503 retained. Zoom is emulated. Native Mac acceptance remains Ian\u2019s.",
+  "browserRegressionsPassed": 112,
+  "buildPassed": true
+}

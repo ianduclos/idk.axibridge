@@ -12,6 +12,11 @@ handoff_for: ian
 
 # idk.axibridge — status
 
+**Cosmetic follow-up:** Ian approved all five finishing touches: paper edge/depth,
+optical alignment, faint surface lift, readout spacing and quieter inactive borders.
+[Sheen comparison](docs/reviews/ui-sheen-2026-09-08/index.html); 28 stable drawing
+fixtures match the precision pass. Mac-only acceptance remains Ian’s.
+
 **Session 2026-09-08: whole-app visual precision pass.**
 
 Implemented Ian's approved precision-instrument direction across Compose, all
