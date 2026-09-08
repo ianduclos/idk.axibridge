@@ -377,17 +377,46 @@
       return corners.length ? root.RibbonJoin.envelope(nodes,spine,sampled.ss,corners,opts.width) : nodes;
     }
 
+    const retained = clamp(Math.floor(opts.retainedSteps ?? opts.steps),1,opts.steps);
     const leftLevels = [], rightLevels = [];
-    for (let i = opts.steps; i >= 1; i--) leftLevels.push(side(1, leftWidths, i / opts.steps));
-    for (let i = 1; i <= opts.steps; i++) rightLevels.push(side(-1, rightWidths, i / opts.steps));
+    for (let i = retained; i >= 1; i--) leftLevels.push(side(1, leftWidths, i / opts.steps));
+    for (let i = 1; i <= retained; i++) rightLevels.push(side(-1, rightWidths, i / opts.steps));
     const leftNodes=leftLevels[0],rightNodes=rightLevels[rightLevels.length-1];
     const paths=leftLevels.concat([spine.map((p,i)=>({p,s:sampled.ss[i]}))],rightLevels);
     const left=leftNodes.map(n=>n.p),right=rightNodes.map(n=>n.p);
+    let result;
     if(opts.maskLoops) {
       const visible=maskPassages(paths,leftNodes,rightNodes,sampled.ss,corners,opts.width,!!opts.reverseOrder);
-      return {...visible,left,right,spine,diagnostics};
+      result={...visible,left,right,spine,diagnostics};
+    } else result={strands:paths.map(nodes=>nodes.map(n=>n.p)),left,right,spine,diagnostics};
+    const mode=opts.outputMode||'strands';
+    if(mode!=='strands'||opts.solidOccluder) {
+      if(!root.RibbonSilhouette)throw Error('Ribbon silhouette helper missing');
+      const spineNodes=spine.map((p,i)=>({p,s:sampled.ss[i]}));
+      result.silhouette=root.RibbonSilhouette.fromNodes(leftNodes,rightNodes,spineNodes,{mergeOverlaps:true});
+      const outline=opts.mergeOverlaps||mode==='solid' ? result.silhouette :
+        root.RibbonSilhouette.fromNodes(leftNodes,rightNodes,spineNodes,{mergeOverlaps:false});
+      result.drawingPaths=mode==='strands'?result.strands:outline.flat();
+      result.occluders=opts.solidOccluder||mode==='solid' ? result.silhouette.flat().map(points=>({points,filled:true})) : [];
     }
-    return { strands: paths.map(nodes=>nodes.map(n=>n.p)), left, right, spine, diagnostics };
+    return result;
+  }
+
+  function generateMany(inputs,options={}) {
+    const length=points=>points.slice(1).reduce((sum,p,i)=>sum+dist(points[i],p),0);
+    const lengths=inputs.map(p=>{const clean=sanitize(p);return clean.length>1&&!same(clean[0],clean.at(-1))?length(clean):0;});
+    const longest=Math.max(0,...lengths), steps=Math.max(1,Math.floor(+options.steps||defaults.steps));
+    const counts=lengths.map(l=>options.widthByLength&&longest>0 ? Math.max(1,Math.ceil(steps*l/longest-1e-10)) : steps);
+    const items=inputs.map((p,i)=>generate(p,{...options,retainedSteps:counts[i]}));
+    const result={items,retainedSteps:counts,strands:items.flatMap(r=>r.strands),
+      spines:items.map(r=>r.spine),drawingPaths:items.flatMap(r=>r.drawingPaths??r.strands)};
+    if(items.some(r=>r.silhouette)) {
+      result.silhouette=root.RibbonSilhouette.union(items.map(r=>r.silhouette??[]));
+      if(options.outputMode==='solid'||options.outputMode==='outline'&&options.mergeOverlaps)
+        result.drawingPaths=result.silhouette.flat().concat(items.filter(r=>r.diagnostics.skipped).flatMap(r=>r.strands));
+      result.occluders=options.solidOccluder||options.outputMode==='solid' ? result.silhouette.flat().map(points=>({points,filled:true})) : [];
+    }
+    return result;
   }
 
   function cubic(a, b, c, d, count) {
@@ -440,7 +469,7 @@
     limitations: ["corner strips use a local union boundary with round outer turns", "no global intersection guarantee", "closed paths bypassed"]
   });
 
-  const api = Object.freeze({ generate, fixtures, profile, crestProfile });
+  const api = Object.freeze({ generate, generateMany, fixtures, profile, crestProfile });
   root.RibbonStudy = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

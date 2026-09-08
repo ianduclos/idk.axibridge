@@ -4,7 +4,9 @@ Exploratory geometry and an interactive comparison based on Ian's A–E sketches
 This is not an installed AxiBridge effect. No application source, project state,
 hardware or running server is involved. Coordinates are study units, not mm.
 
-Latest follow-up: `CREST-STATUS.md` records the phrased crest experiment and its
+Latest output follow-up: `OUTPUT-STATUS.md` covers silhouettes, merged outlines,
+filled occlusion metadata and outer-strand trimming by source length.
+`CREST-STATUS.md` records the phrased crest experiment and its
 independent spacing/height controls. `LOOP-STATUS.md` records the loop sample
 correction; `STRESS.md` records the preceding 156-case sweep of the original mode.
 

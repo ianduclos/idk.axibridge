@@ -8,6 +8,14 @@
         <option value="corner">C · Corner</option>
         <option value="loop">Loop</option>
         <option value="hairpin">Tight bend</option>
+        <option value="many">Different lengths</option>
+      </select>
+    </label>
+    <label class="form-label">Output
+      <select class="form-select" id="ribbon-outputMode">
+        <option value="strands">Strands</option>
+        <option value="outline">Outline only</option>
+        <option value="solid">Solid silhouette</option>
       </select>
     </label>
     <label class="form-label">Crest rhythm
@@ -56,6 +64,12 @@
     <label class="form-check"><input class="form-check-input" id="ribbon-reverse" type="checkbox" disabled><span class="form-check-label">Reverse order</span></label>
     <label class="form-check"><input class="form-check-input" id="ribbon-guide" type="checkbox"><span class="form-check-label">Highlight original</span></label>
   </div>
+  <div class="viz-row">
+    <label class="form-check"><input class="form-check-input" id="ribbon-mergeOverlaps" type="checkbox" checked><span class="form-check-label">Merge outline overlaps</span></label>
+    <label class="form-check"><input class="form-check-input" id="ribbon-solidOccluder" type="checkbox"><span class="form-check-label">Solid occluder</span></label>
+    <label class="form-check"><input class="form-check-input" id="ribbon-background" type="checkbox"><span class="form-check-label">Show lower layer</span></label>
+    <label class="form-check"><input class="form-check-input" id="ribbon-widthByLength" type="checkbox"><span class="form-check-label">Trim width by path length</span></label>
+  </div>
   <div id="ribbon-drawings" aria-live="off"></div>
   <div class="text-small text-muted" id="ribbon-detail" role="status"></div>
 </div>
@@ -71,6 +85,7 @@
 <script>
 /* JOIN_INSERT */
 /* MASKING_INSERT */
+/* SILHOUETTE_INSERT */
 /* GEOMETRY_INSERT */
 </script>
 <script>
@@ -87,7 +102,12 @@
       spacingVariation:+find('spacingVariation').value/100, heightVariation:+find('heightVariation').value/100,
       phrasing:+find('phrasing').value/100, width: +find('width').value, wavelength: +find('wavelength').value,
       variation: +find('variation').value / 100, steps: +find('steps').value,
-      taper:.12,maskLoops:find('mask').checked,reverseOrder:find('reverse').checked };
+      outputMode:find('outputMode').value,mergeOverlaps:find('mergeOverlaps').checked,solidOccluder:find('solidOccluder').checked,
+      widthByLength:find('widthByLength').checked,taper:.12,maskLoops:find('outputMode').value==='strands'&&find('mask').checked,reverseOrder:find('reverse').checked };
+    find('mergeOverlaps').disabled=options.outputMode!=='outline';
+    find('mask').disabled=options.outputMode!=='strands';
+    find('guide').disabled=options.outputMode!=='strands';
+    find('widthByLength').disabled=find('shape').value!=='many';
     find('right-wave-control').hidden=!options.independentWavelengths;
     find('wave-label').textContent=options.independentWavelengths?'Left wavelength':'Wavelength';
     find('wavelengthRight-value').textContent=options.wavelengthRight;
@@ -99,16 +119,23 @@
     for (const key of ['width','wavelength','steps']) find(key+'-value').textContent = options[key];
     find('variation-value').textContent = Math.round(options.variation*100)+'%';
     const fixtures = typeof RibbonStudy.fixtures === 'function' ? RibbonStudy.fixtures() : RibbonStudy.fixtures;
-    const points = fixtures[find('shape').value];
-    const results = relations.map(([relation,label]) => ({label:relation==='mirrored'&&options.independentWavelengths&&options.wavelengthRight!==options.wavelength?'1 · Same pattern, unequal wavelengths':label, ...RibbonStudy.generate(points,{...options,relation})}));
+    const inputs = find('shape').value==='many' ? [
+      [[40,45],[660,45]],[[40,115],[480,115]],[[40,185],[300,185]],[[40,255],[150,255]]
+    ] : [fixtures[find('shape').value]];
+    const results = relations.map(([relation,label]) => ({label:relation==='mirrored'&&options.independentWavelengths&&options.wavelengthRight!==options.wavelength?'1 · Same pattern, unequal wavelengths':label, ...RibbonStudy.generateMany(inputs,{...options,relation})}));
     // The same framing for every relation preserves the comparison's scale.
     let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
     for (const r of results) for (const strand of r.strands) for(const [x,y] of strand) {
       x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);
     }
     const pad=16, box=[x0-pad,y0-pad,x1-x0+2*pad,Math.max(110,y1-y0+2*pad)];
-    find('drawings').innerHTML = results.map(r => `<div class="ribbon-label">${r.label}</div><svg class="ribbon-drawing" role="img" aria-label="${r.label} open path with interpolated strands" viewBox="${box.join(' ')}"><title>${r.label}</title><g class="ribbon-ink">${r.strands.map(p=>`<path d="${pathData(p)}"/>`).join('')}</g>${find('guide').checked ? `<path class="ribbon-guide" d="${pathData(r.spine)}"/>` : ''}</svg>`).join('');
-    find('detail').textContent = `${2*options.steps+1} strands · ${options.maskLoops ? (options.reverseOrder ? 'Earlier passages on top' : 'Later passages on top') : 'Transparent crossings'} · Study units`;
+    const background=Array.from({length:28},(_,i)=>{
+      const x=box[0]+i*box[2]/27;return [[x,box[1]],[x-35,box[1]+box[3]]];
+    });
+    for(const r of results)r.background=find('background').checked ?
+      (options.solidOccluder||options.outputMode==='solid' ? RibbonSilhouette.clipPaths(background,r.silhouette??[]) : background) : [];
+    find('drawings').innerHTML = results.map(r => `<div class="ribbon-label">${r.label}</div><svg class="ribbon-drawing" role="img" aria-label="${r.label} open path ribbon, ${options.outputMode}" viewBox="${box.join(' ')}"><title>${r.label}</title><g class="ribbon-lower" fill="none" stroke="#878580" stroke-width=".8">${r.background.map(p=>`<path d="${pathData(p)}"/>`).join('')}</g>${options.outputMode==='solid' ? `<path class="ribbon-solid" fill="#100F0F" fill-rule="evenodd" d="${(r.silhouette??[]).flat().map(p=>pathData(p)+'Z').join(' ')}"/>` : `<g class="ribbon-ink">${r.drawingPaths.map(p=>`<path d="${pathData(p)}"/>`).join('')}</g>`}${options.outputMode==='solid'?`<g class="ribbon-ink">${r.items.filter(item=>item.diagnostics.skipped).flatMap(item=>item.strands).map(p=>`<path d="${pathData(p)}"/>`).join('')}</g>`:''}${find('guide').checked&&options.outputMode==='strands' ? r.spines.map(p=>`<path class="ribbon-guide" d="${pathData(p)}"/>`).join('') : ''}</svg>`).join('');
+    find('detail').textContent = `${options.outputMode==='strands' ? (find('shape').value==='many' ? results[0].retainedSteps.map(n=>2*n+1).join(' / ')+' strands' : (2*options.steps+1)+' strands') : options.outputMode==='outline'?'Outline only':'Solid silhouette'} · ${options.solidOccluder||options.outputMode==='solid'?'Solid occlusion':options.maskLoops ? (options.reverseOrder ? 'Earlier passages on top' : 'Later passages on top') : 'Transparent crossings'} · Study units`;
     root.dataset.rendered = 'true';
     root.dataset.seed = String(seed);
   }

@@ -10,7 +10,7 @@ OUT = Path('/Users/ianduclos/.codex/visualizations/2026/09/08/01a0829a-4f4d-7ca2
 
 def run():
     join_script = '/*'+(HERE/'vendor/polygon-clipping-LICENSE.md').read_text()+'*/\n'+(HERE/'vendor/polygon-clipping-0.15.7.js').read_text()+'\n'+(HERE/'corner-envelope.js').read_text()
-    fragment = (HERE / 'study-template.html').read_text().replace('/* JOIN_INSERT */',join_script).replace('/* MASKING_INSERT */', (HERE / 'masking.js').read_text()).replace('/* GEOMETRY_INSERT */', (HERE / 'geometry.js').read_text())
+    fragment = (HERE / 'study-template.html').read_text().replace('/* JOIN_INSERT */',join_script).replace('/* MASKING_INSERT */', (HERE / 'masking.js').read_text()).replace('/* SILHOUETTE_INSERT */',(HERE/'silhouette.js').read_text()).replace('/* GEOMETRY_INSERT */', (HERE / 'geometry.js').read_text())
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(fragment)
     css = (KIT / 'assets/visualize.css').read_text()
@@ -76,6 +76,38 @@ def run():
         assert page.locator('.ribbon-ink path').count() == 9
         page.locator('#ribbon-guide').check()
         assert page.locator('.ribbon-guide').count() == 3
+        page.select_option('#ribbon-shape','loop')
+        page.select_option('#ribbon-outputMode','outline')
+        assert page.locator('.ribbon-guide').count()==0
+        assert page.locator('#ribbon-guide').is_disabled()
+        page.locator('#ribbon-mergeOverlaps').uncheck()
+        assert page.locator('.ribbon-ink path').count()==3
+        rawOutline=page.locator('.ribbon-ink').first.inner_html()
+        page.locator('#ribbon-mergeOverlaps').check()
+        assert page.locator('.ribbon-ink').first.inner_html()!=rawOutline
+        page.locator('#ribbon-background').check()
+        lengthScript='els=>els.reduce((n,p)=>n+p.getTotalLength(),0)'
+        lowerBefore=page.locator('.ribbon-lower path').evaluate_all(lengthScript)
+        page.locator('#ribbon-solidOccluder').check()
+        assert page.locator('.ribbon-lower path').evaluate_all(lengthScript)<lowerBefore
+        page.select_option('#ribbon-outputMode','solid')
+        assert page.locator('.ribbon-solid').count()==3
+        assert page.locator('.ribbon-ink path').count()==0
+        assert page.locator('.ribbon-guide').count()==0
+        page.locator('#ribbon-study').screenshot(path=str(HERE/'solid-occlusion.png'))
+        page.select_option('#ribbon-outputMode','outline')
+        page.locator('#ribbon-study').screenshot(path=str(HERE/'outline-occlusion.png'))
+        page.select_option('#ribbon-outputMode','strands')
+        page.locator('#ribbon-solidOccluder').uncheck()
+        page.locator('#ribbon-background').uncheck()
+        page.select_option('#ribbon-shape','many')
+        page.locator('#ribbon-steps').evaluate('(e)=>{e.value=10;e.dispatchEvent(new Event("input"));}')
+        assert page.locator('.ribbon-ink path').count()==252
+        page.locator('#ribbon-widthByLength').check()
+        assert page.locator('.ribbon-ink path').count()==162
+        page.locator('#ribbon-guide').uncheck()
+        page.locator('#ribbon-study').screenshot(path=str(HERE/'length-width.png'))
+        page.locator('#ribbon-widthByLength').uncheck()
         page.select_option('#ribbon-shape','loop')
         for id,value in [('width',24),('steps',10)]:
             page.locator('#ribbon-'+id).evaluate('(e,v)=>{e.value=v;e.dispatchEvent(new Event("input"));}',value)
