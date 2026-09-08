@@ -10,7 +10,7 @@ OUT = Path('/Users/ianduclos/.codex/visualizations/2026/09/08/01a0829a-4f4d-7ca2
 
 def run():
     join_script = '/*'+(HERE/'vendor/polygon-clipping-LICENSE.md').read_text()+'*/\n'+(HERE/'vendor/polygon-clipping-0.15.7.js').read_text()+'\n'+(HERE/'corner-envelope.js').read_text()
-    fragment = (HERE / 'study-template.html').read_text().replace('/* JOIN_INSERT */',join_script).replace('/* MASKING_INSERT */', (HERE / 'masking.js').read_text()).replace('/* SILHOUETTE_INSERT */',(HERE/'silhouette.js').read_text()).replace('/* GEOMETRY_INSERT */', (HERE / 'geometry.js').read_text())
+    fragment = (HERE / 'study-template.html').read_text().replace('/* PEN_INSERT */',(HERE/'pen-widths.json').read_text()).replace('/* JOIN_INSERT */',join_script).replace('/* MASKING_INSERT */', (HERE / 'masking.js').read_text()).replace('/* SILHOUETTE_INSERT */',(HERE/'silhouette.js').read_text()).replace('/* GEOMETRY_INSERT */', (HERE / 'geometry.js').read_text())
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(fragment)
     css = (KIT / 'assets/visualize.css').read_text()
@@ -45,6 +45,23 @@ def run():
         page.locator('#ribbon-independentWavelengths').uncheck()
         assert not page.locator('#ribbon-wavelengthRight').is_visible()
         assert page.locator('.ribbon-ink').first.inner_html()==a
+        page.select_option('#ribbon-interpolation','edges')
+        assert page.locator('.ribbon-ink path').count()==60
+        assert page.locator('#ribbon-guide').is_disabled()
+        page.select_option('#ribbon-shape','corner')
+        page.locator('#ribbon-study').screenshot(path=str(HERE/'edge-corner.png'))
+        page.select_option('#ribbon-shape','straight')
+        page.locator('#ribbon-autoDensity').check()
+        assert page.locator('#ribbon-steps').is_disabled()
+        assert page.locator('#ribbon-density-controls').is_visible()
+        thickCount=page.locator('.ribbon-ink path').count()
+        penRows=json.loads((HERE/'pen-widths.json').read_text())
+        page.select_option('#ribbon-pen',min(penRows,key=lambda p:p['line_diameter_mm'])['id'])
+        assert page.locator('.ribbon-ink path').count()>=thickCount
+        page.locator('#ribbon-study').screenshot(path=str(HERE/'edge-auto-density.png'))
+        page.locator('#ribbon-autoDensity').uncheck()
+        page.select_option('#ribbon-interpolation','spine')
+        assert page.locator('.ribbon-ink path').count()==63
         for name in ['spacingVariation','heightVariation','phrasing']:
             before=page.locator('.ribbon-ink').first.inner_html()
             page.locator('#ribbon-'+name).evaluate('(e)=>{e.value=0;e.dispatchEvent(new Event("input"));}')
@@ -126,6 +143,8 @@ def run():
         page.locator('#ribbon-guide').uncheck()
         page.locator('#ribbon-independentWavelengths').check()
         page.locator('#ribbon-seedBlend').evaluate('(e)=>{e.value=50;e.dispatchEvent(new Event("input"));}')
+        page.locator('#ribbon-autoDensity').check()
+        page.select_option('#ribbon-interpolation','edges')
         for size in [736,360]:
             page.set_viewport_size({'width':size,'height':1200})
             for theme in ['light','dark']:
@@ -135,6 +154,8 @@ def run():
         page.set_viewport_size({'width':736,'height':1200})
         page.emulate_media(color_scheme='light')
         page.select_option('#ribbon-shape','straight')
+        page.locator('#ribbon-autoDensity').uncheck()
+        page.select_option('#ribbon-interpolation','spine')
         page.locator('#ribbon-independentWavelengths').uncheck()
         page.locator('#ribbon-seedBlend').evaluate('(e)=>{e.value=0;e.dispatchEvent(new Event("input"));}')
         for name in ['spacingVariation','heightVariation']:

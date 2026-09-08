@@ -1,0 +1,22 @@
+[
+  {
+    "id": "2d23375e",
+    "name": "Virtual",
+    "line_diameter_mm": 0.4
+  },
+  {
+    "id": "5757b350",
+    "name": "fineliner black",
+    "line_diameter_mm": 0.4
+  },
+  {
+    "id": "535146b4",
+    "name": "red brush",
+    "line_diameter_mm": 0.4
+  },
+  {
+    "id": "2ce3b122",
+    "name": "Uniball Black",
+    "line_diameter_mm": 0.2
+  }
+]

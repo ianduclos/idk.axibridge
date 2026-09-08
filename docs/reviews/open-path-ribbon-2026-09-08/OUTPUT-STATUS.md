@@ -77,3 +77,40 @@ passes inter-path cuts, intact top path, reversal, unchanged silhouette, provena
 determinism and single-path compatibility. Length/output checks pass too. Browser
 checks cover the new fixture, mask toggling and reversal; `cross-path-masking.png`
 records the preview. These are study checks, not installed-app validation.
+
+## Edge interpolation and pen-based density
+
+`interpolation:'edges'` blends signed widths directly from one outer envelope to
+the other, before the existing corner regularization. It uses `2*steps` strands
+(an even count), avoiding a dedicated original or midpoint strand. The original
+remains internal reference geometry only. The default `spine` mode is unchanged.
+Length trimming removes pairs from the ends of the full edge-interpolation grid;
+it never redistributes survivors. A trimmed asymmetric band can drift away from
+the source, so its silhouette uses the interpolated band centre as its sweep
+reference rather than incorrectly filling back to the original path.
+
+`autoDensity` requires `penWidth` in path-coordinate units. The UI reads that
+from the selected saved pen's `line_diameter_mm`, converted using the declared
+160 mm default source horizontal span. `pen-widths.json` is a snapshot from the
+local saved pen library taken this turn, not a live connection to the app. The
+pen selector includes the saved 0.2 mm Uniball and three 0.4 mm presets. Changing
+saved pens in the app does not refresh an already displayed study. Production
+integration should obtain the assigned layer's pen directly.
+
+Density targets a maximum sample cross-section gap of 90% of pen width. It budgets
+both seed endpoints and the normal/miter frame magnitude conservatively, holding
+one count throughout the seed blend. In multi-path collections it chooses the
+largest required count before length trimming. A cap of 512 per-side steps has
+an explicit `densityLimited` diagnostic and visible status; this is not silently
+reported as solid. The preview uses the actual scaled pen width when auto mode
+is active. Pen spread, curve/corner topology and paper still need physical
+validation; no blanket ink-coverage guarantee is made.
+
+`edge-density-check.cjs` passes even/no-centre interpolation, equal straight gaps,
+exact outer edges and trimmed survivors, legacy defaults, seed endpoints,
+auto-density gap bounds, thinner-pen monotonicity, stable blend counts and cap
+reporting. Output checks include the displaced trimmed-band silhouette. Browser
+checks cover the pen selector, auto/manual count switching and 360/736 layouts.
+The lead inspected `edge-corner.png`, `edge-auto-density.png` and the dense loop
+preview. Ready for Ian to check. No app source, hardware or saved pen settings
+were changed.

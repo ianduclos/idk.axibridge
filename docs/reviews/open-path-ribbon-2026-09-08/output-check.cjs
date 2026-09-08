@@ -28,4 +28,11 @@ const closed=[[0,0],[20,0],[20,20],[0,0]];
 assert.deepEqual(R.generate(closed,{...opts,outputMode:'outline'}).strands,[closed],'closed source bypass still applies');
 const mixed=R.generateMany([R.fixtures.straight,closed],{...opts,outputMode:'outline',mergeOverlaps:true});
 assert.ok(mixed.drawingPaths.some(p=>JSON.stringify(p)===JSON.stringify(closed)),'mixed open/closed collections retain bypassed paths');
+const band=R.generate(R.fixtures.straight,{...opts,relation:'independent',interpolation:'edges',retainedSteps:1,outputMode:'outline',mergeOverlaps:true});
+for(const i of [50,100,150,200]) {
+ const x=band.left[i][0],low=Math.min(band.left[i][1],band.right[i][1]),high=Math.max(band.left[i][1],band.right[i][1]);
+ const visible=globalThis.RibbonSilhouette.clipPaths([[[x,low-1],[x,high+1]]],band.silhouette);
+ const visibleLength=visible.reduce((n,p)=>n+p.slice(1).reduce((d,q,j)=>d+Math.hypot(q[0]-p[j][0],q[1]-p[j][1]),0),0);
+ assert.ok(Math.abs(visibleLength-2)<1e-6,'trimmed edge silhouette follows its shifted band, not original source');
+}
 console.log(`output-check: ${cases} silhouette cases, raw outlines, filled metadata, union and closed bypass passed`);

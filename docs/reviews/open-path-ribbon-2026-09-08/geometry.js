@@ -367,6 +367,25 @@
 
     const leftWidths = outerWidths(leftProfile,0);
     const rightWidths = outerWidths(rightProfile,1);
+    if(opts.autoDensity) {
+      if(!(Number.isFinite(+opts.penWidth)&&+opts.penWidth>0))throw Error('Auto density needs a positive pen width in path units');
+      // Budget both endpoint profiles, independent of the current seed blend.
+      // A shared count avoids strands popping in/out while the blend is moved.
+      const refsA=profiles(opts.seed),refsB=seedB===opts.seed?refsA:profiles(seedB);
+      let peakLeft=0,peakRight=0,maxFrame=0;
+      for(let i=0;i<spine.length;i++) {
+        const s=sampled.ss[i],envelope=opts.width*taperAt(s,sampled.total,opts.taper);
+        peakLeft=Math.max(peakLeft,refsA[0](s)*envelope,refsB[0](s)*envelope);
+        peakRight=Math.max(peakRight,refsA[1](s)*envelope,refsB[1](s)*envelope);
+        maxFrame=Math.max(maxFrame,Math.hypot(frame[i].nx,frame[i].ny));
+      }
+      const widest=(opts.interpolation==='edges'?peakLeft+peakRight:Math.max(peakLeft,peakRight))*maxFrame;
+      const intervals=Math.ceil(widest/(+opts.penWidth*.9));
+      const requiredSteps=Math.max(1,opts.interpolation==='edges'?Math.ceil((intervals+1)/2):intervals);
+      opts.steps=Math.min(512,requiredSteps);
+      if(opts.densityProbe)return {requiredSteps,steps:opts.steps,densityLimited:requiredSteps>512};
+      diagnostics.autoSteps=opts.steps;diagnostics.densityLimited=requiredSteps>512;
+    }
     function side(sign, widths, level) {
       const nodes=spine.map((p, i) => {
         if (i === 0) return {p:source[0].slice(),s:sampled.ss[i]};
@@ -378,11 +397,24 @@
     }
 
     const retained = clamp(Math.floor(opts.retainedSteps ?? opts.steps),1,opts.steps);
-    const leftLevels = [], rightLevels = [];
-    for (let i = retained; i >= 1; i--) leftLevels.push(side(1, leftWidths, i / opts.steps));
-    for (let i = 1; i <= retained; i++) rightLevels.push(side(-1, rightWidths, i / opts.steps));
-    const leftNodes=leftLevels[0],rightNodes=rightLevels[rightLevels.length-1];
-    const paths=leftLevels.concat([spine.map((p,i)=>({p,s:sampled.ss[i]}))],rightLevels);
+    let paths,leftNodes,rightNodes;
+    if(opts.interpolation==='edges') {
+      // Even strand count skips a dedicated midpoint. Equal fractions span the
+      // two envelopes; asymmetric sides can carry strands across the source.
+      paths=[];
+      const count=2*opts.steps,trim=opts.steps-retained;
+      for(let i=trim;i<count-trim;i++) {
+        const t=i/(count-1);
+        paths.push(side(1,leftWidths.map((w,j)=>mix(w,-rightWidths[j],t)),1));
+      }
+      leftNodes=paths[0];rightNodes=paths.at(-1);
+    } else {
+      const leftLevels = [], rightLevels = [];
+      for (let i = retained; i >= 1; i--) leftLevels.push(side(1, leftWidths, i / opts.steps));
+      for (let i = 1; i <= retained; i++) rightLevels.push(side(-1, rightWidths, i / opts.steps));
+      leftNodes=leftLevels[0];rightNodes=rightLevels[rightLevels.length-1];
+      paths=leftLevels.concat([spine.map((p,i)=>({p,s:sampled.ss[i]}))],rightLevels);
+    }
     const left=leftNodes.map(n=>n.p),right=rightNodes.map(n=>n.p);
     let result;
     if(opts.maskLoops) {
@@ -392,7 +424,8 @@
     const mode=opts.outputMode||'strands';
     if(mode!=='strands'||opts.solidOccluder||opts.maskAcrossPaths) {
       if(!root.RibbonSilhouette)throw Error('Ribbon silhouette helper missing');
-      const spineNodes=spine.map((p,i)=>({p,s:sampled.ss[i]}));
+      const spineNodes=opts.interpolation==='edges' ? side(1,leftWidths.map((w,i)=>(w-rightWidths[i])/2),1) :
+        spine.map((p,i)=>({p,s:sampled.ss[i]}));
       result.silhouette=root.RibbonSilhouette.fromNodes(leftNodes,rightNodes,spineNodes,{mergeOverlaps:true});
       const outline=opts.mergeOverlaps||mode==='solid' ? result.silhouette :
         root.RibbonSilhouette.fromNodes(leftNodes,rightNodes,spineNodes,{mergeOverlaps:false});
@@ -405,10 +438,13 @@
   function generateMany(inputs,options={}) {
     const length=points=>points.slice(1).reduce((sum,p,i)=>sum+dist(points[i],p),0);
     const lengths=inputs.map(p=>{const clean=sanitize(p);return clean.length>1&&!same(clean[0],clean.at(-1))?length(clean):0;});
-    const longest=Math.max(0,...lengths), steps=Math.max(1,Math.floor(+options.steps||defaults.steps));
+    const longest=Math.max(0,...lengths);
+    const probes=options.autoDensity?inputs.map(p=>generate(p,{...options,densityProbe:true})):[];
+    const requiredSteps=probes.length?Math.max(1,...probes.map(p=>p.requiredSteps??1)):Math.max(1,Math.floor(+options.steps||defaults.steps));
+    const steps=options.autoDensity?Math.min(512,requiredSteps):requiredSteps;
     const counts=lengths.map(l=>options.widthByLength&&longest>0 ? Math.max(1,Math.ceil(steps*l/longest-1e-10)) : steps);
     const maskAcrossPaths=!!options.maskLoops&&inputs.length>1&&(!options.outputMode||options.outputMode==='strands');
-    const items=inputs.map((p,i)=>generate(p,{...options,retainedSteps:counts[i],maskAcrossPaths}));
+    const items=inputs.map((p,i)=>generate(p,{...options,steps,autoDensity:false,retainedSteps:counts[i],maskAcrossPaths}));
     if(maskAcrossPaths)items.forEach((item,index)=>{
       if(item.diagnostics.skipped)return;
       const blockers=root.RibbonSilhouette.union(items.filter((_,j)=>options.reverseOrder?j<index:j>index).map(r=>r.silhouette??[]));
@@ -421,7 +457,7 @@
       });
       item.strands=strands;item.strandIndices=strandIndices;item.drawingPaths=strands;
     });
-    const result={items,retainedSteps:counts,strands:items.flatMap(r=>r.strands),
+    const result={items,steps,densityLimited:options.autoDensity&&requiredSteps>512,retainedSteps:counts,strands:items.flatMap(r=>r.strands),
       spines:items.map(r=>r.spine),drawingPaths:items.flatMap(r=>r.drawingPaths??r.strands)};
     if(items.some(r=>r.silhouette)) {
       result.silhouette=root.RibbonSilhouette.union(items.map(r=>r.silhouette??[]));
