@@ -3,18 +3,26 @@ project: idk.axibridge
 state: active
 updated: 2026-09-08
 machine: mac+pi
-summary: Whole-app visual precision pass is implemented locally with matched evidence, ready for owner checks.
+summary: Visual precision, cosmetic sheen and the selected scaffold icons are installed locally; Mac verification remains with Ian.
 next:
-  - "Review docs/reviews/ui-precision-2026-09-08/report.html and check the updated native app"
+  - "Check the open Mac app for native appearance and the new scaffold icon"
   - "Continue Second Reading alternating-use and paper review"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
 
+**Final wrap-up verification, 8 September:** 1,289 passed, one intentional skip
+(the app lifecycle test leaves the running Mac app alone), one existing Starlette
+deprecation warning. Typecheck and isolated source smoke passed, including four
+tabs, Second Reading and the chosen favicon. Earlier 1,290-pass results below
+precede opening the native app. All session work is committed locally; no push.
+
 **Favicon:** Ian selected the geometric scaffold in sheet white on black.
 Installed as the web favicon and touch icon; frontend rebuilt. The separate
-Mac application icon was also regenerated from the selected mark.
+Mac application icon was also regenerated from the selected mark. The app was
+opened at Ian’s request, and its running server was verified to serve the chosen
+favicon. Preview reports were approved; native icon appearance is not yet confirmed.
 
 **Cosmetic follow-up:** Ian approved all five finishing touches: paper edge/depth,
 optical alignment, faint surface lift, readout spacing and quieter inactive borders.

@@ -41,6 +41,12 @@ and benches. [Matched evidence](docs/reviews/ui-precision-2026-09-08/report.html
 is ready for owner judgement; native/paper acceptance remains open. Existing
 workflows and the mono/Flexoki identity are retained.
 
+**8 September follow-up:** Ian approved the preview and all five cosmetic sheen
+touches; [sheen evidence](docs/reviews/ui-sheen-2026-09-08/index.html) records the
+refinement. A geometric scaffold in sheet white on Flexoki black replaces the
+web favicon and Mac application icon. Native acceptance is Mac-only: the Pi
+does not run the UI. The normal app was opened for Ian to check.
+
 The remaining review is a proposal set. M1-M6 sequence
 viewing/interaction confidence, preservation, everyday composition, sustained
 development, output/performance and bounded spatial experiments. The report

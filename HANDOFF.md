@@ -4,18 +4,22 @@ updated: 2026-09-08
 entries: 14
 ---
 
-### Visual precision and benches acceptance — updated 2026-09-08, owner: ian
+### Mac visual and icon acceptance — updated 2026-09-08, owner: ian
 
-- done: Approved whole-app visual polish, including consistent type/spacing,
-  aligned dimensions, control states and compact/zoom fit. Prior popup/expand,
-  comparison and explicit source scope remain. Working benches are only Venation,
-  Homeostat and Second Reading.
-- next: Review docs/reviews/ui-precision-2026-09-08/report.html, then check native
-  appearance and input feel. Use the normal app restart path when ready.
-- blockers: none for local implementation; aesthetic/native acceptance remains Ian's.
-- context: docs/plans/ui-precision-IMPLEMENTATION.md and the evidence README record
-  exact verification and limits. Full suite 1,290 passed; 112 browser regressions included.
-  No push, hardware use or running-app restart. Durable recovery and future bench
+- done: Whole-app precision and all five cosmetic sheen touches are installed;
+  Ian approved the preview direction. The selected geometric scaffold appears
+  in both the web favicon/touch icon and the separate Mac application icon.
+  The app was opened on request; the live server serves the selected favicon.
+  Working benches remain Venation, Homeostat and Second Reading only.
+- next: Check native Mac appearance/input feel and the displayed app icon.
+  The Pi never runs the UI and is excluded from visual acceptance.
+- blockers: none for implementation; native appearance is not yet confirmed.
+- context: docs/plans/ui-precision-IMPLEMENTATION.md,
+  docs/reviews/ui-precision-2026-09-08/report.html and
+  docs/reviews/ui-sheen-2026-09-08/index.html. Both reports retain their original
+  fixtures. Final suite: 1,289 passed, one lifecycle skip because the app is open;
+  typecheck and isolated source smoke passed. No push or hardware action.
+  Durable recovery and future bench
   services remain separately deferred.
 
 ### Interactive drawing machine: Second Reading — updated 2026-09-06, owner: ian
