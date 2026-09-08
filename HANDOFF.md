@@ -1,8 +1,18 @@
 ---
 project: idk.axibridge
 updated: 2026-09-08
-entries: 15
+entries: 16
 ---
+
+### Magnetic field visual study — opened 2026-09-08, owner: ian
+
+- done: Standalone nine-cell SVG/PNG comparison, individual close views,
+  reproducible script, finite/bounded geometry checks and bounded Sol review.
+- next: Ian selects a promising treatment; then continue magnetic bench design
+  with both bar magnets and independent poles. No bench implementation yet.
+- limits: Simplified planar field; chains remain diagrammatic and loose filings
+  lose some long-range structure at sheet scale. Physical output is untested.
+- context: docs/reviews/magnetic-field-2026-09-08/README.md.
 
 ### Ribbon production acceptance — updated 2026-09-08, owner: ian
 

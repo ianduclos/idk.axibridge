@@ -5,6 +5,7 @@ updated: 2026-09-08
 machine: mac+pi
 summary: Ribbon is integrated as a registered effect; production visual acceptance remains with Ian; the Mac backend now serves Ribbon.
 next:
+  - "Choose a magnetic-field drawing treatment from the nine-cell standalone study"
   - "Check Ribbon on real drawings"
   - "Check the open Mac app for native appearance and the new scaffold icon"
   - "Continue Second Reading alternating-use and paper review"
@@ -12,6 +13,13 @@ handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Magnetic field study, 8 September:** Nine standalone drawings compare three
+magnet arrangements with continuous curves, irregular chains and loose filings.
+[SVG, image and review](docs/reviews/magnetic-field-2026-09-08/README.md).
+The same field is preserved across each row; finite/bounded geometry is checked.
+This is a visual study only: no generator or bench is registered, and paper
+appearance remains untested. Ian's treatment selection precedes bench design.
 
 **Ribbon effect shipping pass, 8 September:** The accepted study is now a
 registered Python effect with paper-space parameters, optional crest softening,

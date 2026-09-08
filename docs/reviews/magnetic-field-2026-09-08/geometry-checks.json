@@ -1,0 +1,155 @@
+{
+  "A1": {
+    "paths": 219,
+    "vertices": 44541,
+    "length_mm": 18569.199482028067,
+    "bounds": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        240.0,
+        170.0
+      ]
+    ],
+    "field_sha256": "32de061c67fa606922d3df03c2cdd570246569159af46388353319809d41c71c",
+    "underlying_routes": 219
+  },
+  "B1": {
+    "paths": 9710,
+    "vertices": 49964,
+    "length_mm": 12828.44182632823,
+    "bounds": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        239.93419313378772,
+        170.0
+      ]
+    ],
+    "field_sha256": "32de061c67fa606922d3df03c2cdd570246569159af46388353319809d41c71c",
+    "underlying_routes": 219
+  },
+  "C1": {
+    "paths": 8367,
+    "vertices": 35912,
+    "length_mm": 8054.611794571184,
+    "bounds": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        240.0,
+        170.0
+      ]
+    ],
+    "field_sha256": "32de061c67fa606922d3df03c2cdd570246569159af46388353319809d41c71c",
+    "underlying_routes": 219
+  },
+  "A2": {
+    "paths": 213,
+    "vertices": 45365,
+    "length_mm": 18919.10193637707,
+    "bounds": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        240.0,
+        170.0
+      ]
+    ],
+    "field_sha256": "9b01d1a8ba756e7a532db1d218cd6548e606c662da7793d725f0be6db215c1f6",
+    "underlying_routes": 213
+  },
+  "B2": {
+    "paths": 9890,
+    "vertices": 50964,
+    "length_mm": 13105.341465195539,
+    "bounds": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        240.0,
+        170.0
+      ]
+    ],
+    "field_sha256": "9b01d1a8ba756e7a532db1d218cd6548e606c662da7793d725f0be6db215c1f6",
+    "underlying_routes": 213
+  },
+  "C2": {
+    "paths": 8521,
+    "vertices": 36556,
+    "length_mm": 8185.396294462156,
+    "bounds": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        240.0,
+        170.0
+      ]
+    ],
+    "field_sha256": "9b01d1a8ba756e7a532db1d218cd6548e606c662da7793d725f0be6db215c1f6",
+    "underlying_routes": 213
+  },
+  "A3": {
+    "paths": 252,
+    "vertices": 45627,
+    "length_mm": 19005.468517209807,
+    "bounds": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        240.0,
+        170.0
+      ]
+    ],
+    "field_sha256": "83dee7e911b4163197c586a2a5bda7c82bc8533c7971069af6f61fd1d8f3de36",
+    "underlying_routes": 252
+  },
+  "B3": {
+    "paths": 9637,
+    "vertices": 51164,
+    "length_mm": 13401.833201512904,
+    "bounds": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        240.0,
+        170.0
+      ]
+    ],
+    "field_sha256": "83dee7e911b4163197c586a2a5bda7c82bc8533c7971069af6f61fd1d8f3de36",
+    "underlying_routes": 252
+  },
+  "C3": {
+    "paths": 8490,
+    "vertices": 36906,
+    "length_mm": 8393.029589316875,
+    "bounds": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        240.0,
+        170.0
+      ]
+    ],
+    "field_sha256": "83dee7e911b4163197c586a2a5bda7c82bc8533c7971069af6f61fd1d8f3de36",
+    "underlying_routes": 252
+  }
+}
