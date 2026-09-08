@@ -15,7 +15,7 @@ from shapely.ops import unary_union
 from ..model import Path
 from ..registry import EffectContext, EffectModule, register_effect
 from ._ribbon_profile import make_profiles
-from ._ribbon_geometry import sample_polyline, frames, sharp_corners, envelope, silhouette, clip_paths, self_mask
+from ._ribbon_geometry import sample_polyline, frames, sharp_corners, envelope, silhouette, clip_paths, self_mask, balance_edge_widths
 
 _SCALE = 4.0
 _MAX_STEPS = 512
@@ -43,7 +43,8 @@ class RibbonParams(BaseModel):
     variation: float = Field(.75, ge=0, le=1, title="Original rhythm variation", description="Only used by the legacy rhythm", json_schema_extra=_group("Rhythm"))
     crest_softening: float = Field(.055, ge=0, le=.2, title="Crest softening", description="Smoothing radius as a fraction of wavelength; zero keeps sharper crests", json_schema_extra=_group("Rhythm"))
     smoothing_variation: float = Field(0, ge=0, le=1, title="Uneven crest softening", description="Independent seeded smoothing for the rising and falling flank of each crest, blended smoothly through the peak", json_schema_extra=_group("Rhythm"))
-    interpolation: Literal["spine", "edges"] = Field("spine", title="Interpolate", description="Spine keeps the source; edges spans both envelopes with no dedicated centre strand", json_schema_extra=_group("Strands"))
+    interpolation: Literal["spine", "edges"] = Field("spine", title="Interpolate", description="Spine keeps the source; edges spans both envelopes with no dedicated centre strand and balances their width near sharp corners", json_schema_extra=_group("Strands"))
+    fractured_edges: bool = Field(False, description="Experimental polygon fractures in edge interpolation", json_schema_extra={"hidden": True})
     steps: int = Field(10, ge=1, le=512, title="Strands per side", json_schema_extra=_group("Strands"))
     auto_density: bool = Field(False, title="Density from assigned pen", description="Uses the layer pen's line width with 10% overlap; count stays fixed throughout seed blending", json_schema_extra=_group("Strands"))
     width_by_length: bool = Field(False, title="Trim width by path length", description="Shorter paths lose outer pairs without moving surviving strands", json_schema_extra=_group("Strands"))
@@ -121,11 +122,17 @@ def _prepare(points, params, ctx):
 def _construct(data, params, steps, retained):
     spine, ss, frame = data["spine"], data["ss"], data["frame"]
     left, right = data["widths"]
+    if params.interpolation == "edges" and not params.fractured_edges:
+        left,right = balance_edge_widths(left,right,ss,data["corners"],data["width"])
     def side(widths):
         nodes = [{"p": (p[0]+n[0]*w,p[1]+n[1]*w), "s":s}
                  for p,n,w,s in zip(spine,frame,widths,ss)]
         nodes[0]["p"],nodes[-1]["p"] = spine[0],spine[-1]
-        return envelope(nodes,spine,ss,data["corners"],data["width"]) if data["corners"] else nodes
+        join = envelope
+        if params.interpolation == "edges" and params.fractured_edges:
+            from ._ribbon_fracture import fractured_envelope
+            join = fractured_envelope
+        return join(nodes,spine,ss,data["corners"],data["width"]) if data["corners"] else nodes
     spine_nodes = [{"p":p,"s":s} for p,s in zip(spine,ss)]
     if params.interpolation == "edges":
         count = 2*steps

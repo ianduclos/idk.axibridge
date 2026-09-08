@@ -23,7 +23,7 @@ entries: 16
 - context: docs/reviews/magnetic-bench-2026-09-09/README.md and
   docs/plans/magnetic-field-bench.md. Original study remains preserved.
 
-### Ribbon production acceptance — updated 2026-09-08, owner: ian
+### Ribbon production acceptance — updated 2026-09-09, owner: ian
 
 - done: Registered Ribbon effect ports the accepted study to Python. Includes
   seed blend normalization, independent wavelengths, corner/loop handling,
@@ -32,6 +32,14 @@ entries: 16
 - hard corners: Ian’s actual acute pen path is repaired without changing its
   parameters or strand count. Full suite: 1,326 passed, one lifecycle skip.
   Evidence: docs/reviews/ribbon-hard-corners-2026-09-08/README.md.
+- edge joins: Regular edge mode stabilizes local side balance through acute
+  joins, preserving total width. The live-path fixture has 20 separate strands
+  without self intersections, crossing pairs or shared interior routes. Hidden
+  `fractured_edges: true` with `interpolation: "edges"` preserves the exact
+  polygon-cutout experiment Ian selected; default remains false. Evidence and
+  tradeoffs: docs/reviews/ribbon-edge-joins-2026-09-09/README.md.
+  Full suite: 1,363 passed, one lifecycle skip. Live backend reloaded and current
+  drawing restored; resolved coordinates match the candidate exactly.
 - next: Check Ribbon from the layer effects picker; the Mac backend now includes
   it after Ian authorized a restart. Review optional per-flank softening on real
   paths/paper. The original inline study is unchanged and remains reference.

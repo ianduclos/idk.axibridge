@@ -36,6 +36,16 @@ The same field is preserved across each row; finite/bounded geometry is checked.
 This is a visual study only: no generator or bench is registered, and paper
 appearance remains untested. Ian's treatment selection precedes bench design.
 
+**Ribbon edge joins, 9 September:** Edge interpolation now stabilizes the
+left/right width allocation through acute corner joins while preserving total
+width modulation. The captured drawing retains 20 distinct, non-crossing
+strands. Local asymmetry changes around severe corners; spine mode is unchanged.
+The polygon-cutout trial is preserved as hidden `fractured_edges` (default off).
+[Evidence and limits](docs/reviews/ribbon-edge-joins-2026-09-09/README.md).
+Full suite: 1,363 passed, one lifecycle skip. Backend reloaded with the current
+drawing restored; live output matches the reviewed candidate. Visual acceptance
+remains with Ian.
+
 **Ribbon hard corners, 8 September:** The live pen-path regression now retains
 21 strands with zero self-intersecting strands or crossing strand pairs (previously
 20 and 53). Overlapping corner supports are swept together; miter-capped radii

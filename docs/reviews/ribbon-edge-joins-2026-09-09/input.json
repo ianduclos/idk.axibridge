@@ -1,0 +1,165 @@
+{
+  "id": "1833a76a",
+  "name": "Pen (anchors)",
+  "visible": true,
+  "draw": true,
+  "source": {
+    "type": "generator",
+    "generator": "pen",
+    "params": {
+      "subpaths": [
+        {
+          "anchors": [
+            {
+              "x": 45.92063522338867,
+              "y": 167.10052490234375,
+              "in_handle": [
+                9.010565365925459,
+                59.31955589673935
+              ],
+              "out_handle": [
+                -9.010565365925459,
+                -59.31955589673935
+              ]
+            },
+            {
+              "x": 27.947092056274414,
+              "y": 137.42327880859375,
+              "in_handle": [
+                6.269842147827148,
+                -0.4179840087890625
+              ],
+              "out_handle": [
+                -6.269842147827148,
+                0.4179840087890625
+              ]
+            },
+            {
+              "x": 15.825398445129395,
+              "y": 133.24337768554688,
+              "in_handle": [
+                2.089946746826172,
+                5.4338531494140625
+              ],
+              "out_handle": [
+                -2.089946746826172,
+                -5.4338531494140625
+              ]
+            },
+            {
+              "x": 18.333335876464844,
+              "y": 73.88888549804688,
+              "in_handle": [
+                -26.751323699951172,
+                6.26983642578125
+              ],
+              "out_handle": [
+                26.751323699951172,
+                -6.26983642578125
+              ]
+            },
+            {
+              "x": 234.015869140625,
+              "y": 107.32804107666016,
+              "in_handle": null,
+              "out_handle": null
+            },
+            {
+              "x": 144.56614685058594,
+              "y": 123.21163940429688,
+              "in_handle": null,
+              "out_handle": null
+            },
+            {
+              "x": 173.40740966796875,
+              "y": 159.15872192382812,
+              "in_handle": null,
+              "out_handle": null
+            },
+            {
+              "x": 119.48677062988281,
+              "y": 169.1904754638672,
+              "in_handle": null,
+              "out_handle": null
+            },
+            {
+              "x": 115.72486877441406,
+              "y": 129.06349182128906,
+              "in_handle": [
+                30.513229370117188,
+                22.571426391601562
+              ],
+              "out_handle": [
+                -30.513229370117188,
+                -22.571426391601562
+              ]
+            },
+            {
+              "x": 77.26984405517578,
+              "y": 147.0370330810547,
+              "in_handle": null,
+              "out_handle": null
+            }
+          ],
+          "closed": false
+        }
+      ],
+      "flatten_tol": 0.05
+    },
+    "file": null,
+    "svg_layer": null,
+    "quantization_mm": 0.1
+  },
+  "transform": {
+    "a": 1.0,
+    "b": 0.0,
+    "c": 0.0,
+    "d": 1.0,
+    "e": 0.0,
+    "f": 0.0
+  },
+  "effects": [
+    {
+      "effect": "ribbon",
+      "enabled": true,
+      "params": {
+        "width": 20.4,
+        "wavelength": 142.6,
+        "independent_wavelengths": true,
+        "wavelength_right": 83.2,
+        "relation": "independent",
+        "taper": 0.319,
+        "seed": 765637268,
+        "seed_b": 19,
+        "seed_blend": 0.491,
+        "rhythm": "phrased",
+        "spacing_variation": 1,
+        "height_variation": 0.974,
+        "phrasing": 0.95,
+        "variation": 0.75,
+        "crest_softening": 0.055,
+        "smoothing_variation": 0.463,
+        "interpolation": "edges",
+        "steps": 10,
+        "auto_density": false,
+        "width_by_length": false,
+        "remove_outer": 0,
+        "output": "strands",
+        "merge_overlaps": true,
+        "solid_occluder": false,
+        "mask_overlaps": true,
+        "reverse_order": true
+      }
+    }
+  ],
+  "pen_id": null,
+  "occluder": false,
+  "receives_occlusion": true,
+  "occlude_groups": [],
+  "receives_groups": [],
+  "region": false,
+  "region_boundary": "cut",
+  "occlusion_margin_mm": 0.0,
+  "frame_offset": 0.0,
+  "frame_follow": false
+}

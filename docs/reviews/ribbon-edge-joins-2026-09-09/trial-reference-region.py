@@ -99,8 +99,53 @@ def _projection(p: Point2, a: Point2, b: Point2) -> tuple[float, float]:
     return t, hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy)
 
 
-def join_ranges(stations: list[float], corners: list[dict[str, float]], width: float) -> list[list[int]]:
-    """The exact sampled supports shared by corner joins and edge balancing."""
+def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[float], corners: list[dict[str, float]], width: float) -> list[dict[str, Any]]:
+    """Join an offset lane, including edge-interpolated lanes crossing the spine.
+
+    A swept strip must stay on one side of its source. Otherwise its boundary
+    can switch onto the source itself. Insert exact zero-width crossings and
+    join each same-side run independently, then reconnect at the shared zero.
+    """
+    if not corners:
+        return nodes[:]
+    normals = frames(spine)
+    signed = [((n['p'][0]-p[0])*f[0]+(n['p'][1]-p[1])*f[1])/(f[0]*f[0]+f[1]*f[1] or 1)
+              for n,p,f in zip(nodes,spine,normals)]
+    if not (any(w > EPS for w in signed) and any(w < -EPS for w in signed)):
+        return _side_envelope(nodes,spine,stations,corners,width)
+    return _side_envelope(nodes,spine,stations,corners,width,reference_mode=True)
+    out = []
+    run_nodes, run_spine, run_stations = [nodes[0]], [spine[0]], [stations[0]]
+
+    def finish():
+        if len(run_nodes)<2:
+            return
+        local = [c for c in corners if run_stations[0]<c['s']<run_stations[-1]]
+        joined = _side_envelope(run_nodes,run_spine,run_stations,local,width)
+        out.extend(joined if not out else joined[1:])
+
+    for i in range(1,len(nodes)):
+        a,b = signed[i-1],signed[i]
+        if a*b < 0 and abs(a)>EPS and abs(b)>EPS:
+            t = a/(a-b)
+            p = (_mix(spine[i-1][0],spine[i][0],t),_mix(spine[i-1][1],spine[i][1],t))
+            s = _mix(stations[i-1],stations[i],t)
+            zero = {'p':p,'s':s}
+            run_nodes.append(zero); run_spine.append(p); run_stations.append(s)
+            finish()
+            run_nodes,run_spine,run_stations = [zero],[p],[s]
+        run_nodes.append(nodes[i]); run_spine.append(spine[i]); run_stations.append(stations[i])
+        if abs(b)<=EPS and i<len(nodes)-1:
+            finish()
+            run_nodes,run_spine,run_stations = [nodes[i]],[spine[i]],[stations[i]]
+    finish()
+    return out
+
+
+def _side_envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[float], corners: list[dict[str, float]], width: float, reference_mode: bool = False) -> list[dict[str, Any]]:
+    """Replace sharp offset corners with the selected local swept-strip edge."""
+    if not corners:
+        return nodes[:]
     # Overlapping supports must be swept together. Splitting at the midpoint
     # both revisited a sample and left inner offsets of a neighbouring turn
     # inside the union, where no boundary route could connect the patch ends.
@@ -112,6 +157,8 @@ def join_ranges(stations: list[float], corners: list[dict[str, float]], width: f
             supports[-1][1] = max(supports[-1][1],hi)
         else:
             supports.append([lo,hi])
+    turns = {corner["s"]:corner["turn"] for corner in corners}
+    frame = frames(spine)
     ranges = []
     for lo,hi in supports:
         start = max(0,bisect_left(stations,lo)-1)
@@ -121,54 +168,12 @@ def join_ranges(stations: list[float], corners: list[dict[str, float]], width: f
             ranges[-1][1] = max(ranges[-1][1],end)
         else:
             ranges.append([start,end])
-    return ranges
-
-
-def balance_edge_widths(left, right, stations, corners, width):
-    """Keep edge lanes on a consistent side through each joined corner region.
-
-    Preserve total width at every station; smoothly stabilize only its left/right
-    allocation. A constant ratio makes every intermediate edge lane a fixed
-    fraction of one same-side profile throughout a corner support. Outside those
-    supports and their short transitions the original independent profiles stay.
-    """
-    ranges = join_ranges(stations,corners,width)
-    if not ranges:
-        return left,right
-    total = [a+b for a,b in zip(left,right)]
-    balanced = list(left)
-    for k,(start,end) in enumerate(ranges):
-        area_left = sum((left[i]+left[i+1])*.5*(stations[i+1]-stations[i]) for i in range(start,end))
-        area_total = sum((total[i]+total[i+1])*.5*(stations[i+1]-stations[i]) for i in range(start,end))
-        ratio = area_left/area_total if area_total>EPS else .5
-        lo,hi = stations[start],stations[end]
-        before = min(width,(lo-stations[ranges[k-1][1]])/2) if k else min(width,lo-stations[0])
-        after = min(width,(stations[ranges[k+1][0]]-hi)/2) if k+1<len(ranges) else min(width,stations[-1]-hi)
-        for i,s in enumerate(stations):
-            if s<lo:
-                t = min(1,(lo-s)/before) if before>EPS else 1
-            elif s>hi:
-                t = min(1,(s-hi)/after) if after>EPS else 1
-            else:
-                t = 0
-            strength = 1-t*t*(3-2*t)
-            if strength:
-                balanced[i] = left[i]+strength*(ratio*total[i]-left[i])
-    return balanced,[w-a for w,a in zip(total,balanced)]
-
-
-def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[float], corners: list[dict[str, float]], width: float) -> list[dict[str, Any]]:
-    """Replace sharp offset corners with the selected local swept-strip edge."""
-    if not corners:
-        return nodes[:]
-    turns = {corner["s"]:corner["turn"] for corner in corners}
-    frame = frames(spine)
-    ranges = join_ranges(stations,corners,width)
     patches = []
     for start,end in ranges:
         source: list[Point2] = []
         offset: list[Point2] = []
         ss: list[float] = []
+        reference, distances = [], []
         for i in range(start, end + 1):
             if stations[i] in turns and 0 < i < len(spine) - 1:
                 a, b = spine[i - 1], spine[i]
@@ -188,8 +193,13 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
                     source.append(b)
                     offset.append((b[0] + w * cos(angle + turn * j / count), b[1] + w * sin(angle + turn * j / count)))
                     ss.append(stations[i])
+                    reference.append((b[0]+width*cos(angle+turn*j/count),b[1]+width*sin(angle+turn*j/count)))
+                    distances.append(w)
             else:
                 source.append(spine[i]); offset.append(_point(nodes[i])); ss.append(stations[i])
+                reference.append((spine[i][0]+frame[i][0]*width,spine[i][1]+frame[i][1]*width))
+                fx,fy=frame[i]
+                distances.append(((nodes[i]['p'][0]-spine[i][0])*fx+(nodes[i]['p'][1]-spine[i][1])*fy)/(fx*fx+fy*fy or 1))
         triangles = []
         for a, b, c, d in zip(source, source[1:], offset[1:], offset):
             for tri in ((a, b, c), (a, c, d)):
@@ -200,10 +210,30 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
             continue
         merged = unary_union(triangles)
         source_line = LineString(source)
-        candidates = list(merged.geoms) if isinstance(merged, MultiPolygon) else [merged]
+        if reference_mode:
+            positive, negative, reference_faces = [], [], []
+            def add_quad(a,b,c,d,target):
+                for tri in ((a,b,c),(a,c,d)):
+                    poly=Polygon(tri)
+                    if poly.area>1e-10: target.append(poly)
+            for i in range(len(source)-1):
+                a,b,u,v=source[i],source[i+1],offset[i],offset[i+1]
+                wa,wb=distances[i],distances[i+1]
+                add_quad(a,b,reference[i+1],reference[i],reference_faces)
+                if wa*wb<0:
+                    t=wa/(wa-wb)
+                    zero=(_mix(a[0],b[0],t),_mix(a[1],b[1],t))
+                    add_quad(a,zero,zero,u,positive if wa>0 else negative)
+                    add_quad(zero,b,v,zero,positive if wb>0 else negative)
+                else:
+                    add_quad(a,b,v,u,positive if wa+wb>=0 else negative)
+            merged=unary_union(reference_faces).difference(unary_union(positive)).union(unary_union(negative))
+            source_line=LineString(reference)
+        candidates = [merged] if merged.geom_type == 'Polygon' else [p for p in getattr(merged,'geoms',[]) if p.geom_type=='Polygon']
+        rings = [ring for poly in candidates for ring in ([poly.exterior,*poly.interiors] if reference_mode else [poly.exterior])]
         chosen = None
-        for poly in candidates:
-            ring = list(poly.exterior.coords)[:-1]
+        for boundary in rings:
+            ring = list(boundary.coords)[:-1]
             ia = next((i for i, p in enumerate(ring) if _distance(p, offset[0]) < 1e-7), -1)
             ib = next((i for i, p in enumerate(ring) if _distance(p, offset[-1]) < 1e-7), -1)
             if ia < 0 or ib < 0:
