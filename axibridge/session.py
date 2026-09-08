@@ -765,11 +765,13 @@ class Session:
             layer = self.project.layer(layer_id)
             src = self.source_geometry.get(layer_id)
             candidate = layer.model_copy(deep=True)
+            diameter = compose.line_diameter_for(layer, self.pens())
         if src is None:
             raise RuntimeError("layer has no source geometry to preview (tween layers preview live already)")
         candidate.effects = [EffectStep(**e) for e in effects]
         # outside the lock: shape_layer is pure and src is never mutated in place
-        return compose.shape_layer(candidate, src, compose.guide_page(self.project))
+        return compose.shape_layer(
+            candidate, src, compose.guide_page(self.project), diameter)
 
     def add_svg_layers(
         self, svg_text: str, filename: str, quantization_mm: float,
@@ -1231,8 +1233,12 @@ class Session:
             for i, t in enumerate(ts):
                 step = layer.model_copy(deep=True)
                 step.source.params = {**(layer.source.params or {}), "t": t, "sweep": 1}
-                paths = tween.materialize(step, self.project, self.source_geometry)
-                shaped = compose.shape_layer(layer, paths, compose.guide_page(self.project))  # tween's own tf/fx baked in
+                diameter = compose.line_diameter_for(layer, self.pens())
+                paths = tween.materialize(
+                    step, self.project, self.source_geometry,
+                    line_diameter_mm=diameter)
+                shaped = compose.shape_layer(
+                    layer, paths, compose.guide_page(self.project), diameter)  # tween's own tf/fx baked in
                 data = layer.model_dump()
                 del data["id"]
                 data.update(
@@ -2809,8 +2815,10 @@ class Session:
             layer = self.project.layer(layer_id)
             self._checkpoint()
             self._materialize_tweens()  # a stale tween must bake its CURRENT look
-            shaped = compose.shape_layer(layer, self.source_geometry.get(layer_id, []),
-                                        compose.guide_page(self.project))
+            shaped = compose.shape_layer(
+                layer, self.source_geometry.get(layer_id, []),
+                compose.guide_page(self.project),
+                compose.line_diameter_for(layer, self.pens()))
             self.source_geometry[layer_id] = shaped
             layer.transform = Affine()
             layer.effects = []
@@ -2866,7 +2874,8 @@ class Session:
             merged: list[Path] = []
             for layer in chosen:
                 merged.extend(compose.shape_layer(
-                    layer, self.source_geometry.get(layer.id, []), page))
+                    layer, self.source_geometry.get(layer.id, []), page,
+                    compose.line_diameter_for(layer, self.pens())))
 
             survivor = chosen[-1]
             self.source_geometry[survivor.id] = merged
@@ -3030,9 +3039,17 @@ class Session:
                     })
                 except KeyError:
                     refs.append(None)
-            key = json.dumps(
-                {"refs": refs, "p": params, "mt": override_t, "master": clamped_master},
-                sort_keys=True)
+            key_data = {
+                "refs": refs, "p": params, "mt": override_t,
+                "master": clamped_master,
+            }
+            # Endpoint effects run while materialising the tween and see the
+            # pen assigned to the tween output. Keep the historic key bytes
+            # unchanged when no enabled effect can observe that width.
+            if any(ref and any(s.get("enabled", True) for s in ref["fx"])
+                   for ref in refs):
+                key_data["pen_width"] = compose.line_diameter_for(layer, self.pens())
+            key = json.dumps(key_data, sort_keys=True)
             layer_map = self._tween_cache.get(layer.id)
             hit = layer_map.get(key) if layer_map is not None else None
             if hit is not None:
@@ -3044,7 +3061,8 @@ class Session:
                     geo[layer.id] = hit.paths
                 continue
             paths = tween.materialize(
-                layer, self.project, read_geo, override_t, clamped_master)
+                layer, self.project, read_geo, override_t, clamped_master,
+                compose.line_diameter_for(layer, self.pens()))
             if layer_map is None:
                 layer_map = self._tween_cache[layer.id] = OrderedDict()
             layer_map[key] = _TweenEntry(paths, tuple(ref_objects),

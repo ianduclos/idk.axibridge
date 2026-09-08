@@ -13,6 +13,7 @@ from typing import Any, Iterable
 
 from shapely.geometry import GeometryCollection, LineString, MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
+from shapely import make_valid
 
 EPS = 1e-9
 Point2 = tuple[float, float]
@@ -218,9 +219,11 @@ def _segment_visible(a: Point2, b: Point2, mask) -> list[tuple[float, float]]:
     inter = line.intersection(mask.boundary)
     geoms: Iterable[Any] = getattr(inter, "geoms", [inter])
     for geom in geoms:
+        if geom.is_empty:
+            continue
         if geom.geom_type == "Point":
             cuts.append(line.project(geom, normalized=True))
-        elif geom.geom_type == "LineString":
+        elif geom.geom_type == "LineString" and len(geom.coords) >= 2:
             cuts.extend((line.project(Point(geom.coords[0]), normalized=True), line.project(Point(geom.coords[-1]), normalized=True)))
     cuts = sorted(cuts)
     unique = [x for i, x in enumerate(cuts) if not i or x - cuts[i - 1] > EPS]
@@ -235,13 +238,14 @@ def clip_paths(paths: list[list[Point2]], mask) -> list[list[Point2]]:
             continue
         current: list[Point2] | None = None
         for a, b in zip(map(_point, path), map(_point, path[1:])):
-            for lo, hi in _segment_visible(a, b, mask):
+            intervals = _segment_visible(a, b, mask)
+            for lo, hi in intervals:
                 p, q = (_mix(a[0], b[0], lo), _mix(a[1], b[1], lo)), (_mix(a[0], b[0], hi), _mix(a[1], b[1], hi))
                 if current is not None and _distance(current[-1], p) <= EPS:
                     current.append(q)
                 else:
                     current = [p, q]; out.append(current)
-            if not _segment_visible(a, b, mask):
+            if not intervals:
                 current = None
     return out
 
@@ -263,7 +267,13 @@ def self_mask(paths_nodes: list[list[dict[str, Any]]], left_nodes: list[dict[str
     for i in range(len(stations) - 1):
         ring = [left[i], left[i + 1], right[i + 1], right[i]]
         xs, ys = [p[0] for p in ring], [p[1] for p in ring]
-        face = (Polygon(ring), stations[i], stations[i + 1], min(xs), max(xs), min(ys), max(ys))
+        polygon = Polygon(ring)
+        # A tight return can fold a quadrilateral over itself.  polygon-clipping
+        # treats that input by its even-odd filled pieces; make_valid gives GEOS
+        # the corresponding valid area before we union candidate blockers.
+        if not polygon.is_valid:
+            polygon = make_valid(polygon)
+        face = (polygon, stations[i], stations[i + 1], min(xs), max(xs), min(ys), max(ys))
         faces.append(face)
         for key in keys(face[3], face[5], face[4], face[6]): grid[key].append(i)
     joins = [(c["s"], width * min(4, abs(tan(c["turn"] / 2))) * 2 + 8) for c in corners]

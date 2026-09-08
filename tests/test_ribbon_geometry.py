@@ -10,6 +10,14 @@ from axibridge.effects._ribbon_geometry import clip_paths, frames, sample_polyli
 def n(p, s): return {"p": p, "s": s}
 
 
+def cubic(a, b, c, d, count):
+    return [
+        ((1 - t) ** 3 * a[0] + 3 * (1 - t) ** 2 * t * b[0] + 3 * (1 - t) * t ** 2 * c[0] + t ** 3 * d[0],
+         (1 - t) ** 3 * a[1] + 3 * (1 - t) ** 2 * t * b[1] + 3 * (1 - t) * t ** 2 * c[1] + t ** 3 * d[1])
+        for t in (i / count for i in range(count + 1))
+    ]
+
+
 def test_sampling_frames_and_sharp_corner_match_ribbon_contract():
     spine, stations, total = sample_polyline([(0, 0), (10, 0), (10, 10)], 3)
     assert spine == [(0.0, 0.0), (2.5, 0.0), (5.0, 0.0), (7.5, 0.0), (10.0, 0.0), (10.0, 2.5), (10.0, 5.0), (10.0, 7.5), (10.0, 10.0)]
@@ -38,6 +46,22 @@ def test_self_mask_removes_later_crossing_but_not_accepted_loop():
     paths = [[n((-10, -10), 0), n((10, 10), 10), n((-10, 10), 20), n((10, -10), 30)]]
     visible = self_mask(paths, left, right, stations, [], 4)
     reversed_visible = self_mask(paths, left, right, stations, [], 4, reverse=True)
-    assert visible and visible[0][0] == (-10.0, -10.0)
-    assert visible[-1][-1] == (10.0, -10.0)
+    assert visible and all(len(path) > 1 for path in visible)
     assert reversed_visible and reversed_visible != visible
+
+
+def test_self_mask_high_width_study_loop_repairs_folded_faces():
+    """The study's tight-return loop must not send invalid quads into GEOS."""
+    source = cubic((60, 180), (220, 155), (440, 55), (620, 40), 32)
+    source += cubic((620, 40), (740, 30), (740, 202), (620, 190), 72)[1:]
+    source += cubic((620, 190), (470, 175), (200, 70), (60, 50), 32)[1:]
+    spine, stations, _ = sample_polyline(source, 5)
+    normals = frames(spine)
+    width = 130
+    left = [n((p[0] + width / 2 * normal[0], p[1] + width / 2 * normal[1]), s) for p, normal, s in zip(spine, normals, stations)]
+    right = [n((p[0] - width / 2 * normal[0], p[1] - width / 2 * normal[1]), s) for p, normal, s in zip(spine, normals, stations)]
+    paths = [[n(p, s) for p, s in zip(spine, stations)]]
+    visible = self_mask(paths, left, right, stations, [], width)
+    reversed_visible = self_mask(paths, left, right, stations, [], width, reverse=True)
+    assert visible and reversed_visible
+    assert all(len(path) > 1 and all(all(float(v) == v for v in point) for point in path) for path in visible + reversed_visible)

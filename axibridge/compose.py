@@ -307,12 +307,14 @@ def guide_page(project: Project) -> tuple[float, float, float, float]:
 
 
 def _layer_ctx(layer: CanvasLayer,
-               page: tuple[float, float, float, float] | None = None) -> EffectContext:
+               page: tuple[float, float, float, float] | None = None,
+               line_diameter_mm: float = DEFAULT_LINE_DIAMETER_MM) -> EffectContext:
     return EffectContext(
         layer_id=layer.id,
         translation=layer.transform.translation,
         seed=_layer_seed(layer.id),
         page=page,
+        line_diameter_mm=line_diameter_mm,
     )
 
 
@@ -329,10 +331,12 @@ def _apply_effect_stack(paths: list[Path], steps: list[EffectStep], ctx: EffectC
 
 
 def shape_layer(layer: CanvasLayer, source_paths: list[Path],
-                page: tuple[float, float, float, float] | None = None) -> list[Path]:
+                page: tuple[float, float, float, float] | None = None,
+                line_diameter_mm: float = DEFAULT_LINE_DIAMETER_MM) -> list[Path]:
     """transform → effect stack. Pure; caller caches."""
     placed = transform_paths(source_paths, layer.transform)
-    return _apply_effect_stack(placed, layer.effects, _layer_ctx(layer, page))
+    return _apply_effect_stack(
+        placed, layer.effects, _layer_ctx(layer, page, line_diameter_mm))
 
 
 def build_mask(
@@ -835,7 +839,8 @@ def resolve_project(
             continue
         src = source_geometry.get(layer.id, _NO_SOURCE)
         if shaped_cache is not None:
-            key = _shape_key(layer, src, page)
+            diameter = line_diameter_for(layer, pens)
+            key = _shape_key(layer, src, page, diameter)
             layer_map = shaped_cache.get(layer.id)
             if layer_map is None:
                 layer_map = shaped_cache[layer.id] = OrderedDict()
@@ -848,13 +853,14 @@ def resolve_project(
                 layer_map.move_to_end(key)
                 shaped[layer.id] = hit.shaped
                 continue
-            out = shape_layer(layer, src, page)
+            out = shape_layer(layer, src, page, diameter)
             shaped[layer.id] = out
             layer_map[key] = _ShapedEntry(out, src, _path_points(out), next(_shaped_seq))
             layer_map.move_to_end(key)
             _evict_shaped(shaped_cache, (layer.id, key))
         else:
-            shaped[layer.id] = shape_layer(layer, src, page)
+            shaped[layer.id] = shape_layer(
+                layer, src, page, line_diameter_for(layer, pens))
 
     # 1.5 region layers ("affects below"), bottom -> top so an upper region
     # sees the output of a lower one (adjustment-layer stacking). The region's
@@ -869,7 +875,7 @@ def resolve_project(
         mask = build_mask(placed, line_diameter_for(region, pens), 0.0)
         if mask is None:
             continue
-        ctx = _layer_ctx(region, page)
+        ctx = _layer_ctx(region, page, line_diameter_for(region, pens))
         for below in project.layers[:r_idx]:
             if below.id not in shaped:
                 continue  # hidden, or itself a region
@@ -950,15 +956,21 @@ def resolve_project(
 
 
 def _shape_key(layer: CanvasLayer, src: list[Path],
-               page: tuple[float, float, float, float] | None = None) -> str:
+               page: tuple[float, float, float, float] | None = None,
+               line_diameter_mm: float = DEFAULT_LINE_DIAMETER_MM) -> str:
     h = hashlib.sha256()
     h.update(str(id(src)).encode())  # source list identity: replaced wholesale on regen
-    h.update(json.dumps({
+    key_data = {
         "t": layer.transform.model_dump(),
         "e": [s.model_dump() for s in layer.effects],
         # page-relative effects (invert) must re-run when the guide moves
         "p": page,
-    }, sort_keys=True).encode())
+    }
+    # Only an enabled effect can observe the pen width. Preserve the historic
+    # key bytes for effect-free layers, including across pen switches.
+    if any(s.enabled for s in layer.effects):
+        key_data["d"] = line_diameter_mm
+    h.update(json.dumps(key_data, sort_keys=True).encode())
     return h.hexdigest()
 
 

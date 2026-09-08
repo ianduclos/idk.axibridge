@@ -329,6 +329,54 @@ def test_create_select_and_edit_a_generated_layer(ui):
     assert not ui.errors
 
 
+def test_ribbon_on_open_paths_groups_and_remove_outer_pairs(ui):
+    """Production Ribbon flow: choose a source that emits open paths, add
+    the effect, then edit its grouped strand controls through the real UI."""
+    source = ui.locator('#gen-select option[value="grid"]')
+    assert source.count() == 1 and source.is_enabled(), \
+        "Grid must remain an available open-path source"
+    ui.select_option("#gen-select", "grid")
+    assert ui.locator("#gen-select").input_value() == "grid"
+    ui.click("#btn-generate")
+    ui.wait_for_selector("#layer-list .layer-row", timeout=20_000)
+    layer_id = _get(f"{ui.base}/api/project")["layers"][0]["id"]
+    assert _get(f"{ui.base}/api/project")["layers"][0]["source"]["generator"] == "grid"
+    select_layer(ui)
+
+    ribbon = ui.locator('#fx-select option[value="ribbon"]')
+    assert ribbon.count() == 1 and ribbon.is_enabled()
+    ui.select_option("#fx-select", "ribbon")
+    before = wait_for_ink(ui)
+    ui.click("#fx-add")
+    ui.wait_for_selector("#fx-steps .step", timeout=20_000)
+    ui.wait_for_function(
+        "([sel, old]) => Array.from(document.querySelectorAll(sel))"
+        ".map(e => e.getAttribute('d') || '').join('|') !== old",
+        arg=["#canvas path", before], timeout=20_000)
+
+    summaries = ui.locator("#fx-steps .form-group summary").all_text_contents()
+    assert summaries == ["Shape", "Rhythm", "Strands", "Output"]
+    strands = ui.locator("#fx-steps .form-group").nth(2)
+    strands.locator("summary").click()
+    remove = strands.locator(".field", has_text="Remove outer pairs").locator(
+        'input[type="number"]')
+    assert remove.input_value() == "0"
+    ribbon_ink = canvas_ink(ui)
+    remove.fill("2")
+    remove.press("Enter")
+    ui.wait_for_function(
+        "([sel, old]) => Array.from(document.querySelectorAll(sel))"
+        ".map(e => e.getAttribute('d') || '').join('|') !== old",
+        arg=["#canvas path", ribbon_ink], timeout=20_000)
+
+    layer = next(l for l in _get(f"{ui.base}/api/project")["layers"]
+                 if l["id"] == layer_id)
+    assert layer["effects"][0]["effect"] == "ribbon"
+    assert layer["effects"][0]["params"]["remove_outer"] == 2
+    assert canvas_ink(ui) != ribbon_ink
+    assert not ui.errors
+
+
 def test_edit_a_param_on_a_layer_loaded_from_a_project(ui):
     """The other half of the loop: a layer that was NOT just created from the
     bench edits through its own detail form."""

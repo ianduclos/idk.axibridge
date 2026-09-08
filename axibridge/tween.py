@@ -701,6 +701,7 @@ def _effects_at(la: CanvasLayer, lb: CanvasLayer, t: float):
 def materialize(
     layer: CanvasLayer, project: Project, source_geometry: dict[str, list[Path]],
     override_t: float | None = None, master_t: float | None = None,
+    line_diameter_mm: float = 0.5,
 ) -> list[Path]:
     """The tween layer's source geometry: the virtual in-between layer(s),
     fully shaped (lerped transform + lerped effects) in paper space. The
@@ -760,6 +761,7 @@ def materialize(
                 # step the ctx seed too: noise fields match A/B at the endpoints
                 seed=_layer_seed(la.id) if t < 0.5 else _layer_seed(lb.id),
                 page=_guide_page(project),
+                line_diameter_mm=line_diameter_mm,
             )
             for effect_id, params in _effects_at(la, lb, t):
                 eff = get_effect(effect_id)

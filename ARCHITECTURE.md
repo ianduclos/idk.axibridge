@@ -139,6 +139,13 @@ gap: a visible **region** layer replaces the shaped geometry of everything
 below it on every resolve, so those layers miss the cache every time — slow,
 never wrong.
 
+**Pen-dependent effects (2026-09-08).** `EffectContext.line_diameter_mm` carries
+the assigned mark width into normal, region and tween effect stacks. Shape and
+tween materialization keys include it when enabled effects can observe it, so
+editing a pen recomputes Ribbon's automatic strand density. Effect-free cache
+keys retain their previous representation. Width reads stay in resolve/session;
+effect modules remain pure and never access pen stores themselves.
+
 **Many frames, not one (2026-08-11).** Every per-layer cache in the resolve
 path — the session's `_shaped_cache`, `_tween_cache` and `_clip_cache`, and
 all three maps inside `OcclusionCache` — held ONE slot per layer with the

@@ -265,12 +265,16 @@ class EffectContext(BaseModel):
     ``page`` is the paper-guide rect (x, y, w, h — the bed when no guide is
     set), for effects whose geometry is page-relative (invert). ``None`` only
     in hand-built contexts; the resolve path always fills it.
+    ``line_diameter_mm`` is the assigned pen's real mark width. Its default
+    matches the compositor's unassigned-pen fallback so hand-built contexts
+    and older callers retain the same behaviour.
     """
 
     layer_id: str = ""
     translation: tuple[float, float] = (0.0, 0.0)
     seed: int = 0
     page: tuple[float, float, float, float] | None = None
+    line_diameter_mm: float = 0.5
 
 
 class EffectModule(ABC):

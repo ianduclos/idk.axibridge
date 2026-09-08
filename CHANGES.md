@@ -2,6 +2,13 @@
 
 ---
 
+### 2026-09-08 — Assigned pen width in effect contexts (Codex)
+- affects: effect authors, normal/region/tween resolve and cache consumers.
+- detail: `EffectContext.line_diameter_mm` supplies the assigned output pen's
+  mark width, with the existing 0.5 mm unassigned fallback. Enabled effect stacks
+  include width in shape/tween cache keys. Ribbon consumes it for automatic
+  strand density; no store reads or Node runtime are required by the effect.
+
 ### 2026-09-06 — Second Reading replay and placement contracts (Codex)
 - affects: saved Second Reading recipes, bench consumers and source-module authors.
 - detail: reading/control events now select retained response policies; Responsive

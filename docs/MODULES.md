@@ -231,6 +231,13 @@ class MyEffect(EffectModule):
 
 The contract, and why each clause exists:
 
+- **Assigned pen context (2026-09-08).** `ctx.line_diameter_mm` supplies the
+  assigned output pen's mark width (0.5 mm when unassigned), without effects
+  reading global stores. Normal layers use their pen, region effects use the
+  region pen, and materialized tween effects use the tween output pen. Pen
+  edits participate in effect-bearing shape and tween cache keys. Ribbon uses
+  this for automatic strand density; its profiles and geometry helpers live in
+  `_ribbon_profile.py` and `_ribbon_geometry.py` for reuse by the planned D3 effect.
 - **You receive geometry already placed on the paper** (the layer transform
   runs first). So a millimetre in your params is a millimetre on the sheet,
   no matter how the layer is scaled — that's the system's promise to the

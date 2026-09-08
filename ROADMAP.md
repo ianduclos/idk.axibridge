@@ -14,6 +14,17 @@ Cohen-line direction, plus how the involved ones should meet the UI) live in
 Shipped work has been pruned from this file (2026-08-17) — see `git log` /
 `STATUS.md` for what landed and when. This file tracks what's still open.
 
+## Ribbon follow-ups (2026-09-08)
+
+1. **D3 as a separate effect next.** One modulating curve alternates across its
+   open source path, as in Ian's original sketch. Reuse Ribbon's seeded profile
+   and geometry helpers; keep its signed oscillation distinct from the two-sided
+   Ribbon. Ian explicitly chose to ship Ribbon before starting D3.
+2. **Expanded effect editor.** Ribbon's parameters now use Shape, Rhythm,
+   Strands and Output groups. Ian suggested a popup for dense effects; defer the
+   UI architecture change until a focused pass, preserving a compact sidebar
+   and considering a larger live preview in the expanded editor.
+
 ## Compose and open benches — implementation (2026-09-08)
 
 Ian asked for a thorough review to lift the tool's look and feel, including
