@@ -4,8 +4,9 @@ Exploratory geometry and an interactive comparison based on Ian's A–E sketches
 This is not an installed AxiBridge effect. No application source, project state,
 hardware or running server is involved. Coordinates are study units, not mm.
 
-Latest follow-up: `LOOP-STATUS.md` records the small loop sample correction;
-`STRESS.md` records the 156-case sweep. The effect's width treatment is unchanged.
+Latest follow-up: `CREST-STATUS.md` records the phrased crest experiment and its
+independent spacing/height controls. `LOOP-STATUS.md` records the loop sample
+correction; `STRESS.md` records the preceding 156-case sweep of the original mode.
 
 ## What is being compared
 
@@ -21,9 +22,10 @@ strand count naturally makes pinches darker than wide passages. The prototype
 uses a short fixed endpoint taper. Sharp corners now use a local swept-strip
 boundary with a rounded outside turn; see CORNER-STATUS.md for the follow-up.
 
-The profiles include occasional suppressed crests. They do not yet implement
-a developed grammar of correlated phrases, editable anchors, or manual crest
-placement. Those remain design possibilities, not completed features.
+The original mode includes occasional suppressed crests. The new Phrased mode
+groups 3–5 crests with a shared timing motif and one accent, blending toward
+independent events at zero phrase strength. Spacing and height variation are
+separate. Editable anchors and manual crest placement remain future possibilities.
 
 ## Lead reading
 
@@ -72,6 +74,7 @@ The corner/masking follow-up adds `corner-check.cjs`, `masking-check.cjs` and
 Run from the repository root:
 
 ```sh
+node docs/reviews/open-path-ribbon-2026-09-08/crest-check.cjs
 node docs/reviews/open-path-ribbon-2026-09-08/geometry-check.cjs
 node docs/reviews/open-path-ribbon-2026-09-08/corner-check.cjs
 node docs/reviews/open-path-ribbon-2026-09-08/masking-check.cjs

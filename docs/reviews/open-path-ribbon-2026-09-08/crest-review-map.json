@@ -1,0 +1,105 @@
+[
+  {
+    "id": "R01",
+    "seed": 7,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0.75
+  },
+  {
+    "id": "R02",
+    "seed": 7,
+    "shape": "straight",
+    "rhythm": "legacy"
+  },
+  {
+    "id": "R03",
+    "seed": 7,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0
+  },
+  {
+    "id": "R04",
+    "seed": 19,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0.75
+  },
+  {
+    "id": "R05",
+    "seed": 19,
+    "shape": "straight",
+    "rhythm": "legacy"
+  },
+  {
+    "id": "R06",
+    "seed": 19,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0
+  },
+  {
+    "id": "R07",
+    "seed": 43,
+    "shape": "straight",
+    "rhythm": "legacy"
+  },
+  {
+    "id": "R08",
+    "seed": 43,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0
+  },
+  {
+    "id": "R09",
+    "seed": 43,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0.75
+  },
+  {
+    "id": "R10",
+    "seed": 81,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 0.75
+  },
+  {
+    "id": "R11",
+    "seed": 81,
+    "shape": "straight",
+    "rhythm": "legacy"
+  },
+  {
+    "id": "R12",
+    "seed": 81,
+    "shape": "straight",
+    "rhythm": "phrased",
+    "phrasing": 1,
+    "spacingVariation": 0,
+    "heightVariation": 0
+  },
+  {
+    "id": "R13",
+    "seed": 19,
+    "shape": "sCurve",
+    "rhythm": "phrased",
+    "phrasing": 0.75
+  },
+  {
+    "id": "R14",
+    "seed": 43,
+    "shape": "corner",
+    "rhythm": "phrased",
+    "phrasing": 0.75
+  },
+  {
+    "id": "R15",
+    "seed": 7,
+    "shape": "loop",
+    "rhythm": "phrased",
+    "phrasing": 0.75
+  }
+]

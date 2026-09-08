@@ -174,6 +174,78 @@
     }, { knots });
   }
 
+  // A phrase shares a small rhythmic motif, with bounded local departures.
+  // Independent random streams keep height edits from moving crest stations.
+  function crestProfile(total, options) {
+    const opts = Object.assign({}, defaults, options || {});
+    const amount = key => clamp(+(opts[key] ?? opts.variation) || 0, 0, 1);
+    const spacing = amount('spacingVariation'), height = amount('heightVariation');
+    const phrasing = clamp(+(opts.phrasing ?? .7) || 0, 0, 1);
+    const wave = Math.max(1, +opts.wavelength || defaults.wavelength);
+    const seed = (opts.seed >>> 0);
+    const rhythm = rng(seed ^ 0xA341316C), heights = rng(seed ^ 0xC8013EA4);
+    const structure = rng(seed ^ 0xAD90777D);
+    // Use a whole number of lobes, including short paths. Distribute the
+    // terminal remainder across the path instead of chopping the last lobe.
+    const count = Math.max(1, Math.min(4096, Math.round(total / wave)));
+    const motif = Array.from({length: 3}, () => .65 + structure() * .7);
+    const events = [];
+    let phraseLeft = 0, phraseSize = 0, accent = 0, phraseGain = 1, pace = 1;
+    for (let i = 0; i < count; i++) {
+      if (phraseLeft === 0) {
+        phraseSize = 3 + Math.floor(structure() * 3);
+        phraseLeft = phraseSize;
+        accent = Math.floor(structure() * Math.min(phraseSize, count-i));
+        phraseGain = .68 + structure() * .32;
+        pace = .72 + structure() * .56;
+      }
+      const position = phraseSize - phraseLeft--;
+      const localSpan = .4 + rhythm() * 1.2;
+      const phraseSpan = pace * motif[position % motif.length];
+      const span = mix(1, mix(localSpan, phraseSpan, phrasing), spacing);
+      const skew = (rhythm() - .5) * .5 * spacing;
+      const freeHeight = .38 + heights() * .62;
+      const hierarchy = phraseGain * (position === accent ? 1 : .46 + heights() * .3);
+      const peak = mix(.86, mix(freeHeight, hierarchy, phrasing), height);
+      const trough = mix(.21, .07 + heights() * .2, height);
+      events.push({span, skew, peak, trough});
+    }
+    const scale = Math.max(0, total) / events.reduce((sum,e) => sum+e.span, 0);
+    const knots = [{s:0,v:0}];
+    let s = 0;
+    for (let i=0; i<events.length; i++) {
+      const e=events[i], length=e.span*scale;
+      knots.push({s:s+length*(.5+e.skew),v:e.peak});
+      s+=length;
+      knots.push({s:i===events.length-1?total:s,v:i===events.length-1?0:e.trough});
+    }
+    return profileFromKnots(knots);
+  }
+
+  function profileFromKnots(knots) {
+    return Object.assign(function(at) {
+      let lo=0, hi=knots.length-1;
+      while(hi-lo>1) {const mid=(lo+hi)>>1;if(knots[mid].s<at)lo=mid;else hi=mid;}
+      const a=knots[lo], b=knots[hi];
+      return mix(a.v,b.v,smooth(clamp((at-a.s)/(b.s-a.s||1),0,1)));
+    },{knots});
+  }
+
+  function relatedCrests(left, total, opts) {
+    const random=rng((opts.seed>>>0)^0x85EBCA6B);
+    const spacing=clamp(+(opts.spacingVariation??opts.variation)||0,0,1);
+    const height=clamp(+(opts.heightVariation??opts.variation)||0,0,1);
+    // Perturb corresponding stations, never cumulative intervals: the two
+    // sides can answer off-beat without drifting into unrelated rhythms.
+    const knots=left.knots.map((k,i,all)=>{
+      if(i===0||i===all.length-1)return {s:k.s,v:0};
+      const room=Math.min(k.s-all[i-1].s,all[i+1].s-k.s);
+      return {s:k.s+(random()-.5)*.55*spacing*room,
+        v:clamp(k.v*(1+(random()-.5)*.55*height),.035,1)};
+    });
+    return profileFromKnots(knots);
+  }
+
   function taperAt(s, total, taper) {
     const edge = Math.max(1e-9, total * clamp(taper, 0, 0.49));
     return Math.min(1, smooth(clamp(s / edge, 0, 1)), smooth(clamp((total - s) / edge, 0, 1)));
@@ -204,10 +276,14 @@
     const frame = frames(spine);
     const corners = sharpCorners(spine,sampled.ss);
     const leftRandom = rng(opts.seed);
-    const leftProfile = knotProfile(sampled.total, opts, leftRandom);
+    const phrased = opts.rhythm === "phrased";
+    const leftProfile = phrased ? crestProfile(sampled.total, opts) : knotProfile(sampled.total, opts, leftRandom);
     let rightProfile;
     if (opts.relation === "mirrored") rightProfile = leftProfile;
-    else if (opts.relation === "independent") rightProfile = knotProfile(sampled.total, opts, rng((opts.seed >>> 0) ^ 0x9E3779B9));
+    else if (opts.relation === "independent") rightProfile = phrased
+      ? crestProfile(sampled.total, {...opts,seed:(opts.seed>>>0)^0x9E3779B9})
+      : knotProfile(sampled.total, opts, rng((opts.seed >>> 0) ^ 0x9E3779B9));
+    else if (phrased) rightProfile = relatedCrests(leftProfile, sampled.total, opts);
     else {
       const relatedRandom = rng((opts.seed >>> 0) ^ 0x85EBCA6B);
       const guide = leftProfile.knots.slice(1).map(k => ({
@@ -301,7 +377,7 @@
     limitations: ["corner strips use a local union boundary with round outer turns", "no global intersection guarantee", "closed paths bypassed"]
   });
 
-  const api = Object.freeze({ generate, fixtures, profile });
+  const api = Object.freeze({ generate, fixtures, profile, crestProfile });
   root.RibbonStudy = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

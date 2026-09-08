@@ -28,6 +28,17 @@ def run():
         page.locator('#ribbon-next').click()
         assert page.locator('#ribbon-study').get_attribute('data-seed') == '8'
         assert page.locator('.ribbon-ink').first.inner_html() != before
+        for name in ['spacingVariation','heightVariation','phrasing']:
+            before=page.locator('.ribbon-ink').first.inner_html()
+            page.locator('#ribbon-'+name).evaluate('(e)=>{e.value=0;e.dispatchEvent(new Event("input"));}')
+            assert page.locator('.ribbon-ink').first.inner_html()!=before, name
+            page.locator('#ribbon-'+name).evaluate('(e)=>{e.value=75;e.dispatchEvent(new Event("input"));}')
+        page.select_option('#ribbon-rhythm','legacy')
+        assert page.locator('#ribbon-variation').is_visible()
+        assert not page.locator('#ribbon-phrasing').is_visible()
+        page.select_option('#ribbon-rhythm','phrased')
+        assert page.locator('#ribbon-phrasing').is_visible()
+        assert not page.locator('#ribbon-variation').is_visible()
         for shape in ['straight','arch','sCurve','corner','hairpin','loop']:
             page.select_option('#ribbon-shape',shape)
             for width in [24,90]:
