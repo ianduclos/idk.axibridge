@@ -64,3 +64,19 @@ units, and peak heights from .42–.65 to .24–.90. Width remains an outer boun
 second-eye report describe the preceding range, not this follow-up. All 24 crest
 configurations and browser checks passed again; the lead inspected the maximum
 render. Ready for Ian to check.
+
+## Softer steepness changes
+
+Ian requested blending the abrupt shoulders visible in the attached screenshot.
+Phrased profiles now use an exact moving average of the cubic profile, with radius
+5.5% of wavelength (capped at 4% of total length). Integrating the cubics makes
+curvature continuous at the former knot seams. Odd endpoint reflection preserves
+zero endpoint widths. It rounds down narrow peaks slightly and lifts nearby
+troughs; knot positions/heights remain generation targets, not exact samples of
+the filtered outline. Related sides use the same radius. Original mode and corner
+geometry are unchanged. This smoothing also applies to the lower variation range.
+
+`crest-smoothing-check.cjs` passed reduced maximum slopes, continuous curvature
+at knot seams, endpoints and width bounds across four maximum-variation seeds.
+The 24 crest configurations and browser suite passed again. The lead inspected
+the regenerated `crest-maximum.png`; visual acceptance remains with Ian.

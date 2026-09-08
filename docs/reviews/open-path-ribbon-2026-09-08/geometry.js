@@ -227,16 +227,37 @@
       s+=length;
       knots.push({s:i===events.length-1?total:s,v:i===events.length-1?0:e.trough});
     }
-    return profileFromKnots(knots);
+    return profileFromKnots(knots, Math.min(wave*.055,total*.04));
   }
 
-  function profileFromKnots(knots) {
-    return Object.assign(function(at) {
-      let lo=0, hi=knots.length-1;
+  function profileFromKnots(knots, radius=0) {
+    // Average the width profile over a small arc-length neighbourhood. Exact
+    // cubic integration gives continuous curvature across the old knot seams.
+    // Odd reflection at the ends keeps the shared endpoint width exactly zero.
+    const areas=[0];
+    for(let i=1;i<knots.length;i++) {
+      const a=knots[i-1],b=knots[i];
+      areas.push(areas[i-1]+(b.s-a.s)*(a.v+b.v)/2);
+    }
+    const total=knots.at(-1).s;
+    function interval(at) {
+      let lo=0,hi=knots.length-1;
       while(hi-lo>1) {const mid=(lo+hi)>>1;if(knots[mid].s<at)lo=mid;else hi=mid;}
-      const a=knots[lo], b=knots[hi];
+      return lo;
+    }
+    function integral(at) {
+      if(at<0)at=-at;
+      if(at>total)at=2*total-at;
+      const i=interval(at),a=knots[i],b=knots[i+1],len=b.s-a.s;
+      const t=clamp((at-a.s)/(len||1),0,1);
+      return areas[i]+len*(a.v*t+(b.v-a.v)*(t*t*t-.5*t*t*t*t));
+    }
+    return Object.assign(function(at) {
+      at=clamp(at,0,total);
+      if(radius>0)return clamp((integral(at+radius)-integral(at-radius))/(2*radius),0,1);
+      const i=interval(at),a=knots[i],b=knots[i+1];
       return mix(a.v,b.v,smooth(clamp((at-a.s)/(b.s-a.s||1),0,1)));
-    },{knots});
+    },{knots,smoothingRadius:radius});
   }
 
   function relatedCrests(left, total, opts) {
@@ -251,7 +272,7 @@
       return {s:k.s+(random()-.5)*.55*spacing*room,
         v:clamp(k.v*(1+(random()-.5)*.55*height),.035,1)};
     });
-    return profileFromKnots(knots);
+    return profileFromKnots(knots,left.smoothingRadius);
   }
 
   function taperAt(s, total, taper) {
