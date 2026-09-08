@@ -1,3 +1,9 @@
+> Accepted for bounded implementation on 8 September 2026: “ok i like it. go”.
+> Popup default with expansion is selected. Current implementation and deliberate
+> limits are recorded in `../../plans/ui-benches-IMPLEMENTATION.md` and
+> `../../../shots/ui-benches-0908/README.md`; the future API sketches below are
+> design direction, not claims that every proposed service is implemented.
+
 # Compose and open benches — proposal for review
 
 Started 7 September; verification completed 8 September 2026. **Design study, not an accepted architecture or application change.**

@@ -366,7 +366,8 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
         const sum = document.createElement("summary");
         sum.textContent = spec.group;
         det.appendChild(sum);
-        if (opts.stateKey) rememberDetails(det, `group:${opts.stateKey}:${spec.group}`, false);
+        det.open = Boolean(spec.groupOpen);
+        if (opts.stateKey) rememberDetails(det, `group:${opts.stateKey}:${spec.group}`, Boolean(spec.groupOpen));
         groups.set(spec.group, det);
       }
       groups.get(spec.group).appendChild(field);

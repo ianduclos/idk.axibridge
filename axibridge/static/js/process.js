@@ -26,7 +26,10 @@
 
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
+import { homeostatFormSchema } from "./homeostat_bench.js";
 import { renderForm } from "./forms.js";
+import { benchAdapter, benchDescriptor, benchUnavailableReason, registerBenchAdapter } from "./bench_registry.js";
+import { initBenchHost, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from "./bench_host.js";
 import {
   closeSecondReadingBench,
   initSecondReadingBench,
@@ -47,6 +50,10 @@ let axis = null;
 let bounds = [0, 100];
 let playing = null;
 let wired = false;
+let renderedKey = null;
+let telemetry = new Map();
+let telemetryRecipe = null;
+let creating = false;
 //: axis value -> point count, for the telemetry strip. Only ever positions
 //: actually previewed, so the curve is a record of the watch, not a claim.
 let seen = new Map();
@@ -93,7 +100,8 @@ export function initProcessPopup() {
   if (!$("process-popup")) return; // stale cached index.html: degrade silently
   wired = true;
   initSecondReadingBench();
-  $("process-close").onclick = close;
+  initBenchHost();
+  $("process-trace").onchange = drawTelemetry;
   $("process-play").onclick = () => isSecondReadingBenchOpen()
     ? toggleSecondReadingPlay() : (playing ? stop() : play());
   $("process-prev").onclick = () => nudge(-1);
@@ -108,22 +116,19 @@ export function initProcessPopup() {
     renderBenchForm();
     render();
   };
-  // click the backdrop (never the modal itself) to dismiss, same as a scrim
-  $("process-popup").addEventListener("mousedown", (e) => {
-    if (e.target === $("process-popup")) close();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !$("process-popup").hidden) { close(); e.stopPropagation(); }
-  });
+
 }
 
 /** Shared opening tail: the axis's own schema decides the scrub's range and
  *  granularity, so an integer step count steps by 1 and a float axis gets 200
  *  positions across whatever its bounds are. */
+let viewSession = 0;
 function openWith(mod, startValue, title) {
+  viewSession++;
   renderSerial++;
   $("process-canvas").setAttribute("viewBox", "0 0 300 218");
   $("process-canvas").style.aspectRatio = "300 / 218";
+  $("process-canvas").style.setProperty("--process-aspect", String(300 / 218));
   $("process-play").disabled = false;
   const schema = mod.schema?.properties?.[axis] || {};
   bounds = [schema.minimum ?? 0, schema.maximum ?? 100];
@@ -133,8 +138,19 @@ function openWith(mod, startValue, title) {
   scrub.step = String(schema.type === "integer" ? 1 : (bounds[1] - bounds[0]) / 200);
   scrub.value = String(clamp(Number(startValue ?? bounds[0])));
   $("process-title").textContent = title;
-  $("process-popup").hidden = false;
+  const entry = benchSrc ? { ...benchSrc, ...benchHooks } : null;
+  const watchedId = layerId;
+  openBenchShell({ close, reopen: entry ? () => openProcessBench(entry) : () => openProcessPopup(watchedId),
+    origin: benchSrc ? 'New material · creates a new layer' : 'Watch · read-only layer preview' });
   seen = new Map();
+  telemetry = new Map();
+  renderedKey = null;
+  const trace = $('process-trace');
+  trace.replaceChildren(new Option('Point count', 'points'));
+  $('process-values').replaceChildren();
+  $('process-status').textContent = 'Preview pending';
+  $('process-origin').title = axis ? `Time axis: ${axis}` : 'Non-temporal bench';
+  for (const id of ['process-scrub','process-prev','process-next','process-play','process-readout']) $(id).hidden = !axis;
   drawTelemetry();
   return render();
 }
@@ -183,31 +199,45 @@ export function openProcessLayerBench(id) {
  *  hands over its own live object, so every edit made here — including the
  *  scrub, which writes the axis back — is already in the panel when the bench
  *  closes, and ＋ Create layer needs no second copy to reconcile. */
-export async function openProcessBench({ mod, params, onCreate, onReroll, onClose }) {
+export async function openProcessBench(entry) {
   if (!$("process-popup")) return;
-  if (isSecondReadingModule(mod)) {
-    stop();
-    renderSerial++;
-    queued = false;
-    clearTimeout(liveTimer);
-    openSecondReadingBench({
-      mod, params, contextKey: `new:${mod.id}`, onKeep: onCreate, onClose,
-    });
+  const adapter = benchAdapter(entry.mod, 'new');
+  if (!adapter) {
+    $('process-title').textContent = entry.mod.label;
+    openBenchShell({ close, origin: 'Bench unavailable' });
+    setBenchChrome(false);
+    showBenchError(benchUnavailableReason(entry.mod));
     return;
   }
+  stop();
+  renderSerial++;
+  queued = false;
+  clearTimeout(liveTimer);
+  return adapter.open(entry);
+}
+
+async function openGenericBench({ mod, params, onCreate, onReroll, onClose }) {
   closeSecondReadingBench(false);
   axis = moduleAxis(mod);
-  if (!axis) return;
   layerId = null;
   benchSrc = { mod, params };
   benchHooks = { onCreate, onReroll, onClose };
   setBenchChrome(true);
   renderBenchForm();
-  await openWith(mod, params[axis], `${mod.label} — bench`);
+  await openWith(mod, axis ? params[axis] : null, `${mod.label} — bench`);
 }
+registerBenchAdapter('process', 1, { open: openGenericBench });
+registerBenchAdapter('homeostat', 1, { open: entry => openGenericBench({
+  ...entry, mod: { ...entry.mod, schema: homeostatFormSchema(entry.mod.schema) },
+}) });
+registerBenchAdapter('second-reading', 1, { open: ({ mod, params, onCreate, onClose }) => {
+  openSecondReadingBench({ mod, params, contextKey: `new:${mod.id}`, onKeep: onCreate, onClose });
+} });
 
 function setBenchChrome(on) {
   $("process-popup")?.classList.remove("second-reading");
+  $("process-popup")?.classList.toggle("watch-only", !on);
+  $("process-status").hidden = false;
   const special = $("process-second-reading");
   if (special) special.hidden = true;
   for (const id of ["process-params", "process-create"]) {
@@ -234,8 +264,14 @@ function renderBenchForm() {
   const { mod, params } = benchSrc;
   const props = { ...(mod.schema?.properties || {}) };
   delete props[axis];
+  // Source-owned group metadata stays authoritative. Core scalar fields remain
+  // visible; existing advanced groups use the ordinary schema renderer.
   const schema = { ...mod.schema, properties: props };
   const later = () => {
+    renderSerial++;
+    renderedKey = null;
+    $('process-create').disabled = true;
+    $('process-status').textContent = 'Parameters changed · preview pending';
     clearTimeout(liveTimer);
     liveTimer = setTimeout(() => render(), 140);
   };
@@ -243,33 +279,51 @@ function renderBenchForm() {
              { onLive: later, stateKey: `bench:${mod.id}` });
 }
 
+function currentParams() {
+  const cur = currentSource();
+  if (!cur) return null;
+  return axis ? { ...cur.params, [axis]: Number($('process-scrub').value) } : { ...cur.params };
+}
+function currentKey() {
+  return JSON.stringify({ module: currentSource()?.mod?.id, params: currentParams() });
+}
 async function commit() {
-  if (!benchSrc || !benchHooks?.onCreate) return;
+  if (!benchSrc || !benchHooks?.onCreate || creating || renderedKey !== currentKey()) return;
   stop();
-  const params = { ...benchSrc.params, [axis]: Number($("process-scrub").value) };
-  const btn = $("process-create");
-  if (btn) btn.disabled = true;
+  const onCreate = benchHooks.onCreate;
+  const params = JSON.parse(JSON.stringify(currentParams()));
+  const key = currentKey();
+  const ownerSession = viewSession;
+  const btn = $('process-create');
+  creating = true;
+  btn.disabled = true;
+  clearBenchError();
   try {
-    await benchHooks.onCreate(params);
-    close();
+    await onCreate(params);
+    // A completed write cannot be canceled by closing the popup. Never close
+    // a different bench that opened while this command was in flight.
+    if (ownerSession === viewSession && renderedKey === key && !isSecondReadingBenchOpen()) close();
   } catch (e) {
-    actions.oops(e);
+    if (ownerSession === viewSession && !$("process-popup").hidden && renderedKey === key)
+      showBenchError(e); // no automatic retry of an uncertain project write
   } finally {
-    if (btn) btn.disabled = false;
+    creating = false;
+    btn.disabled = renderedKey !== currentKey();
   }
 }
 
 function close() {
+  viewSession++;
   renderSerial++; // orphan a preview reply from the view being closed
   if (isSecondReadingBenchOpen()) {
     closeSecondReadingBench();
-    $("process-popup").hidden = true;
     return;
   }
   stop();
   queued = false;
   clearTimeout(liveTimer);
-  $("process-popup").hidden = true;
+  closeBenchShell();
+  renderedKey = null;
   layerId = null;
   const onClose = benchHooks?.onClose;
   benchSrc = null;
@@ -314,32 +368,41 @@ let pending = false;
 let queued = false;
 let renderSerial = 0;
 async function render() {
-  if (isSecondReadingBenchOpen()) return;
+  if (isSecondReadingBenchOpen() || $('process-popup').hidden) return;
   const cur = currentSource();
-  // the watched layer went away under us (deleted from the layer list while
-  // the popup was open): close rather than return, or a running Play leaves
-  // its 40 ms timer ticking as a silent no-op until someone closes the popup
   if (!cur || !cur.mod) { close(); return; }
+  const serial = ++renderSerial;
+  const value = Number($('process-scrub').value);
+  $('process-readout').textContent = String(value);
+  if (benchSrc && axis) benchSrc.params[axis] = value;
+  renderedKey = null;
+  $('process-create').disabled = true;
+  $('process-status').textContent = 'Resolving · previous preview may be shown';
   if (pending) { queued = true; return; }
-  const value = Number($("process-scrub").value);
-  $("process-readout").textContent = String(value);
-  // bench mode: the scrub IS the axis field, so write it back — the panel form
-  // and ＋ Create layer both read this object
-  if (benchSrc) benchSrc.params[axis] = value;
   pending = true;
-  const serial = renderSerial;
+  const params = JSON.parse(JSON.stringify(currentParams()));
+  const base = { ...params }; delete base[axis];
+  const runKey = JSON.stringify({ module: cur.mod.id, params: base });
+  if (runKey !== telemetryRecipe) { seen.clear(); telemetry.clear(); telemetryRecipe = runKey; }
+  const key = JSON.stringify({ module: cur.mod.id, params });
+  clearBenchError();
   try {
-    const params = { ...cur.params, [axis]: value };
-    const out = await api.post("/api/generators/preview",
-                               { module: cur.mod.id, params });
-    if (serial === renderSerial && !$("process-popup").hidden && !isSecondReadingBenchOpen()) {
+    const out = await api.post('/api/generators/preview', { module: cur.mod.id, params });
+    if (serial === renderSerial && !$("process-popup").hidden && !isSecondReadingBenchOpen() && key === currentKey()) {
       draw(out.lines || []);
+      renderedKey = key;
+      $('process-status').textContent = axis ? `Preview current · ${axis} ${value}` : 'Preview current';
+      $('process-create').disabled = creating;
       seen.set(value, out.points || 0);
+      recordTelemetry(value, out.process?.telemetry || {});
       drawTelemetry();
     }
   } catch (e) {
-    stop();
-    actions.oops(e);
+    if (serial === renderSerial && !$("process-popup").hidden && !isSecondReadingBenchOpen()) {
+      stop();
+      $('process-status').textContent = 'Preview unavailable · previous drawing may be shown';
+      showBenchError(e, render);
+    }
   } finally {
     pending = false;
   }
@@ -362,23 +425,51 @@ function draw(lines) {
 // process that is still growing climbs, one that has converged flattens, and
 // that difference is the thing you open this popup to see. Costs no extra
 // request — every reply already carries its own point count.
+function recordTelemetry(value, data) {
+  const numeric = Object.fromEntries(Object.entries(data).filter(([,v]) => typeof v === 'number' && Number.isFinite(v)));
+  telemetry.set(value, numeric);
+  const select = $('process-trace');
+  const previous = select.value;
+  const keys = [...new Set([...telemetry.values()].flatMap(x => Object.keys(x)))];
+  select.replaceChildren(new Option('Point count', 'points'));
+  keys.forEach(key => select.add(new Option(key.replaceAll('_', ' '), key)));
+  select.value = keys.includes(previous) || previous === 'points' ? previous : 'points';
+  const values = $('process-values'); values.replaceChildren();
+  for (const [key, value] of Object.entries(numeric)) {
+    const dt = document.createElement('dt'); dt.textContent = key.replaceAll('_', ' ');
+    const dd = document.createElement('dd'); dd.textContent = Number(value.toFixed(3)).toString();
+    values.append(dt, dd);
+  }
+}
 function drawTelemetry() {
-  const svg = $("process-telemetry");
+  const svg = $('process-telemetry');
   if (!svg) return;
   svg.replaceChildren();
+  const metric = $('process-trace').value;
+  const samples = metric === 'points' ? [...seen] : [...telemetry].filter(([,v]) => metric in v).map(([x,v]) => [x,v[metric]]);
+  samples.sort((a,b) => a[0]-b[0]);
   const span = bounds[1] - bounds[0] || 1;
-  const xs = [...seen.keys()].sort((a, b) => a - b);
-  const peak = Math.max(1, ...seen.values());
-  if (xs.length > 1) {
-    const el = document.createElementNS(NS, "polyline");
-    el.setAttribute("points", xs.map((v) =>
-      `${((v - bounds[0]) / span) * 300},${60 - (seen.get(v) / peak) * 58}`).join(" "));
+  const low = Math.min(0,...samples.map(([,v])=>v));
+  const high = Math.max(1,...samples.map(([,v])=>v));
+  const y = v => 58 - (v-low)/(high-low)*56;
+  const cur = currentSource();
+  // A band is meaningful only for the source's measured variable; no generic
+  // target or quality judgement is inferred for unrelated telemetry.
+  if (metric === 'variable' && typeof cur?.params.target === 'number' && typeof cur?.params.tolerance === 'number') {
+    const band = document.createElementNS(NS,'rect');
+    band.setAttribute('x','0'); band.setAttribute('width','300');
+    const hi = Math.min(high,cur.params.target+cur.params.tolerance), lo = Math.max(low,cur.params.target-cur.params.tolerance);
+    band.setAttribute('y',String(y(hi))); band.setAttribute('height',String(Math.max(0,y(lo)-y(hi))));
+    band.setAttribute('fill','var(--flexoki-green-950)'); svg.appendChild(band);
+  }
+  if (samples.length) {
+    const el = document.createElementNS(NS,'polyline');
+    el.setAttribute('points',samples.map(([v,n])=>`${((v-bounds[0])/span)*300},${y(n)}`).join(' '));
     svg.appendChild(el);
   }
-  const here = Number($("process-scrub").value);
-  const x = ((here - bounds[0]) / span) * 300;
-  const cursor = document.createElementNS(NS, "line");
-  cursor.setAttribute("x1", String(x)); cursor.setAttribute("x2", String(x));
-  cursor.setAttribute("y1", "0"); cursor.setAttribute("y2", "60");
+  const x = ((Number($('process-scrub').value)-bounds[0])/span)*300;
+  const cursor = document.createElementNS(NS,'line');
+  for (const [k,v] of Object.entries({x1:x,x2:x,y1:0,y2:60})) cursor.setAttribute(k,String(v));
   svg.appendChild(cursor);
+  $('process-telemetry-note').textContent = `${metric.replaceAll('_',' ')} · ${samples.length} observed preview samples · range ${low.toFixed(2)}–${high.toFixed(2)}. Unvisited steps are not measured here.`;
 }

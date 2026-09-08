@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/favicon.png">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/css/benches.css">
 </head>
 <body>
 <!-- pywebview-drag-region: with DRAG_REGION_DIRECT_TARGET_ONLY only the bar's
@@ -113,6 +114,7 @@
   <!-- A readout, not a control. It was an editable field, which made it the
        only form control in the chrome bar; renaming now happens where the
        rest of the file actions are, File > Save As. -->
+  <button id="bench-return" hidden>Return to bench</button>
   <span id="project-name" class="project-name readout">untitled</span>
   <div id="status-pill" class="pill">connecting…</div>
   <div id="estimate" class="estimate"></div>
@@ -385,45 +387,57 @@
      Bench mode (opened from the Generate panel) adds the generator's params
      and one write: creating a NEW layer at the step on screen, through the
      same call the panel's own button makes. process.js owns every control. -->
-<div id="process-popup" class="modal-backdrop" hidden>
+<div id="process-popup" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="process-title" hidden>
   <div class="preview-modal">
     <div class="preview-head">
-      <h2 id="process-title">Process</h2>
+      <div><h2 id="process-title">Process</h2><p id="process-origin" class="hint"></p></div>
+      <button id="process-controls-toggle" aria-expanded="false" aria-controls="bench-controls">Controls</button>
+      <button id="process-expand" aria-pressed="false">Expand</button>
       <button id="process-close">Close</button>
     </div>
-    <!-- bench mode puts the generator's own auto-form beside the stage; watch
-         mode hides it and the stage takes the width. process.js owns both. -->
-    <div class="process-body">
-      <div id="process-params" class="form" hidden></div>
-      <div class="preview-stage">
-        <svg id="process-canvas" viewBox="0 0 300 218" preserveAspectRatio="xMidYMid meet"></svg>
-      </div>
-    </div>
-    <!-- A score-editing bench, enabled only by a module descriptor carrying
-         both `intervene` and `branch`. Its branch state is app-memory only;
-         #process-recipe is the exact selected recipe used by Preview/Keep. -->
-    <div id="process-second-reading" hidden>
-      <div class="process-state-row">
+    <div class="bench-layout">
+      <div class="bench-main">
+        <div class="second-only"><div class="process-state-row">
         <span id="process-working-state" class="process-state working">Working</span>
         <span id="process-kept-state" class="process-state kept" hidden>Kept</span>
         <strong id="process-turn-label">Turn 0</strong>
         <span id="process-point-count" class="hint">0 points</span>
         <span id="process-preview-state" class="hint">waiting</span>
-      </div>
-      <div class="process-branch-row">
-        <label for="process-branch-select">reading</label>
-        <select id="process-branch-select"></select>
-        <button id="process-undo" title="undo inside this working bench">Undo</button>
-        <button id="process-redo" title="redo inside this working bench">Redo</button>
-      </div>
-      <div class="process-state-row">
+      </div></div>
+        <div id="process-status" class="hint" aria-live="polite">Preview pending</div>
+        <div class="process-body"><div class="preview-stage">
+          <svg id="process-canvas" viewBox="0 0 300 218" preserveAspectRatio="xMidYMid meet" aria-label="Working drawing"></svg>
+          <svg id="process-reference" preserveAspectRatio="xMidYMid meet" aria-label="Pinned reference drawing" hidden></svg>
+        </div></div>
+        <div id="process-error" role="alert" hidden><span id="process-error-message"></span><button id="process-retry">Retry preview</button></div>
+        <div class="bench-transport">
+          <button id="process-play">Play</button>
+          <div class="second-only"><div class="process-state-row">
         <label for="process-turn-scrub">Turn</label>
         <input id="process-turn-scrub" type="range" min="0" max="64" step="1" value="12"
                title="inspect any turn; revising an earlier turn preserves this reading as an alternative">
-        <span class="hint">Unkept readings last for this app session.</span>
+        <span class="hint">Unkept alternatives: memory only; lost on reload.</span>
+      </div></div>
+          <button id="process-prev">← Step</button><button id="process-next">Step →</button>
+          <input id="process-scrub" type="range" min="0" max="100" step="1" value="0" aria-label="Process axis">
+          <span id="process-readout" class="hint">0</span>
+        </div>
+        <div class="second-only"><div class="process-action-row">
+        <button id="process-continue" class="primary">Continue one turn</button>
+        <button id="process-your-turn"
+                title="draw a stroke; light smoothing keeps deliberate corners">Your turn</button>
+        <button id="process-try-another"
+                title="keep this reading and begin another from the next turn">Try another</button>
+        <button id="process-keep" class="primary">Keep as layer</button>
+      </div></div>
+        <div class="process-generic-actions"><button id="process-reroll" hidden>Reroll</button><button id="process-create" class="primary" hidden>＋ Create layer</button></div>
       </div>
-      <div class="process-controls">
-        <label title="Responsive and Relation readings use the experimental response controls.">Reading <select id="process-reading"><option value="responsive">Responsive</option><option value="first">First response policy</option><option value="shapes">Shape experiment</option><option value="relations">Relation experiment</option><option value="encounters">Encounters · previous</option></select></label>
+      <aside id="bench-controls">
+        <div id="process-params" class="form" hidden></div>
+        <div id="process-second-reading" hidden>
+
+      <details open id="process-next-controls"><summary>Next turn</summary><div class="process-controls">
+        <label title="Responsive and Relation readings use the experimental response controls.">Response mode <select id="process-reading"><option value="responsive">Responsive</option><option value="first">First response policy</option><option value="shapes">Shape experiment</option><option value="relations">Relation experiment</option><option value="encounters">Encounters · previous</option></select></label>
         <label>persistence
           <input id="process-persistence" type="range" min="0" max="1" step="0.01">
           <output id="process-persistence-value">0.50</output>
@@ -439,18 +453,18 @@
         <label hidden>Attention<input id="process-attention" type="range" min="0" max="1" step="0.01"><output id="process-attention-value">0.50</output></label>
         <label hidden>Departure<input id="process-departure" type="range" min="0" max="1" step="0.01"><output id="process-departure-value">0.50</output></label>
         <label hidden>Scale<input id="process-scale" type="range" min="0" max="1" step="0.01"><output id="process-scale-value">0.50</output></label>
-        <label>Pen smoothing<input id="process-pen-smoothing" type="range" min="0" max="1" step="0.01" value="0.6" title="Applies to the next captured stroke. Existing strokes keep the smoothing recorded with them."><output id="process-pen-smoothing-value">0.60</output></label>
+
         <span id="process-next-turn-note" class="hint">controls at turn 0</span>
-      </div>
-      <div class="process-action-row">
-        <button id="process-continue" class="primary">Continue one turn</button>
-        <button id="process-your-turn"
-                title="draw a stroke; light smoothing keeps deliberate corners">Your turn</button>
-        <button id="process-try-another"
-                title="keep this reading and begin another from the next turn">Try another</button>
-        <button id="process-keep" class="primary">Keep as layer</button>
-      </div>
-      <div class="process-reset-row">
+      </div><button id="process-discard-pending" hidden>Discard queued changes</button></details>      <details open id="process-alternatives"><summary>Alternatives</summary><div class="process-branch-row">
+        <label for="process-branch-select">Alternative</label>
+        <select id="process-branch-select"></select>
+        <button id="process-undo" title="undo inside this working bench">Undo</button>
+        <button id="process-redo" title="redo inside this working bench">Redo</button>
+      </div><button id="process-pin-reference">Pin current reference</button><button id="process-compare" disabled>Compare</button><p id="process-comparison-note" class="hint">Pin a reading, then inspect another at the same frame scale.</p></details>
+
+<details id="process-pen-controls"><summary>Your pen</summary><div class="process-controls"><label>Pen smoothing<input id="process-pen-smoothing" type="range" min="0" max="1" step="0.01" value="0.6" title="Applies to the next captured stroke. Existing strokes keep the smoothing recorded with them."><output id="process-pen-smoothing-value">0.60</output></label></div></details>
+
+      <details id="process-new-controls"><summary>New drawing</summary><div class="process-reset-row">
         <span class="hint">new drawing</span>
         <label>Boundary <select id="process-boundary"><option value="clip">Clip</option><option value="contain">Turn inside</option><option value="fit">Overshoot + fit element</option></select></label>
         <span id="process-boundary-note" class="hint"></span>
@@ -460,7 +474,7 @@
         <button id="process-randomize-seed" title="Choose a different seed for the next new drawing">Randomize</button>
         <button id="process-new-drawing"
                 title="apply seed and size, clear every event, and return to turn 0">New drawing</button>
-      </div>
+      </div></details>
       <details id="process-how-it-works">
         <summary>How it works</summary>
         <p>Controls queue for the next turn. Attention changes how widely a response looks across the drawing; Departure changes how far it moves away. Scale controls the length of new extensions and breadth of connections; copied motifs keep their original size relationship. Pen smoothing is saved with each new stroke. Boundary, size, and seed are selected for a new drawing; press New drawing to apply them.</p>
@@ -475,25 +489,15 @@
         <output id="process-recipe" hidden></output>
       </details>
     </div>
-    <div class="row">
-      <button id="process-play" class="primary">Play</button>
-      <button id="process-prev">← Step</button>
-      <button id="process-next">Step →</button>
-      <input id="process-scrub" type="range" min="0" max="100" step="1" value="0"
-             title="scrub the generator's time axis — preview only, the project is not touched">
-      <span id="process-readout" class="hint">0</span>
-      <button id="process-reroll" hidden
-              title="new random seed — same params, a different run of the same process">Reroll</button>
-      <button id="process-create" class="primary" hidden
-              title="create a layer from these params, stopped at the step on screen">＋ Create layer</button>
+        <details id="process-telemetry-row" open><summary>Telemetry</summary>
+          <label for="process-trace">Trace</label><select id="process-trace"><option value="points">Point count</option></select>
+          <svg id="process-telemetry" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
+          <p id="process-telemetry-note" class="hint">Observed preview samples only.</p>
+          <dl id="process-values" class="kv"></dl>
+        </details>
+      </aside>
     </div>
-    <div class="row" id="process-telemetry-row">
-      <!-- Points-so-far against the axis: the growth curve of whatever has
-           actually been previewed. Filled in from the same replies that draw
-           the canvas, so it costs no extra request. -->
-      <svg id="process-telemetry" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
-      <span class="hint">points against the axis</span>
-    </div>
+    <div class="bench-machine"><span class="hint">Bench previews do not plot. Return to Compose to plot a kept layer.</span><button id="process-stop" class="danger" disabled>Stop plot</button></div>
   </div>
 </div>
 

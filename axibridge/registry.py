@@ -147,6 +147,10 @@ class SourceModule(ABC):
     #: guessed at. Modules that already have a ``frame`` field need not
     #: declare anything — see ``effective_time_axis``.
     time_axis: str | None = None
+    #: Optional UI bench declaration.  This is independent of ``time_axis``:
+    #: an adapter may edit something other than a temporal process.  Catalogue
+    #: output validates and copies it before exposing it to the frontend.
+    bench: dict[str, Any] | None = None
     bench_capabilities: tuple[str, ...] = ()
 
     @abstractmethod
@@ -164,6 +168,43 @@ def effective_time_axis(src: Any) -> str | None:
     if axis and axis in fields:
         return axis
     return "frame" if "frame" in fields else None
+
+
+_BENCH_MODES = {"new", "watch", "resume"}
+
+
+def effective_bench(src: Any) -> dict[str, Any] | None:
+    """Validated bench descriptor, including compatibility for older sources.
+
+    Adapter names are deliberately open: the server transports an unfamiliar
+    name unchanged so the frontend can explain that it has no matching UI.
+    """
+    declared = getattr(src, "bench", None)
+    if declared is None:
+        capabilities = set(getattr(src, "bench_capabilities", ()))
+        if {"intervene", "branch"}.issubset(capabilities):
+            declared = {"adapter": "second-reading", "version": 1,
+                        "modes": ["new", "resume"]}
+        elif effective_time_axis(src) is not None:
+            declared = {"adapter": "process", "version": 1,
+                        "modes": ["new", "watch"]}
+        else:
+            return None
+
+    if not isinstance(declared, dict):
+        raise ValueError(f"{src.id}: bench must be a descriptor object")
+    adapter = declared.get("adapter")
+    version = declared.get("version")
+    modes = declared.get("modes")
+    if not isinstance(adapter, str) or not adapter.strip():
+        raise ValueError(f"{src.id}: bench adapter must be a nonempty string")
+    if isinstance(version, bool) or not isinstance(version, int) or version <= 0:
+        raise ValueError(f"{src.id}: bench version must be a positive integer")
+    if not isinstance(modes, list) or any(not isinstance(mode, str) or mode not in _BENCH_MODES for mode in modes):
+        raise ValueError(
+            f"{src.id}: bench modes must be a list containing only new, watch, or resume"
+        )
+    return {"adapter": adapter, "version": version, "modes": list(modes)}
 
 
 def fold_time_axis(src: Any, params: dict[str, Any], shift: float) -> dict[str, Any]:
@@ -354,6 +395,7 @@ def describe_modules() -> dict[str, list[dict[str, Any]]]:
             d["category"] = inst.category
         if kind == "source":
             d["time_axis"] = effective_time_axis(inst)
+            d["bench"] = effective_bench(inst)
             d["bench_capabilities"] = list(inst.bench_capabilities)
         return d
 

@@ -788,7 +788,7 @@ function setToolMode(mode) {
     e.preventDefault();
     rz.setPointerCapture(e.pointerId);
     const onMove = (ev) => {
-      const w = Math.min(Math.max(window.innerWidth - ev.clientX, 340), window.innerWidth * 0.7);
+      const w = Math.min(Math.max(window.innerWidth - ev.clientX, 260), window.innerWidth * 0.7);
       document.documentElement.style.setProperty("--sidebar-w", `${Math.round(w)}px`);
     };
     rz.addEventListener("pointermove", onMove);

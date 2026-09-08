@@ -6,6 +6,14 @@
 
 import { api } from "./api.js";
 import { actions } from "./main.js";
+import {
+  benchProjectEpoch,
+  clearBenchError,
+  closeBenchShell,
+  openBenchShell,
+  showBenchError,
+} from "./bench_host.js";
+import { benchDescriptor } from "./bench_registry.js";
 
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
@@ -29,8 +37,8 @@ const copy = (v) => JSON.parse(JSON.stringify(v));
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 export function isSecondReadingModule(mod) {
-  const caps = new Set(mod?.bench_capabilities || []);
-  return caps.has("intervene") && caps.has("branch");
+  const descriptor = benchDescriptor(mod);
+  return descriptor?.adapter === "second-reading" && descriptor.version === 1;
 }
 
 export function isSecondReadingBenchOpen() {
@@ -204,6 +212,9 @@ export function initSecondReadingBench() {
   $("process-undo").onclick = undo;
   $("process-redo").onclick = redo;
   $("process-keep").onclick = keep;
+  $("process-pin-reference").onclick = pinReference;
+  $("process-compare").onclick = toggleComparison;
+  $("process-discard-pending").onclick = discardPendingControls;
   $("process-new-drawing").onclick = newDrawing;
   $("process-randomize-seed").onclick = randomizePendingSeed;
   for (const id of ["process-boundary", "process-width", "process-height", "process-seed"]) {
@@ -260,6 +271,7 @@ export function initSecondReadingBench() {
       e.stopImmediatePropagation();
     }
   }, true);
+  document.addEventListener("bench-project-reset", () => drafts.clear());
 }
 
 function freshBranch(params, id = "branch-1", label = "Reading 1") {
@@ -281,9 +293,10 @@ function lastStrokeSmoothing(b) {
 }
 
 export function openSecondReadingBench({ mod, params, contextKey, onKeep, onClose }) {
+  const original = { mod, params, contextKey, onKeep, onClose };
   initSecondReadingBench();
   closeSecondReadingBench(false);
-  const key = contextKey || `new:${mod.id}`;
+  const key = `${benchProjectEpoch()}:${contextKey || `new:${mod.id}`}`;
   let draft = drafts.get(key);
   if (!draft) {
     const first = freshBranch(params);
@@ -297,6 +310,17 @@ export function openSecondReadingBench({ mod, params, contextKey, onKeep, onClos
   $("process-popup").hidden = false;
   $("process-title").textContent = `${mod.label} — working bench`;
   setSpecialChrome(true);
+  openBenchShell({
+    close: () => closeSecondReadingBench(),
+    cancelGesture: () => {
+      if (!capture) return false;
+      cancelCapture();
+      return true;
+    },
+    reopen: () => openSecondReadingBench(original),
+    origin: contextKey?.startsWith("layer:")
+      ? "From kept layer · new working draft" : "New material · working draft",
+  });
   renderChrome();
   requestPreview();
 }
@@ -313,9 +337,16 @@ export function closeSecondReadingBench(notify = true) {
   $("process-popup")?.classList.remove("second-reading");
   setSpecialChrome(false);
   if (notify && closing.onClose) closing.onClose();
+  if (notify) closeBenchShell();
 }
 
 function setSpecialChrome(on) {
+  $('process-status').hidden = on;
+  if (on) $('process-popup').classList.remove('watch-only');
+  if (!on) {
+    $('process-reference').setAttribute('hidden', '');
+    $('process-canvas').closest('.preview-stage').classList.remove('comparing');
+  }
   const special = $("process-second-reading");
   if (special) special.hidden = !on;
   for (const id of ["process-params", "process-create", "process-reroll",
@@ -360,6 +391,7 @@ function renderChrome() {
   }
   $("process-next-turn-note").textContent = controlsChanged(b)
     ? `control change queued for turn ${Math.min(64, b.turn + 1)}` : `controls at turn ${b.turn}`;
+  $("process-discard-pending").hidden = !controlsChanged(b);
 
   const select = $("process-branch-select");
   select.replaceChildren();
@@ -387,6 +419,15 @@ function renderChrome() {
     ? "wait until this exact working recipe is on screen" : "keep the drawing on screen as an ordinary layer";
   $("process-play").disabled = !playTimer && (atEnd || b.awaiting);
   $("process-play").textContent = playTimer ? "Pause" : "Play";
+  const reference = active.draft.reference;
+  $("process-pin-reference").disabled = b.awaiting || Boolean(capture) || b.renderedKey !== recipeKey(b);
+  $("process-compare").disabled = !reference;
+  $("process-compare").setAttribute("aria-pressed", String(Boolean(active.draft.comparing)));
+  $("process-compare").textContent = active.draft.comparing ? "Stop comparing" : "Compare";
+  $("process-comparison-note").textContent = reference
+    ? (active.draft.comparing ? `Left: working turn ${recipe(b).turns}. Right: pinned turn ${reference.recipe.turns}. Same frame scale.`
+      : "Reference pinned. Compare it with the working drawing.")
+    : "Pin a reading, then inspect another at the same frame scale.";
   $("process-pen-smoothing").value = String(b.penSmoothing ?? lastStrokeSmoothing(b));
   updateReadout("process-pen-smoothing", b.penSmoothing ?? lastStrokeSmoothing(b));
   renderNewDrawingState();
@@ -434,6 +475,37 @@ function renderNewDrawingState() {
 function syncExternal() {
   const b = branch();
   if (active?.external && b) Object.assign(active.external, recipe(b));
+}
+
+function discardPendingControls() {
+  const b = branch();
+  if (!b || !controlsChanged(b)) return;
+  remember();
+  b.staged = effectiveControls(b);
+  renderChrome();
+}
+
+function pinReference() {
+  const b = branch();
+  if (!active || !b || b.awaiting || b.renderedKey !== recipeKey(b)) return;
+  active.draft.reference = { output: copy(b.rendered), recipe: recipe(b) };
+  active.draft.comparing = false;
+  renderComparison();
+  renderChrome();
+}
+
+function toggleComparison() {
+  if (!active?.draft.reference) return;
+  cancelCapture();
+  active.draft.comparing = !active.draft.comparing;
+  renderComparison();
+  renderChrome();
+}
+
+function stopComparison() {
+  if (!active?.draft.comparing) return;
+  active.draft.comparing = false;
+  renderComparison();
 }
 
 export function toggleSecondReadingPlay() {
@@ -536,7 +608,14 @@ async function keep() {
     const kept = $("process-kept-state");
     kept.hidden = false;
     kept.textContent = `Kept · ${b.kept}`;
-  } catch (e) { actions.oops(e); }
+    clearBenchError();
+  } catch (e) {
+    if (active === owner && branch() === b && recipeKey(b) === key) {
+      // A lost write response may have created the layer. Do not present a
+      // preview-style automatic retry for a potentially completed mutation.
+      showBenchError(e);
+    }
+  }
   finally { owner.keeping = false; if (active) renderChrome(); }
 }
 
@@ -568,6 +647,7 @@ function armCapture() {
   if (!b || b.turn >= 64 || b.awaiting) return;
   stopSecondReadingPlay();
   cancelCapture();
+  stopComparison();
   capture = { armed: true, pointerId: null, points: [], line: null };
   $("process-your-turn").classList.add("on");
   $("process-your-turn").textContent = "Draw on the paper";
@@ -677,6 +757,7 @@ async function requestPreview() {
   const key = JSON.stringify(exact);
   b.awaiting = true;
   b.renderedKey = null;
+  clearBenchError();
   renderChrome();
   try {
     const out = await api.post("/api/generators/preview", { module: active.mod.id, params: copy(exact) });
@@ -684,12 +765,15 @@ async function requestPreview() {
     b.awaiting = false;
     b.renderedKey = key;
     b.rendered = out;
+    clearBenchError();
     drawPreview(out);
     renderProcessDetails(out.process || null);
   } catch (e) {
     if (!active || serial !== openSerial || active.draft.active !== branchId) return;
     b.awaiting = false;
-    actions.oops(e);
+    showBenchError(e, () => {
+      if (active && active.draft.active === branchId && recipeKey(branch()) === key) requestPreview();
+    });
   } finally {
     if (active && serial === openSerial && active.draft.active === branchId) renderChrome();
   }
@@ -698,16 +782,27 @@ async function requestPreview() {
 function drawPreview(out) {
   const svg = $("process-canvas");
   const b = branch();
-  const width = Number(out.width ?? b.params.width ?? 280);
-  const height = Number(out.height ?? b.params.height ?? 198);
-  const frame = out.process?.work_frame || [0, 0, width, height];
+  drawOutput(svg, out, recipe(b), false);
+  renderComparison();
+}
+
+function outputFrame(out, sourceRecipe) {
+  const width = Number(out.width ?? sourceRecipe.width ?? 280);
+  const height = Number(out.height ?? sourceRecipe.height ?? 198);
+  return out.process?.work_frame || [0, 0, width, height];
+}
+
+function drawOutput(svg, out, sourceRecipe, sharedFrame) {
+  const width = Number(out.width ?? sourceRecipe.width ?? 280);
+  const height = Number(out.height ?? sourceRecipe.height ?? 198);
+  const frame = sharedFrame || outputFrame(out, sourceRecipe);
   const [scale, dx, dy] = out.process?.element_transform || [1, 0, 0];
   svg.setAttribute("viewBox", frame.join(" "));
-  svg.dataset.renderedRecipe = JSON.stringify(recipe(b));
+  svg.dataset.renderedRecipe = JSON.stringify(sourceRecipe);
   svg.style.aspectRatio = `${frame[2]} / ${frame[3]}`;
   svg.style.setProperty("--process-aspect", String(frame[2] / frame[3]));
   svg.replaceChildren();
-  if (b.params.boundary === "fit") {
+  if (sourceRecipe.boundary === "fit") {
     const sheet = document.createElementNS(NS, "rect");
     sheet.setAttribute("class", "process-nominal-sheet");
     sheet.setAttribute("x", "0"); sheet.setAttribute("y", "0");
@@ -721,6 +816,36 @@ function drawPreview(out) {
     el.setAttribute("class", "draw-line");
     svg.appendChild(el);
   }
+}
+
+function unionFrame(a, b) {
+  const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]);
+  const right = Math.max(a[0] + a[2], b[0] + b[2]);
+  const bottom = Math.max(a[1] + a[3], b[1] + b[3]);
+  return [x, y, right - x, bottom - y];
+}
+
+function renderComparison() {
+  const stage = $("process-canvas")?.closest(".preview-stage");
+  const referenceSvg = $("process-reference");
+  const b = branch();
+  const reference = active?.draft.reference;
+  const comparing = Boolean(active?.draft.comparing && reference && b?.rendered
+    && b.renderedKey === recipeKey(b));
+  stage?.classList.toggle("comparing", comparing);
+  referenceSvg.toggleAttribute('hidden', !comparing);
+  if (!comparing) {
+    referenceSvg.replaceChildren();
+    if (b?.rendered && b.renderedKey === recipeKey(b)) drawOutput($("process-canvas"), b.rendered, recipe(b), false);
+    return;
+  }
+  const currentRecipe = recipe(b);
+  const frame = unionFrame(
+    outputFrame(b.rendered, currentRecipe),
+    outputFrame(reference.output, reference.recipe),
+  );
+  drawOutput($("process-canvas"), b.rendered, currentRecipe, frame);
+  drawOutput(referenceSvg, reference.output, reference.recipe, frame);
 }
 
 function renderProcessDetails(process) {

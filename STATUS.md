@@ -3,32 +3,28 @@ project: idk.axibridge
 state: active
 updated: 2026-09-08
 machine: mac+pi
-summary: Compose and bench mockups plus an open architecture proposal are ready for owner review; application implementation is not approved.
+summary: Approved Compose and expandable popup benches are implemented locally and ready for owner checks.
 next:
-  - "Review docs/design/ui-benches-2026-09-07/index.html and PROPOSAL.md; popup default with expansion is accepted; confirm Compose hierarchy"
-  - "Review remaining reorganisation with Ian before implementation; popup default with expansion is accepted"
-  - "Ian to judge the cosmetics in the native app and continue Second Reading's alternating-use and paper review"
+  - "Check the implemented popup, expansion, compact controls and comparison in the native app"
+  - "Continue Second Reading alternating-use and paper review"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
 
-**Session 2026-09-07–08: Compose and open benches design study, ready for Ian to check.**
+**Session 2026-09-08: approved Compose and benches implementation.**
 
-[Interactive mockups](docs/design/ui-benches-2026-09-07/index.html) cover Compose,
-Second Reading and Homeostat at desktop, 900px and 700px, including workspace
-and expandable-popup options. [Architecture proposal](docs/design/ui-benches-2026-09-07/PROPOSAL.md)
-separates bench identity, lifecycle/presentation, specialised adapters, explicit
-application operations and state/history. It records current compatibility
-constraints and a bounded implementation sequence. D1 is accepted: popup by default, with expansion preserving working state.
-D2–D4 remain proposals.
+Ian approved the mockups and architecture direction (“ok i like it. go”).
+Implemented popup default with expansion, compact control shelves, explicit
+selected-source scope, persistent expandable layers, versioned bench descriptors,
+local error/focus lifecycle, Second Reading comparison, and Homeostat grouped
+controls with observed telemetry. Same-page drafts and explicit Keep/Create remain.
 
-Fifteen browser layout combinations and the mocked interaction flow were checked;
-[verification and captures](docs/design/ui-benches-2026-09-07/VERIFICATION.md).
-Real generator fixtures, illustrative telemetry, no live project or hardware.
-Application suite/build/typecheck were not rerun for this documentation-only study;
-application sources are unchanged. Native feel and layout acceptance remain with Ian.
-
+[Implementation evidence and limits](shots/ui-benches-0908/README.md).
+Full hardware-free suite: **1,285 passed**, including 107 browser tests;
+build/typecheck and isolated source-only smoke passed.
+Native feel and physical output remain for Ian to check. No push, hardware action
+or running-app restart. Recovery and richer application services remain deferred.
 
 **Session 2026-09-07: design interview complete; fresh-session handoff saved.**
 

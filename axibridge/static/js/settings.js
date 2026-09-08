@@ -1,3 +1,4 @@
+import { resetBenchProject } from "./bench_host.js";
 // Settings tab: machine-level configuration (estimator calibration, holder
 // vector, projects root, host/port) and project file operations
 // (new / load / export / import). The paper guide size lives here too since
@@ -190,6 +191,7 @@ export function initSettingsTab() {
     if (!confirm("Start a new empty project? Unsaved changes are lost.")) return;
     try {
       await api.post("/api/project/new");
+      resetBenchProject();
       await actions.refreshAll();
     } catch (e) { actions.oops(e); }
   };
@@ -198,6 +200,7 @@ export function initSettingsTab() {
     if (!name) return;
     try {
       await api.post("/api/project/load", { name });
+      resetBenchProject();
       await actions.refreshAll();
       actions.log(`loaded project: ${name}`);
     } catch (e) { actions.oops(e); }
@@ -210,6 +213,7 @@ export function initSettingsTab() {
     fd.append("file", file);
     try {
       await api.upload("/api/project/import", fd);
+      resetBenchProject();
       await actions.refreshAll();
       actions.log(`imported: ${file.name}`);
     } catch (err) { actions.oops(err); }

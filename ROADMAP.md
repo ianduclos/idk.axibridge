@@ -14,7 +14,7 @@ Cohen-line direction, plus how the involved ones should meet the UI) live in
 Shipped work has been pruned from this file (2026-08-17) — see `git log` /
 `STATUS.md` for what landed and when. This file tracks what's still open.
 
-## Next design — Compose and an open bench architecture (2026-09-07)
+## Compose and open benches — implementation (2026-09-08)
 
 Ian asked for a thorough review to lift the tool's look and feel, including
 surface and architectural optimizations while preserving its experimental
@@ -26,17 +26,14 @@ shared controls/icons, pending state styling and Second Reading sheet fit are
 implemented; [captures and limits](docs/reviews/ui-review-2026-09-07/cosmetics/README.md)
 are ready for him to check.
 
-**Next-session design scope agreed:** [the handoff brief](docs/plans/ui-benches-next-session.md)
-records the interview decisions. Design Compose and benches together, using
-collapsible groups, a compact persistent Compose layer list and a Benches group
-in the generator picker. Benches favour drawing space on small windows; Compose
-keeps more editing controls exposed. Produce Compose, Second Reading and
-Homeostat mockups, plus an open bench architecture proposal covering shared
-identity/lifecycle, specialised interaction, application exchanges and state/
-undo ownership. Richer future interactions must remain possible within the bench
-family. Expandable presentation is a candidate, not a requirement. Radical
-reorganisation goes back to Ian before implementation; the next design itself
-is not implemented by this handoff.
+**8 September: Ian approved the mockups and bounded implementation.** Popup is
+now the default, with expansion preserving state; Compose has explicit selected
+source scope and a compact expandable layer list. Versioned bench identity,
+shared presentation, specialised Second Reading comparison and grouped Homeostat
+controls/observed telemetry are implemented. See
+[implementation evidence](shots/ui-benches-0908/README.md). Native interaction
+acceptance remains with Ian. Durable recovery, unified unsaved-work prompts and
+richer application services remain deferred pending their own design.
 
 The remaining review is a proposal set. M1-M6 sequence
 viewing/interaction confidence, preservation, everyday composition, sustained

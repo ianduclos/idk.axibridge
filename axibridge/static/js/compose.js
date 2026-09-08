@@ -1,3 +1,4 @@
+import { benchDescriptor, benchUnavailableReason } from "./bench_registry.js";
 // Compose tab: sources (generate / upload), the layer list (z-order,
 // visibility, pen, occlusion), and the selected layer's detail editor
 // (transform numerics, effect stack, generator params).
@@ -174,12 +175,13 @@ const genPreviewReq = (key, module, params, transform = null) => ({
 
 export function initComposeTab() {
   $("tab-compose").innerHTML = `
-    <div class="panel">
-      <h2>Generate</h2>
+    <div id="new-material-anchor"></div>
+    <div class="panel" id="gen-panel">
+      <h2 id="gen-heading">New material</h2>
       <div class="row">
         <select id="gen-select" style="flex:1"></select>
       </div>
-      <div id="gen-form" class="form"></div>
+      <details id="gen-fields" open><summary>Parameters</summary><div id="gen-form" class="form"></div></details>
       <div class="row" id="lineart-stack-row" hidden>
         <select id="lineart-stack-flavor">
           <option value="faithful">faithful</option>
@@ -254,15 +256,17 @@ export function initComposeTab() {
       <div id="asset-list"></div>
     </div>
     <div class="panel" id="layer-detail-panel" hidden>
-      <h2>Layer: <span id="detail-name"></span></h2>
+      <h2>Selected: <span id="detail-name"></span></h2>
+      <div id="selected-source"></div>
       <div id="layer-detail"></div>
     </div>`;
 
+  $("tab-compose").prepend($("layer-detail-panel"));
   const sel = $("gen-select");
   // image-driven generators (any param with format:"asset") group separately
   const usesImage = (m) => Object.values(m.schema.properties || {}).some(
     (p) => (p.format || ((p.anyOf || []).find((a) => a.format) || {}).format) === "asset");
-  const optgroups = { false: group("Procedural"), true: group("Image-driven") };
+  const optgroups = { benches: group("Benches"), false: group("Procedural"), true: group("Image-driven") };
   function group(label) {
     const g = document.createElement("optgroup");
     g.label = label;
@@ -272,7 +276,7 @@ export function initComposeTab() {
   for (const m of S.state.modules.sources) {
     const o = document.createElement("option");
     o.value = m.id; o.textContent = m.label; o.title = m.description;
-    optgroups[usesImage(m)].appendChild(o);
+    optgroups[benchDescriptor(m) ? "benches" : usesImage(m)].appendChild(o);
   }
   sel.onchange = renderGenForm;
   const live = $("gen-live");
@@ -654,7 +658,11 @@ const LINEART_STACK_IDS = new Set(["lineart_edges", "lineart_hatch"]);
 // test the layer panel's ▷ Watch uses, asked of the module instead of a layer.
 function updateBenchButton(m) {
   const btn = $("btn-bench");
-  if (btn) btn.hidden = !moduleAxis(m);
+  if (btn) {
+    btn.hidden = !benchDescriptor(m);
+    btn.disabled = Boolean(benchUnavailableReason(m));
+    btn.title = benchUnavailableReason(m) || 'Open this generator’s working bench';
+  }
 }
 
 function updateLineartStackRow(m) {
@@ -791,6 +799,16 @@ function renderBenchAction() {
   const chip = $("gen-latch"), btn = $("btn-generate");
   if (!chip || !btn) return;
   const layer = latch && (S.state.project?.layers || []).find((l) => l.id === latch);
+  const genPanel = $('gen-panel');
+  if (genPanel) {
+    if (layer && S.selection.length === 1 && S.selection[0] === layer.id) {
+      $('selected-source').appendChild(genPanel);
+      $('gen-heading').textContent = 'Source controls';
+    } else {
+      $('new-material-anchor').after(genPanel);
+      $('gen-heading').textContent = 'New material';
+    }
+  }
   if (layer) {
     chip.hidden = false;
     chip.textContent = `⟿ editing “${layer.name}”`;
@@ -850,6 +868,7 @@ export function rollSeed(schema, params) {
 function bindGenForm(m) {
   const sched = () => { benchPreview(); updateLineartStackRow(m); updateSeparateRow(m); };
   updateBenchButton(m);
+  $("gen-fields").open = !benchDescriptor(m);
   const commit = () => { sched(); if (latch) applyLatched(); };
   renderForm($("gen-form"), m.schema, genParams, commit, { onLive: sched, stateKey: `gen:${m.id}` });
   return sched;
@@ -924,14 +943,29 @@ export function initLayersDock() {
   if (!dock || dock.dataset.dockInit) return;
   dock.dataset.dockInit = "1";
 
-  if (localStorage.getItem(DOCK_COLLAPSED) === "1") dock.classList.add("collapsed");
+  // The compact list remains present; explicit expansion replaces hiding it.
+  dock.classList.remove('collapsed');
   const saved = Number(localStorage.getItem(DOCK_H));
   if (saved) dock.style.setProperty("--layers-dock-h", `${saved}px`);
 
-  $("layers-dock-title").onclick = () => {
-    const collapsed = dock.classList.toggle("collapsed");
-    localStorage.setItem(DOCK_COLLAPSED, collapsed ? "1" : "0");
+  const title = $('layers-dock-title');
+  const expand = document.createElement('button');
+  expand.id = 'layers-dock-expand'; expand.textContent = 'Expand list';
+  const wasExpanded = localStorage.getItem('layers-dock-expanded') === 'true';
+  dock.classList.toggle('expanded-list', wasExpanded);
+  expand.textContent = wasExpanded ? 'Compact list' : 'Expand list';
+  expand.setAttribute('aria-expanded', String(wasExpanded));
+  title.appendChild(expand);
+  const toggle = () => {
+    const wide = dock.classList.toggle('expanded-list');
+    dock.style.setProperty('--layers-dock-h', `${wide ? Math.min(320,dockMax()) : 160}px`);
+    expand.textContent = wide ? 'Compact list' : 'Expand list';
+    expand.setAttribute('aria-expanded', String(wide));
+    localStorage.setItem('layers-dock-expanded', String(wide));
+    localStorage.setItem(DOCK_H, String(wide ? Math.min(320,dockMax()) : 160));
   };
+  title.onclick = toggle;
+
 
   // drag the top edge. Pointer capture rather than document-level listeners:
   // the pointer stays ours even when it leaves the 10px strip, which is what
@@ -1707,6 +1741,7 @@ export function renderLayerDetail() {
     latch = null;
     renderBenchAction();
   }
+  renderBenchAction();
   // a regen preview ghost belongs to one layer: drop it when focus moves on
   if (preview.key && preview.key !== "new" && !S.selection.includes(preview.key)) {
     preview.clear();
@@ -2259,7 +2294,7 @@ export function renderLayerDetail() {
   if (latch === layer.id) {
     const h = document.createElement("div");
     h.className = "hint";
-    h.textContent = "⟿ generator params are latched on the bench (Generate panel)";
+    h.textContent = "Source controls above edit this layer live.";
     wrap.appendChild(h);
   } else if (layer.source.generator && ["generator", "baked"].includes(layer.source.type)) {
     const mod = S.state.modules.sources.find((m) => m.id === layer.source.generator);

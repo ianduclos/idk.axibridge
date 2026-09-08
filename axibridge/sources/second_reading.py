@@ -117,6 +117,8 @@ class SecondReading(ProcessModule):
     description = "Develop passages, intervene with a stroke, and try another continuation."
     orientation = "geometry"
     time_axis = "turns"
+    bench = {"adapter": "second-reading", "version": 1,
+             "modes": ["new", "resume"]}
     bench_capabilities = ("intervene", "branch")
     Params = SecondReadingParams
 

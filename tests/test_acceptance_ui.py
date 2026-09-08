@@ -455,7 +455,7 @@ def test_plot_target_lists_the_whole_document_and_each_layer(ui):
 
 
 def test_panel_collapse_survives_a_reload(ui):
-    head = ui.locator("#tab-compose .panel > h2").first
+    head = ui.locator("#tab-compose .panel:visible > h2").first
     title = head.inner_text()
     assert "collapsed" not in (head.evaluate("e => e.parentElement.className") or "")
     head.click()
@@ -1009,26 +1009,32 @@ def test_the_layer_list_belongs_to_the_compose_tab(ui):
 
 
 def test_the_layers_dock_remembers_how_you_left_it(ui):
-    """Collapse and height are per-machine preferences: they belong in
-    localStorage, never in the project, and they must survive a reload or the
-    dock is furniture you have to rearrange every time."""
+    """Expanded-list state is a per-machine preference; compact never hides."""
     add_layer(ui, "polygon", {"sides": 4, "radius": 20})
     reload_app(ui)
     ui.wait_for_selector("#layers-dock", timeout=15_000)
 
-    ui.click("#layers-dock-title")
+    assert ui.is_visible("#layers-dock-body")
+    assert ui.locator("#layers-dock-expand").text_content() == "Expand list"
+    ui.click("#layers-dock-expand")
     ui.wait_for_function(
-        "() => document.querySelector('#layers-dock').classList.contains('collapsed')",
+        "() => document.querySelector('#layers-dock').classList.contains('expanded-list')",
         timeout=10_000)
-    assert not ui.is_visible("#layers-dock-body")
+    assert ui.locator("#layers-dock-expand").text_content() == "Compact list"
 
     reload_app(ui)
     ui.wait_for_selector("#layers-dock", timeout=15_000)
-    assert not ui.is_visible("#layers-dock-body"), "collapsed state was forgotten"
+    assert ui.is_visible("#layers-dock-body")
+    assert "expanded-list" in (ui.locator("#layers-dock").get_attribute("class") or ""), \
+        "expanded-list state was forgotten"
+    assert ui.locator("#layers-dock-expand").text_content() == "Compact list"
 
-    ui.click("#layers-dock-title")
-    ui.wait_for_selector("#layers-dock-body", timeout=10_000)
-    assert ui.is_visible("#layer-list"), "and it comes back with the list in it"
+    ui.click("#layers-dock-expand")
+    ui.wait_for_function(
+        "() => !document.querySelector('#layers-dock').classList.contains('expanded-list')",
+        timeout=10_000)
+    assert ui.is_visible("#layer-list")
+    assert ui.locator("#layers-dock-expand").text_content() == "Expand list"
     assert not ui.errors
 
 
@@ -2550,6 +2556,15 @@ def open_second_reading_bench(page) -> None:
     page.wait_for_function(
         "() => document.getElementById('process-preview-state').textContent === 'rendered'",
         timeout=20_000)
+    controls = page.locator("#process-controls-toggle")
+    if controls.is_visible() and controls.get_attribute("aria-expanded") != "true":
+        controls.click()
+
+
+def open_bench_details(page, selector: str) -> None:
+    details = page.locator(selector)
+    if details.get_attribute("open") is None:
+        details.locator("summary").click()
 
 
 def second_reading_recipe(page) -> dict:
@@ -2742,6 +2757,7 @@ def test_resuming_a_kept_second_reading_never_patches_the_original_layer(ui):
 
 def test_second_reading_new_drawing_applies_entered_settings_and_queued_controls(ui):
     open_second_reading_bench(ui)
+    open_bench_details(ui, "#process-new-controls")
     ui.eval_on_selector("#process-reach", "el => {el.value='.8'; el.dispatchEvent(new Event('change'));}")
     ui.fill("#process-width", "190")
     ui.fill("#process-height", "170")
@@ -2757,6 +2773,7 @@ def test_second_reading_new_drawing_applies_entered_settings_and_queued_controls
 
 def test_second_reading_pending_new_drawing_settings_survive_work_and_apply_together(ui):
     open_second_reading_bench(ui)
+    open_bench_details(ui, "#process-new-controls")
     before = second_reading_recipe(ui)
     ui.fill("#process-width", "190")
     ui.fill("#process-height", "170")
@@ -2788,6 +2805,7 @@ def test_second_reading_pending_new_drawing_settings_survive_work_and_apply_toge
 
 def test_second_reading_records_chosen_pen_smoothing_and_restores_it_on_resume(ui):
     open_second_reading_bench(ui)
+    open_bench_details(ui, "#process-pen-controls")
     paper = ui.locator("#process-canvas").bounding_box()
 
     def capture(dx, dy):
@@ -2878,6 +2896,7 @@ def test_second_reading_capture_cannot_keep_a_temporary_pointer_preview(ui):
 
 def test_second_reading_drafts_survive_close_and_watch_keeps_normal_geometry_frame(ui):
     open_second_reading_bench(ui)
+    open_bench_details(ui, "#process-new-controls")
     ui.fill("#process-width", "160")
     ui.fill("#process-height", "120")
     ui.click("#process-new-drawing")
@@ -2981,6 +3000,8 @@ def test_creating_from_the_bench_lands_on_the_step_on_screen(ui):
     ui.select_option("#gen-select", "venation")
     ui.wait_for_function(
         "() => !document.getElementById('btn-bench').hidden", timeout=5_000)
+    assert ui.locator("#gen-fields").get_attribute("open") is None
+    ui.click("#gen-fields > summary")
     # a cheap run: the default 400 attractors x 600 steps is a slow way to
     # assert a number gets through
     ui.eval_on_selector_all(
@@ -3098,6 +3119,7 @@ def test_merging_two_layers_leaves_one_row_and_the_same_drawing(ui):
 
 def test_second_reading_fit_keeps_capture_frame_stable_and_resumes_its_recipe(ui):
     open_second_reading_bench(ui)
+    open_bench_details(ui, "#process-new-controls")
     ui.select_option('#process-reading','shapes')
     ui.select_option('#process-boundary','fit')
     ui.fill('#process-seed','12')

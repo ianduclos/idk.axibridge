@@ -4,24 +4,18 @@ updated: 2026-09-08
 entries: 14
 ---
 
-### Compose and open benches design — updated 2026-09-08, owner: ian
+### Compose and open benches acceptance — updated 2026-09-08, owner: ian
 
-- done: Read the holistic review, cosmetics evidence and accepted next-session
-  brief. Created interactive Compose, Second Reading and Homeostat mockups at
-  desktop/900px/700px, with workspace and expandable-popup variants. Wrote an
-  open bench architecture proposal and bounded implementation sequence.
-- next: Review docs/design/ui-benches-2026-09-07/index.html and PROPOSAL.md.
-  D1 is accepted: popup by default, with expansion; the study now defaults to it.
-  D2 asks selected-layer-first Compose hierarchy;
-  D3 proposes identity independent of time; D4 preserves current memory lifetime
-  before separately designing durable recovery. Revise before application coding.
-- blockers: no design blocker; application implementation requires the layout
-  and architectural changes to be reviewed. No decisions inferred from silence.
-- context: docs/plans/ui-benches-next-session.md remains the agreed brief.
-  docs/design/ui-benches-2026-09-07/VERIFICATION.md records fifteen layout checks
-  and the simulated flow, with captures and fixture recipes. No app source,
-  hardware, saved project or running app changed; full app tests not rerun.
-  Broader holistic-review proposals stay open. No push.
+- done: Approved implementation now includes popup/expand, compact controls,
+  source-scope Compose hierarchy, expandable layers, versioned adapters, exact
+  preview gates, local errors, Second Reading comparison and Homeostat telemetry.
+- next: Check native interaction and layout; use the normal app restart path to
+  load the new build when ready. Running app was not restarted in this session.
+- blockers: none for local implementation; owner acceptance remains provisional.
+- context: shots/ui-benches-0908/README.md records verification and limits;
+  docs/plans/ui-benches-IMPLEMENTATION.md records scope. Durable recovery, unified
+  unsaved-work prompts and future service/revision APIs remain separate work.
+  No push or hardware use.
 
 ### Interactive drawing machine: Second Reading — updated 2026-09-06, owner: ian
 

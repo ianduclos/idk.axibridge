@@ -176,17 +176,33 @@ Contract:
   may be `while True`; the param bounds it. A process that revises earlier
   marks rather than adding sets `accumulative = False` and yields whole states,
   which costs much more to cache. Copy `sources/venation.py`.
-  Declaring a `time_axis` also buys the UI for free, and there is no way to
-  opt out of it: the Generate panel shows a **▷ Bench** button for the module
-  (params beside a stage that plays and scrubs the axis, then creates the layer
-  at the step on screen), and a committed layer gets **▷ Watch** and
-  **Rehearse**. The bench form drops the axis field — the scrub bar is that
+  A time axis gives older modules the generic process bench by compatibility:
+  the Generate panel shows a **▷ Bench** button (params beside a stage that
+  plays and scrubs the axis, then creates the layer at the step on screen), and
+  a committed layer gets **▷ Watch** and **Rehearse**. The bench form drops the
+  axis field — the scrub bar is that
   param's control — so give the axis a real title and a tight `ge`/`le`: those
   bounds become the scrub's range, and an unbounded axis has nothing to scrub.
+  New modules may instead declare an explicit, versioned bench independently
+  of time:
+
+  ```python
+  bench = {"adapter": "process", "version": 1,
+           "modes": ["new", "watch"]}
+  ```
+
+  `adapter` is a nonempty UI adapter name, `version` is a positive integer, and
+  `modes` is a list containing only `new`, `watch`, and/or `resume`. Unknown
+  adapter names remain in the catalogue so the UI can report that it cannot
+  open them. For compatibility, an undeclared source with both `intervene` and
+  `branch` capabilities resolves to `second-reading` v1 (`new`, `resume`); any
+  other source with an effective time axis resolves to `process` v1 (`new`,
+  `watch`); a source with neither has no bench.
   **Interactive score bench (2026-09-05):** `second_reading` additionally
-  declares `bench_capabilities = ("intervene", "branch")`. This selects an
-  event-aware editor with human turns, preserved alternatives and Keep as
-  layer. It requires the recorded-event contract in
+  declares `bench = {"adapter": "second-reading", "version": 1, "modes":
+  ["new", "resume"]}` and retains `bench_capabilities = ("intervene",
+  "branch")` for compatibility. This selects an event-aware editor with human
+  turns, preserved alternatives and Keep as layer. It requires the recorded-event contract in
   `plans/second-reading.md`; adding the capability to an arbitrary process
   does not make that process understand interventions. `Step.metadata`
   retains discrete decisions alongside numeric telemetry. The preview API
@@ -336,3 +352,9 @@ the relative old/new frame placements so roundtrips preserve scale. Default is
 user: whole-element fitting happens in its document, and this hook prevents the
 canvas's later quarter-turn from making the kept element exceed the bed. It does
 not constrain manual layer transforms or effects.
+
+
+Bench adapters currently registered at version 1 are `process`, `homeostat`, and
+`second-reading`. Homeostat owns a grouped form schema in `homeostat_bench.js`;
+its generation recipe is unchanged. Schema groups may set `groupOpen: true` for
+an initially expanded group; a remembered user preference takes precedence.

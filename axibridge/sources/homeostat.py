@@ -252,6 +252,7 @@ class Homeostat(ProcessModule):
                    "the drawing leaves its viable range.")
     Params = HomeostatParams
     time_axis = "steps"
+    bench = {"adapter": "homeostat", "version": 1, "modes": ["new", "watch"]}
     accumulative = True
 
     def run(self, params: HomeostatParams) -> Iterator[Step]:

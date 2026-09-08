@@ -507,3 +507,27 @@ placement. Second Reading opts in: its overshoot workspace stays private to
 replay; `document()` fits all visible ink together, and the stored layer affine
 then places that document. Resolve/estimate/plot still consume the same geometry.
 Manual transformations/effects remain unconstrained authoring operations.
+
+
+## Bench presentation and adapters (8 September 2026)
+
+The module catalogue resolves an optional versioned `bench` descriptor independently
+of time-axis identity; see `docs/MODULES.md`. Frontend `bench_registry.js` selects
+local adapters. `bench_host.js` owns popup/expanded presentation, focus, compact
+controls, origin/return, and local errors. It does not interpret drawing events.
+The initial adapters are process, Homeostat (a domain-owned form hierarchy over
+process), and Second Reading (local alternatives, capture, undo, exact Keep).
+
+Existing mutation callbacks remain authoritative. Generic parameters retain their
+Compose object; Watch remains read-only. Preview installs require current intent
+and exact recipe identity. A pending Create also retains its opening view identity,
+so completing a write cannot dismiss a later view. Uncertain writes have no automatic
+retry. Second Reading comparison pins output plus recipe and draws both against
+one union frame; capture exits comparison before mapping pen coordinates.
+
+Project New/Load/Import clears return targets and separates in-memory draft keys by
+project epoch. Closing a popup retains same-page working state; expanding changes
+presentation only. Unkept drafts remain memory-only. Durable recovery, a unified
+unsaved-work guard, server revision/mutation reconciliation, and the full future
+service/factory API in the design proposal remain separate work. No new saved
+project format or route to hardware is introduced.
