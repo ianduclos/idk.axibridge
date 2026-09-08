@@ -13,7 +13,8 @@ handoff_for: ian
 # idk.axibridge — status
 
 **Favicon:** Ian selected the geometric scaffold in sheet white on black.
-Installed as the web favicon and touch icon; frontend rebuilt.
+Installed as the web favicon and touch icon; frontend rebuilt. The separate
+Mac application icon was also regenerated from the selected mark.
 
 **Cosmetic follow-up:** Ian approved all five finishing touches: paper edge/depth,
 optical alignment, faint surface lift, readout spacing and quieter inactive borders.
