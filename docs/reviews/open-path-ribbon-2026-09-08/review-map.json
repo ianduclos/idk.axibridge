@@ -1,0 +1,192 @@
+[
+  {
+    "id": "F01",
+    "shape": "straight",
+    "relation": "independent",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F02",
+    "shape": "straight",
+    "relation": "mirrored",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F03",
+    "shape": "straight",
+    "relation": "related",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F04",
+    "shape": "arch",
+    "relation": "independent",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F05",
+    "shape": "arch",
+    "relation": "mirrored",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F06",
+    "shape": "arch",
+    "relation": "related",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F07",
+    "shape": "sCurve",
+    "relation": "independent",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F08",
+    "shape": "sCurve",
+    "relation": "mirrored",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F09",
+    "shape": "sCurve",
+    "relation": "related",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F10",
+    "shape": "corner",
+    "relation": "independent",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F11",
+    "shape": "corner",
+    "relation": "mirrored",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F12",
+    "shape": "corner",
+    "relation": "related",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F13",
+    "shape": "hairpin",
+    "relation": "independent",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F14",
+    "shape": "hairpin",
+    "relation": "mirrored",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "F15",
+    "shape": "hairpin",
+    "relation": "related",
+    "seed": 7,
+    "width": 32
+  },
+  {
+    "id": "P01",
+    "shape": "sCurve",
+    "relation": "independent",
+    "seed": 8,
+    "width": 32
+  },
+  {
+    "id": "P02",
+    "shape": "sCurve",
+    "relation": "mirrored",
+    "seed": 8,
+    "width": 32
+  },
+  {
+    "id": "P03",
+    "shape": "sCurve",
+    "relation": "related",
+    "seed": 8,
+    "width": 32
+  },
+  {
+    "id": "P04",
+    "shape": "sCurve",
+    "relation": "independent",
+    "seed": 19,
+    "width": 32
+  },
+  {
+    "id": "P05",
+    "shape": "sCurve",
+    "relation": "mirrored",
+    "seed": 19,
+    "width": 32
+  },
+  {
+    "id": "P06",
+    "shape": "sCurve",
+    "relation": "related",
+    "seed": 19,
+    "width": 32
+  },
+  {
+    "id": "P07",
+    "shape": "sCurve",
+    "relation": "independent",
+    "seed": 43,
+    "width": 32
+  },
+  {
+    "id": "P08",
+    "shape": "sCurve",
+    "relation": "mirrored",
+    "seed": 43,
+    "width": 32
+  },
+  {
+    "id": "P09",
+    "shape": "sCurve",
+    "relation": "related",
+    "seed": 43,
+    "width": 32
+  },
+  {
+    "id": "P10",
+    "shape": "hairpin",
+    "relation": "related",
+    "seed": 7,
+    "width": 85
+  },
+  {
+    "id": "P11",
+    "shape": "hairpin",
+    "relation": "related",
+    "seed": 7,
+    "width": 42
+  },
+  {
+    "id": "P12",
+    "shape": "sCurve",
+    "relation": "related",
+    "seed": 7,
+    "width": 32,
+    "variation": 0
+  }
+]

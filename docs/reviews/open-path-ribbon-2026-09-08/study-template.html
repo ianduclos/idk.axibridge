@@ -1,0 +1,76 @@
+<div id="ribbon-study">
+  <div class="viz-controls">
+    <label class="form-label">Path
+      <select class="form-select" id="ribbon-shape">
+        <option value="straight">A · Straight</option>
+        <option value="arch">B · Arch</option>
+        <option value="sCurve" selected>B · S-curve</option>
+        <option value="corner">C · Corner</option>
+        <option value="hairpin">Tight bend</option>
+      </select>
+    </label>
+    <label class="form-label">Width <output id="ribbon-width-value">24</output>
+      <input class="form-range" id="ribbon-width" type="range" min="5" max="90" value="24" step="1">
+    </label>
+    <label class="form-label">Wavelength <output id="ribbon-wavelength-value">180</output>
+      <input class="form-range" id="ribbon-wavelength" type="range" min="45" max="240" value="180" step="5">
+    </label>
+    <label class="form-label">Variation <output id="ribbon-variation-value">75%</output>
+      <input class="form-range" id="ribbon-variation" type="range" min="0" max="100" value="75" step="5">
+    </label>
+    <label class="form-label">Strands per side <output id="ribbon-steps-value">10</output>
+      <input class="form-range" id="ribbon-steps" type="range" min="1" max="32" value="10" step="1">
+    </label>
+  </div>
+  <div class="viz-row">
+    <button class="btn" id="ribbon-next" type="button">New seed</button>
+    <span class="text-small" id="ribbon-seed">Seed 7</span>
+    <label class="form-check"><input class="form-check-input" id="ribbon-guide" type="checkbox"><span class="form-check-label">Highlight original</span></label>
+  </div>
+  <div id="ribbon-drawings" aria-live="off"></div>
+  <div class="text-small text-muted" id="ribbon-detail" role="status"></div>
+</div>
+<style>
+  #ribbon-study {font-family: ui-monospace, SFMono-Regular, Menlo, monospace;}
+  #ribbon-study .ribbon-label {margin: 14px 0 5px; font-size: 13px;}
+  #ribbon-study .ribbon-drawing {display:block; width:100%; background:#FFFCF0;}
+  #ribbon-study .ribbon-ink {fill:none; stroke:#100F0F; stroke-width:.65; stroke-linejoin:round; stroke-linecap:round;}
+  #ribbon-study .ribbon-guide {fill:none; stroke:#AF3029; stroke-width:1.25; stroke-dasharray:5 4;}
+  #ribbon-study #ribbon-detail {margin-top:10px;}
+</style>
+<script>
+/* GEOMETRY_INSERT */
+</script>
+<script>
+(() => {
+  const root = document.getElementById('ribbon-study');
+  const find = id => root.querySelector('#ribbon-' + id);
+  const relations = [['mirrored','1 · Mirrored'],['related','2 · Related, unequal'],['independent','3 · Independent']];
+  let seed = 7;
+  const pathData = points => points.map((p,i) => (i ? 'L' : 'M') + p.map(n => n.toFixed(3)).join(' ')).join(' ');
+  function draw() {
+    const options = { seed, width: +find('width').value, wavelength: +find('wavelength').value,
+      variation: +find('variation').value / 100, steps: +find('steps').value,
+      taper:.12 };
+    for (const key of ['width','wavelength','steps']) find(key+'-value').textContent = options[key];
+    find('variation-value').textContent = Math.round(options.variation*100)+'%';
+    find('seed').textContent = 'Seed ' + seed;
+    const fixtures = typeof RibbonStudy.fixtures === 'function' ? RibbonStudy.fixtures() : RibbonStudy.fixtures;
+    const points = fixtures[find('shape').value];
+    const results = relations.map(([relation,label]) => ({label, ...RibbonStudy.generate(points,{...options,relation})}));
+    // The same framing for every relation preserves the comparison's scale.
+    let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+    for (const r of results) for (const strand of r.strands) for(const [x,y] of strand) {
+      x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);
+    }
+    const pad=16, box=[x0-pad,y0-pad,x1-x0+2*pad,Math.max(110,y1-y0+2*pad)];
+    find('drawings').innerHTML = results.map(r => `<div class="ribbon-label">${r.label}</div><svg class="ribbon-drawing" role="img" aria-label="${r.label} open path with interpolated strands" viewBox="${box.join(' ')}"><title>${r.label}</title><g class="ribbon-ink">${r.strands.map(p=>`<path d="${pathData(p)}"/>`).join('')}</g>${find('guide').checked ? `<path class="ribbon-guide" d="${pathData(r.spine)}"/>` : ''}</svg>`).join('');
+    find('detail').textContent = `${2*options.steps+1} continuous strands · Shared endpoints · Unrestricted bends; crossings possible · Study units`;
+    root.dataset.rendered = 'true';
+    root.dataset.seed = String(seed);
+  }
+  root.querySelectorAll('input,select').forEach(el => el.addEventListener('input',draw));
+  find('next').addEventListener('click',() => {seed++;draw();});
+  draw();
+})();
+</script>

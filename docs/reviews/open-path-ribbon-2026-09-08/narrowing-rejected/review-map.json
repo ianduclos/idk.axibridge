@@ -1,0 +1,219 @@
+[
+  {
+    "id": "F01",
+    "shape": "straight",
+    "relation": "independent",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F02",
+    "shape": "straight",
+    "relation": "mirrored",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F03",
+    "shape": "straight",
+    "relation": "related",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F04",
+    "shape": "arch",
+    "relation": "independent",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F05",
+    "shape": "arch",
+    "relation": "mirrored",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F06",
+    "shape": "arch",
+    "relation": "related",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F07",
+    "shape": "sCurve",
+    "relation": "independent",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F08",
+    "shape": "sCurve",
+    "relation": "mirrored",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F09",
+    "shape": "sCurve",
+    "relation": "related",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F10",
+    "shape": "corner",
+    "relation": "independent",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F11",
+    "shape": "corner",
+    "relation": "mirrored",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F12",
+    "shape": "corner",
+    "relation": "related",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F13",
+    "shape": "hairpin",
+    "relation": "independent",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F14",
+    "shape": "hairpin",
+    "relation": "mirrored",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "F15",
+    "shape": "hairpin",
+    "relation": "related",
+    "seed": 7,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "P01",
+    "shape": "sCurve",
+    "relation": "independent",
+    "seed": 8,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "P02",
+    "shape": "sCurve",
+    "relation": "mirrored",
+    "seed": 8,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "P03",
+    "shape": "sCurve",
+    "relation": "related",
+    "seed": 8,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "P04",
+    "shape": "sCurve",
+    "relation": "independent",
+    "seed": 19,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "P05",
+    "shape": "sCurve",
+    "relation": "mirrored",
+    "seed": 19,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "P06",
+    "shape": "sCurve",
+    "relation": "related",
+    "seed": 19,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "P07",
+    "shape": "sCurve",
+    "relation": "independent",
+    "seed": 43,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "P08",
+    "shape": "sCurve",
+    "relation": "mirrored",
+    "seed": 43,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "P09",
+    "shape": "sCurve",
+    "relation": "related",
+    "seed": 43,
+    "width": 32,
+    "protect": true
+  },
+  {
+    "id": "P10",
+    "shape": "hairpin",
+    "relation": "related",
+    "seed": 7,
+    "width": 85,
+    "protect": false
+  },
+  {
+    "id": "P11",
+    "shape": "hairpin",
+    "relation": "related",
+    "seed": 7,
+    "width": 85,
+    "protect": true
+  },
+  {
+    "id": "P12",
+    "shape": "sCurve",
+    "relation": "related",
+    "seed": 7,
+    "width": 32,
+    "protect": true,
+    "variation": 0
+  }
+]
