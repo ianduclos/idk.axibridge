@@ -86,6 +86,48 @@ def frames(spine: list[Point2]) -> list[Point2]:
     return out
 
 
+def curve_frames(source: list[Point2], spine: list[Point2], stations: list[float]) -> list[Point2]:
+    """Blend gentle source-curve directions BEFORE subdivision can imprint them.
+
+    Keep the source polyline and every sharp-corner frame intact. Only the
+    sampling of the offset field changes: normals at gentle source vertices
+    are interpolated across their segment instead of jumping at its ends.
+    Collinear input subdivisions are not additional tangent knots.
+    """
+    out = frames(spine)
+    knots: list[Point2] = []
+    for p in source:
+        checkpoint()
+        while len(knots) >= 2:
+            a, b = knots[-2], knots[-1]
+            ax, ay, bx, by = b[0]-a[0], b[1]-a[1], p[0]-b[0], p[1]-b[1]
+            if ax*bx+ay*by <= 0 or abs(ax*by-ay*bx) > 1e-10*hypot(ax,ay)*hypot(bx,by):
+                break
+            knots.pop()
+        knots.append(p)
+    if len(knots) < 3:
+        return out
+    ss = [0.0]
+    for a, b in zip(knots, knots[1:]):
+        ss.append(ss[-1] + _distance(a,b))
+    normals = frames(knots)
+    hard = {corner["s"] for corner in sharp_corners(knots, ss)}
+    j = 0
+    for i, at in enumerate(stations):
+        if not i & 255:
+            checkpoint()
+        while j < len(knots)-2 and at > ss[j+1] + EPS:
+            j += 1
+        # Adjacent sharp-corner spans retain the accepted miter/sweep input.
+        if ss[j] in hard or ss[j+1] in hard:
+            continue
+        length = ss[j+1]-ss[j]
+        t = max(0., min(1., (at-ss[j])/(length or 1.)))
+        a,b = normals[j],normals[j+1]
+        out[i] = (_mix(a[0],b[0],t),_mix(a[1],b[1],t))
+    return out
+
+
 def sharp_corners(spine: list[Point2], stations: list[float]) -> list[dict[str, float]]:
     out = []
     for i in range(1, len(spine) - 1):

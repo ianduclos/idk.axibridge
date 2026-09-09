@@ -16,7 +16,7 @@ from ..model import Path
 from ..render_work import checkpoint
 from ..registry import EffectContext, EffectModule, register_effect
 from ._ribbon_profile import make_profiles
-from ._ribbon_geometry import sample_polyline, frames, sharp_corners, envelope, silhouette, clip_paths, self_mask, balance_edge_widths
+from ._ribbon_geometry import sample_polyline, frames, curve_frames, sharp_corners, envelope, silhouette, clip_paths, self_mask, balance_edge_widths
 
 _SCALE = 4.0
 _MAX_STEPS = 512
@@ -84,7 +84,7 @@ def _prepare(points, params, ctx):
         options[key] *= _SCALE
     wave = min(options["wavelength"], options["wavelength_right"]) if params.independent_wavelengths else options["wavelength"]
     spine, ss, total = sample_polyline(points, min(2., wave/12))
-    frame = frames(spine)
+    frame = frames(spine) if params.fractured_edges else curve_frames(points, spine, ss)
     corners = sharp_corners(spine, ss)
     seed_a = (params.seed ^ ctx.seed) & 0xffffffff
     seed_b = (params.seed_b ^ ctx.seed) & 0xffffffff

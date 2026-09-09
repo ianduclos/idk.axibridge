@@ -1,8 +1,20 @@
 ---
 project: idk.axibridge
 updated: 2026-09-09
-entries: 16
+entries: 17
 ---
+
+### Ribbon gentle curves acceptance — updated 2026-09-09, owner: ian
+
+- done: interpolate the offset-direction field across gentle source segments;
+  original spine, crest profiles and point budget stay intact. Sharp corners
+  and the hidden fractured trial retain their treatment.
+- verified: 1,428 passed, one lifecycle skip; backend reloaded with the current
+  empty project preserved. Native appearance remains unverified.
+- evidence: docs/reviews/ribbon-curve-sampling-2026-09-09/README.md and comparison.png.
+- next: check the pictured choppy region in the original drawing. The isolated
+  two-anchor Bézier reproduction improves; the exact screenshot source was not
+  available in the open project. Coarse input may still show its own facets.
 
 ### Heavy drawing updates acceptance — updated 2026-09-09, owner: ian
 

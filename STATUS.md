@@ -3,8 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-09
 machine: mac+pi
-summary: Expensive drawing previews can be superseded by edits or layer deletion; latest-response guards and per-edit elapsed timing are ready for native checking.
+summary: Ribbon blends gentle-curve offset directions to reduce repeated kinks; source geometry and corner treatments are preserved, pending native checking.
 next:
+  - "Check Ribbon curve sampling on the pictured choppy section"
   - "Check heavy Ribbon edits, elapsed reset and deleting a layer during rendering"
   - "Restart app/backend when ready and check Magnetic field four-corner blending, Scatter strengths and pole spacing"
   - "Check the open Mac app for native appearance and the new scaffold icon"
@@ -13,6 +14,14 @@ handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Ribbon curve sampling, 9 September:** Gentle curve directions are blended
+before offsetting, reducing kinks inherited from flattened source segments.
+Source geometry, crest profiles and sample counts stay unchanged; sharp-corner
+and hidden fractured treatments are preserved. Full suite: 1,428 passed, one
+lifecycle skip. Backend reloaded with the current empty project preserved;
+native acceptance remains with Ian.
+[Comparison and limits](docs/reviews/ribbon-curve-sampling-2026-09-09/README.md).
 
 **Render cancellation, 9 September:** Superseded read-only drawing work is
 cancelled cooperatively before edits/deletion wait on the project lock. Browser
