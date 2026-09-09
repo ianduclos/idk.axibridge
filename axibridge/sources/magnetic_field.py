@@ -27,6 +27,8 @@ _HIDDEN_POLE_CORE_RADIUS = 0.7
 _TRACE_STEPS = 2200
 _OCCUPANCY_PITCH = 0.9
 _MAX_OUTPUT_POINTS = 500_000
+_POLE_SPACING_ZONE_RADIUS = 12.0
+_HIDDEN = {"hidden": True}
 
 
 class Magnet(BaseModel):
@@ -42,12 +44,21 @@ class Magnet(BaseModel):
     thickness: float = Field(default=12.0, ge=4.0, le=24.0)
     strength: float = Field(default=1.0, ge=0.1, le=3.0)
     flipped: bool = False
+    locked: bool = False
 
 
 DEFAULT_MAGNETS = (
     Magnet(x=70.0, y=85.0),
     Magnet(x=170.0, y=85.0),
 )
+
+
+class MagnetSize(BaseModel):
+    """Canonical body dimensions, preserved while corner poses fit the frame."""
+
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False, frozen=True)
+    length: float = Field(ge=8.0, le=80.0)
+    thickness: float = Field(ge=4.0, le=24.0)
 
 
 class MagneticFieldParams(BaseModel):
@@ -60,7 +71,7 @@ class MagneticFieldParams(BaseModel):
         description="Angular seed count around each magnetic pole",
     )
     style: Literal["continuous", "chains", "filings"] = Field(
-        default="continuous", title="Mark treatment"
+        default="continuous", title="Mark treatment",
     )
     show_magnets: bool = Field(default=True, title="Show magnets")
     keep_silhouettes: bool = Field(
@@ -75,13 +86,46 @@ class MagneticFieldParams(BaseModel):
     magnets: list[Magnet] = Field(
         default=list(DEFAULT_MAGNETS), max_length=16, title="Magnets",
         description="Bar magnets and independent north/south poles",
-        json_schema_extra={"hidden": True},
+        json_schema_extra=_HIDDEN,
+    )
+    scatter_strength_min: float = Field(
+        default=1.0, ge=0.1, le=3.0, json_schema_extra=_HIDDEN,
+    )
+    scatter_strength_max: float = Field(
+        default=1.0, ge=0.1, le=3.0, json_schema_extra=_HIDDEN,
+    )
+    presets: list[list[Magnet] | None] = Field(
+        default=[None, None, None, None], min_length=4, max_length=4,
+        json_schema_extra=_HIDDEN,
+    )
+    preset_sizes: list[MagnetSize] | None = Field(
+        default=None, max_length=16, json_schema_extra=_HIDDEN,
+    )
+    mix_x: float = Field(
+        default=0.0, ge=0.0, le=1.0, json_schema_extra=_HIDDEN,
+    )
+    mix_y: float = Field(
+        default=0.0, ge=0.0, le=1.0, json_schema_extra=_HIDDEN,
+    )
+    mix_active: bool = Field(default=False, json_schema_extra=_HIDDEN)
+    pole_spacing: float = Field(
+        default=0.0, ge=0.0, le=3.0, title="Pole spacing (mm)",
+        description="Thin complete field routes that crowd together near a pole",
     )
 
     @model_validator(mode="after")
-    def magnets_fit_frame(self) -> "MagneticFieldParams":
+    def validate_recipe(self) -> "MagneticFieldParams":
+        if self.scatter_strength_min > self.scatter_strength_max:
+            raise ValueError("scatter strength minimum must not exceed maximum")
+        if self.mix_active and any(preset is None for preset in self.presets):
+            raise ValueError("active mixing requires all four presets")
+
+        if self.preset_sizes is not None and len(self.preset_sizes) != len(self.magnets):
+            raise ValueError("preset sizes must have the current magnet count")
+
         eps = 1e-9
-        for i, magnet in enumerate(self.magnets):
+
+        def check_fit(magnet: Magnet, label: str) -> None:
             if magnet.kind == "bar":
                 angle = math.radians(magnet.rotation)
                 c, s = abs(math.cos(angle)), abs(math.sin(angle))
@@ -89,10 +133,29 @@ class MagneticFieldParams(BaseModel):
                 y_extent = s * magnet.length * 0.5 + c * magnet.thickness * 0.5
             else:
                 x_extent = y_extent = _POLE_BODY_RADIUS
-            if (magnet.x - x_extent < -eps or magnet.x + x_extent > self.width + eps
+            if (magnet.x - x_extent < -eps
+                    or magnet.x + x_extent > self.width + eps
                     or magnet.y - y_extent < -eps
                     or magnet.y + y_extent > self.height + eps):
-                raise ValueError(f"magnet {i} body must stay inside the frame")
+                raise ValueError(f"{label} body must stay inside the frame")
+
+        for i, magnet in enumerate(self.magnets):
+            check_fit(magnet, f"magnet {i}")
+        for preset_index, preset in enumerate(self.presets):
+            if preset is None:
+                continue
+            if len(preset) != len(self.magnets):
+                raise ValueError(
+                    f"preset {preset_index} must have the current magnet count"
+                )
+            for magnet_index, (current, captured) in enumerate(
+                    zip(self.magnets, preset)):
+                if (captured.kind, captured.flipped) != (current.kind, current.flipped):
+                    raise ValueError(
+                        f"preset {preset_index} magnet {magnet_index} kind and flipped "
+                        "must match the current magnet"
+                    )
+                check_fit(captured, f"preset {preset_index} magnet {magnet_index}")
         return self
 
 
@@ -290,6 +353,68 @@ def _trace_routes(scene: _Scene, density: int, seed: int) -> list[_Route]:
     return routes
 
 
+def _thin_routes_near_poles(routes: list[_Route], scene: _Scene,
+                            spacing: float) -> list[_Route]:
+    """Greedily drop complete routes whose nearest pole approaches crowd.
+
+    Each route contributes at most one sampled anchor per pole: its closest
+    traced point within the fixed pole neighbourhood.  Accepted anchors occupy
+    a small spatial hash, so later routes closer than ``spacing`` to one at the
+    same pole are discarded whole.  Route order and points are left untouched.
+    """
+    if spacing <= 0.0 or not routes or not scene.poles:
+        return routes
+
+    zone_sq = _POLE_SPACING_ZONE_RADIUS**2
+    spacing_sq = spacing**2
+    cell_size = max(spacing, 1e-6)
+    occupied: list[dict[tuple[int, int], list[tuple[float, float]]]] = [
+        {} for _ in scene.poles
+    ]
+    kept: list[_Route] = []
+
+    for route in routes:
+        anchors: list[tuple[int, float, float]] = []
+        for pole_index, (pole_x, pole_y, _) in enumerate(scene.poles):
+            anchor_x, anchor_y = min(
+                route.points,
+                key=lambda point: ((point[0] - pole_x) ** 2
+                                   + (point[1] - pole_y) ** 2),
+            )
+            distance_sq = (anchor_x - pole_x) ** 2 + (anchor_y - pole_y) ** 2
+            if distance_sq <= zone_sq:
+                anchors.append((pole_index, anchor_x, anchor_y))
+
+        crowded = False
+        for pole_index, anchor_x, anchor_y in anchors:
+            cell_x = math.floor(anchor_x / cell_size)
+            cell_y = math.floor(anchor_y / cell_size)
+            pole_cells = occupied[pole_index]
+            for offset_x in (-1, 0, 1):
+                for offset_y in (-1, 0, 1):
+                    for prior_x, prior_y in pole_cells.get(
+                            (cell_x + offset_x, cell_y + offset_y), ()):
+                        if ((anchor_x - prior_x) ** 2 + (anchor_y - prior_y) ** 2
+                                < spacing_sq):
+                            crowded = True
+                            break
+                    if crowded:
+                        break
+                if crowded:
+                    break
+            if crowded:
+                break
+        if crowded:
+            continue
+
+        kept.append(route)
+        for pole_index, anchor_x, anchor_y in anchors:
+            cell = (math.floor(anchor_x / cell_size),
+                    math.floor(anchor_y / cell_size))
+            occupied[pole_index].setdefault(cell, []).append((anchor_x, anchor_y))
+    return kept
+
+
 def _portion(path: np.ndarray, arc: np.ndarray, start: float, end: float) -> np.ndarray:
     keep = (arc > start) & (arc < end)
     ends = np.asarray([
@@ -445,6 +570,7 @@ class MagneticFieldSource(SourceModule):
         routes = _trace_routes(scene, params.density, params.seed)
         if params.remove_escaping:
             routes = [route for route in routes if not route.touches_boundary]
+        routes = _thin_routes_near_poles(routes, scene, params.pole_spacing)
         marks = _texture(routes, params.style, scene, params.seed)
         layers: list[Layer] = []
         if marks:

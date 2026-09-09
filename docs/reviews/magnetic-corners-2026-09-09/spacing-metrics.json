@@ -1,0 +1,44 @@
+[
+  {
+    "cell": "A1",
+    "spacing": 1.0,
+    "visible": true,
+    "paths": 36,
+    "seconds": 0.12928558397106826
+  },
+  {
+    "cell": "A2",
+    "spacing": 0.0,
+    "visible": true,
+    "paths": 226,
+    "seconds": 0.12523812497965991
+  },
+  {
+    "cell": "A3",
+    "spacing": 0.3,
+    "visible": true,
+    "paths": 66,
+    "seconds": 0.12943941599223763
+  },
+  {
+    "cell": "B1",
+    "spacing": 1.0,
+    "visible": false,
+    "paths": 10,
+    "seconds": 0.16756783303571865
+  },
+  {
+    "cell": "B2",
+    "spacing": 0.0,
+    "visible": false,
+    "paths": 248,
+    "seconds": 0.14952270803041756
+  },
+  {
+    "cell": "B3",
+    "spacing": 0.3,
+    "visible": false,
+    "paths": 44,
+    "seconds": 0.16853812499903142
+  }
+]

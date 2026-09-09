@@ -2,6 +2,14 @@
 
 ---
 
+### 2026-09-09 — Magnetic corner recipes (Codex)
+- affects: saved magnetic source recipes and bench consumers.
+- detail: optional corner captures, XY editor state, canonical sizes, scatter
+  strength bounds and locks accompany explicit magnets; only the magnets and
+  drawing controls drive geometry. Older recipes gain defaults. New recipes
+  require this source version to regenerate; update consumers before resuming
+  them. Pole spacing thins whole routes after boundary filtering, before styling.
+
 ### 2026-09-08 — Assigned pen width in effect contexts (Codex)
 - affects: effect authors, normal/region/tween resolve and cache consumers.
 - detail: `EffectContext.line_diameter_mm` supplies the assigned output pen's

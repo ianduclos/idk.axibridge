@@ -3,15 +3,25 @@ project: idk.axibridge
 state: active
 updated: 2026-09-09
 machine: mac+pi
-summary: Ribbon is accepted and shipped with faster masks and drawing update feedback; Magnetic field bench and other native/paper reviews remain open.
+summary: Magnetic field adds four-corner XY presets, Scatter strength ranges and locks, and optional pole spacing on main; native/paper review remains.
 next:
-  - "Try the open Magnetic field bench, including hidden magnets without silhouettes"
+  - "Restart app/backend when ready and check Magnetic field four-corner blending, Scatter strengths and pole spacing"
   - "Check the open Mac app for native appearance and the new scaffold icon"
   - "Continue Second Reading alternating-use and paper review"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Magnetic corners extension, 9 September:** Ian approved position, rotation
+and strength interpolation between four stored arrangements, implemented on
+main with two X/Y sliders. Scatter strength ranges, per-magnet scatter locks,
+canonical sizes, full recipe persistence and optional whole-route pole thinning
+are included. [Behavior, review and evidence](docs/reviews/magnetic-corners-2026-09-09/README.md).
+Full suite: **1,387 passed, one intentional lifecycle skip**, one existing
+Starlette warning. Typecheck and isolated unbundled UI smoke passed. The final
+Scatter-count display correction has a separate rebuilt browser regression run.
+Main app/backend were not restarted; native and paper acceptance remain with Ian.
 
 **Ribbon session closed, 9 September:** Ian accepted the effect and requested
 commit/push. Corner and edge interpolation repairs, the hidden fractured

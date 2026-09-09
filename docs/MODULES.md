@@ -374,3 +374,15 @@ is involved. `keep_silhouettes=False` only opens body footprints when
 `show_magnets=False`; visible bodies always exclude field ink. Resume copies a
 kept recipe, and Keep creates another layer through the normal creation path.
 The bench uses `placement_frame` to fit its fixed drawing frame to the bed.
+
+The magnetic bench also stores four optional `presets` (A/B/C/D), `mix_x`,
+`mix_y`, `mix_active`, canonical `preset_sizes`, scatter strength bounds and
+per-magnet `locked` flags. These are editor metadata: the explicit `magnets`
+list remains the sole geometry input. The bench blends position/strength
+bilinearly, unwraps angles for a continuous square, then fits each pose into the
+frame. Canonical sizes prevent temporary fitting from becoming size blending.
+Presets keep indexed magnet kinds/polarity and frame fixed; clear them before
+structural edits. Locks affect Scatter only. `pole_spacing` optionally thins
+whole routes after boundary filtering and before mark styling; zero preserves
+the existing geometry. It compares closest sampled approaches within 12 mm of
+each pole, not global curve clearance.

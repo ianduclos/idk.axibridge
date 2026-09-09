@@ -4,24 +4,26 @@ updated: 2026-09-09
 entries: 15
 ---
 
-### Magnetic field bench acceptance — updated 2026-09-09, owner: ian
+### Magnetic field corners acceptance — updated 2026-09-09, owner: ian
 
-- done: The approved study is now a registered generator and interactive bench.
-  Continuous default, editable bars/poles, seeded scatter, magnet visibility,
-  optional empty silhouettes, whole-route boundary removal, local undo and
-  Keep/Resume. The later filings reference guided the no-silhouette option.
-- verified: 1,360 tests passed, one intentional native-app lifecycle skip;
-  typecheck, built UI and isolated source-only smoke passed. Screens are
-  provisional until Ian checks the native app and paper output.
-- next: Try the open native bench and check paper output. The app and backend
-  were restarted at Ian's request on 9 September; Ribbon was recovered from a
-  separate `before-magnetic-bench-20260909-002530` project. The bench is open
-  with continuous curves and both magnet bodies and silhouettes hidden.
-  No hardware action was taken.
-- limits: Simplified planar model; small pole cores remain untraced. Irregular
-  styles require many lifts; actual paper/time benefit remains untested.
-- context: docs/reviews/magnetic-bench-2026-09-09/README.md and
-  docs/plans/magnetic-field-bench.md. Original study remains preserved.
+- done: Ian accepted the first bench and requested this extension on main.
+  Four saved A/B/C/D arrangements blend with X/Y sliders (position, rotation,
+  strength); indexed objects, frame and canonical sizes are preserved.
+  Scatter strength ranges and scatter-only locks are saved with the recipe.
+  Optional pole spacing removes whole crowded routes; default zero preserves
+  the previous treatment. Keep/Resume retains corners and editor settings.
+- verified: 1,387 passed, one intentional native-app lifecycle skip, one
+  existing Starlette warning. Typecheck and isolated unbundled smoke passed.
+  Final count-display correction covered by a rebuilt magnetic browser run.
+- next: Restart main backend and reopen the app when Ian wants native review.
+  Current running app was left alone; no hardware action. Check storing and
+  recalling four corners, XY gesture feel, locks and paper lift economy.
+- limits: Field routes regenerate during a blend, so path counts can change.
+  Pole spacing is sampled near-pole thinning, not global clearance; large
+  values can lose long sweeps. Body fitting may temporarily reduce dimensions
+  in a small frame, without changing their stored canonical size.
+- context: docs/reviews/magnetic-corners-2026-09-09/README.md and
+  docs/reviews/magnetic-bench-2026-09-09/README.md. Original study is preserved.
 
 ### Mac visual and icon acceptance — updated 2026-09-08, owner: ian
 

@@ -20,8 +20,11 @@ The first bench is implemented from Ian's approved study: continuous default,
 optional irregular marks, editable bars/poles, seeded scatter, optional magnet
 bodies and empty silhouettes, whole-route boundary removal, local undo and
 Keep/Resume. [Screen evidence and limits](docs/reviews/magnetic-bench-2026-09-09/README.md).
-Ian's native interaction and paper check remain: pole crowding, lift economy,
-and the no-silhouette treatment inspired by the later filings reference.
+Ian accepted the first bench. Four-corner X/Y blending, Scatter strength ranges,
+scatter locks and optional pole spacing are now added; native interaction and
+paper review remain for this extension. High pole-spacing values remove many
+long sweeps; zero retains the original treatment.
+[Extension evidence](docs/reviews/magnetic-corners-2026-09-09/README.md).
 
 ## Ribbon follow-ups (2026-09-08)
 

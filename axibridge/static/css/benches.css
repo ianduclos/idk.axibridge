@@ -104,3 +104,9 @@
   #process-point-count { display:none; }
 
 }
+
+.magnetic-corners { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-2); margin-block:var(--space-2); }
+.magnetic-corner { border:1px solid var(--bench-edge); padding:var(--space-2); border-radius:var(--r-sm); }
+.magnetic-corner > span { display:block; font-size:11px; margin-bottom:var(--space-1); color:var(--ink-soft); }
+.magnetic-corner.stored { border-color:var(--ink-soft); }
+.magnetic-corner .magnetic-row { flex-wrap:wrap; }

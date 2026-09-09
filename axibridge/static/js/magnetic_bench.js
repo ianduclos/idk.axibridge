@@ -1,5 +1,6 @@
 // A local arrangement editor. Geometry always comes from the registered source.
 import { api } from './api.js';
+import { fit, scattered, hasPresets, completePresets, interpolated, withPresetSize } from './magnetic_arrangement.js';
 import { benchProjectEpoch, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from './bench_host.js';
 
 const $ = id => document.getElementById(id);
@@ -10,44 +11,8 @@ const drafts = new Map();
 let active = null;
 let wired = false;
 let gesture = null;
+let mixGesture = null;
 
-function fit(m, p) {
-  if (m.kind === 'bar') {
-    const a = m.rotation * Math.PI / 180;
-    const extent = () => [
-      (Math.abs(Math.cos(a))*m.length + Math.abs(Math.sin(a))*m.thickness)/2,
-      (Math.abs(Math.sin(a))*m.length + Math.abs(Math.cos(a))*m.thickness)/2,
-    ];
-    let [ex, ey] = extent();
-    const scale = Math.min(1, (p.width-1)/(2*ex), (p.height-1)/(2*ey));
-    m.length = Math.max(8, m.length*scale);
-    m.thickness = Math.max(4, m.thickness*scale);
-    [ex, ey] = extent();
-    m.x = clamp(m.x, ex+.05, p.width-ex-.05);
-    m.y = clamp(m.y, ey+.05, p.height-ey-.05);
-  } else {
-    m.x = clamp(m.x, 4.05, p.width-4.05);
-    m.y = clamp(m.y, 4.05, p.height-4.05);
-  }
-  return m;
-}
-
-// Stable across browser sessions. Persist the resulting objects, not a recipe
-// that another random generator would have to recreate during project loading.
-function scattered(p, count, type) {
-  let state = p.seed >>> 0;
-  const random = () => {
-    state = (Math.imul(state, 1664525)+1013904223) >>> 0;
-    return state / 4294967296;
-  };
-  return Array.from({length: count}, (_, i) => {
-    const kind = type === 'bars' ? 'bar' : type === 'poles'
-      ? (i % 2 ? 'south' : 'north') : ['bar','north','south'][i % 3];
-    return fit({ kind, x: p.width*random(), y: p.height*random(),
-      rotation: random()*360-180, length: Math.min(48,p.width*.3), thickness: 12,
-      strength: 1, flipped: random() > .5 }, p);
-  });
-}
 
 function key() { return JSON.stringify(active?.draft.params); }
 function selected() { return active?.draft.params.magnets[active.draft.selection]; }
@@ -64,10 +29,12 @@ function invalidate() {
   renderControls();
   drawHandles();
 }
-function change(fn) {
+function change(fn, preserveMix = false) {
   if (!active || active.keeping || gesture) return;
+  finishMix();
   const before = snapshot();
   fn(active.draft.params);
+  if (!preserveMix && JSON.stringify(before.params.magnets) !== JSON.stringify(active.draft.params.magnets)) active.draft.params.mix_active = false;
   if (JSON.stringify(before.params) === key()) { renderControls(); return; }
   remember(before);
   invalidate();
@@ -75,7 +42,7 @@ function change(fn) {
 }
 function undo(redo = false) {
   if (!active || active.keeping) return;
-  if (gesture) { cancelGesture(); return; }
+  if (gesture || mixGesture) { cancelGesture(); return; }
   const from = redo ? active.draft.redo : active.draft.undo;
   const to = redo ? active.draft.undo : active.draft.redo;
   if (!from.length) return;
@@ -83,6 +50,67 @@ function undo(redo = false) {
   const old = from.pop();
   Object.assign(active.draft, copy(old));
   invalidate(); requestPreview();
+}
+
+function renderPresets() {
+  const p = active.draft.params, complete = completePresets(p);
+  for (let i=0;i<4;i++) {
+    $(`magnetic-store-${i}`).disabled = !p.magnets.length;
+    $(`magnetic-store-${i}`).textContent = p.presets[i] ? 'Replace' : 'Store';
+    $(`magnetic-recall-${i}`).disabled = !p.presets[i];
+    $(`magnetic-store-${i}`).closest('.magnetic-corner').classList.toggle('stored',!!p.presets[i]);
+  }
+  for (const axis of ['x','y']) {
+    $(`magnetic-mix-${axis}`).disabled = !complete;
+    $(`magnetic-mix-${axis}`).value = String(p[`mix_${axis}`]);
+    $(`magnetic-mix-${axis}-value`).textContent = `${Math.round(p[`mix_${axis}`]*100)}%`;
+  }
+  $('magnetic-clear-presets').disabled = !hasPresets(p);
+  $('magnetic-mix-status').textContent = !complete
+    ? `${p.presets.filter(Boolean).length}/4 corners stored · store all four to blend`
+    : p.mix_active ? 'Blended arrangement' : 'Manual arrangement · move either slider to blend';
+}
+function applyMix(axis, value) {
+  if (!active || active.keeping || gesture || !completePresets(active.draft.params)) return;
+  if (!mixGesture) mixGesture = snapshot();
+  const p = active.draft.params;
+  p[`mix_${axis}`] = clamp(value,0,1);
+  p.magnets = interpolated(p,p.mix_x,p.mix_y); p.mix_active = true;
+  invalidate(); requestPreview();
+}
+function finishMix() {
+  if (!active || !mixGesture) return;
+  const before = mixGesture; mixGesture = null;
+  if (JSON.stringify(before.params) !== key()) remember(before);
+  renderControls();
+  if (active.renderedKey !== key()) requestPreview();
+}
+function wirePresets() {
+  for (let i=0;i<4;i++) {
+    $(`magnetic-store-${i}`).onclick = () => change(p => {
+      if (!p.magnets.length) return;
+      if (!hasPresets(p)) p.preset_sizes = p.magnets.map(({length,thickness}) => ({length,thickness}));
+      p.presets[i] = copy(p.magnets); p.mix_active = false;
+    },true);
+    $(`magnetic-recall-${i}`).onclick = () => change(p => {
+      if (!p.presets[i]) return;
+      p.magnets = p.presets[i].map((m,j) => fit(withPresetSize({...m,locked:!!p.magnets[j].locked},p,j),p));
+      p.mix_x = i%2; p.mix_y = Math.floor(i/2); p.mix_active = completePresets(p);
+    },true);
+  }
+  $('magnetic-clear-presets').onclick = () => change(p => {
+    p.presets = [null,null,null,null]; p.preset_sizes = null; p.mix_active = false;
+  },true);
+  for (const axis of ['x','y']) {
+    const input = $(`magnetic-mix-${axis}`);
+    input.oninput = () => applyMix(axis,Number(input.value));
+    input.onchange = () => { applyMix(axis,Number(input.value)); finishMix(); };
+    input.onblur = finishMix;
+    input.onpointercancel = cancelGesture;
+    input.onkeydown = e => {
+      if (e.key === 'Escape' && mixGesture) { e.preventDefault(); e.stopPropagation(); cancelGesture(); }
+    };
+  }
 }
 
 export function initMagneticBench() {
@@ -102,12 +130,15 @@ export function initMagneticBench() {
         <label data-bar>Thickness (mm)<input id="magnetic-thickness" type="number" min="4" max="24" step="0.5"></label>
         <label>Strength<input id="magnetic-strength" type="number" min="0.1" max="3" step="0.1"></label>
       </fieldset>
+      <label class="magnetic-check"><input id="magnetic-lock" type="checkbox">Lock during Scatter</label>
       <div class="magnetic-row"><button id="magnetic-flip">Flip poles</button><button id="magnetic-duplicate">Duplicate</button><button id="magnetic-remove">Remove</button></div>
       <p class="hint">Drag a magnet to move it; drag its round handle to rotate. Click the paper to clear handles. Hidden magnets remain selectable here.</p>
     </details>
     <details open><summary>Drawing</summary>
       <label class="magnetic-field">Marks<select id="magnetic-style"><option value="continuous">Continuous curves</option><option value="chains">Irregular chains</option><option value="filings">Loose filings</option></select></label>
       <label class="magnetic-field">Density<input id="magnetic-density" type="range" min="24" max="100" step="1"><output id="magnetic-density-value"></output></label>
+      <label class="magnetic-field">Pole spacing (mm)<input id="magnetic-pole-spacing" type="range" min="0" max="3" step="0.1"><output id="magnetic-pole-spacing-value"></output></label>
+      <p class="hint">Thin crowded whole curves near poles. Zero keeps the original density.</p>
       <label class="magnetic-check"><input id="magnetic-show" type="checkbox">Show magnets</label>
       <label id="magnetic-silhouettes-label" class="magnetic-check"><input id="magnetic-silhouettes" type="checkbox">Keep empty silhouettes</label>
       <label class="magnetic-check"><input id="magnetic-escaping" type="checkbox">Remove escaping lines</label>
@@ -116,9 +147,18 @@ export function initMagneticBench() {
     <details open><summary>Scatter magnets</summary>
       <div class="magnetic-fields"><label>Count<input id="magnetic-count" type="number" min="1" max="16" step="1" value="4"></label>
       <label>Type<select id="magnetic-scatter-type"><option value="bars">Bars</option><option value="poles">Poles</option><option value="both">Both</option></select></label></div>
+      <div class="magnetic-fields"><label>Min strength<input id="magnetic-strength-min" type="number" min="0.1" max="3" step="0.1"></label><label>Max strength<input id="magnetic-strength-max" type="number" min="0.1" max="3" step="0.1"></label></div>
       <label class="magnetic-field">Seed<input id="magnetic-seed" type="number" min="0" max="2147483647" step="1"></label>
       <div class="magnetic-row"><button id="magnetic-scatter">Scatter</button><button id="magnetic-reshuffle">Reshuffle</button><button id="magnetic-clear">Clear</button></div>
-      <p class="hint">Scatter replaces this arrangement. The same seed, count and type repeat it; Undo restores the previous one.</p>
+      <p class="hint">Scatter preserves locked magnets. With presets stored, it also keeps each magnet’s type and polarity. The same settings and seed repeat the distribution.</p>
+    </details>
+    <details open><summary>Four corners</summary>
+      <div class="magnetic-corners">${['A · top left','B · top right','C · bottom left','D · bottom right'].map((label,i) => `<div class="magnetic-corner"><span>${label}</span><div class="magnetic-row"><button id="magnetic-store-${i}">Store</button><button id="magnetic-recall-${i}">Recall</button></div></div>`).join('')}</div>
+      <label class="magnetic-field">X · left → right<input id="magnetic-mix-x" type="range" min="0" max="1" step="0.01"><output id="magnetic-mix-x-value"></output></label>
+      <label class="magnetic-field">Y · top → bottom<input id="magnetic-mix-y" type="range" min="0" max="1" step="0.01"><output id="magnetic-mix-y-value"></output></label>
+      <p id="magnetic-mix-status" class="hint" aria-live="polite"></p>
+      <button id="magnetic-clear-presets">Clear presets</button>
+      <p class="hint">Store four arrangements of the same magnets, then blend position, angle and strength. Stored corners keep count, types and frame fixed. Clear presets to change them. Bodies fit inside the frame throughout.</p>
     </details>
     <details><summary>Drawing frame</summary><div class="magnetic-fields">
       <label>Width (mm)<input id="magnetic-width" type="number" min="40" max="300" step="1"></label>
@@ -132,6 +172,18 @@ export function initMagneticBench() {
   $('magnetic-undo').onclick = () => undo();
   $('magnetic-redo').onclick = () => undo(true);
   $('magnetic-keep').onclick = keep;
+  wirePresets();
+  $('magnetic-lock').onchange = () => change(() => { if (selected()) selected().locked = $('magnetic-lock').checked; }, true);
+  for (const bound of ['min','max']) $(`magnetic-strength-${bound}`).onchange = () => {
+    const input = $(`magnetic-strength-${bound}`);
+    if (!input.reportValidity() || input.value === '') { renderControls(); return; }
+    change(p => {
+      p[`scatter_strength_${bound}`] = Number(input.value);
+      if (p.scatter_strength_min > p.scatter_strength_max) p[`scatter_strength_${bound === 'min' ? 'max' : 'min'}`] = Number(input.value);
+    }, true);
+  };
+  $('magnetic-pole-spacing').oninput = () => { $('magnetic-pole-spacing-value').textContent = $('magnetic-pole-spacing').value; };
+  $('magnetic-pole-spacing').onchange = () => change(p => { p.pole_spacing = Number($('magnetic-pole-spacing').value); }, true);
   $('magnetic-selection').onchange = () => {
     active.draft.selection = Number($('magnetic-selection').value);
     renderControls(); drawHandles();
@@ -140,7 +192,9 @@ export function initMagneticBench() {
     const input = $(`magnetic-${name}`);
     input.onchange = () => {
       if (!input.reportValidity() || input.value === '') { renderControls(); return; }
-      change(p => { const m = selected(); if (m) { m[name] = Number(input.value); fit(m,p); } });
+      change(p => { const m = selected(); if (m) { m[name] = Number(input.value);
+        if (hasPresets(p)) Object.assign(m,withPresetSize(m,p,active.draft.selection));
+        fit(m,p); } });
     };
   }
   for (const name of ['width','height','seed','density']) {
@@ -184,7 +238,10 @@ export function initMagneticBench() {
     if (!input.reportValidity() || input.value === '') return;
     change(p => {
       if (id === 'magnetic-reshuffle') p.seed = (p.seed+1) % 2147483648;
-      p.magnets = scattered(p, Number(input.value), $('magnetic-scatter-type').value);
+      const lastLocked = p.magnets.reduce((last,m,i) => m.locked ? i : last,-1);
+      const count = Math.max(Number(input.value),lastLocked+1);
+      input.value = String(count);
+      p.magnets = scattered(p, count, $('magnetic-scatter-type').value);
       active.draft.selection = 0;
     });
   };
@@ -264,13 +321,21 @@ function renderControls() {
   $('magnetic-escaping').checked = p.remove_escaping;
   $('magnetic-selected').disabled = !m;
   document.querySelectorAll('#magnetic-selected [data-bar]').forEach(el => { el.hidden = m?.kind !== 'bar'; });
-  for (const id of ['magnetic-remove','magnetic-flip']) $(id).disabled = !m;
-  $('magnetic-duplicate').disabled = !m || p.magnets.length >= 16;
-  for (const kind of ['bar','north','south']) $(`magnetic-add-${kind}`).disabled = p.magnets.length >= 16;
+  const fixed = hasPresets(p);
+  if (fixed) $('magnetic-count').value = String(p.magnets.length);
+  $('magnetic-lock').checked = !!m?.locked; $('magnetic-lock').disabled = !m;
+  for (const id of ['magnetic-remove','magnetic-flip']) $(id).disabled = !m || fixed;
+  for (const id of ['magnetic-length','magnetic-thickness','magnetic-width','magnetic-height','magnetic-count','magnetic-scatter-type','magnetic-clear']) $(id).disabled = fixed;
+  $('magnetic-pole-spacing').value = String(p.pole_spacing);
+  $('magnetic-pole-spacing-value').textContent = String(p.pole_spacing);
+  for (const bound of ['min','max']) $(`magnetic-strength-${bound}`).value = String(p[`scatter_strength_${bound}`]);
+  renderPresets();
+  $('magnetic-duplicate').disabled = !m || fixed || p.magnets.length >= 16;
+  for (const kind of ['bar','north','south']) $(`magnetic-add-${kind}`).disabled = fixed || p.magnets.length >= 16;
   $('magnetic-undo').disabled = !active.draft.undo.length || active.keeping;
   $('magnetic-redo').disabled = !active.draft.redo.length || active.keeping;
   $('process-magnetic').inert = active.keeping;
-  $('magnetic-keep').disabled = active.keeping || Boolean(gesture) || active.inFlight || active.renderedKey !== key();
+  $('magnetic-keep').disabled = active.keeping || Boolean(gesture) || Boolean(mixGesture) || active.inFlight || active.renderedKey !== key();
   $('magnetic-keep').textContent = active.keeping ? 'Keeping…' : 'Keep as layer';
   $('process-status').textContent = active.error ? 'Preview unavailable — retry below' : gesture ? 'Move the magnet; release to update the field' : active.renderedKey !== key()
     ? 'Updating field…' : `${active.output.lines.length.toLocaleString()} ink paths${p.style === 'continuous' ? ' · continuous' : ' · many pen lifts'}${active.output.decimated ? ' · simplified preview' : ''}${!p.magnets.length ? ' · add a magnet to begin' : ''}`;
@@ -346,6 +411,7 @@ function pointerDown(event) {
   const target = event.target.closest('[data-magnet]');
   if (!target) { active.draft.selection = -1; renderControls(); drawHandles(); return; }
   const at = point(event); if (!at) return;
+  finishMix();
   event.preventDefault();
   active.draft.selection = Number(target.dataset.magnet);
   gesture = {pointer:event.pointerId,start:at,before:snapshot(),magnet:copy(selected()),rotate:event.target.hasAttribute('data-rotate')};
@@ -358,7 +424,8 @@ function pointerMove(event) {
   const m = selected(), p = active.draft.params;
   if (gesture.rotate) m.rotation = Math.atan2(at.y-m.y,at.x-m.x)*180/Math.PI;
   else { m.x = gesture.magnet.x + at.x-gesture.start.x; m.y = gesture.magnet.y + at.y-gesture.start.y; }
-  fit(m,p); invalidate();
+  if (hasPresets(p)) Object.assign(m,withPresetSize(m,p,active.draft.selection));
+  fit(m,p); p.mix_active = false; invalidate();
 }
 function pointerUp(event) {
   if (!gesture || gesture.pointer !== event.pointerId) return;
@@ -370,6 +437,10 @@ function pointerUp(event) {
   if (active.renderedKey !== key()) requestPreview();
 }
 function cancelGesture() {
+  if (active && mixGesture) {
+    const before = mixGesture; mixGesture = null; Object.assign(active.draft,copy(before));
+    invalidate(); requestPreview(); return true;
+  }
   if (!active || !gesture) return false;
   const before = gesture.before, pointer = gesture.pointer;
   gesture = null;

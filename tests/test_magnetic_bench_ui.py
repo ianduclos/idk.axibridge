@@ -218,3 +218,122 @@ def test_magnetic_hidden_footprints_are_optional_and_saved(ui):
     assert not recipe(ui)['keep_silhouettes']
     assert recipe(ui)['remove_escaping']
     assert not ui.errors
+
+
+def test_scatter_strengths_locks_and_preset_topology(ui):
+    open_magnetic(ui)
+    assert ui.locator('#magnetic-lock').count() == 1
+    ui.check('#magnetic-lock')
+    ready(ui)
+    anchor = recipe(ui)['magnets'][0]
+    change(ui, '#magnetic-strength-min', .3)
+    change(ui, '#magnetic-strength-max', 2.5)
+    ui.fill('#magnetic-count', '5')
+    ui.click('#magnetic-reshuffle')
+    ready(ui)
+    first = recipe(ui)
+    assert first['magnets'][0] == anchor
+    strengths = [m['strength'] for m in first['magnets'][1:]]
+    assert len(set(strengths)) > 1 and all(.3 <= s <= 2.5 for s in strengths)
+    ui.click('#magnetic-scatter')
+    ready(ui)
+    assert recipe(ui)['magnets'] == first['magnets']
+    ui.click('#magnetic-store-0')
+    ready(ui)
+    assert ui.locator('#magnetic-count').is_disabled()
+    assert ui.locator('#magnetic-add-bar').is_disabled()
+    before = recipe(ui)['magnets']
+    ui.click('#magnetic-reshuffle')
+    ready(ui)
+    after = recipe(ui)['magnets']
+    assert after[0] == anchor and after[1:] != before[1:]
+    assert [m['kind'] for m in before] == [m['kind'] for m in after]
+    ui.click('#magnetic-clear-presets')
+    ready(ui)
+    assert ui.locator('#magnetic-count').is_enabled()
+    assert not ui.errors
+
+
+def test_four_corner_blend_undo_and_keep_resume(ui, server):
+    open_magnetic(ui)
+    assert ui.locator('#magnetic-mix-x').count() == 1
+    assert ui.locator('#magnetic-mix-x').is_disabled()
+    # A/B/C/D on a rectangle. Angles cross the +/-180 seam.
+    for i, (x, y, angle, strength) in enumerate([
+        (60, 60, 170, .5), (100, 60, -170, 1.5),
+        (60, 100, 170, 1.5), (100, 100, -170, 2.5),
+    ]):
+        for field, value in [('x', x), ('y', y), ('rotation', angle), ('strength', strength)]:
+            change(ui, f'#magnetic-{field}', value)
+        ui.click(f'#magnetic-store-{i}')
+        ready(ui)
+    assert ui.locator('#magnetic-mix-x').is_enabled()
+    assert ui.locator('#magnetic-count').input_value() == '2'
+    change(ui, '#magnetic-mix-x', .5)
+    change(ui, '#magnetic-mix-y', .5)
+    center = recipe(ui)
+    m = center['magnets'][0]
+    assert (m['x'], m['y'], m['strength']) == (80, 80, 1.5)
+    assert abs(m['rotation']) == 180
+    assert center['mix_active']
+    # Multiple input events make one history entry when released.
+    ui.locator('#magnetic-mix-x').evaluate("el => { for (const x of [.6,.7,.8]) { el.value=x; el.dispatchEvent(new Event('input')); } el.dispatchEvent(new Event('change')); }")
+    ready(ui)
+    assert recipe(ui)['magnets'][0]['x'] == 92
+    ui.click('#magnetic-undo')
+    ready(ui)
+    assert recipe(ui) == center
+    ui.click('#magnetic-recall-0')
+    ready(ui)
+    recalled = recipe(ui)
+    assert recalled['magnets'][0]['x'] == 60
+    assert recalled['magnets'][0]['rotation'] == 170
+    assert recalled['mix_x'] == recalled['mix_y'] == 0
+    ui.click('#magnetic-keep')
+    ui.wait_for_function("() => document.querySelector('#magnetic-kept').textContent.includes('Kept')")
+    assert _get(f'{server}/api/project')['layers'][0]['source']['params'] == recalled
+    ui.click('#process-close')
+    select_layer(ui)
+    ui.click('#process-resume')
+    ready(ui)
+    assert recipe(ui) == recalled
+    assert ui.locator('#magnetic-mix-x').is_enabled()
+    shot(ui, 'four-corners')
+    assert not ui.errors
+
+
+def test_mix_cancel_and_latest_preview_cannot_keep_stale_geometry(ui):
+    open_magnetic(ui)
+    for i in range(4):
+        change(ui, '#magnetic-x', 60+i*15)
+        ui.click(f'#magnetic-store-{i}')
+        ready(ui)
+    before = recipe(ui)
+    held = []
+    def intercept(route):
+        if not held:
+            held.append(route)
+        else:
+            route.continue_()
+    ui.route('**/api/generators/preview', intercept)
+    with ui.expect_request('**/api/generators/preview'):
+        ui.locator('#magnetic-mix-x').evaluate("el => {el.value=.2; el.dispatchEvent(new Event('input'));}")
+    assert ui.locator('#magnetic-keep').is_disabled()
+    ui.locator('#magnetic-mix-x').focus()
+    ui.keyboard.press('Escape')
+    held[0].fulfill(response=held[0].fetch())
+    ready(ui)
+    assert recipe(ui) == before
+    assert ui.locator('#process-popup').is_visible()
+    ui.unroute('**/api/generators/preview', intercept)
+    change(ui, '#magnetic-mix-x', .25)
+    change(ui, '#magnetic-mix-y', .75)
+    assert recipe(ui)['magnets'][0]['x'] == 86.25
+    change(ui, '#magnetic-pole-spacing', .3)
+    assert recipe(ui)['pole_spacing'] == .3
+    shot(ui, 'mixed')
+    ui.set_viewport_size({'width':850,'height':750})
+    ui.click('#process-controls-toggle')
+    ui.locator('#magnetic-mix-x').scroll_into_view_if_needed()
+    shot(ui, 'corners-narrow')
+    assert not ui.errors
