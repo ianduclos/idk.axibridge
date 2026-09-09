@@ -176,6 +176,13 @@ export const actions = {
   setSeqProgress, // forms.js's inline sequence-asset upload rides the same gen-progress bar
   // plot.js's pen/goto replies carry a position too; one writer for the strip
   setMachineReadout: (...a) => setMachineReadout(...a),
+  completeDrawingTool(layerId, originatingTool) {
+    if (layerId) actions.setSelection([layerId]);
+    // A commit may finish after the user has deliberately chosen another
+    // tool. Select its result, but never let that late reply change their
+    // newer tool choice.
+    if (toolMode === originatingTool && !drawingRepeat) setToolMode("select");
+  },
 
   async refreshAll() {
     await actions.refreshState();
@@ -823,6 +830,7 @@ const TOOL_MODES = {
 };
 
 let toolMode = "select";
+let drawingRepeat = false;
 
 function setToolMode(mode) {
   if (!TOOL_MODES[mode] || mode === toolMode) return;
@@ -842,6 +850,8 @@ function setToolMode(mode) {
   if (brushBar) brushBar.hidden = toolMode !== "brush";
   const shapeBar = $("shape-bar");
   if (shapeBar) shapeBar.hidden = toolMode !== "shape";
+  const repeat = $("drawing-repeat");
+  if (repeat) repeat.hidden = toolMode !== "pen" && toolMode !== "shape";
 }
 
 {
@@ -862,12 +872,20 @@ function setToolMode(mode) {
     });
   }
 
-  // Escape: the active tool gets first refusal (e.g. pen clears a pending
-  // anchor/drag without leaving the tool); only when it declines does Escape
-  // fall through to "exit to select" — two stacked meanings on one key.
+  const repeat = $("drawing-repeat");
+  if (repeat) repeat.onclick = () => {
+    drawingRepeat = !drawingRepeat;
+    repeat.classList.toggle("on", drawingRepeat);
+    repeat.setAttribute("aria-pressed", String(drawingRepeat));
+    repeat.title = drawingRepeat
+      ? "Repeating — keep the Pen or Shape tool active after committing"
+      : "Keep the Pen or Shape tool active after committing";
+  };
+
+  // Escape cancels the active draft and leaves the drawing tool in one step.
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape" || toolMode === "select") return;
-    if (TOOL_MODES[toolMode].handleEscape?.()) return;
+    TOOL_MODES[toolMode].handleEscape?.();
     setToolMode("select");
   });
 

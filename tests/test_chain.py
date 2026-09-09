@@ -294,8 +294,8 @@ def test_remove_keyframe_down_to_two_restores_a_plain_pair():
     params = session.project.layer(tw.id).source.params
     assert params["keys"] == []  # fully reversible to the classic A/B form
     assert (params["a"], params["b"]) == (keys[0], keys[2])
-    with pytest.raises(RuntimeError, match="needs two keyframes"):
-        session.remove_chain_keyframe(tw.id, keys[0])
+    survivor = session.remove_chain_keyframe(tw.id, keys[0])
+    assert survivor.id == keys[2] and survivor.animation_owner_id is None
 
 
 def test_remove_keyframe_rejects_a_stranger():
@@ -318,17 +318,17 @@ def test_reorder_keyframes_reverses_the_motion():
 # -- 8. cascade + un-animate ---------------------------------------------------
 
 
-def test_deleting_a_mid_keyframe_cascades_the_whole_chain():
+def test_deleting_a_mid_keyframe_preserves_the_chain():
     tw, keys = _chain([10, 40, 70, 100])
     deleted = session.delete_layer(keys[1])
-    assert set(deleted) == {tw.id, *keys}
-    assert not session.project.layers
+    assert deleted == [keys[1]]
+    assert session._chain_keys(tw) == [keys[0], keys[2], keys[3]]
 
 
-def test_deleting_the_chain_restores_key_zero_and_sweeps_the_rest():
+def test_unanimate_chain_restores_key_zero_and_sweeps_the_rest():
     tw, keys = _chain([10, 40, 70])
-    deleted = session.delete_layer(tw.id)  # DIRECT delete -> un-animate
-    assert set(deleted) == {tw.id, keys[1], keys[2]}
+    assert session.unanimate_layer(tw.id).id == keys[0]
+    assert [l.id for l in session.project.layers] == [keys[0]]
     restored = session.project.layer(keys[0])
     assert restored.visible and not restored.name.endswith(" ▸ A")
     assert session.undo()
@@ -413,7 +413,8 @@ def test_a_broken_chain_resolves_empty_never_raises():
     """The no-crash contract: a stored project must always resolve."""
     tw, keys = _chain([10, 40, 70])
     stranger = session.add_generated_layer("lissajous", {"size": 40})
-    session.set_tween_params(tw.id, {"keys": [keys[0], stranger.id, keys[2]]})
+    # Deliberately corrupt in-memory input; the public edit API rejects this.
+    tw.source.params["keys"] = [keys[0], stranger.id, keys[2]]
     assert session.resolved(master_t=0.5)[tw.id] == []
 
 
@@ -462,9 +463,9 @@ def test_api_remove_keyframe_validates(client):
     r = client.delete(f"/api/layers/{tw['id']}/chain/keyframe/{keys[1]}")
     assert r.status_code == 200
     assert r.json()["source"]["params"]["keys"] == []  # back to a plain pair
-    # a pair has no keyframe to give up
-    assert client.delete(
-        f"/api/layers/{tw['id']}/chain/keyframe/{keys[0]}").status_code == 409
+    r = client.delete(f"/api/layers/{tw['id']}/chain/keyframe/{keys[0]}")
+    assert r.status_code == 200
+    assert r.json()["id"] == keys[2] and r.json()["animation_owner_id"] is None
 
 
 def test_api_reorder_keyframes_validates(client):

@@ -1,8 +1,24 @@
 ---
 project: idk.axibridge
 updated: 2026-09-09
-entries: 17
+entries: 18
 ---
+
+### Animation families and drawing tools acceptance — updated 2026-09-09, owner: ian
+
+- done: persisted master/keyframe ownership, inseparable ordering/copying,
+  safe child deletion, distinct master Delete and Un-animate, master occlusion;
+  Pen/Shape auto-Select with Repeat, Enter commit and Escape cancel/exit.
+- verified: full suite 1,455 passed, one intentional native lifecycle skip;
+  typecheck/build and 28 final focused checks passed. Coverage includes dock/tool flows,
+  ownership save/load, undo and animated masking.
+- next: restart the app, then check deleting A/B/C, dragging collapsed families,
+  occlusion controls and one-shot/repeated Pen/Shape drawing in the native UI.
+- deployment: local changes only; no app/backend restart, push or Pi deployment.
+  Use matching builds for project interchange: old builds do not enforce ownership.
+- deferred: nested layer groups with shared transforms/visibility and unchanged
+  layer occlusion; agreed direction is recorded in ROADMAP.md.
+- contract: ARCHITECTURE.md, “Owned animation families”.
 
 ### Ribbon gentle curves acceptance — updated 2026-09-09, owner: ian
 

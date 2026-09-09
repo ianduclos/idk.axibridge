@@ -1016,6 +1016,29 @@ function chainKeyIds(params) {
   return (Array.isArray(p.keys) && p.keys.length > 2) ? p.keys : [p.a, p.b].filter(Boolean);
 }
 
+// Animation membership is project state, never an interpretation of a name
+// or whether a row happens to be hidden.  A manual tween can still reference
+// any ordinary layer; only a keyframe that declares its master belongs to the
+// master/keyframe family rendered by this dock.
+function animationFamilies(layers) {
+  const byId = new Map(layers.map((layer) => [layer.id, layer]));
+  const ownerByChild = new Map();
+  const childrenByMaster = new Map();
+  for (const child of layers) {
+    const ownerId = child.animation_owner_id;
+    if (!ownerId) continue;
+    const master = byId.get(ownerId);
+    if (!master || master.source.type !== "tween" || !chainKeyIds(master.source.params).includes(child.id)) continue;
+    ownerByChild.set(child.id, ownerId);
+  }
+  for (const master of layers) {
+    if (master.source.type !== "tween") continue;
+    const children = chainKeyIds(master.source.params).filter((id) => ownerByChild.get(id) === master.id);
+    if (children.length) childrenByMaster.set(master.id, children);
+  }
+  return { ownerByChild, childrenByMaster };
+}
+
 // Consolidate & merge, in the layers area rather than in the effects panel:
 // the fx panel's ⤓ Consolidate bakes ONE layer because that is the layer it is
 // about, but merging is an operation on a SELECTION, so it belongs where the
@@ -1047,34 +1070,30 @@ export function renderLayerList() {
   wrap.innerHTML = "";
   const layers = S.state.project.layers;
   const resolvedById = Object.fromEntries((S.resolved?.layers || []).map((l) => [l.id, l]));
-  const keyframeOwner = new Map();
-  const childrenByTween = new Map();
-  const animateTweens = new Set();
-  for (const l of layers) {
-    if (l.source.type !== "tween") continue;
-    const p = l.source.params || {};
-    const kids = chainKeyIds(p);
-    childrenByTween.set(l.id, kids);
-    const isAnimateGroup = kids.length >= 2 && kids.every((id) => {
-      const kid = layers.find((candidate) => candidate.id === id);
-      return kid && !kid.visible && /▸\s*[A-Z]$/.test(kid.name || "");
-    });
-    if (isAnimateGroup) {
-      animateTweens.add(l.id);
-      for (const kid of kids) keyframeOwner.set(kid, l.id);
+  const { ownerByChild, childrenByMaster } = animationFamilies(layers);
+  const byId = new Map(layers.map((layer) => [layer.id, layer]));
+  // The server owns draw order, but the dock owns this hierarchy: a master is
+  // always followed by its owned keyframes even if a stale/legacy flat order
+  // briefly says otherwise.  Owned children never receive a second top-level
+  // row.
+  const dockLayers = [];
+  for (const layer of [...layers].reverse()) {
+    if (ownerByChild.has(layer.id)) continue;
+    dockLayers.push(layer);
+    for (const childId of childrenByMaster.get(layer.id) || []) {
+      const child = byId.get(childId);
+      if (child) dockLayers.push(child);
     }
   }
-  // top layer first in the list
-  [...layers].reverse().forEach((layer) => {
+  dockLayers.forEach((layer) => {
     const r = resolvedById[layer.id];
-    const owner = keyframeOwner.get(layer.id);
+    const owner = ownerByChild.get(layer.id);
     if (owner && collapsedTweens.has(owner) && !S.selection.includes(layer.id)) return;
     const row = document.createElement("div");
     const isTween = layer.source.type === "tween";
-    const childIds = childrenByTween.get(layer.id) || [];
-    const isAnimateTween = animateTweens.has(layer.id);
-    const isAnimateKeyframe = keyframeOwner.has(layer.id)
-      && (!layer.visible || /▸\s*[A-Z]$/.test(layer.name || ""));
+    const childIds = childrenByMaster.get(layer.id) || [];
+    const isAnimateTween = childIds.length > 0;
+    const isAnimateKeyframe = Boolean(owner);
     row.className = [
       "layer-row",
       isTween ? "tween-row" : "",
@@ -1094,9 +1113,11 @@ export function renderLayerList() {
       : document.createElement("span");
     fold.className = "fold";
 
-    const eye = btn("", layer.visible ? "visible — click to hide" : "hidden — click to show",
-      () => actions.patchLayer(layer.id, { visible: !layer.visible }));
-    eye.append(icon(layer.visible ? EYE : EYE_OFF));
+    const eye = isAnimateKeyframe
+      ? document.createElement("span")
+      : btn("", layer.visible ? "visible — click to hide" : "hidden — click to show",
+        () => actions.patchLayer(layer.id, { visible: !layer.visible }));
+    if (!isAnimateKeyframe) eye.append(icon(layer.visible ? EYE : EYE_OFF));
     eye.className = "eye" + (layer.visible ? "" : " off");
 
     const swatch = document.createElement("span");
@@ -1153,10 +1174,11 @@ export function renderLayerList() {
     est.textContent = r?.stats?.est_s ? fmtTime(r.stats.est_s) : "";
     est.title = "estimated plot time for this layer's resolved geometry";
 
-    const occ = btn("◼", "occluder: masks layers below", () =>
-      actions.patchLayer(layer.id, { occluder: !layer.occluder }));
+    const occ = isAnimateKeyframe ? document.createElement("span")
+      : btn("◼", "occluder: masks layers below", () =>
+        actions.patchLayer(layer.id, { occluder: !layer.occluder }));
     occ.className = "occ " + (layer.occluder ? "on" : "off");
-    if ((layer.occlude_groups || []).length) {
+    if (!isAnimateKeyframe && (layer.occlude_groups || []).length) {
       occ.textContent = layer.occlude_groups.join("");
       occ.title = `occluder into group(s) ${layer.occlude_groups.join(", ")}: masks only their receivers`;
     }
@@ -1165,16 +1187,16 @@ export function renderLayerList() {
     // two-click delete — native confirm() dialogs are blockable/suppressible
     // by the browser, which reads as "the button does nothing"
     const deleteTitle = isAnimateKeyframe
-      ? "delete keyframe (click twice) — removes the whole animation group"
+      ? "delete keyframe (click twice)"
       : isAnimateTween
-        ? "un-animate (click twice) — restores keyframe A as the original layer"
+        ? "delete animation (click twice) — removes its keyframes"
         : isTween
           ? "delete interpolation layer (click twice)"
         : "delete layer (click twice)";
     const del = iconButton(TRASH, deleteTitle, async () => {
       if (!del.dataset.armed) {
         del.dataset.armed = "1";
-        del.textContent = isAnimateTween ? "restore?" : "sure?";
+        del.textContent = "sure?";
         del.setAttribute("aria-label", `${deleteTitle}; click again to confirm`);
         del.style.color = "var(--rust)";
         setTimeout(() => {
@@ -1199,11 +1221,11 @@ export function renderLayerList() {
     });
 
     row.append(fold, eye, swatch, name, est, occ, dup, del);
-    makeDraggable(row, layer);
+    makeDraggable(row, layer, owner, ownerByChild);
     row.onclick = (e) => {
       if (e.target.tagName === "BUTTON") return;
       if (renaming) return;             // the second click of a double-click
-      const displayed = [...S.state.project.layers].reverse().map((l) => l.id);
+      const displayed = dockLayers.map((l) => l.id);
       if (e.shiftKey && selAnchor && displayed.includes(selAnchor)) {
         // range select, file-manager style: anchor … clicked (inclusive)
         const i = displayed.indexOf(selAnchor);
@@ -1318,13 +1340,15 @@ function iconButton(paths, title, fn) {
 // place that can get it wrong.
 let dragging = null;
 
-function makeDraggable(row, layer) {
+function makeDraggable(row, layer, ownerId, ownerByChild) {
   row.draggable = true;
   row.dataset.layerId = layer.id;
 
   row.addEventListener("dragstart", (e) => {
-    dragging = { id: layer.id, copy: e.altKey };
-    e.dataTransfer.effectAllowed = "copyMove";
+    dragging = { id: layer.id, copy: e.altKey, ownerId };
+    // An owned child only moves in the animation's time order.  It cannot be
+    // copied or pulled out into the canvas stack by a dock drag.
+    e.dataTransfer.effectAllowed = ownerId ? "move" : "copyMove";
     e.dataTransfer.setData("text/plain", layer.id);  // Firefox needs a payload
     row.classList.add("dragging");
   });
@@ -1336,10 +1360,11 @@ function makeDraggable(row, layer) {
   });
   row.addEventListener("dragover", (e) => {
     if (!dragging || dragging.id === layer.id) return;
+    if (dragging.ownerId && dragging.ownerId !== ownerId) return;
     e.preventDefault();
     // ⌥ is read continuously, not just at dragstart: you decide to copy
     // mid-drag as often as before it
-    dragging.copy = e.altKey;
+    dragging.copy = !dragging.ownerId && e.altKey;
     e.dataTransfer.dropEffect = dragging.copy ? "copy" : "move";
     const box = row.getBoundingClientRect();
     const above = e.clientY < box.top + box.height / 2;
@@ -1354,9 +1379,15 @@ function makeDraggable(row, layer) {
     e.preventDefault();
     const box = row.getBoundingClientRect();
     const above = e.clientY < box.top + box.height / 2;
-    const { id, copy } = dragging;
+    const { id, copy, ownerId: draggedOwner } = dragging;
     dragging = null;
-    await dropLayer(id, layer.id, above, copy);
+    if (draggedOwner) {
+      await reorderChainKeyframes(draggedOwner, id, layer.id, above);
+    } else {
+      // Dropping a master/ordinary layer onto a child targets that child's
+      // master block.  The server normalizes the complete family afterwards.
+      await dropLayer(id, ownerByChild.get(layer.id) || layer.id, above, copy);
+    }
   });
 }
 
@@ -1420,32 +1451,15 @@ function ldSection(key) {
 
 // -- keyframe A/B/C… family: shared collapse state + scroll position --------
 //
-// An "⏱ Animate"-created A/B pair (or a chain grown past it, A▸B▸C…) are
-// several different layer ids that read as ONE editable thing to Ian —
-// flipping between keyframes should feel like turning a card, not
-// re-navigating a fresh layer. `familyKey` returns a stable id (the owning
-// tween's) for a layer that is genuinely one of those keyframes — hidden,
-// named "... ▸ <LETTER>", and grouped with siblings that are too (the same
-// test renderLayerList uses to decide whether a tween is an animate group,
-// kept in sync by hand rather than shared code — see the KNOWN COLLISION
-// note on renderLayerList/the layer-list region above; both now route
-// through chainKeyIds() so a chain's mid keyframes get the family too, not
-// just the two ends). Anything else (a standalone layer, or the two ends of
-// a plain ⇄ interpolation, which are ordinary visible layers) falls back to
-// its own id, so nothing changes for the common case.
+// An explicitly owned keyframe shares UI state with its master.  Manual tween
+// sources remain independent even if their labels happen to look familiar.
 function familyKey(layer) {
   if (!layer) return layer;
-  if (layer.visible || !/▸\s*[A-Z]$/.test(layer.name || "")) return layer.id;
-  const layers = S.state?.project?.layers || [];
-  const tween = layers.find((l) => l.source.type === "tween"
-    && chainKeyIds(l.source.params).includes(layer.id));
-  if (!tween) return layer.id;
-  const kids = chainKeyIds(tween.source.params);
-  const isAnimateGroup = kids.length >= 2 && kids.every((id) => {
-    const kid = layers.find((c) => c.id === id);
-    return kid && !kid.visible && /▸\s*[A-Z]$/.test(kid.name || "");
-  });
-  return isAnimateGroup ? `family:${tween.id}` : layer.id;
+  const ownerId = layer.animation_owner_id;
+  if (!ownerId) return layer.id;
+  const master = (S.state?.project?.layers || []).find((candidate) => candidate.id === ownerId);
+  return master?.source.type === "tween" && chainKeyIds(master.source.params).includes(layer.id)
+    ? `family:${ownerId}` : layer.id;
 }
 
 // -- keyframe list + right-click Copy/Paste state (S3, Q6 ruling) -----------
@@ -1501,9 +1515,10 @@ async function reorderChainKeyframes(tweenLayerId, movedId, targetId, above) {
   try {
     const layer = S.state.project.layers.find((l) => l.id === tweenLayerId);
     if (!layer) return;
-    const order = chainKeyIds(layer.source.params);
+    const order = [...chainKeyIds(layer.source.params)];
     const from = order.indexOf(movedId);
-    if (from >= 0) order.splice(from, 1);
+    if (from < 0 || !order.includes(targetId)) return;
+    order.splice(from, 1);
     const at = order.indexOf(targetId);
     if (at < 0) return;
     order.splice(above ? at : at + 1, 0, movedId);
@@ -1520,8 +1535,7 @@ async function addChainKeyframe(tweenLayerId) {
     await actions.refreshResolved();
     // selection deliberately stays on the tween: the list this just grew is
     // what you look at next, not the duplicate itself (unlike the layer
-    // dock's ⧉ duplicate, which does jump — that copy has nothing else
-    // pointing at it, this one is a row in the list you're already looking at)
+    // dock's duplicate action, this stays in the list being edited)
   } catch (e) { actions.oops(e); }
 }
 
@@ -1897,8 +1911,15 @@ export function renderLayerDetail() {
   }
 
   // -- pen + occlusion
+  const isOwnedKeyframe = Boolean(layer.animation_owner_id);
   const occ = ldSection("pen");
-  occ.innerHTML = `
+  occ.innerHTML = isOwnedKeyframe ? `
+    <summary>Pen</summary>
+    <div class="row">
+      <label>pen</label>
+      <select id="ld-pen"><option value="">— none —</option></select>
+    </div>
+    <div class="hint">Occlusion belongs to this animation's master layer.</div>` : `
     <summary>Pen &amp; occlusion</summary>
     <div class="row">
       <label>pen</label>
@@ -1936,6 +1957,7 @@ export function renderLayerDetail() {
   const penSel = occ.querySelector("#ld-pen");
   fillPenSelect(penSel, layer.pen_id);
   penSel.onchange = () => actions.patchLayer(layer.id, { pen_id: penSel.value || null });
+  if (!isOwnedKeyframe) {
   occ.querySelector("#ld-draw").onchange = (e) => actions.patchLayer(layer.id, { draw: e.target.checked });
   occ.querySelector("#ld-occluder").onchange = (e) => actions.patchLayer(layer.id, { occluder: e.target.checked });
   occ.querySelector("#ld-receives").onchange = (e) => actions.patchLayer(layer.id, { receives_occlusion: e.target.checked });
@@ -1959,6 +1981,7 @@ export function renderLayerDetail() {
       b.onclick = () => { b.classList.toggle("on"); groupPatch(cls, field); };
     });
   }
+  }
 
   // -- effect stack
   const fx = ldSection("effects");
@@ -1968,7 +1991,7 @@ export function renderLayerDetail() {
     <div class="row">
       <select id="fx-select"></select><button id="fx-add">＋ Add</button>
       <button id="fx-consolidate" title="Bake transform + effects into the source geometry (undoable; regenerate also reverts a generated layer)">⤓ Consolidate</button>
-      ${layer.source.type !== "tween" ? `<button id="fx-animate"
+      ${layer.source.type !== "tween" && !layer.animation_owner_id ? `<button id="fx-animate"
         title="Turn this layer into a keyframed A/B animation that follows the master timeline">⏱ Animate</button>` : ""}
       <button id="process-watch" hidden
         title="Watch this process play and scrub its time axis — preview only, the project is not touched">▷ Watch</button>
@@ -2180,6 +2203,8 @@ export function renderLayerDetail() {
       </details>
       <div id="tw-keyframes"></div>
       <div class="row">
+        ${animationFamilies(S.state.project.layers).childrenByMaster.has(layer.id) ? `<button id="tw-unanimate"
+          title="restore keyframe A as an ordinary layer and remove this animation">Un-animate</button>` : ""}
         <button id="tw-explode"
           title="bake each sweep step into its own layer (pen/occlusion editable per step); the tween stays, hidden">÷ Split into layers</button>
       </div>`;
@@ -2195,6 +2220,15 @@ export function renderLayerDetail() {
     const kfContainer = tw.querySelector("#tw-keyframes");
     if (isChain) renderKeyframeList(kfContainer, layer, keys, nameOf);
     else renderClassicKeyframes(kfContainer, layer, p, nameOf);
+    const unanimate = tw.querySelector("#tw-unanimate");
+    if (unanimate) unanimate.onclick = async () => {
+      try {
+        const restored = await api.post(`/api/layers/${layer.id}/unanimate`);
+        await actions.refreshProject();
+        await actions.refreshResolved();
+        actions.setSelection([restored.id]);
+      } catch (e) { actions.oops(e); }
+    };
 
     // -- the auto-rendered form now carries only `t`; sweep/window are plain
     // bound inputs below, committed through the same debounced PUT merge

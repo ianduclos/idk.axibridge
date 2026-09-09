@@ -41,6 +41,7 @@ let on = false;
 let kind = "rect";
 let subtract = false;
 let drag = null;  // { x0, y0, liveEl, groupEl, pointerId, t0 }
+let committing = false;
 let wired = false; // initTabs() re-runs on every SSE reconnect — wire once
 
 export function initShapeMode() {
@@ -69,20 +70,32 @@ export function initShapeMode() {
     if (!on || e.metaKey || e.ctrlKey || e.altKey) return;
     const key = e.key.toLowerCase();
     const pick = { r: "rect", o: "ellipse", l: "line" }[key];
-    if (pick) { e.preventDefault(); setKind(pick); }
+    if (e.key === "Enter" && drag?.finalBox && !committing) {
+      e.preventDefault();
+      attemptCommit();
+    } else if (pick) { e.preventDefault(); setKind(pick); }
     else if (key === "e") { e.preventDefault(); setSubtract(!subtract); }
   });
 }
 
-export function activateShapeMode() { on = true; syncBar(); }
+export function activateShapeMode() {
+  on = true;
+  if (drag && !drag.groupEl.isConnected) actions.canvas().world.appendChild(drag.groupEl);
+  syncBar();
+}
 
 export function deactivateShapeMode() {
   on = false;
+  if (committing) {
+    // Keep the draft object for a failed request, but don't leave its overlay
+    // on the canvas after the user has chosen another tool.
+    drag?.groupEl.remove();
+    return;
+  }
   cancelDrag();
 }
 
-// Escape clears an in-flight drag without leaving the tool; only a second
-// press (nothing pending) falls through to "exit to select".
+// The broker calls this before leaving for Select, so Escape drops the draft.
 export function handleShapeEscape() {
   if (!drag) return false;
   cancelDrag();
@@ -177,7 +190,7 @@ export function ellipseAnchors(box) {
 // -- pointer capture ---------------------------------------------------------
 
 function onDown(e, wrap) {
-  if (!on || e.button !== 0) return;
+  if (!on || committing || e.button !== 0 || drag) return;
   e.preventDefault();
   e.stopPropagation();
   wrap.setPointerCapture(e.pointerId);
@@ -195,7 +208,7 @@ function onDown(e, wrap) {
 }
 
 function onMove(e) {
-  if (!drag) return;
+  if (!drag || drag.finalBox) return;
   e.preventDefault();
   e.stopPropagation();
   const box = boxFor(e, actions.canvas());
@@ -220,9 +233,10 @@ function onUp(e) {
   e.preventDefault();
   e.stopPropagation();
   const box = boxFor(e, actions.canvas());
-  const t = (performance.now() - drag.t0) / 1000;
-  cancelDrag();
-  commitShape(box, t);
+  if (!validShape(box)) { cancelDrag(); return; }
+  drag.finalBox = box;
+  drag.finalSeconds = (performance.now() - drag.t0) / 1000;
+  attemptCommit();
 }
 
 function cancelDrag() {
@@ -235,11 +249,26 @@ function cancelDrag() {
 
 async function commitShape(box, seconds) {
   if (kind === "line") {
-    if (Math.hypot(box.x1 - box.x0, box.y1 - box.y0) < MIN_SIZE) return;
-    await commitDrawStroke([[box.x0, box.y0, 0], [box.x1, box.y1, seconds]]);
-    return;
+    if (Math.hypot(box.x1 - box.x0, box.y1 - box.y0) < MIN_SIZE) return null;
+    return await commitDrawStroke([[box.x0, box.y0, 0], [box.x1, box.y1, seconds]]);
   }
-  if (box.x1 - box.x0 < MIN_SIZE || box.y1 - box.y0 < MIN_SIZE) return;
+  if (box.x1 - box.x0 < MIN_SIZE || box.y1 - box.y0 < MIN_SIZE) return null;
   const anchors = kind === "ellipse" ? ellipseAnchors(box) : rectAnchors(box);
-  await commitPenSubpath({ anchors, closed: true }, { subtract });
+  return await commitPenSubpath({ anchors, closed: true }, { subtract });
+}
+
+function validShape(box) {
+  return kind === "line"
+    ? Math.hypot(box.x1 - box.x0, box.y1 - box.y0) >= MIN_SIZE
+    : box.x1 - box.x0 >= MIN_SIZE && box.y1 - box.y0 >= MIN_SIZE;
+}
+
+async function attemptCommit() {
+  if (!drag?.finalBox || committing) return;
+  committing = true;
+  const id = await commitShape(drag.finalBox, drag.finalSeconds);
+  committing = false;
+  if (!id) return;
+  cancelDrag();
+  actions.completeDrawingTool(id, "shape");
 }

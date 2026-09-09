@@ -34,6 +34,7 @@ let overlay = null; // persistent <g> appended to editor.world (NOT canvas.js's 
                      // this.overlay, which _renderSelection() clears/repopulates itself)
 let hoverPt = null;  // last known bed-mm pointer position, for the hover rubber-band
 let gesture = null;  // in-progress pointer gesture — see onDown
+let committing = false;
 
 export function initPenMode() {
   if (wired) return;
@@ -72,14 +73,13 @@ export function deactivatePenMode() {
   $("canvas-wrap")?.classList.remove("pen-mode");
   gesture = null;
   hoverPt = null;
-  // Leaving the tool FINISHES an in-progress subpath as an open line rather
-  // than discarding it — losing work silently just because you clicked
-  // another tool button would be worse than committing something you didn't
-  // explicitly ask to close. Escape (not a tool switch) is the deliberate
-  // "throw this away" gesture — see handlePenEscape. A lone anchor with
-  // nothing to connect isn't a line yet, so it's dropped rather than saved
-  // as a stray 1-point path.
-  if (pending.length >= 2) {
+  // The request owns this draft until it resolves. If the user changes tools
+  // meanwhile, keep it available for retry when the Pen tool is reopened.
+  if (committing) { clearOverlay(); announcePending(); return; }
+  // A direct tool switch still finishes a usable open path. The successful
+  // commit path clears pending before it asks the broker to select, and the
+  // committing guard prevents that automatic deactivation from saving twice.
+  if (!committing && pending.length >= 2) {
     commitSubpath(false);
   } else {
     pending = [];
@@ -87,10 +87,8 @@ export function deactivatePenMode() {
   }
 }
 
-// First Escape clears a pending (uncommitted) subpath/in-progress drag
-// without leaving the tool; second Escape (nothing pending) falls through to
-// main.js's broker, which exits to select mode — two stacked Esc meanings on
-// one key, per docs/plans/pen-brush-tools.md Part 0.
+// The broker calls this before leaving for Select, so one Escape both clears
+// the pending work and exits the tool.
 // Re-render the anchor/handle overlay against whatever S.state.project now
 // holds — called after ANY external state change (undo, redo, an unrelated
 // layer edit), since none of those otherwise touch pen.js. A no-op if pen
@@ -110,17 +108,23 @@ export function handlePenEscape() {
  *  gesture (click the first anchor), which is where the closing curve drag
  *  lives; a button can't express that. */
 export function commitPendingPath() {
-  if (!on || gesture || !pending.length) return;
+  if (!on || gesture || !pending.length || committing) return;
+  if (pending.length < 2) {
+    pending = [];
+    redraw();
+    actions.completeDrawingTool(null, "pen");
+    return;
+  }
   commitSubpath(false);
 }
 
 function onKeydown(e) {
-  if (!on) return;
+  if (!on || committing) return;
   const t = e.target;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
   if (e.key === "Enter" && pending.length && !gesture) {
     e.preventDefault();
-    commitSubpath(false);
+    commitPendingPath();
   } else if (e.key === "Backspace" && pending.length && !gesture) {
     e.preventDefault();
     pending.pop();
@@ -234,7 +238,7 @@ function hitPending(editor, e) {
 // -- pointer capture -----------------------------------------------------------
 
 function onDown(e, wrap) {
-  if (!on || e.button !== 0) return;
+  if (!on || committing || e.button !== 0) return;
   e.preventDefault();
   e.stopPropagation();
   wrap.setPointerCapture(e.pointerId);
@@ -274,7 +278,7 @@ function onDown(e, wrap) {
 }
 
 function onMove(e) {
-  if (!on) return;
+  if (!on || committing) return;
   const editor = actions.canvas();
   if (!gesture) {
     const bed = editor.toBed(e);
@@ -426,13 +430,14 @@ async function regenerateActiveLayer({ coalesce }) {
 // subtle enough that a second copy of them would drift; there is one.
 export async function commitPenSubpath(subpath, opts = {}) {
   const bite = opts.subtract ?? subtract;
+  let committedId = null;
   try {
     const id = currentTargetLayerId();
     const target = id ? S.state.project.layers.find((l) => l.id === id) : null;
     const gen = target?.source?.type === "generator" ? target.source.generator : null;
     if (bite && !target) {
       actions.log("subtract: nothing to bite into — select a pen, brush or shape layer");
-      return;
+      return null;
     }
     if (target && (bite || gen !== "pen")) {
       // region semantics: one op onto the mass. A plain pen/brush target
@@ -442,28 +447,39 @@ export async function commitPenSubpath(subpath, opts = {}) {
                      { op: { kind: "pen", mode: bite ? "subtract" : "add",
                              anchors: subpath.anchors, closed: subpath.closed } });
       activePenLayerId = target.id;
+      committedId = target.id;
     } else if (target) {
       const subpaths = [...(target.source.params.subpaths || []), subpath];
       // no coalesce: one finished shape = one ⌘Z, exactly like draw.js's per-stroke commit
       await api.post(`/api/layers/${target.id}/regenerate`, { params: { ...target.source.params, subpaths } });
+      committedId = target.id;
     } else {
       const created = await api.post("/api/layers/generate", { module: "pen", params: { subpaths: [subpath] } });
       activePenLayerId = created.id;
+      committedId = created.id;
       actions.setSelection([created.id]);
     }
+    if (committedId) actions.setSelection([committedId]);
+  } catch (e) { actions.oops(e); return null; }
+  try {
     await actions.refreshProject();
     await actions.refreshResolved();
   } catch (e) { actions.oops(e); }
+  return committedId;
 }
 
 async function commitSubpath(closed) {
-  if (!pending.length) return;
+  if (!pending.length || committing) return;
   const subpath = { anchors: pending.map((a) => ({ ...a })), closed };
-  pending = [];
   gesture = null;
   redraw();
-  await commitPenSubpath(subpath);
+  committing = true;
+  const id = await commitPenSubpath(subpath);
+  committing = false;
+  if (!id) { redraw(); return; }
+  pending = [];
   redraw();
+  actions.completeDrawingTool(id, "pen");
 }
 
 // -- overlay: committed anchors/handles (re-edit) + pending shape + rubber-band --

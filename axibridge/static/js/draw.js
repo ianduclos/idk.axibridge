@@ -168,6 +168,7 @@ function onUp(e) {
 // preset like any other stroke — Ian's call, "a separate type, akin to the
 // draw tool".
 export async function commitDrawStroke(stroke) {
+  let committedId = null;
   try {
     const id = currentTargetLayerId();
     if (id) {
@@ -175,18 +176,24 @@ export async function commitDrawStroke(stroke) {
       const strokes = [...(layer.source.params.strokes || []), stroke];
       // no coalesce: per-stroke undo is the point (⌘Z removes exactly one stroke)
       await api.post(`/api/layers/${id}/regenerate`, { params: { ...layer.source.params, strokes } });
+      committedId = id;
     } else {
       const params = { strokes: [stroke], ...pendingBrush.source };
       const layer = await api.post("/api/layers/generate", { module: "drawing", params });
       activeDrawLayerId = layer.id;
+      committedId = layer.id;
       actions.setSelection([layer.id]);
       if (pendingBrush.effects.length) {
         actions.patchLayer(layer.id, { effects: resolveEffects(pendingBrush.effects) });
       }
     }
+    if (committedId) actions.setSelection([committedId]);
+  } catch (e) { actions.oops(e); return null; }
+  try {
     await actions.refreshProject();
     await actions.refreshResolved();
   } catch (e) { actions.oops(e); }
+  return committedId;
 }
 
 // -- brush presets --------------------------------------------------------------

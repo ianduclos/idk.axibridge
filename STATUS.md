@@ -3,8 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-09
 machine: mac+pi
-summary: Pen and Shape Pen paths default to the finest supported curve tolerance; curve-quality labels and authoring guidance are clearer, ready for native checking.
+summary: Strict animation ownership and Pen/Shape completion are implemented, ready for native checking after an app restart.
 next:
+  - "Restart the app and check animation child deletion, collapsed dragging, master occlusion and Pen/Shape Repeat"
   - "Check Ribbon curve sampling on the pictured choppy section"
   - "Check heavy Ribbon edits, elapsed reset and deleting a layer during rendering"
   - "Refresh the app window and check Magnetic field four-corner blending, Scatter strengths and pole spacing"
@@ -14,6 +15,25 @@ handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+
+**Animation families and drawing tools, 9 September:** Explicit persisted
+ownership replaces name/visibility inference for live animation families.
+Child deletion preserves siblings, one remaining restores an ordinary drawing,
+and master Delete removes the family. Un-animate explicitly retains A. Ordering,
+duplication, consolidation, capture interpolation and save/load preserve ownership;
+master-only occlusion controls apply to materialized output. Pen and Shape return
+to Select after successful drawing unless Repeat is enabled; Enter commits,
+Escape cancels/exits, and failed writes retain drafts without duplicating successful
+writes after preview failures.
+
+Full hardware-free suite: **1,455 passed, one intentional native lifecycle skip**,
+one existing Starlette warning. Typecheck and build passed. An earlier suite run
+had a browser startup timeout; the full rerun passed. Final focused backend/browser checks: **28 passed**,
+covering late integration details. The running app was not restarted; native input
+and appearance remain Ian's acceptance. Nested layer groups are design-only in
+ROADMAP.md. No push, Pi deployment or hardware action. The pre-existing untracked
+Pi skill remains outside this work.
 
 **Session wrap-up, 9 September:** Full suite **1,428 passed**, one intentional
 native-app lifecycle skip, one existing Starlette warning. Typecheck and the

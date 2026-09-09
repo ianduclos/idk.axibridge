@@ -456,3 +456,18 @@ ranges are module-specific; a label change does not rewrite existing recipes.
 Affine placement does not reflatten source curves: scaling a layer up also
 scales its existing approximation error. Prefer finer source geometry before
 large enlargement; display resolution cannot recover missing curve detail.
+
+
+### Animation ownership and tool completion (2026-09-09)
+
+`CanvasLayer.animation_owner_id` belongs to the session family operations, not
+module recipes. Owned keys cannot be reused as independent tween sources or
+merged away. Use keyframe add/remove/reorder and family duplication; never
+construct a copied owner ID without updating the master's key list. See
+ARCHITECTURE.md for load adoption, deletion and compositor rules.
+
+Pen/Shape commit helpers return the committed layer ID (null on a failed
+write). Successful writes remain committed if subsequent preview refresh fails.
+The tool broker returns to Select unless Repeat is enabled or the user already
+chose another tool. Keep failed drafts until retry/cancellation and block new
+gestures during a pending write.

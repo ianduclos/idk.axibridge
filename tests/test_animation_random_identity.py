@@ -92,15 +92,16 @@ def test_new_generator_equal_zero_seed_is_static_and_float_amount_blends(monkeyp
         assert paths[0].points[-1] == (0, 1+t)
 
 
-def test_ordinary_duplicate_of_keyframe_has_independent_field(monkeypatch):
+def test_duplicate_keyframe_retains_family_field(monkeypatch):
     monkeypatch.setitem(registry._EFFECTS, ContextProbe.id, ContextProbe())
     layer = session.add_generated_layer('polygon', {'sides': 3})
     session.update_layer(layer.id, {'effects': [EffectStep(effect=ContextProbe.id).model_dump()]})
     tw = session.animate_layer(layer.id)
     b = session.project.layer(tw.source.params['b'])
     duplicate = session.duplicate_layer(b.id)
-    assert duplicate.effect_seed is None
-    assert shape_layer(duplicate, session.source_geometry[duplicate.id]) != shape_layer(b, session.source_geometry[b.id])
+    assert duplicate.animation_owner_id == tw.id
+    assert duplicate.effect_seed == b.effect_seed
+    assert shape_layer(duplicate, session.source_geometry[duplicate.id]) == shape_layer(b, session.source_geometry[b.id])
 
 
 def test_ribbon_animate_keeps_original_field_at_midpoint():

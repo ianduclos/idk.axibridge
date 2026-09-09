@@ -834,6 +834,9 @@ class Session:
                    "region", "region_boundary", "frame_offset", "frame_follow", "effect_seed"}
         with self._lock:
             layer = self.project.layer(layer_id)
+            if layer.animation_owner_id and (
+                    patch.get("visible") or any(k in patch for k in self._MASTER_OCCLUSION_FIELDS)):
+                raise RuntimeError("visibility and occlusion belong to the animation master")
             self._checkpoint()
             effective_patch = dict(patch)
             if "transform" in effective_patch and layer.source.type == "tween":
@@ -928,146 +931,99 @@ class Session:
             return list(keys)
         return [p.get("a"), p.get("b")]
 
-    #: an Animate-created keyframe's name always carries a " ▸ <LETTER>"
-    #: SUFFIX (A, B, and — from S2 on — C, D, … for chain mid-keys), always
-    #: appended at the very end (``f"{original_name} ▸ B"``, never embedded
-    #: mid-string). Anchoring on ``$`` — rather than the old substring test —
-    #: is what makes this a genuine suffix pattern per F3/S1, and it is what
-    #: lets ``_animation_keyframes_for`` recognise a chain's hidden keyframes
-    #: once they exist; zero behaviour change today, since every name this
-    #: app ever produces already puts the suffix last.
     _KEYFRAME_SUFFIX_RE = re.compile(r" ▸ [A-Z]$")
+    _MASTER_OCCLUSION_FIELDS = (
+        "occluder", "receives_occlusion", "occlusion_margin_mm",
+        "occlude_groups", "receives_groups", "region", "region_boundary",
+    )
 
-    def _animation_keyframes_for(self, tween_layer: CanvasLayer) -> list[CanvasLayer]:
-        """Hidden Animate-created keyframe layers, not visible manual tween refs.
+    def _animation_keyframes_for(self, layer: CanvasLayer) -> list[CanvasLayer]:
+        if layer.source.type != "tween":
+            return []
+        try:
+            refs = [self.project.layer(k) for k in self._tween_refs(layer)]
+        except KeyError:
+            return []
+        return refs if refs and all(k.animation_owner_id == layer.id for k in refs) else []
 
-        Length-agnostic since S2: a CHAIN's mid-keys are Animate-created
-        keyframes too, so dragging the tween moves the whole group (all N
-        keyframes) exactly as it moves A and B on a pair — the visible tween
-        stays the one handle for the animation."""
-        if tween_layer.source.type != "tween":
-            return []
-        refs: list[CanvasLayer] = []
-        for ref_id in self._tween_refs(tween_layer):
-            try:
-                refs.append(self.project.layer(ref_id))
-            except KeyError:
-                return []
-        if len(refs) < 2:
-            return []
-        if all((not l.visible) and self._KEYFRAME_SUFFIX_RE.search(l.name) for l in refs):
-            return refs
-        return []
+    def _restore_animation_key(self, master: CanvasLayer, survivor: CanvasLayer) -> None:
+        """Caller checkpoints; move surviving source into its master's stack slot."""
+        survivor.animation_owner_id = None
+        survivor.visible = master.visible
+        survivor.name = master.name
+        survivor.draw = master.draw
+        for field in self._MASTER_OCCLUSION_FIELDS:
+            setattr(survivor, field, getattr(master, field))
+        self.project.layers.remove(survivor)
+        self.project.layers.insert(self.project.layers.index(master), survivor)
+        for dependent in self._tweens():
+            if dependent.id != master.id and master.id in self._tween_refs(dependent):
+                self._set_chain_keys(dependent, [survivor.id if k == master.id else k
+                                               for k in self._tween_refs(dependent)])
+
+    @_interrupt_preview
+    def unanimate_layer(self, layer_id: str) -> CanvasLayer:
+        with self._lock:
+            master = self.project.layer(layer_id)
+            keys = self._animation_keyframes_for(master)
+            if not keys:
+                raise RuntimeError("not an owned animation")
+            self._checkpoint()
+            self._restore_animation_key(master, keys[0])
+            self._remove_layer_ids({master.id, *(k.id for k in keys[1:])})
+            return keys[0]
+
+    def _remove_layer_ids(self, ids: set[str]) -> list[str]:
+        removed = [l.id for l in self.project.layers if l.id in ids]
+        self.project.layers = [l for l in self.project.layers if l.id not in ids]
+        for lid in removed:
+            for cache in (self.source_geometry, self._shaped_cache,
+                          self._tween_cache, self._clip_cache):
+                cache.pop(lid, None)
+        self.project.normalize_animation_order()
+        return removed
 
     @_interrupt_preview
     def delete_layers(self, layer_ids: list[str], cascade: bool = True) -> list[str]:
-        """Bulk delete = ONE history entry, so one undo restores the lot.
-
-        ``cascade`` (the default) expands the doomed set to a fixpoint so a
-        delete never leaves a dangling tween: (a) any tween referencing a
-        doomed layer joins it; (b) any HIDDEN layer referenced only by doomed
-        tweens joins it (the animate-created keyframes travel with their
-        tween, but a manual tween's VISIBLE sources are never swept). Returns
-        the ordered (project z-order) list of deleted layer ids.
-
-        Un-animate: deleting a tween DIRECTLY (its id in ``layer_ids``, not
-        merely cascade-collected) does not sweep its A keyframe — it RESTORES
-        it (un-hides it and strips the ``" ▸ A"`` suffix), turning the
-        animation back into the plain layer it came from. The A keyframe is
-        restored only when hidden and unreferenced by any surviving tween; the
-        B keyframe still sweeps. Directly deleting a keyframe keeps the full
-        group cascade.
-
-        ``cascade=False`` refuses the delete (human-readable RuntimeError) if a
-        surviving tween still references a doomed layer — the strict mode."""
+        """Delete family members atomically; independent tween dependencies still cascade."""
         with self._lock:
-            layers = [self.project.layer(i) for i in layer_ids]  # all-or-nothing
-            direct = {l.id for l in layers}  # caller's targets, pre-cascade
+            direct = {self.project.layer(i).id for i in layer_ids}
             doomed = set(direct)
-
+            families = {tw.id: self._animation_keyframes_for(tw) for tw in self._tweens()}
+            # Validate strict dependency deletes before touching state/history.
+            if not cascade:
+                for tw in self._tweens():
+                    if tw.id not in doomed and not families[tw.id] and any(
+                            k in doomed for k in self._tween_refs(tw)):
+                        raise RuntimeError("layer is referenced by interpolation layer")
+            self._checkpoint()
+            for mid, kids in families.items():
+                if not kids:
+                    continue
+                master = self.project.layer(mid)
+                if mid in direct:
+                    doomed.update(k.id for k in kids)
+                elif any(k.id in direct for k in kids):
+                    remaining = [k for k in kids if k.id not in direct]
+                    if len(remaining) >= 2:
+                        self._set_chain_keys(master, [k.id for k in remaining])
+                    else:
+                        doomed.add(mid)
+                        if remaining:
+                            self._restore_animation_key(master, remaining[0])
+            # Independent/manual tweens retain their dependency semantics.
             if cascade:
                 while True:
-                    changed = False
-                    # (a) tweens that reference anything doomed
+                    before = set(doomed)
                     for tw in self._tweens():
-                        if tw.id in doomed:
-                            continue
-                        if any(r in doomed for r in self._tween_refs(tw)):
+                        if any(k in doomed for k in self._tween_refs(tw)):
                             doomed.add(tw.id)
-                            changed = True
-                    # (b) hidden layers referenced by a doomed tween and by no
-                    # surviving tween (collects animate keyframes; never takes a
-                    # manual tween's visible sources)
-                    for layer in self.project.layers:
-                        if layer.id in doomed or layer.visible:
-                            continue
-                        by_doomed = by_surviving = False
-                        for tw in self._tweens():
-                            if layer.id in self._tween_refs(tw):
-                                if tw.id in doomed:
-                                    by_doomed = True
-                                else:
-                                    by_surviving = True
-                        if by_doomed and not by_surviving:
-                            doomed.add(layer.id)
-                            changed = True
-                    if not changed:
+                        if tw.id in doomed:
+                            doomed.update(k.id for k in families[tw.id]
+                                          if k.animation_owner_id == tw.id)
+                    if before == doomed:
                         break
-
-                # Un-animate: a DIRECTLY deleted tween restores its A keyframe
-                # instead of sweeping it. Decide here (part of the final doomed
-                # set) so the restored, re-shown A is never re-collected; the
-                # visible/name mutation happens after the checkpoint below.
-                restore: set[str] = set()
-                for tw in self._tweens():
-                    if tw.id not in direct:  # only DIRECT tween deletions
-                        continue
-                    tw_refs = self._tween_refs(tw)
-                    a_ref = tw_refs[0] if tw_refs else None  # first key only ("A")
-                    if a_ref in direct:
-                        continue  # the user deleted A itself too — honour that
-                    try:
-                        a_layer = self.project.layer(a_ref)
-                    except KeyError:
-                        continue
-                    if a_layer.visible:
-                        continue
-                    referenced_by_surviving = any(
-                        a_ref in self._tween_refs(t2)
-                        for t2 in self._tweens()
-                        if t2.id not in doomed
-                    )
-                    if not referenced_by_surviving:
-                        restore.add(a_ref)
-                doomed -= restore
-            else:
-                restore = set()
-                for tw in self._tweens():
-                    if tw.id in doomed:
-                        continue
-                    if any(r in doomed for r in self._tween_refs(tw)):
-                        raise RuntimeError(
-                            f"layer is referenced by interpolation layer {tw.name!r} — "
-                            "delete that first (or together)"
-                        )
-
-            self._checkpoint()
-            # un-hide + un-suffix the restored A keyframes (already excluded
-            # from ``doomed``, so they survive the deletion below)
-            for rid in restore:
-                a_layer = self.project.layer(rid)
-                a_layer.visible = True
-                if a_layer.name.endswith(" ▸ A"):
-                    a_layer.name = a_layer.name[: -len(" ▸ A")]
-            # delete in project z-order for a deterministic, reported result
-            deleted = [l for l in list(self.project.layers) if l.id in doomed]
-            for layer in deleted:
-                self.project.layers.remove(layer)
-                self.source_geometry.pop(layer.id, None)
-                self._shaped_cache.pop(layer.id, None)
-                self._tween_cache.pop(layer.id, None)
-                self._clip_cache.pop(layer.id, None)
-            return [l.id for l in deleted]
+            return self._remove_layer_ids(doomed)
 
     @_interrupt_preview
     def reorder_layers(self, ordered_ids: list[str]) -> None:
@@ -1077,6 +1033,7 @@ class Session:
             self._checkpoint()
             by_id = {l.id: l for l in self.project.layers}
             self.project.layers = [by_id[i] for i in ordered_ids]
+            self.project.normalize_animation_order()
 
     def create_tween_layer(self, a_id: str, b_id: str) -> CanvasLayer:
         """Interpolation layer between two compatible layers (see tween.py).
@@ -1084,6 +1041,8 @@ class Session:
         with self._lock:
             la = self.project.layer(a_id)
             lb = self.project.layer(b_id)
+            if la.animation_owner_id or lb.animation_owner_id:
+                raise RuntimeError("owned keyframes cannot be shared with another animation")
             reason = tween.check_compatible(
                 la, lb, self.source_geometry.get(a_id, []),
                 self.source_geometry.get(b_id, []), self.project,
@@ -1105,6 +1064,7 @@ class Session:
             idx = max(self.project.layers.index(la), self.project.layers.index(lb))
             self.project.layers.insert(idx, layer)
             self.source_geometry[layer.id] = []  # materialised on next resolve
+            self.project.normalize_animation_order()
             return layer
 
     @_interrupt_preview
@@ -1115,22 +1075,29 @@ class Session:
                 raise RuntimeError("not an interpolation layer")
             current = dict(layer.source.params or {})
             merged = tween.TweenParams(**{**current, **values})  # validates bounds
-            if "keys" in values:
+            if any(k in values for k in ("keys", "a", "b")):
                 # a chain rides the ordinary params merge, so this is the ONE
                 # place a keys list can arrive from outside: every id must name
                 # a real layer, and none may be the tween itself (a self-
                 # reference is a cycle the resolve path would have to unwind
                 # every tick). Bounds/uniqueness/endpoint sync are TweenParams'.
-                self._validate_chain_keys(layer, merged.keys)
+                self._validate_chain_keys(layer, merged.keys or [merged.a, merged.b])
             self._checkpoint()
             layer.source.params = merged.model_dump()
+            self.project.normalize_animation_order()
             return layer
 
     def _validate_chain_keys(self, tween_layer: CanvasLayer, keys: list[str]) -> None:
+        owned = self._animation_keyframes_for(tween_layer)
         for kid in keys:
+            candidate = self.project.layer(kid)
+            if candidate.animation_owner_id not in (None, tween_layer.id):
+                raise RuntimeError("keyframe belongs to another animation")
             if kid == tween_layer.id:
                 raise RuntimeError("an interpolation layer cannot be its own keyframe")
             self.project.layer(kid)  # KeyError -> 404 at the API edge
+        if owned and set(keys) != {k.id for k in owned}:
+            raise RuntimeError("use keyframe actions to change animation membership")
 
     def _chain_keys(self, layer: CanvasLayer) -> list[str]:
         """This tween's keyframe ids as a chain would see them: the stored
@@ -1180,6 +1147,7 @@ class Session:
             base = self._KEYFRAME_SUFFIX_RE.sub("", last.name)
             data["name"] = f"{base} ▸ {chr(ord('A') + len(keys))}"
             data["visible"] = False
+            data["animation_owner_id"] = layer.id if self._animation_keyframes_for(layer) else None
             new_key = CanvasLayer(**data)
             new_key.source.file = None  # snapshot belongs to the original
             # below every existing keyframe, so the layer dock reads
@@ -1191,6 +1159,7 @@ class Session:
             # animate_layer does for keyframe B
             self.source_geometry[new_key.id] = self.source_geometry.get(last.id, [])
             self._set_chain_keys(layer, [*keys, new_key.id])
+            self.project.normalize_animation_order()
             return new_key
 
     def remove_chain_keyframe(self, layer_id: str, key_layer_id: str) -> CanvasLayer:
@@ -1207,6 +1176,10 @@ class Session:
             keys = self._chain_keys(layer)
             if key_layer_id not in keys:
                 raise KeyError(f"not a keyframe of this interpolation layer: {key_layer_id}")
+            if self._animation_keyframes_for(layer):
+                remaining = [k for k in keys if k != key_layer_id]
+                self.delete_layers([key_layer_id])
+                return self.project.layer(layer_id if len(remaining) >= 2 else remaining[0])
             if len(keys) <= 2:
                 raise RuntimeError(
                     "an interpolation layer needs two keyframes — delete the "
@@ -1240,6 +1213,7 @@ class Session:
                     "order must contain exactly this interpolation layer's keyframes")
             self._checkpoint()
             self._set_chain_keys(layer, list(ordered_ids))
+            self.project.normalize_animation_order()
             return layer
 
     def explode_tween(self, layer_id: str) -> list[CanvasLayer]:
@@ -2087,7 +2061,7 @@ class Session:
         data["transform"] = tween.lerp_affine(la.transform, lb.transform, t).model_dump()
         data["frame_offset"] = self._lerp_num(la.frame_offset, lb.frame_offset, t)
         data["occlusion_margin_mm"] = self._lerp_num(la.occlusion_margin_mm, lb.occlusion_margin_mm, t)
-        for key in ("visible", "pen_id", "occluder", "receives_occlusion", "frame_follow", "name", "effect_seed"):
+        for key in ("visible", "pen_id", "occluder", "receives_occlusion", "frame_follow", "name", "effect_seed", "animation_owner_id"):
             data[key] = getattr(la, key) if t < 0.5 else getattr(lb, key)
 
         effects, stacks_matched = tween.blend_effect_stacks(la.effects, lb.effects, t)
@@ -2432,21 +2406,38 @@ class Session:
             )
 
     def duplicate_layer(self, layer_id: str) -> CanvasLayer:
-        """Copy a layer (new id) directly above the original — same source,
-        transform, effects, pen. Geometry list is shared by reference; it is
-        only ever replaced wholesale (regen/consolidate), never mutated."""
+        """Copy a complete family, or insert an owned key copy into its own chain."""
         with self._lock:
             layer = self.project.layer(layer_id)
+            owner = self.project.layer(layer.animation_owner_id) if layer.animation_owner_id else None
+            if owner and len(self._chain_keys(owner)) >= tween.MAX_CHAIN_KEYS:
+                raise RuntimeError("animation has reached its keyframe limit")
             self._checkpoint()
-            data = layer.model_dump()
-            data["effect_seed"] = None  # ordinary copies get independent fields
-            del data["id"]  # CanvasLayer mints a fresh one
-            data["name"] = f"{layer.name} copy"
-            copy = CanvasLayer(**data)
-            copy.source.file = None  # snapshot belongs to the original; rewritten on save
-            idx = self.project.layers.index(layer)
-            self.project.layers.insert(idx + 1, copy)
-            self.source_geometry[copy.id] = self.source_geometry.get(layer_id, [])
+
+            def clone(original, independent=False):
+                data = original.model_dump()
+                del data["id"]
+                data["name"] += " copy"
+                data["effect_seed"] = None if independent else compose.layer_effect_seed(original)
+                copy = CanvasLayer(**data)
+                copy.source.file = None
+                self.source_geometry[copy.id] = self.source_geometry.get(original.id, [])
+                return copy
+
+            kids = self._animation_keyframes_for(layer)
+            copy = clone(layer, independent=not owner)
+            self.project.layers.insert(self.project.layers.index(layer) + 1, copy)
+            if kids:
+                duplicates = [clone(k) for k in kids]
+                for kid in duplicates:
+                    kid.animation_owner_id = copy.id
+                    self.project.layers.append(kid)
+                self._set_chain_keys(copy, [k.id for k in duplicates])
+            elif owner:
+                keys = self._chain_keys(owner)
+                keys.insert(keys.index(layer.id) + 1, copy.id)
+                self._set_chain_keys(owner, keys)
+            self.project.normalize_animation_order()
             return copy
 
     def split_hatch_layer(self, layer_id: str, step: int | None = None) -> CanvasLayer:
@@ -2477,6 +2468,8 @@ class Session:
         """
         with self._lock:
             layer = self.project.layer(layer_id)
+            if layer.animation_owner_id or self._animation_keyframes_for(layer):
+                raise ValueError("un-animate or consolidate the animation before splitting hatch")
             if step is None:
                 step = next((i for i, s in enumerate(layer.effects)
                              if s.effect == "hatch_fill"), None)
@@ -2506,6 +2499,7 @@ class Session:
             idx = self.project.layers.index(layer)
             self.project.layers[idx] = outline
             self.project.layers.insert(idx + 1, fill)
+            self.project.normalize_animation_order()
             # shared by reference: source geometry is only ever replaced
             # wholesale, never mutated in place
             self.source_geometry[fill.id] = self.source_geometry.get(layer_id, [])
@@ -2688,9 +2682,8 @@ class Session:
         ONE undo step."""
         with self._lock:
             layer = self.project.layer(layer_id)
-            if layer.source.type == "tween":
-                raise RuntimeError("layer is already an interpolation layer — "
-                                    "animate one of its keyframes instead")
+            if layer.source.type == "tween" or layer.animation_owner_id:
+                raise RuntimeError("layer already belongs to an animation")
             self._checkpoint()
             original_name = layer.name
 
@@ -2728,6 +2721,10 @@ class Session:
                 pen_id=layer.pen_id,
                 visible=True,
             )
+            layer.animation_owner_id = tween_layer.id
+            b.animation_owner_id = tween_layer.id
+            for field in self._MASTER_OCCLUSION_FIELDS:
+                setattr(tween_layer, field, getattr(layer, field))
             idx_a = self.project.layers.index(layer)
             self.project.layers.insert(idx_a + 1, tween_layer)
             self.source_geometry[tween_layer.id] = []  # materialised on next resolve
@@ -2833,6 +2830,7 @@ class Session:
                 self.project.layers.insert(idx + offset, moment)
                 self.source_geometry[moment.id] = paths
                 created.append(moment)
+            self.project.normalize_animation_order()
             return created
 
     def consolidate_effects(self, layer_id: str) -> CanvasLayer:
@@ -2845,6 +2843,7 @@ class Session:
         """
         with self._lock:
             layer = self.project.layer(layer_id)
+            owned = self._animation_keyframes_for(layer)
             self._checkpoint()
             self._materialize_tweens()  # a stale tween must bake its CURRENT look
             shaped = compose.shape_layer(
@@ -2857,6 +2856,8 @@ class Session:
             layer.source.type = "baked"
             layer.source.file = None  # snapshot is stale; rewritten on save
             self._shaped_cache.pop(layer_id, None)
+            if owned:
+                self._remove_layer_ids({k.id for k in owned})
             return layer
 
     def merge_layers(self, layer_ids: list[str]) -> CanvasLayer:
@@ -2889,6 +2890,8 @@ class Session:
                 raise ValueError("merge needs at least two layers")
             order = [l.id for l in self.project.layers]
             chosen = [self.project.layer(i) for i in layer_ids]
+            if any(l.animation_owner_id for l in chosen):
+                raise ValueError("cannot merge owned keyframes; un-animate first")
             if any(l.source.type == "tween" for l in chosen):
                 raise ValueError("cannot merge a tween layer: it is a relationship "
                                  "between keyframes, not geometry")

@@ -98,7 +98,7 @@ def test_tween_cascade_false_blocks_deleting_referenced_layer():
     assert a.id not in {l.id for l in session.project.layers}
 
 
-def test_cascade_delete_keyframe_a_takes_tween_and_b():
+def test_delete_keyframe_a_retains_b():
     layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
     original_name = layer.name
     tw = session.animate_layer(layer.id)
@@ -106,8 +106,8 @@ def test_cascade_delete_keyframe_a_takes_tween_and_b():
     assert len(session.project.layers) == 3
     session._history.clear()
     deleted = session.delete_layer(layer.id)  # delete keyframe A (original id)
-    assert set(deleted) == {layer.id, b_id, tw.id}
-    assert len(session.project.layers) == 0
+    assert set(deleted) == {layer.id, tw.id}
+    assert [l.id for l in session.project.layers] == [b_id]
     # ONE undo restores all three with names + visibility intact
     assert session.undo()
     assert len(session.project.layers) == 3
@@ -118,10 +118,8 @@ def test_cascade_delete_keyframe_a_takes_tween_and_b():
     assert twr.name == original_name and twr.visible
 
 
-def test_un_animate_deleting_tween_restores_keyframe_a():
-    """Directly deleting an animate-created tween un-animates: keyframe A is
-    RESTORED (un-hidden, un-suffixed, same id + geometry) rather than swept; B
-    goes. One undo brings the whole animation back."""
+def test_explicit_unanimate_restores_keyframe_a():
+    """Explicit Un-animate retains A; one undo restores the family."""
     layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
     original_name = layer.name
     a_id = layer.id
@@ -130,10 +128,7 @@ def test_un_animate_deleting_tween_restores_keyframe_a():
     b_id = tw.source.params["b"]
     session._history.clear()
 
-    deleted = session.delete_layer(tw.id)  # DIRECT tween deletion -> un-animate
-
-    assert set(deleted) == {b_id, tw.id}      # A restored, not deleted
-    assert a_id not in deleted
+    assert session.unanimate_layer(tw.id).id == a_id
     survivors = [l.id for l in session.project.layers]
     assert survivors == [a_id]                # exactly the original layer
     a = session.project.layer(a_id)
@@ -147,16 +142,11 @@ def test_un_animate_deleting_tween_restores_keyframe_a():
     assert session.project.layer(a_id).name == f"{original_name} ▸ A"
 
 
-def test_un_animate_only_on_direct_tween_deletion():
-    """Deleting keyframe A directly still cascades the whole group (the
-    un-animate restore is only for a DIRECTLY targeted tween)."""
+def test_master_delete_removes_entire_family():
     layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
-    a_id = layer.id
     tw = session.animate_layer(layer.id)
-    b_id = tw.source.params["b"]
-    deleted = session.delete_layer(a_id)  # delete keyframe A directly
-    assert set(deleted) == {a_id, b_id, tw.id}
-    assert len(session.project.layers) == 0
+    assert set(session.delete_layer(tw.id)) == {layer.id, tw.id, tw.source.params["b"]}
+    assert not session.project.layers
 
 
 def test_cascade_delete_manual_tween_keeps_visible_sources():
@@ -168,10 +158,12 @@ def test_cascade_delete_manual_tween_keeps_visible_sources():
 
 
 def test_cascade_spares_hidden_keyframe_referenced_by_surviving_tween():
-    layer = session.add_generated_layer("polygon", {"sides": 6, "radius": 15})
-    tw1 = session.animate_layer(layer.id)
-    a_id, b_id = tw1.source.params["a"], tw1.source.params["b"]
-    tw2 = session.create_tween_layer(a_id, b_id)  # 2nd tween over the same pair
+    a, b = _pair()
+    session.update_layer(a.id, {"visible": False})
+    session.update_layer(b.id, {"visible": False})
+    a_id, b_id = a.id, b.id
+    tw1 = session.create_tween_layer(a_id, b_id)
+    tw2 = session.create_tween_layer(a_id, b_id)
     deleted = session.delete_layer(tw1.id)
     assert deleted == [tw1.id]  # A/B still referenced by surviving tw2 -> spared
     survivors = {l.id for l in session.project.layers}

@@ -910,9 +910,11 @@ def append_shape_op(layer_id: str, body: ShapeOpBody) -> dict[str, Any]:
 
 @router.delete("/layers/{layer_id}")
 def delete_layer(layer_id: str) -> dict[str, Any]:
-    """Cascade-delete a layer (default): a tween goes with its keyframes, and
-    animate-created keyframes go with their tween. ``deleted`` lists every id
-    that was actually removed (in z-order)."""
+    """Delete one keyframe or a complete master family; return removed IDs.
+
+    Removing the penultimate owned keyframe restores the surviving drawing.
+    Independent tween dependencies still cascade.
+    """
     try:
         deleted = session.delete_layer(layer_id)
     except KeyError as e:
@@ -966,6 +968,17 @@ def put_tween_params(layer_id: str, values: dict[str, Any]) -> dict[str, Any]:
         raise _fail(e, 422)
 
 
+@router.post("/layers/{layer_id}/unanimate")
+def unanimate_layer(layer_id: str) -> dict[str, Any]:
+    """Keep the first owned keyframe as an ordinary drawing."""
+    try:
+        return session.unanimate_layer(layer_id).model_dump()
+    except KeyError as e:
+        raise _fail(e, 404)
+    except RuntimeError as e:
+        raise _fail(e, 409)
+
+
 @router.post("/layers/{layer_id}/chain/keyframe")
 def add_chain_keyframe(layer_id: str) -> dict[str, Any]:
     """Append a keyframe to an interpolation layer, growing A/B into a chain
@@ -984,9 +997,10 @@ def add_chain_keyframe(layer_id: str) -> dict[str, Any]:
 
 @router.delete("/layers/{layer_id}/chain/keyframe/{key_layer_id}")
 def remove_chain_keyframe(layer_id: str, key_layer_id: str) -> dict[str, Any]:
-    """Drop one keyframe from a chain (deleting the hidden layer with it).
-    Refused at two keys — that is a plain A/B tween; delete the tween itself
-    to un-animate."""
+    """Remove a keyframe; return the master or the final surviving drawing.
+
+    Independent/manual tweens still require at least two referenced sources.
+    """
     try:
         return session.remove_chain_keyframe(layer_id, key_layer_id).model_dump()
     except KeyError as e:

@@ -451,10 +451,20 @@ geometry path, never a checkpoint). What's already shipped is in `git log` /
 **"project starts in a tray"**; whether **＋ keyframe** should **jump the
 timeline to the new key** (it duplicates the previous checkpoint, so there
 is nothing to see there yet — which argues both ways, and wants a bench
-opinion); first-class layer **grouping** for a chain (a chain is still N
-sibling layers plus one tween, and a real parent/child node in `compose.py`
-+ the dock + the save format remains a round on its own; `keys` does not
-foreclose it — a grouping UI would present the same list).
+opinion). Animation ownership shipped 2026-09-09: persisted master/keyframe
+families remain inseparable in ordering, copying and deletion.
+
+**Layer groups — agreed direction, implementation deferred (2026-09-09).**
+Ian wants nested containers to move, scale and hide multiple complete layers,
+including animations. Group visibility preserves individually hidden members;
+transforms preserve member editing. Scale positions/geometry while retaining
+physical pen widths and millimetre-based effects. Grouping does not initially
+change per-master occlusion or add a combined group mask. This is a future
+design/implementation pass, not part of the animation-family repair.
+
+**Drawing-tool completion shipped (2026-09-09).** Pen and Shape return to Select
+after a successful drawing, with an explicit Repeat toggle. Enter finishes a
+Pen trace; Escape cancels it and exits. Failed writes retain drafts for retry.
 
 **Awaiting a bench/hardware look, not a decision**: the multi-pen swap
 queue on a real machine (the guided pass queue is simulator/headless-tested

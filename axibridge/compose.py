@@ -120,6 +120,7 @@ class LayerSource(BaseModel):
 class CanvasLayer(BaseModel):
     id: str = Field(default_factory=lambda: uuid.uuid4().hex[:8])
     name: str = "layer"
+    animation_owner_id: str | None = None
     visible: bool = True
     draw: bool = True
     source: LayerSource
@@ -282,6 +283,59 @@ class Project(BaseModel):
     backend_params: dict[str, dict[str, Any]] = Field(default_factory=dict)
     plot_options: PlotOptions = Field(default_factory=PlotOptions)
     staging: list[CaptureGroup] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _animation_families(self):
+        """Adopt only unmistakable old Animate families; validate explicit ownership."""
+        import re
+        by_id = {l.id: l for l in self.layers}
+        refs = {}
+        for layer in self.layers:
+            if layer.source.type == "tween":
+                p = layer.source.params or {}
+                refs[layer.id] = list(p.get("keys") or [p.get("a"), p.get("b")])
+        for owner, keys in refs.items():
+            kids = [by_id.get(k) for k in keys]
+            if (len(keys) >= 2 and len(set(keys)) == len(keys)
+                    and all(k is not None and k.source.type != "tween"
+                            and "animation_owner_id" not in k.model_fields_set
+                            and not k.visible and re.search(r" ▸ [A-Z]$", k.name)
+                            and k.name[:-4] == by_id[owner].name
+                            and sum(k.id in rs for rs in refs.values()) == 1
+                            for k in kids)):
+                for kid in kids:
+                    kid.animation_owner_id = owner
+        for kid in self.layers:
+            owner = kid.animation_owner_id
+            if owner is None:
+                continue
+            if (owner not in refs or kid.id not in refs[owner]
+                    or len(refs[owner]) < 2 or len(set(refs[owner])) != len(refs[owner])
+                    or by_id[owner].animation_owner_id is not None
+                    or kid.source.type == "tween"
+                    or sum(kid.id in rs for rs in refs.values()) != 1):
+                raise ValueError("invalid animation ownership")
+            if any(by_id.get(k) is None or by_id[k].animation_owner_id != owner
+                   for k in refs[owner]):
+                raise ValueError("animation must own every keyframe")
+            kid.visible = False
+        self.normalize_animation_order()
+        return self
+
+    def normalize_animation_order(self) -> None:
+        """Master position determines stack order; owned keys follow in time order."""
+        by_id = {l.id: l for l in self.layers}
+        ordered = []
+        for layer in self.layers:
+            if layer.animation_owner_id:
+                continue
+            if layer.source.type == "tween":
+                p = layer.source.params or {}
+                keys = p.get("keys") or [p.get("a"), p.get("b")]
+                ordered.extend(by_id[k] for k in reversed(keys)
+                               if k in by_id and by_id[k].animation_owner_id == layer.id)
+            ordered.append(layer)
+        self.layers = ordered
 
     def layer(self, layer_id: str) -> CanvasLayer:
         for lyr in self.layers:
@@ -856,7 +910,7 @@ def resolve_project(
     shaped: dict[str, list[Path]] = {}
     for layer in project.layers:
         checkpoint()
-        if not layer.visible or layer.region:
+        if layer.animation_owner_id or not layer.visible or layer.region:
             continue
         src = source_geometry.get(layer.id, _NO_SOURCE)
         if shaped_cache is not None:
@@ -929,7 +983,7 @@ def resolve_project(
         group_ch: dict[str, _Channel] = {}
         for layer in reversed(project.layers):
             checkpoint()
-            if not layer.visible:
+            if layer.animation_owner_id or not layer.visible:
                 continue
             if layer.region:
                 resolved[layer.id] = []  # a region is never drawn and never occludes
@@ -1043,7 +1097,7 @@ def flatten_to_document(
                 continue
         elif target != "all" and layer.id != target:
             continue
-        if not layer.visible or layer.id not in resolved:
+        if layer.animation_owner_id or not layer.visible or layer.id not in resolved:
             continue
         paths = resolved[layer.id]
         ox, oy = (pen_offsets or {}).get(layer.id, (0.0, 0.0))

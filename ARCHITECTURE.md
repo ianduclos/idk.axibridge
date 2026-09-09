@@ -275,6 +275,32 @@ binds its `t` to the master timeline (`?t=` on `/compose/resolved`);
 a frame-sequence asset as the timeline scrubs. Windows and the pingpong curve
 are advanced sub-knobs (folded away in the UI), not separate systems.
 
+**Owned animation families (2026-09-09)** — Animate persists each keyframe's
+`animation_owner_id`, pointing to its master tween. Ownership is independent
+of names, selection, visibility and dock collapse. The project remains a flat
+bottom-to-top stack for the compositor; owned keyframes are normalized into
+reverse playback order immediately below their master. The dock renders them
+as children. Master moves and duplicates carry the whole family; child moves
+only reorder playback, and child duplication inserts another owned keyframe.
+Manual tweens retain independent sources and cannot borrow owned keyframes.
+
+Deleting a child removes that key; one remaining key becomes an ordinary
+layer at the master's position with its occlusion settings. Master Delete
+removes the family. Explicit `POST /api/layers/{id}/unanimate` keeps A instead;
+external tween references to the master follow the surviving source. These are
+single undo entries. Consolidating a master bakes it and removes its owned
+sources atomically. Merge refuses owned keys; split-hatch requires leaving the
+animation first. The master's occlusion settings apply to materialized output;
+owned keys never participate separately in compositing or expose mask controls.
+
+Project validation adopts legacy families only when every source is hidden,
+uniquely referenced, has the master's name plus a keyframe-letter suffix, and
+has no explicit ownership field. Ambiguous/manual relationships remain ordinary
+references. Explicit ownership is validated on load; saves retain the field.
+Capture interpolation steps ownership with relationship changes at the midpoint.
+Older app versions do not enforce this contract; use matching versions when
+moving animation projects between machines.
+
 **Keyframe chains (2026-08-11)** generalise that pair to N without a second
 code path. `TweenParams.keys` (≤ 24; empty ⇒ the classic A/B, and a chain
 shrinking to two normalises back to empty) is reduced *inside*
