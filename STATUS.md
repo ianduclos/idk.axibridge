@@ -13,6 +13,12 @@ handoff_for: ian
 
 # idk.axibridge — status
 
+**Ribbon animation correction, 9 September:** Effect endpoint values are now
+typed through their parameter models before blending. Whole-number JSON values
+for Seed blend no longer round the intermediate frames. 116 related tests pass;
+three distinct live intermediate frames verified after backend reload, with
+the A/B drawing preserved. [Evidence](docs/reviews/ribbon-animation-2026-09-09.md).
+
 **Magnetic corners extension, 9 September:** Ian approved position, rotation
 and strength interpolation between four stored arrangements, implemented on
 main with two X/Y sliders. Scatter strength ranges, per-magnet scatter locks,
@@ -21,7 +27,9 @@ are included. [Behavior, review and evidence](docs/reviews/magnetic-corners-2026
 Full suite: **1,387 passed, one intentional lifecycle skip**, one existing
 Starlette warning. Typecheck and isolated unbundled UI smoke passed. The final
 Scatter-count display correction has a separate rebuilt browser regression run.
-Main app/backend were not restarted; native and paper acceptance remain with Ian.
+Main app/backend were not restarted at that checkpoint. The backend was
+subsequently reloaded for the Ribbon animation correction; native and paper
+acceptance remain with Ian.
 
 **Ribbon session closed, 9 September:** Ian accepted the effect and requested
 commit/push. Corner and edge interpolation repairs, the hidden fractured

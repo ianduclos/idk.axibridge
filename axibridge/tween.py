@@ -584,11 +584,17 @@ def blend_effect_stacks(
         return ([s.model_copy(deep=True) for s in chosen], False)
     out: list[EffectStep] = []
     for sa, sb in zip(ea, eb):
-        defaults = get_effect(sa.effect).Params().model_dump()
+        model = get_effect(sa.effect).Params
+        defaults = model().model_dump()
+        # JSON encodes 0.0/1.0 as whole numbers after a browser edit. Restore
+        # declared parameter types before lerping, so continuous sliders do
+        # not inherit integer rounding from their endpoint representation.
+        pa = model(**sa.params).model_dump()
+        pb = model(**sb.params).model_dump()
         out.append(EffectStep(
             effect=sa.effect,
             enabled=sa.enabled if t < 0.5 else sb.enabled,
-            params=lerp_params(sa.params, sb.params, t, defaults),
+            params=lerp_params(pa, pb, t, defaults),
         ))
     return (out, True)
 
