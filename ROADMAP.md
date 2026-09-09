@@ -32,6 +32,11 @@ Main Ribbon accepted and session closed 9 September: acute/edge joins repaired,
 polygon fractures preserved behind a hidden flag, drawing activity shown in
 the persistent strip, and mask computation reduced by 28.8% on the captured
 fixture with identical coordinates. Paper output remains untested.
+On 9 September, superseded preview cancellation and per-edit elapsed timing were
+added. A true percentage bar remains deferred: union/clipping costs are irregular
+and need explicit stage progress; strand counts would give misleading estimates.
+Hard interruption of an in-flight native geometry call would require isolated
+workers; current cancellation is cooperative at geometry/work boundaries.
 
 1. **D3 as a separate effect next.** One modulating curve alternates across its
    open source path, as in Ian's original sketch. Reuse Ribbon's seeded profile

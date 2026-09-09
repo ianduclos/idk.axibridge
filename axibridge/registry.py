@@ -46,6 +46,7 @@ from typing import Any, Callable, Iterator, Literal
 from pydantic import BaseModel
 from pydantic_core import PydanticUndefined
 
+from .render_work import checkpoint
 from .model import Path, PathDocument
 
 
@@ -80,6 +81,7 @@ _progress: ContextVar[Callable[[float, str], None] | None] = ContextVar(
 
 def report_progress(frac: float, msg: str = "") -> None:
     """Cheap to call in inner loops: a sink decides throttling, not the module."""
+    checkpoint()
     cb = _progress.get()
     if cb is not None:
         cb(frac, msg)

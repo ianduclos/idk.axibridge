@@ -12,6 +12,7 @@ the estimator times and the plotter draws.
 from __future__ import annotations
 
 import io
+from functools import wraps
 import os
 import shutil
 import subprocess
@@ -35,11 +36,33 @@ from .events import bus
 from .machine import SoftLimits, manager
 from .process import ProcessModule
 from .registry import describe_modules, get_effect, get_source, progress_scope
+from .render_work import RenderCancelled, checkpoint
 from .session import session
 from .stores import Pen, pen_library, settings_store
 from .tween import TweenParams
 
 router = APIRouter(prefix="/api")
+
+def _preview_render(handler):
+    """Cancel only read-only UI work; plotting and mutations stay atomic.
+
+    Register before taking the session lock so a queued edit can cancel a
+    queued reader too. Keep metadata and geometry from the same snapshot.
+    """
+    @wraps(handler)
+    def wrapped(*args, **kwargs):
+        try:
+            with session.render_work.scope(), session._lock:
+                checkpoint()
+                result = handler(*args, **kwargs)
+                checkpoint()
+                return result
+        except RenderCancelled:
+            raise HTTPException(409, detail={
+                "code": "render_cancelled", "message": "Drawing update superseded",
+            }) from None
+    return wrapped
+
 
 # Homebrew's two install prefixes (Apple Silicon, Intel) — checked when
 # shutil.which comes back empty. THE BUG (2026-08-11, Ian's bench check):
@@ -375,6 +398,7 @@ class EffectsPreviewBody(BaseModel):
 
 
 @router.post("/layers/{layer_id}/effects/preview")
+@_preview_render
 def preview_layer_effects(layer_id: str, body: EffectsPreviewBody) -> dict[str, Any]:
     """Shape one layer with a candidate effect stack, read-only — the live
     preview for effect-param drags. Output is paper-space (post transform +
@@ -1102,6 +1126,7 @@ def reorder_layers(body: OrderBody) -> dict[str, Any]:
 
 
 @router.get("/compose/resolved")
+@_preview_render
 def get_resolved(
     t: float | None = Query(default=None, ge=0.0, le=1.0),
     stats: bool = Query(default=True),
@@ -1128,6 +1153,7 @@ def get_resolved(
     consts = _consts() if stats else None
     layers_out = []
     for layer in session.project.layers:
+        checkpoint()
         paths = resolved.get(layer.id, []) if layer.visible else []
         pen = pens.get(layer.pen_id or "")
         pen_down: float | None = None
@@ -1169,6 +1195,7 @@ def get_resolved(
 
 
 @router.get("/plan")
+@_preview_render
 def get_plan(
     target: str = "all",
     sheet: str | None = Query(default=None),
@@ -1223,6 +1250,7 @@ def _doc_preview_layers(doc: Any, pen_ids: list[str]) -> dict[str, Any]:
 
 
 @router.get("/preview/sheet")
+@_preview_render
 def preview_sheet_doc(
     sheet: str | None = Query(default=None),
     staged: str | None = Query(default=None),
@@ -1395,6 +1423,7 @@ def _render_animation_frame(t: float, width_px: int, scale: float = 1.0) -> tupl
     pens = session.pens()
     any_geometry = False
     for layer in session.project.layers:
+        checkpoint()
         if not layer.visible:
             continue
         paths = resolved.get(layer.id, [])
@@ -1405,6 +1434,7 @@ def _render_animation_frame(t: float, width_px: int, scale: float = 1.0) -> tupl
         color = rgba(pen.color if pen else compose.INK, pen.opacity if pen else 1.0)
         width = max(1, int(round((pen.line_diameter_mm if pen else compose.DEFAULT_LINE_DIAMETER_MM) * draw_scale)))
         for path in paths:
+            checkpoint()
             if len(path.points) < 2:
                 continue
             pts = [(x * draw_scale, y * draw_scale) for x, y in path.points]
@@ -1440,6 +1470,7 @@ def _render_frame_sequence(
 
 
 @router.get("/animation/preview.png")
+@_preview_render
 def animation_preview_png(
     t: float = Query(default=0.0, ge=0.0, le=1.0),
     width_px: int = Query(default=1200, ge=240, le=2400),

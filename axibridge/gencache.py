@@ -26,6 +26,7 @@ import random
 import threading
 from typing import Any
 
+from .render_work import checkpoint
 from .assets import asset_store
 from .model import PathDocument
 
@@ -94,6 +95,7 @@ def generate_cached(src: Any, params: dict[str, Any]) -> PathDocument:
     The returned ``PathDocument`` is the cached object itself, not a copy:
     legal only because generate() must be pure and callers never mutate what
     it returns (the same contract effects/transforms already have)."""
+    checkpoint()
     validated = src.Params(**params)
     if not getattr(src, "cacheable", True):
         return src.generate(validated)
@@ -103,6 +105,7 @@ def generate_cached(src: Any, params: dict[str, Any]) -> PathDocument:
         if hit is not None:
             return hit
     doc = src.generate(validated)
+    checkpoint()
     with _lock:
         # Another thread may have raced us to the same key (generate_cached
         # has its own lock independent of the session lock — the live-preview

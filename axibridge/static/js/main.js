@@ -1,4 +1,4 @@
-import { beginDrawingUpdate } from "./drawing_status.js";
+import { beginDrawingUpdate, restartDrawingUpdate } from "./drawing_status.js";
 // axibridge v2 frontend orchestrator. Zero-build ES modules on purpose: no
 // toolchain on the Pi, view-source debuggable, and every control surface is
 // rendered from server-declared schemas (see forms.js).
@@ -115,6 +115,7 @@ function log(text, cls = "") {
 
 let errTimer;
 const oops = (e) => {
+  if (e?.name === "AbortError" || e?.code === "render_cancelled") return;
   console.error(e);
   log(`✗ ${e.message}`, "err");
   // also surface where it's visible from ANY tab (the job log lives in Plot)
@@ -246,6 +247,12 @@ export const actions = {
   // so does any scrub/jump (opts.scrub) per Ian's ruling that timeline
   // interactions may still switch views as they do today.
   async refreshResolved(master_t = S.masterT, opts = {}) {
+    // A new live render also supersedes sheet previews and estimates begun
+    // from the previous project/view generation.
+    invalidateResolved();
+    const requestId = ++resolvedRequestId;
+    const controller = new AbortController();
+    resolvedAbort = controller;
     const finishUpdate = beginDrawingUpdate();
     try {
       const stickySheet = !opts.scrub && S.docPreview?.kind === "sheet" ? S.docPreview : null;
@@ -255,7 +262,9 @@ export const actions = {
       S.masterT = master_t;
       let q = master_t == null ? "" : `?t=${encodeURIComponent(master_t)}`;
       if (opts.stats === false) q += q ? "&stats=false" : "?stats=false";
-      S.resolved = await api.get(`/api/compose/resolved${q}`);
+      const resolved = await api.get(`/api/compose/resolved${q}`, { signal: controller.signal });
+      if (requestId !== resolvedRequestId || controller.signal.aborted) return false;
+      S.resolved = resolved;
       if (stickySheet) {
         // re-issue the SAME sheet query — same layout params, fresh geometry.
         await actions.showDocPreview(stickySheet.kind, stickySheet.label, stickySheet.query, {
@@ -264,11 +273,19 @@ export const actions = {
       } else {
         canvas.setData({ layers: S.resolved.layers, images: mapGhosts() });
       }
+      if (requestId !== resolvedRequestId || controller.signal.aborted) return false;
       renderLayerList();
       renderSelReadout();
       refreshPenOverlay(); // pen's anchor/handle overlay tracks undo/redo and any other external edit
       if (opts.plan !== false) await actions.refreshPlan();
-    } finally { finishUpdate(); }
+      return true;
+    } catch (e) {
+      if (e?.name === "AbortError" || e?.code === "render_cancelled") return false;
+      throw e;
+    } finally {
+      if (resolvedAbort === controller) resolvedAbort = null;
+      finishUpdate();
+    }
   },
 
   // Swap the centre canvas to a transient sheet/staged document (grid-sheet
@@ -284,14 +301,23 @@ export const actions = {
   // (clearDocPreviewState is the only other writer, always to null) — see
   // renderViewLabel's comment.
   async showDocPreview(kind, label, query, meta = {}) {
+    const requestId = ++previewRequestId;
+    const generation = viewGeneration;
+    previewAbort?.abort();
+    const controller = new AbortController();
+    previewAbort = controller;
     try {
-      const data = await api.get(`/api/preview/sheet?${query}`);
+      const data = await api.get(`/api/preview/sheet?${query}`, { signal: controller.signal });
+      if (requestId !== previewRequestId || generation !== viewGeneration || controller.signal.aborted) return;
       S.docPreview = { kind, label, query, ...meta };
       canvas.setData({ layers: data.layers, images: [] });
       const banner = $("doc-preview-banner");
       if (banner) { $("doc-preview-label").textContent = label; banner.hidden = false; }
       renderViewLabel();
-    } catch (e) { oops(e); }
+    } catch (e) {
+      if (requestId === previewRequestId && generation === viewGeneration) oops(e);
+    }
+    finally { if (previewAbort === controller) previewAbort = null; }
   },
 
   // Leave preview mode and restore the live project view. refreshResolved does
@@ -301,10 +327,16 @@ export const actions = {
   },
 
   refreshPlan: debounce(async () => {
+    const requestId = ++planRequestId;
+    const generation = viewGeneration;
+    planAbort?.abort();
+    const controller = new AbortController();
+    planAbort = controller;
     try {
       const sheet = S.sheetPlan ? `&sheet=${encodeURIComponent(JSON.stringify(S.sheetPlan))}` : "";
       const staged = S.stagedPlan ? `&staged=${encodeURIComponent(JSON.stringify(S.stagedPlan))}` : "";
-      const r = await api.get(`/api/plan?target=${encodeURIComponent(S.plotTarget)}${sheet}${staged}`);
+      const r = await api.get(`/api/plan?target=${encodeURIComponent(S.plotTarget)}${sheet}${staged}`, { signal: controller.signal });
+      if (requestId !== planRequestId || generation !== viewGeneration || controller.signal.aborted) return;
       S.plan = r.job;
       canvas.setPlan(r.job);
       updatePlayback();
@@ -313,6 +345,7 @@ export const actions = {
         `${r.job.pen_lifts} lifts`;
       $("plan-warnings").textContent = (r.warnings || []).join("; ");
     } catch (e) {
+      if (requestId !== planRequestId || generation !== viewGeneration || controller.signal.aborted) return;
       if (e.message?.includes("nothing") || e.message?.includes("unknown layer")) {
         $("estimate").textContent = "";
         // S.plan was left stale here, which only ever fed a readout nobody
@@ -322,19 +355,24 @@ export const actions = {
         updatePlayback();
       } else { oops(e); }
     }
+    finally { if (planAbort === controller) planAbort = null; }
   }, 200),
 
-  patchLayer: (() => {
-    const debounced = debounce(commitPatch, 350);
-    return (id, patch, opts = {}) => {
+  patchLayer(id, patch, opts = {}) {
       // optimistic local update so the UI doesn't flicker
       const layer = S.state.project.layers.find((l) => l.id === id);
       if (layer) Object.assign(layer, patch);
       renderLayerList();
-      if (opts.debounce) debounced(id, patch);
-      else commitPatch(id, patch);
-    };
-  })(),
+      restartDrawingUpdate();
+      invalidateResolved();
+      layerPatches.schedule(id, patch, opts.debounce ? 350 : 0);
+  },
+
+  cancelLayerUpdates(ids) {
+    for (const id of ids) layerPatches.cancel(id);
+    restartDrawingUpdate();
+    invalidateResolved();
+  },
 
   setSelection(ids) {
     S.selection = ids;
@@ -393,15 +431,82 @@ function mapGhosts() {
   return out;
 }
 
-async function commitPatch(id, patch) {
-  const finishUpdate = beginDrawingUpdate();
-  try {
-    await api.patch(`/api/layers/${id}`, patch);
-    await actions.refreshResolved();
-    renderLayerDetail();
-  } catch (e) { oops(e); }
-  finally { finishUpdate(); }
+let resolvedAbort = null;
+let resolvedRequestId = 0;
+let previewAbort = null;
+let previewRequestId = 0;
+let planAbort = null;
+let planRequestId = 0;
+let viewGeneration = 0;
+
+function invalidateResolved() {
+  viewGeneration++;
+  resolvedRequestId++;
+  resolvedAbort?.abort();
+  resolvedAbort = null;
+  previewRequestId++;
+  previewAbort?.abort();
+  previewAbort = null;
+  planRequestId++;
+  planAbort?.abort();
+  planAbort = null;
 }
+
+const layerPatches = {
+  entries: new Map(),
+  schedule(id, patch, delay) {
+    let entry = this.entries.get(id);
+    if (!entry) {
+      entry = { pending: null, inflight: false, timer: null, canceled: false, finish: beginDrawingUpdate() };
+      this.entries.set(id, entry);
+    }
+    entry.canceled = false;
+    entry.pending = { ...(entry.pending || {}), ...patch };
+    clearTimeout(entry.timer);
+    entry.timer = delay ? setTimeout(() => this.run(id), delay) : null;
+    if (!delay) this.run(id);
+  },
+  cancel(id) {
+    const entry = this.entries.get(id);
+    if (!entry) return;
+    clearTimeout(entry.timer);
+    entry.canceled = true;
+    entry.pending = null;
+    if (!entry.inflight) {
+      entry.finish();
+      this.entries.delete(id);
+    }
+  },
+  async run(id) {
+    const entry = this.entries.get(id);
+    if (!entry || entry.inflight || !entry.pending) return;
+    clearTimeout(entry.timer);
+    entry.timer = null;
+    const patch = entry.pending;
+    entry.pending = null;
+    entry.inflight = true;
+    try {
+      await api.patch(`/api/layers/${id}`, patch);
+    } catch (e) { if (!entry.canceled) oops(e); }
+    finally {
+      entry.inflight = false;
+      if (entry.pending) this.run(id);
+      else {
+        this.entries.delete(id);
+        // Resolve only once all layers' PATCH/debounce work has settled, so
+        // parallel edits cannot paint an intermediate project snapshot.
+        if (!entry.canceled && !this.entries.size) {
+          const refresh = actions.refreshResolved(); // begin before releasing mutation token
+          const generation = viewGeneration;
+          entry.finish();
+          refresh.then((applied) => {
+            if (applied && generation === viewGeneration && !entry.canceled) renderLayerDetail();
+          }).catch(oops);
+        } else entry.finish();
+      }
+    }
+  },
+};
 
 // ---- the machine strip (persistent, in #canvas-status) ---------------------------
 //
@@ -1032,7 +1137,9 @@ document.addEventListener("keydown", async (e) => {
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
   if ((e.key === "Backspace" || e.key === "Delete") && S.selection.length) {
     e.preventDefault();
+    const finishUpdate = beginDrawingUpdate();
     try {
+      actions.cancelLayerUpdates(S.selection);
       const names = S.selection.map((id) =>
         S.state.project.layers.find((l) => l.id === id)?.name || id);
       const r = await api.post("/api/layers/delete", { ids: S.selection }); // one undo step
@@ -1041,6 +1148,7 @@ document.addEventListener("keydown", async (e) => {
       await actions.refreshResolved();
       logDeleted(names, r.deleted || S.selection);
     } catch (err) { oops(err); }
+    finally { finishUpdate(); }
   } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
     e.preventDefault();
     await (e.shiftKey ? redoStep() : undoStep());

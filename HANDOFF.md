@@ -1,8 +1,22 @@
 ---
 project: idk.axibridge
 updated: 2026-09-09
-entries: 15
+entries: 16
 ---
+
+### Heavy drawing updates acceptance — updated 2026-09-09, owner: ian
+
+- done: new edits restart elapsed timing, coalesce pending layer patches and
+  suppress stale drawing/plan/sheet responses. Deletion cancels queued edits
+  and signals active read-only rendering before waiting for the session lock.
+- limit: activity is indeterminate, and cancellation waits for any current
+  native geometry/optimization call to return. Source regeneration commits
+  and plotting/export remain atomic. True percentage progress is deferred.
+- deployment: backend reloaded with the three-layer animation restored; live
+  render exceeded the 30-second verification timeout. Refresh the window.
+- next: check heavy Ribbon edits and mid-render deletion in the native app;
+  geometry fixtures and browser/concurrent API checks are provisional evidence.
+- evidence: docs/reviews/render-cancellation-2026-09-09/README.md.
 
 ### Magnetic field corners acceptance — updated 2026-09-09, owner: ian
 

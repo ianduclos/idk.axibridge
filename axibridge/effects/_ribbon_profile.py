@@ -11,6 +11,8 @@ import math
 from collections.abc import Callable
 from typing import Any
 
+from ..render_work import checkpoint
+
 
 _UINT32_MASK = 0xFFFFFFFF
 
@@ -165,6 +167,7 @@ def _legacy_profile(total: float, opts: dict[str, Any], random: Callable[[], flo
     index = 0
     variation = opts["variation"]
     while station < total:
+        checkpoint()
         guided = guide[index] if guide is not None and index < len(guide) else None
         spacing = guided["spacing"] if guided else 1.0 + (random() - 0.5) * 0.5 * variation
         station = min(total, station + opts["wavelength"] * 0.5 * spacing)
@@ -207,6 +210,7 @@ def _crest_profile(total: float, opts: dict[str, Any], seed: int) -> _Profile:
     phrase_left = phrase_size = accent = 0
     phrase_gain = pace = 1.0
     for index in range(count):
+        checkpoint()
         if phrase_left == 0:
             phrase_size = 3 + math.floor(structure() * 3.0)
             phrase_left = phrase_size
@@ -228,12 +232,14 @@ def _crest_profile(total: float, opts: dict[str, Any], seed: int) -> _Profile:
         trough = height_contrast(_mix(0.21, 0.07 + heights() * 0.2, height))
         events.append({"span": span, "skew": skew, "peak": peak, "trough": trough})
     for index, event in enumerate(events):
+        checkpoint()
         next_peak = events[index + 1]["peak"] if index + 1 < len(events) else event["peak"]
         event["trough"] = min(event["trough"], 0.65 * event["peak"], 0.65 * next_peak)
     scale = max(0.0, total) / sum(event["span"] for event in events)
     knots = [{"s": 0.0, "v": 0.0}]
     station = 0.0
     for index, event in enumerate(events):
+        checkpoint()
         length = event["span"] * scale
         knots.append({"s": station + length * (0.5 + event["skew"]), "v": event["peak"]})
         station += length
@@ -251,6 +257,7 @@ def _related_profile(left: _Profile, opts: dict[str, Any], seed: int) -> _Profil
     spacing, height = opts["spacing_variation"], opts["height_variation"]
     knots: list[dict[str, float]] = []
     for index, knot in enumerate(left.knots):
+        checkpoint()
         if index == 0 or index == len(left.knots) - 1:
             knots.append({"s": knot["s"], "v": 0.0})
             continue
@@ -260,6 +267,7 @@ def _related_profile(left: _Profile, opts: dict[str, Any], seed: int) -> _Profil
             "v": _clamp(knot["v"] * (1.0 + (random() - 0.5) * 0.55 * height), 0.035, 1.0),
         })
     for index in range(2, len(knots) - 1, 2):
+        checkpoint()
         knots[index]["v"] = min(knots[index]["v"], 0.65 * knots[index - 1]["v"], 0.65 * knots[index + 1]["v"])
     return _profile_from_knots(
         knots, left.smoothing_radius, smoothing_seed=seed ^ 0x85EBCA6B,

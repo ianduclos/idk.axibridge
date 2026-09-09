@@ -564,3 +564,22 @@ Equal seed zero is deterministic throughout an animation, matching generator
 execution. Module endpoint params are schema-normalized before interpolation
 on effect, generator, nested and tray routes. This prevents whole-number JSON
 encoding from turning continuous sliders into discrete jumps.
+
+## Preview cancellation (2026-09-09)
+
+`Session.render_work` tracks interactive read scopes with a separate short-held
+lock and context-local cancellation events. An edit signals existing readers
+**before** waiting for the project lock. Readers arriving while a mutation is
+pending start cancelled, preventing queued obsolete renders from delaying an
+edit. Only the read-only resolved, effect-preview, plan, sheet and raster API handlers enter
+these scopes; they hold the project lock through geometry and metadata capture
+so the response describes one snapshot. Plotting and transactional mutation
+bodies do not enter a scope.
+
+Compositor stages, tween stamps, generator progress and Ribbon geometry loops
+cooperate through `checkpoint()`. Completed pure cache entries remain reusable;
+cancelled stage results are not inserted. Occlusion cache finalization runs in
+`finally`. The HTTP boundary translates the dedicated cancellation signal into
+409 / `render_cancelled`; the browser rejects stale responses separately,
+because cancelling HTTP alone does not stop a worker thread. A native geometry
+call already in progress must return before cancellation takes effect.

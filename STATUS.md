@@ -3,8 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-09
 machine: mac+pi
-summary: Magnetic field adds four-corner XY presets, Scatter strength ranges and locks, and optional pole spacing on main; native/paper review remains.
+summary: Expensive drawing previews can be superseded by edits or layer deletion; latest-response guards and per-edit elapsed timing are ready for native checking.
 next:
+  - "Check heavy Ribbon edits, elapsed reset and deleting a layer during rendering"
   - "Restart app/backend when ready and check Magnetic field four-corner blending, Scatter strengths and pole spacing"
   - "Check the open Mac app for native appearance and the new scaffold icon"
   - "Continue Second Reading alternating-use and paper review"
@@ -12,6 +13,16 @@ handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Render cancellation, 9 September:** Superseded read-only drawing work is
+cancelled cooperatively before edits/deletion wait on the project lock. Browser
+requests are guarded against stale responses, layer edits coalesce, and the
+elapsed timer follows the newest edit. Full suite: 1,423 passed, one lifecycle
+skip; typecheck/build and final focused browser checks passed. The bar stays indeterminate; a native
+geometry operation must return before cancellation takes effect. Backend reloaded
+and the current three-layer animation restored; its full live render exceeded
+the 30-second verification timeout. Refresh the window for new JS.
+[Behavior and verification](docs/reviews/render-cancellation-2026-09-09/README.md).
 
 **Animation identity correction, 9 September:** Animate and appended keyframes
 share the original effect field; equal generator seeds including zero stay

@@ -14,6 +14,7 @@ times is what the pen draws.
 from __future__ import annotations
 
 import math
+from functools import wraps
 import random
 import re
 import threading
@@ -34,6 +35,7 @@ from .compose import (
     StagedPass,
     StagedSheet,
 )
+from .render_work import RenderWork, checkpoint
 from .machine import manager
 from .model import Layer, Path, PathDocument
 from .registry import effective_time_axis, field_bounds, fold_time_axis, get_source
@@ -226,9 +228,23 @@ LINEART_STACK_PRESETS: dict[str, list[dict[str, Any]]] = {
 _CROP_MODES = ("timeline", "full")
 
 
+def _interrupt_preview(method):
+    """Signal obsolete readers BEFORE waiting for the project lock.
+
+    Mutation bodies themselves are never cancellable: undo/params/geometry
+    must commit together. Only explicit read-only API scopes observe signals.
+    """
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        with self.render_work.mutation():
+            return method(self, *args, **kwargs)
+    return wrapped
+
+
 class Session:
     def __init__(self) -> None:
         self._lock = threading.RLock()
+        self.render_work = RenderWork()
         self.project = Project()
         self.project_dir: str | None = None
         #: layer id -> source paths in the layer's LOCAL frame (pre-transform)
@@ -379,6 +395,7 @@ class Session:
             self._frame_lru.clear()
             self._frame_bbox.clear()
 
+    @_interrupt_preview
     def undo(self) -> bool:
         """Step back one entry, remembering where we were so redo can return.
 
@@ -394,6 +411,7 @@ class Session:
             self._restore(self._history.pop())
             return True
 
+    @_interrupt_preview
     def redo(self) -> bool:
         """Step forward again into the branch ``undo`` stepped out of. Empty
         as soon as anything is edited — there is no branch left to return to."""
@@ -685,6 +703,7 @@ class Session:
             self.source_geometry[layer.id] = paths
         return layer
 
+    @_interrupt_preview
     def regenerate_layer(self, layer_id: str, params: dict[str, Any] | None = None,
                          coalesce: bool = False) -> CanvasLayer:
         """``coalesce=True`` (the bench's latched live-edit) folds consecutive
@@ -766,12 +785,14 @@ class Session:
             src = self.source_geometry.get(layer_id)
             candidate = layer.model_copy(deep=True)
             diameter = compose.line_diameter_for(layer, self.pens())
+            page = compose.guide_page(self.project)
+        checkpoint()
         if src is None:
             raise RuntimeError("layer has no source geometry to preview (tween layers preview live already)")
         candidate.effects = [EffectStep(**e) for e in effects]
         # outside the lock: shape_layer is pure and src is never mutated in place
         return compose.shape_layer(
-            candidate, src, compose.guide_page(self.project), diameter)
+            candidate, src, page, diameter)
 
     def add_svg_layers(
         self, svg_text: str, filename: str, quantization_mm: float,
@@ -805,6 +826,7 @@ class Session:
                 created.append(layer)
         return created
 
+    @_interrupt_preview
     def update_layer(self, layer_id: str, patch: dict[str, Any]) -> CanvasLayer:
         allowed = {"name", "visible", "draw", "transform", "effects", "pen_id",
                    "occluder", "receives_occlusion", "occlusion_margin_mm",
@@ -855,6 +877,7 @@ class Session:
                 self._shaped_cache.pop(updated.id, None)
             return updated
 
+    @_interrupt_preview
     def delete_layer(self, layer_id: str) -> list[str]:
         return self.delete_layers([layer_id])
 
@@ -936,6 +959,7 @@ class Session:
             return refs
         return []
 
+    @_interrupt_preview
     def delete_layers(self, layer_ids: list[str], cascade: bool = True) -> list[str]:
         """Bulk delete = ONE history entry, so one undo restores the lot.
 
@@ -1045,6 +1069,7 @@ class Session:
                 self._clip_cache.pop(layer.id, None)
             return [l.id for l in deleted]
 
+    @_interrupt_preview
     def reorder_layers(self, ordered_ids: list[str]) -> None:
         with self._lock:
             if sorted(ordered_ids) != sorted(l.id for l in self.project.layers):
@@ -1082,6 +1107,7 @@ class Session:
             self.source_geometry[layer.id] = []  # materialised on next resolve
             return layer
 
+    @_interrupt_preview
     def set_tween_params(self, layer_id: str, values: dict[str, Any]) -> CanvasLayer:
         with self._lock:
             layer = self.project.layer(layer_id)
@@ -2918,7 +2944,9 @@ class Session:
           content via its endpoints' ``frame_follow``.
 
         ``master_t=None`` is byte-identical to no scrub at all."""
+        checkpoint()
         with self._lock:
+            checkpoint()
             overrides = self._clip_overrides(master_t)
             # ephemeral overlay: the follow generators' advanced geometry rides
             # over the stored source geometry for THIS resolve only. Tweens read
@@ -2926,6 +2954,7 @@ class Session:
             # (below), so resolve_project sees a single consistent geometry map.
             geo = {**self.source_geometry, **overrides}
             self._materialize_tweens(master_t, geo)
+            checkpoint()
             return compose.resolve_project(
                 self.project, geo, self.pens(), self._shaped_cache,
                 self._occlusion_cache,
@@ -2952,6 +2981,7 @@ class Session:
 
         overrides: dict[str, list[Path]] = {}
         for layer in self.project.layers:
+            checkpoint()
             if not layer.visible or not layer.frame_follow:
                 continue
             src = layer.source
@@ -2977,6 +3007,7 @@ class Session:
                 paths = [p for lyr in doc.layers for p in lyr.paths]
             except Exception:
                 continue  # fall back to stored base geometry for this layer
+            checkpoint()
             if layer_map is None:
                 layer_map = self._clip_cache[layer.id] = OrderedDict()
             layer_map[key] = _ClipFollowEntry(paths, sum(len(p.points) for p in paths))
@@ -3016,6 +3047,7 @@ class Session:
         # inner result — for its geometry AND its cache key. See
         # _tween_dependency_order.
         for layer in self._tween_dependency_order():
+            checkpoint()
             params = layer.source.params or {}
             override_t: float | None = None
             if master_t is not None and params.get("follow_master"):
@@ -3071,6 +3103,7 @@ class Session:
             paths = tween.materialize(
                 layer, self.project, read_geo, override_t, clamped_master,
                 compose.line_diameter_for(layer, self.pens()))
+            checkpoint()
             if layer_map is None:
                 layer_map = self._tween_cache[layer.id] = OrderedDict()
             layer_map[key] = _TweenEntry(paths, tuple(ref_objects),
@@ -3150,7 +3183,9 @@ class Session:
             return doc
         import vpype_cli
 
+        checkpoint()
         vdoc = vpype_cli.execute(" ".join(cmds), document=doc_to_vpype(doc))
+        checkpoint()
         out = doc_from_vpype(vdoc, source=doc.source)
         out.width, out.height = doc.width, doc.height
         return out

@@ -30,3 +30,8 @@ export function beginDrawingUpdate() {
     render();
   };
 }
+
+export function restartDrawingUpdate() {
+  started = performance.now();
+  render();
+}

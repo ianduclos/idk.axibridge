@@ -15,6 +15,7 @@ from typing import Any, Iterable
 from shapely.geometry import GeometryCollection, LineString, MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
 from shapely import make_valid
+from ..render_work import checkpoint
 
 EPS = 1e-9
 Point2 = tuple[float, float]
@@ -48,6 +49,7 @@ def sample_polyline(points: list[Point2], spacing: float) -> tuple[list[Point2],
     source = [_point(p) for p in points]
     spine, stations, total = [source[0]], [0.0], 0.0
     for a, b in zip(source, source[1:]):
+        checkpoint()
         length = _distance(a, b)
         count = max(1, ceil(length / spacing))
         for j in range(1, count + 1):
@@ -62,6 +64,8 @@ def frames(spine: list[Point2]) -> list[Point2]:
     """Return capped-miter normals (the values include the miter scale)."""
     out: list[Point2] = []
     for i, here in enumerate(spine):
+        if not i & 255:
+            checkpoint()
         prev, nxt = spine[max(0, i - 1)], spine[min(len(spine) - 1, i + 1)]
         ax, ay, bx, by = here[0] - prev[0], here[1] - prev[1], nxt[0] - here[0], nxt[1] - here[1]
         if i == 0:
@@ -85,6 +89,8 @@ def frames(spine: list[Point2]) -> list[Point2]:
 def sharp_corners(spine: list[Point2], stations: list[float]) -> list[dict[str, float]]:
     out = []
     for i in range(1, len(spine) - 1):
+        if not i & 255:
+            checkpoint()
         a = (spine[i][0] - spine[i - 1][0], spine[i][1] - spine[i - 1][1])
         b = (spine[i + 1][0] - spine[i][0], spine[i + 1][1] - spine[i][1])
         turn = atan2(a[0] * b[1] - a[1] * b[0], a[0] * b[0] + a[1] * b[1])
@@ -106,6 +112,7 @@ def join_ranges(stations: list[float], corners: list[dict[str, float]], width: f
     # inside the union, where no boundary route could connect the patch ends.
     supports = []
     for corner in corners:
+        checkpoint()
         reach = width * min(4, abs(tan(corner["turn"] / 2))) * 2 + 12
         lo, hi = max(0,corner["s"]-reach), min(stations[-1],corner["s"]+reach)
         if supports and lo <= supports[-1][1]:
@@ -114,6 +121,7 @@ def join_ranges(stations: list[float], corners: list[dict[str, float]], width: f
             supports.append([lo,hi])
     ranges = []
     for lo,hi in supports:
+        checkpoint()
         start = max(0,bisect_left(stations,lo)-1)
         end = min(len(stations)-1,bisect_right(stations,hi))
         # Quantization to source samples can also make disjoint supports touch.
@@ -138,6 +146,7 @@ def balance_edge_widths(left, right, stations, corners, width):
     total = [a+b for a,b in zip(left,right)]
     balanced = list(left)
     for k,(start,end) in enumerate(ranges):
+        checkpoint()
         area_left = sum((left[i]+left[i+1])*.5*(stations[i+1]-stations[i]) for i in range(start,end))
         area_total = sum((total[i]+total[i+1])*.5*(stations[i+1]-stations[i]) for i in range(start,end))
         ratio = area_left/area_total if area_total>EPS else .5
@@ -145,6 +154,8 @@ def balance_edge_widths(left, right, stations, corners, width):
         before = min(width,(lo-stations[ranges[k-1][1]])/2) if k else min(width,lo-stations[0])
         after = min(width,(stations[ranges[k+1][0]]-hi)/2) if k+1<len(ranges) else min(width,stations[-1]-hi)
         for i,s in enumerate(stations):
+            if not i & 255:
+                checkpoint()
             if s<lo:
                 t = min(1,(lo-s)/before) if before>EPS else 1
             elif s>hi:
@@ -166,10 +177,13 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
     ranges = join_ranges(stations,corners,width)
     patches = []
     for start,end in ranges:
+        checkpoint()
         source: list[Point2] = []
         offset: list[Point2] = []
         ss: list[float] = []
         for i in range(start, end + 1):
+            if not i & 255:
+                checkpoint()
             if stations[i] in turns and 0 < i < len(spine) - 1:
                 a, b = spine[i - 1], spine[i]
                 dx, dy = b[0] - a[0], b[1] - a[1]
@@ -185,6 +199,7 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
                 turn = turns[stations[i]]
                 angle, count = atan2(ny, nx), max(4, ceil(abs(turn) / .055))
                 for j in range(count + 1):
+                    checkpoint()
                     source.append(b)
                     offset.append((b[0] + w * cos(angle + turn * j / count), b[1] + w * sin(angle + turn * j / count)))
                     ss.append(stations[i])
@@ -192,17 +207,21 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
                 source.append(spine[i]); offset.append(_point(nodes[i])); ss.append(stations[i])
         triangles = []
         for a, b, c, d in zip(source, source[1:], offset[1:], offset):
+            checkpoint()
             for tri in ((a, b, c), (a, c, d)):
                 poly = Polygon(tri)
                 if abs(poly.area) > 1e-10:
                     triangles.append(poly)
         if not triangles:
             continue
+        checkpoint()
         merged = unary_union(triangles)
+        checkpoint()
         source_line = LineString(source)
         candidates = list(merged.geoms) if isinstance(merged, MultiPolygon) else [merged]
         chosen = None
         for poly in candidates:
+            checkpoint()
             ring = list(poly.exterior.coords)[:-1]
             ia = next((i for i, p in enumerate(ring) if _distance(p, offset[0]) < 1e-7), -1)
             ib = next((i for i, p in enumerate(ring) if _distance(p, offset[-1]) < 1e-7), -1)
@@ -225,6 +244,7 @@ def envelope(nodes: list[dict[str, Any]], spine: list[Point2], stations: list[fl
             offset_lengths.append(offset_lengths[-1]+_distance(a,b))
         previous, path = stations[start], []
         for index, p in enumerate(chosen):
+            checkpoint()
             if index == 0:
                 path.append({"p": _point(nodes[start]), "s": stations[start]}); continue
             if index == len(chosen) - 1:
@@ -282,6 +302,8 @@ def silhouette(left_nodes: list[Any], right_nodes: list[Any], spine_nodes: list[
     for nodes in (left_nodes, right_nodes):
         denom = max(1, len(nodes) - 1)
         for i, (first, second) in enumerate(zip(nodes, nodes[1:])):
+            if not i & 255:
+                checkpoint()
             a, sa = _node(first); b, sb = _node(second)
             ca = _spine_at(spine_values, spine_stations, sa, i / denom * max(0, len(spine_nodes) - 1))
             cb = _spine_at(spine_values, spine_stations, sb, (i + 1) / denom * max(0, len(spine_nodes) - 1))
@@ -289,15 +311,23 @@ def silhouette(left_nodes: list[Any], right_nodes: list[Any], spine_nodes: list[
                 poly = Polygon(tri)
                 if abs(poly.area) > EPS:
                     pieces.append(poly)
-    return unary_union(pieces) if pieces else GeometryCollection()
+    if not pieces:
+        return GeometryCollection()
+    checkpoint()
+    result = unary_union(pieces)
+    checkpoint()
+    return result
 
 
 def _segment_visible(a: Point2, b: Point2, mask) -> list[tuple[float, float]]:
+    checkpoint()
     line = LineString((a, b))
     if line.length <= EPS:
         return [] if mask.covers(Point(a)) else [(0.0, 1.0)]
     cuts = [0.0, 1.0]
+    checkpoint()
     inter = line.intersection(mask.boundary)
+    checkpoint()
     geoms: Iterable[Any] = getattr(inter, "geoms", [inter])
     for geom in geoms:
         if geom.is_empty:
@@ -315,10 +345,12 @@ def clip_paths(paths: list[list[Point2]], mask) -> list[list[Point2]]:
     """Remove filled mask and its boundary; preserve input route and direction."""
     out: list[list[Point2]] = []
     for path in paths:
+        checkpoint()
         if len(path) < 2:
             continue
         current: list[Point2] | None = None
         for a, b in zip(map(_point, path), map(_point, path[1:])):
+            checkpoint()
             intervals = _segment_visible(a, b, mask)
             for lo, hi in intervals:
                 p, q = (_mix(a[0], b[0], lo), _mix(a[1], b[1], lo)), (_mix(a[0], b[0], hi), _mix(a[1], b[1], hi))
@@ -335,7 +367,9 @@ def self_mask(paths_nodes: list[list[dict[str, Any]]], left_nodes: list[dict[str
     """Mask crossings by later (or earlier) swept faces, retaining accepted runs."""
     def resample(nodes):
         i = 0; result = []
-        for s in stations:
+        for index, s in enumerate(stations):
+            if not index & 255:
+                checkpoint()
             while i + 1 < len(nodes) - 1 and nodes[i + 1]["s"] < s: i += 1
             a, sa = _node(nodes[i]); b, sb = _node(nodes[min(i + 1, len(nodes) - 1)])
             t = max(0.0, min(1.0, (s - sa) / (sb - sa or 1)))
@@ -346,6 +380,8 @@ def self_mask(paths_nodes: list[list[dict[str, Any]]], left_nodes: list[dict[str
     def keys(x0, y0, x1, y1):
         return [(x, y) for x in range(floor(x0 / cell), floor(x1 / cell) + 1) for y in range(floor(y0 / cell), floor(y1 / cell) + 1)]
     for i in range(len(stations) - 1):
+        if not i & 255:
+            checkpoint()
         ring = [left[i], left[i + 1], right[i + 1], right[i]]
         xs, ys = [p[0] for p in ring], [p[1] for p in ring]
         polygon = Polygon(ring)
@@ -353,30 +389,41 @@ def self_mask(paths_nodes: list[list[dict[str, Any]]], left_nodes: list[dict[str
         # treats that input by its even-odd filled pieces; make_valid gives GEOS
         # the corresponding valid area before we union candidate blockers.
         if not polygon.is_valid:
+            checkpoint()
             polygon = make_valid(polygon)
+            checkpoint()
         face = (polygon, stations[i], stations[i + 1], min(xs), max(xs), min(ys), max(ys))
         faces.append(face)
         for key in keys(face[3], face[5], face[4], face[6]): grid[key].append(i)
     joins = [(c["s"], width * min(4, abs(tan(c["turn"] / 2))) * 2 + 8) for c in corners]
     result: list[list[Point2]] = []
     for nodes in paths_nodes:
+        checkpoint()
         run: list[Point2] = []
         def finish():
             nonlocal run
             if len(run) > 1: result.append(run)
             run = []
         for first, second in zip(nodes, nodes[1:]):
+            checkpoint()
             a, sa = _node(first); b, sb = _node(second)
             x0, x1, y0, y1 = min(a[0], b[0]), max(a[0], b[0]), min(a[1], b[1]), max(a[1], b[1])
             blocker_indices = set(j for key in keys(x0, y0, x1, y1) for j in grid[key])
             blockers = []
             for j in blocker_indices:
+                checkpoint()
                 poly, fs, fe, fx0, fx1, fy0, fy1 = faces[j]
                 if (fe >= sa - 4) if reverse else (fs <= sb + 4): continue
                 if fx1 < x0 or fx0 > x1 or fy1 < y0 or fy0 > y1: continue
                 if any(abs((sa + sb) / 2 - cs) < reach and abs((fs + fe) / 2 - cs) < reach for cs, reach in joins): continue
                 blockers.append(poly)
-            intervals = _segment_visible(a, b, unary_union(blockers)) if blockers else [(0.0, 1.0)]
+            if blockers:
+                checkpoint()
+                blocker_mask = unary_union(blockers)
+                checkpoint()
+                intervals = _segment_visible(a, b, blocker_mask)
+            else:
+                intervals = [(0.0, 1.0)]
             if not intervals:
                 finish(); continue
             for lo, hi in intervals:

@@ -3244,8 +3244,8 @@ def test_restart_menu_uses_visible_confirmation_before_request(ui, accept):
     assert not ui.errors
 
 
-def test_drawing_update_status_covers_overlapping_resolves_and_failure(ui, tmp_path):
-    """Slow effect edits stay visible until every update settles, even on error."""
+def test_drawing_update_status_resets_and_latest_resolve_wins(ui, tmp_path):
+    """A fresh edit restarts the wait, and an older render cannot repaint."""
     add_layer(ui, "grid", {"cols": 2, "rows": 2})
     reload_app(ui)
     wait_for_ink(ui)
@@ -3265,10 +3265,49 @@ def test_drawing_update_status_covers_overlapping_resolves_and_failure(ui, tmp_p
         ui.click('#fx-add')
     ui.wait_for_timeout(100)  # dispatch the intercepted request callback
     assert len(held) == 2
-    with ui.expect_response('**/api/compose/resolved*'):
-        held[0].continue_()
-    assert ui.locator('#drawing-status').is_visible()
-    held[1].fulfill(status=503, content_type='application/json', body='{"detail":"Test resolve unavailable"}')
+    assert ui.locator('#drawing-elapsed').inner_text() == "", \
+        "elapsed time belongs to the newest edit, not the superseded render"
+    ui.wait_for_selector('#drawing-status:not([hidden])')
+    held[1].continue_()
     ui.wait_for_selector('#drawing-status', state='hidden')
-    ui.wait_for_function("document.querySelector('#global-error').textContent.includes('Test resolve unavailable')")
-    assert not [e for e in ui.errors if '503' not in e and 'Test resolve unavailable' not in e]
+    assert ui.locator('#fx-steps .step').count() == 2
+    newest_ink = canvas_ink(ui)
+    assert newest_ink
+    # Chromium may still deliver a response for a request whose fetch was
+    # aborted. Its deliberately empty payload must never erase newer ink.
+    try:
+        held[0].fulfill(status=200, content_type='application/json',
+                        body='{"layers":[]}')
+    except Exception:
+        pass  # the browser already discarded the canceled route
+    ui.wait_for_timeout(100)
+    assert canvas_ink(ui) == newest_ink
+    assert ui.locator('#global-error').inner_text() == ""
+    assert not ui.errors
+
+
+def test_deleting_layer_discards_its_debounced_effect_patch(ui):
+    """A queued slider commit cannot recreate work after its layer is deleted."""
+    add_layer(ui, "grid", {"cols": 2, "rows": 2})
+    reload_app(ui)
+    select_layer(ui)
+    layer_id = _get(f"{ui.base}/api/project")["layers"][0]["id"]
+    ui.select_option('#fx-select', 'ribbon')
+    ui.click('#fx-add')
+    ui.wait_for_selector('#fx-steps .step', timeout=20_000)
+    ui.wait_for_selector('#drawing-status', state='hidden', timeout=20_000)
+
+    patches = []
+    ui.on("request", lambda request: patches.append(request.url)
+          if request.method == "PATCH" else None)
+    field = ui.locator('#fx-steps input[type="number"]').first
+    field.fill(str(float(field.input_value()) + 1))
+    field.dispatch_event("change")
+    delete_button = ui.get_by_role("button", name=re.compile("delete layer"))
+    delete_button.click()
+    delete_button.click()
+    ui.wait_for_timeout(600)  # beyond the former global 350ms debounce
+
+    assert not any(f"/api/layers/{layer_id}" in url for url in patches)
+    assert all(layer["id"] != layer_id for layer in _get(f"{ui.base}/api/project")["layers"])
+    assert ui.locator('#global-error').inner_text() == ""

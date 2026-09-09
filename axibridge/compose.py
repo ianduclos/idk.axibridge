@@ -46,6 +46,7 @@ from shapely.geometry import LineString, Point as ShPoint, Polygon
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
+from .render_work import checkpoint
 from .gencache import cache_budget_multiplier
 from .model import Layer, Path, PathDocument, is_closed
 from .registry import EffectContext, get_effect
@@ -329,6 +330,7 @@ def _layer_ctx(layer: CanvasLayer,
 
 def _apply_effect_stack(paths: list[Path], steps: list[EffectStep], ctx: EffectContext) -> list[Path]:
     for step in steps:
+        checkpoint()
         if not step.enabled:
             continue
         eff = get_effect(step.effect)
@@ -336,6 +338,7 @@ def _apply_effect_stack(paths: list[Path], steps: list[EffectStep], ctx: EffectC
         if not ok:
             raise RuntimeError(f"effect {step.effect!r} unavailable: {reason}")
         paths = eff.apply(paths, eff.Params(**step.params), ctx)
+        checkpoint()
     return paths
 
 
@@ -359,6 +362,7 @@ def build_mask(
     stroke_geoms: list[BaseGeometry] = []
     half = max(line_diameter_mm, 0.01) / 2.0
     for p in shaped:
+        checkpoint()
         pts = p.points
         if p.filled and p.is_closed:
             poly = Polygon(pts)
@@ -375,6 +379,7 @@ def build_mask(
         fill_mask: BaseGeometry | None = None
         sorted_polys = sorted(fill_polys, key=lambda g: g.area, reverse=True)
         for i, poly in enumerate(sorted_polys):
+            checkpoint()
             pt = poly.representative_point()
             depth = sum(1 for parent in sorted_polys[:i] if parent.covers(pt))
             if depth % 2 == 0:
@@ -423,6 +428,7 @@ def clip_paths(shaped: list[Path], mask: BaseGeometry) -> list[Path]:
     mnx, mny, mxx, mxy = mask.bounds
     out: list[Path] = []
     for p in shaped:
+        checkpoint()
         xs = [q[0] for q in p.points]
         ys = [q[1] for q in p.points]
         if max(xs) < mnx or min(xs) > mxx or max(ys) < mny or min(ys) > mxy:
@@ -457,6 +463,7 @@ def clip_paths_inside(shaped: list[Path], mask: BaseGeometry) -> list[Path]:
     survived intact and closed."""
     out: list[Path] = []
     for p in shaped:
+        checkpoint()
         if len(p.points) == 1:
             if mask.covers(ShPoint(p.points[0])):
                 out.append(p)
@@ -501,6 +508,7 @@ def region_stitch_paths(
 
     out: list[Path] = []
     for p in shaped:
+        checkpoint()
         if len(p.points) == 1:
             if not mask.covers(ShPoint(p.points[0])):
                 out.append(p)
@@ -734,6 +742,7 @@ class OcclusionCache:
             self._masks.move_to_end(key)
             return hit.mask
         built = build_mask(shaped, diameter, margin)
+        checkpoint()
         self._masks[key] = _MaskEntry(shaped, built, _geom_coords(built), next(_occ_seq))
         self._masks.move_to_end(key)
         return built
@@ -745,6 +754,7 @@ class OcclusionCache:
             self._unions.move_to_end(sig)
             return hit.mask
         merged = unary_union(geoms)
+        checkpoint()
         self._unions[sig] = _UnionEntry(refs, merged, _geom_coords(merged), next(_occ_seq))
         self._unions.move_to_end(sig)
         return merged
@@ -757,6 +767,7 @@ class OcclusionCache:
             self._clips.move_to_end(entry_key)
             return hit.result
         result = clip_paths(subject, mask)
+        checkpoint()
         self._clips[entry_key] = _ClipEntry(
             subject, refs, result, _path_points(result))
         self._clips.move_to_end(entry_key)
@@ -844,6 +855,7 @@ def resolve_project(
     page = guide_page(project)
     shaped: dict[str, list[Path]] = {}
     for layer in project.layers:
+        checkpoint()
         if not layer.visible or layer.region:
             continue
         src = source_geometry.get(layer.id, _NO_SOURCE)
@@ -863,6 +875,7 @@ def resolve_project(
                 shaped[layer.id] = hit.shaped
                 continue
             out = shape_layer(layer, src, page, diameter)
+            checkpoint()
             shaped[layer.id] = out
             layer_map[key] = _ShapedEntry(out, src, _path_points(out), next(_shaped_seq))
             layer_map.move_to_end(key)
@@ -878,6 +891,7 @@ def resolve_project(
     # region output (pixellated blocks, tubes…) still occludes normally.
     # Reassignment only — cached shaped lists are never mutated in place.
     for r_idx, region in enumerate(project.layers):
+        checkpoint()
         if not (region.visible and region.region):
             continue
         placed = transform_paths(source_geometry.get(region.id, []), region.transform)
@@ -886,6 +900,7 @@ def resolve_project(
             continue
         ctx = _layer_ctx(region, page, line_diameter_for(region, pens))
         for below in project.layers[:r_idx]:
+            checkpoint()
             if below.id not in shaped:
                 continue  # hidden, or itself a region
             if region.region_boundary == "continuous":
@@ -906,61 +921,65 @@ def resolve_project(
     resolved: dict[str, list[Path]] = {}
     if occlusion_cache is not None:
         occlusion_cache.begin()
-    #: accumulating channels: the global one plus one per group letter. Each
-    #: carries the mask AND the identity of everything folded into it, which
-    #: is what lets a receiver below decide whether its clip is still valid.
-    global_ch: _Channel | None = None
-    group_ch: dict[str, _Channel] = {}
-    for layer in reversed(project.layers):
-        if not layer.visible:
-            continue
-        if layer.region:
-            resolved[layer.id] = []  # a region is never drawn and never occludes
-            continue
-        s = shaped[layer.id]
-        channels = [global_ch, *(group_ch[g] for g in layer.receives_groups if g in group_ch)]
-        channels = [c for c in channels if c is not None]
-        if layer.receives_occlusion and channels:
-            parts = [c.mask for c in channels]
-            sig = tuple(c.sig for c in channels)
-            refs = tuple(r for c in channels for r in c.refs)
-            if occlusion_cache is not None:
-                applicable = occlusion_cache.union(("|",) + sig, refs, parts)
-                clipped = occlusion_cache.clipped(
-                    layer.id, (id(s), sig), s, refs, applicable)
+    try:
+        #: accumulating channels: the global one plus one per group letter. Each
+        #: carries the mask AND the identity of everything folded into it, which
+        #: is what lets a receiver below decide whether its clip is still valid.
+        global_ch: _Channel | None = None
+        group_ch: dict[str, _Channel] = {}
+        for layer in reversed(project.layers):
+            checkpoint()
+            if not layer.visible:
+                continue
+            if layer.region:
+                resolved[layer.id] = []  # a region is never drawn and never occludes
+                continue
+            s = shaped[layer.id]
+            channels = [global_ch, *(group_ch[g] for g in layer.receives_groups if g in group_ch)]
+            channels = [c for c in channels if c is not None]
+            if layer.receives_occlusion and channels:
+                parts = [c.mask for c in channels]
+                sig = tuple(c.sig for c in channels)
+                refs = tuple(r for c in channels for r in c.refs)
+                if occlusion_cache is not None:
+                    applicable = occlusion_cache.union(("|",) + sig, refs, parts)
+                    clipped = occlusion_cache.clipped(
+                        layer.id, (id(s), sig), s, refs, applicable)
+                else:
+                    clipped = clip_paths(s, unary_union(parts))
             else:
-                clipped = clip_paths(s, unary_union(parts))
-        else:
-            clipped = s
-        resolved[layer.id] = clipped if layer.draw else []
-        if layer.occluder:
-            diameter = line_diameter_for(layer, pens)
-            margin = layer.occlusion_margin_mm
-            if occlusion_cache is not None:
-                m = occlusion_cache.mask(layer, s, diameter, margin)
-            else:
-                m = build_mask(s, diameter, margin)
-            if m is not None:
-                item = (layer.id, id(s), diameter, margin)
-                targets = layer.occlude_groups or [None]
-                for g in targets:
-                    prev = global_ch if g is None else group_ch.get(g)
-                    if prev is None:
-                        merged = _Channel((item,), (s,), m)
-                    else:
-                        grown_sig = prev.sig + (item,)
-                        grown_refs = prev.refs + (s,)
-                        grown_mask = (
-                            occlusion_cache.union(grown_sig, grown_refs, [prev.mask, m])
-                            if occlusion_cache is not None
-                            else unary_union([prev.mask, m]))
-                        merged = _Channel(grown_sig, grown_refs, grown_mask)
-                    if g is None:
-                        global_ch = merged
-                    else:
-                        group_ch[g] = merged
-    if occlusion_cache is not None:
-        occlusion_cache.end({lay.id for lay in project.layers})
+                clipped = s
+            resolved[layer.id] = clipped if layer.draw else []
+            if layer.occluder:
+                diameter = line_diameter_for(layer, pens)
+                margin = layer.occlusion_margin_mm
+                if occlusion_cache is not None:
+                    m = occlusion_cache.mask(layer, s, diameter, margin)
+                else:
+                    m = build_mask(s, diameter, margin)
+                if m is not None:
+                    item = (layer.id, id(s), diameter, margin)
+                    targets = layer.occlude_groups or [None]
+                    for g in targets:
+                        prev = global_ch if g is None else group_ch.get(g)
+                        if prev is None:
+                            merged = _Channel((item,), (s,), m)
+                        else:
+                            grown_sig = prev.sig + (item,)
+                            grown_refs = prev.refs + (s,)
+                            grown_mask = (
+                                occlusion_cache.union(grown_sig, grown_refs, [prev.mask, m])
+                                if occlusion_cache is not None
+                                else unary_union([prev.mask, m]))
+                            merged = _Channel(grown_sig, grown_refs, grown_mask)
+                        if g is None:
+                            global_ch = merged
+                        else:
+                            group_ch[g] = merged
+    finally:
+        if occlusion_cache is not None:
+            occlusion_cache.end({lay.id for lay in project.layers})
+    checkpoint()
     return resolved
 
 

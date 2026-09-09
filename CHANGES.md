@@ -2,6 +2,14 @@
 
 ---
 
+### 2026-09-09 — Cancellable drawing previews (Codex)
+- affects: interactive resolved/effect-preview/plan/sheet/raster API callers and module authors.
+- detail: obsolete read-only render work returns HTTP 409 with structured
+  `detail.code: render_cancelled`. Layer edits and deletion signal before
+  waiting on the session lock; Ribbon and shared pipeline stages cooperate.
+  Callers should discard cancelled previews silently. See docs/MODULES.md for
+  checkpoint and atomic-mutation boundaries. Geometry/recipe formats unchanged.
+
 ### 2026-09-09 — Stable animation random identity (Codex)
 - affects: saved animation layers, effect/generator authors and cached renders.
 - detail: optional `CanvasLayer.effect_seed` persists shared randomness for

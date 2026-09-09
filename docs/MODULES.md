@@ -413,3 +413,23 @@ share the original's effective seed when repairing an existing animation.
 `tests/test_animation_random_identity.py` registers fresh probe effect/generator
 modules to check this shared contract, plus real Ribbon, append, cache, undo
 and serialization checks. Follow it when adding module-specific animation tests.
+
+### Cancellable preview work (2026-09-09)
+
+Long effects should call `axibridge.render_work.checkpoint()` at bounded work
+intervals and before/after expensive geometry operations. Generators already
+using `registry.report_progress()` get the same checkpoint automatically.
+These hooks are no-ops outside an explicit read-only preview scope; do not
+wrap project mutations or plotting in a cancellable scope. Cancellation raises
+`RenderCancelled` (a `BaseException`) so ordinary geometry fallback handlers
+cannot turn an obsolete render into a successful partial drawing. Use `finally`
+for temporary resources; never swallow this signal or cache partial output.
+
+The interactive resolved/effect-preview/plan/sheet/raster HTTP endpoints return 409 with
+`detail.code == "render_cancelled"` when superseded by an edit/deletion. Treat
+that as cancellation, not a toast-worthy failure. Layer edits, regeneration,
+ordering, tween edits and undo/redo signal cancellation before taking the session
+lock. Committing source regeneration remains atomic and is not itself aborted.
+A single native GEOS call cannot be interrupted; the next checkpoint handles
+it. Full percentage progress is deliberately not inferred from strand count:
+clipping and unions have irregular costs.

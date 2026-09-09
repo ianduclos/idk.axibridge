@@ -81,6 +81,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from .render_work import checkpoint
 from .compose import Affine, CanvasLayer, EffectStep, Project, layer_effect_seed, guide_page as _guide_page, transform_paths
 from .gencache import generate_cached
 from .model import Path
@@ -755,6 +756,7 @@ def materialize(
             us = [i / (p.sweep + 1) for i in range(1, p.sweep + 1)]
         out: list[Path] = []
         for u in us:
+            checkpoint()
             seg, t = chain_segment(u, len(layers), curve) if keys else (0, u)
             la, lb = layers[seg], layers[seg + 1]
             geo_a, geo_b = geos[seg], geos[seg + 1]
@@ -770,8 +772,10 @@ def materialize(
                 line_diameter_mm=line_diameter_mm,
             )
             for effect_id, params in _effects_at(la, lb, t):
+                checkpoint()
                 eff = get_effect(effect_id)
                 placed = eff.apply(placed, eff.Params(**params), ctx)
+                checkpoint()
             out.extend(placed)
         return out
     except Exception as exc:

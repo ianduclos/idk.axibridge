@@ -1,4 +1,4 @@
-import { beginDrawingUpdate } from "./drawing_status.js";
+import { beginDrawingUpdate, restartDrawingUpdate } from "./drawing_status.js";
 // Current product benches; time-axis capability alone does not promote a source.
 const WORKING_BENCHES = new Set(['venation', 'homeostat', 'second_reading', 'magnetic_field']);
 const isWorkingBench = mod => WORKING_BENCHES.has(mod?.id);
@@ -79,12 +79,15 @@ export function setSeqProgress(on) {
 let livePreview = localStorage.getItem("axb-live-preview") === "1";
 
 const preview = {
-  timer: null, inflight: false, next: null, seq: 0,
+  timer: null, inflight: false, next: null, seq: 0, pendingFinish: null,
   key: null,  // "new" (add panel) or a layer id — stale ghosts clear on switch
   schedule(req) {                       // req = {key, url, body, transform|null}
     if (!livePreview) return;
     this.key = req.key || null;
     this.next = req;
+    this.seq++; // invalidate the old preview as soon as new input arrives
+    restartDrawingUpdate();
+    if (!this.pendingFinish) this.pendingFinish = beginDrawingUpdate();
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this._run(), 250);
   },
@@ -94,7 +97,8 @@ const preview = {
     this.next = null;
     this.inflight = true;
     const seq = ++this.seq;
-    const finishUpdate = beginDrawingUpdate();
+    const finishUpdate = this.pendingFinish || beginDrawingUpdate();
+    this.pendingFinish = null;
     const p = $("gen-progress");
     if (p && !busyBtn) p.hidden = false;  // ride the same bar, unless a real generate owns it
     try {
@@ -104,7 +108,7 @@ const preview = {
         note(r.decimated ? `preview decimated (${Math.round(r.points / 1000)}k pts — the real thing is exact)` : "");
       }
     } catch (e) {
-      if (seq === this.seq) note(e.message); // quiet inline note, no toast spam mid-drag
+      if (seq === this.seq && e?.name !== "AbortError" && e?.code !== "render_cancelled") note(e.message);
     } finally {
       finishUpdate();
       this.inflight = false;
@@ -114,6 +118,8 @@ const preview = {
   },
   clear() {
     clearTimeout(this.timer);
+    this.pendingFinish?.();
+    this.pendingFinish = null;
     this.next = null;
     this.key = null;
     this.seq++;                             // orphan any in-flight response
@@ -1179,7 +1185,9 @@ export function renderLayerList() {
         }, 2500);
         return;
       }
+      const finishUpdate = beginDrawingUpdate();
       try {
+        actions.cancelLayerUpdates([layer.id]);
         const r = await api.del(`/api/layers/${layer.id}`);
         for (const id of r.deleted || []) collapsedTweens.delete(id);
         localStorage.setItem("axb-collapsed-tweens", JSON.stringify([...collapsedTweens]));
@@ -1187,6 +1195,7 @@ export function renderLayerList() {
         await actions.refreshResolved();
         logDeleted([layer.name], r.deleted || [layer.id]);
       } catch (e) { actions.oops(e); }
+      finally { finishUpdate(); }
     });
 
     row.append(fold, eye, swatch, name, est, occ, dup, del);

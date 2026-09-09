@@ -13,6 +13,7 @@ from typing import Any
 from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import unary_union
 
+from ..render_work import checkpoint
 from ._ribbon_geometry import EPS, Point2, _distance, _mix, _point, frames
 
 
@@ -24,6 +25,7 @@ def fractured_envelope(
     width: float,
 ) -> list[dict[str, Any]]:
     """Join a lane with the preserved reference-minus-positive-plus-negative trial."""
+    checkpoint()
     if not corners:
         return nodes[:]
     frame = frames(spine)
@@ -39,6 +41,7 @@ def fractured_envelope(
 def _fractured_side(nodes, spine, stations, corners, width, reference_mode):
     supports = []
     for corner in corners:
+        checkpoint()
         reach = width * min(4, abs(tan(corner["turn"] / 2))) * 2 + 12
         lo, hi = max(0, corner["s"] - reach), min(stations[-1], corner["s"] + reach)
         if supports and lo <= supports[-1][1]:
@@ -49,6 +52,7 @@ def _fractured_side(nodes, spine, stations, corners, width, reference_mode):
     frame = frames(spine)
     ranges = []
     for lo, hi in supports:
+        checkpoint()
         start = max(0, bisect_left(stations, lo) - 1)
         end = min(len(stations) - 1, bisect_right(stations, hi))
         if ranges and start <= ranges[-1][1]:
@@ -58,8 +62,10 @@ def _fractured_side(nodes, spine, stations, corners, width, reference_mode):
 
     patches = []
     for start, end in ranges:
+        checkpoint()
         source, offset, ss, reference, distances = [], [], [], [], []
         for i in range(start, end + 1):
+            checkpoint()
             if stations[i] in turns and 0 < i < len(spine) - 1:
                 a, b = spine[i - 1], spine[i]
                 dx, dy = b[0] - a[0], b[1] - a[1]
@@ -73,6 +79,7 @@ def _fractured_side(nodes, spine, stations, corners, width, reference_mode):
                 turn = turns[stations[i]]
                 angle, count = atan2(ny, nx), max(4, ceil(abs(turn) / .055))
                 for j in range(count + 1):
+                    checkpoint()
                     theta = angle + turn * j / count
                     source.append(b)
                     offset.append((b[0] + lane_width * cos(theta), b[1] + lane_width * sin(theta)))
@@ -98,14 +105,18 @@ def _fractured_side(nodes, spine, stations, corners, width, reference_mode):
 
         triangles = []
         for a, b, c, d in zip(source, source[1:], offset[1:], offset):
+            checkpoint()
             add_quad(a, b, c, d, triangles)
         if not triangles:
             continue
+        checkpoint()
         merged = unary_union(triangles)
+        checkpoint()
         source_line = LineString(source)
         if reference_mode:
             positive, negative, reference_faces = [], [], []
             for i in range(len(source) - 1):
+                checkpoint()
                 a, b, u, v = source[i], source[i + 1], offset[i], offset[i + 1]
                 wa, wb = distances[i], distances[i + 1]
                 add_quad(a, b, reference[i + 1], reference[i], reference_faces)
@@ -116,7 +127,17 @@ def _fractured_side(nodes, spine, stations, corners, width, reference_mode):
                     add_quad(zero, b, v, zero, positive if wb > 0 else negative)
                 else:
                     add_quad(a, b, v, u, positive if wa + wb >= 0 else negative)
-            merged = unary_union(reference_faces).difference(unary_union(positive)).union(unary_union(negative))
+            checkpoint()
+            reference_union = unary_union(reference_faces)
+            checkpoint()
+            positive_union = unary_union(positive)
+            checkpoint()
+            negative_union = unary_union(negative)
+            checkpoint()
+            merged = reference_union.difference(positive_union)
+            checkpoint()
+            merged = merged.union(negative_union)
+            checkpoint()
             source_line = LineString(reference)
 
         candidates = [merged] if merged.geom_type == "Polygon" else [
@@ -129,6 +150,7 @@ def _fractured_side(nodes, spine, stations, corners, width, reference_mode):
         ]
         chosen = None
         for boundary in rings:
+            checkpoint()
             ring = list(boundary.coords)[:-1]
             ia = next((i for i, point in enumerate(ring) if _distance(point, offset[0]) < 1e-7), -1)
             ib = next((i for i, point in enumerate(ring) if _distance(point, offset[-1]) < 1e-7), -1)
@@ -138,6 +160,7 @@ def _fractured_side(nodes, spine, stations, corners, width, reference_mode):
             def route(step):
                 path, i = [], ia
                 while i != ib:
+                    checkpoint()
                     path.append(ring[i])
                     i = (i + step) % len(ring)
                 return path + [ring[ib]]
@@ -157,6 +180,7 @@ def _fractured_side(nodes, spine, stations, corners, width, reference_mode):
             offset_lengths.append(offset_lengths[-1] + _distance(a, b))
         previous, path = stations[start], []
         for index, point in enumerate(chosen):
+            checkpoint()
             if index == 0:
                 path.append({"p": _point(nodes[start]), "s": stations[start]})
                 continue

@@ -13,6 +13,7 @@ from shapely.geometry import GeometryCollection
 from shapely.ops import unary_union
 
 from ..model import Path
+from ..render_work import checkpoint
 from ..registry import EffectContext, EffectModule, register_effect
 from ._ribbon_profile import make_profiles
 from ._ribbon_geometry import sample_polyline, frames, sharp_corners, envelope, silhouette, clip_paths, self_mask, balance_edge_widths
@@ -67,7 +68,9 @@ def _taper(s, total, amount):
 
 def _points(path):
     out = []
-    for x, y in path.points:
+    for i, (x, y) in enumerate(path.points):
+        if not i & 255:
+            checkpoint()
         p = (x*_SCALE, y*_SCALE)
         if not out or p != out[-1]:
             out.append(p)
@@ -75,6 +78,7 @@ def _points(path):
 
 
 def _prepare(points, params, ctx):
+    checkpoint()
     options = params.model_dump()
     for key in ("width", "wavelength", "wavelength_right"):
         options[key] *= _SCALE
@@ -88,10 +92,17 @@ def _prepare(points, params, ctx):
     b = a if seed_a == seed_b else make_profiles(total, options, seed_b)
     t = params.seed_blend
     taper = [options["width"]*_taper(s, total, params.taper) for s in ss]
-    samples_a = [[p(s)*gain for s, gain in zip(ss, taper)] for p in a]
-    samples_b = [[p(s)*gain for s, gain in zip(ss, taper)] for p in b]
+    samples_a = []
+    samples_b = []
+    for profile in a:
+        checkpoint()
+        samples_a.append([profile(s)*gain for s, gain in zip(ss, taper)])
+    for profile in b:
+        checkpoint()
+        samples_b.append([profile(s)*gain for s, gain in zip(ss, taper)])
     widths = []
     for aa, bb in zip(samples_a, samples_b):
+        checkpoint()
         if t == 0 or seed_a == seed_b:
             values = aa[:]
         elif t == 1:
@@ -120,11 +131,13 @@ def _prepare(points, params, ctx):
 
 
 def _construct(data, params, steps, retained):
+    checkpoint()
     spine, ss, frame = data["spine"], data["ss"], data["frame"]
     left, right = data["widths"]
     if params.interpolation == "edges" and not params.fractured_edges:
         left,right = balance_edge_widths(left,right,ss,data["corners"],data["width"])
     def side(widths):
+        checkpoint()
         nodes = [{"p": (p[0]+n[0]*w,p[1]+n[1]*w), "s":s}
                  for p,n,w,s in zip(spine,frame,widths,ss)]
         nodes[0]["p"],nodes[-1]["p"] = spine[0],spine[-1]
@@ -136,13 +149,20 @@ def _construct(data, params, steps, retained):
     spine_nodes = [{"p":p,"s":s} for p,s in zip(spine,ss)]
     if params.interpolation == "edges":
         count = 2*steps
-        lanes = [side([a+(-b-a)*i/(count-1) for a,b in zip(left,right)])
-                 for i in range(steps-retained,count-(steps-retained))]
+        lanes = []
+        for i in range(steps-retained, count-(steps-retained)):
+            checkpoint()
+            lanes.append(side([a+(-b-a)*i/(count-1) for a,b in zip(left,right)]))
         anchor = side([(a-b)/2 for a,b in zip(left,right)])
     else:
-        lanes = [side([w*i/steps for w in left]) for i in range(retained,0,-1)]
+        lanes = []
+        for i in range(retained, 0, -1):
+            checkpoint()
+            lanes.append(side([w*i/steps for w in left]))
         lanes += [spine_nodes]
-        lanes += [side([-w*i/steps for w in right]) for i in range(1,retained+1)]
+        for i in range(1, retained + 1):
+            checkpoint()
+            lanes.append(side([-w*i/steps for w in right]))
         anchor = spine_nodes
     left_nodes,right_nodes = lanes[0],lanes[-1]
     shape = None
@@ -179,6 +199,7 @@ class Ribbon(EffectModule):
     def apply(self, paths: list[Path], params: RibbonParams, ctx: EffectContext) -> list[Path]:
         bypass, prepared = [], []
         for path in paths:
+            checkpoint()
             points = _points(path)
             if path.is_closed or len(points)<2:
                 bypass.append(path)
@@ -193,14 +214,26 @@ class Ribbon(EffectModule):
         estimate = sum(len(d["spine"])*(2*k+(params.interpolation=="spine")) for d,k in zip(prepared,counts))
         if estimate > _MAX_POINTS:
             raise ValueError("Ribbon exceeds one million points; reduce strand density or simplify the source paths")
-        built = [_construct(d,params,steps,k) for d,k in zip(prepared,counts)]
+        built = []
+        for data, count in zip(prepared, counts):
+            checkpoint()
+            built.append(_construct(data, params, steps, count))
         if params.mask_overlaps and params.output == "strands" and len(built)>1:
             for i,item in enumerate(built):
+                checkpoint()
                 blockers = [r["shape"] for j,r in enumerate(built) if (j<i if params.reverse_order else j>i)]
                 if blockers:
-                    item["strokes"] = clip_paths(item["strokes"],unary_union(blockers))
+                    checkpoint()
+                    mask = unary_union(blockers)
+                    checkpoint()
+                    item["strokes"] = clip_paths(item["strokes"], mask)
         need_fill = params.solid_occluder or params.output == "solid"
-        merged = unary_union([r["shape"] for r in built if r["shape"] is not None]) if need_fill or params.output != "strands" and params.merge_overlaps else GeometryCollection()
+        if need_fill or params.output != "strands" and params.merge_overlaps:
+            checkpoint()
+            merged = unary_union([r["shape"] for r in built if r["shape"] is not None])
+            checkpoint()
+        else:
+            merged = GeometryCollection()
         if params.output == "strands":
             out = [_path(p) for r in built for p in r["strokes"] if len(p)>1]
             if need_fill:

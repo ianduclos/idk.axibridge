@@ -20,6 +20,7 @@ import math
 
 from pydantic import BaseModel, Field
 
+from .render_work import checkpoint
 from .model import PathDocument, PlannedJob, PlannedMove, Point
 
 #: Nominal max carriage speed (11 in/s) — what speed_pendown=100 means.
@@ -84,6 +85,8 @@ def _polyline_time(
     # Junction speed limit at each interior vertex from turn angle.
     v_junc = [0.0] * (n + 1)  # entry speed bound per segment boundary
     for i in range(1, n):
+        if not i & 255:
+            checkpoint()
         (x0, y0), (x1, y1), (x2, y2) = pts[i - 1], pts[i], pts[i + 1]
         ux, uy = x1 - x0, y1 - y0
         wx, wy = x2 - x1, y2 - y1
@@ -96,14 +99,20 @@ def _polyline_time(
     # Forward pass: limited by acceleration from previous boundary.
     v = [0.0] * (n + 1)
     for i in range(1, n + 1):
+        if not i & 255:
+            checkpoint()
         v[i] = min(v_max if i < n else 0.0, v_junc[i] if i < n else 0.0)
         v[i] = min(v[i], math.sqrt(v[i - 1] ** 2 + 2 * a * segs[i - 1]))
     # Backward pass: must be able to decelerate to each boundary speed.
     for i in range(n - 1, -1, -1):
+        if not i & 255:
+            checkpoint()
         v[i] = min(v[i], math.sqrt(v[i + 1] ** 2 + 2 * a * segs[i]))
     # Time per segment with trapezoid/triangle between v[i] and v[i+1].
     t = 0.0
     for i, s in enumerate(segs):
+        if not i & 255:
+            checkpoint()
         v0, v1 = v[i], v[i + 1]
         v_peak = math.sqrt(max((2 * a * s + v0**2 + v1**2) / 2.0, 0.0))
         v_peak = min(v_peak, v_max)
@@ -149,6 +158,7 @@ def plan_job(
     job = PlannedJob()
     pos: Point = start
     for layer, path in doc.iter_paths():
+        checkpoint()
         pts = path.points
         # Travel to path start (pen already up).
         if math.dist(pos, pts[0]) > 1e-9:
