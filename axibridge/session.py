@@ -2833,6 +2833,44 @@ class Session:
             self.project.normalize_animation_order()
             return created
 
+    def gallery_capture(self, layer_id: str, master_t: float | None = None):
+        """Snapshot one treated layer, before regions/occlusion, read-only.
+
+        Uses the resolve pipeline's ephemeral clip/tween evaluation. Derived
+        tween geometry is kept in the local overlay even on a cache hit.
+        """
+        with self._lock:
+            layer = self.project.layer(layer_id)
+            if layer.region:
+                raise ValueError('Region layers do not contain drawable output to save')
+            geo = {**self.source_geometry, **self._clip_overrides(master_t)}
+            self._materialize_tweens(master_t, geo, persist=False)
+            paths = compose.shape_layer(layer, geo.get(layer_id, []),
+                compose.guide_page(self.project), compose.line_diameter_for(layer, self.pens()))
+            module = layer.source.generator
+            label = module or ('Animation' if layer.source.type == 'tween' else 'Layer')
+            if module:
+                try:
+                    label = get_source(module).label
+                except KeyError:
+                    pass  # old generator provenance remains descriptive
+            return paths, layer.name, {'kind': 'layer', 'module': module, 'label': label}
+
+    def insert_gallery_asset(self, name: str, paths: list[Path]) -> CanvasLayer:
+        """Independent baked copy; placement is translation only, one undo."""
+        from .gallery import bounds
+        x0, y0, x1, y1 = bounds(paths)
+        with self._lock:
+            guide = self.project.guide
+            layer = CanvasLayer(name=name, source=LayerSource(type='baked'),
+                transform=Affine(e=guide.x + guide.width/2 - (x0+x1)/2,
+                                 f=guide.y + guide.height/2 - (y0+y1)/2))
+            copied = [p.model_copy(deep=True) for p in paths]
+            self._checkpoint()
+            self.project.layers.append(layer)
+            self.source_geometry[layer.id] = copied
+            return layer
+
     def consolidate_effects(self, layer_id: str) -> CanvasLayer:
         """Bake transform + effect stack into the source geometry.
 
@@ -3022,6 +3060,7 @@ class Session:
     def _materialize_tweens(
         self, master_t: float | None = None,
         geo: dict[str, list[Path]] | None = None,
+        *, persist: bool = True,
     ) -> None:
         """Refresh every tween layer's source geometry from its referenced
         layers (they are live references). Cached on a content key of both
@@ -3041,7 +3080,10 @@ class Session:
         tween's local ``t`` is mapped through its window and time curve into
         ``override_t``; and the RAW clamped master value goes to ``materialize``
         unconditionally so any endpoint's ``frame_follow`` advances the clip.
-        Both are folded into the cache key so scrubbing invalidates correctly."""
+        Both are folded into the cache key so scrubbing invalidates correctly.
+        ``persist=False`` is for read-only gallery capture: write materialized
+        paths only into ``geo``, leaving even derived source entries untouched.
+        """
         import json
 
         read_geo = geo if geo is not None else self.source_geometry
@@ -3099,7 +3141,8 @@ class Session:
                 layer_map.move_to_end(key)
                 # the SAME list object every time this key comes round, which
                 # is what lets compose's id(src)-keyed shaped cache re-hit
-                self.source_geometry[layer.id] = hit.paths
+                if persist:
+                    self.source_geometry[layer.id] = hit.paths
                 if geo is not None:
                     geo[layer.id] = hit.paths
                 continue
@@ -3113,7 +3156,8 @@ class Session:
                                          sum(len(p.points) for p in paths))
             layer_map.move_to_end(key)
             _evict_tween_caches((self._tween_cache, self._clip_cache), (0, layer.id, key))
-            self.source_geometry[layer.id] = paths  # replaced wholesale, never mutated
+            if persist:
+                self.source_geometry[layer.id] = paths  # replaced wholesale, never mutated
             if geo is not None:
                 geo[layer.id] = paths
 

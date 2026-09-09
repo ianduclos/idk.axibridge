@@ -14,6 +14,7 @@ import {
   showBenchError,
 } from "./bench_host.js";
 import { benchDescriptor } from "./bench_registry.js";
+import { openGallerySave } from "./gallery.js";
 
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
@@ -212,6 +213,12 @@ export function initSecondReadingBench() {
   $("process-undo").onclick = undo;
   $("process-redo").onclick = redo;
   $("process-keep").onclick = keep;
+  const save = document.createElement("button");
+  save.id = "process-save-gallery";
+  save.textContent = "Save to gallery";
+  save.disabled = true;
+  save.onclick = saveToGallery;
+  $("process-keep").before(save);
   $("process-pin-reference").onclick = pinReference;
   $("process-compare").onclick = toggleComparison;
   $("process-discard-pending").onclick = discardPendingControls;
@@ -303,7 +310,7 @@ export function openSecondReadingBench({ mod, params, contextKey, onKeep, onClos
     draft = { branches: [first], active: first.id, undo: [], redo: [], serial: 1 };
     drafts.set(key, draft);
   }
-  active = { mod, external: params, contextKey: key, draft, onKeep, onClose };
+  active = { mod, external: params, contextKey: key, draft, onKeep, onClose, savingGallery: false };
   loadPendingNewDrawing();
   openSerial++;
   $("process-popup").classList.add("second-reading");
@@ -414,9 +421,14 @@ function renderChrome() {
     !canRecord(b, [...controlKinds, "branch"], targetTurn);
   $("process-new-drawing").disabled = b.awaiting;
   $("process-branch-select").disabled = b.awaiting;
-  $("process-keep").disabled = b.awaiting || Boolean(capture) || Boolean(active.keeping) || b.renderedKey !== recipeKey(b);
+  $("process-keep").disabled = b.awaiting || Boolean(capture) || Boolean(active.keeping) ||
+    Boolean(active.savingGallery) || b.renderedKey !== recipeKey(b);
   $("process-keep").title = $("process-keep").disabled
     ? "wait until this exact working recipe is on screen" : "keep the drawing on screen as an ordinary layer";
+  $("process-save-gallery").disabled = b.awaiting || Boolean(capture) || Boolean(active.keeping) ||
+    Boolean(active.savingGallery) || b.renderedKey !== recipeKey(b);
+  $("process-save-gallery").title = $("process-save-gallery").disabled
+    ? "wait until this exact working recipe is on screen" : "save the drawing on screen to the gallery";
   $("process-play").disabled = !playTimer && (atEnd || b.awaiting);
   $("process-play").textContent = playTimer ? "Pause" : "Play";
   const reference = active.draft.reference;
@@ -617,6 +629,29 @@ async function keep() {
     }
   }
   finally { owner.keeping = false; if (active) renderChrome(); }
+}
+
+async function saveToGallery() {
+  const b = branch();
+  if (!active || !b || $("process-save-gallery").disabled) return;
+  stopSecondReadingPlay();
+  const owner = active;
+  const exact = recipe(b);
+  const key = recipeKey(b);
+  owner.savingGallery = true;
+  renderChrome();
+  clearBenchError();
+  try {
+    await openGallerySave(
+      { kind: 'generator', module: owner.mod.id, params: copy(exact) },
+      `${owner.mod.label} — ${b.label}`,
+    );
+  } catch (e) {
+    if (active === owner && branch() === b && recipeKey(b) === key) showBenchError(e);
+  } finally {
+    owner.savingGallery = false;
+    if (active === owner) renderChrome();
+  }
 }
 
 function newDrawing() {

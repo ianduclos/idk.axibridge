@@ -392,6 +392,14 @@ the existing geometry. It compares closest sampled approaches within 12 mm of
 each pole, not global curve clearance.
 
 
+**Gallery capture (2026-09-10):** adapters call
+`openGallerySave({kind: 'generator', module, params}, suggestedName)` with the
+exact completed preview recipe. The promise spans the save/cancel dialog;
+guard against pending renders, stale keys, gestures and other writes. Save
+does not Keep, close the bench, or modify its draft. The backend regenerates
+full paths through the existing memo; never send display `lines` as geometry.
+See [Asset gallery](ASSET-GALLERY.md).
+
 ### Animation stability contract (2026-09-09)
 
 An untouched Animate A/B/C chain must render the same drawing throughout.

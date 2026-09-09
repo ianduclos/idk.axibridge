@@ -39,9 +39,11 @@ from .registry import describe_modules, get_effect, get_source, progress_scope
 from .render_work import RenderCancelled, checkpoint
 from .session import session
 from .stores import Pen, pen_library, settings_store
+from .gallery_api import router as gallery_router
 from .tween import TweenParams
 
 router = APIRouter(prefix="/api")
+router.include_router(gallery_router)
 
 def _preview_render(handler):
     """Cancel only read-only UI work; plotting and mutations stay atomic.

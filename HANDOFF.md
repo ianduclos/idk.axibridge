@@ -1,8 +1,25 @@
 ---
 project: idk.axibridge
-updated: 2026-09-09
-entries: 18
+updated: 2026-09-10
+entries: 19
 ---
+
+### Asset gallery native acceptance — opened 2026-09-10, owner: ian
+
+- done: local library of frozen line geometry, layer/all-bench save actions,
+  contact-sheet browser with search/filters/metadata, independent centered
+  insertion, portable project snapshots and precise SVG coordinate storage.
+- verified: full suite 1,477 passed, one intentional lifecycle skip and one
+  existing Starlette warning; typecheck/build passed. Browser checks include
+  nested dialogs, stale replies, failed saves, safe insertion refresh retry,
+  deletion and complete thumbnail/detail/save preview containment.
+- next: restart the app, save a drawing from a bench and a treated layer,
+  tag/search it, and insert into another project. Judge thumbnail readability,
+  save/recall feel and original-size placement in the native window.
+- deployment: local code and built frontend only; the running app/backend were
+  not restarted, and no push, Pi deployment or hardware operation was made.
+- contract: docs/ASSET-GALLERY.md. Folders, sync, recipes, multi-layer capture
+  and bulk management are deferred in ROADMAP.md.
 
 ### Animation families and drawing tools acceptance — updated 2026-09-09, owner: ian
 

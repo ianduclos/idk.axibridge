@@ -1,20 +1,38 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-09
+updated: 2026-09-10
 machine: mac+pi
-summary: Strict animation ownership and Pen/Shape completion are implemented, ready for native checking after an app restart.
+summary: Local asset gallery is implemented and verified, ready for native checking after an app restart.
 next:
-  - "Restart the app and check animation child deletion, collapsed dragging, master occlusion and Pen/Shape Repeat"
-  - "Check Ribbon curve sampling on the pictured choppy section"
-  - "Check heavy Ribbon edits, elapsed reset and deleting a layer during rendering"
-  - "Refresh the app window and check Magnetic field four-corner blending, Scatter strengths and pole spacing"
-  - "Check the open Mac app for native appearance and the new scaffold icon"
-  - "Continue Second Reading alternating-use and paper review"
+  - "Restart the app and check gallery save, browse, metadata editing and insertion"
+  - "Check animation child deletion, collapsed dragging, master occlusion and Pen/Shape Repeat"
+  - "Check Ribbon curve sampling, heavy edits, elapsed reset and deleting during rendering"
+  - "Check Magnetic field four-corner blending, Scatter strengths and pole spacing"
+  - "Continue Second Reading review and check the native appearance and scaffold icon"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+
+**Asset gallery, 10 September:** Local frozen line assets can be saved from
+layers and all working benches, browsed with thumbnails/search/tag/generator
+filters, edited and inserted as independent baked copies centered at original
+size. Layer capture preserves its own effects and animation frame before
+external clipping; preparing a save never mutates the source or undo history.
+Atomic JSON records preserve full paths; project SVG snapshots now serialize
+17 significant digits to avoid six-decimal rounding on save/load.
+
+Full hardware-free suite: **1,477 passed, one intentional native lifecycle
+skip**, one existing Starlette warning. Typecheck and the suite's frontend
+build passed. Browser coverage includes all bench adapters, save failures,
+stale captures, nested Escape, deletion, independent insertion and refresh-only
+retry after a committed insert. Corrected preview containment inspected in an
+isolated browser; native appearance/feel remain Ian's acceptance. The running
+app/backend were not restarted; no push, Pi deployment or hardware action.
+[Workflow and storage contract](docs/ASSET-GALLERY.md).
+
 
 
 **Animation families and drawing tools, 9 September:** Explicit persisted

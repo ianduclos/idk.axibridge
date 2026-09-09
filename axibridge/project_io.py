@@ -61,7 +61,10 @@ def snapshot_svg(paths: list[Path]) -> str:
         '<g id="snapshot">',
     ]
     for p in paths:
-        d = "M " + " L ".join(f"{x:.6f} {y:.6f}" for x, y in p.points)
+        # A snapshot is geometry storage, not a display preview. Seventeen
+        # significant digits round-trip doubles instead of rounding fine
+        # collected assets each time their containing project is saved.
+        d = "M " + " L ".join(f"{x:.17g} {y:.17g}" for x, y in p.points)
         closed = len(p.points) > 2 and p.points[0] == p.points[-1]
         if closed:
             d += " Z"

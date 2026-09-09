@@ -29,6 +29,7 @@ import { S, actions } from "./main.js";
 import { homeostatFormSchema } from "./homeostat_bench.js";
 import { initMagneticBench, openMagneticBench, closeMagneticBench } from "./magnetic_bench.js";
 import { renderForm } from "./forms.js";
+import { openGallerySave } from "./gallery.js";
 import { benchAdapter, benchDescriptor, benchUnavailableReason, registerBenchAdapter } from "./bench_registry.js";
 import { initBenchHost, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from "./bench_host.js";
 import {
@@ -55,6 +56,7 @@ let renderedKey = null;
 let telemetry = new Map();
 let telemetryRecipe = null;
 let creating = false;
+let savingGallery = false;
 //: axis value -> point count, for the telemetry strip. Only ever positions
 //: actually previewed, so the curve is a record of the watch, not a claim.
 let seen = new Map();
@@ -111,6 +113,13 @@ export function initProcessPopup() {
   $("process-scrub").addEventListener("input", () => render());
   const create = $("process-create");
   if (create) create.onclick = commit;
+  const save = document.createElement("button");
+  save.id = "process-generic-save-gallery";
+  save.textContent = "Save to gallery";
+  save.hidden = true;
+  save.disabled = true;
+  save.onclick = saveGenericToGallery;
+  create?.before(save);
   const reroll = $("process-reroll");
   if (reroll) reroll.onclick = () => {
     if (!benchSrc || !benchHooks?.onReroll) return;
@@ -253,7 +262,7 @@ function setBenchChrome(on) {
   $("process-telemetry-row").hidden = false;
   const special = $("process-second-reading");
   if (special) special.hidden = true;
-  for (const id of ["process-params", "process-create"]) {
+  for (const id of ["process-params", "process-create", "process-generic-save-gallery"]) {
     const el = $(id);
     if (el) el.hidden = !on;
   }
@@ -283,7 +292,7 @@ function renderBenchForm() {
   const later = () => {
     renderSerial++;
     renderedKey = null;
-    $('process-create').disabled = true;
+    updateGenericActions();
     $('process-status').textContent = 'Parameters changed · preview pending';
     clearTimeout(liveTimer);
     liveTimer = setTimeout(() => render(), 140);
@@ -300,16 +309,41 @@ function currentParams() {
 function currentKey() {
   return JSON.stringify({ module: currentSource()?.mod?.id, params: currentParams() });
 }
+function updateGenericActions() {
+  const current = renderedKey === currentKey();
+  $('process-create').disabled = creating || savingGallery || !current;
+  $('process-generic-save-gallery').disabled = creating || savingGallery || !current;
+}
+
+async function saveGenericToGallery() {
+  if (!benchSrc || creating || savingGallery || renderedKey !== currentKey()) return;
+  stop();
+  const ownerSession = viewSession;
+  const key = currentKey();
+  const module = benchSrc.mod.id;
+  const params = JSON.parse(JSON.stringify(currentParams()));
+  savingGallery = true;
+  updateGenericActions();
+  clearBenchError();
+  try {
+    await openGallerySave({ kind: 'generator', module, params }, benchSrc.mod.label);
+  } catch (e) {
+    if (ownerSession === viewSession && !$('process-popup').hidden && renderedKey === key)
+      showBenchError(e);
+  } finally {
+    savingGallery = false;
+    if (ownerSession === viewSession && !$('process-popup').hidden) updateGenericActions();
+  }
+}
 async function commit() {
-  if (!benchSrc || !benchHooks?.onCreate || creating || renderedKey !== currentKey()) return;
+  if (!benchSrc || !benchHooks?.onCreate || creating || savingGallery || renderedKey !== currentKey()) return;
   stop();
   const onCreate = benchHooks.onCreate;
   const params = JSON.parse(JSON.stringify(currentParams()));
   const key = currentKey();
   const ownerSession = viewSession;
-  const btn = $('process-create');
   creating = true;
-  btn.disabled = true;
+  updateGenericActions();
   clearBenchError();
   try {
     await onCreate(params);
@@ -321,7 +355,7 @@ async function commit() {
       showBenchError(e); // no automatic retry of an uncertain project write
   } finally {
     creating = false;
-    btn.disabled = renderedKey !== currentKey();
+    updateGenericActions();
   }
 }
 
@@ -337,6 +371,7 @@ function close() {
   clearTimeout(liveTimer);
   closeBenchShell();
   renderedKey = null;
+  savingGallery = false;
   layerId = null;
   const onClose = benchHooks?.onClose;
   benchSrc = null;
@@ -389,7 +424,7 @@ async function render() {
   $('process-readout').textContent = String(value);
   if (benchSrc && axis) benchSrc.params[axis] = value;
   renderedKey = null;
-  $('process-create').disabled = true;
+  updateGenericActions();
   $('process-status').textContent = 'Resolving · previous preview may be shown';
   if (pending) { queued = true; return; }
   pending = true;
@@ -405,7 +440,7 @@ async function render() {
       draw(out.lines || []);
       renderedKey = key;
       $('process-status').textContent = axis ? `Preview current · ${axis} ${value}` : 'Preview current';
-      $('process-create').disabled = creating;
+      updateGenericActions();
       seen.set(value, out.points || 0);
       recordTelemetry(value, out.process?.telemetry || {});
       drawTelemetry();

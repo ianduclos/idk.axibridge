@@ -14,6 +14,17 @@ Cohen-line direction, plus how the involved ones should meet the UI) live in
 Shipped work has been pruned from this file (2026-08-17) — see `git log` /
 `STATUS.md` for what landed and when. This file tracks what's still open.
 
+## Asset gallery acceptance (2026-09-10)
+
+The local line-asset gallery is implemented: save whole treated layers or exact
+bench recipes as frozen geometry, browse/search/tag, and insert independent
+copies at their original size. [Behavior and storage contract](docs/ASSET-GALLERY.md).
+Native contact-sheet readability and the save/recall flow remain for Ian to
+check after restarting the app. Folders, synchronization, recipe recall,
+multi-layer capture and bulk management are deliberately deferred to keep
+this first version focused on collecting and reusing shapes. This is separate
+from the generator/effect discovery gallery below.
+
 ## Magnetic field acceptance (2026-09-09)
 
 The first bench is implemented from Ian's approved study: continuous default,

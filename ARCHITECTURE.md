@@ -215,6 +215,17 @@ into per-layer effect stacks, leaving optimisation as a property of the
 
 ### Undo, duplication, consolidation
 
+**Asset gallery (2026-09-10):** finished line material persists outside projects
+in `CONFIG_DIR/gallery/`, owned by `gallery.py` and `gallery_api.py`. Layer
+capture reuses clip/tween evaluation plus `shape_layer`, before regions and
+occlusion; its ephemeral tween overlay never replaces stored source geometry.
+Bench capture uses the exact completed recipe through `generate_cached`, not
+the simplified wire preview. A bounded temporary capture freezes geometry
+while the user names it. Atomic versioned JSON records retain full paths and
+descriptive provenance without generator dependencies. Insertion adds an
+independent baked layer with one undo checkpoint, centered by translation;
+ordinary project snapshots carry it thereafter. See [Asset gallery](docs/ASSET-GALLERY.md).
+
 The session keeps an undo deque capped two ways (`UNDO_DEPTH` = 50 entries,
 plus `UNDO_GEOMETRY_BUDGET_POINTS` ≈ 65 MB of pinned geometry — the oldest
 entries are trimmed when the budget is exceeded, never the newest). It used

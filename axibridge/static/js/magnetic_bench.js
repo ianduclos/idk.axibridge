@@ -2,6 +2,7 @@
 import { api } from './api.js';
 import { fit, scattered, hasPresets, completePresets, interpolated, withPresetSize } from './magnetic_arrangement.js';
 import { benchProjectEpoch, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from './bench_host.js';
+import { openGallerySave } from './gallery.js';
 
 const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -167,11 +168,12 @@ export function initMagneticBench() {
   $('bench-controls').append(controls);
   const bar = document.createElement('div');
   bar.id = 'magnetic-actions'; bar.hidden = true;
-  bar.innerHTML = `<button id="magnetic-undo">Undo</button><button id="magnetic-redo">Redo</button><span id="magnetic-kept" class="hint" aria-live="polite"></span><button id="magnetic-keep" class="primary" disabled>Keep as layer</button>`;
+  bar.innerHTML = `<button id="magnetic-undo">Undo</button><button id="magnetic-redo">Redo</button><span id="magnetic-kept" class="hint" aria-live="polite"></span><button id="magnetic-save-gallery" disabled>Save to gallery</button><button id="magnetic-keep" class="primary" disabled>Keep as layer</button>`;
   document.querySelector('.bench-main').append(bar);
   $('magnetic-undo').onclick = () => undo();
   $('magnetic-redo').onclick = () => undo(true);
   $('magnetic-keep').onclick = keep;
+  $('magnetic-save-gallery').onclick = saveToGallery;
   wirePresets();
   $('magnetic-lock').onchange = () => change(() => { if (selected()) selected().locked = $('magnetic-lock').checked; }, true);
   for (const bound of ['min','max']) $(`magnetic-strength-${bound}`).onchange = () => {
@@ -276,7 +278,7 @@ export function openMagneticBench({mod,params,contextKey,onKeep,onClose}) {
     draft = {params:input, inputKey, selection:input.magnets.length ? 0 : -1, undo:[],redo:[]};
     drafts.set(context,draft);
   }
-  active = {mod,draft,external:params,onKeep,onClose,renderedKey:null,inFlight:false,queued:false,keeping:false};
+  active = {mod,draft,external:params,onKeep,onClose,renderedKey:null,inFlight:false,queued:false,keeping:false,savingGallery:false};
   $('process-popup').classList.remove('second-reading','watch-only');
   $('process-popup').classList.add('magnetic-field');
   $('process-reference').setAttribute('hidden','');
@@ -335,7 +337,8 @@ function renderControls() {
   $('magnetic-undo').disabled = !active.draft.undo.length || active.keeping;
   $('magnetic-redo').disabled = !active.draft.redo.length || active.keeping;
   $('process-magnetic').inert = active.keeping;
-  $('magnetic-keep').disabled = active.keeping || Boolean(gesture) || Boolean(mixGesture) || active.inFlight || active.renderedKey !== key();
+  $('magnetic-keep').disabled = active.keeping || active.savingGallery || Boolean(gesture) || Boolean(mixGesture) || active.inFlight || active.renderedKey !== key();
+  $('magnetic-save-gallery').disabled = active.keeping || active.savingGallery || Boolean(gesture) || Boolean(mixGesture) || active.inFlight || active.renderedKey !== key();
   $('magnetic-keep').textContent = active.keeping ? 'Keeping…' : 'Keep as layer';
   $('process-status').textContent = active.error ? 'Preview unavailable — retry below' : gesture ? 'Move the magnet; release to update the field' : active.renderedKey !== key()
     ? 'Updating field…' : `${active.output.lines.length.toLocaleString()} ink paths${p.style === 'continuous' ? ' · continuous' : ' · many pen lifts'}${active.output.decimated ? ' · simplified preview' : ''}${!p.magnets.length ? ' · add a magnet to begin' : ''}`;
@@ -460,5 +463,23 @@ async function keep() {
     if (active === owner) showBenchError(error); // no automatic retry of writes
   } finally {
     owner.keeping = false; if (active === owner) renderControls();
+  }
+}
+
+async function saveToGallery() {
+  if (!active || $('magnetic-save-gallery').disabled) return;
+  const owner = active;
+  const exact = copy(owner.draft.params);
+  const expected = key();
+  owner.savingGallery = true;
+  clearBenchError();
+  renderControls();
+  try {
+    await openGallerySave({ kind: 'generator', module: owner.mod.id, params: exact }, owner.mod.label);
+  } catch (error) {
+    if (active === owner && key() === expected) showBenchError(error);
+  } finally {
+    owner.savingGallery = false;
+    if (active === owner) renderControls();
   }
 }

@@ -1,0 +1,57 @@
+.gallery-backdrop {
+  position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center;
+  padding: var(--space-4); background: rgba(16, 15, 15, .72);
+}
+.gallery-dialog {
+  position: relative; width: min(1240px, 96vw); height: min(820px, 92vh);
+  display: flex; flex-direction: column; overflow: hidden;
+  color: var(--ink); background: var(--bench); border: 1px solid var(--bench-edge);
+  border-radius: var(--radius-panel); box-shadow: 0 18px 60px rgba(0,0,0,.45);
+}
+.gallery-close { position: absolute; z-index: 2; top: var(--space-3); right: var(--space-3); }
+.gallery-header { padding: var(--space-4); border-bottom: 1px solid var(--bench-edge); }
+.gallery-header h1, .gallery-save h1 { margin: 0 5rem var(--space-3) 0; font: inherit; font-size: var(--type-title); color: var(--ink-hi); }
+.gallery-controls { display: grid; grid-template-columns: minmax(13rem, 1fr) auto auto minmax(7rem, .35fr); gap: var(--space-2); }
+.gallery-search, .gallery-filter { width: 100%; }
+.gallery-body { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, 34%); }
+.gallery-grid {
+  --gallery-thumb: 180px; min-height: 0; overflow: auto; align-content: start;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--gallery-thumb), 1fr));
+  gap: var(--space-3); padding: var(--space-4); border-right: 1px solid var(--bench-edge);
+}
+.gallery-card {
+  min-width: 0; display: flex; flex-direction: column; gap: 5px; padding: 7px;
+  text-align: left; background: var(--bench-rise); border-color: transparent;
+}
+.gallery-card[aria-selected="true"] { border-color: var(--live); background: var(--bench-edge); }
+.gallery-card-preview, .gallery-detail-preview, .gallery-save-preview {
+  position: relative; display: block; overflow: hidden; background: var(--flexoki-paper); border-radius: calc(var(--radius-control) - 1px);
+}
+.gallery-card-preview { width: 100%; aspect-ratio: 4 / 3; }
+.gallery-preview-image { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; }
+.gallery-card-name { overflow: hidden; color: var(--ink-hi); text-overflow: ellipsis; white-space: nowrap; }
+.gallery-card-meta { overflow: hidden; color: var(--ink-soft); font-size: var(--type-note); text-overflow: ellipsis; white-space: nowrap; }
+.gallery-detail { min-width: 0; overflow: auto; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); }
+.gallery-detail-preview { min-height: 210px; aspect-ratio: 4 / 3; flex: none; }
+.gallery-field { display: flex; flex-direction: column; gap: 5px; color: var(--ink-soft); }
+.gallery-field input, .gallery-field textarea { width: 100%; }
+.gallery-label { font-size: var(--type-note); }
+.gallery-facts, .gallery-status, .gallery-empty, .gallery-loading { margin: 0; color: var(--ink-soft); font-size: var(--type-note); }
+.gallery-status { padding: var(--space-2) var(--space-4); border-top: 1px solid var(--bench-edge); }
+.gallery-detail-actions, .gallery-save-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.gallery-detail-actions .danger { margin-left: auto; }
+.gallery-error { color: var(--rust); font-size: var(--type-note); }
+.gallery-save .gallery-dialog { width: min(760px, 94vw); height: auto; max-height: 90vh; padding: var(--space-4); overflow: auto; }
+.gallery-save-layout { display: grid; grid-template-columns: minmax(220px, 42%) minmax(260px, 1fr); gap: var(--space-4); }
+.gallery-save-preview { min-height: 220px; aspect-ratio: 4 / 3; }
+.gallery-preview-unavailable { color: var(--flexoki-700); }
+.gallery-save-form { display: flex; flex-direction: column; gap: var(--space-3); }
+.gallery-save-actions { justify-content: flex-end; margin-top: auto; }
+@media (max-width: 760px) {
+  .gallery-controls { grid-template-columns: 1fr 1fr; }
+  .gallery-body { grid-template-columns: 1fr; }
+  .gallery-grid { border-right: 0; max-height: 45vh; }
+  .gallery-detail { border-top: 1px solid var(--bench-edge); }
+  .gallery-save-layout { grid-template-columns: 1fr; }
+  .gallery-save-preview { min-height: 160px; }
+}

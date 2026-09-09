@@ -3,6 +3,7 @@ import { beginDrawingUpdate, restartDrawingUpdate } from "./drawing_status.js";
 const WORKING_BENCHES = new Set(['venation', 'homeostat', 'second_reading', 'magnetic_field']);
 const isWorkingBench = mod => WORKING_BENCHES.has(mod?.id);
 import { benchUnavailableReason } from "./bench_registry.js";
+import { openGallery, openGallerySave } from "./gallery.js";
 // Compose tab: sources (generate / upload), the layer list (z-order,
 // visibility, pen, occlusion), and the selected layer's detail editor
 // (transform numerics, effect stack, generator params).
@@ -188,6 +189,7 @@ const genPreviewReq = (key, module, params, transform = null) => ({
 export function initComposeTab() {
   $("tab-compose").innerHTML = `
     <div id="new-material-anchor"></div>
+    <div class="row"><button id="btn-gallery">Gallery</button></div>
     <div class="panel" id="gen-panel">
       <h2 id="gen-heading">New material</h2>
       <div class="row">
@@ -278,6 +280,7 @@ export function initComposeTab() {
   // image-driven generators (any param with format:"asset") group separately
   const usesImage = (m) => Object.values(m.schema.properties || {}).some(
     (p) => (p.format || ((p.anyOf || []).find((a) => a.format) || {}).format) === "asset");
+  $("btn-gallery").onclick = () => openGallery();
   const optgroups = { benches: group("Benches"), false: group("Procedural"), true: group("Image-driven") };
   function group(label) {
     const g = document.createElement("optgroup");
@@ -1991,6 +1994,7 @@ export function renderLayerDetail() {
     <div class="row">
       <select id="fx-select"></select><button id="fx-add">＋ Add</button>
       <button id="fx-consolidate" title="Bake transform + effects into the source geometry (undoable; regenerate also reverts a generated layer)">⤓ Consolidate</button>
+      <button id="btn-layer-gallery" ${layer.region ? 'disabled title="Region layers have no drawable output to save"' : ''}>Save to gallery</button>
       ${layer.source.type !== "tween" && !layer.animation_owner_id ? `<button id="fx-animate"
         title="Turn this layer into a keyframed A/B animation that follows the master timeline">⏱ Animate</button>` : ""}
       <button id="process-watch" hidden
@@ -2002,6 +2006,14 @@ export function renderLayerDetail() {
     </div>
     <div id="fx-steps"></div>`;
   wrap.appendChild(fx);
+  fx.querySelector("#btn-layer-gallery").onclick = async () => {
+    const button = fx.querySelector("#btn-layer-gallery");
+    button.disabled = true;
+    try {
+      await openGallerySave({kind: 'layer', layer_id: layer.id, master_t: S.masterT}, layer.name);
+    } catch (e) { actions.oops(e); }
+    finally { if (button.isConnected) button.disabled = Boolean(layer.region); }
+  };
   fx.querySelector("#fx-consolidate").onclick = async () => {
     try {
       await api.post(`/api/layers/${layer.id}/consolidate`);
