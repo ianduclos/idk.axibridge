@@ -7,7 +7,7 @@ summary: Pen and Shape Pen paths default to the finest supported curve tolerance
 next:
   - "Check Ribbon curve sampling on the pictured choppy section"
   - "Check heavy Ribbon edits, elapsed reset and deleting a layer during rendering"
-  - "Restart app/backend when ready and check Magnetic field four-corner blending, Scatter strengths and pole spacing"
+  - "Refresh the app window and check Magnetic field four-corner blending, Scatter strengths and pole spacing"
   - "Check the open Mac app for native appearance and the new scaffold icon"
   - "Continue Second Reading alternating-use and paper review"
 handoff_for: ian
@@ -15,10 +15,17 @@ handoff_for: ian
 
 # idk.axibridge — status
 
+**Session wrap-up, 9 September:** Full suite **1,428 passed**, one intentional
+native-app lifecycle skip, one existing Starlette warning. Typecheck and the
+suite's rebuilt browser acceptance checks passed. Animation continuity, preview
+cancellation, Ribbon curve sampling and fine Pen defaults are committed. Native
+appearance and paper review remain with Ian; D3 and the expanded effect editor
+remain in ROADMAP.md. The pre-existing untracked Pi skill is outside this work.
+
 **Curve defaults, 9 September:** New Pen paths default to 0.05 mm, the
 smoothest supported tolerance, including Pen silhouettes inside Shape. Pen,
-Grammar, Text/Text Fill and SVG import now say “Curve
-tolerance” and explain that lower values produce smoother geometry. The
+Grammar, Text/Text Fill and SVG import now say “Curve tolerance” and explain
+that lower values produce smoother geometry. The
 module-authoring contract records fine curve defaults and explicit quality
 trade-offs. Existing explicit recipe tolerances remain unchanged. Relevant
 Pen/Shape/Grammar/Text/Ribbon and browser tests passed, with typecheck/build;

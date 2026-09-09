@@ -37,6 +37,9 @@ added. A true percentage bar remains deferred: union/clipping costs are irregula
 and need explicit stage progress; strand counts would give misleading estimates.
 Hard interruption of an in-flight native geometry call would require isolated
 workers; current cancellation is cooperative at geometry/work boundaries.
+Gentle-curve offset sampling was also corrected to reduce repeated kinks without
+adding points. Pen and Shape Pen now default to their finest supported tolerance
+(0.05 mm); shared curve-quality wording and authoring guidance are in docs/MODULES.md.
 
 1. **D3 as a separate effect next.** One modulating curve alternates across its
    open source path, as in Ian's original sketch. Reuse Ribbon's seeded profile

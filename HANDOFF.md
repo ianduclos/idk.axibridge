@@ -7,9 +7,9 @@ entries: 17
 ### Ribbon gentle curves acceptance — updated 2026-09-09, owner: ian
 
 - follow-up: Pen and Shape Pen defaults are now 0.05 mm; curve controls explain
-  lower=smoother. Targeted geometry/UI checks passed and backend defaults were
+  lower=smoother. Final full suite: 1,428 passed, one lifecycle skip; typecheck
+  and rebuilt browser checks passed. Backend defaults were
   verified after reload. Explicit stored tolerances remain unchanged.
-
 - done: interpolate the offset-direction field across gentle source segments;
   original spine, crest profiles and point budget stay intact. Sharp corners
   and the hidden fractured trial retain their treatment.
@@ -45,8 +45,8 @@ entries: 17
 - verified: 1,387 passed, one intentional native-app lifecycle skip, one
   existing Starlette warning. Typecheck and isolated unbundled smoke passed.
   Final count-display correction covered by a rebuilt magnetic browser run.
-- next: Restart main backend and reopen the app when Ian wants native review.
-  Current running app was left alone; no hardware action. Check storing and
+- next: Refresh the app window for native review. The backend was subsequently
+  reloaded during the Ribbon/curve follow-ups; no hardware action. Check storing and
   recalling four corners, XY gesture feel, locks and paper lift economy.
 - limits: Field routes regenerate during a blend, so path counts can change.
   Pole spacing is sampled near-pole thinning, not global clearance; large
