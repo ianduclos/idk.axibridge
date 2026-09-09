@@ -54,8 +54,8 @@ class PenParams(BaseModel):
         json_schema_extra={"hidden": True},
     )
     flatten_tol: float = Field(
-        default=0.2, ge=0.05, le=2.0, title="Flatten tolerance (mm)",
-        description="Max deviation of the flattened polyline from the true curve",
+        default=0.05, ge=0.05, le=2.0, title="Curve tolerance (mm)",
+        description="Lower is smoother. 0.05 mm is the smoothest setting; higher values use fewer points and can show facets. Controls the actual path used by effects and plotting, not just the display.",
     )
 
 

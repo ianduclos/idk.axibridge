@@ -3,7 +3,7 @@ project: idk.axibridge
 state: active
 updated: 2026-09-09
 machine: mac+pi
-summary: Ribbon blends gentle-curve offset directions to reduce repeated kinks; source geometry and corner treatments are preserved, pending native checking.
+summary: Pen and Shape Pen paths default to the finest supported curve tolerance; curve-quality labels and authoring guidance are clearer, ready for native checking.
 next:
   - "Check Ribbon curve sampling on the pictured choppy section"
   - "Check heavy Ribbon edits, elapsed reset and deleting a layer during rendering"
@@ -14,6 +14,15 @@ handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Curve defaults, 9 September:** New Pen paths default to 0.05 mm, the
+smoothest supported tolerance, including Pen silhouettes inside Shape. Pen,
+Grammar, Text/Text Fill and SVG import now say “Curve
+tolerance” and explain that lower values produce smoother geometry. The
+module-authoring contract records fine curve defaults and explicit quality
+trade-offs. Existing explicit recipe tolerances remain unchanged. Relevant
+Pen/Shape/Grammar/Text/Ribbon and browser tests passed, with typecheck/build;
+the live backend advertises both Pen defaults as 0.05 mm. Refresh the window.
 
 **Ribbon curve sampling, 9 September:** Gentle curve directions are blended
 before offsetting, reducing kinks inherited from flattened source segments.

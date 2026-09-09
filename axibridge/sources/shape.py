@@ -90,8 +90,8 @@ class ShapeParams(BaseModel):
         json_schema_extra={"group": "Fine tuning"},
     )
     flatten_tol: float = Field(
-        default=0.2, ge=0.05, le=2.0, title="Pen flatten tolerance (mm)",
-        description="Max deviation of flattened pen silhouettes from the true curve",
+        default=0.05, ge=0.05, le=2.0, title="Pen curve tolerance (mm)",
+        description="Lower is smoother. 0.05 mm is the smoothest setting for pen silhouettes; higher values use fewer points and may show facets.",
         json_schema_extra={"group": "Fine tuning"},
     )
 

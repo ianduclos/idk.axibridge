@@ -243,12 +243,12 @@ export function initComposeTab() {
         <input type="file" id="svg-file" accept=".svg,image/svg+xml" style="flex:1">
       </div>
       <div class="row">
-        <label>flatten tol.</label>
-        <input type="number" id="quant" value="0.1" min="0.01" max="5" step="0.01">
+        <label>curve tolerance</label>
+        <input type="number" id="quant" value="0.1" min="0.01" max="5" step="0.01" title="Lower is smoother. Maximum SVG curve approximation error in mm; higher values use fewer points and may show facets.">
         <span class="hint">mm</span>
         <button id="btn-upload" class="primary">Upload</button>
       </div>
-      <div class="hint">An uploaded SVG contributes its layers as layers.</div>
+      <div class="hint">An uploaded SVG contributes its layers as layers. Lower tolerance gives smoother curves and more points.</div>
       <div class="row" style="margin-top:10px">
         <input type="file" id="asset-file" multiple
           accept="image/png,image/jpeg,video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-msvideo"

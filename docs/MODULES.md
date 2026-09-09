@@ -433,3 +433,26 @@ lock. Committing source regeneration remains atomic and is not itself aborted.
 A single native GEOS call cannot be interrupted; the next checkpoint handles
 it. Full percentage progress is deliberately not inferred from strand count:
 clipping and unions have irregular costs.
+
+### Curve accuracy defaults and wording (2026-09-09)
+
+Ian wants curves to start smooth without having to diagnose hidden quality
+settings. Pen, including Pen silhouettes inside Shape, defaults to its finest supported
+tolerance, 0.05 mm. Explicit
+stored tolerances are respected. Future curve-producing modules should favor
+fine geometry by default and make any quality/cost trade-off explicit.
+
+For a geometric approximation error, use **Curve tolerance (mm)** and explain
+**lower is smoother; higher uses fewer points and may show facets**. State
+whether the tolerance is measured before or after placement/scaling. This is
+actual path geometry consumed by effects and plotting, distinct from a raster
+preview's resolution. Keep those controls clearly distinguished. Do not hide
+quality loss behind automatic simplification or a silently exhausted point
+budget; report a limit or expose a deliberate coarser setting.
+
+Pen, Shape, Grammar, Text/Text Fill and SVG import use the shared wording. Their numeric
+ranges are module-specific; a label change does not rewrite existing recipes.
+
+Affine placement does not reflatten source curves: scaling a layer up also
+scales its existing approximation error. Prefer finer source geometry before
+large enlargement; display resolution cannot recover missing curve detail.

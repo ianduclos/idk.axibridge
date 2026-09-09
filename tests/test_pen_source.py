@@ -121,6 +121,8 @@ def test_flatten_tol_bounds_point_density():
     }]
     fine = _gen(subpaths=subpaths, flatten_tol=0.05)
     coarse = _gen(subpaths=subpaths, flatten_tol=1.5)
+    default = _gen(subpaths=subpaths)
+    assert default.layers[0].paths == fine.layers[0].paths
     assert len(fine.layers[0].paths[0].points) > len(coarse.layers[0].paths[0].points)
 
 

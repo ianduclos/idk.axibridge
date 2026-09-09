@@ -209,8 +209,8 @@ class GrammarParams(BaseModel):
     salience_bias: float = Field(default=0.7, ge=0.0, le=1.0, title="Salience bias",
                                  description="0 = spend violations anywhere, 1 = at the "
                                              "most salient sites (center, symmetry axes)")
-    flatten_tol: float = Field(default=0.2, ge=0.05, le=1.0, title="Flatness (mm)",
-                               description="Bézier flattening tolerance at output",
+    flatten_tol: float = Field(default=0.2, ge=0.05, le=1.0, title="Curve tolerance (mm)",
+                               description="Lower is smoother: maximum curve approximation error in mm. Higher values use fewer points and may show facets in effects and plotting.",
                                json_schema_extra={"group": "Fine tuning"})
     seed: int = Field(default=0, ge=0, le=99999, title="Seed",
                       json_schema_extra={"group": "Fine tuning"})

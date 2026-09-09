@@ -6,6 +6,10 @@ entries: 17
 
 ### Ribbon gentle curves acceptance — updated 2026-09-09, owner: ian
 
+- follow-up: Pen and Shape Pen defaults are now 0.05 mm; curve controls explain
+  lower=smoother. Targeted geometry/UI checks passed and backend defaults were
+  verified after reload. Explicit stored tolerances remain unchanged.
+
 - done: interpolate the offset-direction field across gentle source segments;
   original spine, crest profiles and point budget stay intact. Sharp corners
   and the hidden fractured trial retain their treatment.

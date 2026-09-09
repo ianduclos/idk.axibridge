@@ -210,7 +210,7 @@ From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
   ink fill = `hatch_fill` on the stack), Enter commits open, Esc cancels,
   Backspace deletes last anchor. Storage: a `pen` source with anchors +
   handle vectors + `closed` per subpath; `generate()` flattens cubics at a
-  bounded `flatten_tol` (~0.2 mm) — the grammar generator's exact precedent,
+  bounded `flatten_tol` (0.05 mm default, the finest supported setting since 9 September) — the grammar generator's exact precedent,
   `model.py` untouched. Post-commit: pen mode + selected pen layer shows an
   anchors/handles overlay; drags regenerate with `coalesce=true` (one undo
   entry per editing run). Toolbar becomes a mode segment: ↖ select · ✎ draw ·

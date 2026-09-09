@@ -70,7 +70,8 @@ class TextParams(BaseModel):
         json_schema_extra={"group": "Fine tuning"},
     )
     flatten_tol: float = Field(
-        default=0.1, ge=0.02, le=1.0, title="Curve flatten tolerance (mm)",
+        default=0.1, ge=0.02, le=1.0, title="Curve tolerance (mm)",
+        description="Lower is smoother; higher values use fewer points and may show facets in effects and plotting.",
         json_schema_extra={"group": "Fine tuning"},
     )
 
