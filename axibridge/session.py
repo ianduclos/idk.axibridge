@@ -809,7 +809,7 @@ class Session:
         allowed = {"name", "visible", "draw", "transform", "effects", "pen_id",
                    "occluder", "receives_occlusion", "occlusion_margin_mm",
                    "occlude_groups", "receives_groups",
-                   "region", "region_boundary", "frame_offset", "frame_follow"}
+                   "region", "region_boundary", "frame_offset", "frame_follow", "effect_seed"}
         with self._lock:
             layer = self.project.layer(layer_id)
             self._checkpoint()
@@ -1149,6 +1149,7 @@ class Session:
             self._checkpoint()
 
             data = last.model_dump()
+            data["effect_seed"] = compose.layer_effect_seed(last)
             del data["id"]  # CanvasLayer mints a fresh one
             base = self._KEYFRAME_SUFFIX_RE.sub("", last.name)
             data["name"] = f"{base} ▸ {chr(ord('A') + len(keys))}"
@@ -1243,7 +1244,7 @@ class Session:
                 del data["id"]
                 data.update(
                     name=f"{layer.name} t={t:.2f}", visible=True,
-                    transform=Affine().model_dump(), effects=[],
+                    transform=Affine().model_dump(), effects=[], effect_seed=None,
                     source={"type": "baked"},
                 )
                 nl = CanvasLayer(**data)
@@ -2060,7 +2061,7 @@ class Session:
         data["transform"] = tween.lerp_affine(la.transform, lb.transform, t).model_dump()
         data["frame_offset"] = self._lerp_num(la.frame_offset, lb.frame_offset, t)
         data["occlusion_margin_mm"] = self._lerp_num(la.occlusion_margin_mm, lb.occlusion_margin_mm, t)
-        for key in ("visible", "pen_id", "occluder", "receives_occlusion", "frame_follow", "name"):
+        for key in ("visible", "pen_id", "occluder", "receives_occlusion", "frame_follow", "name", "effect_seed"):
             data[key] = getattr(la, key) if t < 0.5 else getattr(lb, key)
 
         effects, stacks_matched = tween.blend_effect_stacks(la.effects, lb.effects, t)
@@ -2412,6 +2413,7 @@ class Session:
             layer = self.project.layer(layer_id)
             self._checkpoint()
             data = layer.model_dump()
+            data["effect_seed"] = None  # ordinary copies get independent fields
             del data["id"]  # CanvasLayer mints a fresh one
             data["name"] = f"{layer.name} copy"
             copy = CanvasLayer(**data)
@@ -2461,6 +2463,7 @@ class Session:
             self._checkpoint()
 
             fill_data = layer.model_dump()
+            fill_data["effect_seed"] = None
             del fill_data["id"]  # CanvasLayer mints a fresh one
             fill_data["name"] = f"{layer.name} · hatch"
             fill_data["pen_id"] = None
@@ -2667,6 +2670,9 @@ class Session:
 
             # -- B: duplicate_layer's logic, inlined (no nested checkpoint) --
             data = layer.model_dump()
+            # Sharing the existing field preserves the original drawing and
+            # keeps an untouched A/B animation static, for every effect.
+            data["effect_seed"] = compose.layer_effect_seed(layer)
             del data["id"]  # CanvasLayer mints a fresh one
             data["name"] = f"{original_name} ▸ B"
             data["visible"] = False
@@ -3033,6 +3039,8 @@ class Session:
                         "src": ref.source.model_dump(),
                         "tf": ref.transform.model_dump(),
                         "fx": [s.model_dump() for s in ref.effects],
+                        **({"effect_seed": compose.layer_effect_seed(ref)}
+                           if any(s.enabled for s in ref.effects) else {}),
                         "geo": id(ref_geo),
                         "fo": ref.frame_offset,
                         "ff": ref.frame_follow,

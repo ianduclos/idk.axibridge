@@ -267,8 +267,9 @@ path — both flow through `session.resolved(master_t=…)`.
 
 **Canvas tween (per-layer, live)** — a `tween` layer (`tween.py`) morphs an
 ordered list of sibling keyframes: generator params, effect params, and
-decomposed transform lerp continuously; non-blendable fields (seeds, bools,
-mismatched stacks) step at t=0.5 to keep the endpoints exact. `follow_master`
+decomposed transform lerp continuously; non-blendable fields (bools, enums,
+mismatched stacks) step at t=0.5. Equal explicit seeds, including zero, stay
+fixed; differing seeds request deterministic per-frame variation. `follow_master`
 binds its `t` to the master timeline (`?t=` on `/compose/resolved`);
 `sweep > 1` stamps fixed in-betweens; `frame_follow` on a clip layer advances
 a frame-sequence asset as the timeline scrubs. Windows and the pingpong curve
@@ -318,7 +319,8 @@ Both instruments share **one per-layer blend core** (2026-07-19): the
 `structures_match` / `lerp_paths` / `blend_generator_params` /
 `blend_effect_stacks` — live once in `tween.py`, and
 `session._interpolate_layer` composes them. The non-lerpable rule is
-uniform: floats/ints lerp; bools, seeds, refs and enums step at 0.5; a
+uniform: schema-typed floats/ints lerp; bools, refs and enums step at 0.5;
+equal seeds stay fixed and differing seeds vary deterministically per frame; a
 stack's identity is its FULL step list (`enabled` is just a bool that
 steps — disabling a step never changes compatibility). Caller policy stays
 with the callers (frame-follow folding, sweep positions and ctx-seed
@@ -542,3 +544,23 @@ project format or route to hardware is introduced.
 The visible working-bench list is currently curated to Venation, Homeostat and
 Second Reading (Ian, 8 September). Time-axis compatibility remains available for
 ordinary layer Watch; it does not place other generators in the Benches category.
+
+
+### Animation random identity (2026-09-09)
+
+`CanvasLayer.effect_seed` is optional, bounded 32-bit metadata. A null value
+retains the historic hash-of-layer-ID seed, so older independent layers render
+unchanged. Animate B and appended keyframes store their source key's effective
+seed; the original A is not modified. Ordinary duplicates, split hatch layers
+and exploded baked frames reset the override to null. Both `_layer_ctx` and
+tween materialization use `layer_effect_seed`; shaped/tween caches include it
+when effects can observe it. Independent authored keyframes can still have
+different fields; their identities step at the midpoint for endpoint fidelity.
+Snapshot interpolation likewise steps an explicitly changed identity. Existing
+animations are repaired explicitly, not guessed from their names at load time.
+
+Generators never receive layer identity: their stored params own randomness.
+Equal seed zero is deterministic throughout an animation, matching generator
+execution. Module endpoint params are schema-normalized before interpolation
+on effect, generator, nested and tray routes. This prevents whole-number JSON
+encoding from turning continuous sliders into discrete jumps.

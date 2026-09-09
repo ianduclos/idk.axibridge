@@ -261,7 +261,9 @@ class EffectContext(BaseModel):
     ``translation`` is the layer transform's (e, f) component: noise-field
     effects sample their field at ``point - translation`` so dragging a layer
     around the canvas does not reshuffle its wobble. ``seed`` is stable per
-    layer, so two overlapping layers with the same effect get distinct fields.
+    independent layer; Animate/keyframe copies share it to keep identical
+    settings visually static. Use this seed for randomness, never derive a new
+    seed from layer_id (which identifies the current output, not its field).
     ``page`` is the paper-guide rect (x, y, w, h — the bed when no guide is
     set), for effects whose geometry is page-relative (invert). ``None`` only
     in hand-built contexts; the resolve path always fills it.

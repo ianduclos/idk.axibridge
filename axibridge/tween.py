@@ -81,7 +81,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-from .compose import Affine, CanvasLayer, EffectStep, Project, _layer_seed, guide_page as _guide_page, transform_paths
+from .compose import Affine, CanvasLayer, EffectStep, Project, layer_effect_seed, guide_page as _guide_page, transform_paths
 from .gencache import generate_cached
 from .model import Path
 from .registry import EffectContext, fold_time_axis, get_effect, get_source
@@ -187,9 +187,8 @@ def _frame_seed(va: Any, vb: Any, t: float) -> int:
 def lerp_params(pa: dict[str, Any], pb: dict[str, Any], t: float,
                 defaults: dict[str, Any]) -> dict[str, Any]:
     """Key-wise lerp of two param dicts over the union of keys (defaults fill
-    gaps). ``seed`` keys: equal nonzero endpoints keep the seed constant;
-    differing endpoints (or a manually zeroed seed, the "random" wildcard)
-    get a deterministic per-frame seed via :func:`_frame_seed` instead of
+    gaps). ``seed`` keys: equal endpoints (including zero) keep the seed
+    constant; differing endpoints get a deterministic per-frame seed via :func:`_frame_seed` instead of
     snapping at 0.5 — blending RNG seeds is meaningless, but a snap wastes
     the variation the user asked for by giving two different seeds."""
     out: dict[str, Any] = {}
@@ -197,7 +196,7 @@ def lerp_params(pa: dict[str, Any], pb: dict[str, Any], t: float,
         va = pa.get(key, defaults.get(key))
         vb = pb.get(key, defaults.get(key))
         if key == "seed":
-            if va == vb and va != 0:
+            if va == vb:
                 out[key] = va
             elif va != 0 and t <= 0.0:
                 out[key] = va  # endpoint fidelity: t=0 reproduces A exactly
@@ -423,6 +422,13 @@ def _geometry_param_fields(src: Any) -> list[str]:
     return [name for name, spec in props.items() if spec.get("hidden") is True]
 
 
+def _blend_module_params(module, pa, pb, t):
+    """Schema types, not JSON's spelling of whole numbers, govern animation."""
+    model = module.Params
+    return lerp_params(model(**pa).model_dump(), model(**pb).model_dump(),
+                       t, model().model_dump())
+
+
 def blend_generator_params(la: CanvasLayer, lb: CanvasLayer, t: float) -> dict[str, Any] | None:
     """Same-generator param blend, or None when A/B aren't the same generator.
 
@@ -441,7 +447,7 @@ def blend_generator_params(la: CanvasLayer, lb: CanvasLayer, t: float) -> dict[s
     src = get_source(la.source.generator)
     pa = la.source.params or {}
     pb = lb.source.params or {}
-    out = lerp_params(pa, pb, t, src.Params().model_dump())
+    out = _blend_module_params(src, pa, pb, t)
     for field in _geometry_param_fields(src):
         blended = _blend_geometry(pa.get(field), pb.get(field), t)
         if blended is not _NO_BLEND:
@@ -556,8 +562,8 @@ def effective_generator(
         if ega is None or egb is None or ega[0] != egb[0]:
             return None
         gen = ega[0]
-        defaults = get_source(gen).Params().model_dump()
-        params = lerp_params(ega[1], egb[1], ti, defaults)
+        src = get_source(gen)
+        params = _blend_module_params(src, ega[1], egb[1], ti)
         off = ega[2] + (egb[2] - ega[2]) * ti
         own = layer.frame_offset + (
             master_t if (layer.frame_follow and master_t is not None) else 0.0)
@@ -584,17 +590,10 @@ def blend_effect_stacks(
         return ([s.model_copy(deep=True) for s in chosen], False)
     out: list[EffectStep] = []
     for sa, sb in zip(ea, eb):
-        model = get_effect(sa.effect).Params
-        defaults = model().model_dump()
-        # JSON encodes 0.0/1.0 as whole numbers after a browser edit. Restore
-        # declared parameter types before lerping, so continuous sliders do
-        # not inherit integer rounding from their endpoint representation.
-        pa = model(**sa.params).model_dump()
-        pb = model(**sb.params).model_dump()
         out.append(EffectStep(
             effect=sa.effect,
             enabled=sa.enabled if t < 0.5 else sb.enabled,
-            params=lerp_params(pa, pb, t, defaults),
+            params=_blend_module_params(get_effect(sa.effect), sa.params, sb.params, t),
         ))
     return (out, True)
 
@@ -662,7 +661,7 @@ def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
     if ega is not None and egb is not None and ega[0] == egb[0]:
         gen = ega[0]
         src = get_source(gen)
-        params = lerp_params(ega[1], egb[1], t, src.Params().model_dump())
+        params = _blend_module_params(src, ega[1], egb[1], t)
         # Captured-geometry morph (pen/drawing): a hidden shape field can't be
         # scalar-lerped by lerp_params above (it stepped at t=0.5 there), so
         # deep-lerp it structurally on the same reduced param dicts — for a
@@ -764,8 +763,9 @@ def materialize(
             ctx = EffectContext(
                 layer_id=layer.id,
                 translation=lerp_affine(la.transform, lb.transform, t).translation,
-                # step the ctx seed too: noise fields match A/B at the endpoints
-                seed=_layer_seed(la.id) if t < 0.5 else _layer_seed(lb.id),
+                # Animate/append copies share this identity. Independently
+                # authored fields still keep their own endpoint identities.
+                seed=layer_effect_seed(la) if t < 0.5 else layer_effect_seed(lb),
                 page=_guide_page(project),
                 line_diameter_mm=line_diameter_mm,
             )

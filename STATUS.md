@@ -13,6 +13,14 @@ handoff_for: ian
 
 # idk.axibridge — status
 
+**Animation identity correction, 9 September:** Animate and appended keyframes
+share the original effect field; equal generator seeds including zero stay
+fixed. Schema-typed interpolation covers effects and generators. Full suite
+1,399 passed; final copy/capture safeguards passed 105 focused tests. Backend
+is loaded; the current Homeostat drawing is retained. Prior Ribbon is saved as
+`ribbon-midpoint-repaired-20260909-015259`.
+[Contract and verification](docs/reviews/animation-random-identity-2026-09-09.md).
+
 **Ribbon animation correction, 9 September:** Effect endpoint values are now
 typed through their parameter models before blending. Whole-number JSON values
 for Seed blend no longer round the intermediate frames. 116 related tests pass;

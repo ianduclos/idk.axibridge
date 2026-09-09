@@ -376,8 +376,8 @@ def test_lerp_params_seed_per_frame():
     # endpoint fidelity: t=0 is A's seed, t=1 is B's
     assert lerp_params({"seed": 1}, {"seed": 9}, 0.0, {})["seed"] == 1
     assert lerp_params({"seed": 1}, {"seed": 9}, 1.0, {})["seed"] == 9
-    # a manually zeroed seed is the "random" wildcard — hashed even at endpoints
-    assert lerp_params({"seed": 0}, {"seed": 0}, 0.0, {})["seed"] not in (0,)
+    # Equal seeds, including zero, preserve an untouched animation.
+    assert lerp_params({"seed": 0}, {"seed": 0}, 0.0, {})["seed"] == 0
     assert lerp_params({"seed": 0}, {"seed": 5}, 0.0, {})["seed"] != 0
     assert lerp_params({"seed": 5}, {"seed": 0}, 1.0, {})["seed"] != 0
 

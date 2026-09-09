@@ -2,6 +2,15 @@
 
 ---
 
+### 2026-09-09 — Stable animation random identity (Codex)
+- affects: saved animation layers, effect/generator authors and cached renders.
+- detail: optional `CanvasLayer.effect_seed` persists shared randomness for
+  Animate/append keyframes; old layers fall back to their original ID-derived
+  seed. Both context and cache consumers honor it. Equal seed zero remains
+  deterministic across animation; numeric interpolation uses module types.
+  Update other consumers before regenerating new animations; older code ignores
+  this field and can reintroduce midpoint jumps. See docs/MODULES.md.
+
 ### 2026-09-09 — Magnetic corner recipes (Codex)
 - affects: saved magnetic source recipes and bench consumers.
 - detail: optional corner captures, XY editor state, canonical sizes, scatter

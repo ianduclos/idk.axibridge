@@ -124,6 +124,10 @@ class CanvasLayer(BaseModel):
     source: LayerSource
     transform: Affine = Field(default_factory=Affine)
     effects: list[EffectStep] = Field(default_factory=list)
+    effect_seed: int | None = Field(
+        None, ge=0, le=4294967295,
+        description="Stable effect randomness inherited by animation keyframes; null uses the layer ID",
+        json_schema_extra={"hidden": True})
     pen_id: str | None = None
     occluder: bool = False
     receives_occlusion: bool = True
@@ -294,6 +298,11 @@ def _layer_seed(layer_id: str) -> int:
     return int.from_bytes(hashlib.sha256(layer_id.encode()).digest()[:4], "big")
 
 
+def layer_effect_seed(layer: CanvasLayer) -> int:
+    """Legacy layers keep their field; animation copies can share that field."""
+    return _layer_seed(layer.id) if layer.effect_seed is None else layer.effect_seed
+
+
 def transform_paths(paths: list[Path], t: Affine) -> list[Path]:
     return [Path(points=[t.apply(x, y) for x, y in p.points], filled=p.filled) for p in paths]
 
@@ -312,7 +321,7 @@ def _layer_ctx(layer: CanvasLayer,
     return EffectContext(
         layer_id=layer.id,
         translation=layer.transform.translation,
-        seed=_layer_seed(layer.id),
+        seed=layer_effect_seed(layer),
         page=page,
         line_diameter_mm=line_diameter_mm,
     )
@@ -970,6 +979,7 @@ def _shape_key(layer: CanvasLayer, src: list[Path],
     # key bytes for effect-free layers, including across pen switches.
     if any(s.enabled for s in layer.effects):
         key_data["d"] = line_diameter_mm
+        key_data["seed"] = layer_effect_seed(layer)
     h.update(json.dumps(key_data, sort_keys=True).encode())
     return h.hexdigest()
 

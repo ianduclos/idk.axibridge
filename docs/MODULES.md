@@ -271,8 +271,12 @@ The contract, and why each clause exists:
   paths within a layer is effectively undefined behavior; emit properly
   nested or disjoint filled loops (pre-union overlapping shapes yourself,
   the way the brush tool spec does).
-- **Use `ctx` for stability.** `ctx.seed` is stable per layer — mix it into
-  your RNG so overlapping layers differ and re-resolves are reproducible.
+- **Use `ctx` for stability.** `ctx.seed` is stable per independent layer —
+  mix it into your RNG so overlapping layers differ and re-resolves reproduce.
+  Animate and appended keyframes inherit the original field identity via the
+  optional persisted `CanvasLayer.effect_seed`; ordinary duplicates get a fresh
+  field. Never derive RNG state from `ctx.layer_id`, object IDs, clock time or
+  global mutable RNGs: those defeat animation identity and caching.
   `ctx.translation` is the layer's placement: sample noise fields at
   `point − ctx.translation` so dragging a layer keeps its character
   (see `coherent_jitter.py`).
@@ -386,3 +390,26 @@ structural edits. Locks affect Scatter only. `pole_spacing` optionally thins
 whole routes after boundary filtering and before mark styling; zero preserves
 the existing geometry. It compares closest sampled approaches within 12 mm of
 each pole, not global curve clearance.
+
+
+### Animation stability contract (2026-09-09)
+
+An untouched Animate A/B/C chain must render the same drawing throughout.
+Generators are pure functions of validated parameters: equal seeds, **including
+zero**, remain fixed across animation. To choose a fresh starting seed, use the
+creation/edit action and store the chosen value; do not reroll during generate.
+Different explicit endpoint seeds still request per-frame random variation;
+for a smooth random-pattern transition, expose a continuous blend between two
+fixed seeds, as Ribbon does. Discrete enums/bools still step by design.
+
+Both effect and generator interpolation use their parameter models to restore
+numeric types before lerping (JSON `0`/`1` does not make a float slider integer).
+The same rule covers nested generator tweens and capture blending. Effects use
+`ctx.seed`; the compositor and tween caches include the effective field identity.
+Old layers without `effect_seed` keep their original ID-derived field. Older
+animation files are not silently migrated; matching keyframes can explicitly
+share the original's effective seed when repairing an existing animation.
+
+`tests/test_animation_random_identity.py` registers fresh probe effect/generator
+modules to check this shared contract, plus real Ribbon, append, cache, undo
+and serialization checks. Follow it when adding module-specific animation tests.
