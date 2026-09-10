@@ -375,6 +375,8 @@ export const actions = {
       layerPatches.schedule(id, patch, opts.debounce ? 350 : 0);
   },
 
+  layerUpdatesPending: () => layerPatches.entries.size > 0,
+
   cancelLayerUpdates(ids) {
     for (const id of ids) layerPatches.cancel(id);
     restartDrawingUpdate();

@@ -30,6 +30,7 @@ import { homeostatFormSchema } from "./homeostat_bench.js";
 import { initMagneticBench, openMagneticBench, closeMagneticBench } from "./magnetic_bench.js";
 import { renderForm } from "./forms.js";
 import { openGallerySave } from "./gallery.js";
+import { createPresetControls } from "./module_library.js";
 import { benchAdapter, benchDescriptor, benchUnavailableReason, registerBenchAdapter } from "./bench_registry.js";
 import { initBenchHost, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from "./bench_host.js";
 import {
@@ -57,6 +58,7 @@ let telemetry = new Map();
 let telemetryRecipe = null;
 let creating = false;
 let savingGallery = false;
+let genericPresetControls = null;
 //: axis value -> point count, for the telemetry strip. Only ever positions
 //: actually previewed, so the curve is a record of the watch, not a claim.
 let seen = new Map();
@@ -240,6 +242,7 @@ async function openGenericBench({ mod, params, onCreate, onReroll, onClose }) {
   benchSrc = { mod, params };
   benchHooks = { onCreate, onReroll, onClose };
   setBenchChrome(true);
+  installGenericPresetControls();
   renderBenchForm();
   await openWith(mod, axis ? params[axis] : null, `${mod.label} — bench`);
 }
@@ -262,6 +265,7 @@ function setBenchChrome(on) {
   $("process-telemetry-row").hidden = false;
   const special = $("process-second-reading");
   if (special) special.hidden = true;
+  if (!on) removeGenericPresetControls();
   for (const id of ["process-params", "process-create", "process-generic-save-gallery"]) {
     const el = $(id);
     if (el) el.hidden = !on;
@@ -272,6 +276,52 @@ function setBenchChrome(on) {
     reroll.hidden = !(benchHooks?.onReroll
       && (spec?.type === "integer" || spec?.type === "number"));
   }
+}
+
+function removeGenericPresetControls() {
+  genericPresetControls?.remove();
+  genericPresetControls = null;
+}
+
+function installGenericPresetControls() {
+  removeGenericPresetControls();
+  const source = benchSrc;
+  if (!source) return;
+  genericPresetControls = createPresetControls({
+    kind: "source",
+    mod: source.mod,
+    getParams: () => JSON.parse(JSON.stringify(currentParams() || {})),
+    isBusy: () => !benchSrc || benchSrc !== source || $("process-popup").hidden
+      || creating || savingGallery || pending,
+    onApply: async (params) => {
+      if (!benchSrc || benchSrc !== source || $("process-popup").hidden
+          || creating || savingGallery || pending) {
+        throw new Error("The working bench changed before this preset could be applied.");
+      }
+      stop();
+      renderSerial++;
+      queued = false;
+      clearTimeout(liveTimer);
+      Object.keys(source.params).forEach((key) => delete source.params[key]);
+      Object.assign(source.params, JSON.parse(JSON.stringify(params)));
+      // The scrub is the axis field's only editor. Set it before currentParams
+      // reads the draft again, otherwise its old DOM value overwrites a preset.
+      if (axis) {
+        const value = Number(source.params[axis]);
+        const scrub = $("process-scrub");
+        scrub.value = String(clamp(Number.isFinite(value) ? value : bounds[0]));
+        $("process-readout").textContent = scrub.value;
+      }
+      renderedKey = null;
+      seen.clear();
+      telemetry.clear();
+      telemetryRecipe = null;
+      renderBenchForm();
+      await render();
+    },
+  });
+  genericPresetControls.id = "process-module-presets";
+  $("bench-controls")?.prepend(genericPresetControls);
 }
 
 // The bench form is the generator's own auto-form minus the time axis — the
@@ -370,6 +420,7 @@ function close() {
   queued = false;
   clearTimeout(liveTimer);
   closeBenchShell();
+  removeGenericPresetControls();
   renderedKey = null;
   savingGallery = false;
   layerId = null;

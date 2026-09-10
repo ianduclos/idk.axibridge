@@ -213,6 +213,16 @@ it replaced v1's user-arranged pipeline because creative reshaping moved
 into per-layer effect stacks, leaving optimisation as a property of the
 *pass*, not the artwork.
 
+### Module library
+
+Generators and effects have separate selection browsers backed by a local
+module library, independent of projects and gallery geometry. Presets retain
+starting settings, not captured input or interventions. Resolution preserves
+compatible current image inputs and validates against the module schema.
+Explicit application uses existing project mutation paths; browser handoff
+only prepares a draft. Identifying thumbnails render in isolation from the
+live asset store. See [Module library](docs/MODULE-LIBRARY.md).
+
 ### Undo, duplication, consolidation
 
 **Asset gallery (2026-09-10):** finished line material persists outside projects

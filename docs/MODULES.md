@@ -479,3 +479,14 @@ write). Successful writes remain committed if subsequent preview refresh fails.
 The tool broker returns to Select unless Repeat is enabled or the user already
 chose another tool. Keep failed drafts until retry/cancellation and block new
 gestures during a pending write.
+
+### Module browsers and presets
+
+The registry publishes representative example parameters and an explicit
+preset-exclusion contract. Captured drawing data, interventions and external
+image references must not become portable starting-settings presets. Add a
+round-trip/reset test when introducing such fields or a new bench adapter.
+All editable adapters use the shared `createPresetControls` component, supply
+a current draft snapshot, guard pending renders/gestures, and reset local
+interaction state when applying resolved settings. Watch views remain read-only.
+See [Module library](MODULE-LIBRARY.md) for storage, lifecycle and API behavior.

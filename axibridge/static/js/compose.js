@@ -4,6 +4,7 @@ const WORKING_BENCHES = new Set(['venation', 'homeostat', 'second_reading', 'mag
 const isWorkingBench = mod => WORKING_BENCHES.has(mod?.id);
 import { benchUnavailableReason } from "./bench_registry.js";
 import { openGallery, openGallerySave } from "./gallery.js";
+import { openModuleBrowser, createPresetControls, quickModules } from "./module_library.js";
 // Compose tab: sources (generate / upload), the layer list (z-order,
 // visibility, pen, occlusion), and the selected layer's detail editor
 // (transform numerics, effect stack, generator params).
@@ -21,6 +22,10 @@ import {
 
 const $ = (id) => document.getElementById(id);
 let genParams = {};
+let moduleLibraryWired = false;
+let quickSelectEpoch = 0;
+let pendingEffectChoice = null;
+const presetMutationBusy = () => Boolean(busyBtn || liveRegen.inflight || liveRegen.pending || actions.layerUpdatesPending());
 // the bench latch: after "＋ Create layer" the SAME form live-edits the new
 // layer (auto-apply on slider release, coalesced into one undo entry) until
 // "＋ New layer" unlatches or another layer gets selected. null = unlatched.
@@ -194,7 +199,9 @@ export function initComposeTab() {
       <h2 id="gen-heading">New material</h2>
       <div class="row">
         <select id="gen-select" style="flex:1"></select>
+        <button id="gen-browse" type="button">Browse all…</button>
       </div>
+      <div id="gen-presets"></div>
       <details id="gen-fields" open><summary>Parameters</summary><div id="gen-form" class="form"></div></details>
       <div class="row" id="lineart-stack-row" hidden>
         <select id="lineart-stack-flavor">
@@ -281,6 +288,22 @@ export function initComposeTab() {
   const usesImage = (m) => Object.values(m.schema.properties || {}).some(
     (p) => (p.format || ((p.anyOf || []).find((a) => a.format) || {}).format) === "asset");
   $("btn-gallery").onclick = () => openGallery();
+  $("gen-browse").onclick = () => openModuleBrowser({
+    kind: "source", modules: S.state.modules.sources, currentModule: sel.value,
+    getCurrentParams: () => genParams,
+    onUse: async ({ module, params }) => {
+      if (presetMutationBusy()) throw new Error("Wait for the current layer update to finish.");
+      const mod = S.state.modules.sources.find((m) => m.id === module);
+      if (!mod || !sel.isConnected) throw new Error("The generator controls have changed. Reopen the browser.");
+      unlatch();
+      // A non-starred browser choice must remain selectable in the quick list.
+      if (![...sel.options].some((o) => o.value === module)) sel.add(new Option(mod.label, module));
+      sel.value = module; genParams = structuredClone(params); preview.clear();
+      bindGenForm(mod)(); updateLineartStackRow(mod); updateSeparateRow(mod);
+      $("separate-plates").replaceChildren();
+      await refreshQuickSelectors();
+    },
+  });
   const optgroups = { benches: group("Benches"), false: group("Procedural"), true: group("Image-driven") };
   function group(label) {
     const g = document.createElement("optgroup");
@@ -294,6 +317,11 @@ export function initComposeTab() {
     optgroups[isWorkingBench(m) ? "benches" : usesImage(m)].appendChild(o);
   }
   sel.onchange = renderGenForm;
+  if (!moduleLibraryWired) {
+    moduleLibraryWired = true;
+    document.addEventListener("module-library-change", () => refreshQuickSelectors());
+  }
+  refreshQuickSelectors();
   const live = $("gen-live");
   live.checked = livePreview;
   live.onchange = () => {
@@ -833,6 +861,8 @@ function renderBenchAction() {
     btn.textContent = "＋ Create layer";
     btn.title = "create a layer from these params — the sliders then edit it live";
   }
+  const mod = S.state.modules.sources.find((m) => m.id === $("gen-select")?.value);
+  if (mod) renderGeneratorPresets(mod);
 }
 
 // slider release while latched: regenerate the layer with the new params.
@@ -885,7 +915,71 @@ function bindGenForm(m) {
   $("gen-fields").open = !isWorkingBench(m);
   const commit = () => { sched(); if (latch) applyLatched(); };
   renderForm($("gen-form"), m.schema, genParams, commit, { onLive: sched, stateKey: `gen:${m.id}` });
+  renderGeneratorPresets(m);
   return sched;
+}
+
+function renderGeneratorPresets(m) {
+  const targetLayer = S.state.project.layers.find((l) => l.id === latch);
+  const host = $("gen-presets");
+  if (!host) return;
+  const key = `${m.id}:${targetLayer?.id || "new"}`;
+  if (host.dataset.target === key && host.childElementCount) return;
+  host.dataset.target = key;
+  host.replaceChildren(createPresetControls({
+    kind: "source", mod: m, getParams: () => genParams,
+    applyLabel: targetLayer ? "Apply preset" : "Load preset", isBusy: presetMutationBusy,
+    onApply: async (params) => {
+      if ($("gen-select")?.value !== m.id || latch !== (targetLayer?.id || null))
+        throw new Error("The generator target changed. Load the preset again.");
+      if (targetLayer && !await applyGeneratorPreset(targetLayer.id, m.id, params)) return;
+      genParams = structuredClone(params); preview.clear(); bindGenForm(m)();
+    },
+  }));
+}
+
+async function applyGeneratorPreset(layerId, moduleId, params) {
+  if (presetMutationBusy()) throw new Error("Wait for the current layer update to finish.");
+  const layer = S.state.project.layers.find((l) => l.id === layerId);
+  if (!layer || layer.source.generator !== moduleId) throw new Error("The preset target has changed.");
+  if (layer.source.type === "baked" && !confirm("Apply this generator preset? Regenerating replaces the baked geometry.")) return false;
+  const panel = $("tab-compose");
+  panel.inert = true; genBusy(true);
+  try {
+    await api.post(`/api/layers/${layerId}/regenerate`, { params, coalesce: false });
+    preview.clear();
+    await actions.refreshProject(); await actions.refreshResolved();
+  } finally { panel.inert = false; genBusy(false); }
+  return true;
+}
+
+async function refreshQuickSelectors() {
+  const epoch = ++quickSelectEpoch;
+  const selectors = [[$("gen-select"), "source", S.state?.modules?.sources || []],
+    [$("fx-select"), "effect", S.state?.modules?.effects || []]];
+  await Promise.all(selectors.map(async ([select, kind, modules]) => {
+    if (!select) return;
+    const current = select.value;
+    try {
+      const allowed = await quickModules(kind, modules, current);
+      if (epoch !== quickSelectEpoch || !select.isConnected || select.value !== current) return;
+      select.replaceChildren();
+      const groups = new Map();
+      for (const mod of allowed) {
+        let parent = select;
+        if (kind === "source") {
+          const image = Object.values(mod.schema.properties || {}).some((p) =>
+            p.format === "asset" || (p.anyOf || []).some((a) => a.format === "asset"));
+          const label = isWorkingBench(mod) ? "Benches" : image ? "Image-driven" : "Procedural";
+          if (!groups.has(label)) { const group = document.createElement("optgroup"); group.label = label; groups.set(label, group); select.append(group); }
+          parent = groups.get(label);
+        }
+        const option = new Option(mod.label, mod.id); option.title = mod.description || "";
+        option.disabled = mod.available === false; parent.append(option);
+      }
+      if ([...select.options].some((o) => o.value === current)) select.value = current;
+    } catch { /* Existing selectors stay available when the library is offline. */ }
+  }));
 }
 
 function renderGenForm() {
@@ -1992,7 +2086,7 @@ export function renderLayerDetail() {
       ? "(region: applied to the layers below, inside this silhouette)"
       : "(paper-space, non-destructive)"}</span></summary>
     <div class="row">
-      <select id="fx-select"></select><button id="fx-add">＋ Add</button>
+      <select id="fx-select"></select><button id="fx-browse" type="button">Browse all…</button><button id="fx-add">＋ Add</button>
       <button id="fx-consolidate" title="Bake transform + effects into the source geometry (undoable; regenerate also reverts a generated layer)">⤓ Consolidate</button>
       <button id="btn-layer-gallery" ${layer.region ? 'disabled title="Region layers have no drawable output to save"' : ''}>Save to gallery</button>
       ${layer.source.type !== "tween" && !layer.animation_owner_id ? `<button id="fx-animate"
@@ -2070,17 +2164,37 @@ export function renderLayerDetail() {
     if (!m.available) { o.disabled = true; o.textContent += " (unavailable)"; }
     fxSel.appendChild(o);
   }
+  if (pendingEffectChoice?.layerId === layer.id) fxSel.value = pendingEffectChoice.module;
+  fxSel.onchange = () => { pendingEffectChoice = null; };
+  fx.querySelector("#fx-browse").onclick = () => openModuleBrowser({
+    kind: "effect", modules: S.state.modules.effects, currentModule: fxSel.value,
+    getCurrentParams: (module) => pendingEffectChoice?.layerId === layer.id && pendingEffectChoice.module === module
+      ? pendingEffectChoice.params : {},
+    onUse: async ({ module, params }) => {
+      if (!fxSel.isConnected || !S.state.project.layers.some((l) => l.id === layer.id))
+        throw new Error("The target layer changed. Reopen the effects browser.");
+      if (![...fxSel.options].some((o) => o.value === module)) {
+        const mod = S.state.modules.effects.find((m) => m.id === module);
+        fxSel.add(new Option(mod?.label || module, module));
+      }
+      fxSel.value = module;
+      pendingEffectChoice = { layerId: layer.id, module, params: structuredClone(params) };
+      await refreshQuickSelectors();
+    },
+  });
+  refreshQuickSelectors();
   fx.querySelector("#fx-add").onclick = () => {
     const mod = S.state.modules.effects.find((m) => m.id === fxSel.value);
     if (!mod) return;
     expandedSteps.add(`${familyKey(layer)}:${layer.effects.length}`); // open the new step
-    const params = { ...mod.defaults };
+    const chosen = pendingEffectChoice?.layerId === layer.id && pendingEffectChoice.module === mod.id;
+    const params = structuredClone(chosen ? pendingEffectChoice.params : mod.defaults);
     // a fresh seed, same as layer creation: stacking freehand on two layers
     // should give two different hands, not the same wobble twice
-    rollSeed(mod.schema, params);
+    if (!chosen) rollSeed(mod.schema, params);
     // portrait view: same viewRotate/viewAngle default remap as generators —
     // image-driven effects (depth maps) default to what reads upright.
-    applyViewDefaults(mod.schema, params, S.state?.project?.view === "portrait");
+    if (!chosen) applyViewDefaults(mod.schema, params, S.state?.project?.view === "portrait");
     const effects = [...layer.effects, { effect: mod.id, enabled: true, params }];
     actions.patchLayer(layer.id, { effects });
   };
@@ -2131,6 +2245,20 @@ export function renderLayerDetail() {
         preview.clear();
         commitEffects(layer, i, { params: values });
       }, { onLive: sched, stateKey: `fx:${familyKey(layer)}:${i}` });
+      div.appendChild(createPresetControls({
+        kind: "effect", mod, getParams: () => values, applyLabel: "Apply preset", isBusy: presetMutationBusy,
+        onApply: async (params) => {
+          if (presetMutationBusy()) throw new Error("Wait for the current layer update to finish.");
+          const current = S.state.project.layers.find((l) => l.id === layer.id);
+          if (!div.isConnected || current?.effects[i] !== step) throw new Error("The effect target changed. Load the preset again.");
+          const effects = current.effects.map((s, j) => j === i ? { ...s, params } : s);
+          const panel = $("tab-compose"); panel.inert = true;
+          try {
+            await api.patch(`/api/layers/${layer.id}`, { effects });
+            preview.clear(); await actions.refreshProject(); await actions.refreshResolved();
+          } finally { panel.inert = false; }
+        },
+      }));
       div.appendChild(form);
       // A pen belongs to a LAYER, so hatching with a different pen from the
       // outline it fills means two layers. One click builds that pair.
@@ -2375,6 +2503,10 @@ export function renderLayerDetail() {
       const commit = () => { preview.clear(); liveRegen.schedule(layer.id, values); };
       renderForm(gen.querySelector("#regen-form"), mod.schema, values, commit, { onLive: sched, stateKey: `gen:${familyKey(layer)}` });
       const regenBtn = gen.querySelector("#btn-regen");
+      gen.insertBefore(createPresetControls({
+        kind: "source", mod, getParams: () => values, applyLabel: "Apply preset", isBusy: presetMutationBusy,
+        onApply: (params) => applyGeneratorPreset(layer.id, mod.id, params),
+      }), gen.querySelector("#regen-form"));
       // explicit click: run now (no 300ms debounce), own undo entry — routed
       // through the same single-flight guard so it can't race a pending
       // auto-apply from a slider release moments earlier.

@@ -3,8 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-10
 machine: mac+pi
-summary: Gallery geometry types and a temporary canvas comparison overlay are ready for native checking.
+summary: Separate generator/effect browsers and starting-settings presets are ready for native checking.
 next:
+  - "Reload and check module browsers, stars/tags and named presets in Compose and editable benches"
   - "Reload and check gallery geometry filters and Preview on canvas opacity, hide/show and insertion"
   - "Check animation child deletion, collapsed dragging, master occlusion and Pen/Shape Repeat"
   - "Check Ribbon curve sampling, heavy edits, elapsed reset and deleting during rendering"
@@ -14,6 +15,26 @@ handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Module browsers and presets, 10 September:** Generators and effects have
+separate selection browsers, small fixed identifiers, stars, personal tags
+and named starting-settings presets. Browser Use prepares existing controls;
+Apply preset changes an existing generator/effect in one undo step. Editable
+benches load drafts and reset interaction histories; Watch stays read-only.
+Source inputs and captured arrangements are excluded; compatible current image
+inputs are retained and saved seeds are restored. No preset thumbnails.
+
+Identifiers render actual modules against fixed examples in isolated workers
+(two active, eight queued); all 52 registered source/effect identifiers were
+verified. Expected failures fall back to a tool name. Twenty-seven focused
+module/browser/bench checks passed, including stale replies, metadata failures,
+missing modules, stars and one-step undo. The full hardware-free suite passed: 1517 passed, 1 skipped, with one existing
+Starlette deprecation warning. Typecheck and build passed.
+
+The running backend has been updated after preserving/restoring the empty
+project in `before-module-library-20260910-030127-18912f`. Simulator remains
+disconnected/idle; no browser reload or hardware operation. Native appearance
+and interaction remain for Ian. Contract: `docs/MODULE-LIBRARY.md`.
 
 
 **Gallery geometry and canvas comparison, 10 September:** Automatic Line-based,

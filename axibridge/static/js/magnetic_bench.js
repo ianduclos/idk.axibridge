@@ -3,6 +3,7 @@ import { api } from './api.js';
 import { fit, scattered, hasPresets, completePresets, interpolated, withPresetSize } from './magnetic_arrangement.js';
 import { benchProjectEpoch, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from './bench_host.js';
 import { openGallerySave } from './gallery.js';
+import { createPresetControls } from './module_library.js';
 
 const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -13,6 +14,7 @@ let active = null;
 let wired = false;
 let gesture = null;
 let mixGesture = null;
+let presetControls = null;
 
 
 function key() { return JSON.stringify(active?.draft.params); }
@@ -279,6 +281,7 @@ export function openMagneticBench({mod,params,contextKey,onKeep,onClose}) {
     drafts.set(context,draft);
   }
   active = {mod,draft,external:params,onKeep,onClose,renderedKey:null,inFlight:false,queued:false,keeping:false,savingGallery:false};
+  installPresetControls();
   $('process-popup').classList.remove('second-reading','watch-only');
   $('process-popup').classList.add('magnetic-field');
   $('process-reference').setAttribute('hidden','');
@@ -301,11 +304,48 @@ export function closeMagneticBench(notify = true) {
   const closing = active;
   Object.assign(closing.external,copy(closing.draft.params));
   active = null;
+  removePresetControls();
   $('process-popup').classList.remove('magnetic-field');
   $('process-canvas').classList.remove('magnetic-pending');
   $('process-magnetic').hidden = true; $('process-magnetic').inert = false;
   $('magnetic-actions').hidden = true;
   if (notify) { closeBenchShell(); closing.onClose?.(); }
+}
+
+function removePresetControls() {
+  presetControls?.remove();
+  presetControls = null;
+}
+
+function installPresetControls() {
+  removePresetControls();
+  const owner = active;
+  if (!owner) return;
+  presetControls = createPresetControls({
+    kind: 'source',
+    mod: owner.mod,
+    getParams: () => copy(owner.draft.params),
+    isBusy: () => active !== owner || owner.keeping || owner.savingGallery
+      || owner.inFlight || Boolean(gesture) || Boolean(mixGesture),
+    onApply: async (params) => {
+      if (active !== owner || owner.keeping || owner.savingGallery || owner.inFlight || gesture || mixGesture) {
+        throw new Error('The working bench changed before this preset could be applied.');
+      }
+      owner.draft.params = copy(params);
+      owner.draft.selection = owner.draft.params.magnets?.length ? 0 : -1;
+      owner.draft.undo = [];
+      owner.draft.redo = [];
+      owner.renderedKey = null;
+      owner.error = false;
+      $('magnetic-kept').textContent = '';
+      $('process-canvas').classList.add('magnetic-pending');
+      renderControls();
+      drawHandles();
+      await requestPreview();
+    },
+  });
+  presetControls.id = 'magnetic-module-presets';
+  $('bench-controls')?.prepend(presetControls);
 }
 
 function renderControls() {

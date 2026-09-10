@@ -15,6 +15,7 @@ import {
 } from "./bench_host.js";
 import { benchDescriptor } from "./bench_registry.js";
 import { openGallerySave } from "./gallery.js";
+import { createPresetControls } from "./module_library.js";
 
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
@@ -33,6 +34,7 @@ let playTimer = null;
 let playSerial = 0;
 let capture = null;
 let openSerial = 0;
+let presetControls = null;
 
 const copy = (v) => JSON.parse(JSON.stringify(v));
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
@@ -311,6 +313,7 @@ export function openSecondReadingBench({ mod, params, contextKey, onKeep, onClos
     drafts.set(key, draft);
   }
   active = { mod, external: params, contextKey: key, draft, onKeep, onClose, savingGallery: false };
+  installPresetControls();
   loadPendingNewDrawing();
   openSerial++;
   $("process-popup").classList.add("second-reading");
@@ -341,10 +344,53 @@ export function closeSecondReadingBench(notify = true) {
   const b = branch();
   if (b && closing.external) Object.assign(closing.external, recipe(b));
   active = null;
+  removePresetControls();
   $("process-popup")?.classList.remove("second-reading");
   setSpecialChrome(false);
   if (notify && closing.onClose) closing.onClose();
   if (notify) closeBenchShell();
+}
+
+function removePresetControls() {
+  presetControls?.remove();
+  presetControls = null;
+}
+
+function installPresetControls() {
+  removePresetControls();
+  const owner = active;
+  if (!owner) return;
+  presetControls = createPresetControls({
+    kind: "source",
+    mod: owner.mod,
+    getParams: () => copy(recipe()),
+    isBusy: () => {
+      const b = branch();
+      return active !== owner || !b || Boolean(capture) || b.awaiting
+        || Boolean(owner.keeping) || Boolean(owner.savingGallery);
+    },
+    onApply: async (params) => {
+      const b = branch();
+      if (active !== owner || !b || capture || b.awaiting || owner.keeping || owner.savingGallery) {
+        throw new Error("The working bench changed before this preset could be applied.");
+      }
+      stopSecondReadingPlay();
+      cancelCapture();
+      openSerial++;
+      const first = freshBranch(params, `branch-${++owner.draft.serial}`, "Preset reading");
+      owner.draft.branches = [first];
+      owner.draft.active = first.id;
+      owner.draft.undo = [];
+      owner.draft.redo = [];
+      delete owner.draft.reference;
+      owner.draft.comparing = false;
+      delete owner.draft.pendingNewDrawing;
+      renderChrome();
+      await requestPreview();
+    },
+  });
+  presetControls.id = "second-reading-module-presets";
+  $("bench-controls")?.prepend(presetControls);
 }
 
 function setSpecialChrome(on) {

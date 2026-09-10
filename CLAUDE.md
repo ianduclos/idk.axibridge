@@ -65,6 +65,7 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
 | Image assets (depth maps, `clip#NNNN` frame sequences) | `axibridge/assets.py` |
 | Local line-asset gallery (frozen geometry across projects) | `axibridge/gallery.py`, `gallery_api.py`; workflow in `docs/ASSET-GALLERY.md` |
 | Module registry (Source / Effect / Transform) | `axibridge/registry.py` |
+| Module browsers, starting-settings presets and stars/tags | `axibridge/module_library.py`, `module_library_api.py`; workflow in `docs/MODULE-LIBRARY.md` |
 | Layer interpolation (tween layers, param/affine lerp; keyframe chains — `TweenParams.keys`, one layer, isometric segments, per-segment easing; the master timeline scrubs `follow_master` tweens via `session.resolved(master_t=…)`) | `axibridge/tween.py` |
 | Content-keyed `generate()` memo; all cache budgets scale with the `AXIBRIDGE_CACHE_BUDGET` env float (default 1.0; 0.25 on the Pi). Multi-frame tween/shaped/occlusion caches: ARCHITECTURE.md "Caching" | `axibridge/gencache.py` |
 | Generators / effects / plot-pass ops | `axibridge/sources/` `effects/` `transforms/` |

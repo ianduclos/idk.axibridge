@@ -502,7 +502,20 @@ segmentation for auto-masking subjects. Constraint: keep it an *asset
 producer* (a tool that writes into `assets/`), not a resolve-path stage —
 the resolve pipeline stays deterministic and offline.
 
-## Near term — module gallery: generators and effects, thumbnails and tags
+## Module browsers and presets — native acceptance (2026-09-10)
+
+Implemented from the September plan: separate generator/effect selectors,
+small fixed identifiers, stars and personal tags, with named starting-settings
+presets. Presets have no thumbnails and omit source images and captured
+interaction state. Existing controls/benches handle editing; explicit Apply
+changes an existing layer in one undo step. See [Module library](docs/MODULE-LIBRARY.md).
+Native readability and interaction remain for Ian to check.
+
+The August exploration below is historical rationale: its live user-image
+comparisons and gallery-before-launcher ordering are not additional scope
+for this version.
+
+### Earlier module gallery exploration (2026-08-07)
 
 Ian, 2026-08-07: *"a possible generator gallery and effect gallery with
 thumbnails and tags for later cause the list is growing."* Brainstormed the

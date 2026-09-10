@@ -326,6 +326,42 @@ _SOURCES: dict[str, SourceModule] = {}
 _TRANSFORMS: dict[str, TransformModule] = {}
 _EFFECTS: dict[str, EffectModule] = {}
 
+# Parameters which describe captured interaction state rather than a reusable
+# module setting.  Keep this list explicit: a newly added capture model should
+# not silently become portable merely because its field happens to be hidden.
+_PRESET_EXCLUSIONS: dict[tuple[str, str], tuple[str, ...]] = {
+    ("source", "drawing"): ("strokes",),
+    ("source", "brush"): ("strokes",),
+    ("source", "shape"): ("ops",),
+    ("source", "pen"): ("subpaths",),
+    ("source", "second_reading"): ("events", "historical_stacks"),
+    ("source", "magnetic_field"): ("magnets", "presets", "preset_sizes",
+                                     "mix_x", "mix_y", "mix_active"),
+}
+
+_REPRESENTATIVE_PARAMS: dict[tuple[str, str], dict[str, Any]] = {
+    ("source", "text"): {"text": "Aa"},
+    ("source", "text_fill"): {"text": "Aa"},
+    ("source", "drawing"): {"strokes": [[(18, 24, 0), (54, 9, .2), (88, 35, .4)]]},
+    ("source", "brush"): {"strokes": [{"points": [(18, 22, 0), (48, 10, .2),
+                                                       (82, 34, .4)], "radius": 6}]},
+    ("source", "shape"): {"ops": [{"kind": "brush", "points": [
+        (18, 22, 0), (48, 10, .2), (82, 34, .4)], "radius": 6}]},
+    ("source", "pen"): {"subpaths": [{"anchors": [
+        {"x": 15, "y": 35}, {"x": 45, "y": 8}, {"x": 85, "y": 34}]}]},
+}
+
+
+def preset_exclusions(kind: str, module_id: str) -> tuple[str, ...]:
+    """Top-level interaction fields deliberately omitted from presets."""
+    return _PRESET_EXCLUSIONS.get((kind, module_id), ())
+
+
+def representative_params(kind: str, module_id: str, inst: Any) -> dict[str, Any]:
+    return {**inst.Params().model_dump(),
+            **_REPRESENTATIVE_PARAMS.get((kind, module_id), {}),
+            **(getattr(inst, "representative_params", None) or {})}
+
 
 def register_source(cls: type[SourceModule]) -> type[SourceModule]:
     inst = cls()
@@ -398,6 +434,10 @@ def describe_modules() -> dict[str, list[dict[str, Any]]]:
             "defaults": inst.Params().model_dump(),
             "available": ok,
             "unavailable_reason": reason,
+            "preset_exclusions": list(preset_exclusions(kind, inst.id)),
+            # A stable, editable example for library cards and thumbnail
+            # generation. Modules may override it without changing the API.
+            "representative_params": representative_params(kind, inst.id, inst),
         }
         if kind == "transform":
             d["category"] = inst.category

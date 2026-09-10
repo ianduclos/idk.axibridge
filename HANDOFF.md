@@ -1,8 +1,30 @@
 ---
 project: idk.axibridge
 updated: 2026-09-10
-entries: 19
+entries: 20
 ---
+
+### Module browsers and presets native acceptance — opened 2026-09-10, owner: ian
+
+- done: separate generator/effect browsers with fixed identifiers, search,
+  personal stars/tags and named starting-settings presets. Presets have no
+  previews. Browser Use only prepares controls; existing-layer Apply is one
+  undo checkpoint. All editable benches load drafts; Watch remains read-only.
+- contract: presets retain seeds/settings, omit source images and captured
+  interaction state, and preserve compatible current inputs when loaded.
+  Magnetic arrangement corners and Second Reading histories reset. Module
+  identifiers render actual examples in isolated bounded workers.
+- verified: 27 focused module/browser/bench tests and all 52 registered
+  identifiers; typecheck and build passed. Full hardware-free suite: 1517 passed,
+  1 skipped, one existing Starlette deprecation warning.
+- next: reload after preserving any bench draft; check stars/tags and tool
+  handoff, save/load/update/rename/delete presets, and original-layer undo.
+  Judge the compact controls and identifiers in the native window.
+- deployment: backend updated with empty project preserved/restored in
+  `before-module-library-20260910-030127-18912f`; simulator disconnected/idle.
+  No page reload, push, Pi deployment or hardware operation.
+- deferred: live comparisons, preset thumbnails, effect chains, source-image
+  bundles, sync and command launcher. See docs/MODULE-LIBRARY.md and ROADMAP.md.
 
 ### Asset gallery native acceptance — opened 2026-09-10, owner: ian
 
