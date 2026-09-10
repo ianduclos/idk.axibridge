@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import hashlib
 import inspect
 import json
+import logging
 import os
 from pathlib import Path as FsPath
 import tempfile
@@ -21,6 +22,8 @@ from .registry import effects, get_effect, get_source, preset_exclusions, repres
 from .stores import CONFIG_DIR
 
 Kind = Literal["source", "effect"]
+_MISSING = object()
+logger = logging.getLogger(__name__)
 
 
 class Preset(BaseModel):
@@ -48,6 +51,9 @@ class Preference(BaseModel):
     module: str
     starred: bool = False
     tags: list[str] = Field(default_factory=list, max_length=32)
+    rating: int | None = Field(default=None, ge=1, le=5)
+    use_count: int = Field(default=0, ge=0)
+    last_used_at: datetime | None = None
 
     @field_validator("tags")
     @classmethod
@@ -255,12 +261,40 @@ class ModuleLibraryStore:
         merged = _preserve_asset_leaves(module.Params.model_json_schema(), current, merged)
         return module.Params(**merged).model_dump()
 
-    def preference(self, kind: Kind, module: str, starred: bool,
-                   tags: list[str]) -> dict[str, Any]:
+    def preference(self, kind: Kind, module: str, starred: bool | object = _MISSING,
+                   tags: list[str] | object = _MISSING, *,
+                   rating: int | None | object = _MISSING) -> dict[str, Any]:
         _module(kind, module)
-        item = Preference(kind=kind, module=module, starred=starred, tags=tags)
         with self._lock:
             data = self._read()
+            old = next((p for p in data.preferences
+                        if (p.kind, p.module) == (kind, module)), None)
+            changes: dict[str, Any] = {}
+            if starred is not _MISSING:
+                changes["starred"] = starred
+            if tags is not _MISSING:
+                changes["tags"] = tags
+            if rating is not _MISSING:
+                changes["rating"] = rating
+            item = Preference(kind=kind, module=module, **(
+                {**old.model_dump(exclude={"kind", "module"}), **changes}
+                if old else changes))
+            data.preferences = [p for p in data.preferences
+                                if (p.kind, p.module) != (kind, module)]
+            data.preferences.append(item)
+            self._write(data)
+        return item.model_dump(mode="json")
+
+    def record_use(self, kind: Kind, module: str) -> dict[str, Any]:
+        _module(kind, module)
+        with self._lock:
+            data = self._read()
+            old = next((p for p in data.preferences
+                        if (p.kind, p.module) == (kind, module)), None)
+            values = old.model_dump(exclude={"kind", "module"}) if old else {}
+            values.update(use_count=(old.use_count if old else 0) + 1,
+                          last_used_at=datetime.now(timezone.utc))
+            item = Preference(kind=kind, module=module, **values)
             data.preferences = [p for p in data.preferences
                                 if (p.kind, p.module) != (kind, module)]
             data.preferences.append(item)
@@ -270,15 +304,36 @@ class ModuleLibraryStore:
     def thumbnail(self, kind: Kind, module_id: str) -> str:
         module = _module(kind, module_id)
         params = representative_params(kind, module_id, module)
-        module_file = FsPath(inspect.getfile(module.__class__)).read_bytes()
-        worker_file = FsPath(__file__).with_name("module_thumbnail_worker.py").read_bytes()
-        key = hashlib.sha256(kind.encode() + module_id.encode() + module_file
-                             + json.dumps(params, sort_keys=True, default=str).encode()
-                             + worker_file).hexdigest()
+        package = FsPath(__file__).parent
+        # Module implementations share private helpers within their package,
+        # while the worker can traverse any of the package-level render code.
+        # Sources can also import effect helpers (Flowfield uses coherent jitter).
+        # Include both packages so cached SVGs cannot outlive code that shaped them.
+        module_dir = FsPath(inspect.getfile(module.__class__)).parent
+        dependencies = sorted(set(module_dir.glob("*.py")) | set(package.glob("*.py"))
+                              | set((package / "sources").glob("*.py"))
+                              | set((package / "effects").glob("*.py")))
+        if kind == "source" and module_id in {"text", "text_fill"}:
+            dependencies += sorted((package / "fonts").rglob("*.ttf"))
+        digest = hashlib.sha256(kind.encode() + module_id.encode()
+                                + json.dumps(params, sort_keys=True, default=str).encode())
+        for path in dependencies:
+            digest.update(path.name.encode())
+            digest.update(path.read_bytes())
+        key = digest.hexdigest()
         with self._thumb_lock:
             if key in self._thumbs:
                 self._thumbs.move_to_end(key)
                 return self._thumbs[key]
+        cache_path = self.root / "thumbnails" / f"{key}.svg"
+        try:
+            svg = cache_path.read_text()
+        except FileNotFoundError:
+            pass
+        else:
+            with self._thumb_lock:
+                self._remember_thumbnail(key, svg)
+            return svg
         if not self._thumb_capacity.acquire(blocking=False):
             raise ValueError("Module preview queue is full")
         owner = False
@@ -300,10 +355,9 @@ class ModuleLibraryStore:
                 raise ValueError(flight["error"] or "Module preview unavailable")
             with self._thumb_renderers:
                 svg = self._render_thumbnail(kind, module_id, params)
+            self._write_thumbnail(cache_path, svg)
             with self._thumb_lock:
-                self._thumbs[key] = svg
-                while len(self._thumbs) > 128:
-                    self._thumbs.popitem(last=False)
+                self._remember_thumbnail(key, svg)
             return svg
         except Exception as exc:
             if owner:
@@ -315,6 +369,25 @@ class ModuleLibraryStore:
                     self._thumb_flights.pop(key, None)
                 flight["event"].set()
             self._thumb_capacity.release()
+
+    def _remember_thumbnail(self, key: str, svg: str) -> None:
+        self._thumbs[key] = svg
+        self._thumbs.move_to_end(key)
+        while len(self._thumbs) > 128:
+            self._thumbs.popitem(last=False)
+
+    def _write_thumbnail(self, path: FsPath, svg: str) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, name = tempfile.mkstemp(prefix=f".{path.stem}-", suffix=".tmp", dir=path.parent)
+        try:
+            with os.fdopen(fd, "w") as stream:
+                stream.write(svg)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(name, path)
+        finally:
+            if os.path.exists(name):
+                os.unlink(name)
 
     def _render_thumbnail(self, kind: Kind, module_id: str,
                           params: dict[str, Any]) -> str:
@@ -328,9 +401,6 @@ class ModuleLibraryStore:
         if result.returncode or not result.stdout:
             raise ValueError("Module preview unavailable")
         return result.stdout
-
-
-_MISSING = object()
 
 
 def _preserve_asset_leaves(schema: dict[str, Any], current: Any, target: Any) -> Any:
@@ -369,3 +439,13 @@ def _preserve_asset_leaves(schema: dict[str, Any], current: Any, target: Any) ->
 
 
 module_library_store = ModuleLibraryStore(CONFIG_DIR / "module-library")
+
+
+def record_module_use(kind: Kind, module: str | None) -> None:
+    """Best-effort usage bookkeeping for successful project mutations."""
+    if not module:
+        return
+    try:
+        module_library_store.record_use(kind, module)
+    except Exception:
+        logger.exception("Could not record use of %s module %s", kind, module)

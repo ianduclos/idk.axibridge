@@ -1,7 +1,6 @@
 import { beginDrawingUpdate, restartDrawingUpdate } from "./drawing_status.js";
-// Current product benches; time-axis capability alone does not promote a source.
-const WORKING_BENCHES = new Set(['venation', 'homeostat', 'second_reading', 'magnetic_field']);
-const isWorkingBench = mod => WORKING_BENCHES.has(mod?.id);
+// The catalogue distinguishes working benches from temporal Watch views.
+const isWorkingBench = mod => mod?.library_categories?.includes("bench");
 import { benchUnavailableReason } from "./bench_registry.js";
 import { openGallery, openGallerySave } from "./gallery.js";
 import { openModuleBrowser, createPresetControls, quickModules } from "./module_library.js";

@@ -47,6 +47,7 @@ class UpdatePreference(BaseModel):
     model_config = ConfigDict(extra="forbid")
     starred: bool = False
     tags: list[str] = Field(default_factory=list)
+    rating: int | None = Field(default=None, ge=1, le=5)
 
 
 @router.get("")
@@ -88,7 +89,8 @@ def resolve_preset(body: ResolvePreset):
 
 @router.put("/preferences/{kind}/{module}")
 def update_preference(kind: Kind, module: str, body: UpdatePreference):
-    return _call(module_library_store.preference, kind, module, body.starred, body.tags)
+    return _call(module_library_store.preference, kind, module,
+                 **body.model_dump(exclude_unset=True))
 
 
 @router.get("/modules/{kind}/{module}/thumbnail")

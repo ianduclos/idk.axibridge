@@ -490,3 +490,10 @@ All editable adapters use the shared `createPresetControls` component, supply
 a current draft snapshot, guard pending renders/gestures, and reset local
 interaction state when applying resolved settings. Watch views remain read-only.
 See [Module library](MODULE-LIBRARY.md) for storage, lifecycle and API behavior.
+
+Library category filters are exposed as `library_categories` in catalogue
+metadata. Sources derive Image/Procedural from asset inputs and independently
+add Bench for the product working benches (`library_bench` opts extensions in).
+A temporal Watch view alone does not make a generator a working bench. Effects describe intended input with
+`library_category = "line" | "shape" | "agnostic"`; built-ins are explicitly
+classified in the registry. This is a browsing aid, not geometry validation.

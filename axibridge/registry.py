@@ -420,6 +420,43 @@ def get_effect(module_id: str) -> EffectModule:
         raise KeyError(f"unknown effect module: {module_id!r}") from None
 
 
+# Intended input for the library filter, independent of the effect's output.
+# A line effect may produce filled shapes (Ribbon/Fat tube); that does not
+# make it a shape-input effect. Extensions may declare library_category.
+_EFFECT_LIBRARY_CATEGORIES = {
+    "bitmap": "agnostic", "coherent_jitter": "agnostic",
+    "continue_strokes": "line", "contract_expand": "agnostic",
+    "depth_displace": "agnostic", "eigen_fill": "shape",
+    "eyelets": "line", "fat_tube": "line", "freehand": "line",
+    "hatch_fill": "shape", "invert": "shape", "multipass": "agnostic",
+    "offset_fill": "shape", "offset_fill_v2": "shape",
+    "parasite_line": "line", "perspective": "agnostic",
+    "ribbon": "line", "smoothen": "agnostic",
+}
+
+
+def library_categories(inst, kind: str) -> list[str]:
+    if kind == "effect":
+        category = getattr(inst, "library_category",
+                           _EFFECT_LIBRARY_CATEGORIES.get(inst.id, "agnostic"))
+        if category not in {"line", "shape", "agnostic"}:
+            raise ValueError(f"{inst.id}: invalid library category {category!r}")
+        return [category]
+    if kind != "source":
+        return []
+    # Traverse the schema (including $defs) to include nested image inputs.
+    def image_input(node):
+        if isinstance(node, dict):
+            return node.get("format") == "asset" or any(image_input(v) for v in node.values())
+        return isinstance(node, list) and any(image_input(v) for v in node)
+    result = ["image" if image_input(inst.Params.model_json_schema()) else "procedural"]
+    # Product working benches, not every generator with a temporal Watch view.
+    if getattr(inst, "library_bench", inst.id in {
+            "venation", "homeostat", "second_reading", "magnetic_field"}):
+        result.append("bench")
+    return result
+
+
 def describe_modules() -> dict[str, list[dict[str, Any]]]:
     """Module catalogue for the frontend: ids, labels, categories and the
     JSON Schema of each module's params (drives auto-generated controls)."""
@@ -435,6 +472,7 @@ def describe_modules() -> dict[str, list[dict[str, Any]]]:
             "available": ok,
             "unavailable_reason": reason,
             "preset_exclusions": list(preset_exclusions(kind, inst.id)),
+            "library_categories": library_categories(inst, kind),
             # A stable, editable example for library cards and thumbnail
             # generation. Modules may override it without changing the API.
             "representative_params": representative_params(kind, inst.id, inst),

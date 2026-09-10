@@ -151,6 +151,72 @@ def test_preferences_and_thumbnail_api(client):
     assert thumb.headers["cache-control"] == "private, no-cache"
 
 
+def test_preference_partial_updates_preserve_other_fields_and_usage(library):
+    library.preference("source", "lissajous", True, ["Curve"], rating=4)
+    used = library.record_use("source", "lissajous")
+    assert used["use_count"] == 1
+    assert used["last_used_at"] is not None
+    updated = library.preference("source", "lissajous", rating=5)
+    assert updated["starred"] is True
+    assert updated["tags"] == ["Curve"]
+    assert updated["rating"] == 5
+    assert updated["use_count"] == 1
+    assert updated["last_used_at"] == used["last_used_at"]
+
+
+def test_preference_api_accepts_partial_updates(client):
+    path = "/api/module-library/preferences/effect/coherent_jitter"
+    first = client.put(path, json={"starred": True, "tags": ["Texture"], "rating": 3})
+    assert first.status_code == 200
+    second = client.put(path, json={"rating": 5})
+    assert second.status_code == 200
+    assert second.json()["starred"] is True
+    assert second.json()["tags"] == ["Texture"]
+    assert second.json()["rating"] == 5
+
+
+def test_thumbnail_disk_cache_survives_store_restart(library, monkeypatch):
+    calls = 0
+
+    def render(*args):
+        nonlocal calls
+        calls += 1
+        return "<svg>persistent</svg>"
+
+    monkeypatch.setattr(library, "_render_thumbnail", render)
+    assert library.thumbnail("source", "lissajous") == "<svg>persistent</svg>"
+    restarted = ModuleLibraryStore(library.root)
+    monkeypatch.setattr(restarted, "_render_thumbnail", render)
+    assert restarted.thumbnail("source", "lissajous") == "<svg>persistent</svg>"
+    assert calls == 1
+
+
+@pytest.mark.parametrize("module_id,changed_file", [
+    ("lissajous", "gallery.py"), ("flowfield", "coherent_jitter.py"),
+    ("text", "1CamBam_Stick_0.ttf"), ("text_fill", "Recursive-Variable.ttf"),
+])
+def test_thumbnail_disk_cache_invalidates_when_render_dependency_changes(library, monkeypatch, module_id, changed_file):
+    calls = 0
+    original = __import__("axibridge.module_library", fromlist=["FsPath"]).FsPath.read_bytes
+
+    def render(*args):
+        nonlocal calls
+        calls += 1
+        return f"<svg>{calls}</svg>"
+
+    monkeypatch.setattr(library, "_render_thumbnail", render)
+    assert library.thumbnail("source", module_id) == "<svg>1</svg>"
+
+    def changed(path):
+        value = original(path)
+        if path.name == changed_file:
+            return value + b"changed"
+        return value
+
+    monkeypatch.setattr("axibridge.module_library.FsPath.read_bytes", changed)
+    assert library.thumbnail("source", module_id) == "<svg>2</svg>"
+
+
 def test_thumbnail_endpoint_names_registered_module_when_render_fails(client, monkeypatch):
     from axibridge import module_library_api
 

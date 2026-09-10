@@ -5,6 +5,24 @@ These are selectors: **Use** prepares existing controls rather than editing
 geometry. Choosing a generator clears the live layer latch and prepares new
 material. Choosing an effect prepares **Add** on the selected layer.
 
+Visible category chips filter generators by Procedural,
+Image or Bench (Bench membership can overlap); effects by Line, Shape or
+Agnostic. Effect categories describe intended input, not output geometry:
+Ribbon takes lines even when it creates filled ribbons. The detail pane shows
+a larger copy of the same identifier SVG, without another render.
+
+Optional personal ratings run from 1 to 5 and can be cleared; favorites remain
+independent. Sort by name, rating, most-used, least-used or recently used.
+Usage records successful generation/application through the regular controls,
+not browser selection, previews or preset draft loading. A coalesced generator
+edit run counts once; effect reorder, removal, enable toggles and unchanged
+settings do not count. Undo/redo and project reopening leave these personal
+statistics alone. Usage starts when this feature is installed, with no invented
+history. Failed usage persistence is logged without failing a project edit.
+
+Press Enter to turn a tag into a removable box. Frequently used tags are offered
+for quick entry; Save tags persists the edited set.
+
 Names lead the browser. Small fixed examples identify each tool; they do not
 change with your drawing. Search covers names, descriptions, personal tags
 and preset names. Presets stay grouped under their owning tool and have no
@@ -45,7 +63,7 @@ the saved record remains available for renaming or deletion.
 The module library lives under `CONFIG_DIR/module-library/`, independently of
 projects and gallery assets. Its versioned JSON contains stable preset IDs,
 module kind and ID, name, timestamps, parameter values, and module preferences
-(stars/tags). Locked atomic writes protect edits. Presets do not embed source
+(stars/tags, ratings and usage). Locked atomic writes protect edits. Presets do not embed source
 images, geometry or project references.
 
 The `/api/module-library` boundary lists presets/preferences and provides
@@ -61,7 +79,11 @@ those exclusions and test their reset behavior. Fixed identifying examples
 must exercise the actual module with appropriate input, rather than reuse
 unrelated geometry as a placeholder. Image fixtures render in an isolated
 process so library browsing cannot replace the project's asset store.
-Identifier work is lazy and bounded; failed identifiers leave the tool name
+Identifier work is lazy and bounded. Successful SVGs are atomically cached on
+disk under the module library so closing the browser or restarting the backend
+does not rerun them. A content key includes implementations, shared helpers,
+examples and fixtures, plus bundled fonts for text tools. Shared code changes
+can invalidate multiple identifiers. Failed identifiers leave the tool name
 available. Cached thumbnails never become saved or plotted geometry.
 
 Preset thumbnails, saved effect chains, bundled source images, live comparison,

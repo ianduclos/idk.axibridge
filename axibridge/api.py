@@ -12,6 +12,8 @@ the estimator times and the plotter draws.
 from __future__ import annotations
 
 import io
+import json
+from collections import Counter
 from functools import wraps
 import os
 import shutil
@@ -41,6 +43,7 @@ from .session import session
 from .stores import Pen, pen_library, settings_store
 from .gallery_api import router as gallery_router
 from .module_library_api import router as module_library_router
+from .module_library import record_module_use
 from .tween import TweenParams
 
 router = APIRouter(prefix="/api")
@@ -426,6 +429,7 @@ def add_generated_layer(body: GenerateBody) -> dict[str, Any]:
         raise _fail(e, 404)
     except Exception as e:
         raise _fail(e, 400)
+    record_module_use("source", body.module)
     return layer.model_dump()
 
 
@@ -449,6 +453,8 @@ def add_lineart_stack(body: LineartStackBody) -> dict[str, Any]:
         raise _fail(e, 404)
     except Exception as e:
         raise _fail(e, 400)
+    for module_id in {layer.source.generator for layer in layers if layer.source.generator}:
+        record_module_use("source", module_id)
     return {"layers": [layer.model_dump() for layer in layers]}
 
 
@@ -494,6 +500,8 @@ def add_separation_stack(body: SeparateBody) -> dict[str, Any]:
         raise _fail(e, 404)
     except Exception as e:
         raise _fail(e, 400)
+    for module_id in {layer.source.generator for layer in layers if layer.source.generator}:
+        record_module_use("source", module_id)
     return {"layers": [layer.model_dump() for layer in layers]}
 
 
@@ -872,7 +880,22 @@ def get_asset(
 @router.patch("/layers/{layer_id}")
 def patch_layer(layer_id: str, patch: dict[str, Any]) -> dict[str, Any]:
     try:
-        return session.update_layer(layer_id, patch).model_dump()
+        # Cancellation must precede lock acquisition, including this accounting
+        # snapshot around the normal mutation pipeline.
+        with session.render_work.mutation(), session._lock:
+            before = session.project.layer(layer_id)
+            # Match settings as a multiset: reorder, removal and enable toggles
+            # do not masquerade as applying a tool. Identical copies still count.
+            old = Counter((step.effect, json.dumps(step.params, sort_keys=True))
+                          for step in before.effects)
+            updated = session.update_layer(layer_id, patch)
+            new = Counter((step.effect, json.dumps(step.params, sort_keys=True))
+                          for step in updated.effects)
+            used = {module_id for module_id, _ in (new - old)}
+            payload = updated.model_dump()
+        for module_id in used:
+            record_module_use("effect", module_id)
+        return payload
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:
@@ -889,7 +912,14 @@ class RegenerateBody(BaseModel):
 def regenerate_layer(layer_id: str, body: RegenerateBody) -> dict[str, Any]:
     try:
         with progress_scope(_gen_progress_sink()):
-            return session.regenerate_layer(layer_id, body.params, coalesce=body.coalesce).model_dump()
+            with session.render_work.mutation(), session._lock:
+                continuing = body.coalesce and session._coalesce_key == ("regen", layer_id)
+                layer = session.regenerate_layer(layer_id, body.params, coalesce=body.coalesce)
+                module_id = layer.source.generator
+                payload = layer.model_dump()
+            if not continuing:
+                record_module_use("source", module_id)
+            return payload
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:
@@ -905,7 +935,9 @@ def append_shape_op(layer_id: str, body: ShapeOpBody) -> dict[str, Any]:
     """Commit one add/subtract op to a pen/brush/shape layer, converting the
     layer to a shape layer first when needed (one undo step for both)."""
     try:
-        return session.append_shape_op(layer_id, body.op).model_dump()
+        layer = session.append_shape_op(layer_id, body.op)
+        record_module_use("source", layer.source.generator)
+        return layer.model_dump()
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:

@@ -221,7 +221,12 @@ starting settings, not captured input or interventions. Resolution preserves
 compatible current image inputs and validates against the module schema.
 Explicit application uses existing project mutation paths; browser handoff
 only prepares a draft. Identifying thumbnails render in isolation from the
-live asset store. See [Module library](docs/MODULE-LIBRARY.md).
+live asset store and persist as content-keyed atomic SVG files across restarts.
+Ratings and usage are local preferences, independent of project undo. Usage is
+recorded after successful API mutations; failures in bookkeeping cannot fail a
+project edit. Accounting snapshots enter the preview-cancellation mutation scope
+before acquiring the session lock. Effect usage compares settings multisets so reorder/removal does
+not count. See [Module library](docs/MODULE-LIBRARY.md).
 
 ### Undo, duplication, consolidation
 

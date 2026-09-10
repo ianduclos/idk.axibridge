@@ -2,8 +2,8 @@ import { api } from "./api.js";
 
 const API = "/api/module-library";
 const browserState = {
-  source: { query: "", filter: "all", scroll: 0 },
-  effect: { query: "", filter: "all", scroll: 0 },
+  source: { query: "", filter: "all", category: "all", sort: "name", scroll: 0 },
+  effect: { query: "", filter: "all", category: "all", sort: "name", scroll: 0 },
 };
 let activeDialog = null;
 const selectedPresets = new Map();
@@ -229,7 +229,8 @@ export async function quickModules(kind, modules, currentModule) {
 function kindTitle(kind) { return kind === "source" ? "Generators" : "Effects"; }
 
 export async function openModuleBrowser({ kind, modules, currentModule, getCurrentParams, onUse }) {
-  const state = browserState[kind] || (browserState[kind] = { query: "", filter: "all", scroll: 0 });
+  const state = browserState[kind] || (browserState[kind] = { query: "", filter: "all", category: "all", sort: "name", scroll: 0 });
+  state.category ||= "all"; state.sort ||= "name";
   let identifierObserver = null;
   let identifierClosed = false;
   let identifierQueue = [];
@@ -246,7 +247,23 @@ export async function openModuleBrowser({ kind, modules, currentModule, getCurre
   const search = el("input", "module-library-search"); search.type = "search"; search.placeholder = "Search names, descriptions, tags, presets"; search.value = state.query; search.setAttribute("aria-label", "Search tools");
   const filter = el("select", "module-library-filter"); filter.setAttribute("aria-label", "Filter modules");
   for (const [value, label] of [["all", "All"], ["starred", "Starred"], ["tagged", "Tagged"]]) { const option = el("option", "", label); option.value = value; filter.append(option); }
-  filter.value = state.filter; header.append(search, filter);
+  filter.value = state.filter;
+  const sort = el("select", "module-library-sort"); sort.setAttribute("aria-label", "Sort modules");
+  for (const [value, label] of [["name", "Name"], ["rating", "Rating"], ["most-used", "Most used"], ["least-used", "Least used"], ["recently-used", "Recently used"]]) {
+    const option = el("option", "", label); option.value = value; sort.append(option);
+  }
+  sort.value = state.sort;
+  const categories = el("div", "module-library-categories"); categories.setAttribute("aria-label", "Categories");
+  const categoryChoices = kind === "source"
+    ? [["all", "All"], ["procedural", "Procedural"], ["image", "Image"], ["bench", "Bench"]]
+    : [["all", "All"], ["line", "Line"], ["shape", "Shape"], ["agnostic", "Agnostic"]];
+  for (const [value, label] of categoryChoices) {
+    const chip = el("button", "module-library-category", label); chip.type = "button"; chip.dataset.category = value;
+    chip.setAttribute("aria-pressed", String(state.category === value));
+    chip.onclick = () => { state.category = value; state.scroll = 0; render(); };
+    categories.append(chip);
+  }
+  header.append(search, filter, sort, categories);
   const body = el("div", "module-library-body");
   const list = el("div", "module-library-list"); list.setAttribute("role", "listbox");
   const detail = el("aside", "module-library-detail"); detail.setAttribute("aria-live", "polite");
@@ -261,6 +278,17 @@ export async function openModuleBrowser({ kind, modules, currentModule, getCurre
   const entries = [...modules.map((mod) => ({ mod, unavailable: mod.available === false })), ...missingIds.map((id) => ({ mod: { id, label: id, description: "Module unavailable" }, unavailable: true }))];
   let selectedId = moduleMap.has(currentModule) ? currentModule : entries[0]?.mod.id;
   let renderRevision = 0;
+  const preferenceRevisions = new Map();
+  const preferenceBusy = new Set();
+  const tagDrafts = new Map();
+  const tagInputs = new Map();
+
+  function lockMetadata(module, locked = preferenceBusy.has(module)) {
+    if (selectedId !== module) return;
+    for (const control of detail.querySelectorAll(".module-library-star,.module-library-rating button,.module-library-tag-editor input,.module-library-tag-editor button,.module-library-tag-suggestions button,.module-library-save-tags")) control.disabled = locked;
+    const clear = detail.querySelector(".module-library-clear-rating");
+    if (clear) clear.disabled = locked || preference(data, kind, module).rating == null;
+  }
 
   function pumpIdentifiers() {
     if (identifierClosed) return;
@@ -290,12 +318,23 @@ export async function openModuleBrowser({ kind, modules, currentModule, getCurre
   }, { root: list, rootMargin: "0px", threshold: 0.01 });
 
   async function savePreference(module, changes) {
-    const old = preference(data, kind, module);
-    const saved = await api.put(`${API}/preferences/${encodeURIComponent(kind)}/${encodeURIComponent(module)}`, {
-      starred: changes.starred ?? old.starred, tags: changes.tags ?? old.tags,
-    });
-    data.preferences = data.preferences.filter((p) => !(p.kind === kind && p.module === module)); data.preferences.push(saved);
-    emitChange(); render(); showDetail(module);
+    if (preferenceBusy.has(module)) return;
+    const request = (preferenceRevisions.get(module) || 0) + 1;
+    preferenceRevisions.set(module, request);
+    preferenceBusy.add(module);
+    lockMetadata(module, true);
+    try {
+      const saved = await api.put(`${API}/preferences/${encodeURIComponent(kind)}/${encodeURIComponent(module)}`, changes);
+      if (preferenceRevisions.get(module) !== request) return;
+      data.preferences = data.preferences.filter((p) => !(p.kind === kind && p.module === module)); data.preferences.push(saved);
+      if (Object.hasOwn(changes, "tags")) { tagDrafts.delete(module); tagInputs.delete(module); }
+      emitChange(); if (!view.closed) render();
+    } finally {
+      preferenceBusy.delete(module);
+      if (!view.closed && selectedId === module && preferenceRevisions.get(module) === request) {
+        showDetail(module);
+      }
+    }
   }
   async function renamePreset(preset) {
     const saved = await nameDialog({ title: "Rename preset", value: preset.name, action: "Rename", onSubmit: (name) => api.patch(`${API}/presets/${encodeURIComponent(preset.id)}`, { name }) });
@@ -317,12 +356,56 @@ export async function openModuleBrowser({ kind, modules, currentModule, getCurre
     const heading = el("div", "module-library-detail-heading");
     const title = el("h2", "", entry.mod.label || moduleId);
     const star = el("button", "module-library-star", pref.starred ? "★" : "☆"); star.type = "button"; star.setAttribute("aria-label", `${pref.starred ? "Unstar" : "Star"} ${entry.mod.label || moduleId}`); star.setAttribute("aria-pressed", String(pref.starred));
-    star.onclick = async () => { star.disabled = true; try { await savePreference(moduleId, { starred: !pref.starred }); } catch (error) { showDetail(moduleId, error); } };
+    star.onclick = async () => { star.disabled = true; try { await savePreference(moduleId, { starred: !pref.starred }); } catch (error) { if (!view.closed && selectedId === moduleId) showDetail(moduleId, error); } };
     heading.append(title, star);
+    const identifier = el("img", "module-library-detail-identifier"); identifier.alt = "";
+    if (entry.unavailable) identifier.hidden = true;
+    else { identifier.onerror = () => { identifier.hidden = true; }; identifier.src = `${API}/modules/${encodeURIComponent(kind)}/${encodeURIComponent(moduleId)}/thumbnail`; }
     const description = el("p", "module-library-description", entry.mod.description || entry.mod.schema?.description || "No description available.");
-    const tags = el("input", "module-library-tags"); tags.type = "text"; tags.value = (pref.tags || []).join(", "); tags.placeholder = "Tags, separated by commas"; tags.setAttribute("aria-label", `Tags for ${entry.mod.label || moduleId}`);
+    const rating = el("div", "module-library-rating"); rating.dataset.rating = pref.rating == null ? "" : String(pref.rating); rating.setAttribute("aria-label", `Rating for ${entry.mod.label || moduleId}`);
+    for (let value = 1; value <= 5; value++) {
+      const rate = el("button", "module-library-rating-star", value <= (pref.rating || 0) ? "★" : "☆"); rate.type = "button";
+      rate.setAttribute("aria-label", `Rate ${value} star${value === 1 ? "" : "s"}`);
+      rate.onclick = async () => { rate.disabled = true; try { await savePreference(moduleId, { rating: value }); } catch (error) { if (!view.closed && selectedId === moduleId) showDetail(moduleId, error); } };
+      rating.append(rate);
+    }
+    const clearRating = el("button", "module-library-clear-rating", "Clear rating"); clearRating.type = "button"; clearRating.disabled = pref.rating == null;
+    clearRating.onclick = async () => { clearRating.disabled = true; try { await savePreference(moduleId, { rating: null }); } catch (error) { if (!view.closed && selectedId === moduleId) showDetail(moduleId, error); } };
+    rating.append(clearRating);
+    let draft = tagDrafts.get(moduleId) || [...(pref.tags || [])];
+    const tagEditor = el("div", "module-library-tag-editor");
+    const tagChips = el("div", "module-library-tag-chips");
+    const tags = el("input", "module-library-tags"); tags.type = "text"; tags.placeholder = "Add a tag"; tags.setAttribute("aria-label", "Add tag"); tags.value = tagInputs.get(moduleId) || "";
+    function drawTags() {
+      tagDrafts.set(moduleId, [...draft]); tagChips.replaceChildren();
+      for (const value of draft) {
+        const chip = el("span", "module-library-tag-chip"); chip.append(el("span", "", value));
+        const removeTag = el("button", "", "×"); removeTag.type = "button"; removeTag.setAttribute("aria-label", `Remove tag ${value}`);
+        removeTag.onclick = () => { draft = draft.filter((tag) => tag !== value); drawTags(); };
+        chip.append(removeTag); tagChips.append(chip);
+      }
+    }
+    function addTags() {
+      const values = tags.value.split(",").map((value) => value.trim()).filter(Boolean);
+      if (!values.length) return;
+      draft = [...new Set([...draft, ...values])]; tags.value = ""; tagInputs.delete(moduleId); drawTags();
+    }
+    tags.oninput = () => { tagInputs.set(moduleId, tags.value); };
+    tags.onkeydown = (event) => { if (event.key === "Enter") { event.preventDefault(); addTags(); } };
+    drawTags(); tagEditor.append(tagChips, tags);
+    const frequent = el("div", "module-library-tag-suggestions");
+    const counts = new Map();
+    for (const item of data.preferences) for (const tag of item.tags || []) counts.set(tag, (counts.get(tag) || 0) + 1);
+    for (const [value] of [...counts].filter(([value]) => !draft.includes(value)).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 6)) {
+      const suggestion = el("button", "", value); suggestion.type = "button"; suggestion.setAttribute("aria-label", `Add tag ${value}`);
+      suggestion.onclick = () => { draft = [...new Set([...draft, value])]; drawTags(); suggestion.remove(); };
+      frequent.append(suggestion);
+    }
     const saveTags = el("button", "module-library-save-tags", "Save tags"); saveTags.type = "button";
-    saveTags.onclick = async () => { saveTags.disabled = true; try { await savePreference(moduleId, { tags: tags.value.split(",").map((v) => v.trim()).filter(Boolean) }); } catch (error) { showDetail(moduleId, error); } };
+    saveTags.onclick = async () => { addTags(); saveTags.disabled = true; try { await savePreference(moduleId, { tags: draft }); } catch (error) { if (!view.closed && selectedId === moduleId) showDetail(moduleId, error); } };
+    // Persist on press so adding comma-compatible text cannot move the button
+    // during the focus change and cancel the ensuing click.
+    saveTags.onmousedown = (event) => { event.preventDefault(); saveTags.onclick(); };
     const presetHeading = el("h3", "", "Presets");
     const presetList = el("div", "module-library-presets");
     const presetSelect = el("select", "module-library-preset-select"); presetSelect.setAttribute("aria-label", "Preset");
@@ -343,7 +426,8 @@ export async function openModuleBrowser({ kind, modules, currentModule, getCurre
     remove.onclick = () => { const preset = presets.find((p) => p.id === presetSelect.value); if (preset) deletePreset(preset); };
     presetActions.append(use, rename, remove); presetList.append(presetSelect, presetActions); syncActions();
     const error = el("div", "module-library-error", cause ? message(cause) : ""); error.hidden = !cause; error.setAttribute("role", "alert");
-    detail.replaceChildren(heading, description, tags, saveTags, presetHeading, presetList, error);
+    detail.replaceChildren(heading, identifier, presetHeading, presetList, description, rating, tagEditor, frequent, saveTags, error);
+    lockMetadata(moduleId);
   }
   async function useSelection(entry, presetId, button) {
     if (entry.unavailable || view.closed) return;
@@ -364,8 +448,17 @@ export async function openModuleBrowser({ kind, modules, currentModule, getCurre
       const pref = preference(data, kind, mod.id), presets = presetsFor(data, kind, mod.id);
       if (state.filter === "starred" && !pref.starred) return false;
       if (state.filter === "tagged" && !(pref.tags || []).length) return false;
+      if (state.category !== "all" && !(mod.library_categories || []).includes(state.category)) return false;
       return !query || [mod.label, mod.id, mod.description, mod.schema?.description, ...(pref.tags || []), ...presets.map((p) => p.name)].filter(Boolean).join(" ").toLocaleLowerCase().includes(query);
+    }).sort((left, right) => {
+      const a = preference(data, kind, left.mod.id), b = preference(data, kind, right.mod.id);
+      if (state.sort === "rating") return (b.rating ?? -1) - (a.rating ?? -1) || (left.mod.label || left.mod.id).localeCompare(right.mod.label || right.mod.id);
+      if (state.sort === "most-used") return (b.use_count || 0) - (a.use_count || 0) || (left.mod.label || left.mod.id).localeCompare(right.mod.label || right.mod.id);
+      if (state.sort === "least-used") return (a.use_count || 0) - (b.use_count || 0) || (left.mod.label || left.mod.id).localeCompare(right.mod.label || right.mod.id);
+      if (state.sort === "recently-used") return Date.parse(b.last_used_at || 0) - Date.parse(a.last_used_at || 0) || (left.mod.label || left.mod.id).localeCompare(right.mod.label || right.mod.id);
+      return (left.mod.label || left.mod.id).localeCompare(right.mod.label || right.mod.id);
     });
+    for (const chip of categories.children) chip.setAttribute("aria-pressed", String(chip.dataset.category === state.category));
     identifierObserver.disconnect();
     identifierQueue = [];
     list.replaceChildren();
@@ -389,6 +482,7 @@ export async function openModuleBrowser({ kind, modules, currentModule, getCurre
   let timer;
   search.oninput = () => { state.query = search.value; clearTimeout(timer); timer = setTimeout(() => { state.scroll = 0; render(); }, 150); };
   filter.onchange = () => { state.filter = filter.value; state.scroll = 0; render(); };
+  sort.onchange = () => { state.sort = sort.value; state.scroll = 0; render(); };
   list.onscroll = () => { state.scroll = list.scrollTop; };
   render(); search.focus();
 }

@@ -17,7 +17,7 @@ class EmptyParams(BaseModel):
     pass
 
 
-@pytest.mark.parametrize('operation', ['patch', 'delete', 'bulk_delete'])
+@pytest.mark.parametrize('operation', ['patch', 'regenerate', 'delete', 'bulk_delete'])
 @pytest.mark.parametrize('preview', ['resolved', 'effects', 'plan', 'sheet', 'raster'])
 def test_edit_interrupts_preview_and_never_publishes_partial_cache(monkeypatch, operation, preview):
     entered, stop = threading.Event(), threading.Event()
@@ -52,6 +52,9 @@ def test_edit_interrupts_preview_and_never_publishes_partial_cache(monkeypatch, 
             assert entered.wait(3), 'preview never reached the slow effect'
             if operation == 'patch':
                 changed = pool.submit(client.patch, f'/api/layers/{layer.id}', json={'effects': []})
+            elif operation == 'regenerate':
+                changed = pool.submit(client.post, f'/api/layers/{layer.id}/regenerate',
+                                      json={'params': {'sides': 5}})
             elif operation == 'delete':
                 changed = pool.submit(client.delete, f'/api/layers/{layer.id}')
             else:
@@ -62,11 +65,16 @@ def test_edit_interrupts_preview_and_never_publishes_partial_cache(monkeypatch, 
             assert cancelled.status_code == 409
             assert cancelled.json()['detail']['code'] == 'render_cancelled'
             assert not session._shaped_cache.get(layer.id), 'cancelled effect was cached'
+            if operation == 'regenerate':
+                stop.set()  # the retained effect may now finish the fresh render
             fresh = client.get('/api/compose/resolved?stats=false')
             assert fresh.status_code == 200
             if operation == 'patch':
                 assert session.source_geometry[layer.id] is original
                 assert len(fresh.json()['layers']) == 1
+            elif operation == 'regenerate':
+                assert len(fresh.json()['layers']) == 1
+                assert session.project.layer(layer.id).source.params['sides'] == 5
             else:
                 assert fresh.json()['layers'] == []
                 assert session.undo()

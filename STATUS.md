@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-10
 machine: mac+pi
-summary: Separate generator/effect browsers and starting-settings presets are ready for native checking.
+summary: Module browsers now add persistent previews, category filters, ratings, usage sorting and tag boxes.
 next:
-  - "Reload and check module browsers, stars/tags and named presets in Compose and editable benches"
+  - "Check refined module browsers, category chips, ratings, usage sorting and Enter-to-box tags after backend update"
   - "Reload and check gallery geometry filters and Preview on canvas opacity, hide/show and insertion"
   - "Check animation child deletion, collapsed dragging, master occlusion and Pen/Shape Repeat"
   - "Check Ribbon curve sampling, heavy edits, elapsed reset and deleting during rendering"
@@ -15,6 +15,23 @@ handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Browser refinements, 10 September:** Identifier SVGs now persist on disk
+across backend restarts and invalidate when renderer dependencies change. The
+selected tool gets a larger copy of that same SVG. Visible category chips,
+optional personal 1–5 ratings, usage/recency sorting and Enter-to-box tags with
+frequent suggestions make both browsers easier to search. Working benches share
+the same catalogue classification with Compose. Usage counts successful tool
+actions, excludes previews and effect reorder/removal, and leaves undo intact.
+Activation is pending Ian's choice: the existing backend/window remains running
+so its current editing history is preserved. Project saves retain only four
+undo steps and no redo; restarting without that choice would lose session
+history. The rebuilt UI should be reloaded after the backend update.
+Verification: 1538 hardware-free tests passed, 1 skipped, one existing Starlette
+deprecation warning. Typecheck/build passed. Both browsers were inspected with
+loaded identifiers at 1024×768; the generator browser was also checked at
+1440×900. Added cancellation coverage ensures usage accounting still interrupts
+slow previews before waiting for the project lock. Ready for Ian's native check.
 
 **Module browsers and presets, 10 September:** Generators and effects have
 separate selection browsers, small fixed identifiers, stars, personal tags

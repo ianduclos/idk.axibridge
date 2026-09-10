@@ -509,6 +509,10 @@ small fixed identifiers, stars and personal tags, with named starting-settings
 presets. Presets have no thumbnails and omit source images and captured
 interaction state. Existing controls/benches handle editing; explicit Apply
 changes an existing layer in one undo step. See [Module library](docs/MODULE-LIBRARY.md).
+The follow-up adds persistent SVG caching across restarts, a larger selected
+identifier, visible generator/effect category chips, optional personal 1–5
+ratings, usage/recency sorting and Enter-to-box tags with frequent suggestions.
+Usage counts committed tool actions; browsing and draft loads do not count.
 Native readability and interaction remain for Ian to check.
 
 The August exploration below is historical rationale: its live user-image
