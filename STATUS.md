@@ -23,10 +23,13 @@ optional personal 1–5 ratings, usage/recency sorting and Enter-to-box tags wit
 frequent suggestions make both browsers easier to search. Working benches share
 the same catalogue classification with Compose. Usage counts successful tool
 actions, excludes previews and effect reorder/removal, and leaves undo intact.
-Activation is pending Ian's choice: the existing backend/window remains running
-so its current editing history is preserved. Project saves retain only four
-undo steps and no redo; restarting without that choice would lose session
-history. The rebuilt UI should be reloaded after the backend update.
+Activated after diagnosing an orphaned backend: the app was closed, but an old
+server remained attached to PID 1. Saved recovery copy
+`before-browser-activation-20260910-040525-31f4a4`, retired the idle orphan and
+opened the normal app launcher with auto-connect disabled. The new backend is
+owned by the app shell; the drawing was restored. Live generator/effect category
+filters passed a browser smoke without changing project state. CLAUDE.md now
+requires live backend verification and explicit process-ownership checks.
 Verification: 1538 hardware-free tests passed, 1 skipped, one existing Starlette
 deprecation warning. Typecheck/build passed. Both browsers were inspected with
 loaded identifiers at 1024×768; the generator browser was also checked at

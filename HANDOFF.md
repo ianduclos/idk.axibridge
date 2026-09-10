@@ -9,10 +9,11 @@ entries: 20
 - refinement: persistent SVG cache, larger selected preview, generator/effect
   category chips, personal ratings, usage/recency sort and Enter-to-box tags.
   Usage records successful tool actions; reorder/removal/preview do not count.
-  Backend activation awaits Ian's choice (question presented in this task).
-  Existing project saves preserve only four undo steps and no redo. Keep the
-  live session running unless Ian chooses save/restart/restore; reload the UI
-  after activating the new backend. Refinement verification: 1538 passed,
+  Activated after finding an idle orphaned backend while the app was closed.
+  Recovery: `before-browser-activation-20260910-040525-31f4a4`. The normal app
+  launcher now owns the backend, auto-connect was disabled, and the drawing
+  was restored. Live category filters passed without changing project state.
+  CLAUDE.md records the deployment/ownership check. Verification: 1538 passed,
   1 skipped, one existing Starlette warning; typecheck/build passed. Both
   browsers inspected with loaded identifiers at 1024×768 (generators also at
   1440×900). Native interaction remains for Ian.
@@ -27,7 +28,7 @@ entries: 20
 - verified: 27 focused module/browser/bench tests and all 52 registered
   identifiers; typecheck and build passed. Full hardware-free suite: 1517 passed,
   1 skipped, one existing Starlette deprecation warning.
-- next: after backend update, preserve any bench draft and reload; check category
+- next: check the reopened native app: category
   chips, ratings, usage sorting, tag boxes, stars and tool
   handoff, save/load/update/rename/delete presets, and original-layer undo.
   Judge the compact controls and identifiers in the native window.

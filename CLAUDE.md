@@ -55,6 +55,19 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
   (Happened 2026-08-07 with a process from the pre-`02_Areas` layout that had
   been running since 26 July.)
 
+- **Desktop delivery must verify the live backend, not just build files.**
+  When frontend and backend change together, check the running `/api/state`
+  metadata/endpoints and exercise the feature against that server before
+  calling it ready. Publishing a new build against an old process is an
+  incomplete deployment. `AxiBridge.app` attaches to a pre-existing server
+  and leaves it running on close; HTTP responding does not prove the window
+  is open. Check the shell process and the listener's parent. After the app
+  is closed, recover any needed project from an idle orphan before retiring
+  it, then use the normal app launcher so the shell owns its backend. Do not
+  replace it with another standalone server on the user port. Test servers
+  belong on temporary ports with isolated config. The normal owned-server
+  close path is in `launch/axibridge_app.py`.
+
 ## Where things live
 
 | Concern | File |
