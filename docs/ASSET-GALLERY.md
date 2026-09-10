@@ -2,7 +2,7 @@
 
 The gallery keeps finished line shapes locally, across all projects. Open
 **Gallery** in Compose to browse thumbnails, search names/notes/tags/origins,
-filter by tag or generator, and adjust thumbnail size. Newest captures appear
+filter by tag, generator or geometry type, and adjust thumbnail size. Newest captures appear
 first. Search, filters, size and scroll position survive closing the panel
 within the current app page.
 
@@ -29,6 +29,21 @@ assets. The layer has an empty effect stack and normal default pen behavior;
 its placement and new effects can be edited normally. Insertion is undoable.
 Deleting or changing the library original cannot affect inserted copies.
 
+Geometry type is automatic: **Shape-based** means all paths carry a filled
+region flag and are closed; **Line-based** means none do; **Mixed** contains
+both. A closed, unfilled outline remains linework. This is derived from saved
+geometry, so older assets gain the metadata without editing or migration.
+
+**Preview on canvas** folds the gallery into a compact panel and overlays the
+asset in blue at its actual insertion size and centered position. Adjust
+**Overlay opacity** or **Hide overlay** to compare it with the current drawing.
+**Back to gallery** restores the grid and retains entered metadata; Close or
+Escape clears the preview. The canvas remains protected from edits during
+comparison. This is a display-only outline, before any downstream clipping;
+it creates no layer or undo entry until **Add as layer**. Preview requires the
+live canvas rather than a sheet/tray view. Move or transform the layer after
+inserting if needed.
+
 ## Storage and API contract
 
 `gallery.py` owns `CONFIG_DIR/gallery/<id>.json` (normally
@@ -39,9 +54,13 @@ from listings with a warning. The metadata index is derived from file
 timestamps; files remain authoritative.
 
 `gallery_api.py` exposes `/api/gallery` list/save, `/prepare`, `/{id}`
-detail/update/delete, `/{id}/thumbnail` and `/{id}/insert`. List/detail payloads
+detail/update/delete, `/{id}/thumbnail`, `/{id}/preview` and `/{id}/insert`. List/detail payloads
 exclude geometry. Lists also return `tag_counts: [{tag, count}]`, ranked by
 descending asset count with alphabetical ties, independent of current filters.
+Metadata includes derived `geometry_type: "line" | "shape" | "mixed"`; listing
+accepts the same optional filter. The read-only preview endpoint returns a
+sampled SVG and its padded millimetre rectangle, positioned using the same
+translation helper as insertion. Canvas view rotation applies only on display.
 Thumbnails are derived SVGs requested lazily; display
 sampling never changes stored paths. Generator provenance is descriptive,
 not a recipe or a live dependency.

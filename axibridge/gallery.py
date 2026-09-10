@@ -84,22 +84,34 @@ class GalleryRecord(GalleryMetadata):
 
     def metadata(self):
         x0, y0, x1, y1 = bounds(self.paths)
+        shapes = sum(path.filled and path.is_closed for path in self.paths)
+        geometry_type = ('shape' if shapes == len(self.paths) else
+                         'mixed' if shapes else 'line')
         return {**self.model_dump(mode='json', exclude={'paths'}),
-                'width_mm': x1 - x0, 'height_mm': y1 - y0}
+                'width_mm': x1 - x0, 'height_mm': y1 - y0,
+                'geometry_type': geometry_type}
 
 
-def thumbnail(paths: list[Path]) -> str:
+def thumbnail_bounds(paths: list[Path], *, stroke_width: float | None = None) -> tuple[float, float, float, float]:
+    """Return the padded ``x, y, width, height`` used by gallery previews."""
+    x0, y0, x1, y1 = bounds(paths)
+    span = max(x1 - x0, y1 - y0, 1.)
+    pad = max(span * .06, (stroke_width or 0) / 2)
+    return x0 - pad, y0 - pad, x1 - x0 + 2 * pad, y1 - y0 + 2 * pad
+
+
+def thumbnail(paths: list[Path], *, stroke_width: float | None = None) -> str:
     """Line-only view, including closed filled silhouettes as outlines.
 
     Display sampling never changes stored paths. Stroke width scales with
     bounds so a tiny asset and a page-sized asset are both legible in a tile.
     """
+    x, y, width, height = thumbnail_bounds(paths, stroke_width=stroke_width)
     x0, y0, x1, y1 = bounds(paths)
     span = max(x1 - x0, y1 - y0, 1.)
-    pad = span * .06
     stride = max(1, math.ceil(sum(len(p.points) for p in paths) / 60000))
-    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x0-pad} {y0-pad} {x1-x0+2*pad} {y1-y0+2*pad}">',
-             f'<g fill="none" stroke="#100F0F" stroke-width="{span/650}" stroke-linejoin="round" stroke-linecap="round">']
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x} {y} {width} {height}">',
+             f'<g fill="none" stroke="#100F0F" stroke-width="{span/650 if stroke_width is None else stroke_width}" stroke-linejoin="round" stroke-linecap="round">']
     for path in paths:
         if len(path.points) < 2:
             continue
@@ -147,7 +159,7 @@ class GalleryStore:
                 os.unlink(name)
         self._index.pop(record.id, None)
 
-    def list(self, q='', tag='', generator=''):
+    def list(self, q='', tag='', generator='', geometry_type=''):
         with self._lock:
             records, warnings, existing = [], [], set()
             for path in self.root.glob('*.json'):
@@ -174,6 +186,7 @@ class GalleryStore:
             selected = [r for r in records
                         if (not tag or tag.casefold() in [t.casefold() for t in r['tags']])
                         and (not generator or r['origin']['module'] == generator)
+                        and (not geometry_type or r['geometry_type'] == geometry_type)
                         and (not q or q.casefold() in ' '.join([
                             r['name'], r['note'], *r['tags'], r['origin']['label'],
                             r['origin']['module'] or '']).casefold())]

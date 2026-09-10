@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-10
 machine: mac+pi
-summary: Gallery backend is updated; tag boxes and frequent-tag suggestions are ready for checking after a page reload.
+summary: Gallery geometry types and a temporary canvas comparison overlay are ready for native checking.
 next:
-  - "Reload the page and check bench gallery save, Enter tag boxes and Most used suggestions"
+  - "Reload and check gallery geometry filters and Preview on canvas opacity, hide/show and insertion"
   - "Check animation child deletion, collapsed dragging, master occlusion and Pen/Shape Repeat"
   - "Check Ribbon curve sampling, heavy edits, elapsed reset and deleting during rendering"
   - "Check Magnetic field four-corner blending, Scatter strengths and pole spacing"
@@ -15,6 +15,22 @@ handoff_for: ian
 
 # idk.axibridge — status
 
+
+**Gallery geometry and canvas comparison, 10 September:** Automatic Line-based,
+Shape-based and Mixed metadata now derives from filled/closed path flags, also
+for existing records. A geometry filter helps recall. Preview on canvas folds
+the gallery into a compact panel with a blue original-size centered overlay,
+opacity and hide/show controls. It shares insertion placement and never enters
+project geometry or undo history. Close/back/late-request cleanup is covered;
+small-asset preview padding contains the full stroke.
+
+The running backend includes these endpoints. The empty project was preserved
+and restored from `before-gallery-overlay-20260910-011636-831727`; simulator
+remains disconnected/idle. No browser reload or hardware action. Verification
+completed: full suite **1,489 passed, one intentional skip**, one existing
+Starlette warning. The final stroke-padding correction was then verified by
+**18 focused gallery tests**; typecheck and frontend build passed. Isolated
+browser appearance inspected. Ian still owns native acceptance.
 
 **Gallery follow-up, 10 September:** The reported preview/405 error came
 from a detached September-8 backend serving new frontend files without gallery

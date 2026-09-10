@@ -20,6 +20,11 @@ Follow-up: tag inputs now make removable boxes on Enter and offer frequently
 used tags to click. The reported 405 came from a detached pre-gallery backend;
 that backend has been replaced with the current code. Reload the page for the
 tag editor update; the save endpoint is available on the running service.
+Automatic Line-based / Shape-based / Mixed metadata and filtering are added,
+including existing assets. Preview on canvas folds the gallery into a compact
+panel with a centered original-size overlay, opacity and hide/show comparison.
+The preview is transient; placement editing remains an ordinary layer operation
+after insertion. Native readability and interaction remain for Ian to check.
 
 The local line-asset gallery is implemented: save whole treated layers or exact
 bench recipes as frozen geometry, browse/search/tag, and insert independent

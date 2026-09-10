@@ -366,6 +366,8 @@ export class CanvasEditor {
     this.world.appendChild(this.travelGroup);
     this.previewGroup = el("g", { class: "gen-preview" });
     this.world.appendChild(this.previewGroup);
+    this.galleryPreviewGroup = el("g", { class: "gallery-canvas-overlay", "pointer-events": "none", "aria-hidden": "true" });
+    this.world.appendChild(this.galleryPreviewGroup);
     this.overlay = el("g", {});
     this.world.appendChild(this.overlay);
     this.animMarker = el("circle", { r: 1.6, class: "anim-marker", visibility: "hidden" });
@@ -375,6 +377,7 @@ export class CanvasEditor {
 
     this._renderTravel();
     this._renderGenPreview();
+    this._renderGalleryPreview();
     this._renderSelection();
     this.updateMachineMarker();
   }
@@ -385,6 +388,26 @@ export class CanvasEditor {
   setGenPreview(preview) {
     this.genPreview = preview; // {lines: [[[x,y],...],...], transform: mat|null} | null
     this._renderGenPreview();
+  }
+
+  // Separate from generator ghosts: display-only SVG in machine millimetres.
+  // It follows the canvas view transform and never enters resolved geometry.
+  setGalleryPreview(preview) {
+    this.galleryPreview = preview;
+    this._renderGalleryPreview();
+  }
+
+  _renderGalleryPreview() {
+    if (!this.galleryPreviewGroup) return;
+    this.galleryPreviewGroup.replaceChildren();
+    if (!this.galleryPreview) return;
+    const { svg, x, y, width, height, opacity = .8 } = this.galleryPreview;
+    const ink = getComputedStyle(this.svg).getPropertyValue("--live").trim();
+    const colored = ink ? svg.replaceAll("#100F0F", ink) : svg;
+    this.galleryPreviewGroup.appendChild(el("image", {
+      href: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(colored)}`,
+      x, y, width, height, opacity,
+    }));
   }
 
   _renderGenPreview() {

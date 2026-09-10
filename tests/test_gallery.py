@@ -39,7 +39,10 @@ def test_store_exact_restart_filter_metadata_and_bad_record(gallery):
     from axibridge.gallery import GalleryStore
     paths = [Path(points=[(-1.123456789123, 2), (4, 8), (-1.123456789123, 2)], filled=True)]
     draft = gallery.prepare(paths, 'Test', {'kind': 'generator', 'module': 'polygon', 'label': 'Polygon'})
+    assert draft['geometry_type'] == 'line', 'three-point backtracking paths are not closed shapes'
     saved = gallery.save(draft['capture_id'], name='One', tags=[' Ink ', 'ink'], note='branches')
+    assert saved['geometry_type'] == 'line'
+    assert 'geometry_type' not in json.loads(gallery._file(saved['id']).read_text())
     reopened = GalleryStore(gallery.root)
     assert reopened.paths(saved['id']) == paths
     assert reopened.list(q='BRANCH', tag='ink', generator='polygon')['items'][0]['name'] == 'One'
@@ -47,12 +50,48 @@ def test_store_exact_restart_filter_metadata_and_bad_record(gallery):
     assert saved['tags'] == ['Ink']
     reopened.update(saved['id'], name='Two', tags=['fine'], note='')
     assert reopened.get(saved['id'])['name'] == 'Two'
+    assert reopened.get(saved['id'])['geometry_type'] == 'line'
     (gallery.root / ('f' * 32 + '.json')).write_text('{bad')
     assert len(reopened.list()['items']) == 1
     assert reopened.list()['warnings']
     reopened.delete(saved['id'])
     with pytest.raises(KeyError):
         reopened.get(saved['id'])
+
+
+def test_geometry_type_classification_and_filtering_are_derived(gallery):
+    def make(name, paths, tags, module):
+        draft = gallery.prepare(paths, name, {
+            'kind': 'generator', 'module': module, 'label': module.title()})
+        saved = gallery.save(draft['capture_id'], name=name, tags=tags, note='find me')
+        return draft, saved
+
+    closed = [(0, 0), (2, 0), (2, 2), (0, 0)]
+    shape_draft, shape = make('Shape', [Path(points=closed, filled=True)], ['shared'], 'polygon')
+    _, line = make('Line', [
+        Path(points=closed, filled=False),
+        Path(points=[(0, 0), (2, 2)], filled=True),
+    ], ['shared'], 'polygon')
+    _, mixed = make('Mixed', [
+        Path(points=closed, filled=True),
+        Path(points=[(0, 0), (3, 1)]),
+    ], ['other'], 'lines')
+
+    assert shape_draft['geometry_type'] == 'shape'
+    assert shape['geometry_type'] == 'shape'
+    assert line['geometry_type'] == 'line'
+    assert mixed['geometry_type'] == 'mixed'
+    assert gallery.get(mixed['id'])['geometry_type'] == 'mixed'
+
+    gallery.update(mixed['id'], name='Mixed updated', tags=['other'], note='find me')
+    assert gallery.get(mixed['id'])['geometry_type'] == 'mixed'
+    from axibridge.gallery import GalleryStore
+    reopened = GalleryStore(gallery.root)
+    assert reopened.get(shape['id'])['geometry_type'] == 'shape'
+    assert [item['id'] for item in reopened.list(geometry_type='line')['items']] == [line['id']]
+    assert [item['id'] for item in reopened.list(q='find', tag='shared', generator='polygon',
+                                                  geometry_type='shape')['items']] == [shape['id']]
+    assert reopened.list(tag='shared', geometry_type='mixed')['items'] == []
 
 
 def test_layer_capture_freezes_effects_ignores_occlusion_and_does_not_mutate(client, gallery):
@@ -168,6 +207,16 @@ def test_large_geometry_keeps_small_closed_silhouettes_in_preview(gallery):
     assert len(silhouette) >= 4
     saved = gallery.save(draft['capture_id'], name='Dense')
     assert gallery.paths(saved['id']) == paths
+
+
+def test_thumbnail_uses_shared_padded_bounds():
+    from axibridge.gallery import thumbnail, thumbnail_bounds
+    paths = [Path(points=[(2, 3), (6, 5)])]
+    rectangle = thumbnail_bounds(paths)
+    assert rectangle == pytest.approx((1.76, 2.76, 4.48, 2.48))
+    from xml.etree import ElementTree
+    svg = ElementTree.fromstring(thumbnail(paths))
+    assert tuple(map(float, svg.attrib['viewBox'].split())) == pytest.approx(rectangle)
 
 
 def test_capture_is_frozen_and_failed_atomic_edit_preserves_saved_record(gallery, monkeypatch):

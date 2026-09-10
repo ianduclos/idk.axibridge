@@ -2856,15 +2856,20 @@ class Session:
                     pass  # old generator provenance remains descriptive
             return paths, layer.name, {'kind': 'layer', 'module': module, 'label': label}
 
-    def insert_gallery_asset(self, name: str, paths: list[Path]) -> CanvasLayer:
-        """Independent baked copy; placement is translation only, one undo."""
+    def gallery_asset_placement(self, paths: list[Path]) -> Affine:
+        """Shared read-only placement for the gallery overlay and insertion."""
         from .gallery import bounds
         x0, y0, x1, y1 = bounds(paths)
         with self._lock:
             guide = self.project.guide
+            return Affine(e=guide.x + guide.width/2 - (x0+x1)/2,
+                          f=guide.y + guide.height/2 - (y0+y1)/2)
+
+    def insert_gallery_asset(self, name: str, paths: list[Path]) -> CanvasLayer:
+        """Independent baked copy; placement is translation only, one undo."""
+        with self._lock:
             layer = CanvasLayer(name=name, source=LayerSource(type='baked'),
-                transform=Affine(e=guide.x + guide.width/2 - (x0+x1)/2,
-                                 f=guide.y + guide.height/2 - (y0+y1)/2))
+                transform=self.gallery_asset_placement(paths))
             copied = [p.model_copy(deep=True) for p in paths]
             self._checkpoint()
             self.project.layers.append(layer)

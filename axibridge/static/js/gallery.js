@@ -1,7 +1,9 @@
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
 
-const galleryState = { query: "", tag: "", generator: "", thumb: 180, scroll: 0 };
+const galleryState = { query: "", tag: "", generator: "", geometryType: "", thumb: 180, scroll: 0 };
+const geometryLabels = { line: "Line-based", shape: "Shape-based", mixed: "Mixed" };
+const geometryLabel = (item) => geometryLabels[item.geometry_type] || "Unknown type";
 let activeDialog = null;
 
 function node(tag, className, text) {
@@ -51,7 +53,7 @@ function makeDialog(className, title, onClose) {
     if (event.key === "Escape") { event.preventDefault(); close(); return; }
     if (event.key !== "Tab") return;
     const focusable = [...dialog.querySelectorAll("button,input,select,textarea,[tabindex]")]
-      .filter((el) => !el.disabled && el.tabIndex >= 0);
+      .filter((el) => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length);
     if (!focusable.length) return;
     const first = focusable[0], last = focusable[focusable.length - 1];
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
@@ -168,13 +170,16 @@ function metadataLine(item) {
   const date = item.created_at ? new Date(item.created_at).toLocaleString() : "Unknown date";
   const size = Number.isFinite(item.width_mm) && Number.isFinite(item.height_mm)
     ? `${item.width_mm.toFixed(1)} × ${item.height_mm.toFixed(1)} mm` : "Unknown size";
-  return `${date} · ${originText(item.origin)} · ${size}`;
+  return `${geometryLabel(item)} · ${date} · ${originText(item.origin)} · ${size}`;
 }
 
 export async function openGallery() {
   let selectedId = null;
   let loadNumber = 0;
+  let previewNumber = 0;
   const modal = makeDialog("gallery-browser", "Asset gallery", () => {
+    previewNumber++;
+    actions.canvas().setGalleryPreview(null);
     galleryState.scroll = grid.scrollTop;
   });
   const { dialog } = modal;
@@ -185,11 +190,14 @@ export async function openGallery() {
   search.setAttribute("aria-label", "Search assets");
   const tag = node("select", "gallery-filter"); tag.setAttribute("aria-label", "Filter by tag");
   const generator = node("select", "gallery-filter"); generator.setAttribute("aria-label", "Filter by generator");
+  const geometryType = node("select", "gallery-filter"); geometryType.setAttribute("aria-label", "Filter by geometry type");
+  fillSelect(geometryType, "All geometry", Object.keys(geometryLabels), galleryState.geometryType,
+    String, (key) => geometryLabels[key]);
   const size = node("input", "gallery-size");
   size.type = "range"; size.min = "120"; size.max = "260"; size.step = "10"; size.value = String(galleryState.thumb);
   size.setAttribute("aria-label", "Thumbnail size");
   const controls = node("div", "gallery-controls");
-  controls.append(search, tag, generator, size);
+  controls.append(search, tag, generator, geometryType, size);
   header.append(controls);
   const body = node("div", "gallery-body");
   const grid = node("div", "gallery-grid"); grid.setAttribute("role", "listbox");
@@ -214,6 +222,9 @@ export async function openGallery() {
   }
 
   async function showDetail(id) {
+    previewNumber++;
+    actions.canvas().setGalleryPreview(null);
+    modal.element.classList.remove("gallery-on-canvas");
     selectedId = id;
     for (const card of grid.querySelectorAll(".gallery-card")) {
       card.setAttribute("aria-selected", String(card.dataset.id === id));
@@ -221,7 +232,7 @@ export async function openGallery() {
     detail.replaceChildren(node("div", "gallery-loading", "Loading…"));
     try {
       const item = await api.get(`/api/gallery/${encodeURIComponent(id)}`);
-      if (selectedId !== id) return;
+      if (selectedId !== id || modal.closed) return;
       const preview = node("div", "gallery-detail-preview");
       const img = node("img", "gallery-preview-image");
       img.loading = "lazy"; img.alt = `Preview of ${item.name}`;
@@ -235,9 +246,47 @@ export async function openGallery() {
       const save = node("button", "", "Save details"); save.type = "button";
       const add = node("button", "primary", "Add as layer"); add.type = "button";
       const remove = node("button", "danger", "Delete"); remove.type = "button";
+      const onCanvas = node("button", "gallery-preview-toggle", "Preview on canvas"); onCanvas.type = "button";
+      const overlayControls = node("div", "gallery-overlay-controls"); overlayControls.hidden = true;
+      const caption = node("p", "gallery-facts", `${item.name} · Original size, centered on the page. Preview only.`);
+      const opacity = node("input"); opacity.type = "range"; opacity.min = "0"; opacity.max = "100"; opacity.value = "80";
+      opacity.setAttribute("aria-label", "Overlay opacity");
+      const visible = node("button", "", "Hide overlay"); visible.type = "button"; visible.setAttribute("aria-pressed", "true");
+      overlayControls.append(caption, field("Overlay opacity", opacity), visible);
+      let overlay = null, overlayVisible = true;
+      const renderOverlay = () => actions.canvas().setGalleryPreview(overlay && {
+        ...overlay, opacity: overlayVisible ? Number(opacity.value) / 100 : 0,
+      });
+      opacity.oninput = renderOverlay;
+      visible.onclick = () => {
+        overlayVisible = !overlayVisible;
+        visible.textContent = overlayVisible ? "Hide overlay" : "Show overlay";
+        visible.setAttribute("aria-pressed", String(overlayVisible)); renderOverlay();
+      };
+      onCanvas.onclick = async () => {
+        if (modal.element.classList.contains("gallery-on-canvas")) {
+          previewNumber++; overlay = null; actions.canvas().setGalleryPreview(null);
+          modal.element.classList.remove("gallery-on-canvas"); overlayControls.hidden = true;
+          onCanvas.textContent = "Preview on canvas"; onCanvas.focus(); return;
+        }
+        if (S.docPreview) {
+          showError(inlineError, new Error("Return to the live canvas before previewing an asset for insertion.")); return;
+        }
+        const request = ++previewNumber;
+        onCanvas.disabled = true; inlineError.hidden = true;
+        try {
+          const payload = await api.get(`/api/gallery/${encodeURIComponent(id)}/preview`);
+          if (modal.closed || selectedId !== id || request !== previewNumber) return;
+          overlay = payload; renderOverlay();
+          modal.element.classList.add("gallery-on-canvas"); overlayControls.hidden = false;
+          onCanvas.textContent = "Back to gallery"; onCanvas.disabled = false; onCanvas.focus();
+        } catch (error) {
+          if (!modal.closed && selectedId === id && request === previewNumber) showError(inlineError, error);
+        } finally { onCanvas.disabled = false; }
+      };
       const buttons = node("div", "gallery-detail-actions"); buttons.append(save, add, remove);
-      detail.replaceChildren(preview, field("Name", name), field("Tags", tags.element), field("Note", note), facts, inlineError, buttons);
-      const lock = (value) => { for (const control of [name, note, save, add, remove]) control.disabled = value; tags.setDisabled(value); };
+      detail.replaceChildren(preview, onCanvas, overlayControls, field("Name", name), field("Tags", tags.element), field("Note", note), facts, inlineError, buttons);
+      const lock = (value) => { for (const control of [name, note, save, add, remove, onCanvas]) control.disabled = value; tags.setDisabled(value); };
       save.onclick = async () => {
         lock(true); inlineError.hidden = true;
         try {
@@ -247,7 +296,7 @@ export async function openGallery() {
           const card = grid.querySelector(`.gallery-card[data-id="${CSS.escape(id)}"]`);
           if (card) {
             card.querySelector(".gallery-card-name").textContent = updated.name;
-            card.querySelector(".gallery-card-meta").textContent = `${originText(updated.origin)} · ${tagString(updated.tags)}`;
+            card.querySelector(".gallery-card-meta").textContent = `${geometryLabel(updated)} · ${originText(updated.origin)} · ${tagString(updated.tags)}`;
           }
           try { await refreshFacets(); } catch (facetError) { actions.oops(facetError); }
         } catch (error) { showError(inlineError, error); }
@@ -295,9 +344,10 @@ export async function openGallery() {
     if (galleryState.query) params.set("q", galleryState.query);
     if (galleryState.tag) params.set("tag", galleryState.tag);
     if (galleryState.generator) params.set("generator", galleryState.generator);
+    if (galleryState.geometryType) params.set("geometry_type", galleryState.geometryType);
     try {
       const payload = await api.get(`/api/gallery?${params}`);
-      if (current !== loadNumber) return;
+      if (current !== loadNumber || modal.closed) return;
       const items = [...(payload.items || [])].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
       fillSelect(tag, "All tags", payload.tags || [], galleryState.tag, String, String);
       fillSelect(generator, "All generators", payload.generators || [], galleryState.generator,
@@ -311,7 +361,7 @@ export async function openGallery() {
         img.alt = ""; img.src = `/api/gallery/${encodeURIComponent(item.id)}/thumbnail`;
         preview.append(img);
         card.append(preview, node("span", "gallery-card-name", item.name),
-          node("span", "gallery-card-meta", `${originText(item.origin)} · ${tagString(item.tags)}`));
+          node("span", "gallery-card-meta", `${geometryLabel(item)} · ${originText(item.origin)} · ${tagString(item.tags)}`));
         card.onclick = () => showDetail(item.id);
         grid.append(card);
       }
@@ -331,6 +381,7 @@ export async function openGallery() {
   };
   tag.onchange = () => { galleryState.tag = tag.value; galleryState.scroll = 0; load(null); };
   generator.onchange = () => { galleryState.generator = generator.value; galleryState.scroll = 0; load(null); };
+  geometryType.onchange = () => { galleryState.geometryType = geometryType.value; galleryState.scroll = 0; load(null); };
   size.oninput = () => { galleryState.thumb = Number(size.value); grid.style.setProperty("--gallery-thumb", `${galleryState.thumb}px`); };
   grid.onscroll = () => { galleryState.scroll = grid.scrollTop; };
   await load();
@@ -376,6 +427,7 @@ export async function openGallerySave(source, suggestedName = "Untitled asset") 
     prepared = await api.post("/api/gallery/prepare", source);
     if (!modal.closed) {
       preview.replaceChildren(svgPreview(prepared.thumbnail, `Preview of ${name.value}`));
+      form.insertBefore(node("p", "gallery-facts", metadataLine(prepared)), error);
       save.disabled = false;
     }
   } catch (prepareError) {

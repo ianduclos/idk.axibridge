@@ -224,7 +224,11 @@ the simplified wire preview. A bounded temporary capture freezes geometry
 while the user names it. Atomic versioned JSON records retain full paths and
 descriptive provenance without generator dependencies. Insertion adds an
 independent baked layer with one undo checkpoint, centered by translation;
-ordinary project snapshots carry it thereafter. See [Asset gallery](docs/ASSET-GALLERY.md).
+ordinary project snapshots carry it thereafter. Geometry type is derived from
+filled/closed flags, including for existing records. A read-only SVG overlay
+shares insertion's placement helper and lives in a separate canvas display
+group; it never enters resolved or plotted geometry.
+See [Asset gallery](docs/ASSET-GALLERY.md).
 
 The session keeps an undo deque capped two ways (`UNDO_DEPTH` = 50 entries,
 plus `UNDO_GEOMETRY_BUDGET_POINTS` ≈ 65 MB of pinned geometry — the oldest

@@ -38,8 +38,9 @@ def _call(fn, *args, **kwargs):
 
 
 @router.get('')
-def list_assets(q: str = '', tag: str = '', generator: str = ''):
-    return _call(gallery.gallery_store.list, q, tag, generator)
+def list_assets(q: str = '', tag: str = '', generator: str = '',
+                geometry_type: Literal['', 'line', 'shape', 'mixed'] = ''):
+    return _call(gallery.gallery_store.list, q, tag, generator, geometry_type)
 
 
 @router.post('/prepare')
@@ -77,6 +78,18 @@ def asset_thumbnail(asset_id: str):
 @router.patch('/{asset_id}')
 def update_asset(asset_id: str, body: gallery.GalleryMetadata):
     return _call(gallery.gallery_store.update, asset_id, **body.model_dump())
+
+
+@router.get('/{asset_id}/preview')
+def preview_asset(asset_id: str):
+    def preview():
+        paths = gallery.gallery_store.paths(asset_id)
+        transform = session.gallery_asset_placement(paths)
+        x, y, width, height = gallery.thumbnail_bounds(paths, stroke_width=.3)
+        return {'svg': gallery.thumbnail(paths, stroke_width=.3), 'x': x + transform.e,
+                'y': y + transform.f, 'width': width, 'height': height,
+                'transform': transform.model_dump()}
+    return _call(preview)
 
 
 @router.delete('/{asset_id}')

@@ -10,19 +10,28 @@ entries: 19
   contact-sheet browser with search/filters/metadata, independent centered
   insertion, portable project snapshots and precise SVG coordinate storage.
   Tag inputs now create removable boxes on Enter, with Most used suggestions.
-- verified: full suite 1,483 passed, one intentional lifecycle skip and one
-  existing Starlette warning; typecheck/build passed. Browser checks include
+  Derived Line-based / Shape-based / Mixed metadata and filtering cover old
+  assets too. Preview on canvas provides a temporary original-size centered
+  overlay, opacity/hide controls and a compact panel. No preview undo entry.
+- verified: full suite 1,489 passed, one intentional lifecycle skip and one
+  existing Starlette warning; final stroke-padding correction passed all 18
+  focused gallery tests. Typecheck/build passed. Browser checks include
   nested dialogs, stale replies, failed saves, safe insertion refresh retry,
   deletion, complete preview containment, Enter/comma/draft tag handling,
-  suggestions, and the actionable older-backend 405 message.
-- next: reload the page, save a drawing from a bench and a treated layer,
+  suggestions, the actionable older-backend 405 message, geometry filtering,
+  transient overlay cleanup, opacity/hide/show, matching insertion placement,
+  late/failed previews and tiny-asset stroke containment.
+- next: reload and check geometry filters and Preview on canvas comparison;
+  save a drawing from a bench and a treated layer,
   tag/search it, and insert into another project. Judge thumbnail readability,
   save/recall feel and original-size placement in the native window.
 - deployment: replaced the detached pre-gallery backend and verified live
   prepare HTTP 200. Restored the empty untitled project from recovery
   `before-gallery-reload-20260910-005643-00dcc8`. The service is detached from
   its helper, with hardware auto-connect disabled to retain simulator state.
-  No page reload, push, Pi deployment or hardware operation was made.
+  Updated again for geometry/preview endpoints, preserving the empty project
+  in `before-gallery-overlay-20260910-011636-831727`. No page reload, push,
+  Pi deployment or hardware operation was made.
 - contract: docs/ASSET-GALLERY.md. Folders, sync, recipes, multi-layer capture
   and bulk management are deferred in ROADMAP.md.
 
