@@ -18,6 +18,7 @@ function field(label, control) {
 }
 
 function errorText(error) {
+  if (error?.status === 405) return "The running server does not have this gallery endpoint. Restart the AxiBridge backend, then reopen this dialog.";
   return error?.message || "The gallery request failed.";
 }
 
@@ -45,6 +46,7 @@ function makeDialog(className, title, onClose) {
   const opener = document.activeElement;
   let closed = false;
   const keydown = (event) => {
+    if (dialog.contains(event.target)) event.target.__galleryKeydown?.(event);
     event.stopPropagation();
     if (event.key === "Escape") { event.preventDefault(); close(); return; }
     if (event.key !== "Tab") return;
@@ -85,8 +87,76 @@ function svgPreview(svg, alt) {
 }
 
 function tagString(tags) { return (tags || []).join(", "); }
-function parseTags(value) {
-  return [...new Set(value.split(",").map((tag) => tag.trim()).filter(Boolean))];
+
+function tagEditor(initialTags = []) {
+  const root = node("div", "gallery-tag-editor");
+  const chips = node("div", "gallery-tag-chips");
+  const input = node("input", "gallery-tag-draft");
+  input.type = "search";
+  input.placeholder = "Add tags";
+  input.setAttribute("aria-label", "Add tags");
+  const popular = node("div", "gallery-popular-tags");
+  const tags = [];
+  let popularTags = [];
+  let disabled = false;
+
+  function add(value) {
+    const clean = value.trim();
+    if (!clean || tags.some((tag) => tag.toLocaleLowerCase() === clean.toLocaleLowerCase())) return false;
+    tags.push(clean); render(); return true;
+  }
+  function remove(index) { tags.splice(index, 1); render(); input.focus(); }
+  function render() {
+    chips.replaceChildren();
+    for (const [index, tag] of tags.entries()) {
+      const chip = node("span", "gallery-tag-chip");
+      chip.append(node("span", "", tag));
+      const removeButton = node("button", "gallery-tag-remove", "×");
+      removeButton.type = "button"; removeButton.setAttribute("aria-label", `Remove tag ${tag}`);
+      removeButton.disabled = disabled;
+      removeButton.onclick = () => remove(index);
+      chip.append(removeButton); chips.append(chip);
+    }
+    popular.replaceChildren();
+    const available = popularTags.filter(({ tag }) => !tags.some((selected) => selected.toLocaleLowerCase() === tag.toLocaleLowerCase())).slice(0, 8);
+    if (available.length) popular.append(node("span", "gallery-popular-label", "Most used"));
+    for (const item of available) {
+      const suggestion = node("button", "gallery-tag-suggestion", `${item.tag} ${item.count}`);
+      suggestion.type = "button"; suggestion.title = `${item.count} gallery asset${item.count === 1 ? "" : "s"}`;
+      suggestion.disabled = disabled;
+      suggestion.onclick = () => add(item.tag); popular.append(suggestion);
+    }
+  }
+  function commitDraft() {
+    const parts = input.value.split(",");
+    input.value = "";
+    for (const part of parts) add(part);
+  }
+  input.oninput = () => {
+    if (!input.value.includes(",")) return;
+    const parts = input.value.split(",");
+    input.value = parts.pop() || "";
+    for (const part of parts) add(part);
+  };
+  input.__galleryKeydown = (event) => {
+    if (event.key === "Enter" && !event.isComposing) { event.preventDefault(); commitDraft(); }
+    else if (event.key === "Backspace" && !input.value && tags.length) { event.preventDefault(); remove(tags.length - 1); }
+  };
+  root.append(chips, input, popular);
+  for (const tag of initialTags) add(tag);
+  api.get("/api/gallery").then((payload) => {
+    popularTags = payload.tag_counts || []; render();
+  }).catch(() => {});
+  return {
+    element: root,
+    getTags() {
+      const result = [...tags];
+      const draft = input.value.trim();
+      if (draft && !result.some((tag) => tag.toLocaleLowerCase() === draft.toLocaleLowerCase())) result.push(draft);
+      return result;
+    },
+    setDisabled(value) { disabled = value; input.disabled = value; for (const button of root.querySelectorAll("button")) button.disabled = value; },
+  };
 }
 
 function originText(origin) {
@@ -158,7 +228,7 @@ export async function openGallery() {
       img.src = `/api/gallery/${encodeURIComponent(id)}/thumbnail`;
       preview.append(img);
       const name = node("input"); name.type = "text"; name.value = item.name;
-      const tags = node("input"); tags.type = "text"; tags.value = tagString(item.tags); tags.placeholder = "comma separated";
+      const tags = tagEditor(item.tags);
       const note = node("textarea"); note.value = item.note || ""; note.rows = 4;
       const facts = node("p", "gallery-facts", metadataLine(item));
       const inlineError = node("div", "gallery-error"); inlineError.hidden = true; inlineError.setAttribute("role", "alert");
@@ -166,13 +236,13 @@ export async function openGallery() {
       const add = node("button", "primary", "Add as layer"); add.type = "button";
       const remove = node("button", "danger", "Delete"); remove.type = "button";
       const buttons = node("div", "gallery-detail-actions"); buttons.append(save, add, remove);
-      detail.replaceChildren(preview, field("Name", name), field("Tags", tags), field("Note", note), facts, inlineError, buttons);
-      const lock = (value) => { for (const control of [name, tags, note, save, add, remove]) control.disabled = value; };
+      detail.replaceChildren(preview, field("Name", name), field("Tags", tags.element), field("Note", note), facts, inlineError, buttons);
+      const lock = (value) => { for (const control of [name, note, save, add, remove]) control.disabled = value; tags.setDisabled(value); };
       save.onclick = async () => {
         lock(true); inlineError.hidden = true;
         try {
           const updated = await api.patch(`/api/gallery/${encodeURIComponent(id)}`, {
-            name: name.value.trim(), tags: parseTags(tags.value), note: note.value,
+            name: name.value.trim(), tags: tags.getTags(), note: note.value,
           });
           const card = grid.querySelector(`.gallery-card[data-id="${CSS.escape(id)}"]`);
           if (card) {
@@ -279,24 +349,25 @@ export async function openGallerySave(source, suggestedName = "Untitled asset") 
   preview.append(previewState);
   const form = node("form", "gallery-save-form");
   const name = node("input"); name.type = "text"; name.required = true; name.value = suggestedName || "Untitled asset";
-  const tags = node("input"); tags.type = "text"; tags.placeholder = "comma separated";
+  const tags = tagEditor();
   const note = node("textarea"); note.rows = 3;
   const error = node("div", "gallery-error"); error.setAttribute("role", "alert"); error.hidden = true;
   const cancel = node("button", "", "Cancel"); cancel.type = "button"; cancel.onclick = () => modal.close();
   const save = node("button", "primary", "Save"); save.type = "submit"; save.disabled = true;
   const actionsRow = node("div", "gallery-save-actions"); actionsRow.append(cancel, save);
-  form.append(field("Name", name), field("Tags (optional)", tags), field("Note (optional)", note), error, actionsRow);
+  form.append(field("Name", name), field("Tags (optional)", tags.element), field("Note (optional)", note), error, actionsRow);
   layout.append(preview, form); dialog.append(title, layout);
   let prepared = null;
   form.onsubmit = async (event) => {
     event.preventDefault();
     if (!prepared || save.disabled) return;
-    save.disabled = true; error.hidden = true;
+    save.disabled = true; tags.setDisabled(true); error.hidden = true;
     try {
-      await api.post("/api/gallery", { capture_id: prepared.capture_id, name: name.value.trim(), tags: parseTags(tags.value), note: note.value });
+      await api.post("/api/gallery", { capture_id: prepared.capture_id, name: name.value.trim(), tags: tags.getTags(), note: note.value });
       modal.close();
     } catch (requestError) {
       showError(error, requestError);
+      tags.setDisabled(false);
       save.disabled = false;
     }
   };

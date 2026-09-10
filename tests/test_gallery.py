@@ -208,3 +208,19 @@ def test_project_snapshot_preserves_submicron_asset_coordinates(client, gallery,
     loaded = project_io.load_project(folder)
     for actual, expected in zip(loaded[1][layer['id']][0].points, paths[0].points):
         assert actual == pytest.approx(expected, rel=0, abs=1e-14)
+
+
+def test_popular_tags_count_assets_case_insensitively_across_filters(gallery):
+    def make(name, tags):
+        draft = gallery.prepare([Path(points=[(0, 0), (1, 1)])], name,
+                                {'kind': 'layer', 'label': 'Layer'})
+        return gallery.save(draft['capture_id'], name=name, tags=tags)
+    first = make('One', ['Ink', 'ink', 'organic'])
+    second = make('Two', ['ink', 'angular'])
+    make('Three', ['organic'])
+    stats = gallery.list(q='Three')['tag_counts']
+    assert [(t['tag'].casefold(), t['count']) for t in stats] == [('ink', 2), ('organic', 2), ('angular', 1)]
+    gallery.update(second['id'], name='Two', tags=['angular'])
+    assert gallery.list()['tag_counts'][0] == {'tag': 'organic', 'count': 2}
+    gallery.delete(first['id'])
+    assert all(t['tag'].casefold() != 'ink' for t in gallery.list()['tag_counts'])

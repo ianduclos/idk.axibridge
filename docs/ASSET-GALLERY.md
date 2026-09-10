@@ -8,8 +8,13 @@ within the current app page.
 
 **Save to gallery** is available in the selected layer's Effects area and in
 the process/Homeostat, Second Reading and Magnetic benches. A compact dialog
-shows the captured shape, a suggested name, optional comma-separated tags and
-a note. Saving leaves the original layer or working bench untouched.
+shows the captured shape, a suggested name, optional tags and a note. Press
+Enter to turn a tag into a removable box; commas also separate tags. Enter in
+the tag input never saves the asset. An unfinished tag is included when saving.
+Both save and detail editors offer up to eight **Most used** tags to click,
+ranked by the number of assets using each tag across the whole library.
+Selected tags are omitted from suggestions; capitalization does not create
+duplicates. Saving leaves the original layer or working bench untouched.
 
 Layer capture includes its transform and own effects, before external regions,
 occlusion or plot-pass operations. Animation capture uses the current timeline
@@ -35,7 +40,9 @@ timestamps; files remain authoritative.
 
 `gallery_api.py` exposes `/api/gallery` list/save, `/prepare`, `/{id}`
 detail/update/delete, `/{id}/thumbnail` and `/{id}/insert`. List/detail payloads
-exclude geometry. Thumbnails are derived SVGs requested lazily; display
+exclude geometry. Lists also return `tag_counts: [{tag, count}]`, ranked by
+descending asset count with alphabetical ties, independent of current filters.
+Thumbnails are derived SVGs requested lazily; display
 sampling never changes stored paths. Generator provenance is descriptive,
 not a recipe or a live dependency.
 
@@ -52,3 +59,13 @@ coordinate serialization rather than six-decimal rounding, so project
 folders remain portable without the library. The gallery has no separate
 plot path or hardware operations. Folders, synchronization, recipe recall,
 multi-layer capture and bulk management are deferred.
+
+## Frontend/backend version mismatch
+
+A gallery prepare request returning **405 Method Not Allowed** can mean the
+page has the new UI while an older backend is still running. Check whether
+`/openapi.json` lists `/api/gallery/prepare`. Reloading the page or reopening
+the native shell does not replace a detached server that the shell attaches
+to. Preserve the current project, replace that backend through the launcher,
+and reopen the save dialog. This was the cause of the 2026-09-10 report;
+the gallery now gives a specific restart instruction instead of the raw 405.

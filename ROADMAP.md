@@ -16,6 +16,11 @@ Shipped work has been pruned from this file (2026-08-17) — see `git log` /
 
 ## Asset gallery acceptance (2026-09-10)
 
+Follow-up: tag inputs now make removable boxes on Enter and offer frequently
+used tags to click. The reported 405 came from a detached pre-gallery backend;
+that backend has been replaced with the current code. Reload the page for the
+tag editor update; the save endpoint is available on the running service.
+
 The local line-asset gallery is implemented: save whole treated layers or exact
 bench recipes as frozen geometry, browse/search/tag, and insert independent
 copies at their original size. [Behavior and storage contract](docs/ASSET-GALLERY.md).

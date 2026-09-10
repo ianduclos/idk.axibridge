@@ -36,6 +36,30 @@
 .gallery-field { display: flex; flex-direction: column; gap: 5px; color: var(--ink-soft); }
 .gallery-field input, .gallery-field textarea { width: 100%; }
 .gallery-label { font-size: var(--type-note); }
+.gallery-tag-editor {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: var(--control-h);
+  padding: 5px; background: var(--bench-deep); border: 1px solid var(--bench-edge);
+  border-radius: var(--radius-control);
+}
+.gallery-tag-chips { display: contents; }
+.gallery-tag-chip {
+  display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 2px 3px 2px 7px;
+  color: var(--live-soft); background: var(--live-deep); border: 1px solid var(--live);
+  border-radius: 999px; font-size: var(--type-note);
+}
+.gallery-tag-remove {
+  min-width: 20px; min-height: 20px; padding: 0 4px; border: 0; border-radius: 50%;
+  color: inherit; background: transparent; box-shadow: none;
+}
+.gallery-tag-editor .gallery-tag-draft {
+  flex: 1 1 8em; width: auto; min-width: 6em; padding: 2px; background: transparent;
+  border-color: transparent; box-shadow: none;
+}
+.gallery-tag-editor .gallery-tag-draft:focus-visible { border-color: transparent; outline-offset: 2px; }
+.gallery-popular-tags { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.gallery-popular-tags:empty { display: none; }
+.gallery-popular-label { margin-right: 2px; color: var(--ink-soft); font-size: var(--type-note); }
+.gallery-tag-suggestion { padding: 2px 7px; color: var(--ink-soft); font-size: var(--type-note); border-radius: 999px; }
 .gallery-facts, .gallery-status, .gallery-empty, .gallery-loading { margin: 0; color: var(--ink-soft); font-size: var(--type-note); }
 .gallery-status { padding: var(--space-2) var(--space-4); border-top: 1px solid var(--bench-edge); }
 .gallery-detail-actions, .gallery-save-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }

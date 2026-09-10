@@ -163,10 +163,11 @@ class GalleryStore:
                 except (ValueError, OSError, KeyError):
                     warnings.append(f'Could not read asset {path.stem}')
             self._index = {k: v for k, v in self._index.items() if k in existing}
-            tags, generators = {}, {}
+            tags, generators, counts = {}, {}, {}
             for record in records:
                 for t in record['tags']:
                     tags.setdefault(t.casefold(), t)
+                    counts[t.casefold()] = counts.get(t.casefold(), 0) + 1
                 origin = record['origin']
                 if origin['module']:
                     generators[origin['module']] = origin['label']
@@ -178,6 +179,8 @@ class GalleryStore:
                             r['origin']['module'] or '']).casefold())]
             return {'items': sorted(selected, key=lambda r: (r['created_at'], r['id']), reverse=True),
                     'tags': sorted(tags.values(), key=str.casefold),
+                    'tag_counts': [{'tag': tags[k], 'count': count} for k, count in
+                                   sorted(counts.items(), key=lambda entry: (-entry[1], entry[0]))],
                     'generators': [{'id': k, 'label': v} for k, v in sorted(generators.items())],
                     'warnings': warnings}
 

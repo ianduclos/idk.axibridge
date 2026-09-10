@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-10
 machine: mac+pi
-summary: Local asset gallery is implemented and verified, ready for native checking after an app restart.
+summary: Gallery backend is updated; tag boxes and frequent-tag suggestions are ready for checking after a page reload.
 next:
-  - "Restart the app and check gallery save, browse, metadata editing and insertion"
+  - "Reload the page and check bench gallery save, Enter tag boxes and Most used suggestions"
   - "Check animation child deletion, collapsed dragging, master occlusion and Pen/Shape Repeat"
   - "Check Ribbon curve sampling, heavy edits, elapsed reset and deleting during rendering"
   - "Check Magnetic field four-corner blending, Scatter strengths and pole spacing"
@@ -15,6 +15,20 @@ handoff_for: ian
 
 # idk.axibridge — status
 
+
+**Gallery follow-up, 10 September:** The reported preview/405 error came
+from a detached September-8 backend serving new frontend files without gallery
+routes. Replaced it with current code and verified live prepare HTTP 200 after
+the helper exited. The empty untitled project was recovered from
+`before-gallery-reload-20260910-005643-00dcc8`; simulator/disconnected state
+was retained without hardware auto-connect. No browser page was reloaded.
+
+Save and detail tag inputs now create removable boxes on Enter, support comma
+input and unfinished drafts, and offer up to eight Most used tags by asset
+count. Duplicate capitalization is ignored. The 405 dialog now explains the
+backend mismatch. **1,483 tests passed, one intentional native lifecycle skip**,
+one existing warning; typecheck and frontend build passed. Isolated browser
+appearance checked; reload the page for Ian's interaction check.
 
 **Asset gallery, 10 September:** Local frozen line assets can be saved from
 layers and all working benches, browsed with thumbnails/search/tag/generator
