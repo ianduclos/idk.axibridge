@@ -1,20 +1,33 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-10
+updated: 2026-09-16
 machine: mac+pi
-summary: Module browsers now add persistent previews, category filters, ratings, usage sorting and tag boxes.
+summary: Mosca recording bench imports saved trajectories and keeps portable prefix layers.
 next:
-  - "Check refined module browsers, category chips, ratings, usage sorting and Enter-to-box tags after backend update"
-  - "Reload and check gallery geometry filters and Preview on canvas opacity, hide/show and insertion"
-  - "Check animation child deletion, collapsed dragging, master occlusion and Pen/Shape Repeat"
-  - "Check Ribbon curve sampling, heavy edits, elapsed reset and deleting during rendering"
-  - "Check Magnetic field four-corner blending, Scatter strengths and pole spacing"
-  - "Continue Second Reading review and check the native appearance and scaffold icon"
+  - "Check Mosca browsing, cutoff playback, repeated Keep and Resume in the native app"
+  - "Check module browsers, presets and gallery preview/insertion"
+  - "Check animation child handling and Pen/Shape Repeat"
+  - "Check Ribbon and Magnetic field native interaction"
+  - "Continue Second Reading review"
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Mosca recording bench, 16 September:** Read-only experiment browser, playback,
+fractional prefix cutoffs, recorded pen lifts and fixed-frame placement are
+implemented. Keep stays open and creates independent layers; recording assets
+travel through project save/load/ZIP and support Resume without mosca-draw.
+The largest 2.4M-sample history was previewed and kept at 55% in an isolated
+browser. Full suite: **1,561 passed**, one existing Starlette warning;
+typecheck and build passed. The normal native app was opened with hardware
+auto-connect disabled; its owned backend advertises Mosca, lists 108 recordings
+and previews the masked retracing run at 50%. The project remains empty.
+Native interaction and paper output remain Ian's acceptance. Local branch:
+`codex/mosca-recording-bench`; no push or Pi deployment.
+See [behavior and file contract](docs/MOSCA-BENCH.md).
+
 
 **Browser refinements, 10 September:** Identifier SVGs now persist on disk
 across backend restarts and invalidate when renderer dependencies change. The

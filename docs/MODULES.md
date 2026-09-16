@@ -497,3 +497,13 @@ add Bench for the product working benches (`library_bench` opts extensions in).
 A temporal Watch view alone does not make a generator a working bench. Effects describe intended input with
 `library_category = "line" | "shape" | "agnostic"`; built-ins are explicitly
 classified in the registry. This is a browsing aid, not geometry validation.
+
+### Recorded trajectory benches
+
+Mosca uses a dedicated `mosca` v1 adapter (`new`, `resume`) to browse external
+recordings and retain prefixes as layers. A hidden `format: "asset"` parameter
+references the compact recording, so existing cleanup and preset exclusions
+apply. Preparation stays outside project assets; successful layer creation
+persists the recording, and normal save/load/ZIP carries it. Sources use a fixed
+`placement_frame` derived from the full recording, never from the prefix.
+See [Mosca recording bench](MOSCA-BENCH.md) for the pen-mask and import contracts.

@@ -1,8 +1,21 @@
 ---
 project: idk.axibridge
-updated: 2026-09-10
-entries: 20
+updated: 2026-09-16
+entries: 21
 ---
+
+### Mosca native acceptance — opened 2026-09-16, owner: ian
+
+- done: Recording browser, play/scrub/sample stepping, gap-preserving prefix
+  geometry, repeated Keep, Resume and portable recording assets are implemented.
+  Large-history browser smoke exercised 55% and Keep at 1280×900/1024×768.
+  Full suite: 1,561 passed; typecheck/build passed. Normal app launched with
+  auto-connect disabled; its owned backend exposes Mosca and 108 recordings,
+  with a read-only 50% masked preview verified. Empty project unchanged.
+- next: Check the native browser, stopping points and layering workflow.
+- blockers: none for code; human visual/interaction acceptance remains.
+- context: [Mosca bench contract](docs/MOSCA-BENCH.md). Local work is on
+  `codex/mosca-recording-bench`; no push or Pi deployment requested.
 
 ### Module browsers and presets native acceptance — opened 2026-09-10, owner: ian
 

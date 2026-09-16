@@ -110,3 +110,19 @@
 .magnetic-corner > span { display:block; font-size:11px; margin-bottom:var(--space-1); color:var(--ink-soft); }
 .magnetic-corner.stored { border-color:var(--ink-soft); }
 .magnetic-corner .magnetic-row { flex-wrap:wrap; }
+
+/* Mosca recordings share the bench's semantic palette and fixed stage. */
+#process-mosca { display:flex; flex-direction:column; gap:var(--space-3); min-height:0; }
+#process-mosca[hidden], #mosca-actions[hidden] { display:none; }
+#process-mosca label { display:flex; flex-direction:column; gap:var(--space-1); }
+#mosca-recordings { max-height:45vh; overflow:auto; }
+#mosca-recordings summary { cursor:pointer; padding:var(--space-2); }
+.mosca-recording { display:flex; align-items:center; gap:var(--space-2); width:100%; text-align:left; margin:3px 0; }
+.mosca-recording img { width:64px; height:48px; object-fit:contain; background:var(--sheet); }
+#mosca-actions { display:flex; flex-direction:column; gap:var(--space-2); padding:var(--space-3); border-top:1px solid var(--bench-edge); }
+.mosca-transport { display:flex; align-items:center; gap:var(--space-2); }
+#mosca-scrub { flex:1; min-width:40px; }
+#mosca-readout { min-width:6em; font-variant-numeric:tabular-nums; }
+#mosca-kept { flex:1; }
+
+.mosca-bench .bench-transport, .mosca-bench .process-generic-actions { display:none; }

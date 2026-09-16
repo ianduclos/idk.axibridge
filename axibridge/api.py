@@ -42,12 +42,14 @@ from .render_work import RenderCancelled, checkpoint
 from .session import session
 from .stores import Pen, pen_library, settings_store
 from .gallery_api import router as gallery_router
+from .mosca_api import router as mosca_router
 from .module_library_api import router as module_library_router
 from .module_library import record_module_use
 from .tween import TweenParams
 
 router = APIRouter(prefix="/api")
 router.include_router(gallery_router)
+router.include_router(mosca_router)
 router.include_router(module_library_router)
 
 def _preview_render(handler):

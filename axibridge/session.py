@@ -697,8 +697,16 @@ class Session:
             transform=self._placement_transform(generator_id, params, doc, paths),
             frame_follow=self._sequence_driven(generator_id, params),
         )
+        # Draft recordings stay outside the project until a successful Keep.
+        recording_data = None
+        if generator_id == "mosca":
+            from .mosca import recording_bytes
+            recording_data = recording_bytes(params["recording"])
         with self._lock:
             self._checkpoint()
+            if recording_data is not None:
+                from .assets import asset_store
+                asset_store.put(params["recording"], recording_data)
             self.project.layers.append(layer)
             self.source_geometry[layer.id] = paths
         return layer

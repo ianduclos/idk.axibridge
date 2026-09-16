@@ -2,6 +2,15 @@
 
 ---
 
+### 2026-09-16 — Mosca recording import
+
+- affects: mosca-draw output consumers and portable AxiBridge projects.
+- detail: The new Mosca source/bench reads completed NPZ histories without
+  changing the simulation project. Kept layers carry compact recording assets;
+  pen masks retain incoming-segment semantics, legacy files remain continuous.
+  API/configuration and persistence: [Mosca bench](docs/MOSCA-BENCH.md).
+
+
 ### 2026-09-09 — Cancellable drawing previews (Codex)
 - affects: interactive resolved/effect-preview/plan/sheet/raster API callers and module authors.
 - detail: obsolete read-only render work returns HTTP 409 with structured
