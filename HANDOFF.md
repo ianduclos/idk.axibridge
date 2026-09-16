@@ -14,8 +14,11 @@ entries: 21
   with a read-only 50% masked preview verified. Empty project unchanged.
 - next: Check the native browser, stopping points and layering workflow.
 - blockers: none for code; human visual/interaction acceptance remains.
-- context: [Mosca bench contract](docs/MOSCA-BENCH.md). Local work is on
-  `codex/mosca-recording-bench`; no push or Pi deployment requested.
+- verification: Final wrapup after thinning preview lines to 0.07 frame units:
+  1,560 tests passed, one native-launch skip because the app is running;
+  typecheck/build and isolated browser smoke passed.
+- context: [Mosca bench contract](docs/MOSCA-BENCH.md). Integrated on `main`;
+  no Pi deployment. Refresh the native view for the finer preview lines.
 
 ### Module browsers and presets native acceptance — opened 2026-09-10, owner: ian
 

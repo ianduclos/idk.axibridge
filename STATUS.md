@@ -24,8 +24,11 @@ browser. Full suite: **1,561 passed**, one existing Starlette warning;
 typecheck and build passed. The normal native app was opened with hardware
 auto-connect disabled; its owned backend advertises Mosca, lists 108 recordings
 and previews the masked retracing run at 50%. The project remains empty.
-Native interaction and paper output remain Ian's acceptance. Local branch:
-`codex/mosca-recording-bench`; no push or Pi deployment.
+Native interaction and paper output remain Ian's acceptance.
+Wrapup verification after the finer 0.07-unit preview stroke: **1,560 passed,
+1 native-launch skip** (the app was running), one existing Starlette warning.
+Typecheck, build and isolated large-history browser smoke passed. Integrated
+on `main`; no Pi deployment.
 See [behavior and file contract](docs/MOSCA-BENCH.md).
 
 
