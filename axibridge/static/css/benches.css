@@ -126,3 +126,4 @@
 #mosca-kept { flex:1; }
 
 .mosca-bench .bench-transport, .mosca-bench .process-generic-actions { display:none; }
+.mosca-bench #process-canvas .draw-line { stroke-width:0.07; }
