@@ -196,6 +196,9 @@ class PaperGuide(BaseModel):
     height: float = 210.0
 
 
+PLOT_SIMPLIFY_BASELINE_MM = 0.01
+
+
 class PlotOptions(BaseModel):
     """Plot-pass optimisation, applied to the resolved geometry of each pass
     (this replaces v1's user-arranged global pipeline)."""
@@ -206,8 +209,12 @@ class PlotOptions(BaseModel):
     # without chaining genuinely separate strokes into pen-down bridges the
     # preview never showed.
     merge_tolerance_mm: float = Field(default=0.05, ge=0.0, le=10.0, title="Merge tolerance (mm)")
-    simplify: bool = Field(default=False, title="Simplify (drop redundant points)")
-    simplify_tolerance_mm: float = Field(default=0.05, ge=0.001, le=2.0, title="Simplify tolerance (mm)")
+    simplify: bool = Field(
+        default=False, title="Coarser simplification",
+        description="Every plot is simplified to 0.01 mm. Enable for a coarser tolerance.",
+    )
+    simplify_tolerance_mm: float = Field(default=0.05, ge=0.001, le=2.0, title="Extra simplify tolerance (mm)",
+        description="The effective plotting tolerance is never below 0.01 mm.")
     reloop: bool = Field(default=False, title="Reloop closed paths (randomise seams)")
     crop: Literal["off", "guide", "bed", "custom"] = Field(
         default="off", title="Crop to",

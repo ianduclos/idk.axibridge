@@ -1,8 +1,24 @@
 ---
 project: idk.axibridge
 updated: 2026-09-16
-entries: 21
+entries: 22
 ---
+
+### Plot optimization activation — opened 2026-09-16, owner: ian
+
+- done: Mandatory 0.01 mm plot-pass simplification for existing and new
+  projects; native estimates use offline driver timing and effective pen
+  settings. Source recordings and editable geometry remain intact.
+- next: Once the physical plot finishes, save its project, activate through
+  the normal app launcher and verify the live backend and next paper plot.
+- blockers: Do not restart the backend or interrupt the active plot to deploy.
+- verification: 1,576 tests passed across full-suite and browser rerun, one
+  native-launch skip. The first browser server timed out at 30 s under load;
+  rerunning its 101 tests with 120 s startup allowance passed, together with
+  16 focused tests. Typecheck/build and isolated native-estimate UI smoke passed.
+- context: Branch `codex/plot-optimization-estimates` (not merged/pushed). The previous 900k-point
+  Mosca job hit native 1 ms move minimums: about 393 s of planned ink motion
+  versus the generic estimate's 70 s, excluding USB overhead.
 
 ### Mosca native acceptance — opened 2026-09-16, owner: ian
 

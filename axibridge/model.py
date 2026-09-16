@@ -164,7 +164,7 @@ class PlannedJob(BaseModel):
     """A fully ordered move list with time estimates.
 
     This is what the preview renders and what the simulator executes. The
-    timing comes from :mod:`axibridge.estimate` and is an *estimate* of what
+    timing comes from the generic estimator or offline native preview and is an *estimate* of what
     the real planner will do, not a motion plan — execution backends do their
     own planning (pyaxidraw/plotink or saxi).
     """

@@ -908,7 +908,7 @@ def test_machine_state_is_visible_without_opening_a_tab(ui):
     assert not ui.is_visible("#machine-state"), "nothing to report while disconnected"
     # the estimate arrives on a debounced /api/plan, one beat after the ink
     ui.wait_for_function(
-        "() => document.querySelector('#estimate').textContent.includes('est.')",
+        "() => document.querySelector('#estimate').textContent.includes('motion ~')",
         timeout=20_000)
     estimate = ui.inner_text("#estimate")
 

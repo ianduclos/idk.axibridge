@@ -1590,7 +1590,7 @@ function renderLayoutSummary(info) {
     const perSheetS = layoutCostCache.perSheetS;
     const cur = perSheetS[Math.min(anim.sheet, perSheetS.length - 1)];
     const total = perSheetS.reduce((a, b) => a + b, 0);
-    text += ` · this sheet ~${fmtTime(cur)} · ~${fmtTime(total)} total`;
+    text += ` · motion: this sheet ~${fmtTime(cur)} · ~${fmtTime(total)} total`;
   } else {
     text += " · est. …";
     ensureLayoutCost(); // fire-and-forget: renderLayoutSummary runs again when it lands

@@ -16,7 +16,9 @@ copies its recording and cutoff into the bench; subsequent Keeps create new laye
    reduced above 60,000 points and labelled accordingly; kept geometry retains
    the requested tolerance and exact endpoint. Stationary/empty frames cannot
    be kept from the bench. Preview strokes use a fine 0.07 frame-unit width,
-   five times thinner than the general drawing preview.
+   five times thinner than the general drawing preview. All plot passes apply
+   at least 0.01 mm simplification after placement, even when this source
+   tolerance is zero; the retained recording and layer remain unchanged.
 4. Placement uses the complete recording bounds, a 5 mm margin and a y flip into
    AxiBridge's coordinate frame. The frame never follows the cutoff. Existing
    placement centers at original size and shrinks only when needed to fit the bed.

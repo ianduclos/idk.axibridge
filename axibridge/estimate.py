@@ -8,7 +8,8 @@ built on — trapezoidal velocity profiles with junction (cornering) speed
 limits — but its output never reaches the machine.
 
 Calibration values default to nominal AxiDraw V3 figures (EMSL quotes a max
-XY speed of ~11 in/s). Treat estimates as ±15% until calibrated. Since v2 the
+XY speed of ~11 in/s). This approximation has no guaranteed error bound;
+native plots use native_estimate.py instead. Since v2 the
 constants live in machine settings (Settings tab) and are passed in as
 :class:`EstimatorConstants`; the module-level defaults remain for tests and
 standalone use.

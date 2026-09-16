@@ -348,9 +348,10 @@ export const actions = {
       canvas.setPlan(r.job);
       updatePlayback();
       $("estimate").textContent =
-        `est. ${fmtTime(r.job.total_duration)} · ${(r.job.pen_down_distance / 1000).toFixed(2)}m ink · ` +
+        `motion ~${fmtTime(r.job.total_duration)} · ${(r.job.pen_down_distance / 1000).toFixed(2)}m ink · ` +
         `${r.job.pen_lifts} lifts`;
-      $("plan-warnings").textContent = (r.warnings || []).join("; ");
+      $("estimate").title = r.estimator_note || "Approximate motion time";
+      $("plan-warnings").textContent = [...(r.warnings || []), r.estimator_note].filter(Boolean).join("; ");
     } catch (e) {
       if (requestId !== planRequestId || generation !== viewGeneration || controller.signal.aborted) return;
       if (e.message?.includes("nothing") || e.message?.includes("unknown layer")) {
@@ -360,7 +361,14 @@ export const actions = {
         S.plan = null;
         canvas.setPlan(null);
         updatePlayback();
-      } else { oops(e); }
+      } else {
+        S.plan = null;
+        canvas.setPlan(null);
+        updatePlayback();
+        $("estimate").textContent = "Estimate unavailable";
+        $("plan-warnings").textContent = e.message || "Could not estimate this plot";
+        oops(e);
+      }
     }
     finally { if (planAbort === controller) planAbort = null; }
   }, 200),

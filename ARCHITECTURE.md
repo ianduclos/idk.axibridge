@@ -49,7 +49,7 @@ entire execution column consumes that exactly as before.
                  ▼            ▼                ▼
               canvas      per-layer        plot pass (target = all | layer)
               preview     estimates          │ pen-offset compensation
-                                             │ plot-pass optimisation (vpype)
+                                             │ plot-pass optimisation (vpype; ≥0.01 mm simplification)
                                              ▼
                                         PathDocument  →  unchanged v1 execution:
                                         machine.py → backends (native/sim/saxi)
@@ -208,10 +208,13 @@ swaps. The trade Ian accepted is that Plot means "what's on screen" rather
 than "the live project", with the adjacent label as the mitigation.
 
 Plot-pass **optimisation** (linemerge/linesort/
-reloop/simplify, vpype-backed) runs on the resolved geometry of each pass —
+reloop, vpype-backed, preceded by per-path Shapely simplification) runs on the resolved geometry of each pass —
 it replaced v1's user-arranged pipeline because creative reshaping moved
 into per-layer effect stacks, leaving optimisation as a property of the
-*pass*, not the artwork.
+*pass*, not the artwork. Every pass has a mandatory 0.01 mm simplification
+tolerance, including old projects with simplification disabled. The optional
+control selects a coarser tolerance; source recordings and edit geometry are
+unchanged.
 
 ### Module library
 
@@ -451,7 +454,11 @@ writer) because vpype's writer would drop them and fills are mask input.
   ops against jobs.
 - **`estimate.py` is an estimator, never a planner** — trapezoid + junction
   model for timing only; backends do their own planning. v2 moved its
-  calibration constants into Settings so the ±15% can be tuned out.
+  calibration constants into Settings. Native estimates instead use an isolated
+  preview-only pyaxidraw planner (`native_estimate.py`), including native speed,
+  motor-step and millisecond quantization and servo timing. It never connects
+  or borrows the live backend. USB/host overhead and pauses remain excluded.
+  Estimates use the same optimized document and effective pen settings as plots.
 - **Streaming seam** — a future look-ahead backend implements the same
   `plot(doc, params, control, emit)` signature, feeding the EBB
   incrementally; nothing above it changes.

@@ -3237,17 +3237,34 @@ class Session:
             cmds.append("reloop")
         if opts.sort:
             cmds.append("linesort")
-        if opts.simplify:
-            cmds.append(f"linesimplify --tolerance {opts.simplify_tolerance_mm}mm")
-        if not cmds or not doc.layers:
-            return doc
-        import vpype_cli
+        # Baseline applies even when a saved project disabled simplification.
+        # Simplify passages before sorting/merging so dense recordings do not
+        # send hundreds of thousands of redundant vertices through vpype.
+        from shapely.geometry import LineString
 
-        checkpoint()
-        vdoc = vpype_cli.execute(" ".join(cmds), document=doc_to_vpype(doc))
-        checkpoint()
-        out = doc_from_vpype(vdoc, source=doc.source)
-        out.width, out.height = doc.width, doc.height
+        tolerance = max(compose.PLOT_SIMPLIFY_BASELINE_MM,
+                        opts.simplify_tolerance_mm if opts.simplify else 0.0)
+        layers = []
+        for layer in doc.layers:
+            paths = []
+            for path in layer.paths:
+                checkpoint()
+                if len(path.points) > 2:
+                    points = list(LineString(path.points).simplify(
+                        tolerance, preserve_topology=False).coords)
+                    paths.append(path.model_copy(update={"points": points}))
+                else:
+                    paths.append(path)
+            layers.append(layer.model_copy(update={"paths": paths}))
+        out = doc.model_copy(update={"layers": layers})
+        if cmds and out.layers:
+            import vpype_cli
+
+            checkpoint()
+            vdoc = vpype_cli.execute(" ".join(cmds), document=doc_to_vpype(out))
+            checkpoint()
+            out = doc_from_vpype(vdoc, source=doc.source)
+            out.width, out.height = doc.width, doc.height
         return out
 
     def cropped(self, doc: PathDocument) -> PathDocument:

@@ -3,8 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-16
 machine: mac+pi
-summary: Mosca recording bench imports saved trajectories and keeps portable prefix layers.
+summary: Mandatory 0.01 mm plot simplification and native motion estimates implemented; activation pending.
 next:
+  - "After the active plot finishes, activate and check mandatory simplification and native timing"
   - "Check Mosca browsing, cutoff playback, repeated Keep and Resume in the native app"
   - "Check module browsers, presets and gallery preview/insertion"
   - "Check animation child handling and Pen/Shape Repeat"
@@ -14,6 +15,20 @@ handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Plot optimization and timing, 16 September:** All normal, sheet and tray
+passes now simplify each trajectory at a minimum 0.01 mm tolerance, including
+older projects. Optional simplification can increase that tolerance. Native
+estimates use the installed driver's isolated preview planner with the same
+optimized geometry and effective pen settings. Motion time includes motor-step
+and millisecond quantization plus pen timing; USB/host overhead is excluded.
+The current physical plot was left untouched; backend activation is pending.
+Verification covers **1,576 passing tests and one native-launch skip** across
+runs: the full run passed 1,475 but its first browser server missed the 30 s
+startup deadline under load; all 101 affected browser tests plus 16 focused
+checks passed on rerun with a 120 s startup allowance. Typecheck, build and
+isolated native-estimate browser smoke passed. One existing Starlette warning.
+Committed on `codex/plot-optimization-estimates`; not merged or pushed.
 
 **Mosca recording bench, 16 September:** Read-only experiment browser, playback,
 fractional prefix cutoffs, recorded pen lifts and fixed-frame placement are

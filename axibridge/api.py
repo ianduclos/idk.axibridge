@@ -111,9 +111,20 @@ def _consts() -> EstimatorConstants:
     return EstimatorConstants(**settings_store.settings.model_dump())
 
 
-def _estimator_params(backend_id: str) -> MotionParams:
-    raw = session.params_for(backend_id).model_dump()
-    return MotionParams(**{k: v for k, v in raw.items() if k in MotionParams.model_fields})
+def _estimate_plot(doc, params):
+    if manager.active_id == "native":
+        from .native_estimate import estimate_native_job
+        origin = manager.active.origin_offset() if manager.active.connected else (0.0, 0.0)
+        return estimate_native_job(doc, params, origin=origin)
+    raw = params.model_dump()
+    motion = MotionParams(**{k: v for k, v in raw.items() if k in MotionParams.model_fields})
+    return plan_job(doc, motion, consts=_consts())
+
+
+def _estimator_note():
+    if manager.active_id == "native":
+        return "Native motion estimate; USB/host overhead and manual pauses add time."
+    return "Approximate motion estimate; actual backend timing may differ."
 
 
 # -- state / events ----------------------------------------------------------
@@ -1201,8 +1212,6 @@ def get_resolved(
     except Exception as e:
         raise _fail(e, 400)
     pens = session.pens()
-    params = _estimator_params(manager.active_id) if stats else None
-    consts = _consts() if stats else None
     layers_out = []
     for layer in session.project.layers:
         checkpoint()
@@ -1210,6 +1219,7 @@ def get_resolved(
         pen = pens.get(layer.pen_id or "")
         pen_down: float | None = None
         est: float | None = None
+        estimate_error: str | None = None
         if stats:
             pen_down = sum(p.length() for p in paths)
             est = 0.0
@@ -1217,7 +1227,14 @@ def get_resolved(
                 doc = compose.flatten_to_document(
                     session.project, {layer.id: paths}, pens, target=layer.id
                 )
-                est = plan_job(doc, params, consts=consts).total_duration
+                try:
+                    est = _estimate_plot(session._optimize(doc),
+                                         session.effective_params(manager.active_id, layer.id)).total_duration
+                except Exception as e:
+                    # A planner failure must not hide editable geometry or
+                    # substitute a misleading generic native estimate.
+                    est = None
+                    estimate_error = str(e)
         # region layers resolve to nothing (never plotted) but the canvas
         # still needs their silhouette to select/drag — display-only paths
         display = paths
@@ -1241,6 +1258,7 @@ def get_resolved(
                 "points": sum(len(p.points) for p in paths),
                 "pen_down_distance": pen_down,
                 "est_s": est,
+                "estimate_error": estimate_error,
             },
         })
     return {"layers": layers_out, "bed": {"width": compose.BED_WIDTH, "height": compose.BED_HEIGHT}}
@@ -1260,21 +1278,29 @@ def get_plan(
     previews the real page layout and the estimate reflects the shrunk cells."""
     try:
         if staged is not None:
-            doc = session._optimize(_staged_document(StagedSpec.model_validate_json(staged)))
+            spec = StagedSpec.model_validate_json(staged)
+            doc = session._optimize(_staged_document(spec))
+            pen = session.pens().get(spec.pen_id) if spec.pen_id else None
+            params = session.effective_params(manager.active_id, pen=pen)
         elif sheet is not None:
-            doc = session._optimize(_sheet_document(SheetSpec.model_validate_json(sheet)))
+            spec = SheetSpec.model_validate_json(sheet)
+            doc = session._optimize(_sheet_document(spec))
+            pen = session.pens().get(spec.pen_id) if spec.pen_id else None
+            params = session.effective_params(manager.active_id, pen=pen)
         else:
             doc = session.plot_document(target)
+            params = session.effective_params(manager.active_id, target)
+        job = _estimate_plot(doc, params)
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:
         raise _fail(e, 400)
-    job = plan_job(doc, _estimator_params(manager.active_id), consts=_consts())
     return {
         "target": target,
         "job": job.model_dump(),
         "warnings": manager.check_envelope(doc),
-        "estimator_note": "estimate only — backends do their own planning",
+        "estimator_note": _estimator_note(),
+        "estimator_kind": "native" if manager.active_id == "native" else "approximate",
     }
 
 

@@ -1268,7 +1268,7 @@ export function renderLayerList() {
     const est = document.createElement("span");
     est.className = "est";
     est.textContent = r?.stats?.est_s ? fmtTime(r.stats.est_s) : "";
-    est.title = "estimated plot time for this layer's resolved geometry";
+    est.title = r?.stats?.estimate_error || "Estimated motion time for this layer after plot optimization; overhead adds time";
 
     const occ = isAnimateKeyframe ? document.createElement("span")
       : btn("◼", "occluder: masks layers below", () =>
