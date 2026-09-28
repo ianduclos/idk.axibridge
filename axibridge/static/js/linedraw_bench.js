@@ -17,6 +17,7 @@ let workspace = null;
 let serial = 0;
 let hiddenBefore = [];
 let redrawTimer = null;
+let autoRedraw = true;
 const square = [[0.1,0.1],[0.9,0.1],[0.9,0.9],[0.1,0.9]];
 const wholeFrame = [[0,0],[1,0],[1,1],[0,1]];
 const categories = [['hands_feet','Hands + feet'],['clothing','Clothing'],['hair','Hair'],['body','Body']];
@@ -34,6 +35,8 @@ function init() {
     <div id="linedraw-form" class="form"></div>
     <div id="linedraw-categories"><p>Detail categories</p>${categories.map(([key,label]) => `<label><input type="checkbox" data-category="${key}" aria-label="Include ${label.toLowerCase()}"> ${label}</label>`).join('')}<p class="hint">Material form shading requires a face region. Assign each detail region to its person.</p></div>
     <div class="linedraw-actions"><button id="linedraw-analyze">Analyze / redetect faces</button><button id="linedraw-redraw">Redraw</button><button id="linedraw-cancel-job">Cancel analysis</button></div>
+    <label><input id="linedraw-auto-redraw" type="checkbox" checked> Automatic redraw</label>
+    <p class="hint">Adding regions switches this off. Re-enable it when your guides are ready, or press Redraw.</p>
     <p id="linedraw-readiness" class="hint"></p>
     <label>Edit source guides<select id="linedraw-edit-mode"><option value="faces">Face regions</option><option value="people">People / owners</option><option value="details">Detail regions</option></select></label>
     <details id="linedraw-face-controls" open><summary>Face regions</summary>
@@ -82,7 +85,7 @@ function init() {
     if (active.params.style === 'regional_form') active.editMode='details';
     renderControls(); updateGuides(); changed();
   };
-  $('linedraw-edit-mode').onchange = () => { active.editMode = $('linedraw-edit-mode').value; updateGuides(); };
+  $('linedraw-edit-mode').onchange = () => { active.editMode = $('linedraw-edit-mode').value; updateGuides(); buttons(); };
   panel.querySelectorAll('[data-category]').forEach(box => box.onchange = () => {
     const name = box.dataset.category, set = new Set(active.params.detail_categories);
     if (box.checked) set.add(name); else set.delete(name);
@@ -91,6 +94,7 @@ function init() {
   $('linedraw-face-select').onchange = () => { active.selected = Number($('linedraw-face-select').value); updateFaces(); };
   $('linedraw-add-face').onclick = () => {
     if (!active || active.params.faces.length >= 32) return;
+    pauseAutomaticRedraw();
     active.params.faces.push({ id: crypto.randomUUID(), cx:.5, cy:.3, rx:.1, ry:.15, enabled:true, origin:'manual' });
     active.selected = active.params.faces.length - 1; changed(); updateFaces();
   };
@@ -111,7 +115,7 @@ function init() {
   };
   $('linedraw-person-select').onchange = () => { active.selectedPerson = Number($('linedraw-person-select').value); updateGuides(); };
   $('linedraw-detail-select').onchange = () => { active.selectedDetail = Number($('linedraw-detail-select').value); updateGuides(); };
-  $('linedraw-add-person').onclick = () => { if (!active || active.params.people.length >= 32) return; addPerson(); changed(); updateGuides(); };
+  $('linedraw-add-person').onclick = () => { if (!active || active.params.people.length >= 32) return; pauseAutomaticRedraw(); addPerson(); changed(); updateGuides(); };
   $('linedraw-delete-person').onclick = () => {
     if (!active || active.selectedPerson < 0) return;
     const [person] = active.params.people.splice(active.selectedPerson, 1);
@@ -122,6 +126,7 @@ function init() {
   };
   $('linedraw-add-detail').onclick = () => {
     if (!active || active.params.detail_regions.length >= 64) return;
+    pauseAutomaticRedraw();
     if (!active.params.people.length) ensurePerson();
     const person = active.params.people[Math.max(0, active.selectedPerson)];
     active.params.detail_regions.push({id:id(),person_id:person.id,category:'hands_feet',polygon:copy(square),exclude_polygons:[],enabled:true});
@@ -158,9 +163,14 @@ function init() {
     } catch { $('linedraw-message').textContent='Exclusions must be JSON polygons with at least three x,y points from 0 to 1.'; updateGuides(); }
   };
   for (const kind of ['person','detail']) {
-    $('linedraw-draw-'+kind).onclick = () => { detailEditor.beginPolygon(); $('linedraw-message').textContent='Click source points, then Finish polygon.'; };
+    $('linedraw-draw-'+kind).onclick = () => { pauseAutomaticRedraw(); detailEditor.beginPolygon(); buttons(); $('linedraw-message').textContent='Click source points, then Finish polygon.'; };
     $('linedraw-finish-'+kind).onclick = () => { if (!detailEditor.endPolygon()) $('linedraw-message').textContent='Add at least three points before finishing.'; };
   }
+  $('linedraw-auto-redraw').onchange = () => {
+    autoRedraw = $('linedraw-auto-redraw').checked;
+    if (!autoRedraw) pauseAutomaticRedraw();
+    if (active.rendered !== key()) changed();
+  };
   $('linedraw-analyze').onclick = () => run('analyze');
   $('linedraw-redraw').onclick = () => run('render');
   $('linedraw-cancel-job').onclick = cancelJob;
@@ -219,6 +229,7 @@ function updateGuides() {
   for (const name of ['delete-detail','detail-person','detail-category','detail-enabled','detail-polygon','detail-exclusions','draw-detail','finish-detail']) $('linedraw-'+name).disabled=busy || !selectedDetail();
   $('linedraw-add-person').disabled=busy || people.length >= 32;
   $('linedraw-add-detail').disabled=busy || details.length >= 64;
+  $('linedraw-auto-redraw').disabled = !!active.keeping || detailEditor.drawing !== null;
   if (mode === 'faces') regions.draw();
 }
 function buttons() {
@@ -236,6 +247,8 @@ function buttons() {
   detailEditor.disabled = busy;
   panel.querySelectorAll('input,select').forEach(el => { el.disabled = !!active.keeping; });
   for (const name of ['cx','cy','rx','ry','enabled']) $('linedraw-'+name).disabled = busy || active.selected < 0;
+  $('linedraw-auto-redraw').checked = autoRedraw;
+  $('linedraw-auto-redraw').disabled = !!active.keeping || detailEditor.drawing !== null;
   updateGuideButtons();
 }
 function updateGuideButtons() {
@@ -246,14 +259,22 @@ function updateGuideButtons() {
   $('linedraw-add-person').disabled=busy || active.params.people.length >= 32;
   $('linedraw-add-detail').disabled=busy || active.params.detail_regions.length >= 64;
 }
+function pauseAutomaticRedraw() {
+  autoRedraw = false;
+  clearTimeout(redrawTimer); redrawTimer=null;
+  if (active?.busy) cancelJob();
+  $('linedraw-auto-redraw').checked = false;
+}
 function changed(auto=true) {
   if (!active) return;
   clearTimeout(redrawTimer); redrawTimer=null;
   if (active.busy) cancelJob();
-  active.rendered = null; $('linedraw-message').textContent = 'Settings changed. Updating drawing…';
-  $('process-status').textContent='Drawing update pending'; buttons();
-  if (auto && active.params.image && active.ready) redrawTimer=setTimeout(() => {
-    redrawTimer=null; if (active && !active.busy && !active.keeping) run('render');
+  const automatic = auto && autoRedraw && detailEditor.drawing === null && active.params.image && active.ready;
+  active.rendered = null;
+  $('linedraw-message').textContent = automatic ? 'Settings changed. Updating drawing…' : 'Settings changed. Press Redraw when ready.';
+  $('process-status').textContent=automatic ? 'Drawing update pending' : 'Drawing has unapplied edits'; buttons();
+  if (automatic) redrawTimer=setTimeout(() => {
+    redrawTimer=null; if (active && autoRedraw && detailEditor.drawing === null && !active.busy && !active.keeping) run('render');
   },350);
 }
 function imageChanged() {
@@ -371,7 +392,7 @@ export async function openLinedrawBench(entry) {
     .filter(el => el && el!==panel).map(el => [el,el.hidden]);
   hiddenBefore.forEach(([el]) => { el.hidden=true; });
   panel.hidden=false; workspace.hidden=false; $('process-popup').classList.add('linedraw');
-  openBenchShell({close:closeLinedrawBench,cancelGesture:() => regions.cancel() || detailEditor.cancel(),origin:'Image → local drawing → layer'});
+  openBenchShell({close:closeLinedrawBench,cancelGesture:() => { const cancelled=regions.cancel() || detailEditor.cancel(); buttons(); return cancelled; },origin:'Image → local drawing → layer'});
   if (params.style === 'regional_form' && !params.people.length && params.faces.length <= 1) ensurePerson();
   renderControls();
   const url=params.image ? `/api/assets/${encodeURIComponent(params.image)}?frame=${params.frame || 0}` : '';

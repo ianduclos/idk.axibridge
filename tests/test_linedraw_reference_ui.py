@@ -102,3 +102,51 @@ def test_category_edit_redraws_and_updates_status(ui):
     assert ui.get_by_label("Include body").is_checked()
     assert ui.get_by_role("button", name="Keep as layer", exact=True).is_enabled()
     assert not ui.errors
+
+
+def test_manual_redraw_and_region_creation_pause_automatic_updates(ui):
+    _upload_image(ui, "manual.png")
+    ui.route("**/api/linedraw/status", lambda route: route.fulfill(json={
+        "available": True, "faces": True, "detail": "Synthetic models",
+    }))
+    requests = []
+
+    def complete(route):
+        params = route.request.post_data_json["params"]
+        requests.append(params)
+        route.fulfill(json={"id": "synthetic", "state": "complete", "result": {
+            "params": params, "warnings": [],
+            "preview": {"width": 40, "height": 60, "lines": [[[0, 0], [10, 0]]]},
+        }})
+
+    ui.route("**/api/linedraw/jobs", complete)
+    open_bench(ui)
+    ui.locator('#linedraw-form select:has(option[value="manual.png"])').select_option("manual.png")
+    auto = ui.get_by_label("Automatic redraw", exact=True)
+    auto.uncheck()
+    ui.get_by_label("Drawing style", exact=True).select_option("regional_form")
+    ui.wait_for_timeout(550)  # Beyond the debounce: no inference in manual mode.
+    assert requests == []
+    ui.get_by_role("button", name="Redraw", exact=True).click()
+    ui.wait_for_function("document.getElementById('linedraw-message').textContent.startsWith('Drawing ready.')")
+    assert len(requests) == 1
+    auto.check()
+    # Queue an update, then immediately begin adding a guide: cancel the timer.
+    ui.get_by_label("Include body").check()
+    ui.get_by_role("button", name="Add detail region", exact=True).click()
+    assert not auto.is_checked()
+    ui.get_by_label("Detail category").select_option("hair")
+    ui.get_by_role("button", name="Draw detail polygon", exact=True).click()
+    assert auto.is_disabled()
+    ui.wait_for_timeout(550)
+    assert len(requests) == 1
+    assert ui.get_by_role("button", name="Keep as layer", exact=True).is_disabled()
+    # Escape cancels the unfinished polygon without re-enabling automatic work.
+    ui.keyboard.press("Escape")
+    assert auto.is_enabled()
+    assert not auto.is_checked()
+    auto.check()
+    ui.wait_for_function("document.getElementById('linedraw-message').textContent.startsWith('Drawing ready.')")
+    assert len(requests) == 2
+    assert requests[-1]["detail_regions"][0]["category"] == "hair"
+    assert not ui.errors

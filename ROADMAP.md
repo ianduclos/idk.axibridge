@@ -791,3 +791,28 @@ as an ordinary independent layer with its own pen, density and opacity. Screen
 opacity must not be presented as reducing physical ink: lighter plotting needs
 wider spacing, fewer passes or a lighter pen. Decide editable linkage versus a
 frozen detached snapshot before changing the layer model.
+
+
+**Shading proposal refinement, 28 September (discussion, not implemented):**
+
+1. Preserve contour, form-hatch and dense-core roles plus the pre-hatch shadow
+   geometry. Compare the same drawing with shading hidden, sparse, or filled;
+   changing ink treatment should reuse evidence rather than rerun the models.
+2. Start with independently adjustable components of one recipe. Offer an
+   explicit detach action to create ordinary frozen layers with matching
+   placement. Frozen paths can change pen/visibility; editable fill density needs
+   the retained shadow shapes and renderer settings. Linked multi-layer edits
+   and their undo semantics need a design decision before implementation.
+3. Try three tone levels: paper, sparse form strokes and compact dark cores.
+   Vary spacing continuously with the photographic shadow field, protect
+   supported feature gaps, and compare at the intended paper size. Do not
+   assume that adding more filled area improves form or likeness.
+4. Current DSINE normals bend a diagonal hatch field; no depth model runs in
+   the v3 worker. Explore more coherent local flow and controlled hatch endings
+   before adding inference. Hair direction should follow image evidence rather
+   than treating every strand as a surface-normal contour. Depth could later
+   help foreground/background separation and overlap ordering, but would need
+   a separate evidence comparison; it is not a guaranteed detail improvement.
+
+Automatic redraw is now optional. Adding guides switches it off until explicitly
+re-enabled, and unfinished polygons block it. Manual Redraw remains available.

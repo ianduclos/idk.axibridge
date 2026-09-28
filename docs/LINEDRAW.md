@@ -3,7 +3,10 @@
 Choose **Linedraw v3** in the generator selector, then **Bench**. Select or upload
 an image and press **Analyze / redetect faces**. The image stays on this computer.
 The left view shows the source and editable face ellipses; the right view shows
-actual pen paths. Edits redraw automatically after a short pause; Redraw also retries explicitly.
+actual pen paths. With **Automatic redraw** enabled, edits redraw after a short pause. Switch it off
+to batch edits, then press **Redraw**. Adding a face/person/detail region or starting
+a polygon switches it off until you explicitly re-enable it. It stays disabled
+while a polygon is unfinished.
 The shared status indicator stays active during work, and the bench shows the stage.
 Keep creates an ordinary layer.
 Reopen a kept layer's bench to edit its recipe: Apply updates that layer in one
