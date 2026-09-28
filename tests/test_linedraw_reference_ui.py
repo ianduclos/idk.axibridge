@@ -24,15 +24,16 @@ def test_regional_draft_edit_and_image_reset(ui):
 
     ui.route("**/api/linedraw/jobs", complete)
     open_bench(ui)
-    image = ui.locator('#linedraw-form select:has(option[value="regions.png"])')
+    image = ui.locator('#linedraw-image-form select:has(option[value="regions.png"])')
     image.select_option("regions.png")
     ui.get_by_label("Drawing style", exact=True).select_option("light_support")
     assert ui.get_by_text("Light form support", exact=True).count() == 1
-    assert ui.locator('#linedraw-form').get_by_text("Contour strokes").count() == 1
-    assert ui.locator('#linedraw-form').get_by_text("Shadow strength").count() == 0
+    assert ui.locator('#linedraw-drawing-form').get_by_text("Contour strokes").count() == 1
+    assert ui.locator('#linedraw-drawing-form').get_by_text("Shadow strength").count() == 0
     ui.get_by_label("Drawing style", exact=True).select_option("regional_form")
-    assert ui.locator('#linedraw-form').get_by_text("Detail strokes per person").count() == 1
+    assert ui.locator('#linedraw-drawing-form').get_by_text("Detail strokes per person").count() == 1
     ui.get_by_role("button", name="Add detail region").click()
+    ui.get_by_text("Precise detail coordinates and exclusions", exact=True).click()
     assert ui.locator('#linedraw-person-select option').count() == 1
     assert ui.locator('#linedraw-detail-select option').count() == 1
     ui.get_by_label("Detail category").select_option("hair")
@@ -50,7 +51,7 @@ def test_regional_draft_edit_and_image_reset(ui):
     assert requests[-1]["detail_regions"][0]["exclude_polygons"][0][0] == [0.2, 0.2]
     assert "hair" in requests[-1]["detail_categories"]
     LinedrawV3Params.model_validate(requests[-1])
-    image = ui.locator('#linedraw-form select:has(option[value="other.png"])')
+    image = ui.locator('#linedraw-image-form select:has(option[value="other.png"])')
     image.select_option("other.png")
     assert ui.locator('#linedraw-detail-select option').count() == 0
     assert ui.locator('#linedraw-person-select option').count() == 0
@@ -77,7 +78,7 @@ def test_category_edit_redraws_and_updates_status(ui):
     ui.route("**/api/linedraw/jobs", complete)
     ui.route("**/api/linedraw/jobs/synthetic", lambda route: route.fulfill(json={}))
     open_bench(ui)
-    ui.locator('#linedraw-form select:has(option[value="automatic.png"])').select_option("automatic.png")
+    ui.locator('#linedraw-image-form select:has(option[value="automatic.png"])').select_option("automatic.png")
     ui.evaluate('''() => {
       const original = window.fetch.bind(window);
       window.__heldRegional = false;
@@ -121,7 +122,7 @@ def test_manual_redraw_and_region_creation_pause_automatic_updates(ui):
 
     ui.route("**/api/linedraw/jobs", complete)
     open_bench(ui)
-    ui.locator('#linedraw-form select:has(option[value="manual.png"])').select_option("manual.png")
+    ui.locator('#linedraw-image-form select:has(option[value="manual.png"])').select_option("manual.png")
     auto = ui.get_by_label("Automatic redraw", exact=True)
     auto.uncheck()
     ui.get_by_label("Drawing style", exact=True).select_option("regional_form")

@@ -18,6 +18,7 @@ from shapely.ops import unary_union
 from .flow_hatch import flow_hatch
 from .geometry import arc, samples, simplify
 from .reference_trace import _graph
+from .shading import scanline_mask
 from .shadows import line_components, shapes
 
 
@@ -187,15 +188,16 @@ def _revision_line(q):
     return LineString(dense)
 
 
-def render_light(evidence, params, checkpoint=lambda: None) -> list[np.ndarray]:
-    """Select exact hybrid contours and add sparse, cleared shadow hatching."""
+def render_light_components(evidence, params, checkpoint=lambda: None) -> dict[str, list[np.ndarray]]:
+    """The Light recipe, retaining its selected contours and shadow form."""
+    empty = {"contours": [], "form": [], "cores": []}
     rgb = np.asarray(evidence.rgb, float)
     fg = np.asarray(evidence.foreground) > .35
     if rgb.ndim != 3 or rgb.shape[:2] != fg.shape or rgb.shape[2] != 3:
         raise ValueError("rgb and foreground source arrays must have matching dimensions")
     h, w = fg.shape
     if not fg.any() or params.contour_budget <= 0:
-        return []
+        return empty
     normals = np.asarray(evidence.normals)
     if normals.shape[:2] != (h, w) or normals.ndim != 3 or normals.shape[2] < 2:
         raise ValueError("Light requires source-sized normals")
@@ -214,7 +216,7 @@ def render_light(evidence, params, checkpoint=lambda: None) -> list[np.ndarray]:
     pool = _deduplicate(whole + tiles + classic, 1.)
     detail = [LineString(q["points"]) for q in _select(pool, params.contour_budget, fg)]
     if not detail:
-        return []
+        return empty
     checkpoint()
     base = gaussian_filter(lum * fg, 24) / np.maximum(gaussian_filter(fg.astype(float), 24), 1e-5)
     field = np.clip(1 - lum / np.maximum(base, .05), 0, 1) * fg
@@ -233,7 +235,13 @@ def render_light(evidence, params, checkpoint=lambda: None) -> list[np.ndarray]:
         draw.line(list(q.coords), fill=1, width=1)
     room = (distance_transform_edt(~np.asarray(ink, bool)) > stroke * 3) & (distance_transform_edt(shadow) > 2)
     candidates = []
-    for i, q in enumerate(flow_hatch(room, normals, 6., checkpoint)):
+    density = float(getattr(params, "form_density", 1))
+    flow = getattr(params, "form_flow", "original")
+    hatch_kwargs = {"coherent": True} if flow == "coherent" else {}
+    tonal = getattr(params, "shading_mode", "original") == "tonal"
+    if tonal:
+        hatch_kwargs["density_field"] = np.clip(field * 2, 0, 1)
+    for i, q in enumerate(flow_hatch(room, normals, 6. / density, checkpoint, **hatch_kwargs)):
         if i % 64 == 0:
             checkpoint()
         curve = LineString(simplify(q, .25))
@@ -244,11 +252,29 @@ def render_light(evidence, params, checkpoint=lambda: None) -> list[np.ndarray]:
         key = (int(p.x / w * 3), int(p.y / h * 3))
         cells.setdefault(key, []).append(q)
     selected, counts = [], {key: 0 for key in cells}
-    while len(selected) < 60:
+    limit = min(180, round(60 * density)) if tonal else 60
+    while len(selected) < limit:
         active = [key for key in cells if counts[key] < len(cells[key])]
         if not active:
             break
         key = min(active, key=lambda cell: (counts[cell], -cells[cell][counts[cell]].length, cell))
         selected.append(cells[key][counts[key]])
         counts[key] += 1
-    return [np.asarray(q.coords, float) for q in detail + selected]
+    cores = []
+    strength = float(getattr(params, "core_strength", .5))
+    if tonal and strength > 0:
+        deep = np.asarray(shadow, bool) & (field > .26)
+        spacing = max(1., 5. / max(.25, 2 * strength))
+        for q in scanline_mask(deep, spacing, checkpoint, min_length=4, limit=1200):
+            checkpoint()
+            cores.extend(np.asarray(part.coords, float) for part in
+                         line_components(LineString(q).difference(protected))
+                         if part.length >= 3)
+    return {"contours": [np.asarray(q.coords, float) for q in detail],
+            "form": [np.asarray(q.coords, float) for q in selected], "cores": cores}
+
+
+def render_light(evidence, params, checkpoint=lambda: None) -> list[np.ndarray]:
+    """Public source-pixel list API for the frozen Light recipe."""
+    groups = render_light_components(evidence, params, checkpoint)
+    return groups["contours"] + groups["form"] + groups["cores"]

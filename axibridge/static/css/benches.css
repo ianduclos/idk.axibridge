@@ -128,16 +128,38 @@
 .mosca-bench .bench-transport, .mosca-bench .process-generic-actions { display:none; }
 .mosca-bench #process-canvas .draw-line { stroke-width:0.07; }
 
-/* Linedraw uses the shared bench shell with canonical source and pen geometry. */
-#linedraw-panel > label, #linedraw-panel details > label { display: grid; gap: .35rem; margin: .6rem 0; }
+/* Linedraw keeps its controls legible while the two image panes get the space. */
+#process-popup.linedraw .bench-layout { grid-template-columns:minmax(0,1fr) clamp(300px,28vw,380px); }
+#process-popup.linedraw #bench-controls { padding:0; }
+#linedraw-panel { min-height:100%; display:flex; flex-direction:column; }
+#linedraw-panel > label, #linedraw-panel section > label, #linedraw-panel details > label, #linedraw-panel .linedraw-advanced label { display:grid; gap:.35rem; margin:.6rem 0; }
+.linedraw-section { padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--bench-edge); }
+.linedraw-section h3 { margin:0 0 var(--space-2); color:var(--ink-hi); font-size:var(--type-title); font-weight:600; }
+.linedraw-section[hidden], #linedraw-components label[hidden], #linedraw-treatment[hidden], #linedraw-cancel-job[hidden] { display:none; }
+.linedraw-section select { min-width:0; width:100%; }
+.linedraw-section .form { padding:0; }
+#linedraw-components { border:0; padding:0; margin:var(--space-3) 0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-1); }
+#linedraw-components legend { padding:0 0 var(--space-1); color:var(--ink-soft); font-size:var(--type-note); }
+#linedraw-components label { display:flex; align-items:center; gap:var(--space-1); min-width:0; }
+.linedraw-footer { position:sticky; bottom:0; margin-top:auto; padding:var(--space-2) var(--space-4); background:var(--bench); border-top:1px solid var(--bench-edge); z-index:2; }
+.linedraw-footer > .hint { margin:var(--space-1) 0; }
+.linedraw-run-row { display:flex; align-items:center; flex-wrap:wrap; gap:var(--space-2); }
+.linedraw-run-row > label { display:flex; gap:var(--space-1); align-items:center; }
+.linedraw-run-row .linedraw-actions { margin:0; }
+.linedraw-save-actions { margin:var(--space-1) 0; }
+#linedraw-detach { flex:1 1 auto; }
+.linedraw-advanced { margin:.3rem 0; }
+.linedraw-advanced summary { color:var(--ink-soft); }
 .linedraw-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .7rem 0; }
 .linedraw-face-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
 .linedraw-face-fields label { display: grid; gap: .25rem; font-size: .85rem; }
 .linedraw-face-fields input { width: 100%; min-width: 0; }
-.linedraw-workspace { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; width: 100%; height: 100%; min-height: 240px; }
-.linedraw-workspace figure { display: flex; flex-direction: column; margin: 0; min-width: 0; min-height: 0; }
+.linedraw-workspace { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: .6rem; width: 100%; height: 100%; min-height: 300px; padding:.6rem; box-sizing:border-box; }
+.linedraw-workspace figure { display: flex; flex-direction: column; margin: 0; min-width: 0; min-height: 0; border:1px solid var(--bench-edge); }
 .linedraw-workspace figcaption { font-size: .8rem; padding: .4rem; color: var(--ink-soft); }
-.linedraw-workspace svg { flex: 1; width: 100%; min-height: 0; background: var(--paper); color: var(--ink); }
+.linedraw-workspace svg { flex: 1; width: 100%; min-height: 0; background: var(--flexoki-paper); color: var(--flexoki-black); }
+#linedraw-drawing { background:#fff; color:var(--flexoki-black); }
+#linedraw-drawing path { stroke:var(--flexoki-black); stroke-opacity:1; stroke-width:1px; vector-effect:non-scaling-stroke; }
 #linedraw-source { touch-action: none; }
 .linedraw-face { fill: transparent; stroke: var(--live); stroke-width: 2; vector-effect: non-scaling-stroke; cursor: move; }
 .linedraw-face.selected { stroke-width: 3; }
@@ -153,7 +175,8 @@
 .linedraw-region.selected { stroke-width: 3; }
 .linedraw-region.in-progress { pointer-events: none; }
 .linedraw-region-handle { fill: var(--live); stroke: var(--paper); vector-effect: non-scaling-stroke; cursor: crosshair; }
-@media (max-width: 700px) { .linedraw-workspace { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
+@media (max-width: 850px) { #process-popup.linedraw .bench-layout { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(350px,1fr) minmax(250px,auto); } #process-popup.linedraw #bench-controls { display:block; border-left:0; border-top:1px solid var(--bench-edge); } .linedraw-workspace { min-height:0; } }
+@media (max-width: 560px) { .linedraw-workspace { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) minmax(0,1fr); } }
 
 #process-popup.linedraw .bench-transport,
 #process-popup.linedraw .process-generic-actions,

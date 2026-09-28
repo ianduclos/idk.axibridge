@@ -711,6 +711,54 @@ class Session:
             self.source_geometry[layer.id] = paths
         return layer
 
+    def add_linedraw_components(
+        self, doc: PathDocument, params: dict[str, Any],
+        source_layer_id: str | None, project: Project,
+    ) -> list[CanvasLayer]:
+        """Keep one completed Linedraw draft as independent frozen layers.
+
+        Every component shares the same placement, and all are one undo step.
+        The source recipe and effects stay on the original layer only.
+        """
+        names = {"contours": "Contours", "form": "Form", "cores": "Cores"}
+        with self._lock:
+            if self.project is not project:
+                raise ValueError("Drawing belongs to a different project")
+            source = None
+            if source_layer_id is not None:
+                try:
+                    source = self.project.layer(source_layer_id)
+                except KeyError as exc:
+                    raise ValueError("Source layer no longer exists") from exc
+                if source.source.type != "generator" or source.source.generator != "linedraw_v3":
+                    raise ValueError("Source layer is not a Linedraw recipe")
+            components = [layer for layer in doc.layers if layer.paths]
+            if any(layer.name not in names for layer in components):
+                raise ValueError("Drawing contains an unknown component")
+            if len({layer.name for layer in components}) != len(components):
+                raise ValueError("Drawing contains duplicate components")
+            if not components:
+                raise ValueError("Drawing has no paths to separate")
+            if source is not None:
+                transform = source.transform.model_copy(deep=True)
+            else:
+                paths = [path for layer in doc.layers for path in layer.paths]
+                transform = self._placement_transform("linedraw_v3", params, doc, paths)
+            self._checkpoint()
+            created = []
+            for component in components:
+                layer = CanvasLayer(
+                    name=f"Linedraw · {names[component.name]}",
+                    source=LayerSource(type="baked"),
+                    transform=transform.model_copy(deep=True),
+                    pen_id=source.pen_id if source is not None else None,
+                )
+                self.project.layers.append(layer)
+                self.source_geometry[layer.id] = [path.model_copy(deep=True) for path in component.paths]
+                self._snapshot_pen(layer.pen_id)
+                created.append(layer)
+            return created
+
     @_interrupt_preview
     def regenerate_layer(self, layer_id: str, params: dict[str, Any] | None = None,
                          coalesce: bool = False) -> CanvasLayer:

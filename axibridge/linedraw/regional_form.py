@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import numpy as np
 from PIL import Image
-from scipy.ndimage import distance_transform_edt
+from scipy.ndimage import distance_transform_edt, gaussian_filter
 from shapely import affinity
 from shapely.geometry import LineString, Point
 from shapely.ops import unary_union
@@ -16,6 +16,7 @@ from shapely.ops import unary_union
 from .flow_hatch import flow_hatch
 from .geometry import samples, simplify
 from .regional_allocation import prepare_case, select_details
+from .shading import scanline_mask
 from .shadows import line_components, shadow_field, shapes
 
 
@@ -53,7 +54,7 @@ def _resize(array, size, resample):
     return np.asarray(image.resize(size, resample), dtype=float)
 
 
-def _baseline(evidence, faces, checkpoint):
+def _baseline(evidence, faces, checkpoint, params=None):
     """The study's middle material proxy at 768 long-side pixels."""
     h, w = evidence.rgb.shape[:2]
     work_w = max(1, round(w * 768 / max(w, h)))
@@ -86,7 +87,12 @@ def _baseline(evidence, faces, checkpoint):
     normals = np.stack([_resize(evidence.normals[..., i], size, Image.Resampling.BILINEAR)
                         for i in range(min(3, evidence.normals.shape[-1]))], axis=-1)
     base = []
-    for raw in flow_hatch(mask, normals, 5., checkpoint=checkpoint):
+    density = float(_value(params, "form_density", 1))
+    flow = _value(params, "form_flow", "original")
+    hatch_kwargs = {"coherent": True} if flow == "coherent" else {}
+    if _value(params, "shading_mode", "original") == "tonal":
+        hatch_kwargs["density_field"] = np.clip(field * 2, 0, 1)
+    for raw in flow_hatch(mask, normals, 5. / density, checkpoint=checkpoint, **hatch_kwargs):
         checkpoint()
         if len(raw) < 2:
             continue
@@ -119,7 +125,18 @@ def _baseline(evidence, faces, checkpoint):
                     base.append((part, "contour"))
         if cues >= 28:
             break
-    return base, face_geometry
+    cores = []
+    strength = float(_value(params, "core_strength", .5))
+    if _value(params, "shading_mode", "original") == "tonal" and strength > 0:
+        deep = mask & (field >= .3) & ~face_area
+        spacing = max(1., 6. / max(.25, 2 * strength))
+        for q in scanline_mask(deep, spacing, checkpoint, min_length=4, limit=1200):
+            checkpoint()
+            line = LineString(q * scale)
+            cores.extend(np.asarray(part.coords, float) for part in
+                         line_components(line.difference(face_geometry))
+                         if part.length >= 3 * max(scale))
+    return base, face_geometry, cores
 
 
 def _annotation_case(params, w, h):
@@ -157,13 +174,40 @@ def _annotation_case(params, w, h):
                    "people": list(by_person.values())}
 
 
-def render_regional(evidence, params, checkpoint=lambda: None) -> list[np.ndarray]:
-    """Render the frozen reference recipe as source-pixel pen polylines."""
+def _bend_hair_guide(points, image_tangent_field, amount):
+    """Steer one supplied hair stroke toward local image isophotes, within 0.6 px."""
+    if amount <= 0:
+        return np.asarray(points, float)
+    q = samples(np.asarray(points, float), 4.)
+    if len(q) < 3:
+        return q
+    dx, dy = image_tangent_field
+    h, w = dx.shape
+    ix = np.clip(np.rint(q[:, 0]).astype(int), 0, w - 1)
+    iy = np.clip(np.rint(q[:, 1]).astype(int), 0, h - 1)
+    image_tangent = np.column_stack((dx[iy, ix], dy[iy, ix]))
+    image_tangent /= np.maximum(np.linalg.norm(image_tangent, axis=1)[:, None], 1e-9)
+    guide_tangent = np.empty_like(q)
+    guide_tangent[1:-1] = q[2:] - q[:-2]
+    guide_tangent[0], guide_tangent[-1] = q[1] - q[0], q[-1] - q[-2]
+    guide_tangent /= np.maximum(np.linalg.norm(guide_tangent, axis=1)[:, None], 1e-9)
+    sign = np.where(np.sum(image_tangent * guide_tangent, axis=1) < 0, -1, 1)
+    blended = (1 - amount) * guide_tangent + amount * image_tangent * sign[:, None]
+    normal = np.column_stack((-guide_tangent[:, 1], guide_tangent[:, 0]))
+    offset = np.clip(np.sum(blended * normal, axis=1), -.6, .6) * amount
+    offset[0] = offset[-1] = 0
+    return q + offset[:, None] * normal
+
+
+def render_regional_components(evidence, params, checkpoint=lambda: None) -> dict[str, list[np.ndarray]]:
+    """Render the frozen recipe with its source-pixel ink roles retained."""
     h, w = evidence.rgb.shape[:2]
     faces, case = _annotation_case(params, w, h)
     if not faces:
         raise ValueError("Regional form requires an enabled face for the material proxy")
-    base, face_geometry = _baseline(evidence, faces, checkpoint)
+    baseline = _baseline(evidence, faces, checkpoint, params)
+    base, face_geometry = baseline[:2]
+    cores = baseline[2] if len(baseline) > 2 else []
     face_paths = []
     for face in faces:
         checkpoint()
@@ -190,7 +234,7 @@ def render_regional(evidence, params, checkpoint=lambda: None) -> list[np.ndarra
     visible = [q for q in selected if q["category"] in categories]
     detail_lines = [(LineString(q["points"]), q["category"]) for q in visible]
     tolerance = h / 768
-    output = []
+    output = {"contours": [], "form": [], "cores": []}
     for line, role in base:
         checkpoint()
         if role != "hatch" and any(
@@ -201,7 +245,37 @@ def render_regional(evidence, params, checkpoint=lambda: None) -> list[np.ndarra
             for detail, _ in detail_lines
         ):
             continue
-        output.append(np.asarray(line.coords, dtype=float))
-    output.extend(face_paths)
-    output.extend(np.asarray(line.coords, dtype=float) for line, _ in detail_lines)
+        output["form" if role == "hatch" else "contours"].append(
+            np.asarray(line.coords, dtype=float))
+    output["contours"].extend(face_paths)
+    hair_flow = float(_value(params, "hair_flow", 0))
+    image_direction = None
+    if hair_flow > 0 and any(category == "hair" for _, category in detail_lines):
+        lum = np.asarray(evidence.rgb, float) @ np.array([.2126, .7152, .0722])
+        gy, gx = np.gradient(gaussian_filter(lum, 2.))
+        image_direction = (-gy, gx)
+    for line, category in detail_lines:
+        checkpoint()
+        points = np.asarray(line.coords, dtype=float)
+        if category == "hair" and hair_flow > 0:
+            points = _bend_hair_guide(points, image_direction, hair_flow)
+        output["contours"].append(points)
+    if cores:
+        # Raster gaps stay open, and vector clearance protects all accepted
+        # contours and supplied detail guides after regional allocation.
+        paper_w = h if _value(params, "rotate", 0) in (90, 270) else w
+        protected = unary_union([LineString(q) for q in output["contours"]]).buffer(
+            float(_value(params, "clearance", .6)) * paper_w /
+            float(_value(params, "width", 150)))
+        for q in cores:
+            checkpoint()
+            output["cores"].extend(np.asarray(part.coords, float) for part in
+                                   line_components(LineString(q).difference(protected))
+                                   if part.length > 1)
     return output
+
+
+def render_regional(evidence, params, checkpoint=lambda: None) -> list[np.ndarray]:
+    """Public source-pixel list API for the frozen regional recipe."""
+    groups = render_regional_components(evidence, params, checkpoint)
+    return groups["form"] + groups["contours"] + groups["cores"]

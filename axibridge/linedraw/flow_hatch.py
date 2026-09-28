@@ -11,7 +11,8 @@ from scipy.ndimage import distance_transform_edt, gaussian_filter, label
 
 
 def flow_hatch(
-    mask: np.ndarray, normals: np.ndarray, spacing: float = 5, checkpoint=lambda: None
+    mask: np.ndarray, normals: np.ndarray, spacing: float = 5, checkpoint=lambda: None,
+    *, coherent: bool = False, density_field: np.ndarray | None = None,
 ) -> list[np.ndarray]:
     """Return image-coordinate (x, y) polylines contained in ``mask``.
 
@@ -30,14 +31,27 @@ def flow_hatch(
     if not np.isfinite(spacing) or spacing <= 0:
         raise ValueError("spacing must be positive and finite")
     h, w = mask.shape
+    if density_field is not None:
+        density_field = np.asarray(density_field, dtype=float)
+        if density_field.shape != mask.shape or not np.isfinite(density_field).all():
+            raise ValueError("density field must be finite and match mask")
+        density_field = np.clip(density_field, 0, 1)
     if not mask.any():
         return []
 
     # Smoothing suppresses local depth/noise ripples before they steer a pen.
     nx = gaussian_filter(np.nan_to_num(normals[..., 0], nan=0, posinf=0, neginf=0), 10)
     ny = gaussian_filter(np.nan_to_num(normals[..., 1], nan=0, posinf=0, neginf=0), 10)
-    dx = 1.0 - 1.3 * ny
-    dy = -0.65 + 1.3 * nx
+    if coherent:
+        # Projected surface tangents; weak/flat normals retain the study's
+        # diagonal direction instead of inventing a direction from noise.
+        strength = np.hypot(nx, ny)
+        blend = np.clip(strength / .18, 0, 1)
+        dx = (1 - blend) * 1.0 - blend * ny
+        dy = (1 - blend) * -.65 + blend * nx
+    else:
+        dx = 1.0 - 1.3 * ny
+        dy = -0.65 + 1.3 * nx
     mag = np.hypot(dx, dy)
     dx /= np.maximum(mag, 1e-9)
     dy /= np.maximum(mag, 1e-9)
@@ -46,12 +60,14 @@ def flow_hatch(
     distance = distance_transform_edt(mask)
     occupied = np.zeros_like(mask)
     radius = max(1, int(round(0.7 * spacing)))
+    if density_field is not None:
+        radius = max(radius, int(round(1.4 * spacing)))
     yy, xx = np.mgrid[-radius : radius + 1, -radius : radius + 1]
     disk_y, disk_x = np.nonzero(xx * xx + yy * yy <= radius * radius)
     disk_y -= radius
     disk_x -= radius
 
-    stride = max(1, int(round(spacing)))
+    stride = max(1, int(round(spacing if density_field is None else spacing / 2)))
     seeds: list[tuple[float, int, int]] = []
     for row, y in enumerate(range(stride // 2, h, stride)):
         offset = stride // 2 if row % 2 else 0
@@ -119,7 +135,12 @@ def flow_hatch(
         # not stop itself. Dilated occupancy gives subsequent seeds clearance.
         for px, py in path:
             ix, iy = int(round(float(px))), int(round(float(py)))
-            xs, ys = ix + disk_x, iy + disk_y
+            local_radius = radius
+            if density_field is not None:
+                tone = density_field[iy, ix]
+                local_radius = max(1, int(round(.7 * spacing / (.6 + 1.4 * tone))))
+            active = disk_x * disk_x + disk_y * disk_y <= local_radius * local_radius
+            xs, ys = ix + disk_x[active], iy + disk_y[active]
             valid = (xs >= 0) & (xs < w) & (ys >= 0) & (ys < h)
             occupied[ys[valid], xs[valid]] = True
     return paths

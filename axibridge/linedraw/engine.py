@@ -12,6 +12,7 @@ from .trace import trace_map, photographic_map
 from .geometry import samples, arc, simplify
 from .shadows import shadow_field, shapes, line_components
 from .flow_hatch import flow_hatch
+from .shading import scanline_mask
 
 
 def clipped_candidates(candidates, mask, checkpoint=render_checkpoint):
@@ -112,11 +113,11 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
     checkpoint()
     if p.style in ("light_support", "regional_form"):
         if p.style == "light_support":
-            from .reference_light import render_light
-            output = render_light(evidence, p, checkpoint)
+            from .reference_light import render_light_components
+            output = render_light_components(evidence, p, checkpoint)
         else:
-            from .regional_form import render_regional
-            output = render_regional(evidence, p, checkpoint)
+            from .regional_form import render_regional_components
+            output = render_regional_components(evidence, p, checkpoint)
         return document_from_paths(output, p, w, h, checkpoint)
     fg = evidence.foreground > 0.35
     if evidence.alpha is not None:
@@ -152,7 +153,7 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
     if len(pool) > 20000:
         raise ValueError("Too much detail; reduce image detail")
     contours = select(pool, p.contour_budget, w, h, checkpoint) + face_paths
-    output = list(contours)
+    output = {"contours": list(contours), "form": [], "cores": []}
     if p.style != "contours" and fg.any() and p.shadow_strength > 0:
         checkpoint()
         if p.shadow_proxy == "material":
@@ -185,7 +186,21 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
         )
         mass = mass.difference(protected)
         if p.style == "shadow_shapes":
-            output += fill_lines(mass, p.fill_spacing / scale, checkpoint)
+            if p.shading_mode == "original":
+                output["cores"] += fill_lines(mass, p.fill_spacing / scale, checkpoint)
+            else:
+                deep = mask & (field >= threshold + .16)
+                bands = [(mask & ~deep, p.fill_spacing / scale * 2)]
+                if p.core_strength > 0:
+                    bands.append((deep, p.fill_spacing / scale /
+                                  max(.25, 2 * p.core_strength)))
+                for band, spacing in bands:
+                    for q in scanline_mask(band, spacing, checkpoint):
+                        checkpoint()
+                        output["cores"].extend(
+                            np.asarray(line.coords) for line in
+                            line_components(LineString(q).intersection(mass))
+                            if line.length > .1)
         else:
             if evidence.normals is None:
                 raise ValueError("Surface-normal model is required for form hatching")
@@ -195,8 +210,11 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
             raw = flow_hatch(
                 inset,
                 evidence.normals,
-                spacing=p.hatch_spacing / scale,
+                spacing=p.hatch_spacing / scale / p.form_density,
                 checkpoint=checkpoint,
+                coherent=p.form_flow == "coherent",
+                density_field=np.clip(field * 2, 0, 1)
+                if p.shading_mode == "tonal" else None,
             )
             hatch = []
             for i, q in enumerate(raw):
@@ -209,7 +227,14 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
                             Candidate(np.asarray(line.coords), 1, f"hatch-{i}-{j}")
                         )
             budget = 60 if p.style == "light_form" else 300
-            output += select(hatch, budget, w, h, checkpoint)
+            if p.shading_mode == "tonal":
+                budget = min(900, round(budget * p.form_density))
+                # More strokes survive in the darker interior, while the
+                # existing polygon and vector clearance remain authoritative.
+                hatch = [Candidate(c.points, min(1., _line_tone(c.points, field) * 3),
+                                   c.identity) for c in hatch
+                         if _line_tone(c.points, field) >= .04]
+            output["form"] += select(hatch, budget, w, h, checkpoint)
             if p.style == "face_form":
                 # Reserve dense shadow cores for the deepest evidence only.
                 core_groups, _ = shapes(
@@ -218,7 +243,8 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
                     3,
                     25,
                     64,
-                    threshold + 0.2,
+                    threshold + (0.2 if p.shading_mode == "original" else
+                                 0.28 - 0.2 * p.core_strength),
                     checkpoint=checkpoint,
                 )
                 core = GeometryCollection()
@@ -230,30 +256,79 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
                         part = part.symmetric_difference(make_valid(Polygon(q)))
                     core = core.union(part)
                 core = core.intersection(box(0, 0, w, h)).difference(protected)
-                output += fill_lines(core, p.fill_spacing / scale, checkpoint)
+                if p.shading_mode == "original" or p.core_strength > 0:
+                    spacing = p.fill_spacing / scale
+                    if p.shading_mode == "tonal":
+                        spacing /= max(.25, 2 * p.core_strength)
+                    output["cores"] += fill_lines(core, spacing, checkpoint)
     return document_from_paths(output, p, w, h, checkpoint)
+
+
+def _line_tone(points, field):
+    q = np.asarray(points)
+    h, w = field.shape
+    ix = np.clip(np.rint(q[:, 0]).astype(int), 0, w - 1)
+    iy = np.clip(np.rint(q[:, 1]).astype(int), 0, h - 1)
+    return float(np.mean(field[iy, ix]))
+
+
+def _smooth_path_mm(points, amount):
+    """Relax shallow facets, keeping endpoints and tight turns that frame gaps."""
+    if amount <= 0 or len(points) < 3:
+        return points
+    original = points.copy()
+    result = points.copy()
+    before, after = np.diff(original, axis=0)[:-1], np.diff(original, axis=0)[1:]
+    cosine = np.sum(before * after, axis=1) / np.maximum(
+        np.linalg.norm(before, axis=1) * np.linalg.norm(after, axis=1), 1e-12)
+    # A right-angle or sharper turn can bound a deliberate white opening.
+    easing = np.clip((cosine - .7) / .25, 0, 1)
+    for _ in range(2):
+        target = result.copy()
+        target[1:-1] = result[1:-1] + easing[:, None] * (
+            (result[:-2] + 2 * result[1:-1] + result[2:]) / 4 - result[1:-1])
+        delta = target - original
+        length = np.linalg.norm(delta, axis=1)
+        result = original + delta * np.minimum(1, amount / np.maximum(length, 1e-12))[:, None]
+    result[0], result[-1] = original[0], original[-1]
+    return result
 
 
 def document_from_paths(output, p, w, h, checkpoint):
     paper_w, paper_h = (h, w) if p.rotate in (90, 270) else (w, h)
     scale = p.width / paper_w
     checkpoint()
-    if len(output) > 20000 or sum(len(q) for q in output) > 500000:
+    if isinstance(output, dict):
+        components = output
+    else:
+        components = {"contours": output, "form": [], "cores": []}
+    enabled = set(p.ink_components)
+    selected = {name: components.get(name, []) for name in ("contours", "form", "cores") if name in enabled}
+    if sum(len(lines) for lines in selected.values()) > 20000 or sum(
+        len(q) for lines in selected.values() for q in lines
+    ) > 500000:
         raise ValueError(
             "Drawing is too detailed; reduce stroke budgets or increase spacing"
         )
-    paths = []
-    for q in output:
-        checkpoint()
-        q = np.asarray(q, float).copy()
-        q[:, 0] = np.clip(q[:, 0], 0, w)
-        q[:, 1] = np.clip(q[:, 1], 0, h)
-        q = rotate_points(q, w, h, p.rotate) * scale
-        if not np.isfinite(q).all():
-            raise ValueError("Nonfinite drawing geometry")
-        paths.append(Path(points=q.tolist()))
+    layers = []
+    smoothing = getattr(p, "smoothing_mm", 0)
+    for identity, name in enumerate(("contours", "form", "cores"), 1):
+        if name not in selected:
+            continue
+        paths = []
+        for q in selected[name]:
+            checkpoint()
+            q = np.asarray(q, float).copy()
+            q[:, 0] = np.clip(q[:, 0], 0, w)
+            q[:, 1] = np.clip(q[:, 1], 0, h)
+            q = rotate_points(q, w, h, p.rotate) * scale
+            if not np.isfinite(q).all():
+                raise ValueError("Nonfinite drawing geometry")
+            q = _smooth_path_mm(q, smoothing)
+            paths.append(Path(points=q.tolist()))
+        layers.append(Layer(id=identity, name=name, paths=paths))
     return PathDocument(
-        layers=[Layer(id=1, name="Linedraw v3", paths=paths)],
+        layers=layers,
         width=p.width,
         height=paper_h * scale,
         source="linedraw_v3",

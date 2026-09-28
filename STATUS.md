@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-28
 machine: mac+pi
-summary: Linedraw v3 adds reference Light support and regional form choices with automatic bench redraw; visual and paper acceptance remain pending.
+summary: Linedraw v3 adds independent ink components, frozen separate layers, optional tonal shading and Smoothen, plus a white-paper bench; user and paper acceptance pending.
 next:
-  - "Try Linedraw v3 in the open app; review four styles and corrected face regions"
+  - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
   - "After the active plot finishes, activate and check mandatory simplification and native timing"
   - "Check Mosca browsing, cutoff playback, repeated Keep and Resume in the native app"
   - "Check module browsers, presets and gallery preview/insertion"
@@ -15,14 +15,25 @@ handoff_for: Codex
 
 # idk.axibridge — status
 
+**Components and bench, 28 September:** Contours/form/cores can be independently
+included in the recipe or kept as aligned frozen layers in one undo step. Tonal
+coverage, normal-tangent flow, bounded regional hair steering and Smoothen are
+opt-in; original defaults retain the same drawing geometry. The bench now groups
+Image/Guides/Drawing controls, hides irrelevant options, shows white paper, and
+keeps automatic redraw optional/off during guide creation. 44 focused backend and
+12 UI checks plus two private cached-photo comparisons cover this extension; no
+full-suite rerun or hardware activity. Independent review found tonal gains in
+one case and preference for original shading in the other, so new treatments
+remain optional. User and paper acceptance remain pending.
+
 **Reference choices, 28 September:** Light form support and Regional face + form
 are now separate choices, with saved editable ownership/detail regions, category
 switches, automatic debounced redraw and shared drawing status. Verified with
 55 focused tests, typecheck/build and private real-model runs; no full-suite
 rerun requested. Light rendering closely matches the frozen evidence; regional
 hatching and faces are preserved with small legacy base-contour differences.
-All source-specific evidence remains outside Git. Shading-layer separation and
-lighter fill treatments remain design ideas, recorded in ROADMAP.md.
+All source-specific evidence remains outside Git. Component separation and optional tonal treatments are now implemented above;
+linked multi-layer regeneration remains a design idea in ROADMAP.md.
 
 **Linedraw v3 integration, 28 September:** Four styles, automatic editable face
 regions, local model workers, cancellation, real shadow-fill pen strokes and a

@@ -15,7 +15,7 @@ def test_reference_dispatch_preserves_scale_and_rotation(monkeypatch):
     from axibridge.linedraw.contracts import Evidence
     evidence=Evidence(np.ones((20,40,3)), np.ones((20,40)), None,
                       np.ones((20,40)),np.ones((20,40)))
-    monkeypatch.setattr(reference_light,'render_light',lambda *a,**k:[np.array([[10.,5.],[30.,15.]])])
+    monkeypatch.setattr(reference_light,'render_light_components',lambda *a,**k:{'contours':[np.array([[10.,5.],[30.,15.]])], 'form':[], 'cores':[]})
     doc=engine.render_document(evidence,LinedrawV3Params(style='light_support',width=100,rotate=90))
     assert doc.width==100 and doc.height==200
     assert list(doc.iter_paths())[0][1].points == [(75.,50.),(25.,150.)]

@@ -11,13 +11,21 @@ entries: 23
   portable saved geometry and atomic failed regeneration. Generic research
   kernels now live in `axibridge/linedraw`; research imports remain compatible.
   Added reference Light support and regional form, ownership/detail polygon
-  editing, category switches, automatic redraw and shared drawing status.
-- verification: Reference extension: 55 focused tests, typecheck/build and private
+  editing, category switches, optional automatic redraw and shared drawing status.
+  Latest extension: contour/form/core switches, opt-in tonal/direction treatments,
+  Smoothen, white-paper bench and Keep separate layers (frozen, one undo).
+- verification: Latest component extension: 44 focused backend tests and 12 UI
+  tests passed; typecheck/build passed. Desktop/mobile screenshots inspected.
+  Two cached-photo comparison populations retain exact default geometry;
+  independent Sol review supports opt-in treatment, not a universal new default.
+  Reference extension: 55 focused tests, typecheck/build and private
   real-model runs passed. Full suite was not repeated at Ian's request. Prior
   checkpoint full suite: 1,649 passed, one existing Starlette warning. Native app owns the worktree backend;
   real local-model Analyze, Keep, reopen, Redraw, Apply and undo passed. MPS first
   drawing 13.52 s; warm redraw 1.06 s. Typecheck/build passed. No hardware used.
-- next: Try unfamiliar photographs and face corrections; compare all four
+- next: Check the revised bench at native window sizes, compare tonal/original
+  treatments and Smoothen, and assign different pens to separate layers.
+  Then try unfamiliar photographs and face corrections; compare all four
   styles plus the two reference choices, then judge spacing on paper. Dense
   shadow boundaries can be ragged. Regional legacy cues are close, not identical.
 - state: App open from `codex/linedraw-v3`, original checkout unchanged. Local

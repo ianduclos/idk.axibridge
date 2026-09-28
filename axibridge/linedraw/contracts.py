@@ -89,6 +89,17 @@ class LinedrawV3Params(BaseModel):
         default=0.3, ge=0.05, le=5, title="Shadow fill spacing (mm)"
     )
     clearance: float = Field(default=0.6, ge=0, le=5, title="Contour clearance (mm)")
+    ink_components: list[Literal["contours", "form", "cores"]] = Field(
+        default_factory=lambda: ["contours", "form", "cores"], max_length=3,
+        title="Drawing components", json_schema_extra=HIDDEN,
+    )
+    shading_mode: Literal["original", "tonal"] = Field(default="original", title="Shading treatment")
+    form_flow: Literal["original", "coherent"] = Field(default="original", title="Stroke direction")
+    form_density: float = Field(default=1, ge=0.25, le=3, title="Form density")
+    smoothing_mm: float = Field(default=0, ge=0, le=2, title="Smoothen (mm)",
+        description="Maximum local smoothing displacement; zero preserves the original paths.")
+    core_strength: float = Field(default=0.5, ge=0, le=1, title="Dark core strength")
+    hair_flow: float = Field(default=0, ge=0, le=1, title="Hair direction from image")
     faces: list[FaceRegion] = Field(
         default_factory=list, max_length=32, json_schema_extra=HIDDEN
     )
@@ -105,6 +116,8 @@ class LinedrawV3Params(BaseModel):
 
     @model_validator(mode="after")
     def unique_faces(self):
+        if len(set(self.ink_components)) != len(self.ink_components):
+            raise ValueError("Drawing components must be unique")
         if len({f.id for f in self.faces}) != len(self.faces):
             raise ValueError("Face region IDs must be unique")
         for name in ("people", "detail_regions"):

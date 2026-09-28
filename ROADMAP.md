@@ -785,15 +785,15 @@ category switches. Live edits debounce redraw; shared drawing status includes
 bench analysis. Existing four recipes remain available.
 
 Ian also wants to brainstorm fills, a second less-bright layer, or detaching
-shadows into an independent layer. Deferred deliberately pending that discussion.
-A useful direction is preserving contour/shading roles so shading can be kept
-as an ordinary independent layer with its own pen, density and opacity. Screen
+shadows into an independent layer. The bounded implementation below now covers
+component controls, tonal treatment and frozen separate layers.
+Contour/form/core roles now survive generation and can be kept as independent
+frozen layers with their own pen. Density stays editable in the source recipe. Screen
 opacity must not be presented as reducing physical ink: lighter plotting needs
-wider spacing, fewer passes or a lighter pen. Decide editable linkage versus a
-frozen detached snapshot before changing the layer model.
+wider spacing, fewer passes or a lighter pen. Frozen copies are implemented; linked multi-layer regeneration remains open.
 
 
-**Shading proposal refinement, 28 September (discussion, not implemented):**
+**Shading components, 28 September (implemented; visual/paper acceptance pending):**
 
 1. Preserve contour, form-hatch and dense-core roles plus the pre-hatch shadow
    geometry. Compare the same drawing with shading hidden, sparse, or filled;
@@ -802,7 +802,7 @@ frozen detached snapshot before changing the layer model.
    explicit detach action to create ordinary frozen layers with matching
    placement. Frozen paths can change pen/visibility; editable fill density needs
    the retained shadow shapes and renderer settings. Linked multi-layer edits
-   and their undo semantics need a design decision before implementation.
+   and their undo semantics remain open; detached snapshots are implemented.
 3. Try three tone levels: paper, sparse form strokes and compact dark cores.
    Vary spacing continuously with the photographic shadow field, protect
    supported feature gaps, and compare at the intended paper size. Do not
@@ -816,3 +816,13 @@ frozen detached snapshot before changing the layer model.
 
 Automatic redraw is now optional. Adding guides switches it off until explicitly
 re-enabled, and unfinished polygons block it. Manual Redraw remains available.
+
+
+Implemented boundary: independent components inside one editable recipe, plus
+frozen separate layers in one undo. Tonal coverage, normal-tangent flow, gentle
+hair-guide steering and bounded Smoothen are opt-in. Original geometry remains
+unchanged with defaults. The white-paper bench groups relevant controls and
+keeps exact guide coordinates in advanced disclosures. No background generation,
+new depth model, relighting or linked multi-layer recipes were introduced.
+Two-image review found no universal replacement for original shading: denser
+flow can obscure the contour hierarchy. Keep experimental choices optional.

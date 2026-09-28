@@ -7,6 +7,7 @@ import time
 import uuid
 from ..assets import asset_store
 from ..render_work import RenderCancelled
+from ..model import PathDocument
 from .contracts import LinedrawV3Params
 from . import runtime
 from .engine import render_document
@@ -19,10 +20,12 @@ class Job:
     params: LinedrawV3Params
     operation: str
     image: bytes
+    project: object | None = None
     state: str = "queued"
     progress: float = 0
     message: str = ""
     result: dict | None = None
+    document: PathDocument | None = None
     error: str | None = None
     created: float = field(default_factory=time.monotonic)
     cancel: threading.Event = field(default_factory=threading.Event)
@@ -34,7 +37,7 @@ class JobManager:
         self.jobs = {}
         self.executor = None
 
-    def start(self, revision, params, operation):
+    def start(self, revision, params, operation, project=None):
         params = LinedrawV3Params(**params) if isinstance(params, dict) else params
         if operation not in ("analyze", "render"):
             raise ValueError("Unknown drawing operation")
@@ -55,7 +58,7 @@ class JobManager:
                     self.jobs.pop(j.id, None)
             if sum(j.state in ("queued", "running") for j in self.jobs.values()) >= 3:
                 raise ValueError("Drawing queue is full; cancel a pending analysis")
-            job = Job(uuid.uuid4().hex, revision, params, operation, data)
+            job = Job(uuid.uuid4().hex, revision, params, operation, data, project)
             self.jobs[job.id] = job
             if self.executor is None:
                 self.executor = ThreadPoolExecutor(
@@ -85,6 +88,22 @@ class JobManager:
                 j.state = "cancelled"
                 j.result = None
             return self.get(identity)
+
+    def completed_snapshot(self, identity, revision, project):
+        """Return only the completed geometry bound to this live project.
+
+        Keep the project reference, rather than its name or path: New and Load
+        replace the object even when the next project has the same name.
+        """
+        with self.lock:
+            job = self.jobs[identity]
+            if job.revision != revision:
+                raise ValueError("Drawing revision is stale")
+            if job.project is not project:
+                raise ValueError("Drawing belongs to a different project")
+            if job.state != "complete" or job.document is None:
+                raise ValueError("Drawing is not complete")
+            return job.document, job.params
 
     def _run(self, j):
         def check():
@@ -140,12 +159,20 @@ class JobManager:
                 diagnostics={"device": evidence.device},
                 preview=dict(
                     lines=[path.points for _, path in doc.iter_paths()],
+                    components=[dict(
+                        id=layer.name,
+                        label={"contours": "Contours", "form": "Form", "cores": "Cores"}[layer.name],
+                        lines=[path.points for path in layer.paths],
+                        count=len(layer.paths),
+                    ) for layer in doc.layers],
                     width=doc.width,
                     height=doc.height,
                 ),
             )
             with self.lock:
                 check()
+                j.params = p
+                j.document = doc
                 j.result = result
                 j.state = "complete"
                 j.progress = 1

@@ -8,9 +8,45 @@ to batch edits, then press **Redraw**. Adding a face/person/detail region or sta
 a polygon switches it off until you explicitly re-enable it. It stays disabled
 while a polygon is unfinished.
 The shared status indicator stays active during work, and the bench shows the stage.
-Keep creates an ordinary layer.
+The bench groups Image, Guides and Drawing controls; exact guide coordinates live
+in disclosures. The drawing pane has white paper and dark ink.
+Keep creates an ordinary editable layer.
 Reopen a kept layer's bench to edit its recipe: Apply updates that layer in one
 undo step, while Keep creates another layer.
+
+## Components, shading and smoothen
+
+**Contours**, **Form shading** and **Dark cores** switches change the actual
+output, including what is kept and plotted. A style may have no paths in a
+component: Contours has no shading, and the reference recipes have no cores in
+their original treatment. Hidden contours still protect supported white gaps
+in the shading; these are components of one coordinated drawing.
+
+**Original** preserves the existing recipe. **Tonal** varies local hatch coverage
+with photographic darkness and adds compact core strokes. Form density changes
+coverage; dark-core strength changes core coverage. Stronger is not automatically
+clearer. **Coherent** direction uses smoothed image-space normal tangents; it is
+an artistic heuristic, not a reconstructed 3D surface. Regional hair direction
+nudges existing selected hair lines toward image evidence by at most 0.6 source
+pixels; it does not generate missing strands. Rendering controls reuse cached
+model evidence. No depth or additional shading model is introduced.
+
+**Smoothen (mm)** gently relaxes shallow corners, preserves endpoints and sharp
+turns, and bounds each vertex's displacement by the selected amount. Zero leaves
+paths unchanged. This is a drawing-recipe adjustment in output millimetres;
+ordinary layer effects remain available for further processing.
+
+**Keep separate layers** copies the current completed components into independent
+frozen layers in one undo step, with common placement. Assign pens, move, hide or
+apply effects to each afterward. Their density is baked into the paths; return
+to the editable recipe to change the drawing and keep another set. When opened
+from an existing layer, copies inherit its transform and pen, but not its effects;
+the existing layer remains untouched. The action fails safely if the project or
+completed job is no longer current. Saved copies open without models.
+
+Screen brightness is not physical ink coverage: lighter plotting needs lower
+density or a lighter pen. The white-paper bench shows all selected paths as dark
+ink so changes in tone come from actual geometry.
 
 ## Styles and controls
 
@@ -34,7 +70,7 @@ undo step, while Keep creates another layer.
    facial strokes and 192 additional detail strokes per person; hands/feet,
    clothing and hair are initially visible, body detail is off.
 
-For Regional face + form, use **Edit regions** to switch between faces, people
+For Regional face + form, use **Edit source guides** to switch between faces, people
 and detail areas. A person polygon assigns ownership; overlapping people are
 resolved front-to-back in list order, with later entries in front. Link each
 person to a face when there are several. Add detail polygons and label them
@@ -67,9 +103,8 @@ for higher-resolution learned detail, not a template of facial landmarks.
 **Material** uses the research face-seeded color heuristic and requires useful
 face samples; it reports an error if none qualify. Neither recovers physical
 illumination. Foreground recognition identifies people versus background; it
-neither separates people nor understands named body parts. This version uses
-spatial allocation for body detail rather than the manually labeled regional
-budgets of the research studies.
+neither separates people nor understands named body parts. The standard styles use spatial allocation; Regional face + form exposes
+manually labeled detail guides and independent budgets per person.
 
 The 192 contour / 48 per-face defaults are starting settings. More strokes do
 not necessarily improve a drawing. Source correspondence and automatic face

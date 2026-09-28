@@ -208,6 +208,7 @@ export function openProcessLayerBench(id) {
   const params = JSON.parse(JSON.stringify(layer.source.params || {}));
   adapter.open({
     mod, params, contextKey: `layer:${layer.id}`,
+    sourceLayerId: moduleId === 'linedraw_v3' ? layer.id : undefined,
     onApply: moduleId === 'linedraw_v3' ? async (exact) => {
       const updated = await api.post(`/api/layers/${layer.id}/regenerate`, { params: exact });
       await actions.refreshProject();
@@ -262,7 +263,18 @@ async function openGenericBench({ mod, params, onCreate, onReroll, onClose }) {
   renderBenchForm();
   await openWith(mod, axis ? params[axis] : null, `${mod.label} — bench`);
 }
-registerBenchAdapter('linedraw', 1, { open: openLinedrawBench });
+registerBenchAdapter('linedraw', 1, { open: entry => openLinedrawBench({
+  ...entry,
+  onDetach: async ({ jobId, revision }) => {
+    const result = await api.post(`/api/linedraw/jobs/${encodeURIComponent(jobId)}/detach`, {
+      revision, source_layer_id: entry.sourceLayerId ?? null,
+    });
+    await actions.refreshProject();
+    await actions.refreshResolved();
+    actions.setSelection(result.layers.map(layer => layer.id));
+    return result.layers;
+  },
+}) });
 registerBenchAdapter('process', 1, { open: openGenericBench });
 registerBenchAdapter('homeostat', 1, { open: entry => openGenericBench({
   ...entry, mod: { ...entry.mod, schema: homeostatFormSchema(entry.mod.schema) },
