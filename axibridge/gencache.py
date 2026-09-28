@@ -99,7 +99,8 @@ def generate_cached(src: Any, params: dict[str, Any]) -> PathDocument:
     validated = src.Params(**params)
     if not getattr(src, "cacheable", True):
         return src.generate(validated)
-    key = (src.id, validated.model_dump_json(), asset_store.version())
+    identity = getattr(src, "cache_identity", lambda: "")()
+    key = (src.id, validated.model_dump_json() + identity, asset_store.version())
     with _lock:
         hit = _cache.get(key)
         if hit is not None:

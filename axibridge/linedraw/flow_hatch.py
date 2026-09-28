@@ -10,7 +10,9 @@ import numpy as np
 from scipy.ndimage import distance_transform_edt, gaussian_filter, label
 
 
-def flow_hatch(mask: np.ndarray, normals: np.ndarray, spacing: float = 5, checkpoint=lambda: None) -> list[np.ndarray]:
+def flow_hatch(
+    mask: np.ndarray, normals: np.ndarray, spacing: float = 5, checkpoint=lambda: None
+) -> list[np.ndarray]:
     """Return image-coordinate (x, y) polylines contained in ``mask``.
 
     ``mask`` has shape (H, W), ``normals`` has shape (H, W, >=2), and
@@ -18,7 +20,12 @@ def flow_hatch(mask: np.ndarray, normals: np.ndarray, spacing: float = 5, checkp
     """
     mask = np.asarray(mask, dtype=bool)
     normals = np.asarray(normals, dtype=float)
-    if mask.ndim != 2 or normals.shape[:2] != mask.shape or normals.ndim != 3 or normals.shape[2] < 2:
+    if (
+        mask.ndim != 2
+        or normals.shape[:2] != mask.shape
+        or normals.ndim != 3
+        or normals.shape[2] < 2
+    ):
         raise ValueError("mask must be HxW and normals must be HxWxC with C >= 2")
     if not np.isfinite(spacing) or spacing <= 0:
         raise ValueError("spacing must be positive and finite")
@@ -39,7 +46,7 @@ def flow_hatch(mask: np.ndarray, normals: np.ndarray, spacing: float = 5, checkp
     distance = distance_transform_edt(mask)
     occupied = np.zeros_like(mask)
     radius = max(1, int(round(0.7 * spacing)))
-    yy, xx = np.mgrid[-radius:radius + 1, -radius:radius + 1]
+    yy, xx = np.mgrid[-radius : radius + 1, -radius : radius + 1]
     disk_y, disk_x = np.nonzero(xx * xx + yy * yy <= radius * radius)
     disk_y -= radius
     disk_x -= radius
@@ -63,8 +70,12 @@ def flow_hatch(mask: np.ndarray, normals: np.ndarray, spacing: float = 5, checkp
         x0, y0 = int(x), int(y)
         x1, y1 = min(x0 + 1, w - 1), min(y0 + 1, h - 1)
         u, v = x - x0, y - y0
-        vx = (1-v)*((1-u)*dx[y0, x0] + u*dx[y0, x1]) + v*((1-u)*dx[y1, x0] + u*dx[y1, x1])
-        vy = (1-v)*((1-u)*dy[y0, x0] + u*dy[y0, x1]) + v*((1-u)*dy[y1, x0] + u*dy[y1, x1])
+        vx = (1 - v) * ((1 - u) * dx[y0, x0] + u * dx[y0, x1]) + v * (
+            (1 - u) * dx[y1, x0] + u * dx[y1, x1]
+        )
+        vy = (1 - v) * ((1 - u) * dy[y0, x0] + u * dy[y0, x1]) + v * (
+            (1 - u) * dy[y1, x0] + u * dy[y1, x1]
+        )
         length = max(float(np.hypot(vx, vy)), 1e-9)
         return float(vx / length), float(vy / length)
 
@@ -88,7 +99,9 @@ def flow_hatch(mask: np.ndarray, normals: np.ndarray, spacing: float = 5, checkp
                     vx, vy = -vx, -vy
                 # A midpoint check keeps diagonal pixel steps from bridging gaps.
                 nxp, nyp = x + vx, y + vy
-                if not inside((x + nxp) / 2, (y + nyp) / 2, component) or not inside(nxp, nyp, component):
+                if not inside((x + nxp) / 2, (y + nyp) / 2, component) or not inside(
+                    nxp, nyp, component
+                ):
                     break
                 ix, iy = int(round(nxp)), int(round(nyp))
                 if occupied[iy, ix]:

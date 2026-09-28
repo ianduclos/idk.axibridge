@@ -127,3 +127,25 @@
 
 .mosca-bench .bench-transport, .mosca-bench .process-generic-actions { display:none; }
 .mosca-bench #process-canvas .draw-line { stroke-width:0.07; }
+
+/* Linedraw uses the shared bench shell with canonical source and pen geometry. */
+#linedraw-panel > label, #linedraw-panel details > label { display: grid; gap: .35rem; margin: .6rem 0; }
+.linedraw-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .7rem 0; }
+.linedraw-face-fields { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.linedraw-face-fields label { display: grid; gap: .25rem; font-size: .85rem; }
+.linedraw-face-fields input { width: 100%; min-width: 0; }
+.linedraw-workspace { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; width: 100%; height: 100%; min-height: 240px; }
+.linedraw-workspace figure { display: flex; flex-direction: column; margin: 0; min-width: 0; min-height: 0; }
+.linedraw-workspace figcaption { font-size: .8rem; padding: .4rem; color: var(--ink-soft); }
+.linedraw-workspace svg { flex: 1; width: 100%; min-height: 0; background: var(--paper); color: var(--ink); }
+#linedraw-source { touch-action: none; }
+.linedraw-face { fill: transparent; stroke: var(--live); stroke-width: 2; vector-effect: non-scaling-stroke; cursor: move; }
+.linedraw-face.selected { stroke-width: 3; }
+.linedraw-face-handle { fill: var(--live); stroke: var(--paper); vector-effect: non-scaling-stroke; cursor: nwse-resize; }
+#process-popup.linedraw #process-status { display: none; }
+@media (max-width: 700px) { .linedraw-workspace { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
+
+#process-popup.linedraw .bench-transport,
+#process-popup.linedraw .process-generic-actions,
+#process-popup.linedraw .preview-stage { display: none; }
+#linedraw-panel[hidden], .linedraw-workspace[hidden] { display: none; }

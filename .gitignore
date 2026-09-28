@@ -1,4 +1,4 @@
-.venv/
+.venv
 __pycache__/
 *.pyc
 .DS_Store
@@ -6,7 +6,7 @@ __pycache__/
 .claude/settings.local.json
 graphify-out/
 checkpoints/
-node_modules/
+node_modules
 # built frontend — `npm run build` regenerates it; the server falls back to
 # the source in axibridge/static/ when it is absent (see app.py)
 axibridge/static_dist/

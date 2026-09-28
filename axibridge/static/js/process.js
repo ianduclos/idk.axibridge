@@ -25,6 +25,7 @@
 // a fresh run, which is why the bench form debounces mid-drag values.
 
 import { api } from "./api.js";
+import { openLinedrawBench, closeLinedrawBench } from "./linedraw_bench.js";
 import { S, actions } from "./main.js";
 import { homeostatFormSchema } from "./homeostat_bench.js";
 import { openMoscaBench, closeMoscaBench } from "./mosca_bench.js";
@@ -171,6 +172,7 @@ function openWith(mod, startValue, title) {
 
 export async function openProcessPopup(id) {
   if (!$("process-popup")) return;
+  closeLinedrawBench(false);
   closeMoscaBench(false);
   closeMagneticBench(false);
   closeSecondReadingBench(false);
@@ -194,6 +196,7 @@ export function openProcessLayerBench(id) {
   const mod = moduleFor(layer);
   const adapter = benchAdapter(mod, 'resume');
   if (!layer || !adapter) return;
+  closeLinedrawBench(false);
   closeMoscaBench(false);
   closeMagneticBench(false);
   closeSecondReadingBench(false);
@@ -205,6 +208,12 @@ export function openProcessLayerBench(id) {
   const params = JSON.parse(JSON.stringify(layer.source.params || {}));
   adapter.open({
     mod, params, contextKey: `layer:${layer.id}`,
+    onApply: moduleId === 'linedraw_v3' ? async (exact) => {
+      const updated = await api.post(`/api/layers/${layer.id}/regenerate`, { params: exact });
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      return updated;
+    } : undefined,
     onCreate: async (exact) => {
       const kept = await api.post("/api/layers/generate", { module: moduleId, params: exact });
       await actions.refreshProject();
@@ -221,6 +230,7 @@ export function openProcessLayerBench(id) {
  *  closes, and ＋ Create layer needs no second copy to reconcile. */
 export async function openProcessBench(entry) {
   if (!$("process-popup")) return;
+  closeLinedrawBench(false);
   closeMoscaBench(false);
   closeMagneticBench(false);
   const adapter = benchAdapter(entry.mod, 'new');
@@ -239,6 +249,7 @@ export async function openProcessBench(entry) {
 }
 
 async function openGenericBench({ mod, params, onCreate, onReroll, onClose }) {
+  closeLinedrawBench(false);
   closeMoscaBench(false);
   closeMagneticBench(false);
   closeSecondReadingBench(false);
@@ -251,6 +262,7 @@ async function openGenericBench({ mod, params, onCreate, onReroll, onClose }) {
   renderBenchForm();
   await openWith(mod, axis ? params[axis] : null, `${mod.label} — bench`);
 }
+registerBenchAdapter('linedraw', 1, { open: openLinedrawBench });
 registerBenchAdapter('process', 1, { open: openGenericBench });
 registerBenchAdapter('homeostat', 1, { open: entry => openGenericBench({
   ...entry, mod: { ...entry.mod, schema: homeostatFormSchema(entry.mod.schema) },

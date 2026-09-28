@@ -721,11 +721,18 @@ class Session:
             layer = self.project.layer(layer_id)
             if layer.source.type not in ("generator", "baked") or not layer.source.generator:
                 raise RuntimeError("layer was not generated; nothing to regenerate")
+            # Generate against a candidate recipe before checkpointing. Optional
+            # model failures must preserve both the live recipe and undo branch.
+            candidate = layer
+            if params is not None:
+                candidate = layer.model_copy(update={
+                    "source": layer.source.model_copy(update={"params": params}),
+                })
+            src = get_source(layer.source.generator)
+            doc = gencache.generate_cached(src, self._effective_gen_params(candidate))
             self._checkpoint(("regen", layer_id) if coalesce else None)
             if params is not None:
                 layer.source.params = params
-            src = get_source(layer.source.generator)
-            doc = gencache.generate_cached(src, self._effective_gen_params(layer))
             self.source_geometry[layer.id] = [p for lyr in doc.layers for p in lyr.paths]
             layer.source.type = "generator"  # a baked layer returns to live output
             layer.source.file = None  # snapshot is stale; rewritten on save

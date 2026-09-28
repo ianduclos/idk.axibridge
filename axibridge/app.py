@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import logbuf
 from .api import router
+from .linedraw_api import router as linedraw_router
 from .events import bus
 from .machine import manager
 from .registry import load_builtin_modules
@@ -58,6 +59,8 @@ async def _lifespan(app: FastAPI):
                          daemon=True).start()
     yield
     bus.close()  # end the SSE streams so graceful shutdown doesn't wait them out
+    from .linedraw.jobs import manager as linedraw_jobs
+    linedraw_jobs.shutdown()
     manager.shutdown()
 
 
@@ -82,6 +85,7 @@ class _RevalidatedStatic(StaticFiles):
 def create_app() -> FastAPI:
     app = FastAPI(title="axibridge", lifespan=_lifespan)
     app.include_router(router)
+    app.include_router(linedraw_router)
     served = frontend_dir()
     logging.getLogger("axibridge").info(
         "serving the %s frontend from %s",
