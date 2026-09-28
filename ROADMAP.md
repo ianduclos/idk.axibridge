@@ -775,3 +775,19 @@ category-free attention and explicit part localization before production design;
 then test unseen images without individual guide repairs. Integration is deferred
 because a general automatic recipe is not yet established. All reference images
 and image-specific derivatives must stay local and off GitHub.
+
+
+### Linedraw reference choices and shading-layer ideas — 2026-09-28
+
+Shipped as two additional bench choices: Light form support, and Regional face +
+form with editable ownership/detail polygons and fixed base shading across
+category switches. Live edits debounce redraw; shared drawing status includes
+bench analysis. Existing four recipes remain available.
+
+Ian also wants to brainstorm fills, a second less-bright layer, or detaching
+shadows into an independent layer. Deferred deliberately pending that discussion.
+A useful direction is preserving contour/shading roles so shading can be kept
+as an ordinary independent layer with its own pen, density and opacity. Screen
+opacity must not be presented as reducing physical ink: lighter plotting needs
+wider spacing, fewer passes or a lighter pen. Decide editable linkage versus a
+frozen detached snapshot before changing the layer model.

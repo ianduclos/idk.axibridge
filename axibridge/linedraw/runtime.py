@@ -105,12 +105,19 @@ def image_identity(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def evidence_profile(p):
+    return p.style if p.style in ("light_support", "regional_form") else "standard"
+
+
 def evidence_key(data, p, identity):
     return hashlib.sha256(
         (
             image_identity(data)
             + identity
+            + evidence_profile(p)
             + json.dumps([f.model_dump() for f in p.faces], sort_keys=True)
+            + (json.dumps([r.model_dump() for r in p.detail_regions], sort_keys=True)
+               if p.style == "regional_form" else "")
         ).encode()
     ).hexdigest()
 
@@ -136,6 +143,10 @@ def _cache_put(key, evidence):
     )
     size += sum(c.points.nbytes for c in (evidence.whole_candidates or ()))
     size += sum(c.points.nbytes for c in (evidence.tiled_candidates or ()))
+    for group in [evidence.reference_whole or [], evidence.reference_tiles or [], evidence.reference_base or [],
+                  *evidence.reference_faces.values(), *evidence.reference_regions.values()]:
+        # Dict/list candidates have Python-object overhead beyond numeric storage.
+        size += sum(256 + len(c["points"]) * 160 for c in group)
     budget = int(256 * 1024**2 * cache_budget_multiplier())
     if size > budget:
         return
@@ -280,7 +291,9 @@ def detect_and_analyze(
             )
             _run(
                 c,
-                {"faces": [f.model_dump() for f in p.faces], "detect": detect},
+                {"faces": [f.model_dump() for f in p.faces], "detect": detect and p.style != "light_support",
+                 "profile": evidence_profile(p),
+                 "detail_regions": [r.model_dump() for r in p.detail_regions]},
                 directory,
                 cancel,
                 progress,
@@ -311,29 +324,49 @@ def detect_and_analyze(
                 if cancel.is_set():
                     raise RenderCancelled()
 
-            whole_candidates = native_candidates(
-                arrays["whole_native"], [0, 0, w, h], w, h, "whole", check
-            )
-            tiled_candidates = tuple(
-                c
-                for i in range(4)
-                for c in native_candidates(
-                    arrays[f"tile_{i}"],
-                    arrays[f"tile_box_{i}"],
-                    w,
-                    h,
-                    f"tile-{i}",
-                    check,
-                )
-            )
+            profile = evidence_profile(p)
+            reference = {}
             face_candidates = {}
-            for i, face in enumerate(faces):
-                check()
-                name = f"face_{i}"
-                if name in arrays:
-                    face_candidates[face.id] = native_candidates(
-                        arrays[name], arrays[f"box_{i}"], w, h, f"face-{face.id}", check
+            if profile == "standard":
+                whole_candidates = native_candidates(
+                    arrays["whole_native"], [0, 0, w, h], w, h, "whole", check
+                )
+                tiled_candidates = tuple(
+                    c for i in range(4) for c in native_candidates(
+                        arrays[f"tile_{i}"], arrays[f"tile_box_{i}"], w, h, f"tile-{i}", check
                     )
+                )
+                for i, face in enumerate(faces):
+                    check()
+                    name = f"face_{i}"
+                    if name in arrays:
+                        face_candidates[face.id] = native_candidates(
+                            arrays[name], arrays[f"box_{i}"], w, h, f"face-{face.id}", check
+                        )
+            else:
+                from .reference_trace import trace_candidates, trace_face_candidates
+                def trace(name, bounds, prefix):
+                    arr = arrays[name]
+                    if (arr.ndim != 2 or max(arr.shape) > 1536 or not np.isfinite(arr).all()
+                            or arr.min() < 0 or arr.max() > 1):
+                        raise ValueError("Invalid reference line evidence")
+                    return trace_candidates(arr, tuple(bounds), (w, h), prefix, check)
+                whole_candidates = tiled_candidates = None
+                reference["reference_whole"] = trace("whole_native", [0,0,w,h], "whole")
+                reference["reference_tiles"] = trace("tiled_lines", [0,0,w,h], "tiles")
+                reference["reference_faces"] = {
+                    f.id: trace_face_candidates(
+                        arrays[f"face_{i}"], tuple(arrays[f"box_{i}"]), (w, h), f.id,
+                        [f.cx*w, f.cy*h, f.rx*w, f.ry*h], check
+                    )
+                    for i, f in enumerate(faces) if f"face_{i}" in arrays
+                }
+                if profile == "regional_form":
+                    reference["reference_base"] = trace("base_native", [0,0,w,h], "base")
+                    reference["reference_regions"] = {
+                        r.id: trace(f"region_{i}", arrays[f"region_box_{i}"], r.id)
+                        for i, r in enumerate(p.detail_regions) if f"region_{i}" in arrays
+                    }
             diagnostics = json.loads((directory / "diagnostics.json").read_text())
             device = str(diagnostics.get("device", "unknown"))[:64]
             accepted = p.model_copy(update={"faces": list(faces)})
@@ -351,6 +384,7 @@ def detect_and_analyze(
                 whole_candidates,
                 tiled_candidates,
                 device,
+                **reference,
             )
             if cancel.is_set():
                 raise RenderCancelled()

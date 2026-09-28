@@ -11,7 +11,7 @@ export class FaceRegions {
   constructor(svg, onChange, onSelect) {
     this.svg = svg; this.onChange = onChange; this.onSelect = onSelect;
     this.faces = []; this.selected = -1; this.width = 1000; this.height = 1000;
-    this.gesture = null; this.url = ''; this.imageEpoch = 0;
+    this.gesture = null; this.url = ''; this.imageEpoch = 0; this.active = true;
     svg.addEventListener('pointerdown', e => this.down(e));
     svg.addEventListener('pointermove', e => this.move(e));
     svg.addEventListener('pointerup', () => this.finish());
@@ -31,13 +31,14 @@ export class FaceRegions {
   setFaces(faces, selected = this.selected) {
     this.faces = copy(faces); this.selected = Math.min(selected, faces.length - 1); this.draw();
   }
+  setActive(active) { this.active = active; if (active) this.draw(); }
   point(e) {
     const pt = this.svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
     const p = pt.matrixTransform(this.svg.getScreenCTM().inverse());
     return { x: p.x / this.width, y: p.y / this.height };
   }
   down(e) {
-    if (e.button !== 0 || this.disabled) return;
+    if (e.button !== 0 || this.disabled || !this.active) return;
     const index = Number(e.target.dataset.index);
     if (!Number.isInteger(index) || !this.faces[index]) return;
     this.selected = index;
@@ -66,6 +67,7 @@ export class FaceRegions {
     this.faces = this.gesture.faces; this.gesture = null; this.draw(); return true;
   }
   draw() {
+    if (!this.active) return;
     const w = this.width, h = this.height;
     this.svg.setAttribute('viewBox', `0 0 ${w} ${h}`); this.svg.replaceChildren();
     if (this.url) this.svg.append(node('image', { href: this.url, width: w, height: h }));

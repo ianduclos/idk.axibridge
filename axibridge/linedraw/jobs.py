@@ -103,7 +103,8 @@ class JobManager:
                 j.state = "running"
             p = j.params
             if j.operation == "analyze":
-                p = p.model_copy(update={"image_identity": "", "faces": []})
+                p = p.model_copy(update={"image_identity": "", "faces": [],
+                    "people": [person.model_copy(update={"face_id": ""}) for person in p.people]})
             evidence = runtime.detect_and_analyze(
                 j.image,
                 p,
@@ -122,10 +123,14 @@ class JobManager:
             doc = render_document(evidence, p, checkpoint=check)
             check()
             warnings = []
-            if not p.faces:
+            if not p.faces and p.style != "light_support":
                 warnings.append("No face regions. Add a region to request face detail.")
             if not (evidence.foreground > 0.35).any():
                 warnings.append("No person foreground found; the drawing is empty.")
+            if p.style == "regional_form" and not p.detail_regions:
+                warnings.append("Base form only. Add detail regions to recover hands, clothing or hair.")
+            if j.operation == "analyze" and p.people:
+                warnings.append("Faces redetected; check each person's face link.")
             result = dict(
                 params=p.model_dump(),
                 faces=[f.model_dump() for f in p.faces],

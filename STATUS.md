@@ -3,7 +3,7 @@ project: idk.axibridge
 state: active
 updated: 2026-09-28
 machine: mac+pi
-summary: Linedraw v3 implemented and open in the native app from codex/linedraw-v3; user visual and paper acceptance pending.
+summary: Linedraw v3 adds reference Light support and regional form choices with automatic bench redraw; visual and paper acceptance remain pending.
 next:
   - "Try Linedraw v3 in the open app; review four styles and corrected face regions"
   - "After the active plot finishes, activate and check mandatory simplification and native timing"
@@ -14,6 +14,15 @@ handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Reference choices, 28 September:** Light form support and Regional face + form
+are now separate choices, with saved editable ownership/detail regions, category
+switches, automatic debounced redraw and shared drawing status. Verified with
+55 focused tests, typecheck/build and private real-model runs; no full-suite
+rerun requested. Light rendering closely matches the frozen evidence; regional
+hatching and faces are preserved with small legacy base-contour differences.
+All source-specific evidence remains outside Git. Shading-layer separation and
+lighter fill treatments remain design ideas, recorded in ROADMAP.md.
 
 **Linedraw v3 integration, 28 September:** Four styles, automatic editable face
 regions, local model workers, cancellation, real shadow-fill pen strokes and a

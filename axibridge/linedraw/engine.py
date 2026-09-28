@@ -110,6 +110,14 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
     p = params if isinstance(params, LinedrawV3Params) else LinedrawV3Params(**params)
     h, w = evidence.rgb.shape[:2]
     checkpoint()
+    if p.style in ("light_support", "regional_form"):
+        if p.style == "light_support":
+            from .reference_light import render_light
+            output = render_light(evidence, p, checkpoint)
+        else:
+            from .regional_form import render_regional
+            output = render_regional(evidence, p, checkpoint)
+        return document_from_paths(output, p, w, h, checkpoint)
     fg = evidence.foreground > 0.35
     if evidence.alpha is not None:
         fg = fg & (evidence.alpha > 0.5)
@@ -223,6 +231,12 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
                     core = core.union(part)
                 core = core.intersection(box(0, 0, w, h)).difference(protected)
                 output += fill_lines(core, p.fill_spacing / scale, checkpoint)
+    return document_from_paths(output, p, w, h, checkpoint)
+
+
+def document_from_paths(output, p, w, h, checkpoint):
+    paper_w, paper_h = (h, w) if p.rotate in (90, 270) else (w, h)
+    scale = p.width / paper_w
     checkpoint()
     if len(output) > 20000 or sum(len(q) for q in output) > 500000:
         raise ValueError(

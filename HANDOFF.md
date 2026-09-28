@@ -6,15 +6,20 @@ entries: 23
 
 ### Linedraw v3 native and paper acceptance — opened 2026-09-28, owner: ian
 
-- done: Production integration with four executable drawing styles, automatic
+- done: Production integration with six executable drawing styles, automatic
   editable face ellipses, local inference, cancellable draft jobs, Keep/Apply,
   portable saved geometry and atomic failed regeneration. Generic research
   kernels now live in `axibridge/linedraw`; research imports remain compatible.
-- verification: Full suite: 1,649 passed, one existing Starlette warning. Native app owns the worktree backend;
+  Added reference Light support and regional form, ownership/detail polygon
+  editing, category switches, automatic redraw and shared drawing status.
+- verification: Reference extension: 55 focused tests, typecheck/build and private
+  real-model runs passed. Full suite was not repeated at Ian's request. Prior
+  checkpoint full suite: 1,649 passed, one existing Starlette warning. Native app owns the worktree backend;
   real local-model Analyze, Keep, reopen, Redraw, Apply and undo passed. MPS first
   drawing 13.52 s; warm redraw 1.06 s. Typecheck/build passed. No hardware used.
 - next: Try unfamiliar photographs and face corrections; compare all four
-  styles, then judge spacing on paper. Dense shadow boundaries can be ragged.
+  styles plus the two reference choices, then judge spacing on paper. Dense
+  shadow boundaries can be ragged. Regional legacy cues are close, not identical.
 - state: App open from `codex/linedraw-v3`, original checkout unchanged. Local
   model profile installed externally; no model weights or private derivatives
   in Git. Original empty project restored; bundled public example asset retained.

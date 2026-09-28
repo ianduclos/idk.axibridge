@@ -142,7 +142,17 @@
 .linedraw-face { fill: transparent; stroke: var(--live); stroke-width: 2; vector-effect: non-scaling-stroke; cursor: move; }
 .linedraw-face.selected { stroke-width: 3; }
 .linedraw-face-handle { fill: var(--live); stroke: var(--paper); vector-effect: non-scaling-stroke; cursor: nwse-resize; }
-#process-popup.linedraw #process-status { display: none; }
+#linedraw-panel textarea { box-sizing: border-box; width: 100%; min-width: 0; font: .8rem ui-monospace, SFMono-Regular, monospace; }
+#linedraw-panel #linedraw-categories { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; margin: .6rem 0; }
+#linedraw-panel #linedraw-categories[hidden] { display: none; }
+#linedraw-panel #linedraw-categories p { grid-column: 1 / -1; margin: 0; }
+#linedraw-panel #linedraw-categories label { white-space: nowrap; }
+#linedraw-person-controls[hidden], #linedraw-detail-controls[hidden], #linedraw-face-controls[hidden] { display: none; }
+.linedraw-region { fill: transparent; stroke: var(--live); stroke-width: 2; vector-effect: non-scaling-stroke; cursor: move; }
+.linedraw-region.details { stroke-dasharray: 5 3; }
+.linedraw-region.selected { stroke-width: 3; }
+.linedraw-region.in-progress { pointer-events: none; }
+.linedraw-region-handle { fill: var(--live); stroke: var(--paper); vector-effect: non-scaling-stroke; cursor: crosshair; }
 @media (max-width: 700px) { .linedraw-workspace { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
 
 #process-popup.linedraw .bench-transport,

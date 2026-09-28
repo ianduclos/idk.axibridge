@@ -3,7 +3,9 @@
 Choose **Linedraw v3** in the generator selector, then **Bench**. Select or upload
 an image and press **Analyze / redetect faces**. The image stays on this computer.
 The left view shows the source and editable face ellipses; the right view shows
-actual pen paths. Redraw applies settings; Keep creates an ordinary layer.
+actual pen paths. Edits redraw automatically after a short pause; Redraw also retries explicitly.
+The shared status indicator stays active during work, and the bench shows the stage.
+Keep creates an ordinary layer.
 Reopen a kept layer's bench to edit its recipe: Apply updates that layer in one
 undo step, while Keep creates another layer.
 
@@ -17,6 +19,40 @@ undo step, while Keep creates another layer.
    Fill spacing changes density and plot time; there is no painted-fill shortcut.
 4. **Face + form** combines independent face detail, fuller form hatching and
    filled deep-shadow cores.
+
+5. **Light form support** preserves the final research recipe: weighted spatial
+   contour selection, photographic edges stable across two scales, and at most
+   60 sparse hatch strokes with clearance around every contour. It uses no
+   anatomical guides. Its fixed image-space distances are separate from the
+   adjustable Light form style; input images are still capped at 1536 pixels.
+6. **Regional face + form** preserves the earlier middle-scale material/form
+   base with independent face crops and manually selected regional detail.
+   It requires an enabled face region for the material proxy. Start with 48
+   facial strokes and 192 additional detail strokes per person; hands/feet,
+   clothing and hair are initially visible, body detail is off.
+
+For Regional face + form, use **Edit regions** to switch between faces, people
+and detail areas. A person polygon assigns ownership; overlapping people are
+resolved front-to-back in list order, with later entries in front. Link each
+person to a face when there are several. Add detail polygons and label them
+hands/feet, clothing, hair or body. Drag vertices or edit their coordinates;
+exclusion polygons can remove unwanted areas such as knees from a dress crop.
+The single-person default owns the full image, still clipped by foreground.
+
+Category switches affect added detail only: base hatching and face evidence stay
+fixed. An allowance is a ceiling, not a promised count. No regions means base
+form only. Regions and category settings are saved in the layer recipe; changing
+image/frame resets them. Model inference runs again after crop changes, so these
+edits take longer than a cached budget or category change. The previous drawing
+stays visible while its replacement runs. Redetecting faces clears person-face
+links so that stale identities cannot silently attach to a new detection.
+
+The Light support renderer was compared against the frozen research output with
+identical evidence: all 252 paths matched within 0.007 source pixels. Regional
+rendering preserved the reference hatching and face crop selection, but its base
+contour tracing remains slightly different from the oldest cached study. Treat
+it as the corresponding recipe, not guaranteed byte-identical legacy geometry.
+These checks are local; no reference images or derived geometry are test fixtures.
 
 Face regions can be dragged and resized with their corner dot, or edited with
 numeric controls. Automatic detection is only a proposal. Add missed faces,
@@ -91,6 +127,11 @@ frame, so resizing cannot erase thin evidence. The completed bench reports
 the inference device. At most 32 face regions and
 1024 broad contours are accepted. Output is limited to 20,000 paths / 500,000
 points; excessive detail requests an explicit reduction.
+
+The latest reference-style extension passed 55 focused rendering, runtime,
+job, persistence and browser tests, plus typecheck/build. The full repository
+suite was not repeated for this extension, following the requested bounded
+verification.
 
 Tests use mathematical fixtures and mocked model evidence. Real-model smoke
 checks use nonprivate inputs. Private research photographs and all derivatives,

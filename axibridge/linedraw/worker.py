@@ -90,6 +90,18 @@ def face_detection(config, image_path):
     return faces
 
 
+def detail_crop_bounds(region, width, height):
+    """A 35% context expansion around a normalized guide, clipped to source."""
+    points = np.asarray(region["polygon"], float) * [width, height]
+    lo, hi = points.min(axis=0), points.max(axis=0)
+    center = (lo + hi) / 2
+    radius = (hi - lo) * .675
+    left = np.maximum(0, np.floor(center - radius)).astype(int)
+    right = np.minimum([width, height], np.ceil(center + radius)).astype(int)
+    right = np.maximum(left + 1, right)
+    return int(left[0]), int(left[1]), int(right[0]), int(right[1])
+
+
 def main(request_path):
     import gc
     import subprocess
@@ -190,15 +202,23 @@ def main(request_path):
         )
         with torch.inference_mode():
             array = model(batch)[0, 0].clamp(0, 1).cpu().numpy()
+        if profile != "standard":
+            array = np.rint(array * 255).astype(np.uint8).astype(np.float32) / 255
         return array
 
     def resized(arr, size):
+        if profile != "standard":
+            image = Image.fromarray(np.uint8(np.rint(np.clip(arr, 0, 1) * 255)))
+            return np.asarray(image.resize(size, Image.Resampling.BILINEAR), dtype=np.float32) / 255
         return np.asarray(
             Image.fromarray(arr).resize(size, Image.Resampling.BILINEAR),
             dtype=np.float32,
         )
 
-    result["whole_native"] = infer(image, 768)
+    profile = request.get("profile", "standard")
+    result["whole_native"] = infer(image, 1536 if profile == "regional_form" else 768)
+    if profile == "regional_form":
+        result["base_native"] = infer(image, 768)
     result["whole_lines"] = resized(result["whole_native"], (w, h))
     acc = np.zeros((h, w))
     weight = np.zeros((h, w))
@@ -227,6 +247,14 @@ def main(request_path):
         y1 = min(h, max(y0 + 1, int(np.ceil((face["cy"] + face["ry"] * 1.35) * h))))
         result[f"face_{i}"] = infer(image.crop((x0, y0, x1, y1)), 512)
         result[f"box_{i}"] = np.array([x0, y0, x1, y1])
+    if profile == "regional_form":
+        for i, region in enumerate(request.get("detail_regions", [])):
+            if not region.get("enabled", True):
+                continue
+            progress(.65, f"Reading detail region {i + 1}")
+            bounds = detail_crop_bounds(region, w, h)
+            result[f"region_{i}"] = infer(image.crop(bounds), 512)
+            result[f"region_box_{i}"] = np.array(bounds)
     del model
     gc.collect()
     release_import_root(c["line_code"])
