@@ -35,7 +35,9 @@ budgets of the research studies.
 The 192 contour / 48 per-face defaults are starting settings. More strokes do
 not necessarily improve a drawing. Source correspondence and automatic face
 localization are not guarantees of expression or likeness. Physical plot quality
-still needs a pen-and-paper check.
+still needs a pen-and-paper check. Dense shadow styles can retain small holes
+and ragged tonal boundaries; use shadow strength and spacing to judge that
+tradeoff on your image.
 
 ## Local runtime
 
@@ -83,7 +85,10 @@ analysis, but accepted recipes and geometry travel in project folders.
 
 Input images are EXIF-corrected, alpha-composited on white and bounded to 1536
 pixels on their long side. Face inference uses a 512-pixel long side with crop
-context; whole-image learned inference uses 768. At most 32 face regions and
+context; whole-image learned inference uses 768. Learned maps are traced at
+their native inference size before vector coordinates return to the source
+frame, so resizing cannot erase thin evidence. The completed bench reports
+the inference device. At most 32 face regions and
 1024 broad contours are accepted. Output is limited to 20,000 paths / 500,000
 points; excessive detail requests an explicit reduction.
 

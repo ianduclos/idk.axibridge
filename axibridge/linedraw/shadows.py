@@ -63,37 +63,52 @@ def shadow_field(rgb, foreground, face_masks):
     return field, {"skin": skin, "light": light}
 
 
-def shapes(field, fg, sigma, minarea, cap, threshold):
+def shapes(field, fg, sigma, minarea, cap, threshold, checkpoint=None):
+    check = checkpoint or (lambda: None)
     # Normalize blur at the silhouette; never let background create a shadow rim.
+    check()
     smooth = gaussian_filter(field * fg, sigma) / np.maximum(
         gaussian_filter(fg.astype(float), sigma), 1e-5
     )
+    check()
     m = (smooth > threshold) & fg
+    check()
     m = binary_closing(m, iterations=max(1, round(sigma / 2))) & fg
+    check()
     m = binary_opening(m, iterations=1)
+    check()
     labs, n = label(m)
+    check()
+    counts = np.bincount(labs.ravel(), minlength=n + 1)
+    check()
     candidates = []
     for k in range(1, n + 1):
-        size = int(np.sum(labs == k))
+        check()
+        size = int(counts[k])
         if size < minarea:
             continue
         candidates.append((size, k))
     selected = np.zeros_like(m)
     groups = []
     for size, k in sorted(candidates, reverse=True)[:cap]:
+        check()
         component = labs == k
         selected |= component
         # Pad to close actual clipped filled regions at the image boundary.
         curves = contourpy.contour_generator(
             z=np.pad(component.astype(float), 1)
         ).lines(0.5)
+        check()
         qs = []
         for c in curves:
+            check()
             q = simplify(c - 1, max(0.35, sigma * 0.16))
+            check()
             if len(q) > 3:
                 qs.append(q)
         if qs:
             groups.append((size, qs))
+        check()
     return groups, selected
 
 

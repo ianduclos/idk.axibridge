@@ -59,3 +59,28 @@ def test_model_import_roots_do_not_shadow_namespaces(tmp_path):
     assert importlib.util.find_spec("unique_linedraw_utils") is not None
     release_import_root(str(root))
     assert importlib.util.find_spec("unique_linedraw_utils") is None
+
+
+def test_native_trace_preserves_thin_line_before_coordinate_mapping():
+    from axibridge.linedraw.runtime import native_candidates
+
+    line_map = np.ones((768, 768), dtype=np.float32)
+    line_map[100:650, 384] = 0
+    candidates = native_candidates(
+        line_map, [2, 3, 26, 15], 30, 20, "crop", lambda: None
+    )
+    assert len(candidates) == 1
+    points = candidates[0].points
+    assert np.allclose(points[:, 0], 14, atol=0.1)
+    assert points[:, 1].min() >= 3 and points[:, 1].max() <= 15
+    assert np.ptp(points[:, 1]) > 8
+
+
+@pytest.mark.parametrize(
+    "bounds", [[0, 0, 40, 10], [4, 0, 2, 10], [0, float("nan"), 10, 10]]
+)
+def test_native_trace_rejects_invalid_crop(bounds):
+    from axibridge.linedraw.runtime import native_candidates
+
+    with pytest.raises(ValueError):
+        native_candidates(np.ones((8, 8)), bounds, 20, 20, "crop", lambda: None)

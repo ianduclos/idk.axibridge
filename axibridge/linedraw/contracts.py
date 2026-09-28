@@ -82,6 +82,9 @@ class Evidence:
     face_candidates: dict[str, tuple[Candidate, ...]] = field(default_factory=dict)
     identity: str = ""
     alpha: np.ndarray | None = None
+    whole_candidates: tuple[Candidate, ...] | None = None
+    tiled_candidates: tuple[Candidate, ...] | None = None
+    device: str = "unknown"
 
 
 def region_mask(face, width, height):

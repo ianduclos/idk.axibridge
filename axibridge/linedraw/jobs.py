@@ -132,6 +132,7 @@ class JobManager:
                 image_identity=p.image_identity,
                 evidence_identity=evidence.identity,
                 warnings=warnings,
+                diagnostics={"device": evidence.device},
                 preview=dict(
                     lines=[path.points for _, path in doc.iter_paths()],
                     width=doc.width,

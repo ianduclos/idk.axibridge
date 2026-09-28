@@ -14,10 +14,11 @@ from .shadows import shadow_field, shapes, line_components
 from .flow_hatch import flow_hatch
 
 
-def clipped_candidates(candidates, mask):
+def clipped_candidates(candidates, mask, checkpoint=render_checkpoint):
     h, w = mask.shape
     out = []
     for c in candidates:
+        checkpoint()
         dense = samples(c.points, 0.7)
         ix = np.clip(dense[:, 0].astype(int), 0, w - 1)
         iy = np.clip(dense[:, 1].astype(int), 0, h - 1)
@@ -40,6 +41,7 @@ def select(candidates, budget, w, h, checkpoint):
         return []
     queues = [[] for _ in range(9)]
     for c in candidates:
+        checkpoint()
         center = c.points.mean(axis=0)
         cell = min(2, int(3 * center[1] / h)) * 3 + min(2, int(3 * center[0] / w))
         queues[cell].append(c)
@@ -56,6 +58,7 @@ def select(candidates, budget, w, h, checkpoint):
         checkpoint()
         for queue in queues:
             while queue:
+                checkpoint()
                 c = queue.pop(0)
                 q = samples(c.points, 1)
                 ix = np.clip(q[:, 0].astype(int), 0, w - 1)
@@ -122,18 +125,22 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
         candidates = evidence.face_candidates.get(face.id, ())
         face_paths.extend(
             select(
-                clipped_candidates(candidates, mask), p.face_budget, w, h, checkpoint
+                clipped_candidates(candidates, mask, checkpoint),
+                p.face_budget,
+                w,
+                h,
+                checkpoint,
             )
         )
     pool = []
-    for name, arr in [
-        ("whole", evidence.whole_lines),
-        ("tiles", evidence.tiled_lines),
-        ("photo", photographic_map(evidence.rgb)),
+    for name, arr, native in [
+        ("whole", evidence.whole_lines, evidence.whole_candidates),
+        ("tiles", evidence.tiled_lines, evidence.tiled_candidates),
+        ("photo", photographic_map(evidence.rgb), None),
     ]:
         checkpoint()
-        pool.extend(trace_map(arr, name, checkpoint))
-    pool = clipped_candidates(pool, fg & ~face_mask)
+        pool.extend(native if native is not None else trace_map(arr, name, checkpoint))
+    pool = clipped_candidates(pool, fg & ~face_mask, checkpoint)
     if len(pool) > 20000:
         raise ValueError("Too much detail; reduce image detail")
     contours = select(pool, p.contour_budget, w, h, checkpoint) + face_paths
@@ -155,11 +162,13 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
             )
             field = np.clip(1 - lum / np.maximum(base, 0.05), 0, 1)
         threshold = 0.32 - 0.24 * p.shadow_strength
-        groups, mask = shapes(field, fg, 2, 12, 128, threshold)
+        groups, mask = shapes(field, fg, 2, 12, 128, threshold, checkpoint=checkpoint)
         mass = GeometryCollection()
         for _, rings in groups:
+            checkpoint()
             component = GeometryCollection()
             for q in rings:
+                checkpoint()
                 component = component.symmetric_difference(make_valid(Polygon(q)))
             mass = mass.union(component)
         mass = mass.intersection(box(0, 0, w, h))
@@ -196,12 +205,20 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
             if p.style == "face_form":
                 # Reserve dense shadow cores for the deepest evidence only.
                 core_groups, _ = shapes(
-                    field, fg & ~face_mask, 3, 25, 64, threshold + 0.2
+                    field,
+                    fg & ~face_mask,
+                    3,
+                    25,
+                    64,
+                    threshold + 0.2,
+                    checkpoint=checkpoint,
                 )
                 core = GeometryCollection()
                 for _, rings in core_groups:
+                    checkpoint()
                     part = GeometryCollection()
                     for q in rings:
+                        checkpoint()
                         part = part.symmetric_difference(make_valid(Polygon(q)))
                     core = core.union(part)
                 core = core.intersection(box(0, 0, w, h)).difference(protected)
@@ -213,6 +230,7 @@ def render_document(evidence, params, *, checkpoint=render_checkpoint):
         )
     paths = []
     for q in output:
+        checkpoint()
         q = np.asarray(q, float).copy()
         q[:, 0] = np.clip(q[:, 0], 0, w)
         q[:, 1] = np.clip(q[:, 1], 0, h)

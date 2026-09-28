@@ -140,6 +140,7 @@ def main(request_path):
     device = torch.device(
         c.get("device") or ("mps" if torch.backends.mps.is_available() else "cpu")
     )
+    (directory / "diagnostics.json").write_text(json.dumps({"device": str(device)}))
     torch.set_num_threads(4)
 
     def clear(model):
@@ -197,14 +198,17 @@ def main(request_path):
             dtype=np.float32,
         )
 
-    result["whole_lines"] = resized(infer(image, 768), (w, h))
+    result["whole_native"] = infer(image, 768)
+    result["whole_lines"] = resized(result["whole_native"], (w, h))
     acc = np.zeros((h, w))
     weight = np.zeros((h, w))
     cw, ch = max(1, round(w * 0.64)), max(1, round(h * 0.64))
     for i, (x, y) in enumerate(((x, y) for y in [0, h - ch] for x in [0, w - cw])):
         progress(0.3 + i * 0.07, f"Reading detail crop {i + 1} of 4")
         crop = image.crop((x, y, x + cw, y + ch))
-        arr = resized(infer(crop, 512), (cw, ch))
+        result[f"tile_{i}"] = infer(crop, 512)
+        result[f"tile_box_{i}"] = np.array([x, y, x + cw, y + ch])
+        arr = resized(result[f"tile_{i}"], (cw, ch))
         yy, xx = np.mgrid[:ch, :cw]
         win = np.maximum(
             0.025,

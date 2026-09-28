@@ -132,7 +132,7 @@ async function run(operation) {
     draft.params=copy(job.result.params); draft.selected=draft.params.faces.length?0:-1;
     draft.rendered=key(); draft.job=null;
     renderControls(); updateFaces(); draw(job.result.preview);
-    $('linedraw-message').textContent=['Drawing ready.',...job.result.warnings].join(' ');
+    $('linedraw-message').textContent=['Drawing ready.', ...(job.result.diagnostics?.device ? [`Processed locally on ${job.result.diagnostics.device.toUpperCase()}.`] : []), ...job.result.warnings].join(' ');
   } catch (error) { if (valid()) showBenchError(error,() => run(operation)); }
   finally { if (valid()) { draft.busy=false; buttons(); } }
 }

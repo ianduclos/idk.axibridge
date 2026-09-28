@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import threading
 
 from fontTools.ttLib import TTCollection, TTFont
 
@@ -50,6 +51,7 @@ class SystemFont:
 
 
 _cache: list[SystemFont] | None = None
+_discovery_lock = threading.Lock()
 
 #: Fonts a source module ships in-repo (e.g. text_fill.py's Recursive),
 #: contributed via register_bundled() so /api/fonts stays one generic
@@ -123,7 +125,11 @@ def catalogue(refresh: bool = False) -> list[SystemFont]:
     bundled entries never need refreshing, they don't change at runtime."""
     global _cache
     if _cache is None or refresh:
-        _cache = _discover()
+        # Startup probes can time out while scanning fonts. Share the first
+        # scan so their retries do not multiply the same expensive work.
+        with _discovery_lock:
+            if _cache is None or refresh:
+                _cache = _discover()
     return [*_bundled, *_cache]
 
 

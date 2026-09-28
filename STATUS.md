@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-09-28
 machine: mac+pi
-summary: Linedraw v3 research kernels and private-data boundaries preserved; production integration and earlier native acceptance remain pending.
+summary: Linedraw v3 implemented and open in the native app from codex/linedraw-v3; user visual and paper acceptance pending.
 next:
-  - "Continue linedraw v3 from docs/research/linedraw-v3.md; keep all reference-derived material private"
+  - "Try Linedraw v3 in the open app; review four styles and corrected face regions"
   - "After the active plot finishes, activate and check mandatory simplification and native timing"
   - "Check Mosca browsing, cutoff playback, repeated Keep and Resume in the native app"
   - "Check module browsers, presets and gallery preview/insertion"
@@ -14,6 +14,21 @@ handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Linedraw v3 integration, 28 September:** Four styles, automatic editable face
+regions, local model workers, cancellation, real shadow-fill pen strokes and a
+source/drawing bench are implemented. Keep creates a normal layer; Open drawing
+bench → Apply updates its recipe with undo. Saved geometry opens without models.
+Models are configured locally, outside Git. Private study material remains out
+of the repository. [Usage and limits](docs/LINEDRAW.md).
+
+The normal app launcher is running from the isolated `codex/linedraw-v3` worktree
+with its own backend and hardware auto-connect disabled. Native backend flow
+verified Analyze → Keep → reopen → Redraw → Apply → undo; original empty project
+restored. Bundled public portrait: first analysis/drawing 13.52 s, warm redraw
+1.06 s on MPS. Final suite: **1,649 passed**, one existing Starlette warning.
+Typecheck/build passed. Screen results are ready for Ian's check; no paper test.
+The original checkout and main are unchanged; no push or merge.
 
 **Linedraw research checkpoint, 28 September:** Reusable array/geometry kernels
 for shadow shapes, form hatching, regional allocation and optional facial

@@ -17,7 +17,7 @@ import numpy as np
 from PIL import Image, ImageOps
 from ..render_work import RenderCancelled
 from ..stores import CONFIG_DIR
-from .contracts import Evidence, FaceRegion, LinedrawV3Params
+from .contracts import Candidate, Evidence, FaceRegion, LinedrawV3Params
 from .trace import trace_map
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -76,7 +76,7 @@ def status():
 
 def model_identity():
     c = configuration()
-    digest = hashlib.sha256(b"linedraw-runtime-v1")
+    digest = hashlib.sha256(b"linedraw-runtime-v2")
     digest.update(json.dumps(c, sort_keys=True).encode())
     for key in ("line_weights", "person_weights", "normal_weights", "face_weights"):
         path = Path(c.get(key, ""))
@@ -134,6 +134,8 @@ def _cache_put(key, evidence):
     size = sum(a.nbytes for a in arrays if a is not None) + sum(
         c.points.nbytes for cs in evidence.face_candidates.values() for c in cs
     )
+    size += sum(c.points.nbytes for c in (evidence.whole_candidates or ()))
+    size += sum(c.points.nbytes for c in (evidence.tiled_candidates or ()))
     budget = int(256 * 1024**2 * cache_budget_multiplier())
     if size > budget:
         return
@@ -162,6 +164,33 @@ def validate_arrays(arrays, w, h):
             raise ValueError(f"Invalid {key} evidence")
         if key != "normals" and (a.min() < 0 or a.max() > 1):
             raise ValueError(f"Out-of-range {key} evidence")
+
+
+def native_candidates(line_map, bounds, width, height, name, checkpoint):
+    """Trace before resizing; only vector coordinates enter the source frame."""
+    checkpoint()
+    line_map = np.asarray(line_map)
+    bounds = np.asarray(bounds)
+    if (
+        line_map.ndim != 2
+        or min(line_map.shape) < 1
+        or max(line_map.shape) > 768
+        or not np.isfinite(line_map).all()
+        or line_map.min() < 0
+        or line_map.max() > 1
+        or bounds.shape != (4,)
+        or not np.isfinite(bounds).all()
+    ):
+        raise ValueError("Invalid native contour evidence")
+    x0, y0, x1, y1 = bounds.tolist()
+    if not (0 <= x0 < x1 <= width and 0 <= y0 < y1 <= height):
+        raise ValueError("Invalid contour crop bounds")
+    candidates = trace_map(line_map, name, checkpoint)
+    scale = [(x1 - x0) / line_map.shape[1], (y1 - y0) / line_map.shape[0]]
+    return tuple(
+        Candidate(c.points * scale + [x0, y0], c.confidence, c.identity)
+        for c in candidates
+    )
 
 
 def _run(config, request, directory, cancel, progress):
@@ -277,37 +306,36 @@ def detect_and_analyze(
             faces = tuple(FaceRegion(**f) for f in metadata)
             if len(faces) > 32:
                 raise ValueError("Too many face regions")
-            face_candidates = {}
-            for i, face in enumerate(faces):
+
+            def check():
                 if cancel.is_set():
                     raise RenderCancelled()
-                name = f"face_{i}"
-                if name not in arrays:
-                    continue
-                line_map = arrays[name]
-                bounds = arrays[f"box_{i}"]
-                if (
-                    line_map.ndim != 2
-                    or line_map.size > 512 * 512
-                    or not np.isfinite(line_map).all()
-                ):
-                    raise ValueError("Invalid face evidence")
-                x0, y0, x1, y1 = bounds.tolist()
-                if not (0 <= x0 < x1 <= w and 0 <= y0 < y1 <= h):
-                    raise ValueError("Invalid face crop bounds")
 
-                def check():
-                    if cancel.is_set():
-                        raise RenderCancelled()
-
-                candidates = trace_map(line_map, f"face-{face.id}", check)
-                sx, sy = (x1 - x0) / line_map.shape[1], (y1 - y0) / line_map.shape[0]
-                from .contracts import Candidate
-
-                face_candidates[face.id] = tuple(
-                    Candidate(q.points * [sx, sy] + [x0, y0], q.confidence, q.identity)
-                    for q in candidates
+            whole_candidates = native_candidates(
+                arrays["whole_native"], [0, 0, w, h], w, h, "whole", check
+            )
+            tiled_candidates = tuple(
+                c
+                for i in range(4)
+                for c in native_candidates(
+                    arrays[f"tile_{i}"],
+                    arrays[f"tile_box_{i}"],
+                    w,
+                    h,
+                    f"tile-{i}",
+                    check,
                 )
+            )
+            face_candidates = {}
+            for i, face in enumerate(faces):
+                check()
+                name = f"face_{i}"
+                if name in arrays:
+                    face_candidates[face.id] = native_candidates(
+                        arrays[name], arrays[f"box_{i}"], w, h, f"face-{face.id}", check
+                    )
+            diagnostics = json.loads((directory / "diagnostics.json").read_text())
+            device = str(diagnostics.get("device", "unknown"))[:64]
             accepted = p.model_copy(update={"faces": list(faces)})
             key = evidence_key(image_bytes, accepted, identity)
             evidence = Evidence(
@@ -320,6 +348,9 @@ def detect_and_analyze(
                 face_candidates,
                 key,
                 arrays["alpha"],
+                whole_candidates,
+                tiled_candidates,
+                device,
             )
             if cancel.is_set():
                 raise RenderCancelled()

@@ -2127,6 +2127,10 @@ export function renderLayerDetail() {
   const resumeBtn = fx.querySelector("#process-resume");
   if (resumeBtn) {
     resumeBtn.hidden = !interventionBenchable(layer);
+    if (layer.source?.generator === 'linedraw_v3') {
+      resumeBtn.textContent = 'Open drawing bench';
+      resumeBtn.title = 'Edit this drawing recipe; Apply updates this layer, Keep creates another';
+    }
     resumeBtn.onclick = () => openProcessLayerBench(layer.id);
   }
   // Rehearse: same eligibility as Watch (a generator with a time axis) —

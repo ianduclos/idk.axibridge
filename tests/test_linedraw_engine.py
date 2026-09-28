@@ -66,3 +66,39 @@ def test_fill_preserves_hole():
     )
     paths = fill_lines(shape, 1, lambda: None)
     assert paths and all(shape.covers(LineString(p)) for p in paths)
+
+
+def test_native_candidates_drive_contours_when_resized_map_is_blank():
+    from axibridge.linedraw.contracts import Candidate
+    from axibridge.linedraw.engine import render_document
+
+    blank = np.ones((24, 24), dtype=np.float32)
+    evidence = Evidence(
+        np.ones((24, 24, 3)),
+        blank,
+        None,
+        blank,
+        blank,
+        whole_candidates=(Candidate(np.array([[12, 3], [12, 20]]), 1, "native"),),
+        tiled_candidates=(),
+    )
+    doc = render_document(evidence, LinedrawV3Params(style="contours", width=24))
+    paths = [path for _, path in doc.iter_paths()]
+    assert len(paths) == 1
+    assert np.allclose(np.asarray(paths[0].points)[:, 0], 12)
+
+
+def test_clipping_honors_cancellation():
+    from axibridge.linedraw.contracts import Candidate
+    from axibridge.linedraw.engine import clipped_candidates
+    from axibridge.render_work import RenderCancelled
+
+    def cancelled():
+        raise RenderCancelled()
+
+    with pytest.raises(RenderCancelled):
+        clipped_candidates(
+            [Candidate(np.array([[2, 2], [12, 12]]), 1, "line")],
+            np.ones((24, 24), bool),
+            checkpoint=cancelled,
+        )

@@ -82,3 +82,29 @@ def test_api_state_includes_fonts_key(client):
     r = client.get("/api/state").json()
     assert "fonts" in r
     assert any(f["id"] == "recursive" for f in r["fonts"])
+
+
+def test_concurrent_cold_catalogue_shares_one_scan(monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
+    import time
+
+    monkeypatch.setattr(sf, '_cache', None)
+    started = threading.Event()
+    release = threading.Event()
+    calls = []
+    def discover():
+        calls.append(True)
+        started.set()
+        assert release.wait(2)
+        return []
+    monkeypatch.setattr(sf, '_discover', discover)
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        first = pool.submit(sf.catalogue)
+        assert started.wait(1)
+        others = [pool.submit(sf.catalogue) for _ in range(3)]
+        time.sleep(.05)
+        release.set()
+        for result in [first, *others]:
+            assert result.result() == list(sf._bundled)
+    assert len(calls) == 1

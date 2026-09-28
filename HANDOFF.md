@@ -4,21 +4,23 @@ updated: 2026-09-28
 entries: 23
 ---
 
-### Linedraw v3 research continuation — opened 2026-09-28, owner: Codex
+### Linedraw v3 native and paper acceptance — opened 2026-09-28, owner: ian
 
-- done: Preserved code-only research kernels and synthetic tests; documented
-  crop evidence, expression/detail tradeoffs, manual annotation dependence,
-  shadow/hair/ground failures and independent-review limitations.
-- verification: Full suite 1,596 passed; one existing Starlette warning.
-  Reviewed staged code/docs for reference data; all new tests use synthetic inputs.
-- next: Read the research note, recover the local study context if available,
-  and decide how to test automatic or category-free attention on unseen inputs.
-- blockers: Body-part regions are supplied guides; no complete automatic v3
-  or production integration exists. Private images and derivatives must remain
-  outside GitHub, including vectors, masks, annotations and embedded previews.
-- context: [Research checkpoint](docs/research/linedraw-v3.md),
-  [kernel contracts](tools/linedraw_research/README.md). The ignored local
-  `.local/linedraw/HANDOFF.md` locates original scripts and private evidence.
+- done: Production integration with four executable drawing styles, automatic
+  editable face ellipses, local inference, cancellable draft jobs, Keep/Apply,
+  portable saved geometry and atomic failed regeneration. Generic research
+  kernels now live in `axibridge/linedraw`; research imports remain compatible.
+- verification: Full suite: 1,649 passed, one existing Starlette warning. Native app owns the worktree backend;
+  real local-model Analyze, Keep, reopen, Redraw, Apply and undo passed. MPS first
+  drawing 13.52 s; warm redraw 1.06 s. Typecheck/build passed. No hardware used.
+- next: Try unfamiliar photographs and face corrections; compare all four
+  styles, then judge spacing on paper. Dense shadow boundaries can be ragged.
+- state: App open from `codex/linedraw-v3`, original checkout unchanged. Local
+  model profile installed externally; no model weights or private derivatives
+  in Git. Original empty project restored; bundled public example asset retained.
+- context: [Usage](docs/LINEDRAW.md), [approved design](docs/superpowers/specs/2026-09-28-linedraw-v3-design.md),
+  [research findings](docs/research/linedraw-v3.md). Ignored
+  `.local/linedraw/HANDOFF.md` locates the private studies.
 
 ### Plot optimization activation — opened 2026-09-16, owner: ian
 
