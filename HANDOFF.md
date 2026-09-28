@@ -1,8 +1,24 @@
 ---
 project: idk.axibridge
-updated: 2026-09-16
-entries: 22
+updated: 2026-09-28
+entries: 23
 ---
+
+### Linedraw v3 research continuation — opened 2026-09-28, owner: Codex
+
+- done: Preserved code-only research kernels and synthetic tests; documented
+  crop evidence, expression/detail tradeoffs, manual annotation dependence,
+  shadow/hair/ground failures and independent-review limitations.
+- verification: Full suite 1,596 passed; one existing Starlette warning.
+  Reviewed staged code/docs for reference data; all new tests use synthetic inputs.
+- next: Read the research note, recover the local study context if available,
+  and decide how to test automatic or category-free attention on unseen inputs.
+- blockers: Body-part regions are supplied guides; no complete automatic v3
+  or production integration exists. Private images and derivatives must remain
+  outside GitHub, including vectors, masks, annotations and embedded previews.
+- context: [Research checkpoint](docs/research/linedraw-v3.md),
+  [kernel contracts](tools/linedraw_research/README.md). The ignored local
+  `.local/linedraw/HANDOFF.md` locates original scripts and private evidence.
 
 ### Plot optimization activation — opened 2026-09-16, owner: ian
 

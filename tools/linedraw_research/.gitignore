@@ -1,0 +1,6 @@
+# Research code only. Keep references and every image-specific derivative outside Git.
+*
+!*.py
+!*.md
+!.gitignore
+__pycache__/

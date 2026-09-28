@@ -1,20 +1,30 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-16
+updated: 2026-09-28
 machine: mac+pi
-summary: Mandatory 0.01 mm plot simplification and native motion estimates implemented; activation pending.
+summary: Linedraw v3 research kernels and private-data boundaries preserved; production integration and earlier native acceptance remain pending.
 next:
+  - "Continue linedraw v3 from docs/research/linedraw-v3.md; keep all reference-derived material private"
   - "After the active plot finishes, activate and check mandatory simplification and native timing"
   - "Check Mosca browsing, cutoff playback, repeated Keep and Resume in the native app"
   - "Check module browsers, presets and gallery preview/insertion"
-  - "Check animation child handling and Pen/Shape Repeat"
-  - "Check Ribbon and Magnetic field native interaction"
-  - "Continue Second Reading review"
-handoff_for: ian
+  - "Continue remaining native and paper acceptance entries in HANDOFF.md"
+handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Linedraw research checkpoint, 28 September:** Reusable array/geometry kernels
+for shadow shapes, form hatching, regional allocation and optional facial
+guidance are preserved under `tools/linedraw_research/`, with synthetic tests.
+The registered application generators remain unchanged. Reference photographs,
+annotations, model evidence, rendered geometry and comparison artifacts stay
+outside Git; an ignored local handoff locates the complete private studies.
+Verification: **1,596 hardware-free tests passed**, with one existing Starlette
+deprecation warning. No application restart, push or hardware action.
+[Findings and continuation](docs/research/linedraw-v3.md) distinguish manual
+attention from automatic evidence and retain negative results.
 
 **Plot optimization and timing, 16 September:** All normal, sheet and tray
 passes now simplify each trajectory at a minimum 0.01 mm tolerance, including

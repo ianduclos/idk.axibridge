@@ -763,3 +763,15 @@ deliberately:
   don't clobber deliberate saves), and the restart endpoint refusing when
   unsaved changes exist unless `force=true`. Cheap insurance for a
   single-operator instrument.
+
+## Linedraw v3 research checkpoint — 2026-09-28
+
+Code-only experimental kernels and synthetic tests are preserved under
+`tools/linedraw_research/`; see [findings and continuation](docs/research/linedraw-v3.md).
+Ian wants finer likeness/body detail while preserving Shadow shapes and Face + form.
+Local crop evidence is promising, but region selection still depends on manual
+annotations. Shadow/hair/background trials have mixed results. Decide between
+category-free attention and explicit part localization before production design;
+then test unseen images without individual guide repairs. Integration is deferred
+because a general automatic recipe is not yet established. All reference images
+and image-specific derivatives must stay local and off GitHub.
