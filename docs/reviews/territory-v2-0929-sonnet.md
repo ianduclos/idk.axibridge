@@ -124,3 +124,55 @@ Recipes: F wrap/territories, G wound/territories, J growth/territories, X wrap/t
 8. Next experiment: Z with wrap ribbing on the overlapped bodies only, plus a second pass with body scale varying by a factor of 5 (Z1, Z5, Z7, Z12).
 
 Limits: only cells 3 and 7 seen close; 0.2 mm on paper will be lighter than screen; no G or W close views.
+
+## Round 4 — searching lines (v5)
+
+Sheets Ha-Hf. I looked at Ian's sketch first: one continuous restated band that pinches and fans (the sling), a few loose lobes drawn once, large empty ground, one hooked tail. Close views were supplied as tall strips and reached me heavily downscaled (cells 3, 5, 7, 10, 12 of Ha, Hb, Hd, He; none for Hc, Hf), so my line-quality judgements below are weaker than in earlier rounds. Screen only.
+
+### 10. Image-only reading (recorded before recipes.json)
+
+Observations
+- Hf: the familiar dashed contours, single line, no weight. Reads as a base drawing, not the sketch.
+- Hb: the same drawing with restated bundles in 2-4 places per cell (Hb2 triangle, Hb5 oval and left slab, Hb10 dumbbell, Hb11 ring, Hb3 left corner). Everything else stays single. Closest to the sketch's economy: weight decided, ground empty (Hb7, Hb12 stay quiet). Where a whole closed shape is retraced (Hb5 oval, Hb11 ring, Hb8) it reads as an ellipse scribbled several times: scribble filter, not searching.
+- Ha: Hb plus dark knots at junctions and small paired crescents. The knots (Ha3 left and top, Ha5 top right, Ha10 right junction, Ha2 triangle apex) are the only real tangle-to-texture passages; they are also the loudest thing on the sheet and look alike in every cell (a dark cluster with fanning ends): hairball, and one signature. The doubled crescents (Ha1, Ha2, Ha3, Ha7, Ha9, Ha12) sit in empty ground unrelated to anything and repeat as a motif.
+- Hc: Ha with most forms circled several times (Hc7, Hc8, Hc9, Hc11 rings; Hc10 large oval). One handwriting, scribble filter everywhere, no emptiness. Long lines skirt the sheet edge in Hc4 and Hc12 (a frame-like L or corner line): highway, and reads as a mistake.
+- Hd: Ha with a doubled crescent in nearly every cell (Hd1, Hd2, Hd3, Hd4, Hd5, Hd6, Hd7, Hd10): eye/parenthesis motif. Hd9, Hd11 and Hd12 instead get long doubled ribbon lines wandering across the sheet. Hd12's winding double band with one small loop is the strangest passage of the round and a different register; Hd9/Hd11 are straighter and read as highways.
+- He: Ha with offset echo arcs around one lobe (He4 right, He8 figure-eight, He10 dumbbell, He11, He5 top right, He7 bottom-right corner). They read as ripples/tree rings; not a fishnet or globe. He7's L-shaped echo hugging the corner, and He4's along the right edge, look like edge artefacts.
+- Dating bundles (Ha5 oval, Ha6, Hb5): I cannot reliably tell oldest from newest at this size. Tentatively the straighter, more faceted strokes look newest and the looser wobbles oldest; the newest strokes read as ruled facets, not searching.
+- Keepers: Hb2, Hb5, Hb10, Hb11 (bundle as decision, empty elsewhere); Ha3 (three knots joined by long strokes, the tangle turning textural); Ha6; Hd12 (ribbon); He10 (halo dumbbell); Hb12 and Hf12-type quiet cells as ground. Weak: all of Hc; Hd7 and Ha7 (crescent placed for its own sake); He7.
+- What makes me ask what is going on: Hb5 (why is that oval fought over and the big arc beside it left alone), Ha3's knots that connect to distant strokes, Hd12's ribbon, He10's halo around one lobe.
+
+Interpretation (tentative)
+- Weight feels decided in Hb and Ha (2-4 places, rest single). It feels arbitrary in Hc and in Ha's crescents.
+- Unequal treatment is what reads as intention; more mechanisms per cell dilute it.
+
+### 11. After reading recipes.json
+
+Recipes (all `order: reversed`, borders+outer base except Hd on voids): Ha full v5; Hb sediment and reduction only, no search, knots, hooks or events; Hc full v5 with economy off; Hd full v5 on voids base with aperture forced; He full v5 with net forced; Hf plain v2.
+- Confirms and sharpens: Hb's weight is the sediment layer alone; Ha's additions are knots, hooks and events, which produce the hairball signature and crescents. Hc shows economy is doing essential work (without it every form is scribbled). Hd and He are events forced on, so their crescents and halos are the event, not a base tendency.
+- Changes: the crescents in Ha appear in about 6 of 12 cells, which exceeds the 0.3 aperture budget noticeably; I read Ha as running apertures more often than budgeted. Not a change of ranking: Hb > Ha > Hd/He > Hc.
+
+Kill criteria (brief section 5). Judged by eye, not measured:
+- 1 Sediment: fires on He (even concentric echoes, He4, He8, He10); not on Ha or Hb.
+- 2 Reduction: cannot verify at this size; pinches are visible in Hb5 and Ha5.
+- 3 Continuation: fires on Hc4, Hc12, Hd9, Hd11, Hd12 (long edge or doubled lines) and He4, He7 (edge echoes).
+- 4 Knots: fires on Ha3, Ha10 (more than two, hairball read); Ha5, Ha2 borderline.
+- 5 Hooks: not fired; small hooks only.
+- 6 Economy: not fired on Ha or Hb (no vignette); intentionally off on Hc.
+- 7 Net: no globe or fishnet named, but the echoes read as ripples/rings in more than one cell (He4, He8, He10, He11); I count it fired on cliché.
+- 8 Aperture: fires. The doubled crescent repeats in six or more cells on Ha and Hd.
+- 9 Cancel: not fired.
+- 10 Whole: borderline on Ha, fires on Hc (one handwriting).
+
+### 12. Recommendations
+
+1. Take Hb as the base and add Ha's knots back sparingly, at most one knot per cell tied to a long stroke (Ha3 model); do not run the full Ha knot set.
+2. Cut aperture and net events from the default budget (Hd, He, Ha1, Ha2, Ha7, Ha9): crescents and halos repeat as motifs. Keep He10's halo and Hd12's ribbon as rare, one per sheet.
+3. Keep economy on (Hc is the proof); do not retrace every closed form (Hb5 oval, Hc7, Hc11 rings): retrace one form and leave its neighbours single, as Hb5.
+4. Stop lines running along the sheet edge (Hc4, Hc12, He4, He7): clip or forbid.
+5. Make the newest strokes looser, not faceted (Ha5, Hb5, Ha6): a firmer newest stroke should curve, not read as ruled segments.
+6. Vary knot shape and size (Ha3, Ha5, Ha10, Ha2): all present the same dark fanning cluster.
+7. Give at least one cell in four no event at all (Hb7, Hb12, Hf-style ground) so weight elsewhere matters.
+8. Next test: Hb plus a single knot per cell and one rare long doubled ribbon (Hd12 kind) on cells 3, 5, 10, 12; compare to Hb alone.
+
+Limits: close views were too small to judge line quality; no Hc close view; metrics from the brief (ink density, coverage) were not computed.
