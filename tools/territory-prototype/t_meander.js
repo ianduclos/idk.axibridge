@@ -284,7 +284,7 @@ function migrate(chans, A, prm, rng, F = SHEET_F) {
     const ch = rng() < 0.6 ? 0 : Math.floor(rng() * chans.length), f0 = 0.1 + 0.4 * rng();
     rev = { ch, f0, f1: f0 + 0.25 + 0.15 * rng(), t: Math.round(steps * (0.55 + 0.2 * rng())) };
   }
-  const stallW = (x, y) => { let d = 1e9; for (const s of stalls) d = Math.min(d, Math.hypot(s[0] - x, s[1] - y)); return smooth(4, 10, d); };
+  const stallW = (x, y) => { let d = 1e9; for (const s of stalls) { const dx = s[0] - x, dy = s[1] - y; if (dx >= 10 || dx <= -10 || dy >= 10 || dy <= -10) continue; d = Math.min(d, Math.hypot(dx, dy)); } return smooth(4, 10, d); };   // exact early-out: smooth(4,10,≥10) = 1
   const step = (ch, t) => {
     const P = ch.pts, n = P.length; if (n < 10) return;
     const kap = curvatureOf(P), R0 = new Float64Array(n), R1 = new Float64Array(n);
