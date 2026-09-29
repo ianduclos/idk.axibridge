@@ -36,3 +36,14 @@ These are round 4, blind. Ha is full v5, Hb is sediment only, Hc has economy off
 The reviewer judged Hb closest to the sketch. The failures were hairball knots, repeated crescents, economy-off scribbling, and ripple nets. `sheet-V.png` shows the default after the round-4 fixes and has not been reviewed.
 
 Everything was judged on screen only; nothing has been plotted.
+
+## Ian's verdict, 29 September (verbatim, then the reading)
+
+"seed 3, seed 13 are going somewhere. seed 21 also has something. perhaps we're holding onto the territory thing too closely. also, i was expecting to see the illusion of line width and narrowness through the lines, to create the illusion of volume etc. also kinda more unified stuff idk."
+
+These are E1 population seeds on the v5 defaults (reversed order, 15 mm reach, 3 camps in Auto). Next round:
+
+- **Keep what works in seeds 3, 13 and 21.**
+- **Loosen the territory scaffolding.** Composition need not be camps, borders and outer edges.
+- **Build line width from lines.** Several strokes converge to read as thin and diverge to read as thick, so a mark swells and tapers like a brush or ribbon. That creates volume with one pen.
+- **Aim for a more unified sheet** rather than separate treatments.
