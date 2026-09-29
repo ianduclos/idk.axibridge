@@ -1,0 +1,315 @@
+<title>Cores and Skins</title>
+<style>
+/* Layout: bench = sheet left, controls right; experiment strip below. Flexoki, system faces. */
+:root {
+  --bg: #FFFCF0; --bg2: #F2F0E5; --ui: #E6E4D9; --ui2: #DAD8CE; --ui3: #CECDC3;
+  --tx: #100F0F; --tx2: #6F6E69; --tx3: #B7B5AC;
+  --accent: #BC5215; --accent-soft: rgba(188,82,21,.12); --cyan: #24837B;
+  --paper: #FFFCF0; --ink: #100F0F; --ghost: #BC5215; --grey-ink: #B7B5AC; --paper-edge: #CECDC3;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #100F0F; --bg2: #1C1B1A; --ui: #282726; --ui2: #343331; --ui3: #403E3C;
+  --tx: #CECDC3; --tx2: #878580; --tx3: #575653;
+  --accent: #DA702C; --accent-soft: rgba(218,112,44,.16); --cyan: #3AA99F; --paper-edge: #403E3C; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #100F0F; --bg2: #1C1B1A; --ui: #282726; --ui2: #343331; --ui3: #403E3C;
+  --tx: #CECDC3; --tx2: #878580; --tx3: #575653;
+  --accent: #DA702C; --accent-soft: rgba(218,112,44,.16); --cyan: #3AA99F; --paper-edge: #403E3C; color-scheme: dark }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--tx); font-family: var(--sans); }
+.wrap { padding-inline: 20px; padding-block: 20px 40px; max-width: 1320px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-size: 22px; font-weight: 650; letter-spacing: -.01em; margin: 0; }
+.sub { color: var(--tx2); margin: 4px 0 0; font-size: 13.5px; max-width: 62ch; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tab { font: inherit; font-size: 13px; border: 1px solid var(--ui2); background: var(--bg2); color: var(--tx); padding: 7px 12px; border-radius: 6px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+.tab b { font-family: var(--mono); font-weight: 600; color: var(--tx2); }
+.tab[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.tab[aria-pressed="true"] b { color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bench { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+@media (max-width: 860px) { .bench { grid-template-columns: minmax(0,1fr); } }
+.sheetbox { position: relative; }
+.sheet { width: 100%; aspect-ratio: 300 / 218; max-width: 100%; display: block; border: 1px solid var(--paper-edge); border-radius: 2px; background: var(--paper); touch-action: none; cursor: crosshair; box-shadow: 0 1px 0 var(--ui); }
+.sheetmeta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-top: 8px; font-size: 12px; color: var(--tx2); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.stat b { color: var(--tx); font-weight: 600; }
+aside { display: grid; gap: 14px; background: var(--bg2); border: 1px solid var(--ui); border-radius: 8px; padding: 14px; min-width: 0; }
+.desc { font-size: 13.5px; line-height: 1.5; margin: 0; }
+.desc strong { display: block; font-size: 14px; margin-bottom: 4px; }
+.group { display: grid; gap: 10px; }
+.label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--tx2); font-weight: 600; }
+.ctl { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 13px; }
+.ctl output { font-family: var(--mono); font-size: 12px; color: var(--tx2); font-variant-numeric: tabular-nums; }
+.ctl small { grid-column: 1 / -1; color: var(--tx2); font-size: 11.5px; line-height: 1.35; }
+.ctl input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.btn { font: inherit; font-size: 12.5px; border: 1px solid var(--ui2); background: var(--bg); color: var(--tx); padding: 6px 10px; border-radius: 5px; cursor: pointer; }
+.btn:hover { border-color: var(--ui3); }
+.btn.primary { border-color: var(--accent); color: var(--accent); }
+.chk { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.chk input { accent-color: var(--accent); }
+#seed { width: 70px; font: inherit; font-family: var(--mono); font-size: 12.5px; padding: 5px 6px; border: 1px solid var(--ui2); border-radius: 5px; background: var(--bg); color: var(--tx); }
+.hint { font-size: 12px; color: var(--tx2); margin: 0; }
+section.exp { display: grid; gap: 12px; border-top: 1px solid var(--ui); padding-top: 16px; }
+.exp h2 { font-size: 15px; margin: 0; font-weight: 650; }
+.expbtns { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.expbtn { text-align: left; font: inherit; border: 1px solid var(--ui2); background: var(--bg2); color: var(--tx); border-radius: 6px; padding: 9px 11px; cursor: pointer; display: grid; gap: 3px; }
+.expbtn[aria-pressed="true"] { border-color: var(--accent); }
+.expbtn span { font-size: 13px; font-weight: 600; }
+.expbtn span b { font-family: var(--mono); color: var(--accent); margin-right: 6px; }
+.expbtn small { font-size: 12px; color: var(--tx2); line-height: 1.35; }
+.result-head { font-size: 13px; color: var(--tx2); margin: 0; }
+.minis { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.minis.pop { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+figure { margin: 0; display: grid; gap: 4px; min-width: 0; }
+figure canvas { width: 100%; aspect-ratio: 300 / 218; display: block; background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 2px; cursor: pointer; }
+figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); font-variant-numeric: tabular-nums; line-height: 1.35; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--tx2); }
+.sw { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--ink); vertical-align: middle; margin-right: 5px; }
+.sw.g { border-top: 1.5px dashed var(--ghost); }
+.sw.p { border-top-color: var(--grey-ink); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Cores and Skins</h1>
+      <p class="sub">Draw a core on the sheet. The machine never draws your line; it draws a skin in response. Three proposals for how the skins behave, sharing one walker. The plot is the black ink only.</p>
+    </div>
+    <div class="tabs" role="group" aria-label="Proposal">
+      <button class="tab" id="tabA" data-p="A" aria-pressed="true"><b>A</b>Pursuit</button>
+      <button class="tab" id="tabB" data-p="B" aria-pressed="false"><b>B</b>Territory</button>
+      <button class="tab" id="tabC" data-p="C" aria-pressed="false"><b>C</b>Find space</button>
+    </div>
+  </header>
+
+  <div class="bench">
+    <div class="sheetbox">
+      <canvas class="sheet" id="sheet" aria-label="Drawing sheet, 300 by 218 millimetres. Drag to draw a core."></canvas>
+      <div class="sheetmeta">
+        <span id="stats"></span>
+        <span>300 × 218 mm bed · drag to draw a core</span>
+      </div>
+    </div>
+    <aside>
+      <p class="desc" id="desc"></p>
+      <div class="legend"><span><i class="sw"></i>skin (plotted)</span><span><i class="sw g"></i>core (bench only)</span></div>
+      <div class="group">
+        <div class="label">Walker</div>
+        <label class="ctl">Looseness <output id="looseV"></output><input type="range" id="loose" min="0" max="1" step="any" value="0.5"><small>Open space loosens the walk; crowding tightens it regardless.</small></label>
+        <label class="ctl">Departure <output id="depV"></output><input type="range" id="dep" min="0" max="1" step="any" value="0.35"><small>Skips stretches of the core and flings the odd destination far out.</small></label>
+        <label class="ctl">Yield <output id="yieldV"></output><input type="range" id="yield" min="0" max="1" step="any" value="0.5"><small>When boxed in: 0 always stops (open skin), 1 always passes under and resurfaces.</small></label>
+        <label class="ctl" id="reachCtl" hidden>Reach (mm) <output id="reachV"></output><input type="range" id="reach" min="4" max="20" step="any" value="9"><small>How far each core's pull extends; larger merges territories sooner.</small></label>
+        <label class="ctl" id="attendCtl" hidden>Attention <output id="attendV"></output><input type="range" id="attend" min="0" max="1" step="any" value="0.5"><small>How strongly a skin stays where you drew the core.</small></label>
+      </div>
+      <div class="group">
+        <div class="label">Sheet</div>
+        <div class="row"><label for="seed" class="chk">Seed</label><input id="seed" type="number" min="1" max="99999" value="1"><button class="btn" id="reroll">Reroll</button></div>
+        <label class="chk"><input type="checkbox" id="showCores" checked> Show cores</label>
+        <label class="chk"><input type="checkbox" id="reverse"> Reverse arrival order</label>
+        <label class="chk" id="spaceCtl" hidden><input type="checkbox" id="showSpace"> Show free space</label>
+        <div class="row">
+          <button class="btn" id="undo">Undo core</button>
+          <button class="btn" id="clear">Clear</button>
+          <button class="btn" id="example">Example cores</button>
+          <button class="btn primary" id="copySvg">Copy SVG</button>
+        </div>
+        <p class="hint" id="copyMsg" aria-live="polite"></p>
+      </div>
+    </aside>
+  </div>
+
+  <section class="exp">
+    <h2>Experiments</h2>
+    <p class="result-head">Each runs the selected proposal with the current settings. Everything is deterministic on cores + seed, so earlier skins never change when a later core is added. Click a thumbnail to load it onto the sheet.</p>
+    <div class="expbtns">
+      <button class="expbtn" data-e="1" aria-pressed="false"><span><b>E1</b>Same core, three contexts</span><small>Alone, beside existing skins, at the edge. Do the skins differ in a way you can attribute?</small></button>
+      <button class="expbtn" data-e="2" aria-pressed="false"><span><b>E2</b>Population sheet</span><small>24 random core sets. How many cells read as creatures?</small></button>
+      <button class="expbtn" data-e="3" aria-pressed="false"><span><b>E3</b>Fixed prefix, one new core</span><small>Crossing a core, parallel to one, far away. Do the answers differ in kind?</small></button>
+      <button class="expbtn" data-e="4" aria-pressed="false"><span><b>E4</b>Strict closure</span><small>Yield 0 at three loosenesses on your cores. Do open skins read as deliberate?</small></button>
+      <button class="expbtn" data-e="5" aria-pressed="false"><span><b>E5</b>Arrival order</span><small>Your cores in drawn order and reversed. Does foreground-first change the sheet?</small></button>
+    </div>
+    <p class="result-head" id="expHead"></p>
+    <div class="minis" id="minis"></div>
+  </section>
+</div>
+
+<script>
+/*ENGINE*/
+</script>
+<script>
+const $ = id => document.getElementById(id);
+const DESC = {
+  A: ['A · Pursuit', 'Each core gets its own skin. The walker steers toward points placed around the core, gets careful near other ink, and never crosses a line. Boxed in, it stops (an open skin) or goes under and resurfaces (a break). Earlier skins stay in front.'],
+  B: ['B · Territory', 'Cores pull on one shared field, and a skin surrounds the region a core ends up in, so one skin can serve several cores. When a new core joins a region, the old skins stay; the machine answers with a wider ring around the region or a small skin inside its densest part.'],
+  C: ['C · Find space', 'A core is a request. The machine looks for room: it keeps, moves, shrinks or turns the form to where there is space. If nothing fits, it draws an older core again at a different carefulness. Dashed tethers show where each core landed.'],
+};
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+let state = { prop: store.get('cs.prop', 'A'), cores: store.get('cs.cores', null) || exampleCores(), exp: null };
+let last = null, drawing = null;
+
+function prm() {
+  return { loose: +$('loose').value, dep: +$('dep').value, yieldP: +$('yield').value, wander: 1, reach: +$('reach').value, attend: +$('attend').value };
+}
+function seed() { return Math.max(1, Math.floor(+$('seed').value || 1)); }
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function sizeCanvas(cv) {
+  const r = cv.getBoundingClientRect(), dpr = Math.min(3, window.devicePixelRatio || 1);
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.width * 218 / 300 * dpr));
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  return cv.width / 300;
+}
+function drawSheet(cv, res, cores, opt = {}) {
+  const k = sizeCanvas(cv), g = cv.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = css('--paper'); g.fillRect(0, 0, cv.width, cv.height);
+  g.setTransform(k, 0, 0, k, 0, 0);
+  if (opt.space && res.D) {
+    const D = res.D, img = g.createImageData(300, 218);
+    for (let c = 0; c < D.length; c++) { const v = Math.min(1, D[c] / 30); img.data[c * 4] = 36; img.data[c * 4 + 1] = 131; img.data[c * 4 + 2] = 123; img.data[c * 4 + 3] = Math.round(v * 70); }
+    const off = document.createElement('canvas'); off.width = 300; off.height = 218; off.getContext('2d').putImageData(img, 0, 0);
+    g.imageSmoothingEnabled = true; g.drawImage(off, 0, 0, 300, 218);
+  }
+  if (opt.cores) {
+    g.save(); g.strokeStyle = css('--ghost'); g.globalAlpha = 0.75; g.lineWidth = Math.max(0.35, 1.1 / k); g.setLineDash([2.2, 1.6]); g.lineCap = 'round';
+    for (const c of cores) { g.beginPath(); c.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); }
+    for (const s of res.skins) if (s.tether && (s.moved || s.reread !== undefined)) { g.globalAlpha = 0.45; g.setLineDash([0.8, 1.6]); g.beginPath(); g.moveTo(...s.tether[0]); g.lineTo(...s.tether[1]); g.stroke(); }
+    g.setLineDash([]); g.globalAlpha = 0.85; g.fillStyle = css('--ghost'); g.font = `${Math.max(3, 10 / k)}px ui-monospace, monospace`;
+    if (opt.labels) cores.forEach((c, i) => g.fillText(String(i + 1), c[0][0] + 1.2, c[0][1] - 1.2));
+    g.restore();
+  }
+  g.lineJoin = 'round'; g.lineCap = 'round'; g.lineWidth = Math.max(0.4, (opt.thin ? 0.9 : 1.1) / k);
+  for (const s of res.skins) {
+    g.strokeStyle = (opt.focus !== undefined && s.core !== opt.focus) ? css('--grey-ink') : css('--ink');
+    for (const st of s.strokes) { g.beginPath(); st.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); }
+  }
+  if (opt.live && opt.live.length > 1) {
+    g.strokeStyle = css('--ghost'); g.lineWidth = Math.max(0.4, 1.4 / k); g.setLineDash([2.2, 1.6]);
+    g.beginPath(); opt.live.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); g.setLineDash([]);
+  }
+}
+function fmtStats(s) {
+  const parts = [`<span class="stat"><b>${s.skins}</b> skins</span>`, `<b>${s.closed}</b> closed`, `<b>${s.open}</b> open`, `<b>${s.broken}</b> broken`];
+  if (state.prop === 'C') parts.push(`<b>${s.moved}</b> moved`, `<b>${s.reread}</b> redrawn`);
+  if (s.deferred) parts.push(`<b>${s.deferred}</b> no room`);
+  return parts.join(' · ');
+}
+function statsTxt(s) { return `${s.closed} closed · ${s.open} open · ${s.broken} broken` + (state.prop === 'C' ? ` · ${s.moved} moved` : ''); }
+
+let raf = 0;
+function render() { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderNow); }
+function renderNow() {
+  last = runProposal(state.prop, state.cores, prm(), seed(), $('reverse').checked);
+  drawSheet($('sheet'), last, state.cores, { cores: $('showCores').checked, labels: true, space: state.prop === 'C' && $('showSpace').checked, live: drawing });
+  $('stats').innerHTML = fmtStats(stats(last));
+  store.set('cs.cores', state.cores); store.set('cs.prop', state.prop);
+}
+function redrawOnly() { if (!last) return renderNow(); drawSheet($('sheet'), last, state.cores, { cores: $('showCores').checked, labels: true, space: state.prop === 'C' && $('showSpace').checked, live: drawing }); }
+
+function setProp(p) {
+  state.prop = p;
+  for (const t of document.querySelectorAll('.tab')) t.setAttribute('aria-pressed', String(t.dataset.p === p));
+  $('desc').innerHTML = `<strong>${DESC[p][0]}</strong>${DESC[p][1]}`;
+  $('reachCtl').hidden = p !== 'B'; $('attendCtl').hidden = p !== 'C'; $('spaceCtl').hidden = p !== 'C';
+  render(); if (state.exp) runExp(state.exp);
+}
+function syncOutputs() { for (const id of ['loose', 'dep', 'yield', 'reach', 'attend']) $(id + 'V').textContent = (+$(id).value).toFixed(id === 'reach' ? 0 : 2); }
+
+// ---- drawing cores ----
+function toMM(e) { const r = $('sheet').getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 300, (e.clientY - r.top) / r.height * 218]; }
+$('sheet').addEventListener('pointerdown', e => { $('sheet').setPointerCapture(e.pointerId); drawing = [toMM(e)]; redrawOnly(); });
+$('sheet').addEventListener('pointermove', e => { if (!drawing) return; const p = toMM(e), q = drawing[drawing.length - 1]; if (Math.hypot(p[0] - q[0], p[1] - q[1]) > 0.8) { drawing.push(p); redrawOnly(); } });
+function endStroke() {
+  if (!drawing) return;
+  const P = drawing; drawing = null;
+  if (P.length > 1 && polyLen(P) > 3) state.cores.push(smoothPts(resample(P, 1.2), 2).map(([x, y]) => [clamp(x, 3, 297), clamp(y, 3, 215)]));
+  render();
+}
+$('sheet').addEventListener('pointerup', endStroke);
+$('sheet').addEventListener('pointercancel', endStroke);
+
+// ---- controls ----
+for (const t of document.querySelectorAll('.tab')) t.addEventListener('click', () => setProp(t.dataset.p));
+for (const id of ['loose', 'dep', 'yield', 'reach', 'attend']) $(id).addEventListener('input', () => { syncOutputs(); render(); });
+for (const id of ['loose', 'dep', 'yield', 'reach', 'attend']) $(id).addEventListener('change', () => { if (state.exp) runExp(state.exp); });
+$('seed').addEventListener('change', () => { render(); if (state.exp) runExp(state.exp); });
+$('reroll').addEventListener('click', () => { $('seed').value = 1 + Math.floor(Math.random() * 9999); render(); if (state.exp) runExp(state.exp); });
+$('showCores').addEventListener('change', redrawOnly);
+$('showSpace').addEventListener('change', redrawOnly);
+$('reverse').addEventListener('change', render);
+$('undo').addEventListener('click', () => { state.cores.pop(); render(); });
+$('clear').addEventListener('click', () => { state.cores = []; render(); });
+$('example').addEventListener('click', () => { state.cores = exampleCores(); render(); });
+$('copySvg').addEventListener('click', () => {
+  const paths = last.skins.flatMap(s => s.strokes).map(st => `<path d="M${st.map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' L')}"/>`).join('\n');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300mm" height="218mm" viewBox="0 0 300 218"><g fill="none" stroke="#000" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">\n${paths}\n</g></svg>`;
+  const ok = () => { $('copyMsg').textContent = 'Copied the skins as SVG, in millimetres.'; };
+  try { navigator.clipboard.writeText(svg).then(ok, () => { $('copyMsg').textContent = 'The clipboard is not available here.'; }); } catch { $('copyMsg').textContent = 'The clipboard is not available here.'; }
+});
+
+// ---- experiments ----
+function sCurve(cx, cy, a = 0) {
+  const pts = [];
+  for (let k = 0; k <= 40; k++) { const t = k / 40, u = (t - 0.5) * 52, v = Math.sin(t * Math.PI * 2) * 9; pts.push([cx + u * Math.cos(a) - v * Math.sin(a), cy + u * Math.sin(a) + v * Math.cos(a)]); }
+  return pts;
+}
+function prefixCores() {
+  const r = mulberry32(11);
+  return [makeCore('arc', 70, 110, 90, 0.2, r), makeCore('zig', 45, 190, 120, -0.4, r), makeCore('hook', 30, 90, 150, 1.1, r), makeCore('loop', 22, 170, 60, 0, r)];
+}
+function mini(host, cores, caption, opt = {}, cls) {
+  const f = document.createElement('figure'), cv = document.createElement('canvas'), cap = document.createElement('figcaption');
+  cap.textContent = caption; f.append(cv, cap); host.append(f);
+  const res = runProposal(state.prop, cores, opt.prm || prm(), opt.seed || seed(), opt.reverse);
+  requestAnimationFrame(() => drawSheet(cv, res, cores, { cores: $('showCores').checked, focus: opt.focus, thin: true }));
+  cv.title = 'Load onto the sheet';
+  cv.addEventListener('click', () => { state.cores = cores.map(c => c.map(p => p.slice())); if (opt.seed) $('seed').value = opt.seed; if (opt.reverse !== undefined) $('reverse').checked = !!opt.reverse; if (opt.prm) { $('loose').value = opt.prm.loose; $('yield').value = opt.prm.yieldP; syncOutputs(); } render(); $('sheet').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+  if (opt.statCap) cap.textContent = caption + ' · ' + statsTxt(stats(res));
+  return res;
+}
+function runExp(e) {
+  state.exp = e;
+  for (const b of document.querySelectorAll('.expbtn')) b.setAttribute('aria-pressed', String(b.dataset.e === e));
+  const host = $('minis'); host.innerHTML = ''; host.className = 'minis' + (e === '2' ? ' pop' : '');
+  const P = state.prop, name = DESC[P][0];
+  if (e === '1') {
+    $('expHead').textContent = `${name} · the test core is dark; context skins are grey.`;
+    const ctx = prefixCores(), test = sCurve(150, 105, 0.15);
+    mini(host, [test], 'alone', { focus: 0 });
+    mini(host, [...ctx, test], 'after four skins', { focus: 4 });
+    mini(host, [sCurve(262, 190, -0.5)], 'at the edge', { focus: 0 });
+  } else if (e === '2') {
+    $('expHead').textContent = `${name} · 24 random core sets, seeds 1–24. Judge them before reading the counts.`;
+    let s = 1;
+    const step = () => { if (state.exp !== '2' || s > 24) return; const cores = randomCores(s); mini(host, cores, `seed ${s} · ${cores.length} cores`, { seed: s, statCap: false }); s++; setTimeout(step, 0); };
+    step();
+  } else if (e === '3') {
+    $('expHead').textContent = `${name} · the same four-core prefix, then one new core (dark).`;
+    const pre = prefixCores(), c0 = resample(pre[0], 2), m = c0[Math.floor(c0.length / 2)];
+    const a = Math.atan2(c0[Math.floor(c0.length / 2) + 1][1] - m[1], c0[Math.floor(c0.length / 2) + 1][0] - m[0]) + Math.PI / 2;
+    const cross = []; for (let k = 0; k <= 30; k++) { const t = (k / 30 - 0.5) * 44; cross.push([m[0] + Math.cos(a) * t, m[1] + Math.sin(a) * t]); }
+    const par = pre[1].map(([x, y]) => [x + 3.5, y + 6.5]);
+    const far = sCurve(255, 38, 0.3).slice(0, 26);
+    mini(host, pre, 'prefix only');
+    mini(host, [...pre, cross], 'new core crosses core 1', { focus: 4 });
+    mini(host, [...pre, par], 'new core parallel to core 2', { focus: 4 });
+    mini(host, [...pre, far], 'new core far away', { focus: 4 });
+  } else if (e === '4') {
+    $('expHead').textContent = `${name} · your cores, yield 0 (a boxed-in skin always stops).`;
+    for (const l of [0.1, 0.45, 0.8]) mini(host, state.cores, `looseness ${l}`, { prm: { ...prm(), loose: l, yieldP: 0 }, statCap: true });
+  } else if (e === '5') {
+    $('expHead').textContent = `${name} · your cores, drawn order vs reversed. Earlier skins are in front.`;
+    mini(host, state.cores, 'drawn order', { reverse: false, statCap: true });
+    mini(host, state.cores, 'reversed', { reverse: true, statCap: true });
+  }
+}
+for (const b of document.querySelectorAll('.expbtn')) b.addEventListener('click', () => runExp(b.dataset.e));
+
+window.addEventListener('resize', redrawOnly);
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { redrawOnly(); if (state.exp) runExp(state.exp); });
+syncOutputs(); setProp(state.prop);
+</script>
