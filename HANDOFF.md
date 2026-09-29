@@ -4,12 +4,12 @@ updated: 2026-09-29
 entries: 24
 ---
 
-### Territory bench: meander round — opened 2026-09-29, owner: claude (axibridge)
+### Territory bench: Ian's check and merge — opened 2026-09-29, owner: ian
 
-- done: Web-artifact prototype v1 through v5 (Territory), with blind Sonnet reviews in rounds 1–4, Fable design briefs, and multi-agent brainstorm and research for v5. Ian's v5 verdict and the meander reference are recorded.
-- next: Run `docs/plans/territory-meander-round.md` from a fresh session: 3 Opus brainstorms, 2 Sonnet research agents, a Fable synthesis, then a build in `tools/territory-prototype/` (a new `t_meander.js`), review, and Ian.
-- blockers: none. The artifact URL is in the plan and `tools/territory-prototype/README.md`; publish with `url` from the new session.
-- context: [plan](docs/plans/territory-meander-round.md), [prototype sources](tools/territory-prototype/README.md), [v5 evidence and verdict](shots/territory-v5-0929/README.md), [reviews](docs/reviews/territory-v2-0929-sonnet.md). All of it is on `main` (pushed 2026-09-29).
+- done: Meander rounds 3–5 and publication of the prototype artifact as Version 10. The port into axibridge: the `territory` source, the bench adapter with a worker engine, and the Grown / Version 8 planes fill. Tests and docs are done. Everything is on branch `feat/territory-bench` (last commit is the Fill switch).
+- next: Restart AxiBridge.app and try Generate → Territory → Bench. Then decide the merge to `main` (and whether to push and sync idkpi).
+- blockers: none. The server must restart to register the new source.
+- context: [MODULES.md "Client-engine benches"](docs/MODULES.md), [bench evidence](shots/territory-bench-0929/README.md), [meander 5 plan and notes](docs/plans/territory-meander-round-5.md), [prototype README](tools/territory-prototype/README.md), [reviews](docs/reviews/meander-sonnet.md).
 
 ### Linedraw v3 native and paper acceptance — opened 2026-09-28, owner: ian
 

@@ -3,9 +3,10 @@ project: idk.axibridge
 state: active
 updated: 2026-09-29
 machine: mac+pi
-summary: Main (pushed) now includes Linedraw v3, plot estimates and the Territory bench web prototype v1-v5; a meander round is planned next.
+summary: The Territory meander drawing is now a working axibridge bench (Grown or Version 8 fill, live dials, Keep as layer) on feat/territory-bench, awaiting Ian's check and a merge.
 next:
-  - "Start the meander round in a fresh session: docs/plans/territory-meander-round.md"
+  - "Ian: restart AxiBridge.app and try Generate → Territory → Bench; then ask for the merge of feat/territory-bench to main"
+  - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
   - "After the active plot finishes, activate and check mandatory simplification and native timing"
   - "Sync the idkpi clone with main once the Pi is back"
@@ -14,6 +15,20 @@ handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Territory bench, 29 September (evening):** The meander rounds 3–5 on the web prototype
+reached Version 10:
+- deliberate lines with accents and bridges;
+- a Density group whose ground grows out of the lines as echo trains with inherited mutations, drawn with a brushed finish;
+- the Version 8 planes, kept as a path of their own.
+
+That was then ported into the app as a bench:
+- the generated ES-module engine runs in a worker;
+- `sources/territory.py` replays the kept strokes and stores their recipe;
+- the bench UI (`territory_bench.js`) has live dials with locks, Surprise and Back, a next-seeds strip, Keep as layer and resume;
+- a Fill switch chooses Grown or Version 8 planes.
+
+Parity with the prototype is pinned by `tests/test_territory_engine_js.py`. The new territory tests pass, and the full suite had 1695 passed and 1 stale-list failure, since fixed. All of it is on `feat/territory-bench`, not merged or pushed. Evidence is in `shots/meander{3,4,5}-0929/` and `shots/territory-bench-0929/`; reviews are in `docs/reviews/meander-sonnet.md`. Nothing has been plotted.
 
 **Territory bench prototype, 29 September:** An AARON-adjacent drawing bench is
 being prototyped as private web artifacts, with no `axibridge/` changes. *Cores and Skins*
