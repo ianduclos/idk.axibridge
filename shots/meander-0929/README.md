@@ -2,7 +2,7 @@
 
 Ian's brief, after v5: "perhaps we're holding onto the territory thing too closely. also, i was expecting to see the illusion of line width and narrowness through the lines, to create the illusion of volume etc. also kinda more unified stuff idk." The prompt image was the Rio Mamoré (meanders, oxbows, scroll bars). The plan with his full verbatim direction is `docs/plans/territory-meander-round.md`.
 
-Artifact: https://claude.ai/artifact/Bawx12VN4uRgWR2wU2Lso3 (private). New version, render mode **Meander** is the default; v5 and the older renders are still in the Render menu. Everything is judged on screen only; nothing is plotted.
+Artifact: https://claude.ai/artifact/Bawx12VN4uRgWR2wU2Lso3 (private), Version 5. Render mode **Meander** is the default; v5 and the older renders are still in the Render menu. Everything is judged on screen only; nothing is plotted.
 
 ## Process
 
