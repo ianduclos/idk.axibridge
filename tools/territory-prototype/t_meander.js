@@ -714,6 +714,67 @@ Territory.prototype.meander = function (cores) {
     emit('strand', strokes, { ch: id, t: c.tDraw });
   }
 
+  // ---- round 3 (brief §2.2): accents. Beside a sharp bend near the chaos, 3–5 stated arcs on the convex
+  //      side: uneven gaps, lengths growing outward, each leaning downstream, so they neither nest nor ring.
+  const accents = [];
+  if (r3 && prm.accents > 0 && chiC.length) {
+    const rA = rngFor(seed, 6169), nA = Math.round(3 * clamp(prm.accents, 0, 1)), sites = [];
+    for (const [id, g] of geo) {
+      const n = g.C.length, kp = new Float64Array(n);
+      for (let i = 6; i < n - 6; i++) kp[i] = wrap(g.th[i + 6] - g.th[i - 6]) / 6;          // rad per mm
+      for (let i = 20; i < n - 20; i++) {
+        const a = Math.abs(kp[i]); if (a < 1 / 14 || a < Math.abs(kp[i - 1]) || a < Math.abs(kp[i + 1])) continue;
+        let i0 = i, i1 = i; while (i0 > 1 && Math.abs(kp[i0 - 1]) > a * 0.4) i0--; while (i1 < n - 2 && Math.abs(kp[i1 + 1]) > a * 0.4) i1++;
+        const turn = Math.abs(wrap(g.th[i1] - g.th[i0])) * 180 / Math.PI; if (turn < 55 || turn > 175 || tangleZones.some(z => z.ch === id && i >= z.i0 - 10 && i <= z.i1 + 10)) continue;
+        const p = g.C[i], dc = Math.min(...chiC.map(c => Math.hypot(p[0] - c.x, p[1] - c.y))); sites.push({ id, i, i0, i1, a, far: dc > 60, sg: Math.sign(kp[i]), c: chiC.findIndex(c => Math.hypot(p[0] - c.x, p[1] - c.y) === dc) });
+      }
+    }
+    sites.sort((x, y) => y.a - x.a || x.id - y.id || x.i - y.i);
+    const byC = new Set(); let far = 0;
+    for (const pass of [0, 1, 2]) for (const st of sites) {
+      if (accents.length >= nA) break;
+      if (st.far !== (pass === 2) || (pass === 2 && far >= 1)) continue;   // near the chaos first; at most one elsewhere
+      if (pass === 0 && byC.has(st.c)) continue;
+      const g = geo.get(st.id), p = g.C[st.i];
+      if (accents.some(q => Math.hypot(q.at[0] - p[0], q.at[1] - p[1]) < 30)) continue;
+      const cnt = 3 + Math.floor(3 * rA()), set = [0.6, 0.9, 1.5];
+      let gaps;
+      for (let t = 0; t < 20; t++) {
+        const pool = set.slice().sort(() => rA() - 0.5); gaps = []; for (let j = 0; j < cnt - 1; j++) gaps.push(j < 3 ? pool[j] : set[Math.floor(rA() * 3)]);
+        const m = gaps.reduce((x, y) => x + y, 0) / gaps.length, cv = Math.sqrt(gaps.reduce((x, y) => x + (y - m) ** 2, 0) / gaps.length) / m;
+        const mono = gaps.every((x, j) => !j || x >= gaps[j - 1]) || gaps.every((x, j) => !j || x <= gaps[j - 1]);
+        if (cv >= 0.3 && (!mono || gaps.length < 3)) break;
+        if (t === 19) gaps = gaps.map((x, j) => j % 2 ? 1.5 : 0.6);
+      }
+      const lean = 0.1 + 0.1 * rA(), half = (st.i1 - st.i0) / 2, mid = (st.i0 + st.i1) / 2, dir = st.id === 0 || rA() < 0.5 ? 1 : -1;
+      const nx = i => -st.sg * g.nx[i], ny = i => -st.sg * g.ny[i];                          // convex side
+      const arcs = []; let d = g.S[st.i] / 2 + 0.8, cover = 0, samp = 0;
+      for (let j = 0; j < cnt; j++) {
+        if (j) d += gaps[j - 1];
+        const h = half * (0.9 + 0.25 * j) + 4, c0 = mid + dir * j * Math.max(3, lean * h * 2);   // ≥ 1.5 mm of lean per arc
+        const a0 = Math.max(1, Math.round(c0 - h)), a1 = Math.min(g.C.length - 2, Math.round(c0 + h)), P = [];
+        for (let i = a0; i <= a1; i++) { const taper = Math.min(1, (i - a0) / 8, (a1 - i) / 8); P.push([g.C[i][0] + nx(i) * d * (0.7 + 0.3 * taper), g.C[i][1] + ny(i) * d * (0.7 + 0.3 * taper)]); }
+        if (j === cnt - 1) for (let q = 0; q < P.length; q += 3) { samp++; const o = sheet.owner[cellOf(P[q][0], P[q][1])]; if (o && lin.get(o) !== st.id) cover++; }
+        arcs.push(P);
+      }
+      if (samp && cover / samp > 0.3) continue;
+      // the outermost arc is broken once
+      const last = arcs[arcs.length - 1], cut = Math.floor(last.length * (0.3 + 0.4 * rA())), gapN = Math.round((1 + rA()) * 2);
+      arcs.splice(arcs.length - 1, 1, last.slice(0, cut), last.slice(cut + gapN));
+      const hand = { ...firm, A: firm.A * 0.3, tremor: 0, over: 0, lift: 0 }, strokes = [];
+      for (const P of arcs) if (P.length > 4) for (const pc of put(P, st.id, hand, rA, { cross: true, keepHand: true })) strokes.push(pc.pts);
+      // centre spread: curvature centres of each arc's middle (guard against bullseye / tree rings)
+      const cen = arcs.slice(0, cnt - 1).map(P => { const q = Math.floor(P.length / 2), A0 = P[Math.max(0, q - 6)], B0 = P[q], C0 = P[Math.min(P.length - 1, q + 6)];
+        const ax = B0[0] - A0[0], ay = B0[1] - A0[1], bx = C0[0] - B0[0], by = C0[1] - B0[1], den = 2 * (ax * by - ay * bx) || 1e-9;
+        const ux = ((ax * ax + ay * ay) * by - (bx * bx + by * by) * ay) / den, uy = ((bx * bx + by * by) * ax - (ax * ax + ay * ay) * bx) / den; return [A0[0] + ux, A0[1] + uy]; });
+      let spread = 0; for (const u of cen) for (const v of cen) spread = Math.max(spread, Math.hypot(u[0] - v[0], u[1] - v[1]));
+      const gm = gaps.reduce((x, y) => x + y, 0) / gaps.length, gcv = Math.sqrt(gaps.reduce((x, y) => x + (y - gm) ** 2, 0) / gaps.length) / gm;
+      if (st.far) far++;
+      accents.push({ ch: st.id, at: p, far: st.far, n: cnt, spread: +spread.toFixed(1), gapCv: +gcv.toFixed(2) }); byC.add(st.c);
+      emit('accent', strokes, { ch: st.id, t: chans[st.id].tDraw });
+    }
+  }
+
   // ---- a second register: 1–3 single-line reaches in busy ground are restated 2–5 times,
   //      each pass drifting on its own and disagreeing with the others (Ian's sketch; review r1 #4)
   const searchSpots = [];
@@ -888,7 +949,7 @@ Territory.prototype.meander = function (cores) {
   });
   this.lines = out;
   this.meanderInfo = meanderRecipe(out, chans, geo, events, steps, { dead, tot, white, rings, ringStill, prm, tangles, win });
-  if (r3) Object.assign(this.meanderInfo, { chaosShare: +(ink.chaos / (ink.all || 1)).toFixed(3), chiC: chiC.map(c => [+c.x.toFixed(1), +c.y.toFixed(1), +c.r.toFixed(1)]) });
+  if (r3) Object.assign(this.meanderInfo, { accents, chaosShare: +(ink.chaos / (ink.all || 1)).toFixed(3), chiC: chiC.map(c => [+c.x.toFixed(1), +c.y.toFixed(1), +c.r.toFixed(1)]) });
   if (prm.debug) this.meanderDebug = { chans: chans.map(c => ({ id: c.id, cls: c.cls, present: c.present, tDraw: c.tDraw })), snaps, events };
 };
 
