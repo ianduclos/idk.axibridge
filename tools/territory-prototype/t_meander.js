@@ -77,6 +77,20 @@ function chainGraph(G, turnMax) {
   }
   return chains;
 }
+// Cut a tail back until its last 40 mm turn by no more than `limit` degrees: some ends keep a hook, none spiral.
+function uncoil(P, limit) {
+  let Q = P;
+  for (let guard = 0; guard < 40 && Q.length > 30; guard++) {
+    let s = 0, t = 0;
+    for (let i = Q.length - 2; i > 1 && s < 40; i--) {
+      s += Math.hypot(Q[i + 1][0] - Q[i][0], Q[i + 1][1] - Q[i][1]);
+      t += wrap(Math.atan2(Q[i + 1][1] - Q[i][1], Q[i + 1][0] - Q[i][0]) - Math.atan2(Q[i][1] - Q[i - 1][1], Q[i][0] - Q[i - 1][0]));
+    }
+    if (Math.abs(t) * 180 / Math.PI <= limit) break;
+    Q = Q.slice(0, Q.length - Math.max(2, Math.round(Q.length * 0.04)));
+  }
+  return Q;
+}
 function trimToSheet(P, m) {
   const ok = p => p[0] > m && p[0] < W - m && p[1] > m && p[1] < H - m;
   // the longest run inside the margin
@@ -190,7 +204,8 @@ function migrate(chans, A, prm, rng) {
     }
     const sp = new Float32Array(n), lim = 0.5 * ch.ds, Q = P.map(p => p.slice());
     for (let i = 1; i < n - 1; i++) {
-      const pin = smooth(0, 6, Math.min(i, n - 1 - i)), x = P[i][0], y = P[i][1];
+      // the downstream end tapers over 25 mm: the upstream-weighted rate otherwise piles up there and coils it
+      const pin = smooth(0, 6, i) * smooth(0, 25 / ch.ds, n - 1 - i), x = P[i][0], y = P[i][1];
       const edge = smooth(6, 20, Math.min(x, W - x, y, H - y));
       const d = clamp(MIG_E * R1[i], -lim, lim) * pin * edge * (stalls.length ? stallW(x, y) : 1);
       const tx = P[i + 1][0] - P[i - 1][0], ty = P[i + 1][1] - P[i - 1][1], tl = Math.hypot(tx, ty) || 1;
@@ -384,7 +399,7 @@ Territory.prototype.meander = function (cores) {
   const snapAt = (id, t) => { let best = null; for (const s of snaps) if (s.ch === id && s.t <= t && (!best || s.t > best.t)) best = s; return best; };
   for (const c of chans) {
     if (c.abandoned) { const par = chans[c.parent]; c.drawn = par.tDraw >= c.born; c.present = c.pts; c.presentSpeed = []; continue; }
-    const s = snapAt(c.id, c.tDraw); c.drawn = !!s; if (s) { c.present = trimToSheet(s.pts, 10); c.presentSpeed = s.speed; }
+    const s = snapAt(c.id, c.tDraw); c.drawn = !!s; if (s) { c.present = uncoil(trimToSheet(s.pts, 10), 60 + 90 * rE()); c.presentSpeed = s.speed.slice(0, c.present.length); }
   }
   const hands = makeHands(seed, { sway: prm.sway ?? 1, overshoot: prm.overshoot ?? 1, lifts: prm.lifts ?? 1, tremor: prm.tremor ?? 1 });
   const loose = hands[0], firm = hands[1];
