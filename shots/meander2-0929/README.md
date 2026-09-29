@@ -2,7 +2,7 @@
 
 Round 2 of meander, after Ian said of round 1: "bah this is super nice. how can we keep going? keep pushing the thing". He picked four directions: tangle, composition, polish, and a paper test. He then dropped the paper test ("forget the paper test"). The plan is `docs/plans/territory-meander-round-2.md`.
 
-Artifact: https://claude.ai/artifact/Bawx12VN4uRgWR2wU2Lso3 (private), the next version after Version 5. Render is Meander; the new controls are Tangle, Work map, Graft and Found window. Everything was judged on screen only; nothing was plotted.
+Artifact: https://claude.ai/artifact/Bawx12VN4uRgWR2wU2Lso3 (private), Version 6. Render is Meander; the new controls are Tangle, Work map, Graft and Found window. Everything was judged on screen only; nothing was plotted.
 
 ## Process
 
