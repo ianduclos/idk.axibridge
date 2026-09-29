@@ -126,7 +126,7 @@ function densityPass(o) {
   if (effS > 0) {
     const rS = rngFor(seed, 6187), nC = Math.round(effS * (1 + 2 * rS())), cands = [];
     for (let t = 0; t < 60; t++) {
-      const x = 20 + (W - 40) * rS(), y = 20 + (H - 40) * rS(), a = rS() * Math.PI, len = 80 + 180 * rS(), dx = Math.cos(a), dy = Math.sin(a);
+      const x = 20 + (W - 40) * rS(), y = 20 + (H - 40) * rS(), a = rS() * Math.PI, len = 40 + 100 * rS(), dx = Math.cos(a), dy = Math.sin(a);
       const P = []; for (let s2 = -len / 2; s2 <= len / 2; s2 += 1) { const px = x + dx * s2, py = y + dy * s2; if (px > 3 && py > 3 && px < W - 3 && py < H - 3) P.push([px, py]); }
       if (P.length < 60) continue;
       const labs = new Set(); let inJmm = 0, cut = 0, k = 0;
@@ -154,7 +154,7 @@ function densityPass(o) {
   }
   // ---- fans (§2.4): radiating strokes from inside the strongest bends
   if (cov > 0) {
-    const rN = rngFor(seed, 6186), nF = cov > 1 ? 1 : cov > 0.6 && rN() < 0.5 ? 1 : 0   /* r1: rosettes read stamped */, bends = [], used = new Set();
+    const rN = rngFor(seed, 6186), nF = cov > 1.5 ? 1 : 0   /* r1–r2: rosettes read stamped; only at the top of cover */, bends = [], used = new Set();
     for (const [id, g] of geo) { const n = g.C.length; for (let i = 20; i < n - 20; i += 4) { const k = wrap(g.th[Math.min(n - 1, i + 8)] - g.th[Math.max(0, i - 8)]) / 8, r = 1 / (Math.abs(k) || 1e-9); if (r >= 8 && r <= 35) bends.push({ id, i, r, k }); } }
     bends.sort((a, b) => a.r - b.r);
     for (const b of bends) {
@@ -176,7 +176,7 @@ function densityPass(o) {
   if (effX > 0) {
     const rX = rngFor(seed, 6189);
     if (rX() < 0.6 * effX) {
-      const kind = rX() < 0.3 ? 'thorn' : rX() < 0.6 ? 'rings' : 'black';
+      const kind = rX() < 0.35 ? 'thorn' : 'black';   // r2: rings read as dotted arcs
       const at = chiC_.length ? [chiC_[0].x + (rX() - 0.5) * 30, chiC_[0].y + (rX() - 0.5) * 30] : [W * (0.3 + 0.4 * rX()), H * (0.3 + 0.4 * rX())];
       if (kind === 'thorn') { const n = 5 + Math.floor(7 * rX()), a0 = rX() * Math.PI * 2; for (let q = 0; q < n; q++) { if (rX() < 0.12) continue; const a = a0 + q * 2 * Math.PI / n + rad((rX() - 0.5) * 30), len = 12 + 33 * rX(), wd = 1.5 + 3 * rX(), tip = [at[0] + Math.cos(a) * len, at[1] + Math.sin(a) * len];
           for (const sg of [1, -1]) { const b0 = [at[0] - Math.sin(a) * wd * sg, at[1] + Math.cos(a) * wd * sg], R = []; for (let t = 0; t <= 1.0001; t += 0.05) { const bow = -Math.sin(Math.PI * t) * wd * 0.3 * sg; R.push([b0[0] + (tip[0] - b0[0]) * t - Math.sin(a) * bow, b0[1] + (tip[1] - b0[1]) * t + Math.cos(a) * bow]); } L_.surprise.push(R); } } }
@@ -248,9 +248,10 @@ function densityPass(o) {
   // ---- ground (§2.2): scrubs, one pen-down path of 3–9 passes along θ; candidates fixed per cell so the dial only adds
   const lognorm = (r, med, s) => med * Math.exp(s * Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r()));
   const scrub = (x0, y0, r, dth) => {
-    const f0 = facAt(x0, y0), bleed = r() < 0.2;
-    const u0 = r(), passes = u0 < 0.4 ? 1 : u0 < 0.8 ? 2 : 3, side = r() < 0.5 ? 1 : -1, adv = () => 0.15 + 0.45 * r();   // r1: long drags that overlap for tone
-    const nz = noise1(r), nph = r() * 100; let x = x0, y = y0, dir = r() < 0.5 ? 1 : -1, P = [], s = 0;
+    const f0 = facAt(x0, y0), bleed = r() < 0.1;
+    { const th0 = theta(x0, y0) + dth + fac[f0].dth; for (let b = 0; b < 160; b++) { const bx = x0 - Math.cos(th0) * 0.5, by = y0 - Math.sin(th0) * 0.5; if (bx < 3 || by < 3 || bx > W - 3 || by > H - 3 || facAt(bx, by) !== f0 || M.owner[cellOf(bx, by)] > DZ.ground || voidM[cellOf(bx, by)]) break; x0 = bx; y0 = by; } }   // r2: both ends on the plane's edge
+    const u0 = r(), passes = u0 < 0.4 ? 1 : u0 < 0.8 ? 2 : 3, dir0 = 1, side = r() < 0.5 ? 1 : -1, adv = () => 0.15 + 0.45 * r();   // r1: long drags that overlap for tone
+    const nz = noise1(r), nph = r() * 100; let x = x0, y = y0, dir = 1, P = [], s = 0; r();
     for (let k = 0; k < passes; k++) {
       const len = clamp(lognorm(r, 50, 0.5), 20, 130) * (k ? 0.5 + 0.4 * r() : 1); let t = 0, moved = 0;
       while (t < len) {

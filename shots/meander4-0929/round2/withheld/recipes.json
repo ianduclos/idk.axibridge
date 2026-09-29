@@ -1,0 +1,74 @@
+{
+ "D01": {
+  "seed": 10,
+  "density": 1
+ },
+ "D02": {
+  "seed": 7,
+  "density": 0.3
+ },
+ "D03": {
+  "seed": 22,
+  "density": 0.3
+ },
+ "D04": {
+  "seed": 7,
+  "density": 1
+ },
+ "D05": {
+  "seed": 13,
+  "density": 1
+ },
+ "D06": {
+  "seed": 31,
+  "density": 0.3
+ },
+ "D07": {
+  "seed": 13,
+  "density": 0.3
+ },
+ "D08": {
+  "seed": 5,
+  "density": 0.3
+ },
+ "D09": {
+  "seed": 10,
+  "density": 0.7
+ },
+ "D10": {
+  "seed": 13,
+  "density": 0.7
+ },
+ "D11": {
+  "seed": 5,
+  "density": 0.7
+ },
+ "D12": {
+  "seed": 22,
+  "density": 1
+ },
+ "D13": {
+  "seed": 5,
+  "density": 1
+ },
+ "D14": {
+  "seed": 7,
+  "density": 0.7
+ },
+ "D15": {
+  "seed": 31,
+  "density": 1
+ },
+ "D16": {
+  "seed": 22,
+  "density": 0.7
+ },
+ "D17": {
+  "seed": 31,
+  "density": 0.7
+ },
+ "D18": {
+  "seed": 10,
+  "density": 0.3
+ }
+}

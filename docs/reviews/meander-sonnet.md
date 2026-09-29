@@ -350,3 +350,23 @@ Bottom 3:
 - D04: the fur field buries the Z2 spine.
 
 **Most important change:** stop building tone from parallel packed short strokes. Make covering strokes long and single-pass (span a whole patch), let tone come from overlapping drags that overlap and thin out, cut shaped voids with hard edges into the field, and keep a quiet halo around each knot so the calm drawing stays the focal point.
+
+## Meander 4 (Density), round 2
+
+Blind review of round2 sheets A/B/C + close.png against round1 and calm sheet Z.
+
+**1. Current vs earlier: better overall.** Ground: partly fixed. Round 1 was pill-ended dashes filling nearly every cell (D04, D13, D15, D16 read as a combed wind map); round 2 has no pill ends, fewer and denser patches, and real empty paper between them (D09, D10, D12, D13 read as patches, not wallpaper). But inside a patch the close views (D10, D12, D16 close) are still long, roughly parallel, slightly wavy strokes: hair. Voids: better. D15/D17 have a carved dark shard near the top, D13 has dark wedge blades; but they read as isolated blobs or spikes, not as negative shapes cut out of a field. Knots: much better. In D09/D10 the calm knot (left cluster, the ear-like fold) survives, and the ground now keeps a quiet zone around it. Fans/asterisks: fewer, but not gone: D05, D10, D11 (right), D13 each still show a small radial rosette with a beaded arc of tick marks; D04 has two.
+
+**2. Painterly or hair?** Mostly still hair/fur at close range; from sheet distance the big arched swathes (D01 bottom, D05 right, D10 right, D12 left) read as dry-brush streaks, which is the better half. The references have flat planes with hard edges and crisp faceted boundaries; here every patch has a ragged, feathered edge, so nothing reads as a plane. Densest patches (D05 close, D15 close) come closest: dark mass with hard cut edge. The beaded dotted arcs (D01, D15 at top left and right) look like stitching, not painting.
+
+**3. Focal points.** Yes at low and mid intensity (D02, D03, D06, D09 to D11). At D12 to D17 the ground outweighs the calm line: D16's left third and D13's centre pull the eye first. D12/D16 are where the drawing gets buried.
+
+**4. Best intensity per drawing.** Seed 1 (Z1/Z2 family): D01 or D04-range works; D02 is nearly calm, so it is fine but does nothing. Seed 22 (ian-seed22 knots): D09/D10 is the sweet spot; D11 is the edge; D13 is too much. Z2-like (D04/D14): D04 is best, D14 adds a stray long spike-and-line that reads as a ruler error. D05 works as a top end for its seed. Top end (D12/D13/D16/D17): too busy and too uniform; it fills rather than covers, and the added long straight lines (D11, D13, D15, D17) are the mistake: they look like scratched ruler marks, not surprise.
+
+**5. Stamps / repetition.** Repetition is now across the sheet, not within a cell: the same three devices recur: a dense arch swathe, a wedge/needle blade, a small radial fan. The dotted arc appears in D01, D04, D15, D17. The crosshatched dark blob in D15/D17 is single but reads as a technical fill, not hand made. The long straight thin diagonals through D05, D11, D13, D14 (identical weight) are a repeated tic.
+
+**6. Ranking (current).**
+Top 5: D10 (knot plus right swathe, balanced); D09 (drawing leads, ground supports); D05 (closest to a plane; dark shard voids); D01 (arched masses clean, drawing readable); D04 (two swathes echo the calm shapes).
+Bottom 3: D14 (ruler spikes, scattered); D17 (D15 repeat with blob stamp); D16 (buried, hair).
+
+**Most important next change:** give patches hard edges. Clip each swathe to a facet or shape boundary (or terminate strokes on a common edge line) so masses read as planes, and cut the isolated fans, dotted arcs, and long straight lines from the vocabulary.
