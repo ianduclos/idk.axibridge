@@ -1,0 +1,3 @@
+X = mutate over (density 1.3, continue 1.6, planes 0.15, mutate 1.4, slash 1.6, surprise 1.6, ink 80)
+Y = Version 8 control (density 1, continue 1, cover 0.5, slash 1, surprise 1, ink 60; planes-only path)
+Z = new default at max (density 1, continue 1, cover 0.45, planes 0.15, mutate 0.6, slash 1, surprise 1, ink 60)

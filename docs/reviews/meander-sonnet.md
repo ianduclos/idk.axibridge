@@ -370,3 +370,50 @@ Top 5: D10 (knot plus right swathe, balanced); D09 (drawing leads, ground suppor
 Bottom 3: D14 (ruler spikes, scattered); D17 (D15 repeat with blob stamp); D16 (buried, hair).
 
 **Most important next change:** give patches hard edges. Clip each swathe to a facet or shape boundary (or terminate strokes on a common edge line) so masses read as planes, and cut the isolated fans, dotted arcs, and long straight lines from the vocabulary.
+
+---
+
+## Meander 5 (grown field), round 1
+
+The sheets were blind: X = Mutate over, Y = Version 8 control, Z = the new default at max. The recipes are in `shots/meander5-0929/round1/withheld/`. What follows is a summary of the Sonnet review.
+
+- **Ranking:** Z, then X, then Y.
+  - Y is "separate hatch slabs with hard block edges … exactly what the artist rejected": grown-from-lines 2/5.
+  - Z scored grown-from-lines 4/5 and mutations 4/5. It is "the closest to the river's scroll bars and cross-cutting sets".
+  - Best cell: Z-13, with a buckled fold and a cross-cutting set. Worst: Y-3.
+- **Clichés:** tree rings and topo engraving where spacing is uniform (Z-3 bottom, Z-18 lower right, X-3 upper right). The crosshatched discs read as stamps.
+- **Top defects:**
+  1. Hard, ragged, mask-cut field edges.
+  2. Crosshatched discs.
+  3. Uniform spacing over wide areas.
+
+The lead's fixes:
+- ends cut by obstacles feather back by their own amounts;
+- trains thin out in their last 30 %;
+- spacing opens outward from the source line;
+- a wider range of base gaps, including tight dark trains;
+- the disc surprise is kept only on the Version 8 path.
+
+## Meander 5 (grown field), round 2
+
+The sheets were blind, on fresh seeds 5, 10, 18 and 24:
+- K is the default (Mutate 0.6);
+- M is Planes 0.7;
+- Q is over: Density 1.3, Mutate 1.4.
+
+The recipes are in `shots/meander5-0929/round2/withheld/`.
+
+- **Ranking:** Q, then M, then K.
+  - Q: grown 4/5, mutations 4/5. It "wins on integration and feathering, but it flirts with the topo/tree-ring look". Best cell: Q-24.
+  - M has the widest tonal range, but its black bundles read as separate hatching. Worst cell: M-24.
+  - K is "timid and patch-like", with staircase edges.
+- **Top defects:**
+  1. Concentric scallop fields (Q-10, Q-24).
+  2. Hard edges and staircase ends (K, M).
+  3. Hairballs at crossings.
+
+The lead's fixes (this was the last blind round):
+- Mutate defaults to 1.0;
+- buckle wavelengths are 14–36 mm, up from 8–20;
+- cut ends feather back further (median 4.5 mm);
+- plane events avoid the chaos zone.

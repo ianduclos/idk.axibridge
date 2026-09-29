@@ -37,7 +37,7 @@ function chamferLab(src, lab) {
 function densityPass(o) {
   const { seed, prm, out, geo, chans, snaps, chi, junc, Ar } = o;
   // meander 5: a recipe without `planes` is a Version 8 recipe and runs exactly as before (planes only, dials capped at 1)
-  const legacy = prm.planes === undefined, mu = legacy ? 0 : clamp(prm.mutate ?? 0.6, 0, 1.5), trainShare = legacy ? 0 : Math.pow(1 - clamp(prm.planes, 0, 1), 1.3);
+  const legacy = prm.planes === undefined, mu = legacy ? 0 : clamp(prm.mutate ?? 1, 0, 1.5), trainShare = legacy ? 0 : Math.pow(1 - clamp(prm.planes, 0, 1), 1.3);
   const D = clamp(prm.density || 0, 0, legacy ? 1 : 1.5);
   const effOf = k => clamp(D * 2 * (prm[k] ?? 0.5), 0, legacy ? 1 : 3), cov = D * 2 * (prm.cover ?? 0.5);
   const L = clamp(prm.ink ?? 40, 5, 100) * 1000;
@@ -289,7 +289,7 @@ function densityPass(o) {
   // below planes 0.5 the planes are events: a few facets that cross the lines (and the grown field), laid over them
   const planesV = legacy ? 1 : clamp(prm.planes, 0, 1), evt = !legacy && planesV < 0.5, zG = evt ? DZ.base : DZ.ground;
   let evtF = null;
-  if (evt) { const rE = rngFor(seed, 6195), fs = fac.map((f, k) => ({ k, d: Db.d[cellOf(clamp(f.x, 0, W - 1), clamp(f.y, 0, H - 1))], u: rE() })).filter(f => f.d < 10 && !isJ(fac[f.k].x, fac[f.k].y)).sort((a, b) => a.u - b.u); evtF = new Set(fs.slice(0, 1 + Math.round(4 * planesV)).map(f => f.k)); info.events = evtF.size; }
+  if (evt) { const rE = rngFor(seed, 6195), fs = fac.map((f, k) => ({ k, d: Db.d[cellOf(clamp(f.x, 0, W - 1), clamp(f.y, 0, H - 1))], u: rE() })).filter(f => f.d < 10 && !isJ(fac[f.k].x, fac[f.k].y) && chi(fac[f.k].x, fac[f.k].y) < 0.3)   /* r2: events in the chaos zone read as hairballs */.sort((a, b) => a.u - b.u); evtF = new Set(fs.slice(0, 1 + Math.round(4 * planesV)).map(f => f.k)); info.events = evtF.size; }
   const planeCap = groundCap - growCap;
   if (planeCap > 0) {
     const C = 10, cells = [];
@@ -383,7 +383,7 @@ function growField(o) {
       if (kk >= 2 && muts < st.mcap) {
         const r = rT();
         if (r < 0.06 * mu) { g = clamp(g * (rT() < 0.35 ? 0.45 : 1.6 + 0.9 * rT()), 0.35, 2.2); muts++; log.swale++; active = 8; }
-        else if (r < 0.11 * mu) { let bi = 0, bk = 1e9; for (let t = 0; t < 6; t++) { const i = Math.floor(n * (0.2 + 0.6 * rT())); if (Math.abs(kap[i]) < bk) { bk = Math.abs(kap[i]); bi = i; } } bump = { i: bi, w: (15 + 30 * rT()) / 0.5, a: g * (1 + 2 * rT()), lam: 8 + 12 * rT() }; muts++; log.buckle++; active = 30; }
+        else if (r < 0.11 * mu) { let bi = 0, bk = 1e9; for (let t = 0; t < 6; t++) { const i = Math.floor(n * (0.2 + 0.6 * rT())); if (Math.abs(kap[i]) < bk) { bk = Math.abs(kap[i]); bi = i; } } bump = { i: bi, w: (15 + 30 * rT()) / 0.5, a: g * (1 + 2 * rT()), lam: 14 + 22 * rT() /* r2: short wavelengths amplified into cloud scallops */ }; muts++; log.buckle++; active = 30; }
         else if (r < 0.15 * mu) { const p = cur[Math.floor(n * (0.15 + 0.7 * rT()))]; chutes.push({ x: p[0], y: p[1], w: 3 + 5 * rT(), gr: 1.15 + 0.25 * rT() }); muts++; log.chute++; }
         else if (r < 0.18 * mu && !st.child && n > 120) { const i = Math.floor(n * (0.35 + 0.3 * rT())); queue.push({ P: cur.slice(i), g: clamp(g * (0.6 + rT()), 0.35, 2.2) }); cur = cur.slice(0, i + 1); muts++; log.split++; continue; }
       }
@@ -423,7 +423,7 @@ function growField(o) {
       if (!runs.length) { stop.blocked = (stop.blocked || 0) + 1; break; }
       runs.sort((a, b) => b.length - a.length);
       // r1: ends cut by an obstacle feather back (each echo by its own amount) instead of stopping on the mask's edge
-      for (let q = 0; q < runs.length; q++) { let rn = runs[q]; const fa = Math.floor(lognorm(rT, 5, 0.7)), fb = Math.floor(lognorm(rT, 5, 0.7)); const a = rn[0] !== E[0] ? Math.min(fa, rn.length >> 2) : 0, b = rn[rn.length - 1] !== E[E.length - 1] ? Math.min(fb, rn.length >> 2) : 0; runs[q] = rn.slice(a, rn.length - b); }
+      for (let q = 0; q < runs.length; q++) { let rn = runs[q]; const fa = Math.floor(lognorm(rT, 9, 0.8)), fb = Math.floor(lognorm(rT, 9, 0.8)); const a = rn[0] !== E[0] ? Math.min(fa, rn.length / 3 | 0) : 0, b = rn[rn.length - 1] !== E[E.length - 1] ? Math.min(fb, rn.length / 3 | 0) : 0; runs[q] = rn.slice(a, rn.length - b); }
       const late = (kk + 1) / st.K, drop = late > 0.7 && rT() < (late - 0.7) * 1.6;   // r1: trains thin out toward their end (the echo is still inherited)
       for (const rn of runs) { for (const p of rn) { const c = cellOf(p[0], p[1]); gOwn[c] = st.tid; gK[c] = k; } if (drop) continue; const l = (rn.length - 1) * 0.5; inkT += l; outP.push(k % 2 ? rn.slice().reverse() : rn); }
       for (const rn of runs.slice(1)) if (rn.length > 40 && queue.length < 6) queue.push({ P: rn, g });

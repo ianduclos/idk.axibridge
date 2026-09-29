@@ -132,7 +132,7 @@ const DIALS = [
 ];
 const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path class="shut" d="M7 11V7a5 5 0 0 1 10 0v4"/><path class="open" d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
 const BASE = { loose: 0.5, yieldP: 0.5, wander: 1, reach: 15, spread: 0.7, eps: 0.03, borders: true, outer: true, voids: true, interior: false, disregard: 0.15, hyst: 25, render: 'meander' };
-const DEF = { ...MEANDER_MACROS, cover: 0.45, planes: 0.15, mutate: 0.6 };
+const DEF = { ...MEANDER_MACROS, cover: 0.45, planes: 0.15, mutate: 1 };
 let v8 = false;   // a pasted Version 8 recipe (no planes) runs exactly as it did: the engine's planes-only path
 let locks = store.get('meander.locks', {}), last = null, contactFrom = null;
 
