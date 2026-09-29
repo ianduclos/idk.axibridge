@@ -271,3 +271,43 @@ Bottom 3:
 (R11 and R05/R06 are just above the bottom: closed bodies.)
 
 **Most important next change.** Cut fray and arc frequency: cap the round at one chaotic knot per drawing (as in R03/R12), make it small, and let at most two bends carry 3-4 unequal arcs. Leave everything else as bare calm line. Bridges should be a single stroke per crossing, and only at one or two crossings, with no bridges into the chaos. Do not add more variants of the fray to fix the sameness; subtract instances.
+
+
+## Meander 3, round 2
+
+Blind read of round 2 (sheets A–C, closes) against round 1 and the target/bridges references.
+
+**1. Current vs earlier.** Current is better overall, and the restraint is mostly right. Round 1's tangles were hairball-adjacent: R01 (bottom-left scribble mass), R02 (knotted mesh), R06 (wavy wreath along the bulb base), R14 and R18 (dense woven cluster), R17 (wobbly ribbon at the top right), R08 (braided collar). Round 2 turns each into one calm line plus a short stated echo. R01 and R02 improved most. But two things went too far. First, the chaos is now almost entirely gone: only R04 (lower right), R05 and R10 (upper-left fringe of strokes) and R16 (upper-left) keep any textural passage. Second, R06 lost its base tangle and is now a plain bulb with a thin edge, tidier than R05 and less alive. The artist said "I like a bit of the chaos"; most of the sheet now has none. Restraint is right for the lines, but the chaos should return as one small passage per cell instead of zero.
+
+**2. Knot and stamp.** Knot: R03, R12 and R15 (the target's own composition) keep a small knot with one bold crescent and one curl. R10 and R16 have one dense fringe plus a stated arc, which is the closest thing to the target's "tangle plus 1–2 arcs". Elsewhere there is no knot at all (R07, R09, R11, R13, R14, R17, R18).
+Stamp: yes, and it is the new problem. The 3–5 nested parallel crescent, sitting outside a sharp bend, appears in nearly every cell: R03, R07 (two), R08 (three), R09 (three), R10, R12, R13 (three), R14 (three), R15, R17 (two), R18 (two). Each is a near-identical fat "eyebrow" of concentric arcs, so it reads as one stamp, not "a few tight arcs". The target uses them sparingly (three) and each varies in tightness.
+
+**3. Bridges.** What works:
+- R02: the fork of four traces converging and resolving at the loop reads as a calm liminal plane, and it is far better than round 1's mesh.
+- R01: a line lands along the arc and a hook closes it. Restrained.
+- R13 and R17: the Y and V junctions, where a line peels off and lands along another, look like real continuations.
+- R03 and R12: the fillet under the knot.
+Weaker: R15's extra doubled line inside the knot looks like added clutter next to R03/R12. R14 has a small ring at a crossing and R18 has small circles at joints; these read as artifacts, not bridges. Dashed or broken lines (R05, R06, R11, R18) look like dropout, not a chosen integration. Tidying-up: R04 and R09/R18 have crossings left unresolved, so not everything is tidied, which is good.
+
+**4. Beans and parallels.** Closed pills and drafted ovals remain: R10 and R16 (the long pill at right, with echo hugging one end, is the most bean-like), R11 (closed lozenge), R05/R06 (bulb), R13 (large loops right and left). Ruled parallels: the echo bundles in R09 and R18 (close views) are four or five evenly spaced concentric arcs, which is close to tree rings, and R14's echo looks like a ruled set. Reduce to two or three strokes with uneven spacing.
+
+**5. Near-duplicates.**
+- R03 / R12 / R15: same seed. R15 is the best of the three (extra fillet at the knot) but the doubled line is a bit heavy. R03 is cleanest, R12 in between. Keep R03 and R15, drop R12.
+- R05 / R06: R05 is better (livelier base tangle; R06 is a bald bulb with a stiff base).
+- R10 / R16: R10 is better. R16 keeps more woven tangle in the upper-left and a rounder pill; R10 reads more deliberate, with a real stated arc.
+- R09 / R18: R09 is better (R18 crops off and gets a stubbier composition, with unresolved crossings).
+- R13 / R14 / R17 are not duplicates, but their echoes are interchangeable.
+
+**6. Top 5 and bottom 3 (round 2).**
+Top:
+1. R02: fork of traces resolving at the loop, calm and strange.
+2. R03: the target at its best; knot plus one crescent plus fillet.
+3. R13: open composition with Y junction, stated arcs, and airy weight.
+4. R10: tangle in the upper-left balanced by a stated arc; complex, and it still has some chaos.
+5. R17: reads as one gesture with a junction; calm and dynamic.
+Bottom:
+1. R06: a bulb with the life removed.
+2. R11: lozenge plus stray lines; nothing resolves.
+3. R18: parallel echo bundle plus loose crossings and small circles.
+
+**Next change (most important).** Break the echo stamp and put a little chaos back in a controlled way: vary echo count (0, 2 or 3 strokes), spacing and length per cell so that only about one in three cells has a fat crescent, and re-seed one small textural passage (a single tight tangle near a sharp bend, as in the target) into each cell that has none. That fixes both "everything is the same eyebrow" and "too tidy" together.

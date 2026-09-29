@@ -21,7 +21,7 @@ Contact sheets:
 - `../../.venv/bin/python shoot.py out.html out.png 2000` screenshots it.
 - `cfg.flags: true` adds the meander kill-table flags and ink length to captions (lead's eyes only; never on review sheets).
 - `node close.js <config.json> out.html ID:x,y,w,h | ID:auto …` renders close views at the plotted pen width; `auto` picks the 100 × 70 mm window with the most ink.
-- `node smoke_meander.js [seeds…]` checks determinism and timing and prints each recipe's metrics.
+- `node smoke_meander.js [--r3] [seeds…]` checks determinism and timing and prints each recipe's metrics. `--r3` runs the page's round-3 dials and adds chaos share, accents, bridges and trunk count.
 
 ## Parts
 
@@ -33,6 +33,6 @@ Contact sheets:
 | `t_forms.js` | v4 bodies: Poisson inflation, tubes, wrap/wound/growth |
 | `t_graph.js` | Contour graph |
 | `t_v5.js` | v5 searching lines |
-| `t_meander.js` | Meander (render `meander`): migration + neck editor, strand bands for width, event-dated history, searching register. Design: `docs/research/meander/synthesis-brief.md` and `build-notes/` |
+| `t_meander.js` | Meander (render `meander`): migration + neck editor, strand bands for width, event-dated history, searching register. Design: `docs/research/meander/synthesis-brief.md` and `build-notes/`. Round 3 (dials `complexity`, `chaos`, `accents`, `bridges`; chaos field, accents, bridges, second river): `docs/research/meander3/`. A recipe without those dials is byte-identical to Version 6. |
 
 History and verdicts are in `shots/territory-v2-0929` … `shots/territory-v5-0929` and `docs/reviews/territory-v2-0929-sonnet.md`.

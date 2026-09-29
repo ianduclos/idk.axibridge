@@ -444,13 +444,16 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg, chiF) {
   const trunk = ch.cls === 'trunk', S0 = ch.S0 || (trunk ? 8 : 1.4), Smax = trunk ? 9 : 5.5;
   const S = new Float64Array(n), b = new Float64Array(n), K = new Int8Array(n);
   let Kmax = 1;
+  // meander3 r2: outside χ a channel is single-line, 3 or 5 strands (fat about one channel in three), so bends differ
+  const capOut = chiF ? [1, 3, 3, 5, 5, 5][Math.floor(rng() * 6)] : 8;
   for (let i = 0; i < n; i++) {
     const dEnd = Math.min(i, n - 1 - i) * 0.5, Ai = A(C[i][0], C[i][1]);
     let s = clamp(S0 * (0.2 + 0.8 * Ai) * 1.7 * Math.pow(smooth(vlo, vhi, vl[i]), 0.8) * (0.35 + 0.65 * cg[i]) * prm.band, 0.3, Smax);
     s = 0.3 + (s - 0.3) * smooth(0, 6, dInf[i]) * smooth(0, 15, dEnd);
     S[i] = s; b[i] = sgn[i] * smooth(0, 6, dInf[i]);
     // a channel is one line or a band of ≥ 3: a pair is an outline at any gap
-    K[i] = s < 1.6 ? 1 : clamp(1 + Math.round(s / 0.9), 3, chiF && chiF(C[i][0], C[i][1]) < 0.5 ? 5 : 8); Kmax = Math.max(Kmax, K[i]);
+    const out3 = chiF && chiF(C[i][0], C[i][1]) < 0.5;
+    K[i] = s < 1.6 || (out3 && capOut === 1) ? 1 : clamp(1 + Math.round(s / 0.9), 3, out3 ? capOut : 8); Kmax = Math.max(Kmax, K[i]);
   }
   // strands fill the whole band: k = 0 is the firm core on the concave side, higher k walk toward
   // the convex edge and drop first as S falls; an inactive strand rides its inward neighbour, so
@@ -492,7 +495,10 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg, chiF) {
         L = Math.round((30 + 20 * tg.rng()) / 0.5);
         if (d.i < n - 1 - d.i) { Lm = Math.round(1.5 * L); Lp = L; } else { Lm = L; Lp = Math.round(1.5 * L); }
         i0 = Math.max(0, d.i - Lm); i1 = Math.min(n - 1, d.i + Lp);
-      } else if (R3 && (d.i - L < 50 || d.i + L > n - 51)) continue;   // the knot sits ≥ 25 mm from either end, else none
+      } else if (R3) {   // the knot sits ≥ 25 mm from either end: slide it inward (r2: dropping it left most cells tidy)
+        if (n < 2 * L + 101) continue;
+        const ci = clamp(d.i, 50 + L, n - 51 - L); d.i = ci; i0 = ci - L; i1 = ci + L; Lm = L; Lp = L;
+      }
       const depth = d.depth * clamp(prm.tangle, 0, 1) / 0.6;
       for (let i = i0; i <= i1; i++) { const Li = i < d.i ? Lm : Lp; coh[i] = Math.min(coh[i], 1 - Math.min(0.95, depth * 0.5 * (1 + Math.cos(Math.PI * (i - d.i) / Li)))); }
       zones.push({ ch: ch.id, i0, i1, depth }); tg.left--;
