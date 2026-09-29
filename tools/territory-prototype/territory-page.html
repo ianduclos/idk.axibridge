@@ -1,11 +1,14 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Territory</title>
 <style>
-/* Layout: bench = sheet left, controls right; experiment strip below. Flexoki, system faces. */
+/* Layout: sheet left, dials right; a contact sheet of seeds below. Flexoki, system faces. */
 :root {
   --bg: #FFFCF0; --bg2: #F2F0E5; --ui: #E6E4D9; --ui2: #DAD8CE; --ui3: #CECDC3;
   --tx: #100F0F; --tx2: #6F6E69;
   --accent: #BC5215; --accent-soft: rgba(188,82,21,.12);
-  --paper: #FFFCF0; --ink: #100F0F; --grey-ink: #B7B5AC; --paper-edge: #CECDC3;
+  --paper: #FFFCF0; --ink: #100F0F; --paper-edge: #CECDC3;
   --c1: #24837B; --c2: #BC5215; --c3: #5E409D; --c0: #878580;
   --sans: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -17,194 +20,86 @@
   --bg: #100F0F; --bg2: #1C1B1A; --ui: #282726; --ui2: #343331; --ui3: #403E3C;
   --tx: #CECDC3; --tx2: #878580; --accent: #DA702C; --accent-soft: rgba(218,112,44,.16); --paper-edge: #403E3C; color-scheme: dark }
 [hidden] { display: none !important; }
-html, body { background: var(--bg); color: var(--tx); font-family: var(--sans); }
-.wrap { padding-inline: 20px; padding-block: 20px 40px; max-width: 1320px; margin: 0 auto; display: grid; gap: 18px; }
-header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+html, body { background: var(--bg); color: var(--tx); font-family: var(--sans); margin: 0; }
+.wrap { padding-inline: 16px; padding-block: 20px 40px; max-width: 1320px; margin: 0 auto; display: grid; gap: 18px; }
 h1 { font-size: 22px; font-weight: 650; letter-spacing: -.01em; margin: 0; }
 .sub { color: var(--tx2); margin: 4px 0 0; font-size: 13.5px; max-width: 64ch; }
-.tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.tools .label { margin-right: 4px; }
-.tool { font: inherit; font-size: 13px; border: 1px solid var(--ui2); background: var(--bg2); color: var(--tx); padding: 6px 11px; border-radius: 6px; cursor: pointer; display: flex; gap: 7px; align-items: center; }
-.tool i { width: 16px; height: 0; border-top: 2px dashed var(--c); display: inline-block; }
-.tool[data-t="void"] i { border-top-style: dotted; }
-.tool[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
-button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.bench { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bench { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 18px; align-items: start; }
 @media (max-width: 860px) { .bench { grid-template-columns: minmax(0,1fr); } }
-.sheet { width: 100%; aspect-ratio: 300 / 218; max-width: 100%; display: block; border: 1px solid var(--paper-edge); border-radius: 2px; background: var(--paper); touch-action: none; cursor: crosshair; }
+.sheet { width: 100%; aspect-ratio: 300 / 218; display: block; border: 1px solid var(--paper-edge); border-radius: 2px; background: var(--paper); }
 .sheetmeta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-top: 8px; font-size: 12px; color: var(--tx2); font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.sheetmeta b { color: var(--tx); font-weight: 600; }
-aside { display: grid; gap: 14px; background: var(--bg2); border: 1px solid var(--ui); border-radius: 8px; padding: 14px; min-width: 0; }
-.group { display: grid; gap: 9px; }
+aside { display: grid; gap: 12px; background: var(--bg2); border: 1px solid var(--ui); border-radius: 8px; padding: 14px; min-width: 0; }
 .label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--tx2); font-weight: 600; }
-.ctl { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 13px; }
-.ctl output { font-family: var(--mono); font-size: 12px; color: var(--tx2); font-variant-numeric: tabular-nums; }
-.ctl small { grid-column: 1 / -1; color: var(--tx2); font-size: 11.5px; line-height: 1.35; }
-.ctl input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.dial { display: grid; grid-template-columns: 1fr auto auto; gap: 2px 8px; font-size: 13px; align-items: center; }
+.dial output { font-family: var(--mono); font-size: 12px; color: var(--tx2); font-variant-numeric: tabular-nums; }
+.dial small { grid-column: 1 / -1; color: var(--tx2); font-size: 11.5px; line-height: 1.35; }
+.dial input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
+.lock { border: 0; background: none; padding: 2px; color: var(--tx2); cursor: pointer; display: grid; place-items: center; border-radius: 4px; }
+.lock svg { width: 14px; height: 14px; }
+.lock[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+.lock .shut { display: none; } .lock[aria-pressed="true"] .shut { display: inline; } .lock[aria-pressed="true"] .open { display: none; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.btn { font: inherit; font-size: 12.5px; border: 1px solid var(--ui2); background: var(--bg); color: var(--tx); padding: 6px 10px; border-radius: 5px; cursor: pointer; }
+.btn { font: inherit; font-size: 12.5px; border: 1px solid var(--ui2); background: var(--bg); color: var(--tx); padding: 6px 10px; border-radius: 5px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.btn svg { width: 14px; height: 14px; }
 .btn:hover { border-color: var(--ui3); }
 .btn.primary { border-color: var(--accent); color: var(--accent); }
 .chk { display: flex; gap: 6px; align-items: center; font-size: 13px; }
 .chk input { accent-color: var(--accent); }
-.chk small { color: var(--tx2); font-size: 11.5px; }
-.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
-#seed, #camps, #order { font: inherit; font-family: var(--mono); font-size: 12.5px; padding: 5px 6px; border: 1px solid var(--ui2); border-radius: 5px; background: var(--bg); color: var(--tx); }
-#seed { width: 70px; }
-.hint { font-size: 12px; color: var(--tx2); margin: 0; }
-section.exp { display: grid; gap: 12px; border-top: 1px solid var(--ui); padding-top: 16px; }
-.exp h2 { font-size: 15px; margin: 0; font-weight: 650; }
-.expbtns { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
-.expbtn { text-align: left; font: inherit; border: 1px solid var(--ui2); background: var(--bg2); color: var(--tx); border-radius: 6px; padding: 9px 11px; cursor: pointer; display: grid; gap: 3px; }
-.expbtn[aria-pressed="true"] { border-color: var(--accent); }
-.expbtn span { font-size: 13px; font-weight: 600; }
-.expbtn span b { font-family: var(--mono); color: var(--accent); margin-right: 6px; }
-.expbtn small { font-size: 12px; color: var(--tx2); line-height: 1.35; }
-.result-head { font-size: 13px; color: var(--tx2); margin: 0; }
-.minis { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
-.minis.pop { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+#seed, #recipeIn { font: inherit; font-family: var(--mono); font-size: 12.5px; padding: 5px 6px; border: 1px solid var(--ui2); border-radius: 5px; background: var(--bg); color: var(--tx); }
+#seed { width: 76px; }
+#recipeIn { width: 100%; box-sizing: border-box; }
+.recipe { font-family: var(--mono); font-size: 11.5px; color: var(--tx2); line-height: 1.4; word-break: break-word; margin: 0; }
+.hint { font-size: 12px; color: var(--tx2); margin: 0; min-height: 1em; }
+section.contact { display: grid; gap: 12px; border-top: 1px solid var(--ui); padding-top: 16px; }
+.contact h2 { font-size: 15px; margin: 0; font-weight: 650; }
+.minis { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 figure { margin: 0; display: grid; gap: 4px; min-width: 0; }
 figure canvas { width: 100%; aspect-ratio: 300 / 218; display: block; background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 2px; cursor: pointer; }
-figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); font-variant-numeric: tabular-nums; line-height: 1.35; }
+figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); font-variant-numeric: tabular-nums; }
 </style>
 
 <div class="wrap">
   <header>
-    <div>
-      <h1>Territory</h1>
-      <p class="sub">Each core claims ground for its camp. Borders remember where they were and search again where they were fought over. The machine draws where rival camps meet, where territory runs out, and a few marks inside. Voids are ground nobody may enter. Lines already drawn stay; when the ground shifts, only what moved gets drawn. The plot is the black ink only.</p>
-    </div>
-    <div class="tools" role="group" aria-label="Next core">
-      <span class="label">Next core</span>
-      <button class="tool" data-t="auto" aria-pressed="true" style="--c: var(--tx2)"><i></i>Auto</button>
-      <button class="tool" data-t="1" aria-pressed="false" style="--c: var(--c1)"><i></i>Camp 1</button>
-      <button class="tool" data-t="2" aria-pressed="false" style="--c: var(--c2)"><i></i>Camp 2</button>
-      <button class="tool" data-t="3" aria-pressed="false" style="--c: var(--c3)"><i></i>Camp 3</button>
-      <button class="tool" data-t="void" aria-pressed="false" style="--c: var(--c0)"><i></i>Void</button>
-    </div>
+    <h1>Territory</h1>
+    <p class="sub">Rivers migrate over a few scattered cores. Bends swell into bundles, tangle where they work hardest and leave traces where they were. Curves bridge the places where they cross. One pen; the plot is the black ink only.</p>
   </header>
 
   <div class="bench">
     <div>
-      <canvas class="sheet" id="sheet" aria-label="Drawing sheet, 300 by 218 millimetres. Drag to draw a core."></canvas>
-      <div class="sheetmeta"><span id="stats"></span><span>300 × 218 mm bed · drag to draw a core</span></div>
+      <canvas class="sheet" id="sheet" aria-label="Drawing sheet, 300 by 218 millimetres"></canvas>
+      <div class="sheetmeta"><span id="stats"></span><span>300 × 218 mm</span></div>
     </div>
     <aside>
-      <div class="group">
-        <div class="label">Draw</div>
-        <div class="modes">
-          <label class="chk"><input type="checkbox" id="mBorders" checked> Borders</label>
-          <label class="chk"><input type="checkbox" id="mOuter" checked> Outer edges</label>
-          <label class="chk"><input type="checkbox" id="mVoids" checked> Voids</label>
-          <label class="chk"><input type="checkbox" id="mInterior"> Interior</label>
-        </div>
+      <div class="row">
+        <button class="btn primary" id="randomize"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>Randomize</button>
+        <span class="hint">locked dials stay</span>
       </div>
-      <div class="group">
-        <div class="label">Bodies</div>
-        <div class="row"><label class="chk" for="render">Render</label><select id="render"><option value="meander" selected>Meander</option><option value="v5">Searching lines (v5)</option><option value="auto">Bodies: auto</option><option value="wrap">Wrap</option><option value="wound">Wound line</option><option value="growth">Growth</option><option value="hatch">Hatch (earlier)</option><option value="lines">Lines only</option></select></div>
-        <div class="row"><label class="chk" for="forms">Forms</label><select id="forms"><option value="tubes" selected>Cores as tubes</option><option value="territories">Territories</option></select></div>
-        <label class="ctl">Line spacing <output id="spacingV"></output><input type="range" id="spacing" min="0.6" max="2.5" step="any" value="1"></label>
-        <label class="ctl">Tube size <output id="tubeScaleV"></output><input type="range" id="tubeScale" min="0.4" max="2.5" step="any" value="1"></label>
-        <label class="ctl">Ink budget (m) <output id="budgetV"></output><input type="range" id="budget" min="1" max="40" step="any" value="14"><small>Spent front to back: forms behind get what is left.</small></label>
-        <label class="chk"><input type="checkbox" id="terminator"> Terminator <small>a straight line beyond which nothing is shaded</small></label>
-        <label class="chk"><input type="checkbox" id="keepLines"> Keep territory lines under bodies</label>
+      <div class="dial">
+        <label for="seed">Seed</label>
+        <input id="seed" type="number" min="1" max="99999" value="22">
+        <button class="lock" data-lock="seed" aria-pressed="false" aria-label="Lock seed"></button>
+        <small>Picks the cores and every chance in the drawing.</small>
       </div>
-      <div class="group" id="v5Group">
-        <div class="label">Searching lines</div>
-        <p class="hint">Borders restate their own history and search again where they were contested; one passage gets the weight, the biggest camp stays nearly empty.</p>
-        <div class="modes">
-          <label class="chk"><input type="checkbox" id="v5search" checked> Searching passes</label>
-          <label class="chk"><input type="checkbox" id="v5economy" checked> Silent winner</label>
-          <label class="chk"><input type="checkbox" id="v5events" checked> Events</label>
-          <label class="chk"><input type="checkbox" id="v5knots" checked> Knots</label>
-        </div>
-        <label class="ctl">Most passes <output id="searchMaxV"></output><input type="range" id="searchMax" min="1" max="12" step="1" value="6"></label>
-        <label class="ctl">Ink allowance <output id="budgetMulV"></output><input type="range" id="budgetMul" min="0.5" max="10" step="any" value="4"><small>How much new ink v5 may add, as a multiple of the base lines.</small></label>
-        <div class="row"><label class="chk" for="v5event">Force event</label><select id="v5event"><option value="">by chance</option><option value="net">net</option><option value="aperture">aperture</option></select></div>
+      <div id="dials"></div>
+      <label class="chk"><input type="checkbox" id="showCores"> Show cores</label>
+      <div class="label">Settings</div>
+      <p class="recipe" id="recipe"></p>
+      <div class="row">
+        <button class="btn" id="copyRecipe">Copy settings</button>
+        <button class="btn" id="copySvg">Copy SVG</button>
       </div>
-      <div class="group">
-        <div class="label">Hand</div>
-        <label class="ctl">Sway <output id="swayV"></output><input type="range" id="sway" min="0" max="3" step="any" value="1"><small>Slow drift; loose on straights for one hand, on curves for the other.</small></label>
-        <label class="ctl">Overshoot <output id="overshootV"></output><input type="range" id="overshoot" min="0" max="3" step="any" value="1"></label>
-        <label class="ctl">Pen lifts <output id="liftsV"></output><input type="range" id="lifts" min="0" max="3" step="any" value="1"></label>
-        <label class="ctl">Tremor <output id="tremorV"></output><input type="range" id="tremor" min="0" max="5" step="any" value="1"></label>
-        <label class="ctl">Pen width (mm) <output id="penV"></output><input type="range" id="pen" min="0.1" max="0.6" step="any" value="0.2"><small>Preview and SVG only.</small></label>
-      </div>
-      <div class="group" id="meanderGroup">
-        <div class="label">Meander</div>
-        <p class="hint">Centrelines from the territory migrate like river bends; each is drawn as a bundle of strands that swells after a bend and pinches where it turns. History appears only where something happened: a cutoff, a capture, a refusal.</p>
-        <div class="row"><label class="chk" for="mSource">Centrelines</label><select id="mSource"><option value="territory" selected>from the territory</option><option value="nothing">from nothing</option></select></div>
-        <label class="ctl">Channels <output id="mChannelsV"></output><input type="range" id="mChannels" min="2" max="12" step="1" value="8"><small>One trunk plus minors at a smaller scale.</small></label>
-        <label class="ctl">Drift <output id="mDriftV"></output><input type="range" id="mDrift" min="0.2" max="1" step="any" value="0.6"><small>How far the bends migrate away from where they started.</small></label>
-        <label class="ctl">Band <output id="mBandV"></output><input type="range" id="mBand" min="0.5" max="2" step="any" value="1"><small>Width of the strand bundles; 0.5 is nearly single lines.</small></label>
-        <label class="ctl">History <output id="mHistoryV"></output><input type="range" id="mHistory" min="0" max="1" step="any" value="0.6"><small>How often an event leaves traces of where the channel was.</small></label>
-        <label class="ctl">Activity <output id="mActivityV"></output><input type="range" id="mActivity" min="0" max="1" step="any" value="0.9"><small>Contrast between busy and quiet ground; 0 is even everywhere.</small></label>
-        <label class="ctl">Events <output id="mEventsV"></output><input type="range" id="mEvents" min="0" max="3" step="1" value="2"><small>Budget for cutoffs, captures, refusals and a reversal.</small></label>
-        <label class="ctl">White channel <output id="mWhiteV"></output><input type="range" id="mWhite" min="0" max="1" step="any" value="0"><small>Chance the main channel is left undrawn, outlined only by what stops against it.</small></label>
-        <label class="ctl">Searching <output id="mSearchV"></output><input type="range" id="mSearch" min="0" max="2" step="any" value="1"><small>How many quiet single lines get restated a few times, each pass drifting on its own.</small></label>
-        <label class="ctl">Tangle <output id="mTangleV"></output><input type="range" id="mTangle" min="0" max="1" step="any" value="1"><small>Where a band works hardest, or where two bends refused each other, its strands lose order along a stretch and find it again.</small></label>
-        <label class="ctl">Work map <output id="mWorkV"></output><input type="range" id="mWork" min="0" max="1" step="any" value="0.5"><small>How much the weight follows where the river actually moved, rather than a random field.</small></label>
-        <label class="ctl">Graft <output id="mGraftV"></output><input type="range" id="mGraft" min="0" max="1" step="any" value="0.5"><small>From the territory: share of its own channels kept; the rest sprout from the trunk's bends. 1 is the earlier look.</small></label>
-        <label class="chk"><input type="checkbox" id="mWindow"> Found window <small>simulate on a larger field and choose the frame</small></label>
-        <label class="ctl">Different times <output id="mHeteroV"></output><input type="range" id="mHetero" min="0" max="1" step="any" value="0.6"><small>How far apart in time the channels are shown.</small></label>
-      </div>
-      <div class="group" id="volumeGroup">
-        <div class="label">Volume (hatch render)</div>
-        <p class="hint">The territories read as a lit landscape: each camp a hill, each border a valley. Volume is built from repeated lines, never fill.</p>
-        <div class="modes">
-          <label class="chk"><input type="checkbox" id="mRestate" checked> Restated edges</label>
-          <label class="chk"><input type="checkbox" id="mHatch" checked> Form hatch</label>
-        </div>
-        <label class="ctl">Traces <output id="tracesV"></output><input type="range" id="traces" min="1" max="10" step="1" value="3"><small>Most times an edge is restated on its shadow side.</small></label>
-        <label class="ctl">Trace gap (mm) <output id="traceGapV"></output><input type="range" id="traceGap" min="0.8" max="3" step="any" value="1.3"></label>
-        <label class="ctl">Hatch density <output id="hatchDensityV"></output><input type="range" id="hatchDensity" min="0" max="2.5" step="any" value="0.8"></label>
-        <label class="ctl">Bend <output id="bendV"></output><input type="range" id="bend" min="0" max="4" step="any" value="2.2"><small>How far the hatch turns to follow the form.</small></label>
-        <label class="ctl">Hatch angle <output id="hatchAngleV"></output><input type="range" id="hatchAngle" min="-90" max="90" step="any" value="35"></label>
-        <label class="ctl">Light direction <output id="lightAzV"></output><input type="range" id="lightAz" min="-180" max="180" step="any" value="-135"></label>
-        <label class="ctl">Relief <output id="reliefV"></output><input type="range" id="relief" min="5" max="80" step="any" value="30"><small>How steep the hills are, so how quickly they fall into shadow.</small></label>
-      </div>
-      <div class="group">
-        <div class="label">Field</div>
-        <label class="ctl">Base reach (mm) <output id="reachV"></output><input type="range" id="reach" min="5" max="30" step="any" value="15"><small>How far a typical core's claim extends.</small></label>
-        <label class="ctl">Reach spread <output id="spreadV"></output><input type="range" id="spread" min="0" max="1.2" step="any" value="0.7"><small>0 gives every core the same reach; high values give a few cores huge claims.</small></label>
-        <label class="ctl">Contest floor <output id="epsV"></output><input type="range" id="eps" min="0.005" max="0.15" step="any" value="0.03"><small>Below this influence, ground is unclaimed and borders fade out.</small></label>
-        <div class="row"><label class="chk" for="camps">Camps in Auto</label><select id="camps"><option value="2">2</option><option value="3" selected>3</option></select></div>
-      </div>
-      <div class="group">
-        <div class="label">Hand</div>
-        <label class="ctl">Looseness <output id="looseV"></output><input type="range" id="loose" min="0" max="1" step="any" value="0.5"><small>Weak contests and open space loosen the line; strong contests tighten it.</small></label>
-        <label class="ctl">Yield <output id="yieldV"></output><input type="range" id="yield" min="0" max="1" step="any" value="0.5"><small>When boxed in: 0 stops, 1 goes under and resurfaces.</small></label>
-        <label class="ctl">Disregard <output id="disregardV"></output><input type="range" id="disregard" min="0" max="0.6" step="any" value="0.15"><small>Chance that an arrival draws its borders as if one rival core were absent.</small></label>
-        <label class="ctl">Hold back (mm) <output id="hystV"></output><input type="range" id="hyst" min="0" max="120" step="any" value="25"><small>Small shifts wait until this much has moved or the map changes shape.</small></label>
-      </div>
-      <div class="group">
-        <div class="label">Sheet</div>
-        <div class="row"><label for="seed" class="chk">Seed</label><input id="seed" type="number" min="1" max="99999" value="1"><button class="btn" id="reroll">Reroll</button></div>
-        <label class="chk"><input type="checkbox" id="showCores" checked> Show cores</label>
-        <label class="chk"><input type="checkbox" id="showLand"> Show territories</label>
-        <div class="row"><label class="chk" for="order">Arrival order</label><select id="order"><option value="drawn">as drawn</option><option value="reversed" selected>reversed</option><option value="largest">largest first</option><option value="smallest">smallest first</option></select></div>
-        <div class="row">
-          <button class="btn" id="undo">Undo core</button>
-          <button class="btn" id="clear">Clear</button>
-          <button class="btn" id="example">Example cores</button>
-          <button class="btn primary" id="copySvg">Copy SVG</button>
-        </div>
-        <p class="hint" id="copyMsg" aria-live="polite"></p>
-      </div>
+      <input id="recipeIn" placeholder="Paste settings and press Enter" aria-label="Paste settings">
+      <p class="hint" id="msg" aria-live="polite"></p>
     </aside>
   </div>
 
-  <section class="exp">
-    <h2>Experiments</h2>
-    <p class="result-head">Each uses the current settings. Runs are deterministic on cores + seed: adding a core never changes the ink drawn before it. Click a thumbnail to load it onto the sheet.</p>
-    <div class="expbtns">
-      <button class="expbtn" data-e="2" aria-pressed="false"><span><b>E1</b>Population sheet</span><small>24 random sheets: 8–12 cores, two or three camps, sometimes voids.</small></button>
-      <button class="expbtn" data-e="4" aria-pressed="false"><span><b>E2</b>Renderers</span><small>Your cores as meander, as searching lines with and without searching passes, and as plain lines.</small></button>
-      <button class="expbtn" data-e="3" aria-pressed="false"><span><b>E3</b>One more core</span><small>Your cores, then one extra core from each camp and a void at the sheet's centre. What moves?</small></button>
-      <button class="expbtn" data-e="5" aria-pressed="false"><span><b>E4</b>Arrival order</span><small>Your cores as drawn, reversed, largest first and smallest first.</small></button>
-      <button class="expbtn" data-e="6" aria-pressed="false"><span><b>E5</b>Five seeds</span><small>Your cores under five seeds: fading, chords and disregard change; the map does not.</small></button>
+  <section class="contact">
+    <div class="row" style="justify-content: space-between">
+      <h2>Twelve seeds</h2>
+      <div class="row"><button class="btn" id="prev12">Previous 12</button><button class="btn" id="next12">Next 12</button></div>
     </div>
-    <p class="result-head" id="expHead"></p>
+    <p class="hint">Current dials, twelve seeds from the one on the sheet. Click one to load it.</p>
     <div class="minis" id="minis"></div>
   </section>
 </div>
@@ -215,169 +110,122 @@ figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); fon
 <script>
 const $ = id => document.getElementById(id);
 const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
-let state = { cores: store.get('terr.cores', null) || exampleSheet(), tool: 'auto', exp: null };
-let last = null, drawing = null;
-const SLIDERS = ['mChannels', 'mDrift', 'mBand', 'mHistory', 'mActivity', 'mEvents', 'mWhite', 'mHetero', 'mSearch', 'mTangle', 'mWork', 'mGraft', 'searchMax', 'budgetMul', 'spacing', 'tubeScale', 'budget', 'sway', 'overshoot', 'lifts', 'tremor', 'pen', 'reach', 'spread', 'eps', 'loose', 'yield', 'disregard', 'hyst', 'traces', 'traceGap', 'hatchDensity', 'bend', 'hatchAngle', 'lightAz', 'relief'];
+// Dials: [key, label, min, max, randomize range, note]. Defaults come from the engine.
+const DIALS = [
+  ['complexity', 'Complexity', 0, 1, [0.2, 0.9], 'How many channels, and whether a second river crosses the first.'],
+  ['drift', 'Drift', 0.2, 1, [0.35, 0.9], 'How far the bends migrate from where they started.'],
+  ['band', 'Band', 0.5, 2, [0.7, 1.5], 'Width of the strand bundles; low is nearly single lines.'],
+  ['chaos', 'Chaos', 0, 1, [0.2, 0.8], 'Tangles, searching passes and events, kept to a few places; the rest stays deliberate.'],
+  ['accents', 'Accents', 0, 1, [0.2, 0.9], 'Tight stated arcs beside sharp bends and next to the chaos.'],
+  ['bridges', 'Bridges', 0, 1, [0.2, 0.9], 'Curves that join lines where they cross or nearly meet, on a plane of their own.'],
+  ['history', 'History', 0, 1, [0.3, 0.9], 'How often an event leaves traces of where a channel was.'],
+];
+const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path class="shut" d="M7 11V7a5 5 0 0 1 10 0v4"/><path class="open" d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
+const BASE = { loose: 0.5, yieldP: 0.5, wander: 1, reach: 15, spread: 0.7, eps: 0.03, borders: true, outer: true, voids: true, interior: false, disregard: 0.15, hyst: 25, render: 'meander' };
+const DEF = MEANDER_MACROS;
+let locks = store.get('meander.locks', {}), last = null, contactFrom = null;
 
-function prm() {
-  return { loose: +$('loose').value, yieldP: +$('yield').value, wander: 1, reach: +$('reach').value, spread: +$('spread').value, eps: +$('eps').value,
-    camps: +$('camps').value, borders: $('mBorders').checked, outer: $('mOuter').checked, voids: $('mVoids').checked, interior: $('mInterior').checked,
-    disregard: +$('disregard').value, hyst: +$('hyst').value,
-    restate: $('render').value === 'hatch' && $('mRestate').checked, hatch: $('render').value === 'hatch' && $('mHatch').checked,
-    render: ['hatch', 'lines'].includes($('render').value) ? 'lines' : $('render').value,
-    search: $('v5search').checked, economy: $('v5economy').checked, events: $('v5events').checked, knots: $('v5knots').checked ? 3 : 0, searchMax: +$('searchMax').value, budgetMul: +$('budgetMul').value,
-    forceNet: $('v5event').value === 'net', forceAperture: $('v5event').value === 'aperture', forms: $('forms').value, spacing: +$('spacing').value, tubeScale: +$('tubeScale').value,
-    budget: +$('budget').value, terminator: $('terminator').checked, keepLines: $('keepLines').checked, sway: +$('sway').value, overshoot: +$('overshoot').value, lifts: +$('lifts').value, tremor: +$('tremor').value,
-    traces: +$('traces').value, traceGap: +$('traceGap').value, hatchDensity: +$('hatchDensity').value, bend: +$('bend').value,
-    hatchAngle: +$('hatchAngle').value, lightAz: +$('lightAz').value, lightEl: 35, relief: +$('relief').value, clearance: 2.5,
-    ...($('render').value === 'meander' ? { source: $('mSource').value, channels: +$('mChannels').value, drift: +$('mDrift').value, band: +$('mBand').value, history: +$('mHistory').value, activity: +$('mActivity').value, events: +$('mEvents').value, white: +$('mWhite').value, hetero: +$('mHetero').value, search: +$('mSearch').value, tangle: +$('mTangle').value, work: +$('mWork').value, graft: +$('mGraft').value, window: $('mWindow').checked ? 1 : 0 } : {}) };
+for (const [k, name, lo, hi, , note] of DIALS) {
+  const d = document.createElement('div'); d.className = 'dial';
+  d.innerHTML = `<label for="d_${k}">${name}</label><output id="d_${k}V"></output><button class="lock" data-lock="${k}" aria-pressed="false" aria-label="Lock ${name.toLowerCase()}"></button><input type="range" id="d_${k}" min="${lo}" max="${hi}" step="any"><small>${note}</small>`;
+  $('dials').append(d);
 }
-function seed() { return Math.max(1, Math.floor(+$('seed').value || 1)); }
-function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
-function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+for (const b of document.querySelectorAll('.lock')) {
+  b.innerHTML = LOCK_SVG;
+  b.setAttribute('aria-pressed', String(!!locks[b.dataset.lock]));
+  b.addEventListener('click', () => { locks[b.dataset.lock] = !locks[b.dataset.lock]; b.setAttribute('aria-pressed', String(locks[b.dataset.lock])); store.set('meander.locks', locks); });
+}
 
+function seed() { return Math.max(1, Math.floor(+$('seed').value || 1)); }
+function dials() { const o = {}; for (const [k] of DIALS) o[k] = +(+$('d_' + k).value).toFixed(2); return o; }
+function setDials(o) { for (const [k] of DIALS) if (o[k] !== undefined && isFinite(o[k])) $('d_' + k).value = o[k]; if (o.seed) $('seed').value = Math.floor(o.seed); sync(); }
+function sync() { for (const [k] of DIALS) $('d_' + k + 'V').textContent = (+$('d_' + k).value).toFixed(2); $('recipe').textContent = recipe(); }
+function recipe() { const d = dials(); return `seed ${seed()} · ` + DIALS.map(([k]) => `${k} ${d[k].toFixed(2)}`).join(' · '); }
+function parseRecipe(s) { const o = {}; for (const m of s.matchAll(/([a-z]+)\s+(-?[\d.]+)/gi)) o[m[1].toLowerCase()] = +m[2]; return o; }
+function run(sd, d, quality) { const sh = randomSheet(sd); return runTerritory(sh.cores, { ...BASE, camps: Math.max(2, sh.camps), ...d, ...(quality ? { quality } : {}) }, sd, 'reversed'); }
+
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function sizeCanvas(cv) {
   const r = cv.getBoundingClientRect(), dpr = Math.min(3, window.devicePixelRatio || 1);
   const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.width * 218 / 300 * dpr));
   if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
   return cv.width / 300;
 }
-function coreColor(camp) { return css(camp === 0 ? '--c0' : '--c' + camp); }
 function drawSheet(cv, res, opt = {}) {
   const k = sizeCanvas(cv), g = cv.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = css('--paper'); g.fillRect(0, 0, cv.width, cv.height);
   g.setTransform(k, 0, 0, k, 0, 0);
-  if (opt.land && res.L) {
-    const img = new ImageData(300, 218), cols = [0, 1, 2, 3].map(c => hexRgb(coreColor(c)));
-    for (let c = 0; c < res.L.length; c++) {
-      const l = res.L[c]; if (!l) continue;
-      const col = cols[l < 0 ? 0 : l]; img.data.set([col[0], col[1], col[2], l < 0 ? 40 : 26], c * 4);
-    }
-    const off = document.createElement('canvas'); off.width = 300; off.height = 218; off.getContext('2d').putImageData(img, 0, 0);
-    g.imageSmoothingEnabled = true; g.drawImage(off, 0, 0, 300, 218);
-  }
   if (opt.cores) {
     g.save(); g.lineCap = 'round'; g.lineWidth = Math.max(0.35, 1.2 / k); g.globalAlpha = 0.8;
     for (const c of res.cores) {
-      g.strokeStyle = coreColor(c.camp); g.setLineDash(c.camp === 0 ? [0.5, 1.6] : [2.2, 1.6]);
+      g.strokeStyle = css(c.camp === 0 ? '--c0' : '--c' + c.camp); g.setLineDash(c.camp === 0 ? [0.5, 1.6] : [2.2, 1.6]);
       g.beginPath(); c.pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke();
     }
     g.restore();
   }
-  g.lineJoin = 'round'; g.lineCap = 'round'; g.lineWidth = Math.max(opt.thin ? 0.45 : 0.6, +$('pen').value * k) / k;
-  for (const l of res.lines) {
-    g.strokeStyle = (opt.focus !== undefined && l.core !== opt.focus) ? css('--grey-ink') : css('--ink');
-    for (const st of l.strokes) { g.beginPath(); st.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); }
-  }
-  if (opt.live && opt.live.length > 1) {
-    g.strokeStyle = state.tool === 'void' ? css('--c0') : state.tool === 'auto' ? css('--tx2') : css('--c' + state.tool);
-    g.lineWidth = Math.max(0.4, 1.4 / k); g.setLineDash([2.2, 1.6]);
-    g.beginPath(); opt.live.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); g.setLineDash([]);
-  }
+  g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = css('--ink'); g.lineWidth = Math.max(opt.thin ? 0.45 : 0.6, 0.2 * k) / k;
+  for (const l of res.lines) for (const st of l.strokes) { g.beginPath(); st.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); }
 }
-function statsHtml(s) {
-  return `<b>${s.border}</b> border · <b>${s.outer}</b> edge · <b>${s.interior}</b> interior lines · <b>${s.broken}</b> broken · <b>${s.disregard}</b> disregarding · <b>${(s.mm / 1000).toFixed(1)}</b> m ink`;
-}
-function statsTxt(s) { return `${s.border}b ${s.outer}e ${s.interior}i · ${(s.mm / 1000).toFixed(1)} m`; }
+const inkM = res => (res.lines.reduce((a, l) => a + l.strokes.reduce((b, s) => b + polyLen(s), 0), 0) / 1000).toFixed(1);
 
 let timer = 0;
 function render(delay = 0) { clearTimeout(timer); timer = setTimeout(renderNow, delay); }
 function renderNow() {
-  last = runTerritory(state.cores, prm(), seed(), $('order').value);
-  redrawOnly();
-  $('stats').innerHTML = statsHtml(tStats(last));
-  store.set('terr.cores', state.cores);
+  sync();
+  last = run(seed(), dials());
+  redraw();
+  $('stats').textContent = `seed ${seed()} · ${inkM(last)} m ink`;
+  store.set('meander.settings', { seed: seed(), ...dials() });
 }
-function redrawOnly() { if (!last) return renderNow(); drawSheet($('sheet'), last, { cores: $('showCores').checked, land: $('showLand').checked, live: drawing }); }
-function syncOutputs() { for (const id of SLIDERS) $(id + 'V').textContent = (+$(id).value).toFixed(['mChannels', 'mEvents', 'searchMax', 'budget', 'reach', 'hyst', 'traces', 'hatchAngle', 'lightAz', 'relief'].includes(id) ? 0 : 2); }
+function redraw() { if (last) drawSheet($('sheet'), last, { cores: $('showCores').checked }); }
 
-// ---- drawing ----
-function toMM(e) { const r = $('sheet').getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 300, (e.clientY - r.top) / r.height * 218]; }
-$('sheet').addEventListener('pointerdown', e => { $('sheet').setPointerCapture(e.pointerId); drawing = [toMM(e)]; redrawOnly(); });
-$('sheet').addEventListener('pointermove', e => { if (!drawing) return; const p = toMM(e), q = drawing[drawing.length - 1]; if (Math.hypot(p[0] - q[0], p[1] - q[1]) > 0.8) { drawing.push(p); redrawOnly(); } });
-function endStroke() {
-  if (!drawing) return;
-  const P = drawing; drawing = null;
-  if (P.length > 1 && polyLen(P) > 3) {
-    const pts = smoothPts(resample(P, 1.2), 2).map(([x, y]) => [clamp(x, 3, 297), clamp(y, 3, 215)]);
-    state.cores.push({ pts, camp: state.tool === 'void' || state.tool === 'auto' ? 'auto' : +state.tool, kind: state.tool === 'void' ? 'void' : 'attract' });
-  }
-  render();
+let contactRun = 0;
+function contact(from) {
+  contactFrom = Math.max(1, from); const my = ++contactRun, host = $('minis'), d = dials(); host.innerHTML = '';
+  let i = 0;
+  const step = () => {
+    if (my !== contactRun || i >= 12) return;
+    const sd = contactFrom + i++, f = document.createElement('figure'), cv = document.createElement('canvas'), cap = document.createElement('figcaption');
+    f.append(cv, cap); host.append(f);
+    const res = run(sd, d, 'thumb'); cap.textContent = `seed ${sd} · ${inkM(res)} m`;
+    requestAnimationFrame(() => drawSheet(cv, res, { cores: $('showCores').checked, thin: true }));
+    cv.title = 'Load onto the sheet';
+    cv.addEventListener('click', () => { $('seed').value = sd; renderNow(); $('sheet').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    setTimeout(step, 0);
+  };
+  step();
 }
-$('sheet').addEventListener('pointerup', endStroke);
-$('sheet').addEventListener('pointercancel', endStroke);
 
-// ---- controls ----
-for (const t of document.querySelectorAll('.tool')) t.addEventListener('click', () => {
-  state.tool = t.dataset.t;
-  for (const u of document.querySelectorAll('.tool')) u.setAttribute('aria-pressed', String(u === t));
+for (const [k] of DIALS) {
+  $('d_' + k).addEventListener('input', () => { sync(); render(90); });
+  $('d_' + k).addEventListener('change', () => contact(contactFrom));
+}
+$('seed').addEventListener('change', () => { renderNow(); contact(seed()); });
+$('showCores').addEventListener('change', () => { redraw(); contact(contactFrom); });
+$('prev12').addEventListener('click', () => contact(contactFrom - 12));
+$('next12').addEventListener('click', () => contact(contactFrom + 12));
+$('randomize').addEventListener('click', () => {
+  const o = {};
+  for (const [k, , , , [a, b]] of DIALS) if (!locks[k]) o[k] = +(a + (b - a) * Math.random()).toFixed(2);
+  if (!locks.seed) o.seed = 1 + Math.floor(Math.random() * 9999);
+  setDials(o); renderNow(); contact(seed());
 });
-for (const id of SLIDERS) {
-  $(id).addEventListener('input', () => { syncOutputs(); render(90); });
-  $(id).addEventListener('change', () => { if (state.exp) runExp(state.exp); });
-}
-for (const id of ['mBorders', 'mOuter', 'mVoids', 'mInterior', 'mRestate', 'mHatch', 'camps', 'order', 'render', 'forms', 'terminator', 'keepLines', 'v5search', 'v5economy', 'v5events', 'v5knots', 'v5event', 'mSource', 'mWindow']) $(id).addEventListener('change', () => { render(); if (state.exp && id !== 'order') runExp(state.exp); });
-$('seed').addEventListener('change', () => { render(); if (state.exp) runExp(state.exp); });
-$('reroll').addEventListener('click', () => { $('seed').value = 1 + Math.floor(Math.random() * 9999); render(); if (state.exp) runExp(state.exp); });
-$('showCores').addEventListener('change', redrawOnly);
-$('pen').addEventListener('input', () => { syncOutputs(); redrawOnly(); });
-function syncGroups() { const r = $('render').value; $('volumeGroup').hidden = r !== 'hatch'; $('v5Group').hidden = r !== 'v5'; $('meanderGroup').hidden = r !== 'meander'; }
-$('render').addEventListener('change', syncGroups);
-$('showLand').addEventListener('change', redrawOnly);
-$('undo').addEventListener('click', () => { state.cores.pop(); render(); });
-$('clear').addEventListener('click', () => { state.cores = []; render(); });
-$('example').addEventListener('click', () => { state.cores = exampleSheet(); render(); });
+const say = t => { $('msg').textContent = t; };
+function copy(text, ok) { try { navigator.clipboard.writeText(text).then(() => say(ok), () => say('The clipboard is not available here.')); } catch { say('The clipboard is not available here.'); } }
+$('copyRecipe').addEventListener('click', () => copy(recipe(), 'Copied the settings.'));
+$('recipeIn').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const o = parseRecipe($('recipeIn').value);
+  if (!Object.keys(o).length) return say('No settings found in that text.');
+  setDials(o); renderNow(); contact(seed()); say('Loaded the settings.'); $('recipeIn').value = '';
+});
 $('copySvg').addEventListener('click', () => {
   const paths = last.lines.flatMap(l => l.strokes).map(st => `<path d="M${st.map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' L')}"/>`).join('\n');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300mm" height="218mm" viewBox="0 0 300 218"><g fill="none" stroke="#000" stroke-width="${(+$('pen').value).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round">\n${paths}\n</g></svg>`;
-  const fail = () => { $('copyMsg').textContent = 'The clipboard is not available here.'; };
-  try { navigator.clipboard.writeText(svg).then(() => { $('copyMsg').textContent = 'Copied the plotted lines as SVG, in millimetres.'; }, fail); } catch { fail(); }
+  copy(`<svg xmlns="http://www.w3.org/2000/svg" width="300mm" height="218mm" viewBox="0 0 300 218"><g fill="none" stroke="#000" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round">\n${paths}\n</g></svg>`, 'Copied the plotted lines as SVG, in millimetres.');
 });
+window.addEventListener('resize', redraw);
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { redraw(); contact(contactFrom); });
 
-// ---- experiments ----
-function mini(host, cores, caption, opt = {}) {
-  const f = document.createElement('figure'), cv = document.createElement('canvas'), cap = document.createElement('figcaption');
-  f.append(cv, cap); host.append(f);
-  const p = { ...prm(), quality: 'thumb', ...(opt.prm || {}) }, sd = opt.seed || seed();
-  const ord = opt.order || $('order').value, res = runTerritory(cores, p, sd, ord);
-  cap.textContent = caption + ' · ' + statsTxt(tStats(res));
-  requestAnimationFrame(() => drawSheet(cv, res, { cores: $('showCores').checked, land: $('showLand').checked, focus: opt.focus, thin: true }));
-  cv.title = 'Load onto the sheet';
-  cv.addEventListener('click', () => {
-    state.cores = cores.map(c => ({ ...c, pts: c.pts.map(q => q.slice()) }));
-    $('seed').value = sd; $('order').value = ord;
-    if (opt.prm) { if ('camps' in opt.prm) $('camps').value = opt.prm.camps; if (opt.prm.render) $('render').value = opt.prm.render; for (const [m, id] of [['borders', 'mBorders'], ['outer', 'mOuter'], ['voids', 'mVoids'], ['interior', 'mInterior'], ['restate', 'mRestate'], ['hatch', 'mHatch']]) if (m in opt.prm) $(id).checked = opt.prm[m]; }
-    render(); $('sheet').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  });
-}
-function runExp(e) {
-  state.exp = e;
-  for (const b of document.querySelectorAll('.expbtn')) b.setAttribute('aria-pressed', String(b.dataset.e === e));
-  const host = $('minis'); host.innerHTML = ''; host.className = 'minis' + (e === '2' ? ' pop' : '');
-  if (e === '2') {
-    $('expHead').textContent = 'Seeds 1–24. Judge the drawings before reading the counts.';
-    let s = 1;
-    const step = () => { if (state.exp !== '2' || s > 24) return; const sh = randomSheet(s); mini(host, sh.cores, `seed ${s}`, { seed: s, prm: { camps: Math.max(2, sh.camps) } }); s++; setTimeout(step, 0); };
-    step();
-  } else if (e === '4') {
-    $('expHead').textContent = 'Your cores under each renderer, same forms.';
-    const combos = [['meander', { render: 'meander', events: 2 }], ['v5 searching lines', { render: 'v5', events: true }], ['v5, no searching passes', { render: 'v5', search: false, events: true }], ['lines only', { render: 'lines' }]];
-    for (const [name, m] of combos) mini(host, state.cores, name, { prm: m });
-  } else if (e === '3') {
-    $('expHead').textContent = 'Your cores plus one more at the centre; the new core\'s ink is dark, earlier ink grey.';
-    const n = state.cores.length, extra = t => ({ pts: makeCore('arc', 60, 150, 109, 0.3, mulberry32(3)), camp: t === 'void' ? 'auto' : t, kind: t === 'void' ? 'void' : 'attract' });
-    mini(host, state.cores, 'as drawn');
-    for (const t of [1, 2, 3, 'void']) mini(host, [...state.cores, extra(t)], t === 'void' ? '+ void' : `+ camp ${t}`, { focus: n });
-  } else if (e === '5') {
-    $('expHead').textContent = 'Your cores in four arrival orders. Earlier ink stays; later arrivals only add what moved.';
-    for (const [o, name] of [['drawn', 'as drawn'], ['reversed', 'reversed'], ['largest', 'largest first'], ['smallest', 'smallest first']]) mini(host, state.cores, name, { order: o });
-  } else if (e === '6') {
-    $('expHead').textContent = 'Your cores under five seeds.';
-    const s0 = seed(); for (let k = 0; k < 5; k++) mini(host, state.cores, `seed ${s0 + k}`, { seed: s0 + k });
-  }
-}
-for (const b of document.querySelectorAll('.expbtn')) b.addEventListener('click', () => runExp(b.dataset.e));
-window.addEventListener('resize', redrawOnly);
-if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { redrawOnly(); if (state.exp) runExp(state.exp); });
-syncOutputs(); syncGroups(); render();
+setDials({ ...DEF, seed: 22, ...store.get('meander.settings', {}) });
+renderNow(); contact(seed());
 </script>

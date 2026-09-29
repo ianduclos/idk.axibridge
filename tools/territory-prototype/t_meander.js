@@ -14,6 +14,14 @@
 // geometry clipped against occupancy, not walkLine pursuits (the walker would scramble spacing).
 
 const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1, history: 0.6, activity: 0.9, events: 2, white: 0, hetero: 0.6, search: 1, tangle: 1, work: 0.5, graft: 0.5, window: 0 };
+// Round 3 page dials (0–1). Each fans out to the older keys; a recipe without them is unchanged.
+const MEANDER_MACROS = { complexity: 0.5, drift: 0.6, band: 1, chaos: 0.5, accents: 0.5, bridges: 0.5, history: 0.6 };
+function expandMacros(p) {
+  const q = { ...p };
+  if (p.complexity !== undefined) q.channels = Math.round(5 + 6 * clamp(p.complexity, 0, 1));
+  if (p.chaos !== undefined) { const h = clamp(p.chaos, 0, 1); q.tangle = Math.min(1, 2 * h); q.search = 2 * h; q.events = Math.round(4 * h); q.hetero = 1.2 * h; }
+  return q;
+}
 const MIG_E = 4;          // mm of displacement per unit R1 per step (calibrated at CP1)
 const V_ABS = 0.075;      // absolute floor for a band's swell speed: p95 of lagged speed on seed 21's trunk (round 2 CP1)
 
@@ -520,7 +528,7 @@ function hookFrom(P, toward, rng) {
 }
 
 Territory.prototype.meander = function (cores) {
-  const prm = { ...MEANDER_DEFAULTS, ...this.prm }, seed = this.seed;
+  const prm = expandMacros({ ...MEANDER_DEFAULTS, ...this.prm }), seed = this.seed;
   const F = prm.window ? { x0: -0.3 * W, y0: -0.3 * H, x1: 1.3 * W, y1: 1.3 * H } : SHEET_F;
   const A0 = activityField(seed, prm.activity, F);
   const rM = rngFor(seed, 6161), rB = rngFor(seed, 6162), rH = rngFor(seed, 6163), rE = rngFor(seed, 6164);
@@ -833,4 +841,4 @@ function meanderRecipe(out, chans, geo, events, steps, o) {
     events: events.map(e => ({ kind: e.kind, ch: e.ch, t: e.t, at: e.at.map(v => Math.round(v)) })),
   };
 }
-if (typeof module !== 'undefined') module.exports.MEANDER_DEFAULTS = MEANDER_DEFAULTS;
+if (typeof module !== 'undefined') { module.exports.MEANDER_DEFAULTS = MEANDER_DEFAULTS; module.exports.MEANDER_MACROS = MEANDER_MACROS; }
