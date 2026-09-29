@@ -17,6 +17,7 @@ const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1
 const MIG_E = 4;          // mm of displacement per unit R1 per step (calibrated at CP1)
 const V_ABS = 0.075;      // absolute floor for a band's swell speed: p95 of lagged speed on seed 21's trunk (round 2 CP1)
 
+const SHEET_F = { x0: 0, y0: 0, x1: W, y1: H };
 function boxFilter(a, w) {
   const n = a.length, out = new Float64Array(n), h = Math.max(1, w >> 1);
   let s = 0, c = 0;
@@ -34,22 +35,23 @@ function segDist(px, py, ax, ay, bx, by) {
 }
 
 // A(x,y): two or three broad blobs plus one sharp ridge; `contrast` 0 = flat 0.5.
-function activityField(seed, contrast) {
-  const r = rngFor(seed, 6160), cs = 5, gw = Math.ceil(W / cs) + 1, gh = Math.ceil(H / cs) + 1, g = new Float32Array(gw * gh);
+function activityField(seed, contrast, F = SHEET_F) {
+  const FW = F.x1 - F.x0, FH = F.y1 - F.y0;
+  const r = rngFor(seed, 6160), cs = 5, gw = Math.ceil(FW / cs) + 1, gh = Math.ceil(FH / cs) + 1, g = new Float32Array(gw * gh);
   const blobs = [], nb = 2 + (r() < 0.5 ? 1 : 0);
-  for (let k = 0; k < nb; k++) blobs.push({ x: 30 + r() * (W - 60), y: 25 + r() * (H - 50), s: 30 + r() * 45, w: k > 0 && r() < 0.35 ? -0.7 : 1 });
-  const ra = r() * Math.PI, rl = 80 + 80 * r(), rx = 50 + r() * (W - 100), ry = 40 + r() * (H - 80), rw = 5 + 5 * r();
+  for (let k = 0; k < nb; k++) blobs.push({ x: F.x0 + 30 + r() * (FW - 60), y: F.y0 + 25 + r() * (FH - 50), s: 30 + r() * 45, w: k > 0 && r() < 0.35 ? -0.7 : 1 });
+  const ra = r() * Math.PI, rl = 80 + 80 * r(), rx = F.x0 + 50 + r() * (FW - 100), ry = F.y0 + 40 + r() * (FH - 80), rw = 5 + 5 * r();
   const ax = rx - Math.cos(ra) * rl / 2, ay = ry - Math.sin(ra) * rl / 2, bx = rx + Math.cos(ra) * rl / 2, by = ry + Math.sin(ra) * rl / 2;
   let lo = 1e9, hi = -1e9;
   for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
-    const x = i * cs, y = j * cs; let v = 0;
+    const x = F.x0 + i * cs, y = F.y0 + j * cs; let v = 0;
     for (const b of blobs) v += b.w * Math.exp(-((x - b.x) ** 2 + (y - b.y) ** 2) / (2 * b.s * b.s));
     const d = segDist(x, y, ax, ay, bx, by); v += 0.9 * Math.exp(-d * d / (2 * rw * rw));
     g[j * gw + i] = v; lo = Math.min(lo, v); hi = Math.max(hi, v);
   }
   for (let c = 0; c < g.length; c++) g[c] = 0.5 + ((g[c] - lo) / (hi - lo || 1) - 0.5) * contrast;
   return (x, y) => {
-    const fx = clamp(x / cs, 0, gw - 1.001), fy = clamp(y / cs, 0, gh - 1.001), i = Math.floor(fx), j = Math.floor(fy), u = fx - i, v = fy - j;
+    const fx = clamp((x - F.x0) / cs, 0, gw - 1.001), fy = clamp((y - F.y0) / cs, 0, gh - 1.001), i = Math.floor(fx), j = Math.floor(fy), u = fx - i, v = fy - j;
     const c = j * gw + i;
     return (g[c] * (1 - u) + g[c + 1] * u) * (1 - v) + (g[c + gw] * (1 - u) + g[c + gw + 1] * u) * v;
   };
@@ -81,6 +83,48 @@ function workMap(snaps, F) {
     return (g[c] * (1 - u) + g[c + 1] * u) * (1 - v) + (g[c + gw] * (1 - u) + g[c + gw + 1] * u) * v;
   };
   return { at, g, gw, gh, cs, F };
+}
+// Found window (round 2): the sheet is a frame chosen on a 1.6× field. Score: work centroid off-centre,
+// empty ground 25–55 %, more work preferred; hard gates: 1–5 centreline crossings of the frame (0 is the
+// old inset, more is an excerpt), top-decile work cut by ≤ 2 edges, a protagonist ≥ 3.5× the median;
+// a zoomed frame (s < 1) needs ≥ 2 channels inside. Returns sim→sheet: p' = (p − o) / s.
+function findWindow(Wk, polys, F, rng) {
+  const { g, gw, gh, cs } = Wk, SW = gw + 1;
+  const sat = f => { const a = new Float64Array(SW * (gh + 1)); for (let j = 0; j < gh; j++) { let row = 0; for (let i = 0; i < gw; i++) { row += f(g[j * gw + i], i, j); a[(j + 1) * SW + i + 1] = a[j * SW + i + 1] + row; } } return a; };
+  const Sw = sat(v => v), Sx = sat((v, i) => v * (i + 0.5)), Sy = sat((v, i, j) => v * (j + 0.5)), Se = sat(v => v < 0.02 ? 1 : 0);
+  const box = (a, i0, j0, i1, j1) => a[j1 * SW + i1] - a[j0 * SW + i1] - a[j1 * SW + i0] + a[j0 * SW + i0];
+  const nz = Array.from(g).filter(v => v > 0.02).sort((a, b) => a - b); if (nz.length < 10) return null;
+  const med = nz[Math.floor(nz.length / 2)], tdec = nz[Math.floor(nz.length * 0.9)];
+  let best = null, bestW = 0;
+  const cand = [];
+  for (const sc of [1, 0.8, 0.65]) {
+    const ww = W * sc, wh = H * sc, iw = Math.round(ww / cs), jh = Math.round(wh / cs);
+    for (let oy = F.y0; oy + wh <= F.y1; oy += 15) for (let ox = F.x0; ox + ww <= F.x1; ox += 15) {
+      const i0 = Math.round((ox - F.x0) / cs), j0 = Math.round((oy - F.y0) / cs), i1 = Math.min(gw, i0 + iw), j1 = Math.min(gh, j0 + jh);
+      const work = box(Sw, i0, j0, i1, j1); if (work <= 0) continue;
+      cand.push({ sc, ox, oy, i0, j0, i1, j1, work }); bestW = Math.max(bestW, work);
+    }
+  }
+  for (const c of cand) {
+    if (c.work < 0.3 * bestW) continue;
+    const { i0, j0, i1, j1 } = c, cells = (i1 - i0) * (j1 - j0);
+    const cx = box(Sx, i0, j0, i1, j1) / c.work, cy = box(Sy, i0, j0, i1, j1) / c.work;
+    const d = Math.hypot(cx - (i0 + i1) / 2, cy - (j0 + j1) / 2) / Math.hypot(i1 - i0, j1 - j0);
+    const a = d >= 0.15 && d <= 0.35 ? 1 : Math.exp(-(((d < 0.15 ? 0.15 - d : d - 0.35) / 0.08) ** 2));
+    const ef = box(Se, i0, j0, i1, j1) / cells, b = ef >= 0.25 && ef <= 0.55 ? 1 : Math.exp(-(((ef < 0.25 ? 0.25 - ef : ef - 0.55) / 0.1) ** 2));
+    // hard gates
+    let hot = 0; for (const [ii0, jj0, ii1, jj1] of [[i0, j0, i1, j0 + 1], [i0, j1 - 1, i1, j1], [i0, j0, i0 + 1, j1], [i1 - 1, j0, i1, j1]]) { let h = false; for (let j = jj0; j < jj1 && !h; j++) for (let i = ii0; i < ii1; i++) if (g[j * gw + i] >= tdec) { h = true; break; } if (h) hot++; }
+    if (hot > 2) continue;
+    let peak = 0; for (let j = j0; j + 8 <= j1; j += 2) for (let i = i0; i + 8 <= i1; i += 2) peak = Math.max(peak, box(Sw, i, j, i + 8, j + 8) / 64);
+    if (peak < 3.5 * med) continue;
+    const X0 = c.ox, Y0 = c.oy, X1 = c.ox + W * c.sc, Y1 = c.oy + H * c.sc, inside = p => p[0] > X0 && p[0] < X1 && p[1] > Y0 && p[1] < Y1;
+    let cross = 0, inCh = 0;
+    for (const P of polys) { let k = 0, prev = null; for (const p of P) { const q = inside(p); if (q) k++; if (prev !== null && q !== prev) cross++; prev = q; } if (k > 0.5 * P.length) inCh++; }
+    if (cross < 1 || cross > 5 || (c.sc < 1 && inCh < 2)) continue;
+    const score = a * b * (0.5 + 0.5 * c.work / bestW) + 1e-6 * rng();
+    if (!best || score > best.score) best = { s: c.sc, ox: c.ox, oy: c.oy, score, cross };
+  }
+  return best;
 }
 const renderField = (A, Wk, mu) => (x, y) => { const w = Wk.at(x, y); return (1 - mu) * A(x, y) + mu * w * w; };
 
@@ -121,19 +165,24 @@ function uncoil(P, limit) {
   }
   return Q;
 }
-function trimToSheet(P, m) {
-  const ok = p => p[0] > m && p[0] < W - m && p[1] > m && p[1] < H - m;
-  // the longest run inside the margin
-  let best = [], cur = [];
-  for (const p of P) { if (ok(p)) cur.push(p); else { if (cur.length > best.length) best = cur; cur = []; } }
-  return cur.length > best.length ? cur : best;
+function trimToSheet(P, m, F = SHEET_F) { const r = trimRun(P, m, F); return P.slice(r[0], r[1] + 1); }
+// [i0, i1] of the longest run of P inside F less a margin
+function trimRun(P, m, F = SHEET_F) {
+  const ok = p => p[0] > F.x0 + m && p[0] < F.x1 - m && p[1] > F.y0 + m && p[1] < F.y1 - m;
+  let b0 = 0, b1 = -1, c0 = -1;
+  for (let i = 0; i <= P.length; i++) {
+    if (i < P.length && ok(P[i])) { if (c0 < 0) c0 = i; continue; }
+    if (c0 >= 0 && i - 1 - c0 > b1 - b0) { b0 = c0; b1 = i - 1; }
+    c0 = -1;
+  }
+  return [b0, b1];
 }
-function noiseWalk(rng, len, x, y, h) {
+function noiseWalk(rng, len, x, y, h, F = SHEET_F) {
   const nz = noise1(rng), ph = rng() * 100, pts = [[x, y]];
   for (let s = 0; s < len; s += 2) {
     h += nz(ph + s / 45) * 0.12;
-    const cx = W / 2 - x, cy = H / 2 - y;           // steer home near the margin
-    if (x < 25 || x > W - 25 || y < 22 || y > H - 22) h += clamp(wrap(Math.atan2(cy, cx) - h), -0.25, 0.25);
+    const cx = (F.x0 + F.x1) / 2 - x, cy = (F.y0 + F.y1) / 2 - y;           // steer home near the margin
+    if (x < F.x0 + 25 || x > F.x1 - 25 || y < F.y0 + 22 || y > F.y1 - 22) h += clamp(wrap(Math.atan2(cy, cx) - h), -0.25, 0.25);
     x += Math.cos(h) * 2; y += Math.sin(h) * 2; pts.push([x, y]);
   }
   return pts;
@@ -148,7 +197,7 @@ function wiggle(P, rng) {
     return [p[0] - (b[1] - a[1]) / l * d, p[1] + (b[0] - a[0]) / l * d];
   });
 }
-function seedChannels(T, prm, rng) {
+function seedChannels(T, prm, rng, F = SHEET_F) {
   const nCh = clamp(Math.round(prm.channels), 2, 12), out = [];
   const mk = (cls, pts) => {
     const trunk = cls === 'trunk';
@@ -174,22 +223,29 @@ function seedChannels(T, prm, rng) {
   const near = (P, Q, r) => { const h = pointHash(Q, r); let k = 0; for (const p of P) { const gx = Math.floor(p[0] / r), gy = Math.floor(p[1] / r); let f = false; for (let u = -1; u <= 1 && !f; u++) for (let v = -1; v <= 1 && !f; v++) for (const q of (h.get((gx + u) * 4096 + gy + v) || [])) if (Math.hypot(q[0] - p[0], q[1] - p[1]) < r) { f = true; break; } if (f) k++; } return k / P.length; };
   if (chains.length && polyLen(chains[0]) >= 60) out.push(mk('trunk', chains[0]));
   else {
-    const a = rng() * Math.PI * 2, x = W / 2 + Math.cos(a) * W * 0.3 * rng(), y = H / 2 + Math.sin(a) * H * 0.3 * rng();
-    out.push(mk('trunk', trimToSheet(noiseWalk(rng, 160 + 120 * rng(), x, y, rng() * Math.PI * 2), 12)));
+    const FW = F.x1 - F.x0, FH = F.y1 - F.y0, a = rng() * Math.PI * 2, x = (F.x0 + F.x1) / 2 + Math.cos(a) * FW * 0.3 * rng(), y = (F.y0 + F.y1) / 2 + Math.sin(a) * FH * 0.3 * rng();
+    out.push(mk('trunk', trimToSheet(noiseWalk(rng, 160 + 120 * rng(), x, y, rng() * Math.PI * 2, F), 12, F)));
   }
+  // graft (round 2): below 1, only inherited minors that touch the trunk's neighbourhood are kept, a share g of
+  // the minors; the rest sprout at the trunk's bends. graft 1 is round 1's territory topology exactly.
+  const graft = prm.source === 'territory' ? clamp(prm.graft ?? 1, 0, 1) : 1;
+  if (graft < 1 && out.length) { const tp = out[0].pts; chains = [chains[0], ...chains.slice(1).filter(P => near(P, tp, 25) > 0.15)]; }
+  const inheritCap = graft < 1 ? 1 + Math.round(graft * (nCh - 1)) : nCh;
   for (const P0 of chains.slice(1)) {
-    if (out.length >= nCh) break;
+    if (out.length >= nCh || out.length >= inheritCap) break;
     let P = P0; const len = polyLen(P); if (len < 30) continue;
     if (len > 120) { const k = Math.floor((P.length - 120) * rng()); P = P.slice(k, k + 121); }
     if (out.some(c => near(P, c.pts, 5) > 0.35)) continue;
     out.push(mk('minor', P));
   }
   // top up (and 'nothing'): minors sprout off the trunk
-  const tr = out[0].pts;
+  const tr = out[0].pts; let trK = null;
   for (let tries = 0; out.length < nCh && tries < 12; tries++) {
-    const i = 5 + Math.floor(rng() * Math.max(1, tr.length - 10)), p = tr[Math.min(i, tr.length - 2)], q = tr[Math.min(i + 1, tr.length - 1)];
+    let i = 5 + Math.floor(rng() * Math.max(1, tr.length - 10));
+    if (graft < 1) { if (!trK) { trK = curvatureOf(tr).map(Math.abs); } let tot = 0; for (let q = 5; q < tr.length - 5; q++) tot += trK[q] + 0.01; let u = rng() * tot; for (let q = 5; q < tr.length - 5; q++) { u -= trK[q] + 0.01; if (u <= 0) { i = q; break; } } }
+    const p = tr[Math.min(i, tr.length - 2)], q = tr[Math.min(i + 1, tr.length - 1)];
     const h = Math.atan2(q[1] - p[1], q[0] - p[0]) + (rng() < 0.5 ? 1 : -1) * (0.6 + 0.8 * rng());
-    const P = trimToSheet(noiseWalk(rng, 40 + 80 * rng(), p[0] + Math.cos(h) * 8, p[1] + Math.sin(h) * 8, h), 12);
+    const P = trimToSheet(noiseWalk(rng, 40 + 80 * rng(), p[0] + Math.cos(h) * 8, p[1] + Math.sin(h) * 8, h, F), 12, F);
     if (polyLen(P) < 35 || out.some(c => near(P, c.pts, 6) > 0.25)) continue;
     out.push(mk('minor', P));
   }
@@ -211,7 +267,7 @@ function curvatureOf(P) {
 }
 function inflCount(k) { let c = 0, sg = 0; for (let i = 0; i < k.length; i++) { const s = k[i] > 0.004 ? 1 : k[i] < -0.004 ? -1 : 0; if (s && sg && s !== sg) c++; if (s) sg = s; } return c; }
 
-function migrate(chans, A, prm, rng) {
+function migrate(chans, A, prm, rng, F = SHEET_F) {
   const steps = Math.round(180 + 420 * prm.drift), ev = clamp(Math.round(prm.events), 0, 3);
   const cap = { cut: [0, 1, 2, 3][ev], refuse: [0, 1, 2, 2][ev], capture: [0, 1, 2, 2][ev] }, used = { cut: 0, refuse: 0, capture: 0 };
   const snaps = [], events = [], stalls = [], pairs = [];
@@ -236,10 +292,10 @@ function migrate(chans, A, prm, rng) {
     for (let i = 1; i < n - 1; i++) {
       // the downstream end tapers over 25 mm: the upstream-weighted rate otherwise piles up there and coils it
       const pin = smooth(0, 6, i) * smooth(0, 25 / ch.ds, n - 1 - i), x = P[i][0], y = P[i][1];
-      const edge = smooth(6, 20, Math.min(x, W - x, y, H - y));
+      const edge = smooth(6, 20, Math.min(x - F.x0, F.x1 - x, y - F.y0, F.y1 - y));
       const d = clamp(MIG_E * R1[i], -lim, lim) * pin * edge * (stalls.length ? stallW(x, y) : 1);
       const tx = P[i + 1][0] - P[i - 1][0], ty = P[i + 1][1] - P[i - 1][1], tl = Math.hypot(tx, ty) || 1;
-      Q[i][0] = clamp(x + d * ty / tl, 6, W - 6); Q[i][1] = clamp(y - d * tx / tl, 6, H - 6);   // right normal = outward for κ > 0
+      Q[i][0] = clamp(x + d * ty / tl, F.x0 + 6, F.x1 - 6); Q[i][1] = clamp(y - d * tx / tl, F.y0 + 6, F.y1 - 6);   // right normal = outward for κ > 0
       sp[i] = Math.abs(d);
     }
     ch.pts = Q; ch.speed = sp;
@@ -465,10 +521,11 @@ function hookFrom(P, toward, rng) {
 
 Territory.prototype.meander = function (cores) {
   const prm = { ...MEANDER_DEFAULTS, ...this.prm }, seed = this.seed;
-  const A = activityField(seed, prm.activity);
+  const F = prm.window ? { x0: -0.3 * W, y0: -0.3 * H, x1: 1.3 * W, y1: 1.3 * H } : SHEET_F;
+  const A0 = activityField(seed, prm.activity, F);
   const rM = rngFor(seed, 6161), rB = rngFor(seed, 6162), rH = rngFor(seed, 6163), rE = rngFor(seed, 6164);
-  const chans = seedChannels(this, prm, rM);
-  const sim = migrate(chans, A, prm, rM);
+  const chans = seedChannels(this, prm, rM, F);
+  const sim = migrate(chans, A0, prm, rM, F);
   const { steps, snaps, events } = sim;
   // heterochrony: each channel's present is its own moment; the widest pair differ by ≥ 40 % when hetero is high
   const hetero = clamp(prm.hetero, 0, 1), live = chans.filter(c => !c.abandoned);
@@ -478,9 +535,22 @@ Territory.prototype.meander = function (cores) {
     order.forEach((o, i) => { const u = i === 0 ? 0 : i === order.length - 1 ? 1 : o.u; o.c.tDraw = Math.round(steps * (1 - 0.55 * hetero * u)); });
   }
   const snapAt = (id, t) => { let best = null; for (const s of snaps) if (s.ch === id && s.t <= t && (!best || s.t > best.t)) best = s; return best; };
+  // found window: choose the frame on the field, then carry everything into sheet millimetres
+  let win = { s: 1, ox: 0, oy: 0, score: 0, cross: 0 };
+  if (prm.window) {
+    const polys = chans.map(c => c.abandoned ? c.pts : (snapAt(c.id, c.tDraw) || {}).pts).filter(Boolean);
+    win = findWindow(workMap(snaps, F), polys, F, rngFor(seed, 6166)) || { s: 1, ox: 0, oy: 0, score: 0, cross: 0 };
+    const tf = p => [(p[0] - win.ox) / win.s, (p[1] - win.oy) / win.s];
+    for (const sn of snaps) { sn.pts = sn.pts.map(tf); sn.speed = sn.speed.map(v => v / win.s); }
+    for (const e of events) { if (e.at) e.at = tf(e.at); if (e.loop) e.loop = e.loop.map(tf); }
+    for (const c of chans) c.pts = c.pts.map(tf);
+  }
+  const A = prm.window ? (x, y) => A0(win.ox + x * win.s, win.oy + y * win.s) : A0;
+  const mTrim = prm.window ? 3 : 10;
   for (const c of chans) {
     if (c.abandoned) { const par = chans[c.parent]; c.drawn = par.tDraw >= c.born; c.present = c.pts; c.presentSpeed = []; continue; }
-    const s = snapAt(c.id, c.tDraw); c.drawn = !!s; if (s) { c.present = uncoil(trimToSheet(s.pts, 10), 60 + 90 * rE()); c.presentSpeed = s.speed.slice(0, c.present.length); }
+    const s = snapAt(c.id, c.tDraw); c.drawn = !!s;
+    if (s) { const [i0, i1] = trimRun(s.pts, mTrim); c.present = uncoil(s.pts.slice(i0, i1 + 1), 60 + 90 * rE()); c.presentSpeed = s.speed.slice(i0, i0 + c.present.length); if (c.present.length < 10) c.drawn = false; }
   }
   const Wk = workMap(snaps, { x0: 0, y0: 0, x1: W, y1: H }), Ar = renderField(A, Wk, clamp(prm.work, 0, 1));
   const hands = makeHands(seed, { sway: prm.sway ?? 1, overshoot: prm.overshoot ?? 1, lifts: prm.lifts ?? 1, tremor: prm.tremor ?? 1 });
@@ -686,7 +756,7 @@ Territory.prototype.meander = function (cores) {
       L.forEach(p => erased.mark(p[0], p[1], 1, 0, 1.2));
       emit('oxbow', strokes, { ch: it.e.ch, t: it.t });
     } else {
-      const P = trimToSheet(it.c.pts, 10); if (polyLen(P) < 20) continue;
+      const P = trimToSheet(it.c.pts, mTrim); if (polyLen(P) < 20) continue;
       const strokes = [];
       for (const pc of put(P, it.c.id, loose, rH, { erase: true })) {
         // the far end breaks up and stops in open ground
@@ -727,7 +797,7 @@ Territory.prototype.meander = function (cores) {
     return { ch: z.ch, depth: +z.depth.toFixed(2), mm: Math.round((z.i1 - z.i0) * 0.5), aspect: +aspect.toFixed(1), angle: Math.round(angle), curl: +curlF.toFixed(2), ink: Math.round(len), K: fails >= 2 };
   });
   this.lines = out;
-  this.meanderInfo = meanderRecipe(out, chans, geo, events, steps, { dead, tot, white, rings, ringStill, prm, tangles });
+  this.meanderInfo = meanderRecipe(out, chans, geo, events, steps, { dead, tot, white, rings, ringStill, prm, tangles, win });
   if (prm.debug) this.meanderDebug = { chans: chans.map(c => ({ id: c.id, cls: c.cls, present: c.present, tDraw: c.tDraw })), snaps, events };
 };
 
@@ -753,12 +823,12 @@ function meanderRecipe(out, chans, geo, events, steps, o) {
     if (e.size >= 2) through = true;
   }
   const flags = [
-    o.ringStill ? 'T' : '', deadFrac > 0.10 ? 'R' : '', ratios.some(r => r.edge > 60) ? 'O' : '', ratios.some(r => r.ratio < 2.5) ? 'P' : '', ratios.some(r => r.rail > 0.2) ? 'L' : '', (o.tangles || []).some(t => t.K) ? 'K' : '', through ? 'F' : '',
+    o.ringStill ? 'T' : '', deadFrac > 0.10 ? 'R' : '', ratios.some(r => r.edge > 60) ? 'O' : '', ratios.some(r => r.ratio < 2.5) ? 'P' : '', ratios.some(r => r.rail > 0.2) ? 'L' : '', o.prm.window && o.win && !o.win.score ? 'W' : '', (o.tangles || []).some(t => t.K) ? 'K' : '', through && !o.prm.window ? 'F' : '',
     ratios.some(r => r.K3 > 0.6) ? 'H' : '', hair > 400 ? 'X' : '', contrast < 4 ? 'N' : '', empty / N < 0.35 ? 'E' : '',
   ].join('');
   return {
     steps, white: o.white, inkMm, deadFrac: +deadFrac.toFixed(3), contrast: +contrast.toFixed(2), hairball: Math.round(hair), empty: +(empty / N).toFixed(2),
-    ringsDropped: o.rings, ratios, flags, tangles: o.tangles || [],
+    ringsDropped: o.rings, ratios, flags, tangles: o.tangles || [], window: o.win ? { s: o.win.s, origin: [Math.round(o.win.ox), Math.round(o.win.oy)], score: +o.win.score.toFixed(3), cross: o.win.cross } : null,
     channels: chans.map(c => ({ id: c.id, cls: c.cls, tDraw: c.tDraw, drawn: !!c.drawn, abandoned: !!c.abandoned, len: c.present ? Math.round(polyLen(c.present)) : 0 })),
     events: events.map(e => ({ kind: e.kind, ch: e.ch, t: e.t, at: e.at.map(v => Math.round(v)) })),
   };
