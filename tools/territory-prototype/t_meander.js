@@ -15,7 +15,7 @@
 
 const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1, history: 0.6, activity: 0.9, events: 2, white: 0, hetero: 0.6, search: 1, tangle: 1, work: 0.5, graft: 0.5, window: 0 };
 // Round 3 page dials (0–1). Each fans out to the older keys; a recipe without them is unchanged.
-const MEANDER_MACROS = { complexity: 0.5, drift: 0.6, band: 1, chaos: 0.5, accents: 0.5, bridges: 0.5, history: 0.6 };
+const MEANDER_MACROS = { complexity: 0.5, drift: 0.6, band: 1, chaos: 0.5, accents: 0.5, bridges: 0.5, history: 0.6, density: 0, continue: 0.5, cover: 0.5, slash: 0.5, surprise: 0.5, ink: 40 };
 function expandMacros(p) {
   const q = { ...p };
   if (p.complexity !== undefined) q.channels = Math.round(5 + 6 * clamp(p.complexity, 0, 1));
