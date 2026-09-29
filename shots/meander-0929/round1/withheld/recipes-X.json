@@ -1,0 +1,32 @@
+{
+ "X1": {
+  "seed": 21,
+  "render": "v5 defaults (reversed, reach 15)",
+  "decoy": false
+ },
+ "X2": {
+  "seed": 5,
+  "render": "v5 defaults (reversed, reach 15)",
+  "decoy": true
+ },
+ "X3": {
+  "seed": 3,
+  "render": "v5 defaults (reversed, reach 15)",
+  "decoy": false
+ },
+ "X4": {
+  "seed": 40,
+  "render": "v5 defaults (reversed, reach 15)",
+  "decoy": true
+ },
+ "X5": {
+  "seed": 13,
+  "render": "v5 defaults (reversed, reach 15)",
+  "decoy": false
+ },
+ "X6": {
+  "seed": 9,
+  "render": "v5 defaults (reversed, reach 15)",
+  "decoy": true
+ }
+}
