@@ -376,7 +376,7 @@ function migrate(chans, A, prm, rng, F = SHEET_F) {
 }
 
 // ---- M2: the bundle ----
-function bundleGeom(ch, present, speed, A, prm, rng, loose, tg) {
+function bundleGeom(ch, present, speed, A, prm, rng, loose, tg, chiF) {
   const C = catmullRom(resample(present, 2), 0.5), n = C.length; if (n < 30) return null;
   const nx = new Float64Array(n), ny = new Float64Array(n), th = new Float64Array(n);
   for (let i = 0; i < n; i++) { const a = C[Math.max(0, i - 2)], b = C[Math.min(n - 1, i + 2)]; th[i] = Math.atan2(b[1] - a[1], b[0] - a[0]); nx[i] = -Math.sin(th[i]); ny[i] = Math.cos(th[i]); }
@@ -416,13 +416,14 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg) {
   // ends peel off and merge in rather than stopping (Fable advice 1, A2)
   const own = [], shared = noise1(rng), shared2 = noise1(rng), ph = rng() * 100;
   for (let k = 0; k < Kmax; k++) own.push(noise1(rng));
-  const off = [], act = [];
+  const off = [], act = [], steady = new Float64Array(n).fill(1);
+  if (chiF) for (let i = 0; i < n; i++) steady[i] = 0.45 + 0.55 * chiF(C[i][0], C[i][1]);   // round 3: the ragged edge steadies outside χ
   for (let k = 0; k < Kmax; k++) {
     const o = new Float64Array(n), ac = new Uint8Array(n);
     for (let i = 0; i < n; i++) {
       ac[i] = k === 0 || K[i] > k ? 1 : 0;
-      const drift = 0.45 * loose.A * shared(ph + i * 0.5 / 30) + (0.03 + 0.04 * k) * S[i] * shared2(ph + i * 0.5 / 25);
-      const mine = 0.25 * loose.A * own[k](ph + 37 * k + i * 0.5 / 10) + (k ? 0.11 * S[i] * own[k](ph + 211 + 53 * k + i * 0.5 / 18) : 0);
+      const drift = steady[i] * 0.45 * loose.A * shared(ph + i * 0.5 / 30) + (0.03 + 0.04 * k) * S[i] * shared2(ph + i * 0.5 / 25);
+      const mine = steady[i] * 0.25 * loose.A * own[k](ph + 37 * k + i * 0.5 / 10) + (k ? steady[i] * 0.11 * S[i] * own[k](ph + 211 + 53 * k + i * 0.5 / 18) : 0);
       o[i] = ac[i] ? drift + mine + b[i] * S[i] / 2 * (1 - 2 * Math.pow((k + 0.5) / K[i], 1.5)) : off[k - 1][i];
     }
     off.push(boxFilter(o, 20)); act.push(ac);
@@ -531,7 +532,7 @@ Territory.prototype.meander = function (cores) {
   const prm = expandMacros({ ...MEANDER_DEFAULTS, ...this.prm }), seed = this.seed;
   const F = prm.window ? { x0: -0.3 * W, y0: -0.3 * H, x1: 1.3 * W, y1: 1.3 * H } : SHEET_F;
   const A0 = activityField(seed, prm.activity, F);
-  const rM = rngFor(seed, 6161), rB = rngFor(seed, 6162), rH = rngFor(seed, 6163), rE = rngFor(seed, 6164);
+  const rM = rngFor(seed, 6161); let rB = rngFor(seed, 6162); const rH = rngFor(seed, 6163), rE = rngFor(seed, 6164);
   const chans = seedChannels(this, prm, rM, F);
   const sim = migrate(chans, A0, prm, rM, F);
   const { steps, snaps, events } = sim;
@@ -573,8 +574,14 @@ Territory.prototype.meander = function (cores) {
   let sid = 10; const newId = ch => { const id = ++sid; lin.set(id, ch); return id; };
   const out = []; let hooksAt = [];
   // Draw a hand-made stroke into the sheet, cut where it meets unrelated ink (or erased ground).
+  const calm = { ...firm, A: firm.A * 0.4, over: 0.5, lift: 0.05, tremor: 0.01 };
+  const calmed = (P, hand) => {
+    let m = 0, k = 0; for (let i = 0; i < P.length; i += 4) { m += chi(P[i][0], P[i][1]); k++; } m = k ? m / k : 0;
+    const h = { ...hand }; for (const f of ['A', 'over', 'lift', 'tremor']) h[f] = calm[f] + (hand[f] - calm[f]) * m; return h;
+  };
   const put = (P, ch, hand, rng, o = {}) => {
     const id = newId(ch), pieces = [];
+    if (r3 && !o.keepHand) hand = calmed(P, hand);
     for (const Q of handLine(P, hand, rng)) {
       let cur = [], s = 0, startT = false;
       for (let i = 0; i < Q.length; i++) {
@@ -594,17 +601,45 @@ Territory.prototype.meander = function (cores) {
     if (hooksAt.some(h => Math.hypot(h[0] - e[0], h[1] - e[1]) < 25)) return null;
     const hk = hookFrom(pc.pts, toward, rng); if (hk) hooksAt.push(e); return hk;
   };
-  const emit = (kind, strokes, extra) => { if (strokes.length) out.push({ core: -1, kind, strokes, ...extra }); };
+  const ink = { all: 0, chaos: 0 };
+  const emit = (kind, strokes, extra) => {
+    if (!strokes.length) return;
+    for (const st of strokes) { const L = polyLen(st), q = st[Math.floor(st.length / 2)]; ink.all += L; if (chi(q[0], q[1]) > 0.5) ink.chaos += L; }
+    out.push({ core: -1, kind, strokes, ...extra });
+  };
 
   // ---- M2: present bundles ----
   { const ms = chans.filter(c => c.cls === 'minor' && !c.abandoned && c.drawn && c.present && c.present.length > 10).map(c => ({ c, a: c.present.reduce((x, p) => x + Ar(p[0], p[1]), 0) / c.present.length })).sort((x, y) => y.a - x.a || x.c.id - y.c.id);
     ms.forEach((m, i) => { m.c.S0 = i < 2 ? 4 : 1.4; }); }
   const geo = new Map(); this._geo = geo; let dead = 0, tot = 0; const tangleZones = [];
-  const rT = rngFor(seed, 6165), tg = { rng: rT, on: rT() >= 0.2, left: 2, refuse: events.filter(e => e.kind === 'refuse') };
-  for (const c of chans) {
-    if (!c.drawn || c.abandoned || !c.present || c.present.length < 10) continue;
-    const g = bundleGeom(c, c.present, c.presentSpeed, Ar, prm, rB, loose, tg);
-    if (g) { geo.set(c.id, g); dead += g.dead; tot += g.tot; tangleZones.push(...g.zones); }
+  const bundles = (presentOf, chiF) => {
+    const rT = rngFor(seed, 6165), tg = { rng: rT, on: rT() >= 0.2, left: 2, refuse: events.filter(e => e.kind === 'refuse') };
+    for (const c of chans) {
+      if (!c.drawn || c.abandoned || !c.present || c.present.length < 10) continue;
+      const g = bundleGeom(c, presentOf(c), c.presentSpeed, Ar, prm, rB, loose, tg, chiF);
+      if (g) { geo.set(c.id, g); dead += g.dead; tot += g.tot; tangleZones.push(...g.zones); }
+    }
+  };
+  bundles(c => c.present);
+  // ---- round 3 (brief §2.1): the chaos field χ, centred on the tangle zones (else the busiest ground).
+  //      Outside it the centreline is pre-smoothed, the band edge steadies and the hand calms, so the
+  //      chaos is concentrated in one or two places. Recipes without `chaos` (pre-round-3) skip all of it.
+  const r3 = prm.chaos !== undefined, chaosD = r3 ? clamp(prm.chaos, 0, 1) : 0, chiC = [];
+  let chi = () => 0;
+  if (r3) {
+    const rX = rngFor(seed, 6168);
+    if (chaosD > 0) {
+      const nC = chaosD > 0.6 ? 2 : 1;   // one place of chaos by default, two when the dial is high
+      for (const z of tangleZones.slice().sort((p, q) => q.depth - p.depth).slice(0, nC)) { const g = geo.get(z.ch), q = g.C[Math.round((z.i0 + z.i1) / 2)]; chiC.push({ x: q[0], y: q[1], r: 20 + 15 * rX() }); }
+      if (!chiC.length) {
+        let best = null; for (let y = 25; y < H - 25; y += 5) for (let x = 25; x < W - 25; x += 5) { const a = Ar(x, y); if (!best || a > best.a) best = { x, y, a }; }
+        if (best) chiC.push({ x: best.x, y: best.y, r: 20 + 15 * rX() });
+      }
+    }
+    chi = (x, y) => { let m = 0; for (const c of chiC) { const d = Math.hypot(x - c.x, y - c.y); if (d < c.r) m = Math.max(m, smooth(c.r, 0.4 * c.r, d)); } return m; };
+    // second pass on pre-smoothed centrelines, same streams as the first
+    geo.clear(); dead = 0; tot = 0; tangleZones.length = 0; rB = rngFor(seed, 6162);
+    bundles(c => { const P = resample(c.present, 2), Ps = smoothPts(P, 14); return P.map((p, i) => { const w = chi(p[0], p[1]); return [Ps[i][0] + (p[0] - Ps[i][0]) * w, Ps[i][1] + (p[1] - Ps[i][1]) * w]; }); }, chi);
   }
   // white channel: the trunk's bundle is withheld; its strip is a wall nobody drew
   const trunkG = geo.get(0);
@@ -639,12 +674,13 @@ Territory.prototype.meander = function (cores) {
   if (prm.search > 0) {
     // 2–3 patches of lognormal size: the largest gets the most passes (review r2 #4; brief §1.4)
     const cand = [], inZone = (id, i) => (tangleZones || []).some(z => z.ch === id && i >= z.i0 - 20 && i <= z.i1 + 20);
-    for (const [id, g] of geo) for (let i = 30; i < g.C.length - 30; i += 20) { const p = g.C[i]; if (g.S[i] < 3 && Ar(p[0], p[1]) > 0.5 && !inZone(id, i)) cand.push({ id, i, band: g.S[i] >= 1.6, a: Ar(p[0], p[1]) + 0.3 * rE() }); }
+    for (const [id, g] of geo) for (let i = 30; i < g.C.length - 30; i += 20) { const p = g.C[i]; if (g.S[i] < 3 && Ar(p[0], p[1]) > 0.5 && !inZone(id, i) && (!r3 || chi(p[0], p[1]) > 0.3)) cand.push({ id, i, band: g.S[i] >= 1.6, a: Ar(p[0], p[1]) + 0.3 * rE() }); }
     cand.sort((x, y) => y.a - x.a || x.id - y.id || x.i - y.i);
     const want = Math.round((2 + (rE() < 0.5 ? 1 : 0)) * prm.search);
     let onBand = 0;
     for (const c of cand) {
       if (searchSpots.length >= want) break;
+      if (r3 && ink.chaos > (0.10 + 0.15 * chaosD) * ink.all) break;
       if (c.band && onBand >= 1) continue;
       const g = geo.get(c.id), p = g.C[c.i];
       if (searchSpots.some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 35)) continue;
@@ -766,7 +802,7 @@ Territory.prototype.meander = function (cores) {
     } else {
       const P = trimToSheet(it.c.pts, mTrim); if (polyLen(P) < 20) continue;
       const strokes = [];
-      for (const pc of put(P, it.c.id, loose, rH, { erase: true })) {
+      for (const pc of put(P, it.c.id, loose, rH, { erase: true, keepHand: true })) {
         // the far end breaks up and stops in open ground
         const tot = polyLen(pc.pts), cut = tot * 0.65; let s = 0, cur = [], mode = 0, left = 0;
         for (let i = 0; i < pc.pts.length; i++) {
@@ -806,6 +842,7 @@ Territory.prototype.meander = function (cores) {
   });
   this.lines = out;
   this.meanderInfo = meanderRecipe(out, chans, geo, events, steps, { dead, tot, white, rings, ringStill, prm, tangles, win });
+  if (r3) Object.assign(this.meanderInfo, { chaosShare: +(ink.chaos / (ink.all || 1)).toFixed(3), chiC: chiC.map(c => [+c.x.toFixed(1), +c.y.toFixed(1), +c.r.toFixed(1)]) });
   if (prm.debug) this.meanderDebug = { chans: chans.map(c => ({ id: c.id, cls: c.cls, present: c.present, tDraw: c.tDraw })), snaps, events };
 };
 

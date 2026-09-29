@@ -584,4 +584,4 @@ function exampleSheet() {
   ];
 }
 
-if (typeof module !== 'undefined') module.exports = { runTerritory, tStats, randomSheet, exampleSheet, makeCore, mulberry32, W, H, polyLen };
+if (typeof module !== 'undefined') module.exports = { runTerritory, tStats, randomSheet, exampleSheet, makeCore, mulberry32, W, H, polyLen, resample };
