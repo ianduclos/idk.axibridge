@@ -138,9 +138,10 @@ figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); fon
         <label class="ctl">Drift <output id="mDriftV"></output><input type="range" id="mDrift" min="0.2" max="1" step="any" value="0.6"><small>How far the bends migrate away from where they started.</small></label>
         <label class="ctl">Band <output id="mBandV"></output><input type="range" id="mBand" min="0.5" max="2" step="any" value="1"><small>Width of the strand bundles; 0.5 is nearly single lines.</small></label>
         <label class="ctl">History <output id="mHistoryV"></output><input type="range" id="mHistory" min="0" max="1" step="any" value="0.6"><small>How often an event leaves traces of where the channel was.</small></label>
-        <label class="ctl">Activity <output id="mActivityV"></output><input type="range" id="mActivity" min="0" max="1" step="any" value="0.7"><small>Contrast between busy and quiet ground; 0 is even everywhere.</small></label>
+        <label class="ctl">Activity <output id="mActivityV"></output><input type="range" id="mActivity" min="0" max="1" step="any" value="0.9"><small>Contrast between busy and quiet ground; 0 is even everywhere.</small></label>
         <label class="ctl">Events <output id="mEventsV"></output><input type="range" id="mEvents" min="0" max="3" step="1" value="2"><small>Budget for cutoffs, captures, refusals and a reversal.</small></label>
-        <label class="ctl">White channel <output id="mWhiteV"></output><input type="range" id="mWhite" min="0" max="1" step="any" value="0.35"><small>Chance the main channel is left undrawn, outlined only by what stops against it.</small></label>
+        <label class="ctl">White channel <output id="mWhiteV"></output><input type="range" id="mWhite" min="0" max="1" step="any" value="0"><small>Chance the main channel is left undrawn, outlined only by what stops against it.</small></label>
+        <label class="ctl">Searching <output id="mSearchV"></output><input type="range" id="mSearch" min="0" max="2" step="any" value="1"><small>How many quiet single lines get restated a few times, each pass drifting on its own.</small></label>
         <label class="ctl">Different times <output id="mHeteroV"></output><input type="range" id="mHetero" min="0" max="1" step="any" value="0.6"><small>How far apart in time the channels are shown.</small></label>
       </div>
       <div class="group" id="volumeGroup">
@@ -212,7 +213,7 @@ const $ = id => document.getElementById(id);
 const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 let state = { cores: store.get('terr.cores', null) || exampleSheet(), tool: 'auto', exp: null };
 let last = null, drawing = null;
-const SLIDERS = ['mChannels', 'mDrift', 'mBand', 'mHistory', 'mActivity', 'mEvents', 'mWhite', 'mHetero', 'searchMax', 'budgetMul', 'spacing', 'tubeScale', 'budget', 'sway', 'overshoot', 'lifts', 'tremor', 'pen', 'reach', 'spread', 'eps', 'loose', 'yield', 'disregard', 'hyst', 'traces', 'traceGap', 'hatchDensity', 'bend', 'hatchAngle', 'lightAz', 'relief'];
+const SLIDERS = ['mChannels', 'mDrift', 'mBand', 'mHistory', 'mActivity', 'mEvents', 'mWhite', 'mHetero', 'mSearch', 'searchMax', 'budgetMul', 'spacing', 'tubeScale', 'budget', 'sway', 'overshoot', 'lifts', 'tremor', 'pen', 'reach', 'spread', 'eps', 'loose', 'yield', 'disregard', 'hyst', 'traces', 'traceGap', 'hatchDensity', 'bend', 'hatchAngle', 'lightAz', 'relief'];
 
 function prm() {
   return { loose: +$('loose').value, yieldP: +$('yield').value, wander: 1, reach: +$('reach').value, spread: +$('spread').value, eps: +$('eps').value,
@@ -225,7 +226,7 @@ function prm() {
     budget: +$('budget').value, terminator: $('terminator').checked, keepLines: $('keepLines').checked, sway: +$('sway').value, overshoot: +$('overshoot').value, lifts: +$('lifts').value, tremor: +$('tremor').value,
     traces: +$('traces').value, traceGap: +$('traceGap').value, hatchDensity: +$('hatchDensity').value, bend: +$('bend').value,
     hatchAngle: +$('hatchAngle').value, lightAz: +$('lightAz').value, lightEl: 35, relief: +$('relief').value, clearance: 2.5,
-    ...($('render').value === 'meander' ? { source: $('mSource').value, channels: +$('mChannels').value, drift: +$('mDrift').value, band: +$('mBand').value, history: +$('mHistory').value, activity: +$('mActivity').value, events: +$('mEvents').value, white: +$('mWhite').value, hetero: +$('mHetero').value } : {}) };
+    ...($('render').value === 'meander' ? { source: $('mSource').value, channels: +$('mChannels').value, drift: +$('mDrift').value, band: +$('mBand').value, history: +$('mHistory').value, activity: +$('mActivity').value, events: +$('mEvents').value, white: +$('mWhite').value, hetero: +$('mHetero').value, search: +$('mSearch').value } : {}) };
 }
 function seed() { return Math.max(1, Math.floor(+$('seed').value || 1)); }
 function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }

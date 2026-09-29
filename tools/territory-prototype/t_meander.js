@@ -13,7 +13,7 @@
 // Deviations from the brief: the meander spread is `band` (v2 owns `spread`); strands are exact
 // geometry clipped against occupancy, not walkLine pursuits (the walker would scramble spacing).
 
-const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1, history: 0.6, activity: 0.7, events: 2, white: 0.35, hetero: 0.6 };
+const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1, history: 0.6, activity: 0.9, events: 2, white: 0, hetero: 0.6, search: 1 };
 const MIG_E = 4;          // mm of displacement per unit R1 per step (calibrated at CP1)
 
 function boxFilter(a, w) {
@@ -311,7 +311,7 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose) {
     for (let i = 0; i < n; i++) {
       ac[i] = k === 0 || K[i] > k ? 1 : 0;
       const drift = 0.45 * loose.A * shared(ph + i * 0.5 / 30) + (0.03 + 0.04 * k) * S[i] * shared2(ph + i * 0.5 / 25);
-      const mine = 0.25 * loose.A * own[k](ph + 37 * k + i * 0.5 / 10);
+      const mine = 0.25 * loose.A * own[k](ph + 37 * k + i * 0.5 / 10) + (k ? 0.11 * S[i] * own[k](ph + 211 + 53 * k + i * 0.5 / 18) : 0);
       o[i] = ac[i] ? drift + mine + b[i] * S[i] / 2 * (1 - 2 * Math.pow((k + 0.5) / K[i], 1.5)) : off[k - 1][i];
     }
     off.push(boxFilter(o, 20)); act.push(ac);
@@ -388,7 +388,7 @@ Territory.prototype.meander = function (cores) {
   }
   const hands = makeHands(seed, { sway: prm.sway ?? 1, overshoot: prm.overshoot ?? 1, lifts: prm.lifts ?? 1, tremor: prm.tremor ?? 1 });
   const loose = hands[0], firm = hands[1];
-  const strandHand = { ...loose, A: loose.A * 0.3, lift: 0 }, edgeHand = { ...firm, lift: 0 };
+  const strandHand = { ...loose, A: loose.A * 0.3, lift: 0, over: 0 }, edgeHand = { ...firm, lift: 0 };
 
   // ---- ink sheet with lineage ----
   const sheet = new Sheet(), erased = new Sheet(), lin = new Map(), rel = new Set();
@@ -443,18 +443,42 @@ Territory.prototype.meander = function (cores) {
     const strokes = [];
     for (const st of g.strands) {
       const mid = st.pts[Math.floor(st.pts.length / 2)], cross = A(mid[0], mid[1]) > 0.72;
-      const pieces = put(st.pts, id, st.k === 0 ? edgeHand : strandHand, rB, { cross });
+      const pieces = put(st.pts, id, st.k === 0 ? (rB() < 0.5 ? { ...edgeHand, over: 0 } : edgeHand) : strandHand, rB, { cross });
       for (const pc of pieces) {
         strokes.push(pc.pts);
         if (pc.endT && st.k === 0 && polyLen(pc.pts) > 15) { const q = Math.min(st.i1, st.i0 + pc.pts.length); const hk = addHook(pc, [-g.nx[q] * st.side, -g.ny[q] * st.side], rB); if (hk) strokes.push(hk); }
       }
       // the downstream end of the convex strand usually curls inward
-      if (st.k === 0 && st.i1 >= g.C.length - 40 && pieces.length && rB() < 0.6) {
-        const last = pieces[pieces.length - 1], q = g.C.length - 1, sg = g.b[Math.max(0, q - 30)] >= 0 ? 1 : -1;
+      if (st.k === 0 && st.i1 >= g.C.length - 40 && pieces.length && rB() < 0.3) {
+        const last = pieces[pieces.length - 1], q = g.C.length - 1, sg = rB() < 0.5 ? 1 : -1;
         const hk = addHook(last, [g.nx[q] * sg, g.ny[q] * sg], rB); if (hk) strokes.push(hk);
       }
     }
     emit('strand', strokes, { ch: id, t: c.tDraw });
+  }
+
+  // ---- a second register: 1–3 single-line reaches in busy ground are restated 2–5 times,
+  //      each pass drifting on its own and disagreeing with the others (Ian's sketch; review r1 #4)
+  const searchSpots = [];
+  if (prm.search > 0) {
+    const cand = [];
+    for (const [id, g] of geo) for (let i = 30; i < g.C.length - 30; i += 20) { const p = g.C[i]; if (g.S[i] < 1.6 && A(p[0], p[1]) > 0.55) cand.push({ id, i, a: A(p[0], p[1]) + 0.3 * rE() }); }
+    cand.sort((x, y) => y.a - x.a || x.id - y.id || x.i - y.i);
+    const want = Math.round((1 + 2 * rE()) * prm.search);
+    for (const c of cand) {
+      if (searchSpots.length >= want) break;
+      const g = geo.get(c.id), p = g.C[c.i];
+      if (searchSpots.some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 45)) continue;
+      searchSpots.push(p);
+      const half = Math.round((12 + 18 * rE()) * 2), passes = 2 + Math.floor(4 * rE()), strokes = [];
+      for (let r = 0; r < passes; r++) {
+        const nz = noise1(rE), ph = rE() * 100, amp = 0.6 + 1.4 * rE(), bias = (rE() - 0.5) * 1.6;
+        const i0 = clamp(c.i - half + Math.round((rE() - 0.5) * 20), 0, g.C.length - 1), i1 = clamp(c.i + half + Math.round((rE() - 0.5) * 20), 0, g.C.length - 1);
+        const P = []; for (let q = i0; q <= i1; q++) { const d = bias + amp * nz(ph + q * 0.5 / 15); P.push([g.C[q][0] + g.nx[q] * d, g.C[q][1] + g.ny[q] * d]); }
+        for (const pc of put(P, c.id, { ...loose, lift: 0.4 }, rE, { cross: true })) strokes.push(pc.pts);
+      }
+      emit('search', strokes, { ch: c.id, t: chans[c.id].tDraw });
+    }
   }
 
   // ---- M3: history (event-dated, concave side, displacement thresholds) ----
