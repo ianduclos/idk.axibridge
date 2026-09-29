@@ -40,3 +40,43 @@ Observations/effect on judgement
 8. Next test: same seed, K base, interior limited to a single crossing line, plus a variant with region-dependent fragmentation; compare on cells 3, 5, 7, 12.
 
 Limits: screen only; only cells 3 and 7 seen at close view; the sheets do not show paper line weight.
+
+## Round 2 — volume
+
+Sheets R-V, same inputs per cell. Close views seen for cells 3 and 7 of S, T, U only. Screen only.
+
+### 4. Image-only reading (recorded before recipes.json)
+
+Observations
+- R: the round-1 K/O family with more overlap between territories. Wobbly open contours, no shading. Some cells now crowd well (R10 big lower mass under a banded upper one, R6 spiral-ribbon through a stacked cluster, R3). Flat: outlines, no turning.
+- S: short doubled or tripled parallel strokes hugging one side of edges (S3 close, S7 close). Reads as edge thickening and a few ribbed edges, a "second line" rather than a surface. The rib runs along a contour, so the form turns only at its rim. S5 lower-right ribbon and S10 lower-left rim are the best; S7's ribbed neck (the diagonal bundle at centre) reads as a weighted limb.
+- T: free short strokes fill slopes beside the contours. This is where volume first appears: T7 close, lumps with hatched flanks and open unhatched tops, read as lit from upper left. T9, T8, T12 also. But T3 close and T1 shift to weather chart/contour map: strokes stream in uniform bands across whole regions and lose the forms (T3 upper right, T5 lower right scatter, T1 lower left). Hatching cliché and fur in T5 bottom-right and T1 bottom-left.
+- U: S+T together. Strongest sense of weight: U7 close (the round lump has hatch bending around its right, doubled rim on the neck, hatch marks on the small top-left form), U10 lower band, U6, U3 centre (strokes curve around the S-shaped fold like flow round a stone). Cost: more of the sheet is stroke-field; U3 upper right and U1 lower left are dense enough to read as engraving/fur. Empty ground still present in U9, U11 (good).
+- V: the same treatment on a different underlying drawing: the contours themselves differ (more closed, blocky, stacked). Most "sculpture-like": V5, V9, V12 read as stacked stone masses with hatched undersides; V1, V2 dense but crowded, with more ruled straight strokes (V2 centre vertical bars, V1 crossing line at top, V3 vertical slashes). V11 keeps one clean unhatched lump (bottom left) beside hatched ones, which gives unequal authority.
+- Mechanical ruling: hatch strokes are near-straight, near-parallel, near-equal length in dense regions (T3, U3, V1, V10). The doubled rims in S keep the wobble of the contour, so they keep line character. Long straight interior lines (R11, V2) still read as ruler.
+- Cells to keep: U7, T7, S7 (three stages of one volume idea), U10, V5, V9, V12, V11, U6, S5. Weak: T1, T3 (weather), V1, V2 (crowded, ruled), and R as flat baseline.
+- Defects to protect: hatches that overshoot the contour and spill into the ground (U7 top left, T7 lower left); the unshaded facing sides; the leftover ribbon loops (U10). Defects that flatten: uniform stroke length and even spacing.
+
+Interpretation (tentative)
+- Volume arrives from asymmetry, one side shaded and one side left bare, more than from the number of traces. Density beyond a point turns into surface texture.
+- The volume is of separate lumps or stones, not of a single unified figure. That fits "abstraction" but risks becoming a rock catalogue if every territory is treated alike.
+
+### 5. After reading recipes.json
+
+Recipes: R has neither flag; S restate only; T hatch only; U both; V both with order "drawn" (U is "reversed"). All else is identical (reach raised 12 to 15 since round 1).
+- This matches my reading: restate gives edge weight, hatch gives flanks, and the two together in U give the most volume. It does not change my ranking.
+- Order is the significant new fact. V differs from U only in the order the structure arrives, yet the contours, closure and stacking change wholesale. So which forms sit on top is being chosen by arrival order, and V's blocky masses (V5, V9) come from that, not from the shading. I had attributed V's sculptural look partly to different shading; it is the base drawing.
+- Hatch bending to follow form accounts for the flow around folds in U3 but not for the straight bars in V2/V1; those look like the flat-slope fallback and are the ruled passages.
+
+### 6. Recommendations
+
+1. Take U as the shading base and try V's `drawn` order under it for cells 5, 9, 12; V5/V9/V12 are the strongest mass drawings on either sheet. Keep both orders as options, do not merge them.
+2. Cap hatch density per territory (T3, U3, V1, T1): leave at least the lit third of each form bare, as T7/U7 do. Stop the continuous banded fields that read as weather.
+3. Make hatch length and spacing vary along a form (U3 flowing centre is right, U3 upper right and V10 lower band are uniform). Longer strokes on broad flanks, short ticks at turns.
+4. Keep restate but taper it: doubled rims in S3/S7 are good on one side of a form; drop the third line where three strokes run parallel at even gaps (S3 centre-left).
+5. Protect strokes that overshoot the contour (U7 top left, T7 lower left) and unshaded facing sides. Do not clip hatches to the shape.
+6. Treat straight long interior lines as a separate problem (R11, V2, V1): either curve them or cut them; they carry the least authority.
+7. Push abstraction by giving one territory per cell no shading at all (V11 bottom left, U11 left) rather than shading everything; unequal treatment reads more deliberate than uniform treatment.
+8. Next experiment: U with `hatch` on and `restate` on only for territories that arrived last, compared on cells 3, 7, 10, 11 against plain U and V.
+
+Limits: hatch at 0.3-0.5 mm on paper will read denser than these previews; check a physical plot before deciding density.
