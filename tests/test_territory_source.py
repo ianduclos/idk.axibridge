@@ -22,7 +22,10 @@ def test_strokes_come_back_verbatim():
 def test_recipe_accepts_the_bench_keys_and_bounds_them():
     src = get_source("territory")
     p = src.Params(recipe={"seed": 13, "continue": 2, "mutate": 1.5, "unknown": 3})
-    assert p.recipe.cont == 2 and p.recipe.mutate == 1.5
+    assert p.recipe.cont == 2 and p.recipe.mutate == 1.5 and p.recipe.fill == "grown"
+    assert src.Params(recipe={"fill": "v8"}).recipe.fill == "v8"
+    with pytest.raises(ValidationError):
+        src.Params(recipe={"fill": "other"})
     with pytest.raises(ValidationError):
         src.Params(recipe={"density": 3})
     with pytest.raises(ValidationError):

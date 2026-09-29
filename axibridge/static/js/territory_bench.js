@@ -82,7 +82,10 @@ function init() {
   const dials = side.querySelector('#tb-dials');
   let sub = null, lastGrp = null;
   for (const [k, label, lo, hi, , note, grp] of DIALS) {
-    if (grp !== 'sub' && grp !== lastGrp) { lastGrp = grp; const h = document.createElement('h3'); h.className = 'tb-group'; h.textContent = grp; dials.append(h); }
+    if (grp !== 'sub' && grp !== lastGrp) { lastGrp = grp; const h = document.createElement('h3'); h.className = 'tb-group'; h.textContent = grp; dials.append(h);
+      if (grp === 'Density') { const f = document.createElement('div'); f.className = 'tb-fill'; f.setAttribute('role', 'group'); f.setAttribute('aria-label', 'Fill style');
+        f.innerHTML = `<span class="hint">Fill</span><button id="tb-fill-grown" aria-pressed="true" title="Fields grow out of the lines (Version 10)">Grown</button><button id="tb-fill-v8" aria-pressed="false" title="Brushed planes laid between the lines (Version 8)">Version 8 planes</button>`;
+        dials.append(f); } }
     const row = document.createElement('div');
     row.className = 'tb-dial';
     row.innerHTML = `<label for="tb-d-${k}" title="Double-click to reset">${label}</label><output id="tb-v-${k}"></output>
@@ -103,6 +106,8 @@ function init() {
   for (const b of side.querySelectorAll('.tb-lock')) b.addEventListener('click', () => {
     if (!active) return; const k = b.dataset.lock; active.locks[k] = !active.locks[k]; store.set('territory.locks', active.locks); sync();
   });
+  $('tb-fill-grown').onclick = () => setFill(false);
+  $('tb-fill-v8').onclick = () => setFill(true);
   $('tb-prev').onclick = () => stepSeed(-1);
   $('tb-next').onclick = () => stepSeed(1);
   $('tb-seed').onchange = () => { if (!active) return; remember(); active.seed = clampSeed($('tb-seed').value); sync(); render(); refreshThumbs(true); };
@@ -143,7 +148,7 @@ export function openTerritoryBench({ mod, params, contextKey, onKeep, onClose })
   const rec = (fromLayer ? params?.recipe : null) || store.get('territory.settings', null) || params?.recipe || {};
   const dials = { ...DEF };
   for (const [k] of DIALS) { const v = rec[k] ?? (k === 'continue' ? rec.cont : undefined); if (Number.isFinite(+v) && v !== null) dials[k] = +v; }
-  active = { seed: clampSeed(rec.seed ?? 22), dials, locks: store.get('territory.locks', {}), history: [], onKeep, onClose,
+  active = { seed: clampSeed(rec.seed ?? 22), v8: rec.fill === 'v8', dials, locks: store.get('territory.locks', {}), history: [], onKeep, onClose,
     rendered: null, keeping: false, pending: 0, thumbFrom: 0, thumbs: new Map(), mod };
   active.thumbFrom = active.seed + 1;
   const popup = $('process-popup');
@@ -170,7 +175,10 @@ export function closeTerritoryBench(notify = true) {
 }
 
 // ---- state ----
-const snapshot = () => ({ seed: active.seed, dials: { ...active.dials } });
+const snapshot = () => ({ seed: active.seed, v8: active.v8, dials: { ...active.dials } });
+// Version 8 planes: the engine's untouched V8 path runs when a recipe carries no planes/mutate keys (dials cap at 1 there)
+const payload = () => { const d = { ...active.dials }; if (active.v8) { delete d.planes; delete d.mutate; } return d; };
+function setFill(v8) { if (!active || active.keeping || active.v8 === v8) return; remember(); active.v8 = v8; sync(); render(); refreshThumbs(); }
 function remember() {
   if (!active) return; const s = snapshot(), last = active.history.at(-1);
   if (last && JSON.stringify(last) === JSON.stringify(s)) return;
@@ -178,7 +186,7 @@ function remember() {
 }
 function back() {
   if (!active || !active.history.length || active.keeping) return;
-  const s = active.history.pop(); active.seed = s.seed; active.dials = s.dials; sync(); render(); refreshThumbs(true);
+  const s = active.history.pop(); active.seed = s.seed; active.v8 = Boolean(s.v8); active.dials = s.dials; sync(); render(); refreshThumbs(true);
 }
 function stepSeed(d) {
   if (!active || active.keeping) return; remember(); active.seed = clampSeed(active.seed + d); sync(); render();
@@ -190,12 +198,14 @@ function surprise() {
   active.thumbFrom = active.seed + 1; sync(); render(); refreshThumbs(true);
 }
 function recipeText() {
-  return `seed ${active.seed} · ` + DIALS.map(([k]) => `${k} ${fmt(k, active.dials[k])}`).join(' · ');
+  return `seed ${active.seed} · ` + DIALS.filter(([k]) => !(active.v8 && (k === 'planes' || k === 'mutate'))).map(([k]) => `${k} ${fmt(k, active.dials[k])}`).join(' · ') + (active.v8 ? ' · version 8' : '');
 }
 function paste(text) {
   const o = {}; for (const m of String(text).matchAll(/([a-z]+)\s+(-?[\d.]+)/gi)) o[m[1].toLowerCase()] = +m[2];
   if (!Object.keys(o).length) return say('No settings found in that text.');
   remember();
+  // the prototype's convention: a recipe with density but no planes is a Version 8 recipe
+  active.v8 = /version\s*8/i.test(text) || (o.density > 0 && o.planes === undefined);
   if (o.seed) active.seed = clampSeed(o.seed);
   for (const [k, , lo, hi] of DIALS) if (Number.isFinite(o[k])) active.dials[k] = Math.max(lo, Math.min(hi, o[k]));
   $('tb-paste').value = ''; say('Loaded the settings.'); active.thumbFrom = active.seed + 1; sync(); render(); refreshThumbs(true);
@@ -216,6 +226,9 @@ function sync() {
     const on = Boolean(o.locks[b.dataset.lock]); b.setAttribute('aria-pressed', String(on)); b.innerHTML = svg(on ? ICON.lock : ICON.open);
   }
   $('tb-sub').classList.toggle('tb-idle', !(o.dials.density > 0));
+  $('tb-fill-grown').setAttribute('aria-pressed', String(!o.v8)); $('tb-fill-v8').setAttribute('aria-pressed', String(o.v8));
+  for (const k of ['planes', 'mutate']) $('tb-d-' + k).closest('.tb-dial').hidden = o.v8;
+  $('tb-sub').classList.toggle('tb-v8', o.v8);
   for (const b of document.querySelectorAll('.tb-thumb')) b.classList.toggle('current', b.dataset.seed === String(o.seed));
   $('tb-back').disabled = !o.history.length || o.keeping;
   $('tb-recipe').textContent = recipeText();
@@ -233,7 +246,7 @@ function render(delay = 0) {
   active.timer = setTimeout(() => {
     if (!active) return; clearBenchError();
     active.pending = ++jobId;
-    getWorker().postMessage({ kind: 'sheet', id: jobId, seed: active.seed, dials: { ...active.dials }, key: key() });
+    getWorker().postMessage({ kind: 'sheet', id: jobId, seed: active.seed, dials: payload(), key: key() });
   }, delay);
 }
 function onSheet(r) {
@@ -274,7 +287,7 @@ function refreshThumbs(reset = false) {
     b.append(cv, cap); host.append(b); active.thumbs.set(sd, cv);
     b.onclick = () => { if (!active || active.keeping) return; remember(); active.seed = sd; sync(); render(); };
     paint(cv, null, null, true);
-    getWorker().postMessage({ kind: 'thumb', gen, seed: sd, dials: { ...active.dials } });
+    getWorker().postMessage({ kind: 'thumb', gen, seed: sd, dials: payload() });
   }
   $('tb-thumbs-prev').disabled = active.thumbFrom <= 1; sync();
 }
@@ -309,7 +322,7 @@ async function keep() {
   if (!active || $('tb-keep').disabled) return;
   const owner = active, r = owner.rendered; owner.keeping = true; sync(); clearBenchError();
   try {
-    const recipe = { seed: owner.seed, ...owner.dials };
+    const recipe = { seed: owner.seed, ...owner.dials, fill: owner.v8 ? 'v8' : 'grown' };
     await owner.onKeep({ recipe, strokes: territoryStrokes(r.xy, r.lens), engine: ENGINE });
     if (active === owner) $('tb-kept').textContent = 'Kept as a new layer';
   } catch (error) { if (active === owner) showBenchError(error, keep); }

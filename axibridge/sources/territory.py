@@ -10,6 +10,8 @@ recipe travels with the layer so the bench can reopen it with every dial live
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..model import Layer, Path, PathDocument
@@ -41,6 +43,7 @@ class TerritoryRecipe(BaseModel):
     slash: float = Field(default=0.5, ge=0, le=2)
     surprise: float = Field(default=0.5, ge=0, le=2)
     ink: float = Field(default=40, ge=5, le=100)
+    fill: Literal["grown", "v8"] = Field(default="grown")   # v8: the Version 8 planes path (no planes/mutate)
 
 
 class TerritoryParams(BaseModel):

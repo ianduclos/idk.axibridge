@@ -30,5 +30,7 @@ def test_engine_matches_the_approved_recipes():
       h.update(JSON.stringify(runTerritory(sh.cores, {...B, ...d, camps: Math.max(2, sh.camps)}, s, 'reversed').lines)); } return h.digest('hex').slice(0, 12); };
     assert.equal(hash({...MEANDER_MACROS}), 'b45260fbdda1');
     assert.equal(hash(V10), '69348711b6f5');
+    // Version 8 planes: the same engine with no planes/mutate keys (the bench's 'Version 8 planes' fill)
+    assert.equal(hash({...MEANDER_MACROS,density:1,continue:1,cover:0.5,slash:1,surprise:1,ink:60}), '5eb5c5e66e06');
     """
     subprocess.run(["node", "--input-type=module", "-e", script], cwd=ROOT, check=True, timeout=120)

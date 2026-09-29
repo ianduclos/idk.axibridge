@@ -74,3 +74,23 @@ def test_territory_resume_restores_the_recipe(ui, server):
     _drawn(ui)
     assert _recipe(ui) == kept and len(layers) >= 1
     assert not ui.errors
+
+
+def test_territory_version_8_planes_fill(ui, server):
+    _open(ui)
+    _set(ui, "density", 1)
+    ui.wait_for_function("() => JSON.parse(document.querySelector('#territory-canvas').dataset.renderedRecipe).dials.density === 1")
+    _drawn(ui)
+    grown = int(ui.locator("#territory-canvas").get_attribute("data-strokes"))
+    ui.click("#tb-fill-v8")
+    ui.wait_for_function("() => JSON.parse(document.querySelector('#territory-canvas').dataset.renderedRecipe).v8 === true")
+    _drawn(ui)
+    assert ui.locator("#tb-d-planes").is_hidden() and ui.locator("#tb-d-mutate").is_hidden()
+    assert "version 8" in ui.locator("#tb-recipe").text_content()
+    assert int(ui.locator("#territory-canvas").get_attribute("data-strokes")) != grown
+    ui.click("#tb-keep")
+    ui.locator("#tb-kept", has_text="Kept as a new layer").wait_for()
+    assert _get(f"{server}/api/project")["layers"][-1]["source"]["params"]["recipe"]["fill"] == "v8"
+    ui.click("#tb-back")
+    ui.wait_for_function("() => JSON.parse(document.querySelector('#territory-canvas').dataset.renderedRecipe).v8 === false")
+    assert not ui.errors
