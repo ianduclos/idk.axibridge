@@ -101,7 +101,7 @@ figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); fon
       </div>
       <div class="group">
         <div class="label">Bodies</div>
-        <div class="row"><label class="chk" for="render">Render</label><select id="render"><option value="v5" selected>Searching lines (v5)</option><option value="auto">Bodies: auto</option><option value="wrap">Wrap</option><option value="wound">Wound line</option><option value="growth">Growth</option><option value="hatch">Hatch (earlier)</option><option value="lines">Lines only</option></select></div>
+        <div class="row"><label class="chk" for="render">Render</label><select id="render"><option value="meander" selected>Meander</option><option value="v5">Searching lines (v5)</option><option value="auto">Bodies: auto</option><option value="wrap">Wrap</option><option value="wound">Wound line</option><option value="growth">Growth</option><option value="hatch">Hatch (earlier)</option><option value="lines">Lines only</option></select></div>
         <div class="row"><label class="chk" for="forms">Forms</label><select id="forms"><option value="tubes" selected>Cores as tubes</option><option value="territories">Territories</option></select></div>
         <label class="ctl">Line spacing <output id="spacingV"></output><input type="range" id="spacing" min="0.6" max="2.5" step="any" value="1"></label>
         <label class="ctl">Tube size <output id="tubeScaleV"></output><input type="range" id="tubeScale" min="0.4" max="2.5" step="any" value="1"></label>
@@ -130,6 +130,19 @@ figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); fon
         <label class="ctl">Tremor <output id="tremorV"></output><input type="range" id="tremor" min="0" max="5" step="any" value="1"></label>
         <label class="ctl">Pen width (mm) <output id="penV"></output><input type="range" id="pen" min="0.1" max="0.6" step="any" value="0.2"><small>Preview and SVG only.</small></label>
       </div>
+      <div class="group" id="meanderGroup">
+        <div class="label">Meander</div>
+        <p class="hint">Centrelines from the territory migrate like river bends; each is drawn as a bundle of strands that swells after a bend and pinches where it turns. History appears only where something happened: a cutoff, a capture, a refusal.</p>
+        <div class="row"><label class="chk" for="mSource">Centrelines</label><select id="mSource"><option value="territory" selected>from the territory</option><option value="nothing">from nothing</option></select></div>
+        <label class="ctl">Channels <output id="mChannelsV"></output><input type="range" id="mChannels" min="2" max="12" step="1" value="8"><small>One trunk plus minors at a smaller scale.</small></label>
+        <label class="ctl">Drift <output id="mDriftV"></output><input type="range" id="mDrift" min="0.2" max="1" step="any" value="0.6"><small>How far the bends migrate away from where they started.</small></label>
+        <label class="ctl">Band <output id="mBandV"></output><input type="range" id="mBand" min="0.5" max="2" step="any" value="1"><small>Width of the strand bundles; 0.5 is nearly single lines.</small></label>
+        <label class="ctl">History <output id="mHistoryV"></output><input type="range" id="mHistory" min="0" max="1" step="any" value="0.6"><small>How often an event leaves traces of where the channel was.</small></label>
+        <label class="ctl">Activity <output id="mActivityV"></output><input type="range" id="mActivity" min="0" max="1" step="any" value="0.7"><small>Contrast between busy and quiet ground; 0 is even everywhere.</small></label>
+        <label class="ctl">Events <output id="mEventsV"></output><input type="range" id="mEvents" min="0" max="3" step="1" value="2"><small>Budget for cutoffs, captures, refusals and a reversal.</small></label>
+        <label class="ctl">White channel <output id="mWhiteV"></output><input type="range" id="mWhite" min="0" max="1" step="any" value="0.35"><small>Chance the main channel is left undrawn, outlined only by what stops against it.</small></label>
+        <label class="ctl">Different times <output id="mHeteroV"></output><input type="range" id="mHetero" min="0" max="1" step="any" value="0.6"><small>How far apart in time the channels are shown.</small></label>
+      </div>
       <div class="group" id="volumeGroup">
         <div class="label">Volume (hatch render)</div>
         <p class="hint">The territories read as a lit landscape: each camp a hill, each border a valley. Volume is built from repeated lines, never fill.</p>
@@ -151,19 +164,6 @@ figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); fon
         <label class="ctl">Reach spread <output id="spreadV"></output><input type="range" id="spread" min="0" max="1.2" step="any" value="0.7"><small>0 gives every core the same reach; high values give a few cores huge claims.</small></label>
         <label class="ctl">Contest floor <output id="epsV"></output><input type="range" id="eps" min="0.005" max="0.15" step="any" value="0.03"><small>Below this influence, ground is unclaimed and borders fade out.</small></label>
         <div class="row"><label class="chk" for="camps">Camps in Auto</label><select id="camps"><option value="2">2</option><option value="3" selected>3</option></select></div>
-      </div>
-      <div class="group" id="v5Group">
-        <div class="label">Searching lines</div>
-        <p class="hint">Borders restate their own history and search again where they were contested; one passage gets the weight, the biggest camp stays nearly empty.</p>
-        <div class="modes">
-          <label class="chk"><input type="checkbox" id="v5search" checked> Searching passes</label>
-          <label class="chk"><input type="checkbox" id="v5economy" checked> Silent winner</label>
-          <label class="chk"><input type="checkbox" id="v5events" checked> Events</label>
-          <label class="chk"><input type="checkbox" id="v5knots" checked> Knots</label>
-        </div>
-        <label class="ctl">Most passes <output id="searchMaxV"></output><input type="range" id="searchMax" min="1" max="12" step="1" value="6"></label>
-        <label class="ctl">Ink allowance <output id="budgetMulV"></output><input type="range" id="budgetMul" min="0.5" max="10" step="any" value="4"><small>How much new ink v5 may add, as a multiple of the base lines.</small></label>
-        <div class="row"><label class="chk" for="v5event">Force event</label><select id="v5event"><option value="">by chance</option><option value="net">net</option><option value="aperture">aperture</option></select></div>
       </div>
       <div class="group">
         <div class="label">Hand</div>
@@ -194,7 +194,7 @@ figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); fon
     <p class="result-head">Each uses the current settings. Runs are deterministic on cores + seed: adding a core never changes the ink drawn before it. Click a thumbnail to load it onto the sheet.</p>
     <div class="expbtns">
       <button class="expbtn" data-e="2" aria-pressed="false"><span><b>E1</b>Population sheet</span><small>24 random sheets: 8–12 cores, two or three camps, sometimes voids.</small></button>
-      <button class="expbtn" data-e="4" aria-pressed="false"><span><b>E2</b>Renderers</span><small>Your cores as searching lines, without searching passes, as bodies, and as plain lines.</small></button>
+      <button class="expbtn" data-e="4" aria-pressed="false"><span><b>E2</b>Renderers</span><small>Your cores as meander, as searching lines with and without searching passes, and as plain lines.</small></button>
       <button class="expbtn" data-e="3" aria-pressed="false"><span><b>E3</b>One more core</span><small>Your cores, then one extra core from each camp and a void at the sheet's centre. What moves?</small></button>
       <button class="expbtn" data-e="5" aria-pressed="false"><span><b>E4</b>Arrival order</span><small>Your cores as drawn, reversed, largest first and smallest first.</small></button>
       <button class="expbtn" data-e="6" aria-pressed="false"><span><b>E5</b>Five seeds</span><small>Your cores under five seeds: fading, chords and disregard change; the map does not.</small></button>
@@ -212,7 +212,7 @@ const $ = id => document.getElementById(id);
 const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 let state = { cores: store.get('terr.cores', null) || exampleSheet(), tool: 'auto', exp: null };
 let last = null, drawing = null;
-const SLIDERS = ['searchMax', 'budgetMul', 'spacing', 'tubeScale', 'budget', 'sway', 'overshoot', 'lifts', 'tremor', 'pen', 'reach', 'spread', 'eps', 'loose', 'yield', 'disregard', 'hyst', 'traces', 'traceGap', 'hatchDensity', 'bend', 'hatchAngle', 'lightAz', 'relief'];
+const SLIDERS = ['mChannels', 'mDrift', 'mBand', 'mHistory', 'mActivity', 'mEvents', 'mWhite', 'mHetero', 'searchMax', 'budgetMul', 'spacing', 'tubeScale', 'budget', 'sway', 'overshoot', 'lifts', 'tremor', 'pen', 'reach', 'spread', 'eps', 'loose', 'yield', 'disregard', 'hyst', 'traces', 'traceGap', 'hatchDensity', 'bend', 'hatchAngle', 'lightAz', 'relief'];
 
 function prm() {
   return { loose: +$('loose').value, yieldP: +$('yield').value, wander: 1, reach: +$('reach').value, spread: +$('spread').value, eps: +$('eps').value,
@@ -224,7 +224,8 @@ function prm() {
     forceNet: $('v5event').value === 'net', forceAperture: $('v5event').value === 'aperture', forms: $('forms').value, spacing: +$('spacing').value, tubeScale: +$('tubeScale').value,
     budget: +$('budget').value, terminator: $('terminator').checked, keepLines: $('keepLines').checked, sway: +$('sway').value, overshoot: +$('overshoot').value, lifts: +$('lifts').value, tremor: +$('tremor').value,
     traces: +$('traces').value, traceGap: +$('traceGap').value, hatchDensity: +$('hatchDensity').value, bend: +$('bend').value,
-    hatchAngle: +$('hatchAngle').value, lightAz: +$('lightAz').value, lightEl: 35, relief: +$('relief').value, clearance: 2.5 };
+    hatchAngle: +$('hatchAngle').value, lightAz: +$('lightAz').value, lightEl: 35, relief: +$('relief').value, clearance: 2.5,
+    ...($('render').value === 'meander' ? { source: $('mSource').value, channels: +$('mChannels').value, drift: +$('mDrift').value, band: +$('mBand').value, history: +$('mHistory').value, activity: +$('mActivity').value, events: +$('mEvents').value, white: +$('mWhite').value, hetero: +$('mHetero').value } : {}) };
 }
 function seed() { return Math.max(1, Math.floor(+$('seed').value || 1)); }
 function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
@@ -283,7 +284,7 @@ function renderNow() {
   store.set('terr.cores', state.cores);
 }
 function redrawOnly() { if (!last) return renderNow(); drawSheet($('sheet'), last, { cores: $('showCores').checked, land: $('showLand').checked, live: drawing }); }
-function syncOutputs() { for (const id of SLIDERS) $(id + 'V').textContent = (+$(id).value).toFixed(['searchMax', 'budget', 'reach', 'hyst', 'traces', 'hatchAngle', 'lightAz', 'relief'].includes(id) ? 0 : 2); }
+function syncOutputs() { for (const id of SLIDERS) $(id + 'V').textContent = (+$(id).value).toFixed(['mChannels', 'mEvents', 'searchMax', 'budget', 'reach', 'hyst', 'traces', 'hatchAngle', 'lightAz', 'relief'].includes(id) ? 0 : 2); }
 
 // ---- drawing ----
 function toMM(e) { const r = $('sheet').getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 300, (e.clientY - r.top) / r.height * 218]; }
@@ -310,12 +311,12 @@ for (const id of SLIDERS) {
   $(id).addEventListener('input', () => { syncOutputs(); render(90); });
   $(id).addEventListener('change', () => { if (state.exp) runExp(state.exp); });
 }
-for (const id of ['mBorders', 'mOuter', 'mVoids', 'mInterior', 'mRestate', 'mHatch', 'camps', 'order', 'render', 'forms', 'terminator', 'keepLines', 'v5search', 'v5economy', 'v5events', 'v5knots', 'v5event']) $(id).addEventListener('change', () => { render(); if (state.exp && id !== 'order') runExp(state.exp); });
+for (const id of ['mBorders', 'mOuter', 'mVoids', 'mInterior', 'mRestate', 'mHatch', 'camps', 'order', 'render', 'forms', 'terminator', 'keepLines', 'v5search', 'v5economy', 'v5events', 'v5knots', 'v5event', 'mSource']) $(id).addEventListener('change', () => { render(); if (state.exp && id !== 'order') runExp(state.exp); });
 $('seed').addEventListener('change', () => { render(); if (state.exp) runExp(state.exp); });
 $('reroll').addEventListener('click', () => { $('seed').value = 1 + Math.floor(Math.random() * 9999); render(); if (state.exp) runExp(state.exp); });
 $('showCores').addEventListener('change', redrawOnly);
 $('pen').addEventListener('input', () => { syncOutputs(); redrawOnly(); });
-function syncGroups() { const r = $('render').value; $('volumeGroup').hidden = r !== 'hatch'; $('v5Group').hidden = r !== 'v5'; }
+function syncGroups() { const r = $('render').value; $('volumeGroup').hidden = r !== 'hatch'; $('v5Group').hidden = r !== 'v5'; $('meanderGroup').hidden = r !== 'meander'; }
 $('render').addEventListener('change', syncGroups);
 $('showLand').addEventListener('change', redrawOnly);
 $('undo').addEventListener('click', () => { state.cores.pop(); render(); });
@@ -355,7 +356,7 @@ function runExp(e) {
     step();
   } else if (e === '4') {
     $('expHead').textContent = 'Your cores under each renderer, same forms.';
-    const combos = [['v5 searching lines', { render: 'v5' }], ['v5, no searching passes', { render: 'v5', search: false }], ['bodies: auto', { render: 'auto' }], ['lines only', { render: 'lines' }]];
+    const combos = [['meander', { render: 'meander', events: 2 }], ['v5 searching lines', { render: 'v5', events: true }], ['v5, no searching passes', { render: 'v5', search: false, events: true }], ['lines only', { render: 'lines' }]];
     for (const [name, m] of combos) mini(host, state.cores, name, { prm: m });
   } else if (e === '3') {
     $('expHead').textContent = 'Your cores plus one more at the centre; the new core\'s ink is dark, earlier ink grey.';

@@ -533,10 +533,11 @@ function runTerritory(rawCores, prm, seed, order = 'drawn') {
   T.order = arrivalOrder(cores, order);
   for (const i of T.order) { T.arrive(cores[i], cores, done); done.push(cores[i]); }
   if (prm.render === 'v5') T.v5(cores, rngFor(seed, 5151));
+  else if (prm.render === 'meander') T.meander(cores);
   else if (['wrap', 'wound', 'growth', 'auto'].includes(prm.render)) T.organic(cores);
   else T.volume(rngFor(seed, 991));
   const L = T.labels();
-  return { lines: T.lines, cores, L, inkLen: T.inkLen, regions: T.regions, surf: T.surf, forms: T.forms, snapshots: T.snapshots || [], v5: T.v5info, T };
+  return { lines: T.lines, cores, L, inkLen: T.inkLen, regions: T.regions, surf: T.surf, forms: T.forms, snapshots: T.snapshots || [], v5: T.v5info, meander: T.meanderInfo, T };
 }
 
 function tStats(res) {

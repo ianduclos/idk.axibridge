@@ -16,6 +16,6 @@ for(const c of cfg.cells){
   else if(c.example) cores=E.exampleSheet();
   else cores=c.cores;
   const res=E.runTerritory(cores,prm,c.seed||c.random||1,c.order||(c.reverse?'reversed':'drawn'));
-  cells+=`<figure><div class="svg">${svgOf(res,{cores:cfg.cores})}</div><figcaption><b>${esc(c.id)}</b>${cfg.captions&&c.cap?' · '+esc(c.cap):''}</figcaption></figure>`;
+  cells+=`<figure><div class="svg">${svgOf(res,{cores:cfg.cores})}</div><figcaption><b>${esc(c.id)}</b>${cfg.captions&&c.cap?' · '+esc(c.cap):''}${cfg.flags&&res.meander?' · '+esc(res.meander.flags||'ok')+' · '+res.meander.inkMm+'mm'+(res.meander.white?' · W':''):''}</figcaption></figure>`;
 }
 fs.writeFileSync(process.argv[3],`<!doctype html><meta charset="utf-8"><style>body{margin:0;padding:18px;background:#fff;font:13px ui-monospace,Menlo,monospace;color:#100F0F}h1{font:600 16px system-ui;margin:0 0 12px}.g{display:grid;grid-template-columns:repeat(${cfg.cols||4},1fr);gap:14px}figure{margin:0}.svg svg{width:100%;display:block;border:1px solid #CECDC3}figcaption{margin-top:4px}</style><h1>${esc(cfg.title||'')}</h1><div class="g">${cells}</div>`);
