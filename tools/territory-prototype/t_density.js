@@ -36,12 +36,14 @@ function chamferLab(src, lab) {
 
 function densityPass(o) {
   const { seed, prm, out, geo, chans, snaps, chi, junc, Ar } = o;
-  const D = clamp(prm.density || 0, 0, 1);
-  const effOf = k => clamp(D * 2 * (prm[k] ?? 0.5), 0, 1), cov = D * 2 * (prm.cover ?? 0.5);
+  // meander 5: a recipe without `planes` is a Version 8 recipe and runs exactly as before (planes only, dials capped at 1)
+  const legacy = prm.planes === undefined, mu = legacy ? 0 : clamp(prm.mutate ?? 0.6, 0, 1.5), trainShare = legacy ? 0 : Math.pow(1 - clamp(prm.planes, 0, 1), 1.3);
+  const D = clamp(prm.density || 0, 0, legacy ? 1 : 1.5);
+  const effOf = k => clamp(D * 2 * (prm[k] ?? 0.5), 0, legacy ? 1 : 3), cov = D * 2 * (prm.cover ?? 0.5);
   const L = clamp(prm.ink ?? 40, 5, 100) * 1000;
   const baseInk = out.reduce((a, l) => a + l.strokes.reduce((b, s) => b + polyLen(s), 0), 0);
-  const Istar = baseInk + Math.max(0, L - baseInk) * Math.pow(D, 1.5), room = Math.max(0, Istar - baseInk);
-  const caps = { slash: 0.03 * room, surprise: 0.12 * room, cont: 0.15 * room, fans: 0.12 * room };
+  const Istar = baseInk + Math.max(0, L - baseInk) * Math.pow(Math.min(1, D), 1.5), room = Math.max(0, Istar - baseInk);
+  const ov = k => Math.max(1, effOf(k)), caps = { slash: 0.03 * room * ov('slash'), surprise: 0.12 * room * ov('surprise'), cont: 0.15 * room * ov('continue'), fans: 0.12 * room };   // 'over' dials (> 1 effective) get more room
   const info = { D, target: Math.round(Istar), layers: {} };
 
   // ---- fields (§2.1), rngFor(seed, 6180)
@@ -175,9 +177,9 @@ function densityPass(o) {
   // ---- surprise (§2.7): one region that switches register, touching the drawing
   if (effX > 0) {
     const rX = rngFor(seed, 6189);
-    if (rX() < 0.6 * effX) {
+    for (let q5 = 0; q5 < (!legacy && effX > 1.3 ? 2 : 1); q5++) if (rX() < 0.6 * effX) {   // over 1.3: a second one, elsewhere
       const kind = rX() < 0.35 ? 'thorn' : 'black';   // r2: rings read as dotted arcs
-      const at = chiC_.length ? [chiC_[0].x + (rX() - 0.5) * 30, chiC_[0].y + (rX() - 0.5) * 30] : [W * (0.3 + 0.4 * rX()), H * (0.3 + 0.4 * rX())];
+      const at = chiC_.length && !q5 ? [chiC_[0].x + (rX() - 0.5) * 30, chiC_[0].y + (rX() - 0.5) * 30] : [W * (0.2 + 0.6 * rX()), H * (0.2 + 0.6 * rX())];
       if (kind === 'thorn') { const n = 5 + Math.floor(7 * rX()), a0 = rX() * Math.PI * 2; for (let q = 0; q < n; q++) { if (rX() < 0.12) continue; const a = a0 + q * 2 * Math.PI / n + rad((rX() - 0.5) * 30), len = 12 + 33 * rX(), wd = 1.5 + 3 * rX(), tip = [at[0] + Math.cos(a) * len, at[1] + Math.sin(a) * len];
           for (const sg of [1, -1]) { const b0 = [at[0] - Math.sin(a) * wd * sg, at[1] + Math.cos(a) * wd * sg], R = []; for (let t = 0; t <= 1.0001; t += 0.05) { const bow = -Math.sin(Math.PI * t) * wd * 0.3 * sg; R.push([b0[0] + (tip[0] - b0[0]) * t - Math.sin(a) * bow, b0[1] + (tip[1] - b0[1]) * t + Math.cos(a) * bow]); } L_.surprise.push(R); } } }
       else if (kind === 'rings') { const n = 3 + Math.floor(5 * rX()); for (let q = 0; q < n; q++) { const r = 3 + 6 * rX(), c = [at[0] + (rX() - 0.5) * 30, at[1] + (rX() - 0.5) * 30], a0 = rX() * Math.PI * 2, R = []; for (let t = 0; t < 1.75 * Math.PI; t += 0.15) R.push([c[0] + Math.cos(a0 + t) * r, c[1] + Math.sin(a0 + t) * r]); L_.surprise.push(R); } }
@@ -224,6 +226,7 @@ function densityPass(o) {
   const FG = 2, FW = Math.ceil(W / FG), FH = Math.ceil(H / FG), facId = new Int16Array(FW * FH);
   for (let j = 0; j < FH; j++) for (let i = 0; i < FW; i++) { const x = i * FG + 1, y = j * FG + 1 + 3 * nA(ph + 700 + x / 25); let b = 0, bd = 1e18; fac.forEach((f, k) => { const d = (f.x - x) ** 2 + (f.y - y) ** 2; if (d < bd) { bd = d; b = k; } }); facId[j * FW + i] = b; }
   const facAt = (x, y) => facId[clamp(Math.floor(y / FG), 0, FH - 1) * FW + clamp(Math.floor(x / FG), 0, FW - 1)];
+  const Tg0 = Tg.slice(), T0 = (x, y) => bil(Tg0, x, y);   // tone before the planes' weights, for the grown field
   for (let j = 0; j < FY; j++) for (let i = 0; i < FX; i++) Tg[j * FX + i] *= fac[facAt(i * G, j * G)].w;
   const T = (x, y) => bil(Tg, x, y);
   // voids (§2.3, r1): hard-edged shards carved out of where the fill would be densest, like the monoprint's cut-outs
@@ -249,7 +252,7 @@ function densityPass(o) {
   const lognorm = (r, med, s) => med * Math.exp(s * Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r()));
   const scrub = (x0, y0, r, dth) => {
     const f0 = facAt(x0, y0), bleed = r() < 0.1;
-    { const th0 = theta(x0, y0) + dth + fac[f0].dth; for (let b = 0; b < 160; b++) { const bx = x0 - Math.cos(th0) * 0.5, by = y0 - Math.sin(th0) * 0.5; if (bx < 3 || by < 3 || bx > W - 3 || by > H - 3 || facAt(bx, by) !== f0 || M.owner[cellOf(bx, by)] > DZ.ground || voidM[cellOf(bx, by)]) break; x0 = bx; y0 = by; } }   // r2: both ends on the plane's edge
+    { const th0 = theta(x0, y0) + dth + fac[f0].dth; for (let b = 0; b < 160; b++) { const bx = x0 - Math.cos(th0) * 0.5, by = y0 - Math.sin(th0) * 0.5; if (bx < 3 || by < 3 || bx > W - 3 || by > H - 3 || facAt(bx, by) !== f0 || M.owner[cellOf(bx, by)] > zG || voidM[cellOf(bx, by)]) break; x0 = bx; y0 = by; } }   // r2: both ends on the plane's edge
     const u0 = r(), passes = u0 < 0.4 ? 1 : u0 < 0.8 ? 2 : 3, dir0 = 1, side = r() < 0.5 ? 1 : -1, adv = () => 0.15 + 0.45 * r();   // r1: long drags that overlap for tone
     const nz = noise1(r), nph = r() * 100; let x = x0, y = y0, dir = 1, P = [], s = 0; r();
     for (let k = 0; k < passes; k++) {
@@ -257,7 +260,7 @@ function densityPass(o) {
       while (t < len) {
         const th = theta(x, y) + dth + fac[f0].dth, lat = nz(nph + s / 18) * 0.06;
         const nx = x + dir * Math.cos(th) * 0.5 - Math.sin(th) * lat, ny = y + dir * Math.sin(th) * 0.5 + Math.cos(th) * lat;
-        if (nx < 3 || ny < 3 || nx > W - 3 || ny > H - 3 || M.owner[cellOf(nx, ny)] > DZ.ground || T(nx, ny) < 0.06 + 0.12 * (0.5 + 0.5 * dry(nx / 9, ny / 9)) || isJ(nx, ny) || voidM[cellOf(nx, ny)] || (facAt(nx, ny) !== f0 && !bleed)) break;
+        if (nx < 3 || ny < 3 || nx > W - 3 || ny > H - 3 || M.owner[cellOf(nx, ny)] > zG || (evt ? 0.6 : T(nx, ny)) < 0.06 + 0.12 * (0.5 + 0.5 * dry(nx / 9, ny / 9)) || isJ(nx, ny) || voidM[cellOf(nx, ny)] || (facAt(nx, ny) !== f0 && !bleed)) break;
         x = nx; y = ny; P.push([x, y]); t += 0.5; s += 0.5; moved++;
       }
       if (moved < 4 && k === 0) return null;
@@ -280,10 +283,18 @@ function densityPass(o) {
   };
   const otherInk = ['chord', 'wedge', 'cont', 'ribbon', 'fan', 'surprise'].reduce((t, k) => t + (layers[k] || []).reduce((u, P) => u + polyLen(P), 0), 0);
   const groundCap = Math.max(0, room - otherInk) * smooth(0, 1, cov);   // what the other layers left
-  if (groundCap > 0) {
+  // ---- grow (meander 5): the field grown out of the lines as echo trains; planes get what's left
+  const pv5 = legacy ? 1 : clamp(prm.planes, 0, 1), growCap = legacy ? 0 : pv5 < 0.5 ? groundCap - Math.min(groundCap * (0.05 + 0.4 * pv5), 1500 + 5000 * pv5) : groundCap * trainShare;   // below 0.5 the planes are only events: a small share
+  if (growCap > 0) { const g5 = growField({ seed, cap: growCap, mu, out, layers, voidM, isJ: (x, y) => jDist(x, y) < 0.4 * jr, T0, Db, info }); /* grown fields may come closer to knots than planes */ layers.grow = g5; for (const P of g5) for (const p of P) M.mark(p[0], p[1], DZ.fan, 0, 0.7); }
+  // below planes 0.5 the planes are events: a few facets that cross the lines (and the grown field), laid over them
+  const planesV = legacy ? 1 : clamp(prm.planes, 0, 1), evt = !legacy && planesV < 0.5, zG = evt ? DZ.base : DZ.ground;
+  let evtF = null;
+  if (evt) { const rE = rngFor(seed, 6195), fs = fac.map((f, k) => ({ k, d: Db.d[cellOf(clamp(f.x, 0, W - 1), clamp(f.y, 0, H - 1))], u: rE() })).filter(f => f.d < 10 && !isJ(fac[f.k].x, fac[f.k].y)).sort((a, b) => a.u - b.u); evtF = new Set(fs.slice(0, 1 + Math.round(4 * planesV)).map(f => f.k)); info.events = evtF.size; }
+  const planeCap = groundCap - growCap;
+  if (planeCap > 0) {
     const C = 10, cells = [];
     for (let cy2 = 0; cy2 < Math.ceil(H / C); cy2++) for (let cx2 = 0; cx2 < Math.ceil(W / C); cx2++) {
-      const x = cx2 * C + C / 2, y = cy2 * C + C / 2, t = T(x, y); if (t <= 0.02) continue;
+      const x = cx2 * C + C / 2, y = cy2 * C + C / 2, t = evt ? Math.max(0.5, T(x, y)) : T(x, y); if (t <= 0.02 || (evtF && !evtF.has(facAt(x, y)))) continue;
       const cross = chi(x, y) > 0.5 || cov > 1 || dry(x / 30 + 7, y / 30 + 3) > 0.45 && t > 0.6;
       cells.push({ i: cy2 * 100 + cx2, x0: cx2 * C, y0: cy2 * C, w: Math.pow(t, 1.3), cross });
     }
@@ -292,8 +303,8 @@ function densityPass(o) {
     for (const c of cells) { const r = rngFor(seed, 6181, c.i); for (let j = 0; j < 14; j++) cand.push({ c, j, u: r(), x: c.x0 + C * r(), y: c.y0 + C * r(), cr: c.cross && r() < 0.5 }); }
     const made = new Map(), make = q => { const k = q.c.i * 16 + q.j; if (!made.has(k)) { const r = rngFor(seed, 6181, q.c.i, q.j + 1); const P = scrub(q.x, q.y, r, q.cr ? rad(25 + 15 * r()) : 0); made.set(k, P ? dryBrush(P) : []); } return made.get(k); };
     const inkAt = dm => { let s = 0; const keep = []; for (const q of cand) if (q.u < clamp(dm * q.c.w, 0, 1)) { const ps = make(q); if (ps.length) { keep.push(ps); for (const p of ps) s += polyLen(p); } } return { s, keep }; };
-    let lo = 0, hi = 1, res = inkAt(hi); while (res.s < groundCap && hi < 64) { lo = hi; hi *= 2; res = inkAt(hi); }
-    for (let it = 0; it < 7; it++) { const mid = (lo + hi) / 2, r2 = inkAt(mid); if (r2.s > groundCap) hi = mid; else { lo = mid; res = r2; } }
+    let lo = 0, hi = 1, res = inkAt(hi); while (res.s < planeCap && hi < 64) { lo = hi; hi *= 2; res = inkAt(hi); }
+    for (let it = 0; it < 7; it++) { const mid = (lo + hi) / 2, r2 = inkAt(mid); if (r2.s > planeCap) hi = mid; else { lo = mid; res = r2; } }
     layers.ground = res.keep.flat();
   }
 
@@ -310,7 +321,7 @@ function densityPass(o) {
     return outS;
   };
   const added = [];
-  for (const k of ['ground', 'fan', 'wedge', 'ribbon', 'cont', 'surprise', 'chord']) if (layers[k] && layers[k].length) { const S = order(layers[k]); added.push({ core: -1, kind: 'd-' + k, strokes: S }); info.layers[k] = { mm: Math.round(S.reduce((a, s) => a + polyLen(s), 0)), strokes: S.length }; }
+  for (const k of ['grow', 'ground', 'fan', 'wedge', 'ribbon', 'cont', 'surprise', 'chord']) if (layers[k] && layers[k].length) { const S = order(layers[k]); added.push({ core: -1, kind: 'd-' + k, strokes: S }); info.layers[k] = { mm: Math.round(S.reduce((a, s) => a + polyLen(s), 0)), strokes: S.length }; }
   // metrics
   const inkAll = baseInk + added.reduce((a, l) => a + l.strokes.reduce((b, s) => b + polyLen(s), 0), 0);
   info.inkM = +(inkAll / 1000).toFixed(1); info.lifts = out.reduce((a, l) => a + l.strokes.length, 0) + added.reduce((a, l) => a + l.strokes.length, 0);
@@ -320,4 +331,125 @@ function densityPass(o) {
     let jc = 0, jt = 0; for (let y = 1; y < H; y += 2) for (let x = 1; x < W; x += 2) if (isJ(x, y)) { jt++; if (!dm[cellOf(x, y)]) jc++; } info.juncClear = +(jc / (jt || 1)).toFixed(3); }
   out.push(...added);
   return info;
+}
+
+// ======================= meander 5: the grown field =======================
+// See docs/research/meander5/brainstorm.md. Echo trains: each echo is offset from the PREVIOUS echo (never the
+// source), so whatever happens to one echo is inherited by every later one. Curvature-driven migration (the
+// outside of a bend moves faster) keeps trains from reading as tree rings; mutations (swale, buckle → oxbow,
+// chute, fan, split) arise, peak and fade under accumulating smoothing. Trains stop at other lines, at other
+// trains (so sets truncate each other like scroll-bar generations), at voids, knots' quiet zones and low tone.
+function growField(o) {
+  const { seed, cap, mu, out, layers, voidM, isJ, T0, Db, info } = o;
+  const rG = rngFor(seed, 6191), occ = new Int32Array(N).fill(-1), gOwn = new Int32Array(N).fill(-1), gK = new Int32Array(N), src = [];
+  const addSrc = (P, seedable) => { if (P.length < 3) return; const id = src.length; src.push({ P, seedable, id });
+    for (const p of resample(P, 0.5)) for (const [a, b] of [[-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]]) { const x = Math.floor(p[0] + a), y = Math.floor(p[1] + b); if (x >= 0 && y >= 0 && x < GW && y < GH) occ[y * GW + x] = id; } };
+  for (const l of out) for (const st of l.strokes) addSrc(st, polyLen(st) >= 25);
+  for (const k of ['cont', 'ribbon']) for (const st of (layers[k] || [])) addSrc(st, polyLen(st) >= 25);
+  for (const k of ['chord', 'wedge', 'fan', 'surprise']) for (const st of (layers[k] || [])) addSrc(st, false);
+  const cellOk = (x, y) => x >= 3 && y >= 3 && x <= W - 3 && y <= H - 3;
+  const lognorm = (r, med, s) => med * Math.exp(s * Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r()));
+  // seeds: sub-arcs centred on bends (point-bar side) or straight reaches (alternating), ranked by bend × open ground × tone
+  const cands = [];
+  for (const s of src) {
+    if (!s.seedable) continue;
+    const R = resample(s.P, 1), k = curvatureOf(R), n = R.length; let alt = rG() < 0.5 ? 1 : -1;
+    for (let i = 8 + Math.floor(rG() * 15); i < n - 8; i += 15 + Math.floor(15 * rG())) {
+      let bi = i, bk = 0; for (let j = Math.max(0, i - 12); j < Math.min(n, i + 12); j++) if (Math.abs(k[j]) > bk) { bk = Math.abs(k[j]); bi = j; }
+      const bend = bk > 0.02; for (const pref of [1, 0]) { const sg = (bend ? Math.sign(k[bi]) : (pref ? (alt = -alt) : alt)) * (pref ? 1 : -1);
+      const a = R[Math.max(0, bi - 1)], b = R[Math.min(n - 1, bi + 1)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / l * sg, ny = (b[0] - a[0]) / l * sg;
+      let open = 0; for (const d of [1.5, 5, 10, 16]) { const x = R[bi][0] + nx * d, y = R[bi][1] + ny * d; if (!cellOk(x, y)) break; const c = cellOf(x, y), oc = occ[c]; if ((oc >= 0 && oc !== s.id) || isJ(x, y) || voidM[c]) break; open++; }
+      if (open < 2) continue;
+      const len = clamp(lognorm(rG, bend ? Math.max(60, 0.9 * Math.PI / (bk || 1)) : 90, 0.4), 40, 220);
+      cands.push({ s, ci: bi, len, sg, sc: (0.4 + Math.min(1, bk * 30)) * open * (0.3 + T0(R[bi][0], R[bi][1])) * (0.4 + rG()) * (pref ? 1 : 0.45), u: rG(), R }); }
+    }
+  }
+  cands.sort((a, b) => b.sc - a.sc);
+  const stop = {}, covered = new Map(), log = { stop, trains: 0, echoes: 0, swale: 0, buckle: 0, oxbow: 0, chute: 0, fan: 0, split: 0 }, trainsOut = [];
+  let ink = 0, tid = 0;
+  const ring = { ink: 0, plain: 0 };
+  const echoTrain = (P0, sg, st) => {
+    const rT = rngFor(seed, 6192, st.tid, st.gen || 0), nzT = noise1(rT), outP = [], slideInit = 0, gaps = []; let slide = 0, cur = resample(P0, 0.5), g = st.g, muts = 0, oxb = 0, L0 = polyLen(P0), chutes = [], bumpAt = -1, active = 0, inkT = 0;
+    const queue = [];
+    let endWhy = 'end';
+    for (let k = st.k0 || 0; k < (st.k0 || 0) + st.K && ink + inkT < cap; k++) {
+      const kk = k - (st.k0 || 0);
+      const n = cur.length; if (n < 16) { stop.short = (stop.short || 0) + 1; break; }
+      let kap = curvatureOf(cur); for (let pass = 0; pass < 2; pass++) { const t = new Float64Array(n); let acc = 0; const w = 16; for (let i = -w; i < n + w; i++) { if (i + w < n) acc += kap[Math.min(n - 1, i + w)]; if (i - w - 1 >= 0) acc -= kap[i - w - 1]; if (i >= 0 && i < n) t[i] = acc / (Math.min(n - 1, i + w) - Math.max(0, i - w) + 1); } kap = t; }   // bend scale (~16 mm), not the hand's tremor
+      let km = 0; for (let i = 0; i < n; i++) km += Math.abs(kap[i]); km = Math.max(km / n, 0.004);
+      if (km > 1 / 12) { stop.ring = (stop.ring || 0) + 1; break; }   // closing on a point: a target, not a field
+      // mutations: rolled once per echo after the second, capped per train
+      let bump = null;
+      if (kk >= 2 && muts < st.mcap) {
+        const r = rT();
+        if (r < 0.06 * mu) { g = clamp(g * (rT() < 0.35 ? 0.45 : 1.6 + 0.9 * rT()), 0.35, 2.2); muts++; log.swale++; active = 8; }
+        else if (r < 0.11 * mu) { let bi = 0, bk = 1e9; for (let t = 0; t < 6; t++) { const i = Math.floor(n * (0.2 + 0.6 * rT())); if (Math.abs(kap[i]) < bk) { bk = Math.abs(kap[i]); bi = i; } } bump = { i: bi, w: (15 + 30 * rT()) / 0.5, a: g * (1 + 2 * rT()), lam: 8 + 12 * rT() }; muts++; log.buckle++; active = 30; }
+        else if (r < 0.15 * mu) { const p = cur[Math.floor(n * (0.15 + 0.7 * rT()))]; chutes.push({ x: p[0], y: p[1], w: 3 + 5 * rT(), gr: 1.15 + 0.25 * rT() }); muts++; log.chute++; }
+        else if (r < 0.18 * mu && !st.child && n > 120) { const i = Math.floor(n * (0.35 + 0.3 * rT())); queue.push({ P: cur.slice(i), g: clamp(g * (0.6 + rT()), 0.35, 2.2) }); cur = cur.slice(0, i + 1); muts++; log.split++; continue; }
+      }
+      g = clamp(g * (1 + (rT() - 0.5) * 0.16), 0.35, 2.2); gaps.push(g);
+      // offset with curvature-driven migration and the train's fan hinge
+      const sAt = new Float32Array(n); for (let i = 1; i < n; i++) sAt[i] = sAt[i - 1] + Math.hypot(cur[i][0] - cur[i - 1][0], cur[i][1] - cur[i - 1][1]); slide += (rT() - 0.5) * 3;
+      let E = [];
+      for (let i = 0; i < n; i++) {
+        const a = cur[Math.max(0, i - 2)], b = cur[Math.min(n - 1, i + 2)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / l * sg, ny = (b[0] - a[0]) / l * sg;
+        let d = g * (1 - st.beta * clamp(kap[i] * sg / km, -2, 2) * 0.5) * (1 + st.phi * (i / (n - 1) - 0.5)) * (1 + st.pinch * nzT(st.ph + (sAt[i] + slide) / st.lam));   // pinch: gap varies along the arc and accumulates, so sets pinch and open like grain
+        if (bump && Math.abs(i - bump.i) < bump.w / 2) { const t = (i - bump.i) / (bump.w / 2); d += bump.a * 0.5 * (1 + Math.cos(Math.PI * t)) * Math.sin(2 * Math.PI * (i - bump.i) * 0.5 / bump.lam); }
+        d = clamp(d, 0.3, 5);
+        E.push([cur[i][0] + nx * d, cur[i][1] + ny * d]);
+      }
+      // cusps: drop points whose step runs backwards against the parent's
+      E = E.filter((p, i) => { if (i === 0 || i === n - 1) return true; const q = E[i + 1], r0 = E[i - 1], dx = q[0] - r0[0], dy = q[1] - r0[1], ex = cur[i + 1][0] - cur[i - 1][0], ey = cur[i + 1][1] - cur[i - 1][1]; return dx * ex + dy * ey > 0; });
+      // accumulating smoothing, then even spacing
+      for (let pass = 0, np = Math.min(9, 3 + (k >> 3)); pass < np; pass++) E = E.map((p, i) => i === 0 || i === E.length - 1 ? p : [p[0] + 0.22 * ((E[i - 1][0] + E[i + 1][0]) / 2 - p[0]), p[1] + 0.22 * ((E[i - 1][1] + E[i + 1][1]) / 2 - p[1])]);
+      E = resample(E, 0.5); if (E.length < 16) break;
+      // staggered ends: each end trimmed on its own
+      const endAdj = (Q, atEnd) => { const e = Math.round((rT() - 0.42) * 7); if (e < 0) return atEnd ? Q.slice(0, Q.length + e) : Q.slice(-e); if (!e) return Q;   // each end trims or runs on by itself: ends stagger, sets can lengthen
+        const m = Q.length, a = atEnd ? Q[m - 4] : Q[3], b = atEnd ? Q[m - 1] : Q[0], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ext = []; for (let j = 1; j <= e; j++) ext.push([b[0] + (b[0] - a[0]) / l * 0.5 * j, b[1] + (b[1] - a[1]) / l * 0.5 * j]); return atEnd ? Q.concat(ext) : ext.reverse().concat(Q); };
+      E = endAdj(endAdj(E, true), false); if (E.length < 16) break;
+      // cutoff: a neck (two points far apart along the echo, close in space) is spliced; the loop left behind is an oxbow
+      if (active > 0 && oxb < 2) { active--;
+        outer: for (let i = 0; i < E.length - 40; i += 2) for (let j = i + 40; j < E.length; j += 2) if (Math.abs(E[i][0] - E[j][0]) < 1.6 && Math.hypot(E[i][0] - E[j][0], E[i][1] - E[j][1]) < Math.max(0.8, 1.5 * g)) {
+          const loop = E.slice(i, j + 1); loop.push(E[i].slice()); let mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9; for (const p of loop) { mnx = Math.min(mnx, p[0]); mxx = Math.max(mxx, p[0]); mny = Math.min(mny, p[1]); mxy = Math.max(mxy, p[1]); }
+          if (Math.max(mxx - mnx, mxy - mny) >= 6) { outP.push(loop); log.oxbow++; oxb++; }
+          E = E.slice(0, i + 1).concat(E.slice(j)); break outer; } }
+      // clip: other lines, other trains, voids, quiet zones, low tone, inherited chutes
+      const blocked = p => { if (!cellOk(p[0], p[1])) return true; const c = cellOf(p[0], p[1]), oc = occ[c], go = gOwn[c]; if ((oc >= 0 && oc !== st.src) || (go >= 0 && (go !== st.tid || gK[c] < k - Math.max(3, Math.ceil(2.2 / g)))) || voidM[c] || isJ(p[0], p[1])) return true; for (const ch of chutes) if (Math.hypot(p[0] - ch.x, p[1] - ch.y) < ch.w / 2) return true; return false; };
+      const runs = []; let rc = [];
+      for (const p of E) { if (blocked(p)) { if (rc.length >= 8) runs.push(rc); rc = []; } else rc.push(p); }
+      if (rc.length >= 8) runs.push(rc);
+      // chutes follow the echo and widen
+      for (const ch of chutes) { let bd = 1e9, bp = null; for (const p of E) { const d = Math.hypot(p[0] - ch.x, p[1] - ch.y); if (d < bd) { bd = d; bp = p; } } if (bp && bd < 6) { ch.x = bp[0]; ch.y = bp[1]; ch.w = Math.min(ch.w * ch.gr, 30); } }
+      if (!runs.length) { stop.blocked = (stop.blocked || 0) + 1; break; }
+      runs.sort((a, b) => b.length - a.length);
+      for (const rn of runs) { for (const p of rn) { const c = cellOf(p[0], p[1]); gOwn[c] = st.tid; gK[c] = k; } const l = (rn.length - 1) * 0.5; inkT += l; outP.push(k % 2 ? rn.slice().reverse() : rn); }
+      for (const rn of runs.slice(1)) if (rn.length > 40 && queue.length < 6) queue.push({ P: rn, g });
+      log.echoes++;
+      cur = runs[0]; if (cur.length < 20) { stop.run = (stop.run || 0) + 1; break; } if ((cur.length - 1) * 0.5 > 1.6 * L0 + 20) { stop.long = (stop.long || 0) + 1; endWhy = 'long'; break; }
+      if (kk === st.K - 1) { stop.K = (stop.K || 0) + 1; endWhy = 'K'; }
+    }
+    return { outP, inkT, queue, gaps, muts, why: endWhy, cur, kEnd: (st.k0 || 0) + st.K };
+  };
+  for (const c of cands) {
+    if (ink >= cap) break;
+    const key = c.s.id * 2 + (c.sg > 0 ? 1 : 0), cv = covered.get(key) || 0, L0 = (c.R.length - 1); if (cv + c.len > 0.8 * L0 + 30) continue;
+    const i0 = Math.max(0, Math.round(c.ci - c.len / 2)), i1 = Math.min(c.R.length, Math.round(c.ci + c.len / 2)); if (i1 - i0 < 25) continue;
+    covered.set(key, cv + (i1 - i0));
+    const rS = rngFor(seed, 6193, tid), young = log.trains < 4;
+    const st = { tid: tid++, src: c.s.id, g: 0.55 + 0.7 * rS() * rS(), beta: (0.15 + 0.45 * mu) * (0.6 + 0.8 * rS()), phi: rS() < 0.3 + 0.4 * mu ? (rS() < 0.5 ? -1 : 1) * (0.3 + 0.6 * rS()) * Math.min(1, mu + 0.3) : 0, mcap: 1 + Math.round(3 * mu * (young ? 1.5 : 0.7)), K: Math.round(clamp(lognorm(rS, young ? 45 : 24, 0.5), 6, 110)), pinch: 0.25 + 0.45 * rS(), lam: 15 + 35 * rS(), ph: rS() * 100 };
+    if (st.phi) log.fan++;
+    const todo = [{ P: c.R.slice(i0, i1), st }];
+    while (todo.length && ink < cap) {
+      const t = todo.shift(), r = echoTrain(t.P, c.sg, t.st);
+      if (r.outP.length) { trainsOut.push(...r.outP); ink += r.inkT; log.trains++; ring.ink += r.inkT; if (r.muts === 0 && r.gaps.length >= 6) { const m = r.gaps.reduce((a, b) => a + b, 0) / r.gaps.length, sd = Math.sqrt(r.gaps.reduce((a, b) => a + (b - m) ** 2, 0) / r.gaps.length); if (sd / m < 0.2) ring.plain += r.inkT; } }
+      for (const q of r.queue) todo.push({ P: q.P, st: { ...t.st, tid: tid++, g: q.g, child: true, K: Math.max(4, Math.round(t.st.K * 0.6)) } });
+      if (r.why !== 'end' && (t.st.gen || 0) < 3 && r.cur.length > 40) {   // a new generation: same train, re-rolled gap, migration, fan and mutation cap
+        const rN = rngFor(seed, 6194, t.st.tid, t.st.gen || 0); log.gen = (log.gen || 0) + 1;
+        todo.push({ P: r.cur, st: { ...t.st, gen: (t.st.gen || 0) + 1, k0: r.kEnd, g: clamp(t.st.g * (0.5 + 0.9 * rN()), 0.4, 1.3), pinch: 0.2 + 0.5 * rN(), lam: 15 + 35 * rN(), ph: rN() * 100, beta: (0.15 + 0.45 * mu) * (0.4 + 1.2 * rN()), phi: rN() < 0.4 ? (rN() - 0.5) * 1.4 * Math.min(1, mu + 0.3) : 0, mcap: 1 + Math.round(3 * mu * rN()), K: Math.round(clamp(lognorm(rN, 22, 0.5), 6, 60)) } });
+      }
+    }
+  }
+  log.mm = Math.round(ink); log.ring = +(ring.plain / (ring.ink || 1)).toFixed(2); log.cands = cands.length;
+  info.grow = log;
+  return trainsOut;
 }

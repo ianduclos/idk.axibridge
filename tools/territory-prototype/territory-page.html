@@ -121,16 +121,19 @@ const DIALS = [
   ['accents', 'Accents', 0, 1, [0.2, 0.9], 'Tight stated arcs beside sharp bends and next to the chaos.'],
   ['bridges', 'Bridges', 0, 1, [0.2, 0.9], 'Curves that join lines where they cross or nearly meet, on a plane of their own.'],
   ['history', 'History', 0, 1, [0.3, 0.9], 'How often an event leaves traces of where a channel was.'],
-  ['density', 'Density', 0, 1, [0, 0.9], 'How busy the sheet gets: shapes carry on, fields fill, cuts and surprises arrive. 0 is the calm drawing.', 'Density'],
-  ['continue', 'Continue', 0, 1, [0.2, 1], 'Bands run past their ends, wrap, and cross the sheet as ribbons.', 'sub'],
-  ['cover', 'Cover', 0, 1, [0.2, 1], 'Streaks and fans fill the ground between forms; some voids stay dark.', 'sub'],
-  ['slash', 'Slash', 0, 1, [0, 0.8], 'Straight cuts and shard wedges across the forms.', 'sub'],
-  ['surprise', 'Surprise', 0, 1, [0, 1], 'One region that switches register.', 'sub'],
+  ['density', 'Density', 0, 1.5, [0.3, 1.2], 'How busy the sheet gets: shapes carry on, fields fill, cuts and surprises arrive. 0 is the calm drawing; past 1 is over.', 'Density'],
+  ['continue', 'Continue', 0, 2, [0.2, 1.6], 'Bands run past their ends, wrap, and cross the sheet as ribbons. Past 1 is over.', 'sub'],
+  ['cover', 'Cover', 0, 1, [0.3, 0.55], 'How much of the ground gets filled; some voids stay dark.', 'sub'],
+  ['planes', 'Planes', 0, 1, [0, 0.6], 'Where the fill comes from. 0: grown out of the lines as echoes. Below 0.5 brushed planes are rare events that cross the lines; 1 is all planes.', 'sub'],
+  ['mutate', 'Mutate', 0, 1.5, [0.3, 1.3], 'Changes inside the grown fields, passed on echo to echo: spacing jumps, buckles, oxbows, breaks, fans, splits. Past 1 is over.', 'sub'],
+  ['slash', 'Slash', 0, 2, [0, 1.6], 'Straight cuts and shard wedges across the forms. Past 1 is over.', 'sub'],
+  ['surprise', 'Surprise', 0, 2, [0, 1.6], 'A region that switches register; past 1.3, two. Past 1 is over.', 'sub'],
   ['ink', 'Ink limit (m)', 5, 100, [20, 80], 'Most ink a sheet may use. Plot time grows with ink and pen lifts.', 'sub'],
 ];
 const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path class="shut" d="M7 11V7a5 5 0 0 1 10 0v4"/><path class="open" d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
 const BASE = { loose: 0.5, yieldP: 0.5, wander: 1, reach: 15, spread: 0.7, eps: 0.03, borders: true, outer: true, voids: true, interior: false, disregard: 0.15, hyst: 25, render: 'meander' };
-const DEF = MEANDER_MACROS;
+const DEF = { ...MEANDER_MACROS, cover: 0.45, planes: 0.15, mutate: 0.6 };
+let v8 = false;   // a pasted Version 8 recipe (no planes) runs exactly as it did: the engine's planes-only path
 let locks = store.get('meander.locks', {}), last = null, contactFrom = null;
 
 for (const [k, name, lo, hi, , note, grp] of DIALS) {
@@ -150,9 +153,9 @@ function dials() { const o = {}; for (const [k] of DIALS) o[k] = +(+$('d_' + k).
 function setDials(o) { for (const [k] of DIALS) if (o[k] !== undefined && isFinite(o[k])) $('d_' + k).value = o[k]; if (o.seed) $('seed').value = Math.floor(o.seed); sync(); }
 const fmt = (k, v) => k === 'ink' ? String(Math.round(v)) : (+v).toFixed(2);
 function sync() { for (const [k] of DIALS) $('d_' + k + 'V').textContent = fmt(k, $('d_' + k).value); $('recipe').textContent = recipe(); }
-function recipe() { const d = dials(); return `seed ${seed()} · ` + DIALS.map(([k]) => `${k} ${fmt(k, d[k])}`).join(' · '); }
+function recipe() { const d = dials(); return `seed ${seed()} · ` + DIALS.filter(([k]) => !(v8 && (k === 'planes' || k === 'mutate'))).map(([k]) => `${k} ${fmt(k, d[k])}`).join(' · ') + (v8 ? ' · version 8' : ''); }
 function parseRecipe(s) { const o = {}; for (const m of s.matchAll(/([a-z]+)\s+(-?[\d.]+)/gi)) o[m[1].toLowerCase()] = +m[2]; return o; }
-function run(sd, d, quality) { const sh = randomSheet(sd); return runTerritory(sh.cores, { ...BASE, camps: Math.max(2, sh.camps), ...d, ...(quality ? { quality } : {}) }, sd, 'reversed'); }
+function run(sd, d, quality) { const sh = randomSheet(sd); if (v8) { d = { ...d }; delete d.planes; delete d.mutate; } return runTerritory(sh.cores, { ...BASE, camps: Math.max(2, sh.camps), ...d, ...(quality ? { quality } : {}) }, sd, 'reversed'); }
 
 function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function sizeCanvas(cv) {
@@ -208,7 +211,7 @@ function contact(from) {
 }
 
 for (const [k] of DIALS) {
-  $('d_' + k).addEventListener('input', () => { sync(); render(90); });
+  $('d_' + k).addEventListener('input', () => { if (k === 'planes' || k === 'mutate') v8 = false; sync(); render(90); });
   $('d_' + k).addEventListener('change', () => contact(contactFrom));
 }
 $('seed').addEventListener('change', () => { renderNow(); contact(seed()); });
@@ -219,7 +222,7 @@ $('randomize').addEventListener('click', () => {
   const o = {};
   for (const [k, , , , [a, b]] of DIALS) if (!locks[k]) o[k] = +(a + (b - a) * Math.random()).toFixed(k === 'ink' ? 0 : 2);
   if (!locks.seed) o.seed = 1 + Math.floor(Math.random() * 9999);
-  setDials(o); renderNow(); contact(seed());
+  v8 = false; setDials(o); renderNow(); contact(seed());
 });
 const say = t => { $('msg').textContent = t; };
 function copy(text, ok) { try { navigator.clipboard.writeText(text).then(() => say(ok), () => say('The clipboard is not available here.')); } catch { say('The clipboard is not available here.'); } }
@@ -228,7 +231,7 @@ $('recipeIn').addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   const o = parseRecipe($('recipeIn').value);
   if (!Object.keys(o).length) return say('No settings found in that text.');
-  setDials(o); renderNow(); contact(seed()); say('Loaded the settings.'); $('recipeIn').value = '';
+  v8 = o.density > 0 && o.planes === undefined; setDials(o); renderNow(); contact(seed()); say(v8 ? 'Loaded a Version 8 recipe; it runs as it did. Move Planes or Mutate to leave that mode.' : 'Loaded the settings.'); $('recipeIn').value = '';
 });
 $('copySvg').addEventListener('click', () => {
   const paths = last.lines.flatMap(l => l.strokes).map(st => `<path d="M${st.map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' L')}"/>`).join('\n');
