@@ -746,7 +746,8 @@ Territory.prototype.meander = function (cores) {
         if (cv >= 0.3 && (!mono || gaps.length < 3)) break;
         if (t === 19) gaps = gaps.map((x, j) => j % 2 ? 1.5 : 0.6);
       }
-      const lean = 0.1 + 0.1 * rA(), half = (st.i1 - st.i0) / 2, mid = (st.i0 + st.i1) / 2, dir = st.id === 0 || rA() < 0.5 ? 1 : -1;
+      const lean = 0.1 + 0.1 * rA(), half = Math.min(14, (st.i1 - st.i0) / 2),   // ≤ 7 mm core: a stated arc, not a ruled run
+        mid = (st.i0 + st.i1) / 2, dir = st.id === 0 || rA() < 0.5 ? 1 : -1;
       const nx = i => -st.sg * g.nx[i], ny = i => -st.sg * g.ny[i];                          // convex side
       const arcs = []; let d = g.S[st.i] / 2 + 0.8, cover = 0, samp = 0;
       for (let j = 0; j < cnt; j++) {
@@ -802,6 +803,121 @@ Territory.prototype.meander = function (cores) {
       }
       emit('search', strokes, { ch: c.id, t: chans[c.id].tDraw });
     }
+  }
+
+  // ---- round 3 (brief §2.3): bridges. Where lines of unrelated channels cross, or a line's end points at
+  //      another, a calm tangent-continuous curve joins them: a fillet in the corner of a crossing (A1) or a
+  //      continuation that bends and lands along the other line (A3). Few, and never where the ink is thick.
+  const bridges = [];
+  if (r3 && prm.bridges > 0) {
+    const rG = rngFor(seed, 6170), bd = clamp(prm.bridges, 0, 1);
+    const nB = Math.round(bd * (2 + 3 * rG())), capInk = (0.03 + 0.05 * bd) * ink.all;
+    const idx = new Map(), SI = [];
+    for (const e of out) for (const st of e.strokes) {
+      const P = resample(st, 1); if (P.length < 4) continue;
+      const si = SI.length; SI.push({ P, ch: e.ch, kind: e.kind });
+      P.forEach((p, i) => { const a = P[Math.max(0, i - 2)], b = P[Math.min(P.length - 1, i + 2)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, k = Math.floor(p[0] / 2) * 4096 + Math.floor(p[1] / 2); let bb = idx.get(k); if (!bb) idx.set(k, bb = []); bb.push({ si, i, x: p[0], y: p[1], tx: (b[0] - a[0]) / l, ty: (b[1] - a[1]) / l }); });
+    }
+    const nearest = (x, y, r, ok) => { let best = null, d2 = r * r; const gx = Math.floor(x / 2), gy = Math.floor(y / 2), R = Math.ceil(r / 2); for (let u = -R; u <= R; u++) for (let v = -R; v <= R; v++) for (const q of (idx.get((gx + u) * 4096 + gy + v) || [])) { const d = (q.x - x) ** 2 + (q.y - y) ** 2; if (d < d2 && ok(q)) { d2 = d; best = q; } } return best; };
+    const foreign = (a, b) => a !== b && !rel.has(a + ':' + b);
+    const chOf = (x, y) => { if (x < 0 || y < 0 || x >= W || y >= H) return -2; const o = sheet.owner[cellOf(x, y)]; return o ? lin.get(o) : -1; };
+    const inkDisc = (x, y, r) => { let c = 0, t = 0; for (let u = -r; u <= r; u++) for (let v = -r; v <= r; v++) { if (u * u + v * v > r * r) continue; t++; if (chOf(x + u, y + v) >= 0) c++; } return c / t; };
+    const hermite = (P, tP, Q, tQ, k) => { const L = Math.hypot(Q[0] - P[0], Q[1] - P[1]), m = Math.max(4, Math.round(L / 0.5)), h = k * L, B = []; for (let j = 0; j <= m; j++) { const t = j / m, t2 = t * t, t3 = t2 * t, a = 2 * t3 - 3 * t2 + 1, b = t3 - 2 * t2 + t, c = -2 * t3 + 3 * t2, d = t3 - t2; B.push([a * P[0] + b * h * tP[0] + c * Q[0] + d * h * tQ[0], a * P[1] + b * h * tP[1] + c * Q[1] + d * h * tQ[1]]); } return B; };
+    const along = (q, sg, mm) => { const P = SI[q.si].P, j = clamp(q.i + sg * Math.round(mm), 1, P.length - 2); if (Math.abs(j - q.i) < mm * 0.7) return null; const a = P[j - 1], b = P[j + 1], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return { p: P[j], t: [sg * (b[0] - a[0]) / l, sg * (b[1] - a[1]) / l] }; };
+    // candidate sites from stroke ends: X (a foreign line within 2.5 mm: the corner of a crossing) and E (the end's ray meets one 8–40 mm on)
+    const cands = [];
+    SI.forEach((S, si) => {
+      if (S.kind !== 'strand' || S.P.length < 15) return;
+      for (const end of [0, 1]) {
+        const P = end ? S.P : S.P.slice().reverse(), n = P.length, e = P[n - 1], a = P[n - 4], l = Math.hypot(e[0] - a[0], e[1] - a[1]) || 1, t = [(e[0] - a[0]) / l, (e[1] - a[1]) / l];
+        const qx = nearest(e[0], e[1], 2.5, q => foreign(S.ch, SI[q.si].ch));
+        if (qx) { const dot = t[0] * qx.tx + t[1] * qx.ty; if (Math.abs(dot) < Math.cos(rad(25))) cands.push({ kind: 'fillet', si, P, t, q: qx, at: [qx.x, qx.y] }); continue; }
+        for (let s2 = 3; s2 <= 40; s2++) {
+          const x = e[0] + t[0] * s2, y = e[1] + t[1] * s2, c = chOf(x, y);
+          if (c === -2 || c === S.ch) break;
+          if (c < 0) continue;
+          if (!foreign(S.ch, c) || s2 < 8) break;
+          const q = nearest(x, y, 3, q => SI[q.si].ch === c);
+          if (q && Math.abs(t[0] * q.tx + t[1] * q.ty) <= Math.sin(rad(45)) + 0.25) cands.push({ kind: 'cont', si, P, t, q, s: s2, at: [(e[0] + x) / 2, (e[1] + y) / 2] });
+          break;
+        }
+      }
+    });
+    const check = (B, chA, chB) => {
+      const R = resample(B, 1); if (R.length < 4) return false;
+      let turn = 0, kmax = 0, cross = 0, prev = -1;
+      for (let i = 1; i < R.length - 1; i++) { const d = wrap(Math.atan2(R[i + 1][1] - R[i][1], R[i + 1][0] - R[i][0]) - Math.atan2(R[i][1] - R[i - 1][1], R[i][0] - R[i - 1][0])); turn += d; kmax = Math.max(kmax, Math.abs(d)); }
+      if (kmax > 1 / 3 || Math.abs(turn) > Math.PI) return false;
+      for (let i = 0; i < R.length; i++) {
+        const p = R[i]; if (p[0] < 3 || p[1] < 3 || p[0] > W - 3 || p[1] > H - 3) return false;
+        if (i < 3 || i > R.length - 4) continue;
+        const c = chOf(p[0], p[1]), f = c >= 0 && c !== chA && c !== chB; if (f && !prev) cross++; prev = f ? 1 : 0;
+      }
+      return cross === 0;
+    };
+    const bean = (B, P, q, sg) => {   // bridge + 15 mm of each host nearly closing on 30–400 mm²
+      const hostB = []; for (let j = 0; j <= 15; j++) { const r = along(q, sg, j + 1); if (r) hostB.push(r.p); }
+      const poly = P.slice(Math.max(0, P.length - 16)).concat(B, hostB); if (poly.length < 6) return false;
+      const f = poly[0], l = poly[poly.length - 1]; if (Math.hypot(f[0] - l[0], f[1] - l[1]) > 8) return false;
+      let A2 = 0; for (let i = 0; i < poly.length; i++) { const u = poly[i], v = poly[(i + 1) % poly.length]; A2 += u[0] * v[1] - v[0] * u[1]; }
+      const area = Math.abs(A2) / 2; return area >= 30 && area <= 400;
+    };
+    const hand = { ...firm, A: firm.A * 0.5, tremor: 0, lift: 0, over: 0 };
+    let used = 0, echoN = 0; const busy = [...hooksAt, ...searchSpots], rE6 = rngFor(seed, 6171);
+    while (bridges.length < nB && cands.length) {
+      let bi = -1, bs = 0;
+      cands.forEach((c, i) => {
+        if (c.dead) return;
+        if (chi(c.at[0], c.at[1]) > 0.7) { c.dead = true; return; }
+        if (c.cover === undefined) c.cover = inkDisc(Math.round(c.at[0]), Math.round(c.at[1]), 10);
+        if (c.cover > 0.25) { c.dead = true; return; }
+        const rare = [...busy, ...bridges.map(b => b.at)].some(b => Math.hypot(b[0] - c.at[0], b[1] - c.at[1]) < 30) ? 0.3 : 1;
+        const sc = (0.3 + Ar(c.at[0], c.at[1])) * rare * (1 - c.cover) * (c.kind === 'cont' ? 1 : 0.9) + 0.01 * rG();
+        if (sc > bs) { bs = sc; bi = i; }
+      });
+      if (bi < 0) break;
+      const c = cands[bi]; c.dead = true;
+      const chA = SI[c.si].ch, chB = SI[c.q.si].ch, u = rG(), k = 0.35 + 0.2 * u;
+      let B = null, sg = 1, P0, tP, dist;
+      if (c.kind === 'fillet') {
+        // corner of a crossing: back along A, out along B on the acute side
+        const L = 8 + 10 * rG(), n = c.P.length; P0 = c.P[Math.max(0, n - 1 - Math.round(L))];
+        const dA = [P0[0] - c.q.x, P0[1] - c.q.y], lA = Math.hypot(dA[0], dA[1]) || 1;
+        sg = (dA[0] * c.q.tx + dA[1] * c.q.ty) / lA > 0 ? 1 : -1;            // the acute sector
+        tP = [-dA[0] / lA, -dA[1] / lA]; dist = L;
+      } else {
+        // continuation: leave along the end's heading, land along the other line 0.4–0.9 × the gap further on
+        sg = (c.t[0] * c.q.tx + c.t[1] * c.q.ty) >= 0 ? 1 : -1;
+        P0 = c.P[c.P.length - 1]; tP = c.t; dist = c.s * (0.4 + 0.5 * rG());
+      }
+      const r = along(c.q, sg, dist); if (!r) continue;
+      B = hermite(P0, tP, r.p, r.t, k);
+      if (c.kind === 'cont' && rG() < 0.5) B = B.slice(0, Math.max(4, B.length - Math.round((1 + 2 * rG()) * 2)));   // stops short
+      if (!check(B, chA, chB) || bean(B, c.P, c.q, sg)) continue;
+      const L = polyLen(B); if (used + L > capInk) continue;
+      const strokes = []; for (const pc of put(B, chA, hand, rG, { cross: true, keepHand: true })) strokes.push(pc.pts);
+      if (!strokes.length) continue;
+      used += L; B.forEach(p => erased.mark(p[0], p[1], 1, 0, 1.2));
+      // echoes (A6): 1–3 parallel traces beside it, each landing somewhere else along the other line
+      let echoes = 0;
+      if (echoN < 4 && rE6() < 0.65) {
+        const want = Math.min(4 - echoN, 1 + Math.floor(3 * rE6())), side = rE6() < 0.5 ? 1 : -1, nP = [-tP[1] * side, tP[0] * side], lens = [L];
+        let d = 0, prevGap = 0;
+        for (let j = 0; j < want; j++) {
+          let gap; do { gap = 0.9 + 1.3 * rE6(); } while (prevGap && Math.abs(gap - prevGap) / prevGap < 0.35); prevGap = gap; d += gap;
+          const rr = along(c.q, sg, Math.max(3, dist + (rE6() < 0.5 ? -1 : 1) * (5 + 10 * rE6()) * (j + 1) * 0.7)); if (!rr) continue;
+          const Pj = [P0[0] + nP[0] * d, P0[1] + nP[1] * d], Qj = [rr.p[0] + nP[0] * d * 0.3, rr.p[1] + nP[1] * d * 0.3];
+          const Bj = hermite(Pj, tP, Qj, rr.t, k * (0.9 + 0.2 * rE6())), Lj = polyLen(Bj);
+          if (lens.some(x => Math.abs(x - Lj) / Math.max(x, Lj) < 0.15) || !check(Bj, chA, chB) || used + Lj > capInk) continue;
+          const pcs = put(Bj, chA, hand, rE6, { cross: true, keepHand: true }); if (!pcs.length) continue;
+          for (const pc of pcs) strokes.push(pc.pts);
+          lens.push(Lj); used += Lj; echoes++; echoN++; Bj.forEach(p => erased.mark(p[0], p[1], 1, 0, 1.2));
+        }
+      }
+      bridges.push({ kind: c.kind, at: c.at, a: chA, b: chB, mm: Math.round(L), echoes });
+      emit('bridge', strokes, { ch: chA, t: chans[chA] ? chans[chA].tDraw : steps });
+    }
+    bridges.ink = used; bridges.cap = capInk;
   }
 
   // ---- M3: history (event-dated, concave side, displacement thresholds) ----
@@ -949,7 +1065,7 @@ Territory.prototype.meander = function (cores) {
   });
   this.lines = out;
   this.meanderInfo = meanderRecipe(out, chans, geo, events, steps, { dead, tot, white, rings, ringStill, prm, tangles, win });
-  if (r3) Object.assign(this.meanderInfo, { accents, chaosShare: +(ink.chaos / (ink.all || 1)).toFixed(3), chiC: chiC.map(c => [+c.x.toFixed(1), +c.y.toFixed(1), +c.r.toFixed(1)]) });
+  if (r3) Object.assign(this.meanderInfo, { accents, bridges, bridgeInk: +((bridges.ink || 0) / (ink.all || 1)).toFixed(3), chaosShare: +(ink.chaos / (ink.all || 1)).toFixed(3), chiC: chiC.map(c => [+c.x.toFixed(1), +c.y.toFixed(1), +c.r.toFixed(1)]) });
   if (prm.debug) this.meanderDebug = { chans: chans.map(c => ({ id: c.id, cls: c.cls, present: c.present, tDraw: c.tDraw })), snaps, events };
 };
 
