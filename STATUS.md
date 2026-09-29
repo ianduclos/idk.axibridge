@@ -1,19 +1,35 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-28
+updated: 2026-09-29
 machine: mac+pi
-summary: Linedraw v3 adds independent ink components, frozen separate layers, optional tonal shading and Smoothen, plus a white-paper bench; user and paper acceptance pending.
+summary: Main now includes Linedraw v3 and plot estimates (local, unpushed); a Territory bench prototype (web artifact, v1-v5) is on feat/territory-bench with a meander round planned next.
 next:
+  - "Start the meander round in a fresh session: docs/plans/territory-meander-round.md"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
   - "After the active plot finishes, activate and check mandatory simplification and native timing"
-  - "Check Mosca browsing, cutoff playback, repeated Keep and Resume in the native app"
-  - "Check module browsers, presets and gallery preview/insertion"
+  - "Decide whether to push main (fast-forwarded to codex/linedraw-v3) and merge feat/territory-bench"
   - "Continue remaining native and paper acceptance entries in HANDOFF.md"
 handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Territory bench prototype, 29 September:** An AARON-adjacent drawing bench is
+being prototyped as private web artifacts, with no `axibridge/` changes. *Cores and Skins*
+(v1) led to *Territory*: rival camps with log-sum-exp fields, borders and fading
+edges, voids, and history-aware redraw (v2); a lit-landscape volume pass (v3); soft
+bodies with wrap, wound and growth renderers and a smooth two-handed line (v4, "too
+concrete"); and searching lines, where borders restate their own history with an
+economy of weight (v5). Seeds 3, 13 and 21 were "going somewhere". Ian wants the illusion of
+line width from lines, a more unified sheet and less territory scaffold, so the
+meander round comes next ([plan](docs/plans/territory-meander-round.md)). Sources are in
+`tools/territory-prototype/`. Evidence is in `shots/territory-v2-0929` through
+`shots/territory-v5-0929`. Blind Sonnet reviews are in `docs/reviews/territory-v2-0929-sonnet.md`, and
+the research and briefs are in `docs/research/territory-v5/`. Roles on this track: Fable designs,
+Sonnet critiques. Everything was judged on screen; nothing has been plotted. Earlier the same day, local
+`main` was fast-forwarded to `codex/linedraw-v3`, which contains the plot-estimate
+commits. The full suite passed (1,688) before the merge, and nothing has been pushed.
 
 **Components and bench, 28 September:** Contours/form/cores can be independently
 included in the recipe or kept as aligned frozen layers in one undo step. Tonal
