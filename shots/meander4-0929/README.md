@@ -12,7 +12,7 @@ Ian said "i stopped seeing these sexy shapes". The causes were found by toggling
 
 Within 12 mm of another channel, all of these are now off. Seed 22's drip, ring crescents and restated neck are back.
 
-## Page (Version 8)
+## Page (Version 8, published 29 September at the same link)
 
 A Density group sits under the seven dials:
 
