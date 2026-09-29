@@ -452,7 +452,7 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg, chiF) {
     s = 0.3 + (s - 0.3) * smooth(0, 6, dInf[i]) * smooth(0, 15, dEnd);
     S[i] = s; b[i] = sgn[i] * smooth(0, 6, dInf[i]);
     // a channel is one line or a band of ≥ 3: a pair is an outline at any gap
-    const out3 = chiF && chiF(C[i][0], C[i][1]) < 0.5;
+    const out3 = chiF && chiF(C[i][0], C[i][1]) < 0.5 && !(tg && tg.junc && tg.junc(C[i][0], C[i][1], ch.id));
     K[i] = s < 1.6 || (out3 && capOut === 1) ? 1 : clamp(1 + Math.round(s / 0.9), 3, out3 ? capOut : 8); Kmax = Math.max(Kmax, K[i]);
   }
   // strands fill the whole band: k = 0 is the firm core on the concave side, higher k walk toward
@@ -632,7 +632,7 @@ Territory.prototype.meander = function (cores) {
   const calm = { ...firm, A: firm.A * 0.4, over: 0.5, lift: 0.05, tremor: 0.01 };
   const calmed = (P, hand) => {
     let m = 0, k = 0; for (let i = 0; i < P.length; i += 4) { m += chi(P[i][0], P[i][1]); k++; } m = k ? m / k : 0;
-    const h = { ...hand }; for (const f of ['A', 'over', 'lift', 'tremor']) h[f] = calm[f] + (hand[f] - calm[f]) * m; return h;
+    const h = { ...hand }; for (const f of ['A', 'lift', 'tremor']) h[f] = calm[f] + (hand[f] - calm[f]) * m; return h;
   };
   const put = (P, ch, hand, rng, o = {}) => {
     const id = newId(ch), pieces = [];
@@ -651,10 +651,10 @@ Territory.prototype.meander = function (cores) {
     }
     return pieces.filter(pc => polyLen(pc.pts) > 3);
   };
-  const addHook = (pc, toward, rng) => {
-    const e = pc.pts[pc.pts.length - 1];
-    if (hooksAt.some(h => Math.hypot(h[0] - e[0], h[1] - e[1]) < (r3 ? 45 : 25))) return null;
-    const hk = r3 ? hookFrom(pc.pts, toward, rng, 0.2 + 0.25 * rng()) : hookFrom(pc.pts, toward, rng); if (hk) hooksAt.push(e); return hk;
+  const addHook = (pc, toward, rng, ch = -1) => {
+    const e = pc.pts[pc.pts.length - 1], atJ = r3 && junc && junc(e[0], e[1], ch, 8);   // a junction hook is the seed-22 drip: v6 spacing and curl
+    if (hooksAt.some(h => Math.hypot(h[0] - e[0], h[1] - e[1]) < (r3 && !atJ ? 45 : 25))) return null;
+    const hk = r3 ? hookFrom(pc.pts, toward, rng, atJ ? 0.35 : 0.2 + 0.25 * rng()) : hookFrom(pc.pts, toward, rng); if (hk) hooksAt.push(e); return hk;
   };
   const ink = { all: 0, chaos: 0 };
   const emit = (kind, strokes, extra) => {
@@ -669,8 +669,9 @@ Territory.prototype.meander = function (cores) {
     // meander3 r1 (F5): a banded minor that never meets the trunk reads as a second drawing
     const tp0 = chans[0].present; if (prm.chaos !== undefined && tp0) { const h = pointHash(tp0, 6); for (const m of ms) if (m.c.S0 === 4 && !m.c.present.some(p => { const gx = Math.floor(p[0] / 6), gy = Math.floor(p[1] / 6); for (let u = -1; u <= 1; u++) for (let v = -1; v <= 1; v++) for (const q of (h.get((gx + u) * 4096 + gy + v) || [])) if (Math.hypot(q[0] - p[0], q[1] - p[1]) < 6) return true; return false; })) m.c.S0 = 1.4; } }
   const geo = new Map(); this._geo = geo; let dead = 0, tot = 0; const tangleZones = [];
+  let junc = null;
   const bundles = (presentOf, chiF) => {
-    const rT = rngFor(seed, 6165), tg = { rng: rT, on: rT() >= 0.2, left: prm.chaos !== undefined ? 1 : 2, refuse: events.filter(e => e.kind === 'refuse') };
+    const rT = rngFor(seed, 6165), tg = { junc, rng: rT, on: rT() >= 0.2, left: prm.chaos !== undefined ? 1 : 2, refuse: events.filter(e => e.kind === 'refuse') };
     for (const c of chans) {
       if (!c.drawn || c.abandoned || !c.present || c.present.length < 10) continue;
       const g = bundleGeom(c, presentOf(c), c.presentSpeed, Ar, prm, rB, loose, tg, chiF);
@@ -697,7 +698,13 @@ Territory.prototype.meander = function (cores) {
     chi = (x, y) => { let m = 0; for (const c of chiC) { const d = Math.hypot(x - c.x, y - c.y); if (d < c.r) m = Math.max(m, smooth(c.r, 0.4 * c.r, d)); } return m; };
     // second pass on pre-smoothed centrelines, same streams as the first
     geo.clear(); dead = 0; tot = 0; tangleZones.length = 0; rB = rngFor(seed, 6162);
-    bundles(c => { const P = resample(c.present, 2), Ps = smoothPts(P, 6); return P.map((p, i) => { const w = chi(p[0], p[1]); return [Ps[i][0] + (p[0] - Ps[i][0]) * w, Ps[i][1] + (p[1] - Ps[i][1]) * w]; }); }, chi);
+    // meander4 (Ian: "i stopped seeing these sexy shapes"): no band cap within 12 mm of another channel,
+    // so restatement piles up at junctions as in v6 and his first sketch
+    const jp = []; for (const c of chans) if (c.drawn && !c.abandoned && c.present) for (let i = 0; i < c.present.length; i += 2) jp.push([c.present[i][0], c.present[i][1], c.id]);
+    const jh = pointHash(jp, 12);
+    junc = (x, y, id, r = 12) => { const gx = Math.floor(x / 12), gy = Math.floor(y / 12); for (let u = -1; u <= 1; u++) for (let v = -1; v <= 1; v++) for (const q of (jh.get((gx + u) * 4096 + gy + v) || [])) if (q[2] !== id && Math.hypot(q[0] - x, q[1] - y) < r) return true; return false; };
+    bundles(c => { const P = resample(c.present, 2), Ps = smoothPts(P, 6); return P.map((p, i) => { const w = junc(p[0], p[1], c.id) ? 1 : chi(p[0], p[1]);   // junctions keep their cusps (the seed-22 drip)
+      return [Ps[i][0] + (p[0] - Ps[i][0]) * w, Ps[i][1] + (p[1] - Ps[i][1]) * w]; }); }, chi);
   }
   // white channel: the trunk's bundle is withheld; its strip is a wall nobody drew
   const trunkG = geo.get(0);
@@ -715,12 +722,12 @@ Territory.prototype.meander = function (cores) {
       const pieces = put(st.pts, id, st.k === 0 ? (rB() < 0.5 ? { ...edgeHand, over: 0 } : edgeHand) : strandHand, rB, { cross });
       for (const pc of pieces) {
         strokes.push(pc.pts);
-        if (pc.endT && st.k === 0 && polyLen(pc.pts) > 15 && (!r3 || rB() < 0.5)) { const q = Math.min(st.i1, st.i0 + pc.pts.length); const hk = addHook(pc, [-g.nx[q] * st.side, -g.ny[q] * st.side], rB); if (hk) strokes.push(hk); }
+        if (pc.endT && st.k === 0 && polyLen(pc.pts) > 15 && (!r3 || rB() < 0.75 || junc(pc.pts[pc.pts.length - 1][0], pc.pts[pc.pts.length - 1][1], id, 8))) { const q = Math.min(st.i1, st.i0 + pc.pts.length); const hk = addHook(pc, [-g.nx[q] * st.side, -g.ny[q] * st.side], rB, id); if (hk) strokes.push(hk); }
       }
       // the downstream end of the convex strand usually curls inward
       if (st.k === 0 && st.i1 >= g.C.length - 40 && pieces.length && rB() < 0.3) {
         const last = pieces[pieces.length - 1], q = g.C.length - 1, sg = rB() < 0.5 ? 1 : -1;
-        const hk = addHook(last, [g.nx[q] * sg, g.ny[q] * sg], rB); if (hk) strokes.push(hk);
+        const hk = addHook(last, [g.nx[q] * sg, g.ny[q] * sg], rB, id); if (hk) strokes.push(hk);
       }
     }
     emit('strand', strokes, { ch: id, t: c.tDraw });
@@ -737,7 +744,7 @@ Territory.prototype.meander = function (cores) {
       for (let i = 20; i < n - 20; i++) {
         const a = Math.abs(kp[i]); if (a < 1 / 14 || a < Math.abs(kp[i - 1]) || a < Math.abs(kp[i + 1])) continue;
         let i0 = i, i1 = i; while (i0 > 1 && Math.abs(kp[i0 - 1]) > a * 0.4) i0--; while (i1 < n - 2 && Math.abs(kp[i1 + 1]) > a * 0.4) i1++;
-        const turn = Math.abs(wrap(g.th[i1] - g.th[i0])) * 180 / Math.PI; if (turn < 55 || turn > 175 || tangleZones.some(z => z.ch === id && i >= z.i0 - 10 && i <= z.i1 + 10)) continue;
+        const turn = Math.abs(wrap(g.th[i1] - g.th[i0])) * 180 / Math.PI; if (turn < 55 || turn > 150 || junc(g.C[i][0], g.C[i][1], id, 5) || g.S.slice(Math.max(0, i0 - 20), i1 + 21).some(v => v >= 1.6) || tangleZones.some(z => z.ch === id && i >= z.i0 - 10 && i <= z.i1 + 10)) continue;
         const p = g.C[i], dc = Math.min(...chiC.map(c => Math.hypot(p[0] - c.x, p[1] - c.y))); sites.push({ id, i, i0, i1, a, far: dc > 60, sg: Math.sign(kp[i]), c: chiC.findIndex(c => Math.hypot(p[0] - c.x, p[1] - c.y) === dc) });
       }
     }
