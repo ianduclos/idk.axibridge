@@ -1086,6 +1086,8 @@ Territory.prototype.meander = function (cores) {
   this.lines = out;
   this.meanderInfo = meanderRecipe(out, chans, geo, events, steps, { dead, tot, white, rings, ringStill, prm, tangles, win });
   if (r3) Object.assign(this.meanderInfo, { accents, bridges, bridgeInk: +((bridges.ink || 0) / (ink.all || 1)).toFixed(3), chaosShare: +(ink.chaos / (ink.all || 1)).toFixed(3), chiC: chiC.map(c => [+c.x.toFixed(1), +c.y.toFixed(1), +c.r.toFixed(1)]) });
+  // meander 4: density layers (t_density.js), only when the dial is up; the base above is final
+  if (r3 && prm.density > 0) this.meanderInfo.density = densityPass({ seed, prm, out, geo, chans, snaps, chi, junc, Ar, chiC: chiC.map(c => ({ x: c.x, y: c.y })) });
   if (prm.debug) this.meanderDebug = { chans: chans.map(c => ({ id: c.id, cls: c.cls, present: c.present, tDraw: c.tDraw })), snaps, events };
 };
 
