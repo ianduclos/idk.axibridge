@@ -13,8 +13,9 @@
 // Deviations from the brief: the meander spread is `band` (v2 owns `spread`); strands are exact
 // geometry clipped against occupancy, not walkLine pursuits (the walker would scramble spacing).
 
-const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1, history: 0.6, activity: 0.9, events: 2, white: 0, hetero: 0.6, search: 1 };
+const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1, history: 0.6, activity: 0.9, events: 2, white: 0, hetero: 0.6, search: 1, tangle: 0.6, work: 0.7, graft: 0.3, window: 1 };
 const MIG_E = 4;          // mm of displacement per unit R1 per step (calibrated at CP1)
+const V_ABS = 0.075;      // absolute floor for a band's swell speed: p95 of lagged speed on seed 21's trunk (round 2 CP1)
 
 function boxFilter(a, w) {
   const n = a.length, out = new Float64Array(n), h = Math.max(1, w >> 1);
@@ -53,6 +54,35 @@ function activityField(seed, contrast) {
     return (g[c] * (1 - u) + g[c + 1] * u) * (1 - v) + (g[c + gw] * (1 - u) + g[c + gw + 1] * u) * v;
   };
 }
+
+// ---- round 2: where the river actually worked ----
+// Wk: accumulated migration speed of every snapshot on a 5 mm grid over the field F, blurred ~10 mm,
+// normalised by its p98. The render field Ar = (1 - mu)·A + mu·Wk² puts weight where migration happened
+// (A stays the simulation field). docs/research/meander2/synthesis-brief.md §1.1
+function workMap(snaps, F) {
+  const cs = 5, gw = Math.ceil((F.x1 - F.x0) / cs) + 1, gh = Math.ceil((F.y1 - F.y0) / cs) + 1;
+  let g = new Float32Array(gw * gh);
+  for (const s of snaps) for (let i = 0; i < s.pts.length; i++) {
+    const x = Math.floor((s.pts[i][0] - F.x0) / cs), y = Math.floor((s.pts[i][1] - F.y0) / cs);
+    if (x >= 0 && y >= 0 && x < gw && y < gh) g[y * gw + x] += s.speed[i] || 0;
+  }
+  for (let pass = 0; pass < 3; pass++) {
+    const t = new Float32Array(gw * gh);
+    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+      let v = 0, n = 0; for (let v2 = -1; v2 <= 1; v2++) for (let u = -1; u <= 1; u++) { const X = x + u, Y = y + v2; if (X >= 0 && Y >= 0 && X < gw && Y < gh) { v += g[Y * gw + X]; n++; } }
+      t[y * gw + x] = v / n;
+    }
+    g = t;
+  }
+  const nz = Array.from(g).filter(v => v > 0).sort((a, b) => a - b), top = nz.length ? nz[Math.floor(nz.length * 0.98)] || 1 : 1;
+  for (let c = 0; c < g.length; c++) g[c] = clamp(g[c] / top, 0, 1);
+  const at = (x, y) => {
+    const fx = clamp((x - F.x0) / cs, 0, gw - 1.001), fy = clamp((y - F.y0) / cs, 0, gh - 1.001), i = Math.floor(fx), j = Math.floor(fy), u = fx - i, v = fy - j, c = j * gw + i;
+    return (g[c] * (1 - u) + g[c + 1] * u) * (1 - v) + (g[c + gw] * (1 - u) + g[c + gw + 1] * u) * v;
+  };
+  return { at, g, gw, gh, cs, F };
+}
+const renderField = (A, Wk, mu) => (x, y) => { const w = Wk.at(x, y); return (1 - mu) * A(x, y) + mu * w * w; };
 
 // ---- seeding ----
 function chainGraph(G, turnMax) {
@@ -282,7 +312,7 @@ function migrate(chans, A, prm, rng) {
 }
 
 // ---- M2: the bundle ----
-function bundleGeom(ch, present, speed, A, prm, rng, loose) {
+function bundleGeom(ch, present, speed, A, prm, rng, loose, tg) {
   const C = catmullRom(resample(present, 2), 0.5), n = C.length; if (n < 30) return null;
   const nx = new Float64Array(n), ny = new Float64Array(n), th = new Float64Array(n);
   for (let i = 0; i < n; i++) { const a = C[Math.max(0, i - 2)], b = C[Math.min(n - 1, i + 2)]; th[i] = Math.atan2(b[1] - a[1], b[0] - a[0]); nx[i] = -Math.sin(th[i]); ny[i] = Math.cos(th[i]); }
@@ -302,14 +332,16 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose) {
   // migration speed, lagged downstream so the swell sits after the apex
   const lagW = 8 + 7 * rng(), a = Math.exp(-0.5 / lagW), vl = new Float64Array(n);
   for (let i = 0; i < n; i++) { const v = speed.length ? speed[Math.round(i / (n - 1) * (speed.length - 1))] : 0; vl[i] = i ? a * vl[i - 1] + (1 - a) * v : v; }
-  const vs = Array.from(vl).sort((x, y) => x - y), vlo = vs[Math.floor(n * 0.15)], vhi = vs[Math.floor(n * 0.95)] + 1e-9;
+  const vs = Array.from(vl).sort((x, y) => x - y), vlo = vs[Math.floor(n * 0.15)], vhiOwn = vs[Math.floor(n * 0.95)], vhi = Math.max(vhiOwn, V_ABS) + 1e-9;
+  // a gentle arc (radius > 80 mm) earns at most a third of its swell: per-channel speed quantiles otherwise manufacture one
+  const cg = new Float64Array(n); for (let i = 0; i < n; i++) cg[i] = smooth(0.012, 0.035, Math.abs(kap[i]));
   // S0: trunk 8; only the two most active minors get a band, the rest are single lines (Fable advice 1, §3)
   const trunk = ch.cls === 'trunk', S0 = ch.S0 || (trunk ? 8 : 1.4), Smax = trunk ? 9 : 5.5;
   const S = new Float64Array(n), b = new Float64Array(n), K = new Int8Array(n);
   let Kmax = 1;
   for (let i = 0; i < n; i++) {
     const dEnd = Math.min(i, n - 1 - i) * 0.5, Ai = A(C[i][0], C[i][1]);
-    let s = clamp(S0 * (0.2 + 0.8 * Ai) * 1.7 * Math.pow(smooth(vlo, vhi, vl[i]), 0.8) * prm.band, 0.3, Smax);
+    let s = clamp(S0 * (0.2 + 0.8 * Ai) * 1.7 * Math.pow(smooth(vlo, vhi, vl[i]), 0.8) * (0.35 + 0.65 * cg[i]) * prm.band, 0.3, Smax);
     s = 0.3 + (s - 0.3) * smooth(0, 6, dInf[i]) * smooth(0, 15, dEnd);
     S[i] = s; b[i] = sgn[i] * smooth(0, 6, dInf[i]);
     // a channel is one line or a band of ≥ 3: a pair is an outline at any gap
@@ -331,6 +363,51 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose) {
     }
     off.push(boxFilter(o, 20)); act.push(ac);
   }
+  // ---- round 2: the tangle is the band's own strands losing rank, spacing and continuity along a
+  //      stretch while keeping the channel's heading (coherence dial; meander2 brief §1.2)
+  const coh = new Float64Array(n).fill(1), zones = [];
+  if (tg && tg.on && tg.left > 0 && Kmax >= 4 && prm.tangle > 0) {
+    const P = new Float64Array(n);
+    for (let i = 0; i < n; i++) P[i] = (dInf[i] < 8 || Math.min(i, n - 1 - i) * 0.5 < 20) ? 0 : A(C[i][0], C[i][1]) * S[i] / Smax * vl[i] / vhi;
+    const dips = []; let bi = -1, bv = 0;
+    for (let i = 0; i < n; i++) if (P[i] > bv) { bv = P[i]; bi = i; }
+    if (bi >= 0 && K[bi] >= 3) dips.push({ i: bi, depth: 1 });
+    for (const e of tg.refuse.filter(e => e.ch === ch.id || e.other === ch.id)) {        // the plait: a half-depth dip at a refused neck
+      let j = -1, jd = 12; for (let i = 0; i < n; i++) { const d = Math.hypot(C[i][0] - e.at[0], C[i][1] - e.at[1]); if (d < jd) { jd = d; j = i; } }
+      if (j >= 0 && K[j] >= 3 && P[j] > 0 && !dips.some(d => Math.abs(d.i - j) < 80)) dips.push({ i: j, depth: 0.5 });
+    }
+    for (const d of dips.slice(0, Math.min(2, tg.left))) {
+      let L = Math.round((10 + 20 * tg.rng() + 15 * A(C[d.i][0], C[d.i][1])) / 0.5);
+      L = Math.max(L, Math.round(3 * 1.6 * S[d.i] / 0.5 / 2));
+      const i0 = Math.max(0, d.i - L), i1 = Math.min(n - 1, d.i + L), depth = d.depth * clamp(prm.tangle, 0, 1) / 0.6;
+      for (let i = i0; i <= i1; i++) coh[i] = Math.min(coh[i], 1 - Math.min(0.95, depth * 0.5 * (1 + Math.cos(Math.PI * (i - d.i) / L))));
+      zones.push({ ch: ch.id, i0, i1, depth }); tg.left--;
+    }
+  }
+  if (zones.length) {
+    for (let k = 0; k < Kmax; k++) {
+      const wz = noise1(tg.rng), lam = 12 + 13 * tg.rng(), ph2 = tg.rng() * 100;
+      for (const z of zones) {
+        for (let i = z.i0; i <= z.i1; i++) {
+          const w = 1 - coh[i]; if (w <= 0) continue;
+          const env = 0.7 * S[i] * (1 + 0.6 * w);
+          off[k][i] = coh[i] * off[k][i] + w * env * wz(ph2 + i * 0.5 / lam);
+          if (w > 0.3) act[k][i] = 1;                                    // dropped strands revive
+        }
+        const seg = boxFilter(off[k].slice(z.i0, z.i1 + 1), 8); for (let i = z.i0; i <= z.i1; i++) off[k][i] = seg[i - z.i0];
+      }
+    }
+    // spacing stop: an outer strand riding within 0.35 mm of a sibling for > 8 mm lets go
+    for (const z of zones) for (let k = 1; k < Kmax; k++) {
+      let run = 0;
+      for (let i = z.i0; i <= z.i1; i++) {
+        if (!act[k][i]) { run = 0; continue; }
+        let near = false; for (let q = 0; q < k; q++) if (act[q][i] && Math.abs(off[q][i] - off[k][i]) < 0.35) { near = true; break; }
+        run = near ? run + 1 : 0; if (run > 16) act[k][i] = 0;
+      }
+    }
+  }
+  const inZ = i => zones.some(z => i >= z.i0 && i <= z.i1);
   // exactly-two-strand pairs at 0.6–3 mm (the railway), over the channel's length
   let dead = 0, tot = 0;
   for (let i = 0; i < n; i += 2) { tot++; if (K[i] === 2 || (Kmax > 1 && act[1][i] && !(Kmax > 2 && act[2][i]))) { const g = Math.abs(off[1][i] - off[0][i]); if (g > 0.6 && g < 3) dead++; } }
@@ -345,14 +422,17 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose) {
       let j = i; while (j + 1 < n && act[k][j + 1]) j++;
       let a0 = i + (k ? Math.round((1 + 4 * rng()) * 2) : 0);
       while (a0 < j) {
-        let len = k ? Math.round((30 + 40 * rng()) * (1 - 0.07 * k) * 2) : j - a0;
+        const zoned = inZ(a0);
+        let len = zoned ? Math.round((10 + 15 * rng()) * 2) : k ? Math.round((30 + 40 * rng()) * (1 - 0.07 * k) * (0.55 + 0.45 * cg[a0]) * 2) : j - a0;
+        if (k === 0 && !zoned) { const z = zones.find(z => z.i0 > a0 && z.i0 <= j); if (z) len = z.i0 - a0; }
         let e = Math.min(j, a0 + len);
+        if (zoned) { for (let t = 0; t < 4 && strands.some(q => q.k !== k && (Math.abs(q.i1 - e) < 8 || Math.abs(q.i0 - a0) < 8)); t++) e = Math.min(j, e + 6); }
         if (k && e < j && (breaksOf[k - 1] || []).some(q => Math.abs(q - e) < 16)) e = Math.min(j, e + 20);
         if (e - a0 >= 16) {
           const pts = []; for (let q = a0; q <= e; q++) { pts.push([C[q][0] + nx[q] * off[k][q], C[q][1] + ny[q] * off[k][q]]); cv[q] = strands.length; }
-          strands.push({ k, i0: a0, i1: e, pts, side: Math.sign(off[k][Math.floor((a0 + e) / 2)]) || 1 });
+          strands.push({ k, i0: a0, i1: e, pts, side: Math.sign(off[k][Math.floor((a0 + e) / 2)]) || 1, zoned: inZ(Math.floor((a0 + e) / 2)) });
         }
-        brk.push(e); a0 = e + Math.round((3 + 6 * rng()) * 2);
+        brk.push(e); a0 = e + (inZ(e) ? Math.round((2 + 4 * rng()) * 2) : Math.round((3 + 6 * rng()) * (2 - cg[Math.min(e, n - 1)]) * 2));
       }
       i = j + 1;
     }
@@ -369,7 +449,8 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose) {
   const Sv = []; for (let i = 0; i < n; i++) if (dInf[i] > 6 && Math.min(i, n - 1 - i) > 30) Sv.push(S[i]);
   Sv.sort((x, y) => x - y);
   const ratio = Sv.length > 10 ? Sv[Math.floor(Sv.length * 0.9)] / Sv[Math.floor(Sv.length * 0.1)] : 1;
-  return { C, nx, ny, S, b, strands, dead, tot, ratio, Kmax, edgeRun, len: n * 0.5, Kfrac3: K.reduce((x, v) => x + (v >= 3 ? 1 : 0), 0) / n };
+  let rail = 0, banded = 0; for (let i = 0; i < n; i++) if (K[i] >= 3) { banded++; if (cg[i] < 0.3) rail++; }
+  return { C, nx, ny, th, S, b, strands, zones, dead, tot, ratio, Kmax, edgeRun, vhiOwn, railFrac: banded ? rail / banded : 0, len: n * 0.5, Kfrac3: K.reduce((x, v) => x + (v >= 3 ? 1 : 0), 0) / n };
 }
 
 // Hook of 2–5 mm curling toward `toward` (a direction vector) from the end of a stroke.
@@ -401,6 +482,7 @@ Territory.prototype.meander = function (cores) {
     if (c.abandoned) { const par = chans[c.parent]; c.drawn = par.tDraw >= c.born; c.present = c.pts; c.presentSpeed = []; continue; }
     const s = snapAt(c.id, c.tDraw); c.drawn = !!s; if (s) { c.present = uncoil(trimToSheet(s.pts, 10), 60 + 90 * rE()); c.presentSpeed = s.speed.slice(0, c.present.length); }
   }
+  const Wk = workMap(snaps, { x0: 0, y0: 0, x1: W, y1: H }), Ar = renderField(A, Wk, clamp(prm.work, 0, 1));
   const hands = makeHands(seed, { sway: prm.sway ?? 1, overshoot: prm.overshoot ?? 1, lifts: prm.lifts ?? 1, tremor: prm.tremor ?? 1 });
   const loose = hands[0], firm = hands[1];
   const strandHand = { ...loose, A: loose.A * 0.3, lift: 0, over: 0 }, edgeHand = { ...firm, lift: 0 };
@@ -437,13 +519,14 @@ Territory.prototype.meander = function (cores) {
   const emit = (kind, strokes, extra) => { if (strokes.length) out.push({ core: -1, kind, strokes, ...extra }); };
 
   // ---- M2: present bundles ----
-  { const ms = chans.filter(c => c.cls === 'minor' && !c.abandoned && c.drawn && c.present && c.present.length > 10).map(c => ({ c, a: c.present.reduce((x, p) => x + A(p[0], p[1]), 0) / c.present.length })).sort((x, y) => y.a - x.a || x.c.id - y.c.id);
+  { const ms = chans.filter(c => c.cls === 'minor' && !c.abandoned && c.drawn && c.present && c.present.length > 10).map(c => ({ c, a: c.present.reduce((x, p) => x + Ar(p[0], p[1]), 0) / c.present.length })).sort((x, y) => y.a - x.a || x.c.id - y.c.id);
     ms.forEach((m, i) => { m.c.S0 = i < 2 ? 4 : 1.4; }); }
-  const geo = new Map(); this._geo = geo; let dead = 0, tot = 0;
+  const geo = new Map(); this._geo = geo; let dead = 0, tot = 0; const tangleZones = [];
+  const rT = rngFor(seed, 6165), tg = { rng: rT, on: rT() >= 0.3, left: 2, refuse: events.filter(e => e.kind === 'refuse') };
   for (const c of chans) {
     if (!c.drawn || c.abandoned || !c.present || c.present.length < 10) continue;
-    const g = bundleGeom(c, c.present, c.presentSpeed, A, prm, rB, loose);
-    if (g) { geo.set(c.id, g); dead += g.dead; tot += g.tot; }
+    const g = bundleGeom(c, c.present, c.presentSpeed, Ar, prm, rB, loose, tg);
+    if (g) { geo.set(c.id, g); dead += g.dead; tot += g.tot; tangleZones.push(...g.zones); }
   }
   // white channel: the trunk's bundle is withheld; its strip is a wall nobody drew
   const trunkG = geo.get(0);
@@ -457,7 +540,7 @@ Territory.prototype.meander = function (cores) {
     if (white && id === 0) continue;
     const strokes = [];
     for (const st of g.strands) {
-      const mid = st.pts[Math.floor(st.pts.length / 2)], cross = A(mid[0], mid[1]) > 0.72;
+      const mid = st.pts[Math.floor(st.pts.length / 2)], cross = st.zoned || Ar(mid[0], mid[1]) > 0.72;
       const pieces = put(st.pts, id, st.k === 0 ? (rB() < 0.5 ? { ...edgeHand, over: 0 } : edgeHand) : strandHand, rB, { cross });
       for (const pc of pieces) {
         strokes.push(pc.pts);
@@ -476,16 +559,20 @@ Territory.prototype.meander = function (cores) {
   //      each pass drifting on its own and disagreeing with the others (Ian's sketch; review r1 #4)
   const searchSpots = [];
   if (prm.search > 0) {
-    const cand = [];
-    for (const [id, g] of geo) for (let i = 30; i < g.C.length - 30; i += 20) { const p = g.C[i]; if (g.S[i] < 1.6 && A(p[0], p[1]) > 0.55) cand.push({ id, i, a: A(p[0], p[1]) + 0.3 * rE() }); }
+    // 2–3 patches of lognormal size: the largest gets the most passes (review r2 #4; brief §1.4)
+    const cand = [], inZone = (id, i) => (tangleZones || []).some(z => z.ch === id && i >= z.i0 - 20 && i <= z.i1 + 20);
+    for (const [id, g] of geo) for (let i = 30; i < g.C.length - 30; i += 20) { const p = g.C[i]; if (g.S[i] < 3 && Ar(p[0], p[1]) > 0.5 && !inZone(id, i)) cand.push({ id, i, band: g.S[i] >= 1.6, a: Ar(p[0], p[1]) + 0.3 * rE() }); }
     cand.sort((x, y) => y.a - x.a || x.id - y.id || x.i - y.i);
-    const want = Math.round((1 + 2 * rE()) * prm.search);
+    const want = Math.round((2 + (rE() < 0.5 ? 1 : 0)) * prm.search);
+    let onBand = 0;
     for (const c of cand) {
       if (searchSpots.length >= want) break;
+      if (c.band && onBand >= 1) continue;
       const g = geo.get(c.id), p = g.C[c.i];
-      if (searchSpots.some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 45)) continue;
-      searchSpots.push(p);
-      const half = Math.round((12 + 18 * rE()) * 2), passes = 2 + Math.floor(4 * rE()), strokes = [];
+      if (searchSpots.some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 35)) continue;
+      searchSpots.push(p); if (c.band) onBand++;
+      const gauss = Math.sqrt(-2 * Math.log(1 - rE())) * Math.cos(2 * Math.PI * rE());
+      const halfMm = clamp(8 * Math.exp(0.6 * gauss), 6, 40), half = Math.round(halfMm * 2), passes = 2 + Math.floor(5 * rE() * halfMm / 40), strokes = [];
       for (let r = 0; r < passes; r++) {
         const nz = noise1(rE), ph = rE() * 100, amp = 0.6 + 1.4 * rE(), bias = (rE() - 0.5) * 1.6;
         const i0 = clamp(c.i - half + Math.round((rE() - 0.5) * 20), 0, g.C.length - 1), i1 = clamp(c.i + half + Math.round((rE() - 0.5) * 20), 0, g.C.length - 1);
@@ -509,7 +596,7 @@ Territory.prototype.meander = function (cores) {
     let keptPts = [];
     for (const s of cands) {
       const mid = s.pts[Math.floor(s.pts.length / 2)];
-      if (rH() > prm.history * 1.4 * A(mid[0], mid[1]) ** 2) continue;
+      if (rH() > prm.history * 1.4 * Ar(mid[0], mid[1]) ** 2) continue;
       const thr = 0.6 + 3.4 * rH(), P = resample(s.pts, 1), kh = pointHash(keptPts, 4);
       const keep = P.map(p => {
         const gx = Math.floor(p[0] / 8), gy = Math.floor(p[1] / 8); let bi = -1, bd = 24;
@@ -618,8 +705,29 @@ Territory.prototype.meander = function (cores) {
     }
   }
 
+  // tangle metric per zone (anti-hairball): principal-axis aspect, tangent deviation from the channel, tight curls
+  const tangles = tangleZones.map(z => {
+    const g = geo.get(z.ch), pts = [], devs = []; let curl = 0, len = 0;
+    for (const st of g.strands) {
+      if (st.i1 < z.i0 || st.i0 > z.i1) continue;
+      for (let q = 1; q < st.pts.length - 1; q++) {
+        const i = st.i0 + q; if (i < z.i0 || i > z.i1) continue;
+        const a = st.pts[q - 1], b = st.pts[q], c2 = st.pts[q + 1];
+        pts.push(b); len += 0.5;
+        devs.push(Math.abs(wrap(Math.atan2(c2[1] - a[1], c2[0] - a[0]) - g.th[i])));
+        const turnA = Math.abs(wrap(Math.atan2(c2[1] - b[1], c2[0] - b[0]) - Math.atan2(b[1] - a[1], b[0] - a[0])));
+        if (turnA > 0.5 / 3) curl += 0.5;
+      }
+    }
+    if (pts.length < 10) return { ch: z.ch, aspect: 0, angle: 0, curl: 0, ink: 0, K: false };
+    const m = centroid(pts); let xx = 0, yy = 0, xy = 0; for (const p of pts) { xx += (p[0] - m[0]) ** 2; yy += (p[1] - m[1]) ** 2; xy += (p[0] - m[0]) * (p[1] - m[1]); }
+    const tr = xx + yy, det = xx * yy - xy * xy, d = Math.sqrt(Math.max(0, tr * tr / 4 - det)), aspect = Math.sqrt((tr / 2 + d) / Math.max(1e-9, tr / 2 - d));
+    const angle = devs.reduce((x, y) => x + y, 0) / devs.length * 180 / Math.PI, curlF = curl / len;
+    const fails = (aspect < 3) + (angle > 35) + (curlF > 0.1);
+    return { ch: z.ch, depth: +z.depth.toFixed(2), mm: Math.round((z.i1 - z.i0) * 0.5), aspect: +aspect.toFixed(1), angle: Math.round(angle), curl: +curlF.toFixed(2), ink: Math.round(len), K: fails >= 2 };
+  });
   this.lines = out;
-  this.meanderInfo = meanderRecipe(out, chans, geo, events, steps, { dead, tot, white, rings, ringStill, prm });
+  this.meanderInfo = meanderRecipe(out, chans, geo, events, steps, { dead, tot, white, rings, ringStill, prm, tangles });
   if (prm.debug) this.meanderDebug = { chans: chans.map(c => ({ id: c.id, cls: c.cls, present: c.present, tDraw: c.tDraw })), snaps, events };
 };
 
@@ -637,7 +745,7 @@ function meanderRecipe(out, chans, geo, events, steps, o) {
   let hair = 0; for (let j = 0; j < gh - 1; j++) for (let i = 0; i < gw - 1; i++) hair = Math.max(hair, dens[j * gw + i] + dens[j * gw + i + 1] + dens[(j + 1) * gw + i] + dens[(j + 1) * gw + i + 1]);
   const D = distField(occ); let empty = 0; for (let c = 0; c < N; c++) if (D[c] > 8) empty++;
   const deadFrac = o.tot ? o.dead / o.tot : 0;
-  const ratios = [...geo.entries()].filter(([, g]) => g.len >= 60 && g.Kmax >= 3).map(([id, g]) => ({ ch: id, ratio: +g.ratio.toFixed(2), K3: +g.Kfrac3.toFixed(2), edge: Math.round(g.edgeRun) }));
+  const ratios = [...geo.entries()].filter(([, g]) => g.len >= 60 && g.Kmax >= 3).map(([id, g]) => ({ ch: id, ratio: +g.ratio.toFixed(2), K3: +g.Kfrac3.toFixed(2), edge: Math.round(g.edgeRun), rail: +g.railFrac.toFixed(2), vhi: +g.vhiOwn.toFixed(3) }));
   let through = false;
   for (const [, g] of geo) {
     if (g.Kmax < 2) continue;
@@ -645,12 +753,12 @@ function meanderRecipe(out, chans, geo, events, steps, o) {
     if (e.size >= 2) through = true;
   }
   const flags = [
-    o.ringStill ? 'T' : '', deadFrac > 0.10 ? 'R' : '', ratios.some(r => r.edge > 60) ? 'O' : '', ratios.some(r => r.ratio < 2.5) ? 'P' : '', through ? 'F' : '',
+    o.ringStill ? 'T' : '', deadFrac > 0.10 ? 'R' : '', ratios.some(r => r.edge > 60) ? 'O' : '', ratios.some(r => r.ratio < 2.5) ? 'P' : '', ratios.some(r => r.rail > 0.2) ? 'L' : '', (o.tangles || []).some(t => t.K) ? 'K' : '', through ? 'F' : '',
     ratios.some(r => r.K3 > 0.6) ? 'H' : '', hair > 400 ? 'X' : '', contrast < 4 ? 'N' : '', empty / N < 0.35 ? 'E' : '',
   ].join('');
   return {
     steps, white: o.white, inkMm, deadFrac: +deadFrac.toFixed(3), contrast: +contrast.toFixed(2), hairball: Math.round(hair), empty: +(empty / N).toFixed(2),
-    ringsDropped: o.rings, ratios, flags,
+    ringsDropped: o.rings, ratios, flags, tangles: o.tangles || [],
     channels: chans.map(c => ({ id: c.id, cls: c.cls, tDraw: c.tDraw, drawn: !!c.drawn, abandoned: !!c.abandoned, len: c.present ? Math.round(polyLen(c.present)) : 0 })),
     events: events.map(e => ({ kind: e.kind, ch: e.ch, t: e.t, at: e.at.map(v => Math.round(v)) })),
   };
