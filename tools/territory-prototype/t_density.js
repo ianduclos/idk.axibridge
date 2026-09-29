@@ -178,7 +178,7 @@ function densityPass(o) {
   if (effX > 0) {
     const rX = rngFor(seed, 6189);
     for (let q5 = 0; q5 < (!legacy && effX > 1.3 ? 2 : 1); q5++) if (rX() < 0.6 * effX) {   // over 1.3: a second one, elsewhere
-      const kind = rX() < 0.35 ? 'thorn' : 'black';   // r2: rings read as dotted arcs
+      const kind = legacy ? (rX() < 0.35 ? 'thorn' : 'black') : 'thorn';   // r1 (m5): the crosshatched disc read as a stamp   // r2: rings read as dotted arcs
       const at = chiC_.length && !q5 ? [chiC_[0].x + (rX() - 0.5) * 30, chiC_[0].y + (rX() - 0.5) * 30] : [W * (0.2 + 0.6 * rX()), H * (0.2 + 0.6 * rX())];
       if (kind === 'thorn') { const n = 5 + Math.floor(7 * rX()), a0 = rX() * Math.PI * 2; for (let q = 0; q < n; q++) { if (rX() < 0.12) continue; const a = a0 + q * 2 * Math.PI / n + rad((rX() - 0.5) * 30), len = 12 + 33 * rX(), wd = 1.5 + 3 * rX(), tip = [at[0] + Math.cos(a) * len, at[1] + Math.sin(a) * len];
           for (const sg of [1, -1]) { const b0 = [at[0] - Math.sin(a) * wd * sg, at[1] + Math.cos(a) * wd * sg], R = []; for (let t = 0; t <= 1.0001; t += 0.05) { const bow = -Math.sin(Math.PI * t) * wd * 0.3 * sg; R.push([b0[0] + (tip[0] - b0[0]) * t - Math.sin(a) * bow, b0[1] + (tip[1] - b0[1]) * t + Math.cos(a) * bow]); } L_.surprise.push(R); } } }
@@ -387,7 +387,7 @@ function growField(o) {
         else if (r < 0.15 * mu) { const p = cur[Math.floor(n * (0.15 + 0.7 * rT()))]; chutes.push({ x: p[0], y: p[1], w: 3 + 5 * rT(), gr: 1.15 + 0.25 * rT() }); muts++; log.chute++; }
         else if (r < 0.18 * mu && !st.child && n > 120) { const i = Math.floor(n * (0.35 + 0.3 * rT())); queue.push({ P: cur.slice(i), g: clamp(g * (0.6 + rT()), 0.35, 2.2) }); cur = cur.slice(0, i + 1); muts++; log.split++; continue; }
       }
-      g = clamp(g * (1 + (rT() - 0.5) * 0.16), 0.35, 2.2); gaps.push(g);
+      g = clamp(g * (1 + (rT() - 0.5) * 0.16) * st.open, 0.3, 2.2); gaps.push(g);   // r1: tight at the source, opening outward
       // offset with curvature-driven migration and the train's fan hinge
       const sAt = new Float32Array(n); for (let i = 1; i < n; i++) sAt[i] = sAt[i - 1] + Math.hypot(cur[i][0] - cur[i - 1][0], cur[i][1] - cur[i - 1][1]); slide += (rT() - 0.5) * 3;
       let E = [];
@@ -422,7 +422,10 @@ function growField(o) {
       for (const ch of chutes) { let bd = 1e9, bp = null; for (const p of E) { const d = Math.hypot(p[0] - ch.x, p[1] - ch.y); if (d < bd) { bd = d; bp = p; } } if (bp && bd < 6) { ch.x = bp[0]; ch.y = bp[1]; ch.w = Math.min(ch.w * ch.gr, 30); } }
       if (!runs.length) { stop.blocked = (stop.blocked || 0) + 1; break; }
       runs.sort((a, b) => b.length - a.length);
-      for (const rn of runs) { for (const p of rn) { const c = cellOf(p[0], p[1]); gOwn[c] = st.tid; gK[c] = k; } const l = (rn.length - 1) * 0.5; inkT += l; outP.push(k % 2 ? rn.slice().reverse() : rn); }
+      // r1: ends cut by an obstacle feather back (each echo by its own amount) instead of stopping on the mask's edge
+      for (let q = 0; q < runs.length; q++) { let rn = runs[q]; const fa = Math.floor(lognorm(rT, 5, 0.7)), fb = Math.floor(lognorm(rT, 5, 0.7)); const a = rn[0] !== E[0] ? Math.min(fa, rn.length >> 2) : 0, b = rn[rn.length - 1] !== E[E.length - 1] ? Math.min(fb, rn.length >> 2) : 0; runs[q] = rn.slice(a, rn.length - b); }
+      const late = (kk + 1) / st.K, drop = late > 0.7 && rT() < (late - 0.7) * 1.6;   // r1: trains thin out toward their end (the echo is still inherited)
+      for (const rn of runs) { for (const p of rn) { const c = cellOf(p[0], p[1]); gOwn[c] = st.tid; gK[c] = k; } if (drop) continue; const l = (rn.length - 1) * 0.5; inkT += l; outP.push(k % 2 ? rn.slice().reverse() : rn); }
       for (const rn of runs.slice(1)) if (rn.length > 40 && queue.length < 6) queue.push({ P: rn, g });
       log.echoes++;
       cur = runs[0]; if (cur.length < 20) { stop.run = (stop.run || 0) + 1; break; } if ((cur.length - 1) * 0.5 > 1.6 * L0 + 20) { stop.long = (stop.long || 0) + 1; endWhy = 'long'; break; }
@@ -436,7 +439,7 @@ function growField(o) {
     const i0 = Math.max(0, Math.round(c.ci - c.len / 2)), i1 = Math.min(c.R.length, Math.round(c.ci + c.len / 2)); if (i1 - i0 < 25) continue;
     covered.set(key, cv + (i1 - i0));
     const rS = rngFor(seed, 6193, tid), young = log.trains < 4;
-    const st = { tid: tid++, src: c.s.id, g: 0.55 + 0.7 * rS() * rS(), beta: (0.15 + 0.45 * mu) * (0.6 + 0.8 * rS()), phi: rS() < 0.3 + 0.4 * mu ? (rS() < 0.5 ? -1 : 1) * (0.3 + 0.6 * rS()) * Math.min(1, mu + 0.3) : 0, mcap: 1 + Math.round(3 * mu * (young ? 1.5 : 0.7)), K: Math.round(clamp(lognorm(rS, young ? 45 : 24, 0.5), 6, 110)), pinch: 0.25 + 0.45 * rS(), lam: 15 + 35 * rS(), ph: rS() * 100 };
+    const st = { tid: tid++, src: c.s.id, open: 1 + 0.035 * rS() * rS() * (rS() < 0.75 ? 1 : 0), g: 0.35 + 1.0 * rS() * rS(), beta: (0.15 + 0.45 * mu) * (0.6 + 0.8 * rS()), phi: rS() < 0.3 + 0.4 * mu ? (rS() < 0.5 ? -1 : 1) * (0.3 + 0.6 * rS()) * Math.min(1, mu + 0.3) : 0, mcap: 1 + Math.round(3 * mu * (young ? 1.5 : 0.7)), K: Math.round(clamp(lognorm(rS, young ? 45 : 24, 0.5), 6, 110)), pinch: 0.25 + 0.45 * rS(), lam: 15 + 35 * rS(), ph: rS() * 100 };
     if (st.phi) log.fan++;
     const todo = [{ P: c.R.slice(i0, i1), st }];
     while (todo.length && ink < cap) {
