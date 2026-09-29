@@ -13,7 +13,7 @@
 // Deviations from the brief: the meander spread is `band` (v2 owns `spread`); strands are exact
 // geometry clipped against occupancy, not walkLine pursuits (the walker would scramble spacing).
 
-const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1, history: 0.6, activity: 0.9, events: 2, white: 0, hetero: 0.6, search: 1, tangle: 0.6, work: 0.7, graft: 0.3, window: 1 };
+const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1, history: 0.6, activity: 0.9, events: 2, white: 0, hetero: 0.6, search: 1, tangle: 0.6, work: 0.5, graft: 0.5, window: 0 };
 const MIG_E = 4;          // mm of displacement per unit R1 per step (calibrated at CP1)
 const V_ABS = 0.075;      // absolute floor for a band's swell speed: p95 of lagged speed on seed 21's trunk (round 2 CP1)
 
@@ -422,7 +422,7 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg) {
   // ---- round 2: the tangle is the band's own strands losing rank, spacing and continuity along a
   //      stretch while keeping the channel's heading (coherence dial; meander2 brief §1.2)
   const coh = new Float64Array(n).fill(1), zones = [];
-  if (tg && tg.on && tg.left > 0 && Kmax >= 4 && prm.tangle > 0) {
+  if (tg && tg.on && tg.left > 0 && Kmax >= 3 && prm.tangle > 0) {
     const P = new Float64Array(n);
     for (let i = 0; i < n; i++) P[i] = (dInf[i] < 8 || Math.min(i, n - 1 - i) * 0.5 < 20) ? 0 : A(C[i][0], C[i][1]) * S[i] / Smax * vl[i] / vhi;
     const dips = []; let bi = -1, bv = 0;
@@ -433,7 +433,7 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg) {
       if (j >= 0 && K[j] >= 3 && P[j] > 0 && !dips.some(d => Math.abs(d.i - j) < 80)) dips.push({ i: j, depth: 0.5 });
     }
     for (const d of dips.slice(0, Math.min(2, tg.left))) {
-      let L = Math.round((10 + 20 * tg.rng() + 15 * A(C[d.i][0], C[d.i][1])) / 0.5);
+      let L = Math.round((18 + 30 * tg.rng() + 20 * A(C[d.i][0], C[d.i][1])) / 0.5);   // meander2 r1: 20–45 mm read as nothing
       L = Math.max(L, Math.round(3 * 1.6 * S[d.i] / 0.5 / 2));
       const i0 = Math.max(0, d.i - L), i1 = Math.min(n - 1, d.i + L), depth = d.depth * clamp(prm.tangle, 0, 1) / 0.6;
       for (let i = i0; i <= i1; i++) coh[i] = Math.min(coh[i], 1 - Math.min(0.95, depth * 0.5 * (1 + Math.cos(Math.PI * (i - d.i) / L))));
@@ -446,7 +446,7 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg) {
       for (const z of zones) {
         for (let i = z.i0; i <= z.i1; i++) {
           const w = 1 - coh[i]; if (w <= 0) continue;
-          const env = 0.7 * S[i] * (1 + 0.6 * w);
+          const env = (1.0 * S[i] + 1.2) * (1 + 0.6 * w);
           off[k][i] = coh[i] * off[k][i] + w * env * wz(ph2 + i * 0.5 / lam);
           if (w > 0.3) act[k][i] = 1;                                    // dropped strands revive
         }
@@ -592,7 +592,7 @@ Territory.prototype.meander = function (cores) {
   { const ms = chans.filter(c => c.cls === 'minor' && !c.abandoned && c.drawn && c.present && c.present.length > 10).map(c => ({ c, a: c.present.reduce((x, p) => x + Ar(p[0], p[1]), 0) / c.present.length })).sort((x, y) => y.a - x.a || x.c.id - y.c.id);
     ms.forEach((m, i) => { m.c.S0 = i < 2 ? 4 : 1.4; }); }
   const geo = new Map(); this._geo = geo; let dead = 0, tot = 0; const tangleZones = [];
-  const rT = rngFor(seed, 6165), tg = { rng: rT, on: rT() >= 0.3, left: 2, refuse: events.filter(e => e.kind === 'refuse') };
+  const rT = rngFor(seed, 6165), tg = { rng: rT, on: rT() >= 0.2, left: 2, refuse: events.filter(e => e.kind === 'refuse') };
   for (const c of chans) {
     if (!c.drawn || c.abandoned || !c.present || c.present.length < 10) continue;
     const g = bundleGeom(c, c.present, c.presentSpeed, Ar, prm, rB, loose, tg);
