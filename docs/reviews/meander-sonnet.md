@@ -311,3 +311,42 @@ Bottom:
 3. R18: parallel echo bundle plus loose crossings and small circles.
 
 **Next change (most important).** Break the echo stamp and put a little chaos back in a controlled way: vary echo count (0, 2 or 3 strokes), spacing and length per cell so that only about one in three cells has a fat crescent, and re-seed one small textural passage (a single tight tangle near a sharp bend, as in the target) into each cell that has none. That fixes both "everything is the same eyebrow" and "too tidy" together.
+
+## Meander 4 (Density), round 1
+
+Blind read of sheets A/B/C against Z and the two references. Groupings inferred by composition: Z1 = D03/D16/D12, Z2 = D02/D14/D04, Z3 = D07/D10, Z4 = D08/D11/D13, Z5 = D06/D17/D15, Z6 = D18/D09/D01/D05 (low to high within each).
+
+**1. Streak or hatching?** Mostly the wrong family. The covered ground is built from many short rounded-end strokes, roughly 10-25 mm, laid side by side along a flow field. At sheet scale it reads as hair, fur or wind-flow: D04, D12, D16, D10 look like combed grass or a weather-chart of streamlines. In close-D1 (D04, D12, D05) the strokes are visibly stitched: pill-shaped ends and staggered gaps produce a "dashed line" rhythm, which is the standing short-dash reject in longer form. A brush streak has a long unbroken drag, a ragged start and end, and tone that builds from overlap. Here the tone comes from parallel packing, which is engraving logic. It works where strokes converge into a dark mass (D01 left of centre, D15 lower left, D13 upper right): those dark wedges read as rubbed pigment, the closest to the monoprint. It fails in the open parts of the field, where evenly spaced parallel runs read as contour lines (D05 right, D10 upper right, D14 lower right). Fan roots and spray tips (D01, D15 bottom) are the most hair-like spots.
+
+**2. Is the calm drawing legible?** At low intensity yes: D03, D07, D08, D18 keep the Z drawings intact with a few extra marks. From mid intensity up, the junction shapes are buried. D12 has the Z1 knot with its rings, but it sits in a tangle of triangles and straight slashes and is no longer the focal point. D16 keeps it better. D04 buries the Z2 spine under flow fields, D15 and D13 lose the calm drawing completely, and D10 keeps only a corner of Z3. The drips and crescents are hard to find in every high cell. The problem is that the field competes with the knot at equal line weight and equal darkness. Nothing steps back near the focal shapes, and the reference crop's quiet ground is gone.
+
+**3. Ribbons and surprises.** The twin-rail ribbons (D11 and D13 top left, D05 and D01 sweeping across, D16 top right) are the best new element. They wrap and cross with real confidence, and D11/D13 upper left is the closest thing to the pink-ribbons sweep. They still read as pipes or rivers, because the rails are constant width and parallel and nothing fills or shades between them. They also do not overlap or occlude each other, so they never look folded. D01 and D05 cross cleanly, but flatly. Fans: the fans off nodes (D01, D09, D10, D13 lower left) are pasted-on rosettes, and they look like a hair-parting. Wedges and shards (D01 left, D13 top, D15 lower left, D06 lower left): the solid black wedges are strong. They give the ink-slash contrast the references have and should be kept. Straight slashes (D04, D10, D11, D13, D15): the very long hairline diagonals are the worst offenders. They read as ruler lines or cracks in the glass, not as gesture, and they cut through the knots. The X/star bursts (D15 and D17 centre, D06 upper) are small and feel like a stamped asterisk. The thorn and ring marks (D10, D16) are legible and charming when small, but only at that scale.
+
+**4. Voids.** Some. D11 and D13 have a large clean void left of centre, and D14 and D05 have a rounded bare shape enclosed by ribbons. These work, but they read as leftover ground, not as shaped negatives cut by the fill. In D04, D12, D15, D16 the fill runs edge to edge with no carved shapes. Nothing in the fill has a hard edge, so unlike the references (the black eye and the crescent windows) no void looks deliberate.
+
+**5. Best intensity per drawing.**
+- Z1: D16 (D12 is too much).
+- Z2: D14.
+- Z3: between D07 and D10; it needs a mid.
+- Z4: D11.
+- Z5: D17 (D15 is too much).
+- Z6: D09 (D01 is next; D05 is heavy).
+
+The high end is not dense enough to match the references in tone, because the references are near solid and these are combed lines with a lot of paper showing. It is also too busy in structure, because there are too many separate flow patches at once and no one dominant sweep. So the density is wrong in kind, not in amount.
+
+**6. Repeated stamps.** Yes. The rosette fan appears in D01, D09, D10, D13 and D16. The solid black wedge is in D01, D09, D15, D17 and D06. A long hairline diagonal is in almost every busy cell. The star burst repeats between D15 and D17, which are the same layout at two intensities, so that is fair.
+
+**7. Ranking.**
+Top 5:
+- D11: ribbons, void and knot all coexist.
+- D14: fields stay in the corners and the Z2 spine survives.
+- D16: the knot and rings are still readable.
+- D09: dark masses with the drawing intact.
+- D13 (top left only): the strongest ribbon and wedge passages.
+
+Bottom 3:
+- D15: total burial of the calm drawing.
+- D12: the tangle of triangles and slashes wrecks Z1's focal point.
+- D04: the fur field buries the Z2 spine.
+
+**Most important change:** stop building tone from parallel packed short strokes. Make covering strokes long and single-pass (span a whole patch), let tone come from overlapping drags that overlap and thin out, cut shaped voids with hard edges into the field, and keep a quiet halo around each knot so the calm drawing stays the focal point.

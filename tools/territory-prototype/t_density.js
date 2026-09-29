@@ -73,8 +73,8 @@ function densityPass(o) {
   };
   // junction pools J (2 mm grid): within 14 mm of a point where two channels' present lines meet within 12 mm
   const jpts = []; for (const c of chans) if (c.drawn && !c.abandoned && c.present) for (let i = 0; i < c.present.length; i += 3) { const p = c.present[i]; if (junc && junc(p[0], p[1], c.id)) jpts.push(p); }
-  const Jh = pointHash(jpts, 14), inJ = (x, y) => { const gx = Math.floor(x / 14), gy = Math.floor(y / 14); for (let u = -1; u <= 1; u++) for (let v = -1; v <= 1; v++) for (const q of (Jh.get((gx + u) * 4096 + gy + v) || [])) if (Math.hypot(q[0] - x, q[1] - y) < 14) return true; return false; };
-  const Jg = new Uint8Array(FX * FY); for (let j = 0; j < FY; j++) for (let i = 0; i < FX; i++) Jg[j * FX + i] = inJ(i * G, j * G) ? 1 : 0;
+  const jr = 14 + 10 * D, Jh = pointHash(jpts, jr + 12), jDist = (x, y) => { let m = 1e9; const gx = Math.floor(x / (jr + 12)), gy = Math.floor(y / (jr + 12)); for (let u = -1; u <= 1; u++) for (let v = -1; v <= 1; v++) for (const q of (Jh.get((gx + u) * 4096 + gy + v) || [])) m = Math.min(m, Math.hypot(q[0] - x, q[1] - y)); return m; }, inJ = (x, y) => jDist(x, y) < jr;   // r1: a quiet zone around knots that grows with D
+  const Jg = new Uint8Array(FX * FY), Jring = new Float32Array(FX * FY).fill(1); for (let j = 0; j < FY; j++) for (let i = 0; i < FX; i++) { const d = jDist(i * G, j * G); Jg[j * FX + i] = d < jr ? 1 : 0; Jring[j * FX + i] = 0.3 + 0.7 * smooth(jr, jr + 12, d); }
   const isJ = (x, y) => Jg[Math.round(clamp(y / G, 0, FY - 1)) * FX + Math.round(clamp(x / G, 0, FX - 1))] === 1;
 
   // ---- the mask: base marked with a jittered halo (§3)
@@ -124,7 +124,7 @@ function densityPass(o) {
   }
   // ---- slash (§2.6): restated chords, shard wedges, rarely an X
   if (effS > 0) {
-    const rS = rngFor(seed, 6187), nC = Math.round(effS * (1 + 4 * rS())), cands = [];
+    const rS = rngFor(seed, 6187), nC = Math.round(effS * (1 + 2 * rS())), cands = [];
     for (let t = 0; t < 60; t++) {
       const x = 20 + (W - 40) * rS(), y = 20 + (H - 40) * rS(), a = rS() * Math.PI, len = 80 + 180 * rS(), dx = Math.cos(a), dy = Math.sin(a);
       const P = []; for (let s2 = -len / 2; s2 <= len / 2; s2 += 1) { const px = x + dx * s2, py = y + dy * s2; if (px > 3 && py > 3 && px < W - 3 && py < H - 3) P.push([px, py]); }
@@ -154,7 +154,7 @@ function densityPass(o) {
   }
   // ---- fans (§2.4): radiating strokes from inside the strongest bends
   if (cov > 0) {
-    const rN = rngFor(seed, 6186), nF = Math.min(3, Math.round(cov * (1 + 2 * rN()))), bends = [], used = new Set();
+    const rN = rngFor(seed, 6186), nF = cov > 1 ? 1 : cov > 0.6 && rN() < 0.5 ? 1 : 0   /* r1: rosettes read stamped */, bends = [], used = new Set();
     for (const [id, g] of geo) { const n = g.C.length; for (let i = 20; i < n - 20; i += 4) { const k = wrap(g.th[Math.min(n - 1, i + 8)] - g.th[Math.max(0, i - 8)]) / 8, r = 1 / (Math.abs(k) || 1e-9); if (r >= 8 && r <= 35) bends.push({ id, i, r, k }); } }
     bends.sort((a, b) => a.r - b.r);
     for (const b of bends) {
@@ -175,8 +175,8 @@ function densityPass(o) {
   // ---- surprise (§2.7): one region that switches register, touching the drawing
   if (effX > 0) {
     const rX = rngFor(seed, 6189);
-    if (rX() < effX) {
-      const kind = rX() < 0.45 ? 'thorn' : rX() < 0.6 ? 'rings' : 'black';
+    if (rX() < 0.6 * effX) {
+      const kind = rX() < 0.3 ? 'thorn' : rX() < 0.6 ? 'rings' : 'black';
       const at = chiC_.length ? [chiC_[0].x + (rX() - 0.5) * 30, chiC_[0].y + (rX() - 0.5) * 30] : [W * (0.3 + 0.4 * rX()), H * (0.3 + 0.4 * rX())];
       if (kind === 'thorn') { const n = 5 + Math.floor(7 * rX()), a0 = rX() * Math.PI * 2; for (let q = 0; q < n; q++) { if (rX() < 0.12) continue; const a = a0 + q * 2 * Math.PI / n + rad((rX() - 0.5) * 30), len = 12 + 33 * rX(), wd = 1.5 + 3 * rX(), tip = [at[0] + Math.cos(a) * len, at[1] + Math.sin(a) * len];
           for (const sg of [1, -1]) { const b0 = [at[0] - Math.sin(a) * wd * sg, at[1] + Math.cos(a) * wd * sg], R = []; for (let t = 0; t <= 1.0001; t += 0.05) { const bow = -Math.sin(Math.PI * t) * wd * 0.3 * sg; R.push([b0[0] + (tip[0] - b0[0]) * t - Math.sin(a) * bow, b0[1] + (tip[1] - b0[1]) * t + Math.cos(a) * bow]); } L_.surprise.push(R); } } }
@@ -201,18 +201,6 @@ function densityPass(o) {
   layers.ribbon = capTo(clip(L_.ribbonRails, DZ.ribbon), caps.cont * 0.6);
   layers.fan = capTo(clip(L_.fans, DZ.fan), caps.fans * 0.7);
   layers.surprise = capTo(clip(L_.surprise, DZ.surprise), caps.surprise);
-  // voids (§2.3): the largest pockets away from everything marked stay empty
-  const voidM = new Uint8Array(N);
-  if (cov > 0) {
-    const occ = new Uint8Array(N); for (let c = 0; c < N; c++) if (M.owner[c]) occ[c] = 1;
-    const Dm = chamferLab(occ, null).d, rV = rngFor(seed, 6183), peaks = [];
-    for (let y = 8; y < H - 8; y += 3) for (let x = 8; x < W - 8; x += 3) { const d = Dm[y * GW + x]; if (d >= 14) peaks.push({ x, y, d }); }
-    peaks.sort((a, b) => b.d - a.d); const kept = [];
-    for (const pk of peaks) { if (kept.length >= Math.round(Math.min(1, cov) * 4)) break; if (kept.some(k => Math.hypot(k.x - pk.x, k.y - pk.y) < k.d + pk.d)) continue; kept.push(pk); }
-    for (const pk of kept) { const R = Math.min(1.6 * pk.d, 45), thr = 2 + 3 * rV(), ox = (rV() - 0.5) * 0.3 * R; for (let y = Math.max(0, pk.y - R); y < Math.min(H, pk.y + R); y++) for (let x = Math.max(0, pk.x - R); x < Math.min(W, pk.x + R); x++) { const c = Math.floor(y) * GW + Math.floor(x); if (Dm[c] >= thr && Math.hypot(x - pk.x - ox, (y - pk.y) * 1.25) < R * (0.8 + 0.3 * (0.5 + 0.5 * nH((x + y) / 15)))) voidM[c] = 1; } }
-    info.voids = kept.length;
-  }
-
   // tone T (4 mm grid): activity × chaos × lobe; 0 in J; stretched until p90/p50 ≥ 4
   const Tg = new Float32Array(FX * FY), gh = []; for (const [id, g] of geo) for (let i = 0; i < g.C.length; i += 6) gh.push([g.C[i][0], g.C[i][1], id, i]);
   const GH8 = pointHash(gh, 8);
@@ -222,35 +210,61 @@ function densityPass(o) {
     for (let u = -3; u <= 3; u++) for (let v = -3; v <= 3; v++) for (const q of (GH8.get((gx + u) * 4096 + gy + v) || [])) { const d = Math.hypot(q[0] - x, q[1] - y); if (d < bd) { bd = d; best = q; } }
     let lobe = 1;
     if (best) { const g = geo.get(best[2]), k = best[3]; if (Math.abs(g.b[k]) > 0.2) lobe = ((x - g.C[k][0]) * g.nx[k] + (y - g.C[k][1]) * g.ny[k]) * g.b[k] > 0 ? 1.5 : 0.6; }
-    Tg[j * FX + i] = (0.35 + Ar(clamp(x, 0, W - 1), clamp(y, 0, H - 1))) * (1 + 0.4 * chi(x, y)) * lobe;
+    Tg[j * FX + i] = (0.35 + Ar(clamp(x, 0, W - 1), clamp(y, 0, H - 1))) * (1 + 0.4 * chi(x, y)) * lobe * Jring[j * FX + i];
   }
   { const vals = Array.from(Tg).filter(v => v > 0).sort((a, b) => a - b), want = cov > 1 ? 6 : 4;
     if (vals.length > 10) { const p = q => vals[Math.floor(q * (vals.length - 1))], mx = vals[vals.length - 1]; let lo = 1, hi = 8;
       for (let it = 0; it < 20; it++) { const gm = (lo + hi) / 2; if (Math.pow(p(0.9), gm) / Math.pow(p(0.5), gm) >= want) hi = gm; else lo = gm; }
       const gm = Math.min(hi, cov > 1 ? 3 : 2.2);   // cover the field: a floor, and the peaks stretched only so far
       for (let c = 0; c < Tg.length; c++) Tg[c] = Tg[c] > 0 ? 0.12 + 0.88 * Math.pow(Tg[c] / mx, gm) : 0; } }
+  // r1 → facets: the ground is laid in planes (Voronoi cells 25–50 mm), each with its own direction and
+  // weight, so tone changes at edges like brushed planes instead of combing one smooth flow (the hair look)
+  const rP = rngFor(seed, 6190), fac = [];
+  for (let t = 0; t < 400 && fac.length < 70; t++) { const x = W * rP(), y = H * rP(), sp = 25 + 25 * rP(); if (fac.some(f => Math.hypot(f.x - x, f.y - y) < Math.min(sp, f.sp))) continue; fac.push({ x, y, sp, dth: rad((rP() - 0.5) * 50), w: 0.25 + 1.2 * rP() * rP() + 0.3 * rP() }); }
+  const FG = 2, FW = Math.ceil(W / FG), FH = Math.ceil(H / FG), facId = new Int16Array(FW * FH);
+  for (let j = 0; j < FH; j++) for (let i = 0; i < FW; i++) { const x = i * FG + 1, y = j * FG + 1 + 3 * nA(ph + 700 + x / 25); let b = 0, bd = 1e18; fac.forEach((f, k) => { const d = (f.x - x) ** 2 + (f.y - y) ** 2; if (d < bd) { bd = d; b = k; } }); facId[j * FW + i] = b; }
+  const facAt = (x, y) => facId[clamp(Math.floor(y / FG), 0, FH - 1) * FW + clamp(Math.floor(x / FG), 0, FW - 1)];
+  for (let j = 0; j < FY; j++) for (let i = 0; i < FX; i++) Tg[j * FX + i] *= fac[facAt(i * G, j * G)].w;
   const T = (x, y) => bil(Tg, x, y);
+  // voids (§2.3, r1): hard-edged shards carved out of where the fill would be densest, like the monoprint's cut-outs
+  const voidM = new Uint8Array(N);
+  if (cov > 0) {
+    const rV = rngFor(seed, 6183), cand = [], want = 1 + Math.round(Math.min(1, cov) * 3), kept = [];
+    for (let y = 20; y < H - 20; y += 12) for (let x = 20; x < W - 20; x += 12) { const t = T(x, y); if (t > 0.45 && jDist(x, y) > jr + 20 && Db.d[cellOf(x, y)] > 6) cand.push({ x: x + (rV() - 0.5) * 8, y: y + (rV() - 0.5) * 8, t: t + 0.3 * rV() }); }
+    cand.sort((a, b) => b.t - a.t);
+    for (const c of cand) { if (kept.length >= want) break; if (kept.some(k => Math.hypot(k.x - c.x, k.y - c.y) < 70)) continue; kept.push(c); }
+    for (const c of kept) {
+      const n = 5 + Math.floor(3 * rV()), R = 12 + 23 * rV(), a0 = rV() * Math.PI * 2, stretch = 1 + 1.2 * rV(), rot = theta(c.x, c.y), poly = [];
+      for (let q = 0; q < n; q++) { const a = a0 + q * 2 * Math.PI / n + (rV() - 0.5) * 0.5, r = R * (0.5 + 0.6 * rV()), lx = Math.cos(a) * r * stretch, ly = Math.sin(a) * r; poly.push([c.x + lx * Math.cos(rot) - ly * Math.sin(rot), c.y + lx * Math.sin(rot) + ly * Math.cos(rot)]); }
+      const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+      for (let y = Math.max(0, Math.floor(Math.min(...ys))); y < Math.min(H, Math.ceil(Math.max(...ys))); y++) for (let x = Math.max(0, Math.floor(Math.min(...xs))); x < Math.min(W, Math.ceil(Math.max(...xs))); x++) {
+        let inside = false; for (let a = 0, b = n - 1; a < n; b = a++) { const [xa, ya] = poly[a], [xb, yb] = poly[b]; if ((ya > y + 0.5) !== (yb > y + 0.5) && x + 0.5 < (xb - xa) * (y + 0.5 - ya) / (yb - ya) + xa) inside = !inside; }
+        if (inside) voidM[y * GW + x] = 1;
+      }
+    }
+    info.voids = kept.length;
+  }
 
   // ---- ground (§2.2): scrubs, one pen-down path of 3–9 passes along θ; candidates fixed per cell so the dial only adds
   const lognorm = (r, med, s) => med * Math.exp(s * Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r()));
   const scrub = (x0, y0, r, dth) => {
-    const passes = 3 + Math.floor(7 * r()), side = r() < 0.5 ? 1 : -1, adv = () => clamp(lognorm(r, 0.9, 0.5), 0.35, 2.2);
+    const f0 = facAt(x0, y0), bleed = r() < 0.2;
+    const u0 = r(), passes = u0 < 0.4 ? 1 : u0 < 0.8 ? 2 : 3, side = r() < 0.5 ? 1 : -1, adv = () => 0.15 + 0.45 * r();   // r1: long drags that overlap for tone
     const nz = noise1(r), nph = r() * 100; let x = x0, y = y0, dir = r() < 0.5 ? 1 : -1, P = [], s = 0;
     for (let k = 0; k < passes; k++) {
-      const len = clamp(lognorm(r, 22, 0.55), 8, 55); let t = 0, moved = 0;
+      const len = clamp(lognorm(r, 50, 0.5), 20, 130) * (k ? 0.5 + 0.4 * r() : 1); let t = 0, moved = 0;
       while (t < len) {
-        const th = theta(x, y) + dth, lat = 0.5 * nz(nph + s / 12) * 0.08;
+        const th = theta(x, y) + dth + fac[f0].dth, lat = nz(nph + s / 18) * 0.06;
         const nx = x + dir * Math.cos(th) * 0.5 - Math.sin(th) * lat, ny = y + dir * Math.sin(th) * 0.5 + Math.cos(th) * lat;
-        if (nx < 3 || ny < 3 || nx > W - 3 || ny > H - 3 || M.owner[cellOf(nx, ny)] > DZ.ground || T(nx, ny) < 0.06 + 0.12 * (0.5 + 0.5 * dry(nx / 9, ny / 9)) || isJ(nx, ny) || voidM[cellOf(nx, ny)]) break;
+        if (nx < 3 || ny < 3 || nx > W - 3 || ny > H - 3 || M.owner[cellOf(nx, ny)] > DZ.ground || T(nx, ny) < 0.06 + 0.12 * (0.5 + 0.5 * dry(nx / 9, ny / 9)) || isJ(nx, ny) || voidM[cellOf(nx, ny)] || (facAt(nx, ny) !== f0 && !bleed)) break;
         x = nx; y = ny; P.push([x, y]); t += 0.5; s += 0.5; moved++;
       }
       if (moved < 4 && k === 0) return null;
       if (moved < 4) break;
-      const th = theta(x, y) + dth, a = adv(), hx = dir * Math.cos(th), hy = dir * Math.sin(th), qx = -Math.sin(th) * side, qy = Math.cos(th) * side;
-      for (let q = 1; q <= 4; q++) { const ang = Math.PI * q / 4, rr = a / 2; P.push([x + hx * Math.sin(ang) * rr * 0.8 + qx * rr * (1 - Math.cos(ang)), y + hy * Math.sin(ang) * rr * 0.8 + qy * rr * (1 - Math.cos(ang))]); }   // a round hairpin
-      x += qx * a; y += qy * a; dir = -dir;
+      const th = theta(x, y) + dth + fac[f0].dth, a = adv(), hx = dir * Math.cos(th), hy = dir * Math.sin(th), qx = -Math.sin(th) * side, qy = Math.cos(th) * side;
+      x += qx * a + hx * 0.4; y += qy * a + hy * 0.4; P.push([x, y]); dir = -dir;   // a sharp turn, the return shorter: ends stagger instead of pills
     }
-    return P.length > 16 ? P : null;
+    return P.length > 30 ? P : null;
   };
   // dry-brush: noise stretched 8:1 along the scrub's heading breaks neighbouring passes in aligned skips
   const dryBrush = P => {
