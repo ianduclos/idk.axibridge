@@ -4,7 +4,7 @@ Status: planned 2026-09-29, not started. Start it in a fresh session.
 
 ## Why
 
-Round 1 of meander landed. Ian on the published page (Version 5 of https://claude.ai/artifact/Bawx12VN4uRgWR2wU2Lso3), verbatim: "bah this is super nice. how can we keep going? keep pushing the thing". He chose all four directions below. Evidence and the mechanism are in `shots/meander-0929/README.md`; the reviews are in `docs/reviews/meander-sonnet.md` (rounds 1–2); the design is in `docs/research/meander/`.
+Round 1 of meander landed. Ian on the published page (Version 5 of https://claude.ai/artifact/Bawx12VN4uRgWR2wU2Lso3), verbatim: "bah this is super nice. how can we keep going? keep pushing the thing". He chose all four directions below, then dropped the paper test. Evidence and the mechanism are in `shots/meander-0929/README.md`; the reviews are in `docs/reviews/meander-sonnet.md` (rounds 1–2); the design is in `docs/research/meander/`.
 
 His standing aesthetic direction is in `docs/plans/territory-meander-round.md` ("Ian's aesthetic direction"). Carry that section verbatim into every agent brief, as last round.
 
@@ -19,10 +19,7 @@ His standing aesthetic direction is in `docs/plans/territory-meander-round.md` (
    - rails on gentle arcs and straights (M09, M10, M13);
    - no protagonist in the thin cells (M01, M06, M07, M14).
    - Reviewer's suggestion: make dropout bands curvature-gated, and use 2–3 unequal searching patches per cell.
-4. **Paper test.** Plot 2–3 shortlisted cells on the AxiDraw. Width made of lines has to be judged at 0.4 mm on paper. This is the first plot on this track, so it is Ian-gated: he is present, the pen is chosen, and the carriage starts at home.
-   - **The Pi is down** (CHANGES feed, 2026-09-11), so use the Mac's direct USB AxiDraw, not `pi_ssh`.
-   - Export uses the page's Copy SVG, in mm, at pen width.
-   - Plot through axibridge's normal import, never a second geometry path.
+4. ~~Paper test~~ — dropped by Ian (29 September, mid-round: "forget the paper test").
 
 ## Roles and loop (unchanged)
 
@@ -35,6 +32,7 @@ Lessons from round 1 worth keeping:
 
 ## Not in scope
 
-- Any `axibridge/` change, except using its existing import and plot path for the paper test.
+- Any `axibridge/` change.
+- Plotting.
 - Colour or multi-pen.
 - The bench port (a later decision, once Ian accepts a direction).
