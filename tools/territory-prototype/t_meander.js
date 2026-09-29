@@ -247,7 +247,7 @@ function seedChannels(T, prm, rng, F = SHEET_F) {
   // round 3 (brief §2.4): a second river at a different heading, crossing the first exactly once
   if (prm.complexity !== undefined && out.length) {
     const r2 = rngFor(T.seed, 6167);
-    if (r2() < smooth(0.3, 0.9, prm.complexity)) {
+    if (r2() < smooth(0.25, 0.85, prm.complexity)) {
       const tp = out[0].pts, m = tp[Math.floor(tp.length / 2)], e0 = tp[0], e1 = tp[tp.length - 1], th = Math.atan2(e1[1] - e0[1], e1[0] - e0[0]);
       for (let tries = 0; tries < 8; tries++) {
         const side = r2() < 0.5 ? 1 : -1, d = (0.35 + 0.25 * r2()) * W, x = m[0] - Math.sin(th) * d * side, y = m[1] + Math.cos(th) * d * side;
@@ -256,9 +256,11 @@ function seedChannels(T, prm, rng, F = SHEET_F) {
         const h = toward > 0 ? h0 : h0 + Math.PI;
         const P = trimToSheet(noiseWalk(r2, 180 + 120 * r2(), clamp(x, 20, W - 20), clamp(y, 20, H - 20), h, F), 12, F);
         if (polyLen(P) < 100 || crossings(P, tp) !== 1) continue;
-        const c = mk('trunk', P); c.S0 = 5; c.second = true; out.push(c);
+        const c = mk('trunk', P); c.S0 = 5; c.second = true;
         // junction sprouts (§2.4, D3): two short minors start near the crossing, the seed-22 knot on purpose
         let X = null; for (let i = 1; i < c.pts.length && !X; i++) for (let j = 1; j < tp.length; j++) if (crossings([c.pts[i - 1], c.pts[i]], [tp[j - 1], tp[j]])) { X = { p: c.pts[i], i, j }; break; }
+        if (!X || X.p[0] < 0.2 * W || X.p[0] > 0.8 * W || X.p[1] < 0.2 * H || X.p[1] > 0.8 * H) continue;   // r1 (F5): the crossing sits in the middle 60 %
+        out.push(c);
         if (X) {
           out[0].crossAt = X.p; const rj = rngFor(T.seed, 6172);
           for (let k = 0; k < 2 && out.length < nCh; k++) {
@@ -448,7 +450,7 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg, chiF) {
     s = 0.3 + (s - 0.3) * smooth(0, 6, dInf[i]) * smooth(0, 15, dEnd);
     S[i] = s; b[i] = sgn[i] * smooth(0, 6, dInf[i]);
     // a channel is one line or a band of ≥ 3: a pair is an outline at any gap
-    K[i] = s < 1.6 ? 1 : clamp(1 + Math.round(s / 0.9), 3, 8); Kmax = Math.max(Kmax, K[i]);
+    K[i] = s < 1.6 ? 1 : clamp(1 + Math.round(s / 0.9), 3, chiF && chiF(C[i][0], C[i][1]) < 0.5 ? 5 : 8); Kmax = Math.max(Kmax, K[i]);
   }
   // strands fill the whole band: k = 0 is the firm core on the concave side, higher k walk toward
   // the convex edge and drop first as S falls; an inactive strand rides its inward neighbour, so
@@ -480,15 +482,17 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg, chiF) {
       let j = -1, jd = 12; for (let i = 0; i < n; i++) { const d = Math.hypot(C[i][0] - e.at[0], C[i][1] - e.at[1]); if (d < jd) { jd = d; j = i; } }
       if (j >= 0 && K[j] >= 3 && P[j] > 0 && !dips.some(d => Math.abs(d.i - j) < 80)) dips.push({ i: j, depth: 0.5 });
     }
+    const R3 = prm.chaos !== undefined;
     for (const d of dips.slice(0, Math.min(2, tg.left))) {
-      let L = Math.round((18 + 30 * tg.rng() + 20 * A(C[d.i][0], C[d.i][1])) / 0.5);   // meander2 r1: 20–45 mm read as nothing
+      // meander2 r1: 20–45 mm read as nothing; meander3 r1 (Fable F1): 59–114 mm × 2 read as one stamp, so 25–55 mm × 1
+      let L = R3 ? Math.round((10 + 12 * tg.rng() + 6 * A(C[d.i][0], C[d.i][1])) / 0.5) : Math.round((18 + 30 * tg.rng() + 20 * A(C[d.i][0], C[d.i][1])) / 0.5);
       L = Math.max(L, Math.round(3 * 1.6 * S[d.i] / 0.5 / 2));
       let i0 = Math.max(0, d.i - L), i1 = Math.min(n - 1, d.i + L), Lm = L, Lp = L;
       if (prm.chaos > 0.5 && d.depth === 1) {   // round 3: a long tangle that runs out toward the nearer end and thins
         L = Math.round((30 + 20 * tg.rng()) / 0.5);
         if (d.i < n - 1 - d.i) { Lm = Math.round(1.5 * L); Lp = L; } else { Lm = L; Lp = Math.round(1.5 * L); }
         i0 = Math.max(0, d.i - Lm); i1 = Math.min(n - 1, d.i + Lp);
-      }
+      } else if (R3 && (d.i - L < 50 || d.i + L > n - 51)) continue;   // the knot sits ≥ 25 mm from either end, else none
       const depth = d.depth * clamp(prm.tangle, 0, 1) / 0.6;
       for (let i = i0; i <= i1; i++) { const Li = i < d.i ? Lm : Lp; coh[i] = Math.min(coh[i], 1 - Math.min(0.95, depth * 0.5 * (1 + Math.cos(Math.PI * (i - d.i) / Li)))); }
       zones.push({ ch: ch.id, i0, i1, depth }); tg.left--;
@@ -496,13 +500,13 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg, chiF) {
   }
   if (zones.length) {
     for (let k = 0; k < Kmax; k++) {
-      const wz = noise1(tg.rng), lam = 12 + 13 * tg.rng(), ph2 = tg.rng() * 100;
+      const wz = noise1(tg.rng), lam = prm.chaos !== undefined ? 12 + 18 * tg.rng() : 12 + 13 * tg.rng(), ph2 = tg.rng() * 100;
       for (const z of zones) {
         for (let i = z.i0; i <= z.i1; i++) {
           const w = 1 - coh[i]; if (w <= 0) continue;
           const env = (1.0 * S[i] + 1.2) * (1 + 0.6 * w);
           off[k][i] = coh[i] * off[k][i] + w * env * wz(ph2 + i * 0.5 / lam);
-          if (w > 0.3) act[k][i] = 1;                                    // dropped strands revive
+          if (w > 0.3 && (prm.chaos === undefined || k < 4)) act[k][i] = 1;                                    // dropped strands revive
         }
         const seg = boxFilter(off[k].slice(z.i0, z.i1 + 1), 8); for (let i = z.i0; i <= z.i1; i++) off[k][i] = seg[i - z.i0];
       }
@@ -564,12 +568,12 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg, chiF) {
 }
 
 // Hook of 2–5 mm curling toward `toward` (a direction vector) from the end of a stroke.
-function hookFrom(P, toward, rng) {
+function hookFrom(P, toward, rng, curl = 0.35) {
   const m = P.length; if (m < 3) return null;
   const e = P[m - 1], p = P[Math.max(0, m - 4)], tx = e[0] - p[0], ty = e[1] - p[1];
   const sgn = Math.sign(tx * toward[1] - ty * toward[0]) || 1, len = 2 + 3 * rng(), out = [[e[0], e[1]]];
   let a = Math.atan2(ty, tx), x = e[0], y = e[1];
-  for (let t = 0; t < len; t += 0.5) { a += sgn * 0.35; x += Math.cos(a) * 0.5; y += Math.sin(a) * 0.5; out.push([x, y]); }
+  for (let t = 0; t < len; t += 0.5) { a += sgn * curl; x += Math.cos(a) * 0.5; y += Math.sin(a) * 0.5; out.push([x, y]); }
   return out;
 }
 
@@ -643,8 +647,8 @@ Territory.prototype.meander = function (cores) {
   };
   const addHook = (pc, toward, rng) => {
     const e = pc.pts[pc.pts.length - 1];
-    if (hooksAt.some(h => Math.hypot(h[0] - e[0], h[1] - e[1]) < 25)) return null;
-    const hk = hookFrom(pc.pts, toward, rng); if (hk) hooksAt.push(e); return hk;
+    if (hooksAt.some(h => Math.hypot(h[0] - e[0], h[1] - e[1]) < (r3 ? 45 : 25))) return null;
+    const hk = r3 ? hookFrom(pc.pts, toward, rng, 0.2 + 0.25 * rng()) : hookFrom(pc.pts, toward, rng); if (hk) hooksAt.push(e); return hk;
   };
   const ink = { all: 0, chaos: 0 };
   const emit = (kind, strokes, extra) => {
@@ -655,10 +659,12 @@ Territory.prototype.meander = function (cores) {
 
   // ---- M2: present bundles ----
   { const ms = chans.filter(c => c.cls === 'minor' && !c.abandoned && c.drawn && c.present && c.present.length > 10).map(c => ({ c, a: c.present.reduce((x, p) => x + Ar(p[0], p[1]), 0) / c.present.length })).sort((x, y) => y.a - x.a || x.c.id - y.c.id);
-    ms.forEach((m, i) => { m.c.S0 = i < 2 ? 4 : 1.4; }); }
+    ms.forEach((m, i) => { m.c.S0 = i < 2 ? 4 : 1.4; });
+    // meander3 r1 (F5): a banded minor that never meets the trunk reads as a second drawing
+    const tp0 = chans[0].present; if (prm.chaos !== undefined && tp0) { const h = pointHash(tp0, 6); for (const m of ms) if (m.c.S0 === 4 && !m.c.present.some(p => { const gx = Math.floor(p[0] / 6), gy = Math.floor(p[1] / 6); for (let u = -1; u <= 1; u++) for (let v = -1; v <= 1; v++) for (const q of (h.get((gx + u) * 4096 + gy + v) || [])) if (Math.hypot(q[0] - p[0], q[1] - p[1]) < 6) return true; return false; })) m.c.S0 = 1.4; } }
   const geo = new Map(); this._geo = geo; let dead = 0, tot = 0; const tangleZones = [];
   const bundles = (presentOf, chiF) => {
-    const rT = rngFor(seed, 6165), tg = { rng: rT, on: rT() >= 0.2, left: 2, refuse: events.filter(e => e.kind === 'refuse') };
+    const rT = rngFor(seed, 6165), tg = { rng: rT, on: rT() >= 0.2, left: prm.chaos !== undefined ? 1 : 2, refuse: events.filter(e => e.kind === 'refuse') };
     for (const c of chans) {
       if (!c.drawn || c.abandoned || !c.present || c.present.length < 10) continue;
       const g = bundleGeom(c, presentOf(c), c.presentSpeed, Ar, prm, rB, loose, tg, chiF);
@@ -685,7 +691,7 @@ Territory.prototype.meander = function (cores) {
     chi = (x, y) => { let m = 0; for (const c of chiC) { const d = Math.hypot(x - c.x, y - c.y); if (d < c.r) m = Math.max(m, smooth(c.r, 0.4 * c.r, d)); } return m; };
     // second pass on pre-smoothed centrelines, same streams as the first
     geo.clear(); dead = 0; tot = 0; tangleZones.length = 0; rB = rngFor(seed, 6162);
-    bundles(c => { const P = resample(c.present, 2), Ps = smoothPts(P, 14); return P.map((p, i) => { const w = chi(p[0], p[1]); return [Ps[i][0] + (p[0] - Ps[i][0]) * w, Ps[i][1] + (p[1] - Ps[i][1]) * w]; }); }, chi);
+    bundles(c => { const P = resample(c.present, 2), Ps = smoothPts(P, 6); return P.map((p, i) => { const w = chi(p[0], p[1]); return [Ps[i][0] + (p[0] - Ps[i][0]) * w, Ps[i][1] + (p[1] - Ps[i][1]) * w]; }); }, chi);
   }
   // white channel: the trunk's bundle is withheld; its strip is a wall nobody drew
   const trunkG = geo.get(0);
@@ -703,7 +709,7 @@ Territory.prototype.meander = function (cores) {
       const pieces = put(st.pts, id, st.k === 0 ? (rB() < 0.5 ? { ...edgeHand, over: 0 } : edgeHand) : strandHand, rB, { cross });
       for (const pc of pieces) {
         strokes.push(pc.pts);
-        if (pc.endT && st.k === 0 && polyLen(pc.pts) > 15) { const q = Math.min(st.i1, st.i0 + pc.pts.length); const hk = addHook(pc, [-g.nx[q] * st.side, -g.ny[q] * st.side], rB); if (hk) strokes.push(hk); }
+        if (pc.endT && st.k === 0 && polyLen(pc.pts) > 15 && (!r3 || rB() < 0.5)) { const q = Math.min(st.i1, st.i0 + pc.pts.length); const hk = addHook(pc, [-g.nx[q] * st.side, -g.ny[q] * st.side], rB); if (hk) strokes.push(hk); }
       }
       // the downstream end of the convex strand usually curls inward
       if (st.k === 0 && st.i1 >= g.C.length - 40 && pieces.length && rB() < 0.3) {
@@ -718,7 +724,7 @@ Territory.prototype.meander = function (cores) {
   //      side: uneven gaps, lengths growing outward, each leaning downstream, so they neither nest nor ring.
   const accents = [];
   if (r3 && prm.accents > 0 && chiC.length) {
-    const rA = rngFor(seed, 6169), nA = Math.round(3 * clamp(prm.accents, 0, 1)), sites = [];
+    const rA = rngFor(seed, 6169), nA = Math.min(2, Math.round(3 * clamp(prm.accents, 0, 1))), sites = [];
     for (const [id, g] of geo) {
       const n = g.C.length, kp = new Float64Array(n);
       for (let i = 6; i < n - 6; i++) kp[i] = wrap(g.th[i + 6] - g.th[i - 6]) / 6;          // rad per mm
@@ -731,13 +737,13 @@ Territory.prototype.meander = function (cores) {
     }
     sites.sort((x, y) => y.a - x.a || x.id - y.id || x.i - y.i);
     const byC = new Set(); let far = 0;
-    for (const pass of [0, 1, 2]) for (const st of sites) {
+    for (const pass of [0, 1]) for (const st of sites) {   // r1: the far pass put arcs on every bend
       if (accents.length >= nA) break;
       if (st.far !== (pass === 2) || (pass === 2 && far >= 1)) continue;   // near the chaos first; at most one elsewhere
       if (pass === 0 && byC.has(st.c)) continue;
       const g = geo.get(st.id), p = g.C[st.i];
       if (accents.some(q => Math.hypot(q.at[0] - p[0], q.at[1] - p[1]) < 30)) continue;
-      const cnt = 3 + Math.floor(3 * rA()), set = [0.6, 0.9, 1.5];
+      const cnt = 3 + Math.floor(2 * rA()), set = [0.6, 0.9, 1.5];
       let gaps;
       for (let t = 0; t < 20; t++) {
         const pool = set.slice().sort(() => rA() - 0.5); gaps = []; for (let j = 0; j < cnt - 1; j++) gaps.push(j < 3 ? pool[j] : set[Math.floor(rA() * 3)]);
@@ -784,7 +790,7 @@ Territory.prototype.meander = function (cores) {
     const cand = [], inZone = (id, i) => (tangleZones || []).some(z => z.ch === id && i >= z.i0 - 20 && i <= z.i1 + 20);
     for (const [id, g] of geo) for (let i = 30; i < g.C.length - 30; i += 20) { const p = g.C[i]; if (g.S[i] < 3 && Ar(p[0], p[1]) > 0.5 && !inZone(id, i) && (!r3 || chi(p[0], p[1]) > 0.3)) cand.push({ id, i, band: g.S[i] >= 1.6, a: Ar(p[0], p[1]) + 0.3 * rE() }); }
     cand.sort((x, y) => y.a - x.a || x.id - y.id || x.i - y.i);
-    const want = Math.round((2 + (rE() < 0.5 ? 1 : 0)) * prm.search);
+    const want = r3 ? Math.round((1 + (rE() < 0.5 ? 1 : 0)) * Math.min(1, prm.search)) : Math.round((2 + (rE() < 0.5 ? 1 : 0)) * prm.search);
     let onBand = 0;
     for (const c of cand) {
       if (searchSpots.length >= want) break;
@@ -794,7 +800,7 @@ Territory.prototype.meander = function (cores) {
       if (searchSpots.some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 35)) continue;
       searchSpots.push(p); if (c.band) onBand++;
       const gauss = Math.sqrt(-2 * Math.log(1 - rE())) * Math.cos(2 * Math.PI * rE());
-      const halfMm = clamp(8 * Math.exp(0.6 * gauss), 6, 40), half = Math.round(halfMm * 2), passes = 2 + Math.floor(5 * rE() * halfMm / 40), strokes = [];
+      const halfMm = clamp(8 * Math.exp(0.6 * gauss), 6, r3 ? 25 : 40), half = Math.round(halfMm * 2), passes = Math.min(r3 ? 4 : 9, 2 + Math.floor(5 * rE() * halfMm / 40)), strokes = [];
       for (let r = 0; r < passes; r++) {
         const nz = noise1(rE), ph = rE() * 100, amp = 0.6 + 1.4 * rE(), bias = (rE() - 0.5) * 1.6;
         const i0 = clamp(c.i - half + Math.round((rE() - 0.5) * 20), 0, g.C.length - 1), i1 = clamp(c.i + half + Math.round((rE() - 0.5) * 20), 0, g.C.length - 1);
@@ -811,7 +817,7 @@ Territory.prototype.meander = function (cores) {
   const bridges = [];
   if (r3 && prm.bridges > 0) {
     const rG = rngFor(seed, 6170), bd = clamp(prm.bridges, 0, 1);
-    const nB = Math.round(bd * (2 + 3 * rG())), capInk = (0.03 + 0.05 * bd) * ink.all;
+    const nB = Math.round(bd * (1 + 2 * rG())), capInk = (0.03 + 0.05 * bd) * ink.all;
     const idx = new Map(), SI = [];
     for (const e of out) for (const st of e.strokes) {
       const P = resample(st, 1); if (P.length < 4) continue;
@@ -856,11 +862,11 @@ Territory.prototype.meander = function (cores) {
       return cross === 0;
     };
     const bean = (B, P, q, sg) => {   // bridge + 15 mm of each host nearly closing on 30–400 mm²
-      const hostB = []; for (let j = 0; j <= 15; j++) { const r = along(q, sg, j + 1); if (r) hostB.push(r.p); }
-      const poly = P.slice(Math.max(0, P.length - 16)).concat(B, hostB); if (poly.length < 6) return false;
+      const hostB = []; for (let j = 0; j <= 40; j++) { const r = along(q, sg, j + 1); if (r) hostB.push(r.p); }
+      const poly = P.slice(Math.max(0, P.length - 41)).concat(B, hostB); if (poly.length < 6) return false;
       const f = poly[0], l = poly[poly.length - 1]; if (Math.hypot(f[0] - l[0], f[1] - l[1]) > 8) return false;
       let A2 = 0; for (let i = 0; i < poly.length; i++) { const u = poly[i], v = poly[(i + 1) % poly.length]; A2 += u[0] * v[1] - v[0] * u[1]; }
-      const area = Math.abs(A2) / 2; return area >= 30 && area <= 400;
+      const area = Math.abs(A2) / 2; return area >= 30 && area <= 1200;
     };
     const hand = { ...firm, A: firm.A * 0.5, tremor: 0, lift: 0, over: 0 };
     let used = 0, echoN = 0; const busy = [...hooksAt, ...searchSpots], rE6 = rngFor(seed, 6171);
@@ -868,7 +874,8 @@ Territory.prototype.meander = function (cores) {
       let bi = -1, bs = 0;
       cands.forEach((c, i) => {
         if (c.dead) return;
-        if (chi(c.at[0], c.at[1]) > 0.7) { c.dead = true; return; }
+        if (chi(c.at[0], c.at[1]) > 0.4) { c.dead = true; return; }
+        if (bridges.some(b => Math.hypot(b.at[0] - c.at[0], b.at[1] - c.at[1]) < 40 || b.kind === c.kind)) { c.dead = true; return; }
         if (c.cover === undefined) c.cover = inkDisc(Math.round(c.at[0]), Math.round(c.at[1]), 10);
         if (c.cover > 0.25) { c.dead = true; return; }
         const rare = [...busy, ...bridges.map(b => b.at)].some(b => Math.hypot(b[0] - c.at[0], b[1] - c.at[1]) < 30) ? 0.3 : 1;
@@ -894,14 +901,14 @@ Territory.prototype.meander = function (cores) {
       B = hermite(P0, tP, r.p, r.t, k);
       if (c.kind === 'cont' && rG() < 0.5) B = B.slice(0, Math.max(4, B.length - Math.round((1 + 2 * rG()) * 2)));   // stops short
       if (!check(B, chA, chB) || bean(B, c.P, c.q, sg)) continue;
-      const L = polyLen(B); if (used + L > capInk) continue;
+      const L = polyLen(B); if (used + L > capInk || (c.kind === 'cont' && L > 35)) continue;
       const strokes = []; for (const pc of put(B, chA, hand, rG, { cross: true, keepHand: true })) strokes.push(pc.pts);
       if (!strokes.length) continue;
       used += L; B.forEach(p => erased.mark(p[0], p[1], 1, 0, 1.2));
       // echoes (A6): 1–3 parallel traces beside it, each landing somewhere else along the other line
       let echoes = 0;
-      if (echoN < 4 && rE6() < 0.65) {
-        const want = Math.min(4 - echoN, 1 + Math.floor(3 * rE6())), side = rE6() < 0.5 ? 1 : -1, nP = [-tP[1] * side, tP[0] * side], lens = [L];
+      if (echoN < 2 && rE6() < 0.3) {
+        const want = Math.min(2 - echoN, 1), side = rE6() < 0.5 ? 1 : -1, nP = [-tP[1] * side, tP[0] * side], lens = [L];
         let d = 0, prevGap = 0;
         for (let j = 0; j < want; j++) {
           let gap; do { gap = 0.9 + 1.3 * rE6(); } while (prevGap && Math.abs(gap - prevGap) / prevGap < 0.35); prevGap = gap; d += gap;
@@ -994,7 +1001,7 @@ Territory.prototype.meander = function (cores) {
       for (const r of it.k.runs) {
         for (const pc of put(r, it.k.ch, loose, rH, { erase: true })) {
           strokes.push(pc.pts);
-          if (pc.endT) { const g = geo.get(it.k.ch), e = pc.pts[pc.pts.length - 1]; const c0 = g.C[Math.floor(g.C.length / 2)]; const hk = addHook(pc, [c0[0] - e[0], c0[1] - e[1]], rH); if (hk) strokes.push(hk); }
+          if (pc.endT && !r3) { const g = geo.get(it.k.ch), e = pc.pts[pc.pts.length - 1]; const c0 = g.C[Math.floor(g.C.length / 2)]; const hk = addHook(pc, [c0[0] - e[0], c0[1] - e[1]], rH); if (hk) strokes.push(hk); }
         }
       }
       for (const r of it.k.runs) r.forEach(p => erased.mark(p[0], p[1], 1, 0, 1.2));

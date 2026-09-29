@@ -1,0 +1,186 @@
+{
+ "R01": {
+  "seed": 21,
+  "what": "complexity 0.9",
+  "complexity": 0.9,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R02": {
+  "seed": 5,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R03": {
+  "seed": 22,
+  "what": "accents 0, bridges 0 (calm hand + chaos only)",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0,
+  "bridges": 0,
+  "history": 0.6
+ },
+ "R04": {
+  "seed": 24,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R05": {
+  "seed": 10,
+  "what": "v6 (previous version)"
+ },
+ "R06": {
+  "seed": 10,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R07": {
+  "seed": 3,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R08": {
+  "seed": 16,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R09": {
+  "seed": 14,
+  "what": "bridges 1",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 1,
+  "history": 0.6
+ },
+ "R10": {
+  "seed": 13,
+  "what": "chaos 0.8",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.8,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R11": {
+  "seed": 40,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R12": {
+  "seed": 22,
+  "what": "v6 (previous version)"
+ },
+ "R13": {
+  "seed": 7,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R14": {
+  "seed": 19,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R15": {
+  "seed": 22,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R16": {
+  "seed": 13,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R17": {
+  "seed": 31,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ },
+ "R18": {
+  "seed": 14,
+  "what": "new defaults",
+  "complexity": 0.5,
+  "drift": 0.6,
+  "band": 1,
+  "chaos": 0.5,
+  "accents": 0.5,
+  "bridges": 0.5,
+  "history": 0.6
+ }
+}
