@@ -205,6 +205,16 @@ function wiggle(P, rng) {
     return [p[0] - (b[1] - a[1]) / l * d, p[1] + (b[0] - a[0]) / l * d];
   });
 }
+function crossings(P, Q) {
+  let n = 0;
+  for (let i = 1; i < P.length; i++) for (let j = 1; j < Q.length; j++) {
+    const a = P[i - 1], b = P[i], c = Q[j - 1], d = Q[j];
+    if (Math.max(a[0], b[0]) < Math.min(c[0], d[0]) || Math.max(c[0], d[0]) < Math.min(a[0], b[0]) || Math.max(a[1], b[1]) < Math.min(c[1], d[1]) || Math.max(c[1], d[1]) < Math.min(a[1], b[1])) continue;
+    const o = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+    if (o(a, b, c) !== o(a, b, d) && o(c, d, a) !== o(c, d, b)) n++;
+  }
+  return n;
+}
 function seedChannels(T, prm, rng, F = SHEET_F) {
   const nCh = clamp(Math.round(prm.channels), 2, 12), out = [];
   const mk = (cls, pts) => {
@@ -233,6 +243,34 @@ function seedChannels(T, prm, rng, F = SHEET_F) {
   else {
     const FW = F.x1 - F.x0, FH = F.y1 - F.y0, a = rng() * Math.PI * 2, x = (F.x0 + F.x1) / 2 + Math.cos(a) * FW * 0.3 * rng(), y = (F.y0 + F.y1) / 2 + Math.sin(a) * FH * 0.3 * rng();
     out.push(mk('trunk', trimToSheet(noiseWalk(rng, 160 + 120 * rng(), x, y, rng() * Math.PI * 2, F), 12, F)));
+  }
+  // round 3 (brief §2.4): a second river at a different heading, crossing the first exactly once
+  if (prm.complexity !== undefined && out.length) {
+    const r2 = rngFor(T.seed, 6167);
+    if (r2() < smooth(0.3, 0.9, prm.complexity)) {
+      const tp = out[0].pts, m = tp[Math.floor(tp.length / 2)], e0 = tp[0], e1 = tp[tp.length - 1], th = Math.atan2(e1[1] - e0[1], e1[0] - e0[0]);
+      for (let tries = 0; tries < 8; tries++) {
+        const side = r2() < 0.5 ? 1 : -1, d = (0.35 + 0.25 * r2()) * W, x = m[0] - Math.sin(th) * d * side, y = m[1] + Math.cos(th) * d * side;
+        const turn = (50 + 60 * r2()) * Math.PI / 180, h0 = th + (r2() < 0.5 ? turn : -turn);
+        const toward = Math.sin(th) * side * Math.cos(h0) - Math.cos(th) * side * Math.sin(h0);   // heading · (−normal·side)
+        const h = toward > 0 ? h0 : h0 + Math.PI;
+        const P = trimToSheet(noiseWalk(r2, 180 + 120 * r2(), clamp(x, 20, W - 20), clamp(y, 20, H - 20), h, F), 12, F);
+        if (polyLen(P) < 100 || crossings(P, tp) !== 1) continue;
+        const c = mk('trunk', P); c.S0 = 5; c.second = true; out.push(c);
+        // junction sprouts (§2.4, D3): two short minors start near the crossing, the seed-22 knot on purpose
+        let X = null; for (let i = 1; i < c.pts.length && !X; i++) for (let j = 1; j < tp.length; j++) if (crossings([c.pts[i - 1], c.pts[i]], [tp[j - 1], tp[j]])) { X = { p: c.pts[i], i, j }; break; }
+        if (X) {
+          out[0].crossAt = X.p; const rj = rngFor(T.seed, 6172);
+          for (let k = 0; k < 2 && out.length < nCh; k++) {
+            const host = rj() < 0.5 ? c.pts : tp, hi = host === tp ? X.j : X.i, q = clamp(hi + Math.round((rj() - 0.5) * 16), 1, host.length - 2);
+            const hh = Math.atan2(host[q + 1][1] - host[q - 1][1], host[q + 1][0] - host[q - 1][0]) + (rj() < 0.5 ? 1 : -1) * (0.6 + 0.8 * rj());
+            const S = trimToSheet(noiseWalk(rj, 40 + 50 * rj(), host[q][0] + Math.cos(hh) * 6, host[q][1] + Math.sin(hh) * 6, hh, F), 12, F);
+            if (polyLen(S) >= 30) out.push(mk('minor', S));
+          }
+        }
+        break;
+      }
+    }
   }
   // graft (round 2): below 1, only inherited minors that touch the trunk's neighbourhood are kept, a share g of
   // the minors; the rest sprout at the trunk's bends. graft 1 is round 1's territory topology exactly.
@@ -352,6 +390,7 @@ function migrate(chans, A, prm, rng, F = SHEET_F) {
       } else stall(mx, my, t, 'refuse', a.id, a.id);
       return;
     }
+    if (a.cls === 'trunk' && b.cls === 'trunk') { stalls.push([mx, my]); return; }   // round 3: two rivers hold their crossing, no event
     const trunk = a.cls === 'trunk' ? a : b.cls === 'trunk' ? b : null, minor = trunk === a ? b : a, m = trunk === a ? nk.j : nk.i;
     if (trunk && minor.alive && !minor.captured && used.capture < cap.capture && m > 10 && minor.pts.length - m > 12 && rng() < 0.7) {
       used.capture++;
@@ -444,8 +483,14 @@ function bundleGeom(ch, present, speed, A, prm, rng, loose, tg, chiF) {
     for (const d of dips.slice(0, Math.min(2, tg.left))) {
       let L = Math.round((18 + 30 * tg.rng() + 20 * A(C[d.i][0], C[d.i][1])) / 0.5);   // meander2 r1: 20–45 mm read as nothing
       L = Math.max(L, Math.round(3 * 1.6 * S[d.i] / 0.5 / 2));
-      const i0 = Math.max(0, d.i - L), i1 = Math.min(n - 1, d.i + L), depth = d.depth * clamp(prm.tangle, 0, 1) / 0.6;
-      for (let i = i0; i <= i1; i++) coh[i] = Math.min(coh[i], 1 - Math.min(0.95, depth * 0.5 * (1 + Math.cos(Math.PI * (i - d.i) / L))));
+      let i0 = Math.max(0, d.i - L), i1 = Math.min(n - 1, d.i + L), Lm = L, Lp = L;
+      if (prm.chaos > 0.5 && d.depth === 1) {   // round 3: a long tangle that runs out toward the nearer end and thins
+        L = Math.round((30 + 20 * tg.rng()) / 0.5);
+        if (d.i < n - 1 - d.i) { Lm = Math.round(1.5 * L); Lp = L; } else { Lm = L; Lp = Math.round(1.5 * L); }
+        i0 = Math.max(0, d.i - Lm); i1 = Math.min(n - 1, d.i + Lp);
+      }
+      const depth = d.depth * clamp(prm.tangle, 0, 1) / 0.6;
+      for (let i = i0; i <= i1; i++) { const Li = i < d.i ? Lm : Lp; coh[i] = Math.min(coh[i], 1 - Math.min(0.95, depth * 0.5 * (1 + Math.cos(Math.PI * (i - d.i) / Li)))); }
       zones.push({ ch: ch.id, i0, i1, depth }); tg.left--;
     }
   }
@@ -630,7 +675,8 @@ Territory.prototype.meander = function (cores) {
     const rX = rngFor(seed, 6168);
     if (chaosD > 0) {
       const nC = chaosD > 0.6 ? 2 : 1;   // one place of chaos by default, two when the dial is high
-      for (const z of tangleZones.slice().sort((p, q) => q.depth - p.depth).slice(0, nC)) { const g = geo.get(z.ch), q = g.C[Math.round((z.i0 + z.i1) / 2)]; chiC.push({ x: q[0], y: q[1], r: 20 + 15 * rX() }); }
+      if (chans[0].crossAt) chiC.push({ x: chans[0].crossAt[0], y: chans[0].crossAt[1], r: 20 + 15 * rX() });
+      for (const z of tangleZones.slice().sort((p, q) => q.depth - p.depth).slice(0, nC - chiC.length)) { const g = geo.get(z.ch), q = g.C[Math.round((z.i0 + z.i1) / 2)]; chiC.push({ x: q[0], y: q[1], r: 20 + 15 * rX() }); }
       if (!chiC.length) {
         let best = null; for (let y = 25; y < H - 25; y += 5) for (let x = 25; x < W - 25; x += 5) { const a = Ar(x, y); if (!best || a > best.a) best = { x, y, a }; }
         if (best) chiC.push({ x: best.x, y: best.y, r: 20 + 15 * rX() });
