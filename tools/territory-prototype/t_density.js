@@ -368,6 +368,26 @@ function growField(o) {
   const stop = {}, covered = new Map(), log = { stop, trains: 0, echoes: 0, swale: 0, buckle: 0, oxbow: 0, chute: 0, fan: 0, split: 0 }, trainsOut = [];
   let ink = 0, tid = 0;
   const ring = { ink: 0, plain: 0 };
+  // finish (m5 r3): the painterly surface of the V8 drags, applied only to what is drawn — the inherited echo stays clean
+  const dryF = noise2(rngFor(seed, 6196));
+  const finish = (P, r) => {
+    const n = P.length; if (n < 8) return [P];
+    const nz = noise1(r), ph = r() * 100, amp = 0.08 + 0.16 * r();
+    // hand: slow drift + fine wobble across the stroke
+    let Q = P.map((p, i) => { const a = P[Math.max(0, i - 2)], b = P[Math.min(n - 1, i + 2)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, w = amp * (nz(ph + i * 0.5 / 7) + 0.45 * nz(ph + 40 + i * 0.5 / 1.6)); return [p[0] - (b[1] - a[1]) / l * w, p[1] + (b[0] - a[0]) / l * w]; });
+    // ends: each runs on or stops short by its own amount
+    const cut = m => Math.max(0, Math.min(m, Math.floor(n / 4)));
+    Q = Q.slice(cut(Math.floor(r() * r() * 10)), n - cut(Math.floor(r() * r() * 10)));
+    // drag: some echoes are scrubbed out and back, shorter on the return, with a sharp turn
+    if (r() < 0.35 && Q.length > 20) { const back = Math.floor(Q.length * (0.4 + 0.5 * r())), off = (0.15 + 0.3 * r()) * (r() < 0.5 ? 1 : -1), R = [];
+      for (let i = Q.length - 1; i >= Q.length - back; i--) { const a = Q[Math.max(0, i - 2)], b = Q[Math.min(Q.length - 1, i + 2)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, w = off * (1 + 0.4 * nz(ph + 90 + i / 20)); R.push([Q[i][0] - (b[1] - a[1]) / l * w, Q[i][1] + (b[0] - a[0]) / l * w]); }
+      Q = Q.concat(R); }
+    // dry brush: noise stretched along the heading, shared by the whole sheet, so skips line up across neighbouring echoes
+    const a = Q[0], b = Q[Math.min(Q.length - 1, 30)], h = Math.atan2(b[1] - a[1], b[0] - a[0]), c = Math.cos(h), sn = Math.sin(h), pcs = []; let curP = [];
+    for (const p of Q) { if (dryF((p[0] * c + p[1] * sn) / 35 + 5, (-p[0] * sn + p[1] * c) / 4) > 0.55) { if (curP.length > 6) pcs.push(curP); curP = []; } else curP.push(p); }
+    if (curP.length > 6) pcs.push(curP);
+    return pcs;
+  };
   const echoTrain = (P0, sg, st) => {
     const rT = rngFor(seed, 6192, st.tid, st.gen || 0), nzT = noise1(rT), outP = [], slideInit = 0, gaps = []; let slide = 0, cur = resample(P0, 0.5), g = st.g, muts = 0, oxb = 0, L0 = polyLen(P0), chutes = [], bumpAt = -1, active = 0, inkT = 0;
     const queue = [];
@@ -425,7 +445,7 @@ function growField(o) {
       // r1: ends cut by an obstacle feather back (each echo by its own amount) instead of stopping on the mask's edge
       for (let q = 0; q < runs.length; q++) { let rn = runs[q]; const fa = Math.floor(lognorm(rT, 9, 0.8)), fb = Math.floor(lognorm(rT, 9, 0.8)); const a = rn[0] !== E[0] ? Math.min(fa, rn.length / 3 | 0) : 0, b = rn[rn.length - 1] !== E[E.length - 1] ? Math.min(fb, rn.length / 3 | 0) : 0; runs[q] = rn.slice(a, rn.length - b); }
       const late = (kk + 1) / st.K, drop = late > 0.7 && rT() < (late - 0.7) * 1.6;   // r1: trains thin out toward their end (the echo is still inherited)
-      for (const rn of runs) { for (const p of rn) { const c = cellOf(p[0], p[1]); gOwn[c] = st.tid; gK[c] = k; } if (drop) continue; const l = (rn.length - 1) * 0.5; inkT += l; outP.push(k % 2 ? rn.slice().reverse() : rn); }
+      for (const rn of runs) { for (const p of rn) { const c = cellOf(p[0], p[1]); gOwn[c] = st.tid; gK[c] = k; } if (drop) continue; for (const f of finish(k % 2 ? rn.slice().reverse() : rn, rT)) { inkT += polyLen(f); outP.push(f); } }
       for (const rn of runs.slice(1)) if (rn.length > 40 && queue.length < 6) queue.push({ P: rn, g });
       log.echoes++;
       cur = runs[0]; if (cur.length < 20) { stop.run = (stop.run || 0) + 1; break; } if ((cur.length - 1) * 0.5 > 1.6 * L0 + 20) { stop.long = (stop.long || 0) + 1; endWhy = 'long'; break; }
