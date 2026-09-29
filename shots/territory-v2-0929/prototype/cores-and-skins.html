@@ -1,0 +1,764 @@
+<title>Cores and Skins</title>
+<style>
+/* Layout: bench = sheet left, controls right; experiment strip below. Flexoki, system faces. */
+:root {
+  --bg: #FFFCF0; --bg2: #F2F0E5; --ui: #E6E4D9; --ui2: #DAD8CE; --ui3: #CECDC3;
+  --tx: #100F0F; --tx2: #6F6E69; --tx3: #B7B5AC;
+  --accent: #BC5215; --accent-soft: rgba(188,82,21,.12); --cyan: #24837B;
+  --paper: #FFFCF0; --ink: #100F0F; --ghost: #BC5215; --grey-ink: #B7B5AC; --paper-edge: #CECDC3;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #100F0F; --bg2: #1C1B1A; --ui: #282726; --ui2: #343331; --ui3: #403E3C;
+  --tx: #CECDC3; --tx2: #878580; --tx3: #575653;
+  --accent: #DA702C; --accent-soft: rgba(218,112,44,.16); --cyan: #3AA99F; --paper-edge: #403E3C; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #100F0F; --bg2: #1C1B1A; --ui: #282726; --ui2: #343331; --ui3: #403E3C;
+  --tx: #CECDC3; --tx2: #878580; --tx3: #575653;
+  --accent: #DA702C; --accent-soft: rgba(218,112,44,.16); --cyan: #3AA99F; --paper-edge: #403E3C; color-scheme: dark }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--tx); font-family: var(--sans); }
+.wrap { padding-inline: 20px; padding-block: 20px 40px; max-width: 1320px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-size: 22px; font-weight: 650; letter-spacing: -.01em; margin: 0; }
+.sub { color: var(--tx2); margin: 4px 0 0; font-size: 13.5px; max-width: 62ch; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tab { font: inherit; font-size: 13px; border: 1px solid var(--ui2); background: var(--bg2); color: var(--tx); padding: 7px 12px; border-radius: 6px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; }
+.tab b { font-family: var(--mono); font-weight: 600; color: var(--tx2); }
+.tab[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.tab[aria-pressed="true"] b { color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bench { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+@media (max-width: 860px) { .bench { grid-template-columns: minmax(0,1fr); } }
+.sheetbox { position: relative; }
+.sheet { width: 100%; aspect-ratio: 300 / 218; max-width: 100%; display: block; border: 1px solid var(--paper-edge); border-radius: 2px; background: var(--paper); touch-action: none; cursor: crosshair; box-shadow: 0 1px 0 var(--ui); }
+.sheetmeta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-top: 8px; font-size: 12px; color: var(--tx2); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.stat b { color: var(--tx); font-weight: 600; }
+aside { display: grid; gap: 14px; background: var(--bg2); border: 1px solid var(--ui); border-radius: 8px; padding: 14px; min-width: 0; }
+.desc { font-size: 13.5px; line-height: 1.5; margin: 0; }
+.desc strong { display: block; font-size: 14px; margin-bottom: 4px; }
+.group { display: grid; gap: 10px; }
+.label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--tx2); font-weight: 600; }
+.ctl { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 13px; }
+.ctl output { font-family: var(--mono); font-size: 12px; color: var(--tx2); font-variant-numeric: tabular-nums; }
+.ctl small { grid-column: 1 / -1; color: var(--tx2); font-size: 11.5px; line-height: 1.35; }
+.ctl input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.btn { font: inherit; font-size: 12.5px; border: 1px solid var(--ui2); background: var(--bg); color: var(--tx); padding: 6px 10px; border-radius: 5px; cursor: pointer; }
+.btn:hover { border-color: var(--ui3); }
+.btn.primary { border-color: var(--accent); color: var(--accent); }
+.chk { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.chk input { accent-color: var(--accent); }
+#seed { width: 70px; font: inherit; font-family: var(--mono); font-size: 12.5px; padding: 5px 6px; border: 1px solid var(--ui2); border-radius: 5px; background: var(--bg); color: var(--tx); }
+.hint { font-size: 12px; color: var(--tx2); margin: 0; }
+section.exp { display: grid; gap: 12px; border-top: 1px solid var(--ui); padding-top: 16px; }
+.exp h2 { font-size: 15px; margin: 0; font-weight: 650; }
+.expbtns { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.expbtn { text-align: left; font: inherit; border: 1px solid var(--ui2); background: var(--bg2); color: var(--tx); border-radius: 6px; padding: 9px 11px; cursor: pointer; display: grid; gap: 3px; }
+.expbtn[aria-pressed="true"] { border-color: var(--accent); }
+.expbtn span { font-size: 13px; font-weight: 600; }
+.expbtn span b { font-family: var(--mono); color: var(--accent); margin-right: 6px; }
+.expbtn small { font-size: 12px; color: var(--tx2); line-height: 1.35; }
+.result-head { font-size: 13px; color: var(--tx2); margin: 0; }
+.minis { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.minis.pop { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+figure { margin: 0; display: grid; gap: 4px; min-width: 0; }
+figure canvas { width: 100%; aspect-ratio: 300 / 218; display: block; background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 2px; cursor: pointer; }
+figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); font-variant-numeric: tabular-nums; line-height: 1.35; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--tx2); }
+.sw { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--ink); vertical-align: middle; margin-right: 5px; }
+.sw.g { border-top: 1.5px dashed var(--ghost); }
+.sw.p { border-top-color: var(--grey-ink); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Cores and Skins</h1>
+      <p class="sub">Draw a core on the sheet. The machine never draws your line; it draws a skin in response. Three proposals for how the skins behave, sharing one walker. The plot is the black ink only.</p>
+    </div>
+    <div class="tabs" role="group" aria-label="Proposal">
+      <button class="tab" id="tabA" data-p="A" aria-pressed="true"><b>A</b>Pursuit</button>
+      <button class="tab" id="tabB" data-p="B" aria-pressed="false"><b>B</b>Territory</button>
+      <button class="tab" id="tabC" data-p="C" aria-pressed="false"><b>C</b>Find space</button>
+    </div>
+  </header>
+
+  <div class="bench">
+    <div class="sheetbox">
+      <canvas class="sheet" id="sheet" aria-label="Drawing sheet, 300 by 218 millimetres. Drag to draw a core."></canvas>
+      <div class="sheetmeta">
+        <span id="stats"></span>
+        <span>300 × 218 mm bed · drag to draw a core</span>
+      </div>
+    </div>
+    <aside>
+      <p class="desc" id="desc"></p>
+      <div class="legend"><span><i class="sw"></i>skin (plotted)</span><span><i class="sw g"></i>core (bench only)</span></div>
+      <div class="group">
+        <div class="label">Walker</div>
+        <label class="ctl">Looseness <output id="looseV"></output><input type="range" id="loose" min="0" max="1" step="any" value="0.5"><small>Open space loosens the walk; crowding tightens it regardless.</small></label>
+        <label class="ctl">Departure <output id="depV"></output><input type="range" id="dep" min="0" max="1" step="any" value="0.35"><small>Skips stretches of the core and flings the odd destination far out.</small></label>
+        <label class="ctl">Yield <output id="yieldV"></output><input type="range" id="yield" min="0" max="1" step="any" value="0.5"><small>When boxed in: 0 always stops (open skin), 1 always passes under and resurfaces.</small></label>
+        <label class="ctl" id="reachCtl" hidden>Reach (mm) <output id="reachV"></output><input type="range" id="reach" min="4" max="20" step="any" value="9"><small>How far each core's pull extends; larger merges territories sooner.</small></label>
+        <label class="ctl" id="attendCtl" hidden>Attention <output id="attendV"></output><input type="range" id="attend" min="0" max="1" step="any" value="0.5"><small>How strongly a skin stays where you drew the core.</small></label>
+      </div>
+      <div class="group">
+        <div class="label">Sheet</div>
+        <div class="row"><label for="seed" class="chk">Seed</label><input id="seed" type="number" min="1" max="99999" value="1"><button class="btn" id="reroll">Reroll</button></div>
+        <label class="chk"><input type="checkbox" id="showCores" checked> Show cores</label>
+        <label class="chk"><input type="checkbox" id="reverse"> Reverse arrival order</label>
+        <label class="chk" id="spaceCtl" hidden><input type="checkbox" id="showSpace"> Show free space</label>
+        <div class="row">
+          <button class="btn" id="undo">Undo core</button>
+          <button class="btn" id="clear">Clear</button>
+          <button class="btn" id="example">Example cores</button>
+          <button class="btn primary" id="copySvg">Copy SVG</button>
+        </div>
+        <p class="hint" id="copyMsg" aria-live="polite"></p>
+      </div>
+    </aside>
+  </div>
+
+  <section class="exp">
+    <h2>Experiments</h2>
+    <p class="result-head">Each runs the selected proposal with the current settings. Everything is deterministic on cores + seed, so earlier skins never change when a later core is added. Click a thumbnail to load it onto the sheet.</p>
+    <div class="expbtns">
+      <button class="expbtn" data-e="1" aria-pressed="false"><span><b>E1</b>Same core, three contexts</span><small>Alone, beside existing skins, at the edge. Do the skins differ in a way you can attribute?</small></button>
+      <button class="expbtn" data-e="2" aria-pressed="false"><span><b>E2</b>Population sheet</span><small>24 random core sets. How many cells read as creatures?</small></button>
+      <button class="expbtn" data-e="3" aria-pressed="false"><span><b>E3</b>Fixed prefix, one new core</span><small>Crossing a core, parallel to one, far away. Do the answers differ in kind?</small></button>
+      <button class="expbtn" data-e="4" aria-pressed="false"><span><b>E4</b>Strict closure</span><small>Yield 0 at three loosenesses on your cores. Do open skins read as deliberate?</small></button>
+      <button class="expbtn" data-e="5" aria-pressed="false"><span><b>E5</b>Arrival order</span><small>Your cores in drawn order and reversed. Does foreground-first change the sheet?</small></button>
+    </div>
+    <p class="result-head" id="expHead"></p>
+    <div class="minis" id="minis"></div>
+  </section>
+</div>
+
+<script>
+// Cores & skins engine. Pure functions of (cores, proposal, params, seed).
+// Units: millimetres on the 300 x 218 AxiDraw bed. Grid: 1 mm cells.
+const W = 300, H = 218, GW = 300, GH = 218, N = GW * GH;
+const MARGIN = 2, SELFWIN = 8, CLOSEARC = 10, INK_R = 1.0;
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function rngFor(seed, ...keys) {
+  let h = (seed >>> 0) ^ 0x9e3779b9;
+  for (const k of keys) { h = Math.imul(h ^ k, 2654435761); h ^= h >>> 13; }
+  return mulberry32(h);
+}
+function noise1(rng) {
+  const v = new Float32Array(512);
+  for (let i = 0; i < 512; i++) v[i] = rng() * 2 - 1;
+  return t => {
+    const i = Math.floor(t), f = t - i, u = f * f * (3 - 2 * f);
+    const a = v[((i % 512) + 512) % 512], b = v[(((i + 1) % 512) + 512) % 512];
+    return a + (b - a) * u;
+  };
+}
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+const rad = d => d * Math.PI / 180;
+const cellOf = (x, y) => clamp(Math.floor(y), 0, GH - 1) * GW + clamp(Math.floor(x), 0, GW - 1);
+
+function polyLen(P) { let s = 0; for (let i = 1; i < P.length; i++) s += Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]); return s; }
+function resample(P, step) {
+  if (P.length < 2) return P.slice();
+  const out = [P[0].slice()]; let carry = 0;
+  for (let i = 1; i < P.length; i++) {
+    const [x0, y0] = P[i - 1], [x1, y1] = P[i];
+    const seg = Math.hypot(x1 - x0, y1 - y0);
+    let d = step - carry;
+    while (d <= seg) { const t = d / seg; out.push([x0 + (x1 - x0) * t, y0 + (y1 - y0) * t]); d += step; }
+    carry = seg - (d - step);
+  }
+  const last = P[P.length - 1];
+  if (Math.hypot(last[0] - out[out.length - 1][0], last[1] - out[out.length - 1][1]) > step * 0.3) out.push(last.slice());
+  return out;
+}
+function smoothPts(P, passes = 2) {
+  let Q = P;
+  for (let p = 0; p < passes; p++) {
+    Q = Q.map((q, i) => (i === 0 || i === Q.length - 1) ? q : [(Q[i - 1][0] + q[0] * 2 + Q[i + 1][0]) / 4, (Q[i - 1][1] + q[1] * 2 + Q[i + 1][1]) / 4]);
+  }
+  return Q;
+}
+function centroid(P) { let x = 0, y = 0; for (const p of P) { x += p[0]; y += p[1]; } return [x / P.length, y / P.length]; }
+
+// ---------- the sheet: ink occupancy ----------
+class Sheet {
+  constructor() { this.owner = new Int32Array(N); this.arc = new Float32Array(N); }
+  mark(x, y, id, s) {
+    const r = INK_R;
+    for (let j = Math.floor(y - r); j <= Math.floor(y + r); j++) {
+      if (j < 0 || j >= GH) continue;
+      for (let i = Math.floor(x - r); i <= Math.floor(x + r); i++) {
+        if (i < 0 || i >= GW) continue;
+        if (Math.hypot(i + 0.5 - x, j + 0.5 - y) > r + 0.2) continue;
+        const c = j * GW + i;
+        if (!this.owner[c]) { this.owner[c] = id; this.arc[c] = s; }
+      }
+    }
+  }
+  hit(x, y, id, s, closing) {
+    if (x < MARGIN || x > W - MARGIN || y < MARGIN || y > H - MARGIN) return 'edge';
+    const c = cellOf(x, y), o = this.owner[c];
+    if (!o) return 0;
+    if (o !== id) return 'ink';
+    if (s - this.arc[c] > SELFWIN) return (closing && this.arc[c] < CLOSEARC) ? 0 : 'self';
+    return 0;
+  }
+  segHit(x0, y0, x1, y1, id, s0, closing) {
+    const len = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.ceil(len / 0.4));
+    for (let k = 1; k <= n; k++) {
+      const t = k / n, h = this.hit(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, id, s0 + len * t, closing);
+      if (h) return h;
+    }
+    return 0;
+  }
+  clear(x, y, id, s, r) {
+    if (x < MARGIN || x > W - MARGIN || y < MARGIN || y > H - MARGIN) return false;
+    for (let j = Math.floor(y - r); j <= Math.floor(y + r); j++) for (let i = Math.floor(x - r); i <= Math.floor(x + r); i++) {
+      if (i < 0 || j < 0 || i >= GW || j >= GH) continue;
+      const c = j * GW + i, o = this.owner[c];
+      if (o && !(o === id && s - this.arc[c] <= SELFWIN)) return false;
+    }
+    return true;
+  }
+}
+
+// Distance (mm) from every cell to the nearest ink or the bed edge. Chamfer 1/1.414.
+function distField(sheet) {
+  const d = new Float32Array(N), D2 = Math.SQRT2;
+  for (let c = 0; c < N; c++) d[c] = sheet.owner[c] ? 0 : 1e6;
+  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+    const c = j * GW + i; let v = d[c];
+    if (i > 0) v = Math.min(v, d[c - 1] + 1);
+    if (j > 0) { v = Math.min(v, d[c - GW] + 1); if (i > 0) v = Math.min(v, d[c - GW - 1] + D2); if (i < GW - 1) v = Math.min(v, d[c - GW + 1] + D2); }
+    d[c] = v;
+  }
+  for (let j = GH - 1; j >= 0; j--) for (let i = GW - 1; i >= 0; i--) {
+    const c = j * GW + i; let v = d[c];
+    if (i < GW - 1) v = Math.min(v, d[c + 1] + 1);
+    if (j < GH - 1) { v = Math.min(v, d[c + GW] + 1); if (i < GW - 1) v = Math.min(v, d[c + GW + 1] + D2); if (i > 0) v = Math.min(v, d[c + GW - 1] + D2); }
+    d[c] = Math.min(v, i + 0.5 - MARGIN, W - i - 0.5 - MARGIN, j + 0.5 - MARGIN, H - j - 0.5 - MARGIN);
+  }
+  return d;
+}
+
+// ---------- the walker: pursuit of imaginary destinations under never-overlap ----------
+// Carefulness comes from context: near other ink or the edge it slows, samples
+// densely and steers hard; in open space it lopes. Boxed in, it either stops
+// (an open skin) or passes under and resurfaces (a visible interruption).
+function walk(sheet, dests, id, prm, rng, D) {
+  if (dests.length < 3) return null;
+  // Start at the first destination that is free.
+  let k0 = dests.findIndex(p => !sheet.hit(p[0], p[1], id, 0, false) && sheet.clear(p[0], p[1], id, 0, 1.2));
+  if (k0 < 0) return { strokes: [], status: 'blocked', breaks: 0 };
+  const ring = dests.slice(k0).concat(dests.slice(0, k0));
+  const target = ring.concat([ring[0]]);
+  const nz = noise1(rng);
+  let [x, y] = ring[0];
+  let h = Math.atan2(ring[1][1] - y, ring[1][0] - x) + (rng() - 0.5) * 0.6;
+  let best = 1e9, stuck = 0, turn = 0;
+  let di = 1, s = 0, pen = true, cur = [[x, y]], strokes = [], breaks = 0, under = 0, freeRun = 0, since = 0, ended = false;
+  sheet.mark(x, y, id, 0);
+  for (let step = 0; step < 6000 && di < target.length; step++) {
+    const [tx, ty] = target[di];
+    const ctx = D ? smooth(1.5, 18, D[cellOf(x, y)]) : 1;
+    const L = clamp(prm.loose * (0.3 + 0.7 * ctx), 0, 1);
+    const len = 0.6 + 1.9 * L, maxT = rad(30 - 20 * L);
+    const closing = di === target.length - 1;
+    const h0 = h;
+    h += clamp(wrap(Math.atan2(ty - y, tx - x) - h), -maxT, maxT) + nz(s * 0.08) * rad(4 + 26 * L) * prm.wander;
+    let nx = x + Math.cos(h) * len, ny = y + Math.sin(h) * len;
+    if (pen) {
+      const hit = sheet.segHit(x, y, nx, ny, id, s, closing);
+      if (hit) {
+        let found = false;
+        for (let k = 1; k <= 7 && !found; k++) for (const sg of (rng() < 0.5 ? [1, -1] : [-1, 1])) {
+          const a = h + sg * k * rad(13), ax = x + Math.cos(a) * len, ay = y + Math.sin(a) * len;
+          if (!sheet.segHit(x, y, ax, ay, id, s, closing)) { h = a; nx = ax; ny = ay; found = true; break; }
+        }
+        if (!found) {
+          if (hit === 'edge' || rng() >= prm.yieldP) { ended = true; break; }
+          pen = false; breaks++; if (cur.length > 1) strokes.push(cur); cur = null; under = 0; freeRun = 0;
+        }
+      }
+    }
+    turn += wrap(h - h0);
+    x = nx; y = ny; s += len;
+    if (pen) { cur.push([x, y]); sheet.mark(x, y, id, s); }
+    else {
+      under += len;
+      if (x < MARGIN || x > W - MARGIN || y < MARGIN || y > H - MARGIN || under > 45) { ended = true; break; }
+      freeRun = sheet.clear(x, y, id, s, 1.8) ? freeRun + 1 : 0;
+      if (freeRun >= 2) { pen = true; cur = [[x, y]]; sheet.mark(x, y, id, s); }
+    }
+    const dt = Math.hypot(tx - x, ty - y);
+    if (dt < best - 0.3) { best = dt; stuck = 0; } else stuck++;
+    if (dt < 1.2 + 3.5 * L || stuck > 28 || Math.abs(turn) > Math.PI * 1.5) {
+      // Arrived, or orbiting a destination it cannot reach: move on.
+      di++; since = 0; stuck = 0; best = 1e9; turn = 0;
+      if (di === target.length && pen && dt < 1.2 + 3.5 * L + 0.5 && dt > 0.3) cur.push([tx, ty]);
+    } else if (++since > 240) { di++; since = 0; }
+  }
+  if (cur && cur.length > 1) strokes.push(cur);
+  if (di < target.length) ended = true;
+  const status = ended ? 'open' : breaks ? 'broken' : 'closed';
+  return { strokes: strokes.filter(st => polyLen(st) > 1.5), status, breaks };
+}
+
+// Destinations around a core: out along one side, round the end, back along
+// the other. Offsets vary; Departure skips stretches and flings the odd point.
+function ringDests(core, prm, rng, D, scale = 1) {
+  const base = (2.5 + 9 * prm.loose) * scale;
+  // The skin follows the gross form: smooth the core at the scale of the offset,
+  // so zigzags and scrawls get one body instead of interleaved sides.
+  const P = smoothPts(resample(core, 2), Math.max(2, Math.round(base * 1.2)));
+  const nz = noise1(rng);
+  const crowd = p => D ? 0.55 + 0.45 * smooth(2, 20, D[cellOf(p[0], p[1])]) : 1;
+  const fling = () => rng() < prm.dep * 0.09 ? 2 + rng() * 1.3 : 1;
+  let out = [];
+  if (polyLen(P) < 8) {
+    const [cx, cy] = centroid(P), r = base * (0.8 + 0.5 * rng()), a0 = rng() * 7, n = 7;
+    for (let k = 0; k < n; k++) { const a = a0 + k / n * Math.PI * 2, rr = r * (0.7 + 0.6 * nz(k)) * fling(); out.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]); }
+    return out;
+  }
+  const n = P.length, T = P.map((p, i) => {
+    const a = P[Math.max(0, i - 1)], b = P[Math.min(n - 1, i + 1)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    return [(b[0] - a[0]) / l, (b[1] - a[1]) / l];
+  });
+  const stride = Math.max(1, Math.round((3.5 + 8 * prm.loose) / 2));
+  const off = (i, side) => base * (0.65 + 0.7 * Math.abs(nz(i * 0.15 + side * 60))) * crowd(P[i]) * fling();
+  const push = (i, side) => { const o = off(i, side); out.push([P[i][0] - T[i][1] * o * side, P[i][1] + T[i][0] * o * side]); };
+  for (let i = 0; i < n; i += stride) push(i, 1);
+  const e = n - 1, oe = base * 0.9 * crowd(P[e]);
+  out.push([P[e][0] + T[e][0] * oe, P[e][1] + T[e][1] * oe]);
+  for (let i = e; i >= 0; i -= stride) push(i, -1);
+  const o0 = base * 0.9 * crowd(P[0]);
+  out.push([P[0][0] - T[0][0] * o0, P[0][1] - T[0][1] * o0]);
+  // Skip stretches: the skin cuts across and ignores part of its core.
+  if (prm.dep > 0 && out.length > 8) {
+    const kept = [];
+    for (let i = 0; i < out.length; i++) {
+      if (i > 0 && rng() < prm.dep * 0.12 && out.length - i > 3) { i += 1 + Math.floor(rng() * 4); if (i < out.length) kept.push(out[i]); continue; }
+      kept.push(out[i]);
+    }
+    if (kept.length >= 5) out = kept;
+  }
+  return out;
+}
+
+// ---------- B: shared territory field ----------
+function contribution(core, r) {
+  const P = resample(core, 2), f = new Float32Array(N);
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const [x, y] of P) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  const pad = r * 2.6;
+  const i0 = clamp(Math.floor(x0 - pad), 0, GW - 1), i1 = clamp(Math.ceil(x1 + pad), 0, GW - 1);
+  const j0 = clamp(Math.floor(y0 - pad), 0, GH - 1), j1 = clamp(Math.ceil(y1 + pad), 0, GH - 1);
+  const r2 = r * r;
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+    const cx = i + 0.5, cy = j + 0.5; let m = 1e9;
+    for (const p of P) { const dx = p[0] - cx, dy = p[1] - cy, d = dx * dx + dy * dy; if (d < m) m = d; }
+    f[j * GW + i] = Math.exp(-m / r2);
+  }
+  return f;
+}
+function flood(F, level, seed) {
+  const mask = new Uint8Array(N);
+  if (F[seed] <= level) return mask;
+  const st = [seed]; mask[seed] = 1;
+  while (st.length) {
+    const c = st.pop(), i = c % GW, j = (c / GW) | 0;
+    const nb = [i > 0 ? c - 1 : -1, i < GW - 1 ? c + 1 : -1, j > 0 ? c - GW : -1, j < GH - 1 ? c + GW : -1];
+    for (const q of nb) if (q >= 0 && !mask[q] && F[q] > level) { mask[q] = 1; st.push(q); }
+  }
+  return mask;
+}
+// Marching squares on (F - level) restricted to mask; returns the longest loop.
+function contourLoop(F, level, mask) {
+  const v = i => mask[i] ? F[i] - level : -1;
+  const segs = [], pos = new Map();
+  const edgePt = (id) => {
+    if (pos.has(id)) return pos.get(id);
+    const c = id >> 1, i = c % GW, j = (c / GW) | 0, horiz = !(id & 1);
+    const a = v(c), b = horiz ? v(c + 1) : v(c + GW), t = a / (a - b);
+    const p = horiz ? [i + 0.5 + t, j + 0.5] : [i + 0.5, j + 0.5 + t];
+    pos.set(id, p); return p;
+  };
+  for (let j = 1; j < GH - 2; j++) for (let i = 1; i < GW - 2; i++) {
+    const c = j * GW + i;
+    const tl = v(c) > 0, tr = v(c + 1) > 0, br = v(c + GW + 1) > 0, bl = v(c + GW) > 0;
+    const e = [];
+    if (tl !== tr) e.push(c * 2);
+    if (tr !== br) e.push((c + 1) * 2 + 1);
+    if (br !== bl) e.push((c + GW) * 2);
+    if (bl !== tl) e.push(c * 2 + 1);
+    if (e.length === 2) segs.push([e[0], e[1]]);
+    else if (e.length === 4) { segs.push([e[0], e[1]]); segs.push([e[2], e[3]]); }
+  }
+  const adj = new Map();
+  segs.forEach((s, k) => { for (const id of s) { if (!adj.has(id)) adj.set(id, []); adj.get(id).push(k); } });
+  const used = new Uint8Array(segs.length); let best = null, bestLen = 0;
+  for (let k = 0; k < segs.length; k++) {
+    if (used[k]) continue;
+    used[k] = 1; const loop = [segs[k][0], segs[k][1]]; let end = segs[k][1];
+    for (;;) {
+      const nxt = (adj.get(end) || []).find(q => !used[q]);
+      if (nxt === undefined) break;
+      used[nxt] = 1; end = segs[nxt][0] === end ? segs[nxt][1] : segs[nxt][0]; loop.push(end);
+    }
+    const pts = loop.map(edgePt), L = polyLen(pts);
+    if (L > bestLen) { bestLen = L; best = pts; }
+  }
+  return best;
+}
+
+// ---------- the three proposals ----------
+function runA(cores, order, prm, seed) {
+  const sheet = new Sheet(), skins = [];
+  for (const i of order) {
+    const rng = rngFor(seed, i + 1, 11), D = distField(sheet);
+    const sk = walk(sheet, ringDests(cores[i], prm, rng, D), i + 1, prm, rng, D);
+    if (sk) skins.push({ core: i, ...sk });
+  }
+  return { skins, sheet };
+}
+
+function runB(cores, order, prm, seed) {
+  const sheet = new Sheet(), skins = [], F = new Float32Array(N), gen = new Map();
+  const tau = 0.5; let sid = 1000;
+  const seen = [];
+  for (const i of order) {
+    const rng = rngFor(seed, i + 1, 22);
+    const r = prm.reach * (0.6 + 1.1 * Math.pow(rng(), 2.2));
+    const f = contribution(cores[i], r);
+    for (let c = 0; c < N; c++) F[c] += f[c];
+    seen.push(i);
+    const P = resample(cores[i], 2);
+    let seedCell = cellOf(P[0][0], P[0][1]);
+    for (const p of P) { const c = cellOf(p[0], p[1]); if (F[c] > F[seedCell]) seedCell = c; }
+    const comp = flood(F, tau, seedCell);
+    const members = seen.filter(j => resample(cores[j], 3).some(p => comp[cellOf(p[0], p[1])]));
+    let level = tau, mode = 'new';
+    if (members.length > 1) {
+      const g = Math.max(...members.map(j => gen.get(j) || 0)) + 1;
+      members.forEach(j => gen.set(j, g));
+      if (rng() < 0.15 + prm.dep * 0.6) {
+        let mx = 0, mc = seedCell;
+        for (let c = 0; c < N; c++) if (comp[c] && F[c] > mx) { mx = F[c]; mc = c; }
+        level = Math.min(mx * 0.85, tau * (1.5 + 0.5 * g)); seedCell = mc; mode = 'inner';
+      } else { level = tau * Math.pow(0.7, g); mode = 'ring'; }
+    }
+    const mask = flood(F, level, seedCell);
+    const loop = contourLoop(F, level, mask);
+    if (!loop || polyLen(loop) < 6) continue;
+    const D = distField(sheet), nz = noise1(rng);
+    const spacing = 3.5 + 8 * prm.loose, R = resample(loop, spacing);
+    const [cx, cy] = centroid(R);
+    let dests = R.map((p, k) => {
+      const dx = p[0] - cx, dy = p[1] - cy, l = Math.hypot(dx, dy) || 1, j = nz(k * 0.3) * prm.dep * (3 + 6 * prm.loose);
+      const fl = rng() < prm.dep * 0.06 ? 1 + rng() * 0.5 : 1;
+      return [cx + dx * fl + dx / l * j, cy + dy * fl + dy / l * j];
+    });
+    // start where the new request is
+    let k0 = 0, bd = 1e9;
+    dests.forEach((p, k) => { const d = Math.hypot(p[0] - P[0][0], p[1] - P[0][1]); if (d < bd) { bd = d; k0 = k; } });
+    dests = dests.slice(k0).concat(dests.slice(0, k0));
+    const sk = walk(sheet, dests, ++sid, prm, rng, D);
+    if (sk) skins.push({ core: i, mode, members: members.length, ...sk });
+  }
+  return { skins, sheet, field: F };
+}
+
+function transformCore(core, c, s, th, tx, ty) {
+  const cs = Math.cos(th), sn = Math.sin(th);
+  return core.map(([x, y]) => { const dx = (x - c[0]) * s, dy = (y - c[1]) * s; return [tx + dx * cs - dy * sn, ty + dx * sn + dy * cs]; });
+}
+function runC(cores, order, prm, seed) {
+  const sheet = new Sheet(), skins = [], placed = [];
+  let sid = 2000;
+  for (const i of order) {
+    const rng = rngFor(seed, i + 1, 33), D = distField(sheet);
+    const core = resample(cores[i], 2), c0 = centroid(core);
+    const need = s => (2.5 + 9 * prm.loose) * s * 0.9 + 1.4;
+    let best = null;
+    for (let k = 0; k < 260; k++) {
+      let tx = c0[0], ty = c0[1], s = 1, th = 0;
+      if (k > 0) {
+        s = [1, 0.8, 0.65, 0.5, 0.38][Math.floor(rng() * 5)];
+        th = (rng() - 0.5) * rad(80) * prm.dep;
+        if (rng() < 0.55) { tx += (rng() + rng() + rng() - 1.5) * 50; ty += (rng() + rng() + rng() - 1.5) * 50; }
+        else { tx = 10 + rng() * (W - 20); ty = 10 + rng() * (H - 20); }
+      }
+      const T = transformCore(core, c0, s, th, tx, ty);
+      let fit = 1e9;
+      for (const p of T) {
+        if (p[0] < 6 || p[0] > W - 6 || p[1] < 6 || p[1] > H - 6) { fit = -1; break; }
+        fit = Math.min(fit, D[cellOf(p[0], p[1])] - need(s));
+      }
+      if (fit <= 0) continue;
+      const shift = Math.hypot(tx - c0[0], ty - c0[1]);
+      const score = s * 30 - shift * prm.attend * 0.8 + Math.min(fit, 20) * 0.4 + rng() * 6;
+      if (!best || score > best.score) best = { score, T, s, shift, c1: [tx, ty] };
+    }
+    if (best) {
+      const sk = walk(sheet, ringDests(best.T, prm, rng, D, best.s), ++sid, prm, rng, D);
+      placed.push({ core: i, T: best.T, s: best.s });
+      if (sk) skins.push({ core: i, moved: best.shift > 3 || best.s < 1, tether: [c0, best.c1], placedCore: best.T, ...sk });
+    } else if (placed.length) {
+      // Nothing fits: answer an older core instead, drawn again at another carefulness.
+      const old = placed[Math.floor(rng() * placed.length)];
+      const alt = { ...prm, loose: clamp(1 - prm.loose + (rng() - 0.5) * 0.3, 0.05, 1) };
+      const sk = walk(sheet, ringDests(old.T, alt, rng, D, old.s * 1.5), ++sid, alt, rng, D);
+      if (sk) skins.push({ core: i, reread: old.core, tether: [c0, centroid(old.T)], ...sk });
+      else skins.push({ core: i, reread: old.core, strokes: [], status: 'deferred', breaks: 0 });
+    } else skins.push({ core: i, strokes: [], status: 'deferred', breaks: 0 });
+  }
+  return { skins, sheet };
+}
+
+function runProposal(prop, cores, prm, seed, reverse = false) {
+  const order = cores.map((_, i) => i);
+  if (reverse) order.reverse();
+  const res = prop === 'B' ? runB(cores, order, prm, seed) : prop === 'C' ? runC(cores, order, prm, seed) : runA(cores, order, prm, seed);
+  if (prop === 'C') res.D = distField(res.sheet);
+  return res;
+}
+
+function stats(res) {
+  const s = { skins: 0, closed: 0, open: 0, broken: 0, moved: 0, reread: 0, deferred: 0 };
+  for (const k of res.skins) {
+    if (k.status === 'deferred' || k.status === 'blocked') { s.deferred++; continue; }
+    s.skins++; s[k.status]++;
+    if (k.moved) s.moved++;
+    if (k.reread !== undefined) s.reread++;
+  }
+  return s;
+}
+
+// ---------- core vocabularies for examples and population sheets ----------
+function makeCore(type, L, x, y, a, rng) {
+  const pts = [], n = Math.max(6, Math.round(L / 1.5));
+  const ca = Math.cos(a), sa = Math.sin(a);
+  const put = (u, v) => pts.push([x + u * ca - v * sa, y + u * sa + v * ca]);
+  for (let k = 0; k <= n; k++) {
+    const t = k / n, u = (t - 0.5) * L;
+    if (type === 'arc') put(u, Math.sin(t * Math.PI) * L * 0.28);
+    else if (type === 'hook') { const b = Math.max(0, t - 0.65) / 0.35; put(u * (1 - b * 0.8), -b * b * L * 0.35); }
+    else if (type === 'zig') put(u, ((k % Math.max(2, Math.round(n / 5))) / Math.max(2, Math.round(n / 5)) - 0.5) * L * 0.22);
+    else if (type === 'loop') { const th = t * Math.PI * 2 * 1.15; put(Math.cos(th) * L * 0.18 + u * 0.35, Math.sin(th) * L * 0.18); }
+    else if (type === 'scrawl') put(u, Math.sin(t * 17 + rng() * 0.3) * L * 0.07 + Math.sin(t * 5) * L * 0.12);
+    else put(u, 0);
+  }
+  return smoothPts(pts, 1).map(([px, py]) => [clamp(px, 4, W - 4), clamp(py, 4, H - 4)]);
+}
+function randomCores(seed) {
+  const rng = mulberry32(seed * 7919 + 13), types = ['arc', 'hook', 'zig', 'loop', 'scrawl', 'line'];
+  const n = 3 + Math.floor(rng() * 6), out = [];
+  for (let k = 0; k < n; k++) {
+    const L = 8 + 95 * Math.pow(rng(), 2.2);
+    out.push(makeCore(types[Math.floor(rng() * types.length)], L, 30 + rng() * (W - 60), 25 + rng() * (H - 50), rng() * Math.PI * 2, rng));
+  }
+  return out;
+}
+function exampleCores() {
+  const r = mulberry32(5);
+  return [
+    makeCore('arc', 90, 120, 95, -0.25, r),
+    makeCore('hook', 38, 205, 70, 0.9, r),
+    makeCore('zig', 55, 95, 150, 0.15, r),
+    makeCore('loop', 26, 215, 150, 0.4, r),
+    makeCore('line', 12, 60, 60, 1.2, r),
+    makeCore('scrawl', 70, 170, 118, -0.6, r),
+  ];
+}
+
+if (typeof module !== 'undefined') module.exports = { runProposal, stats, randomCores, exampleCores, makeCore, mulberry32, W, H };
+
+</script>
+<script>
+const $ = id => document.getElementById(id);
+const DESC = {
+  A: ['A · Pursuit', 'Each core gets its own skin. The walker steers toward points placed around the core, gets careful near other ink, and never crosses a line. Boxed in, it stops (an open skin) or goes under and resurfaces (a break). Earlier skins stay in front.'],
+  B: ['B · Territory', 'Cores pull on one shared field, and a skin surrounds the region a core ends up in, so one skin can serve several cores. When a new core joins a region, the old skins stay; the machine answers with a wider ring around the region or a small skin inside its densest part.'],
+  C: ['C · Find space', 'A core is a request. The machine looks for room: it keeps, moves, shrinks or turns the form to where there is space. If nothing fits, it draws an older core again at a different carefulness. Dashed tethers show where each core landed.'],
+};
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+let state = { prop: store.get('cs.prop', 'A'), cores: store.get('cs.cores', null) || exampleCores(), exp: null };
+let last = null, drawing = null;
+
+function prm() {
+  return { loose: +$('loose').value, dep: +$('dep').value, yieldP: +$('yield').value, wander: 1, reach: +$('reach').value, attend: +$('attend').value };
+}
+function seed() { return Math.max(1, Math.floor(+$('seed').value || 1)); }
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function sizeCanvas(cv) {
+  const r = cv.getBoundingClientRect(), dpr = Math.min(3, window.devicePixelRatio || 1);
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.width * 218 / 300 * dpr));
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  return cv.width / 300;
+}
+function drawSheet(cv, res, cores, opt = {}) {
+  const k = sizeCanvas(cv), g = cv.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = css('--paper'); g.fillRect(0, 0, cv.width, cv.height);
+  g.setTransform(k, 0, 0, k, 0, 0);
+  if (opt.space && res.D) {
+    const D = res.D, img = g.createImageData(300, 218);
+    for (let c = 0; c < D.length; c++) { const v = Math.min(1, D[c] / 30); img.data[c * 4] = 36; img.data[c * 4 + 1] = 131; img.data[c * 4 + 2] = 123; img.data[c * 4 + 3] = Math.round(v * 70); }
+    const off = document.createElement('canvas'); off.width = 300; off.height = 218; off.getContext('2d').putImageData(img, 0, 0);
+    g.imageSmoothingEnabled = true; g.drawImage(off, 0, 0, 300, 218);
+  }
+  if (opt.cores) {
+    g.save(); g.strokeStyle = css('--ghost'); g.globalAlpha = 0.75; g.lineWidth = Math.max(0.35, 1.1 / k); g.setLineDash([2.2, 1.6]); g.lineCap = 'round';
+    for (const c of cores) { g.beginPath(); c.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); }
+    for (const s of res.skins) if (s.tether && (s.moved || s.reread !== undefined)) { g.globalAlpha = 0.45; g.setLineDash([0.8, 1.6]); g.beginPath(); g.moveTo(...s.tether[0]); g.lineTo(...s.tether[1]); g.stroke(); }
+    g.setLineDash([]); g.globalAlpha = 0.85; g.fillStyle = css('--ghost'); g.font = `${Math.max(3, 10 / k)}px ui-monospace, monospace`;
+    if (opt.labels) cores.forEach((c, i) => g.fillText(String(i + 1), c[0][0] + 1.2, c[0][1] - 1.2));
+    g.restore();
+  }
+  g.lineJoin = 'round'; g.lineCap = 'round'; g.lineWidth = Math.max(0.4, (opt.thin ? 0.9 : 1.1) / k);
+  for (const s of res.skins) {
+    g.strokeStyle = (opt.focus !== undefined && s.core !== opt.focus) ? css('--grey-ink') : css('--ink');
+    for (const st of s.strokes) { g.beginPath(); st.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); }
+  }
+  if (opt.live && opt.live.length > 1) {
+    g.strokeStyle = css('--ghost'); g.lineWidth = Math.max(0.4, 1.4 / k); g.setLineDash([2.2, 1.6]);
+    g.beginPath(); opt.live.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); g.setLineDash([]);
+  }
+}
+function fmtStats(s) {
+  const parts = [`<span class="stat"><b>${s.skins}</b> skins</span>`, `<b>${s.closed}</b> closed`, `<b>${s.open}</b> open`, `<b>${s.broken}</b> broken`];
+  if (state.prop === 'C') parts.push(`<b>${s.moved}</b> moved`, `<b>${s.reread}</b> redrawn`);
+  if (s.deferred) parts.push(`<b>${s.deferred}</b> no room`);
+  return parts.join(' · ');
+}
+function statsTxt(s) { return `${s.closed} closed · ${s.open} open · ${s.broken} broken` + (state.prop === 'C' ? ` · ${s.moved} moved` : ''); }
+
+let raf = 0;
+function render() { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderNow); }
+function renderNow() {
+  last = runProposal(state.prop, state.cores, prm(), seed(), $('reverse').checked);
+  drawSheet($('sheet'), last, state.cores, { cores: $('showCores').checked, labels: true, space: state.prop === 'C' && $('showSpace').checked, live: drawing });
+  $('stats').innerHTML = fmtStats(stats(last));
+  store.set('cs.cores', state.cores); store.set('cs.prop', state.prop);
+}
+function redrawOnly() { if (!last) return renderNow(); drawSheet($('sheet'), last, state.cores, { cores: $('showCores').checked, labels: true, space: state.prop === 'C' && $('showSpace').checked, live: drawing }); }
+
+function setProp(p) {
+  state.prop = p;
+  for (const t of document.querySelectorAll('.tab')) t.setAttribute('aria-pressed', String(t.dataset.p === p));
+  $('desc').innerHTML = `<strong>${DESC[p][0]}</strong>${DESC[p][1]}`;
+  $('reachCtl').hidden = p !== 'B'; $('attendCtl').hidden = p !== 'C'; $('spaceCtl').hidden = p !== 'C';
+  render(); if (state.exp) runExp(state.exp);
+}
+function syncOutputs() { for (const id of ['loose', 'dep', 'yield', 'reach', 'attend']) $(id + 'V').textContent = (+$(id).value).toFixed(id === 'reach' ? 0 : 2); }
+
+// ---- drawing cores ----
+function toMM(e) { const r = $('sheet').getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 300, (e.clientY - r.top) / r.height * 218]; }
+$('sheet').addEventListener('pointerdown', e => { $('sheet').setPointerCapture(e.pointerId); drawing = [toMM(e)]; redrawOnly(); });
+$('sheet').addEventListener('pointermove', e => { if (!drawing) return; const p = toMM(e), q = drawing[drawing.length - 1]; if (Math.hypot(p[0] - q[0], p[1] - q[1]) > 0.8) { drawing.push(p); redrawOnly(); } });
+function endStroke() {
+  if (!drawing) return;
+  const P = drawing; drawing = null;
+  if (P.length > 1 && polyLen(P) > 3) state.cores.push(smoothPts(resample(P, 1.2), 2).map(([x, y]) => [clamp(x, 3, 297), clamp(y, 3, 215)]));
+  render();
+}
+$('sheet').addEventListener('pointerup', endStroke);
+$('sheet').addEventListener('pointercancel', endStroke);
+
+// ---- controls ----
+for (const t of document.querySelectorAll('.tab')) t.addEventListener('click', () => setProp(t.dataset.p));
+for (const id of ['loose', 'dep', 'yield', 'reach', 'attend']) $(id).addEventListener('input', () => { syncOutputs(); render(); });
+for (const id of ['loose', 'dep', 'yield', 'reach', 'attend']) $(id).addEventListener('change', () => { if (state.exp) runExp(state.exp); });
+$('seed').addEventListener('change', () => { render(); if (state.exp) runExp(state.exp); });
+$('reroll').addEventListener('click', () => { $('seed').value = 1 + Math.floor(Math.random() * 9999); render(); if (state.exp) runExp(state.exp); });
+$('showCores').addEventListener('change', redrawOnly);
+$('showSpace').addEventListener('change', redrawOnly);
+$('reverse').addEventListener('change', render);
+$('undo').addEventListener('click', () => { state.cores.pop(); render(); });
+$('clear').addEventListener('click', () => { state.cores = []; render(); });
+$('example').addEventListener('click', () => { state.cores = exampleCores(); render(); });
+$('copySvg').addEventListener('click', () => {
+  const paths = last.skins.flatMap(s => s.strokes).map(st => `<path d="M${st.map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' L')}"/>`).join('\n');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300mm" height="218mm" viewBox="0 0 300 218"><g fill="none" stroke="#000" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round">\n${paths}\n</g></svg>`;
+  const ok = () => { $('copyMsg').textContent = 'Copied the skins as SVG, in millimetres.'; };
+  try { navigator.clipboard.writeText(svg).then(ok, () => { $('copyMsg').textContent = 'The clipboard is not available here.'; }); } catch { $('copyMsg').textContent = 'The clipboard is not available here.'; }
+});
+
+// ---- experiments ----
+function sCurve(cx, cy, a = 0) {
+  const pts = [];
+  for (let k = 0; k <= 40; k++) { const t = k / 40, u = (t - 0.5) * 52, v = Math.sin(t * Math.PI * 2) * 9; pts.push([cx + u * Math.cos(a) - v * Math.sin(a), cy + u * Math.sin(a) + v * Math.cos(a)]); }
+  return pts;
+}
+function prefixCores() {
+  const r = mulberry32(11);
+  return [makeCore('arc', 70, 110, 90, 0.2, r), makeCore('zig', 45, 190, 120, -0.4, r), makeCore('hook', 30, 90, 150, 1.1, r), makeCore('loop', 22, 170, 60, 0, r)];
+}
+function mini(host, cores, caption, opt = {}, cls) {
+  const f = document.createElement('figure'), cv = document.createElement('canvas'), cap = document.createElement('figcaption');
+  cap.textContent = caption; f.append(cv, cap); host.append(f);
+  const res = runProposal(state.prop, cores, opt.prm || prm(), opt.seed || seed(), opt.reverse);
+  requestAnimationFrame(() => drawSheet(cv, res, cores, { cores: $('showCores').checked, focus: opt.focus, thin: true }));
+  cv.title = 'Load onto the sheet';
+  cv.addEventListener('click', () => { state.cores = cores.map(c => c.map(p => p.slice())); if (opt.seed) $('seed').value = opt.seed; if (opt.reverse !== undefined) $('reverse').checked = !!opt.reverse; if (opt.prm) { $('loose').value = opt.prm.loose; $('yield').value = opt.prm.yieldP; syncOutputs(); } render(); $('sheet').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+  if (opt.statCap) cap.textContent = caption + ' · ' + statsTxt(stats(res));
+  return res;
+}
+function runExp(e) {
+  state.exp = e;
+  for (const b of document.querySelectorAll('.expbtn')) b.setAttribute('aria-pressed', String(b.dataset.e === e));
+  const host = $('minis'); host.innerHTML = ''; host.className = 'minis' + (e === '2' ? ' pop' : '');
+  const P = state.prop, name = DESC[P][0];
+  if (e === '1') {
+    $('expHead').textContent = `${name} · the test core is dark; context skins are grey.`;
+    const ctx = prefixCores(), test = sCurve(150, 105, 0.15);
+    mini(host, [test], 'alone', { focus: 0 });
+    mini(host, [...ctx, test], 'after four skins', { focus: 4 });
+    mini(host, [sCurve(262, 190, -0.5)], 'at the edge', { focus: 0 });
+  } else if (e === '2') {
+    $('expHead').textContent = `${name} · 24 random core sets, seeds 1–24. Judge them before reading the counts.`;
+    let s = 1;
+    const step = () => { if (state.exp !== '2' || s > 24) return; const cores = randomCores(s); mini(host, cores, `seed ${s} · ${cores.length} cores`, { seed: s, statCap: false }); s++; setTimeout(step, 0); };
+    step();
+  } else if (e === '3') {
+    $('expHead').textContent = `${name} · the same four-core prefix, then one new core (dark).`;
+    const pre = prefixCores(), c0 = resample(pre[0], 2), m = c0[Math.floor(c0.length / 2)];
+    const a = Math.atan2(c0[Math.floor(c0.length / 2) + 1][1] - m[1], c0[Math.floor(c0.length / 2) + 1][0] - m[0]) + Math.PI / 2;
+    const cross = []; for (let k = 0; k <= 30; k++) { const t = (k / 30 - 0.5) * 44; cross.push([m[0] + Math.cos(a) * t, m[1] + Math.sin(a) * t]); }
+    const par = pre[1].map(([x, y]) => [x + 3.5, y + 6.5]);
+    const far = sCurve(255, 38, 0.3).slice(0, 26);
+    mini(host, pre, 'prefix only');
+    mini(host, [...pre, cross], 'new core crosses core 1', { focus: 4 });
+    mini(host, [...pre, par], 'new core parallel to core 2', { focus: 4 });
+    mini(host, [...pre, far], 'new core far away', { focus: 4 });
+  } else if (e === '4') {
+    $('expHead').textContent = `${name} · your cores, yield 0 (a boxed-in skin always stops).`;
+    for (const l of [0.1, 0.45, 0.8]) mini(host, state.cores, `looseness ${l}`, { prm: { ...prm(), loose: l, yieldP: 0 }, statCap: true });
+  } else if (e === '5') {
+    $('expHead').textContent = `${name} · your cores, drawn order vs reversed. Earlier skins are in front.`;
+    mini(host, state.cores, 'drawn order', { reverse: false, statCap: true });
+    mini(host, state.cores, 'reversed', { reverse: true, statCap: true });
+  }
+}
+for (const b of document.querySelectorAll('.expbtn')) b.addEventListener('click', () => runExp(b.dataset.e));
+
+window.addEventListener('resize', redrawOnly);
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { redrawOnly(); if (state.exp) runExp(state.exp); });
+syncOutputs(); setProp(state.prop);
+</script>
