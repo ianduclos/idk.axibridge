@@ -13,7 +13,7 @@
 // Deviations from the brief: the meander spread is `band` (v2 owns `spread`); strands are exact
 // geometry clipped against occupancy, not walkLine pursuits (the walker would scramble spacing).
 
-const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1, history: 0.6, activity: 0.9, events: 2, white: 0, hetero: 0.6, search: 1, tangle: 0.6, work: 0.5, graft: 0.5, window: 0 };
+const MEANDER_DEFAULTS = { source: 'territory', channels: 8, drift: 0.6, band: 1, history: 0.6, activity: 0.9, events: 2, white: 0, hetero: 0.6, search: 1, tangle: 1, work: 0.5, graft: 0.5, window: 0 };
 const MIG_E = 4;          // mm of displacement per unit R1 per step (calibrated at CP1)
 const V_ABS = 0.075;      // absolute floor for a band's swell speed: p95 of lagged speed on seed 21's trunk (round 2 CP1)
 
