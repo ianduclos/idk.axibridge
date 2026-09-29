@@ -10,7 +10,7 @@ Round 3 of meander, after Ian's notes on Version 6. They are verbatim in `docs/p
 
 The design is in `docs/research/meander3/`: the Opus brainstorm, the Fable synthesis brief, and Fable's advice after review 1. The reviews are "Meander 3, round 1/2" in `docs/reviews/meander-sonnet.md`. Everything was judged on screen only; nothing was plotted.
 
-## Page (Version 7)
+## Page (Version 7, published 29 September at the same link)
 
 The page is meander only. It has seven dials plus the seed: complexity, drift, band, chaos, accents, bridges, history. Randomize changes every unlocked dial within a curated range, and each dial has a lock. Copy settings gives a one-line recipe, and pasting it back restores it. A twelve-seed contact sheet replaces the experiments. Cores are hidden by default. The seed picks the cores through the same population sheet (E1) as before, so at the default dials seeds 22 and 10 draw exactly as in Version 6 until the round-3 features act.
 
