@@ -80,3 +80,47 @@ Recipes: R has neither flag; S restate only; T hatch only; U both; V both with o
 8. Next experiment: U with `hatch` on and `restate` on only for territories that arrived last, compared on cells 3, 7, 10, 11 against plain U and V.
 
 Limits: hatch at 0.3-0.5 mm on paper will read denser than these previews; check a physical plot before deciding density.
+
+## Round 3 — organic
+
+Sheets F, G, J, X, Y, Z plus control W. Close views: cell 3 and 7 of each of F, J, X, Y, Z (none for G, W). Screen only, 0.2 mm.
+
+### 7. Image-only reading (recorded before recipes.json)
+
+Observations
+- W (control): still round-2 language. Wobbly contours with straight hatch flanks. Not organic; reads as drawn rocks with fur.
+- Two families of sheet by subject. F, G, J fill large faceted polygons (regions) that touch and cover much of the page; X, Y, Z draw small separate bodies (beans, capsules, curled worms, segmented tubes) on empty ground.
+- F: dense parallel contour lines inside each polygon, swept in one direction per region. Lines are smooth, thin, and swell into a lit shoulder (F7, F3 left pillows). Weak points: hard straight polygon outlines and a few long straight jumps (F3 diagonal, F10 long horizontal line across the drawing, F10 right edge with lines bunched into a black bar, F4 right edge). Also engraved-print / hair cliché in F2, F1. Strong isolated passage: F7's ribbon pinching to a black tail at bottom left, and F3's pillow with a crumpled hollow.
+- G: concentric rings. Immediately topographic-map and tree-ring cliché (G1, G8, G9, G6). Polygonal rings show the facet edges (octagon look, G8). G7, G11, G4 lose the rings' centre and get calmer, closer to bodies, but still read as contour maps.
+- J: maze/brain-coral thread growing inside polygons (J1, J3, J7, J10). Thin, smooth, lively line and real sway; J7 is a long trailing creature-like passage with unequal density. But the maze fill is the brain-coral/reaction-diffusion cliché; it is texture, not volume. Polygon outlines and straight cross-lines are unresolved (J3, J10, J11).
+- X: small ribbed bodies with tiny bristles at their rims (X3 curl, X7 rod, X2 stack, X10). Best "bodies"; read as grubs, seeds, pods. The ribs turn with the form, lit from one side. Very evenly scattered on empty ground, so a catalogue of specimens (X8, X6). Bristle ticks add character.
+- Y: same bodies with wound spiral around a highlight (Y3, Y7). Reads as thumbprint / fingerprint / snail shell; each body gets a bullseye. Smooth, thin, best line quality of all, but repetitive across cells.
+- Z: outline plus a few buckling strands (Z3 lower right, Z5, Z7 rod, Z10, Z1). The most restrained; some bodies have a single small arc (Z6, Z7 upper left), some have coiled-intestine strand fill (Z7 lower left, Z10). Unequal treatment between neighbours is the most deliberate-looking thing on any sheet. Some shapes stay empty except an outline (Z11, Z9).
+- Line character: F, G, Y have smooth, even, swaying line with natural overshoot at edges (F7 tail). X has short hooked ends. J's line sways most but is constant in scale. None looks ruled except F's outline segments.
+- Clichés: G = topographic map/tree rings; J = brain coral; Y = fingerprint; F = engraving/ridge lines (Joy Division-like in F2, F5, F6). X and Z avoid a named cliché but X drifts toward a worm/insect catalogue.
+- Keepers: X3, X7, X10, X2, X12, Y7 (large body only), Z3, Z5, Z7, Z10, F7, F3 (left pillow), J7. Weak: G1, G8, G9, X8, X6 (scattered even), F10, J10 (straight crossings).
+- Potent abstraction candidates: Z5 (large ribbed body against curled one against beaded worms), Z7 (four treatments in one cell: empty, arc, ribs, coral), X2 (overlap stack of tubes), F7.
+
+Interpretation
+- Bodies (X/Y/Z) give volume more convincingly than territories (F/G/J), where the fill has to explain a hard polygon boundary. Polygon outlines are the problem in F/G/J.
+- The success of Z is not the line family but the choice of what to do to each body.
+
+### 8. After reading recipes.json
+
+Recipes: F wrap/territories, G wound/territories, J growth/territories, X wrap/tubes, Y wound/tubes, Z growth/tubes; all `reversed`. The 3x2 grid separates two variables cleanly.
+- It confirms the pattern: forms decide organic-ness (tubes beat territories in every renderer), render decides which cliché appears (wound = rings/fingerprint, growth = coral, wrap = engraving or ribbing).
+- Territories being pillows made from regions explains the hard outlines; my dislike of F/G/J is a dislike of that form family, not of the renderers.
+- Growth on tubes (Z) is the one combination that varies treatment per body, so my reading of Z as deliberate is a property of growth only drawing where it has room. Judgement unchanged, but I had underrated wrap+tubes (X) because of the catalogue look; that is a scatter problem, not a renderer problem.
+
+### 9. Recommendations
+
+1. Drop all territories forms (F, G, J) as a base. Keep F7 as a reference for the swell-into-tail line.
+2. Drop wound (G, Y) as a default renderer; keep it only for the largest body per cell (Y7 large body, Y5 big body) to avoid the fingerprint look.
+3. Take X and Z as the base pair; test mixing them per body within one cell (ribs on some, growth on others, bare on the rest), on cells 3, 5, 7, 10.
+4. Keep bristles and overshoots (X3, X7, Z3): protect small hooked ends and the tiny tick at body tops; these give the line character.
+5. Break the even scatter (X8, X6, Y8): vary size more and let bodies overlap or press together as in X2, Z2, X12, so empty space takes shape.
+6. Remove or resolve straight crossings and polygon outlines wherever they remain (F3, F10, J3, J10); they are the only ruled passages.
+7. Let growth fill vary from a single arc to full coral within a cell (Z7 model); avoid full maze fill (J1, J7 body), which is brain coral.
+8. Next experiment: Z with wrap ribbing on the overlapped bodies only, plus a second pass with body scale varying by a factor of 5 (Z1, Z5, Z7, Z12).
+
+Limits: only cells 3 and 7 seen close; 0.2 mm on paper will be lighter than screen; no G or W close views.
