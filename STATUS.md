@@ -3,12 +3,12 @@ project: idk.axibridge
 state: active
 updated: 2026-09-29
 machine: mac+pi
-summary: Main now includes Linedraw v3 and plot estimates (local, unpushed); a Territory bench prototype (web artifact, v1-v5) is on feat/territory-bench with a meander round planned next.
+summary: Main (pushed) now includes Linedraw v3, plot estimates and the Territory bench web prototype v1-v5; a meander round is planned next.
 next:
   - "Start the meander round in a fresh session: docs/plans/territory-meander-round.md"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
   - "After the active plot finishes, activate and check mandatory simplification and native timing"
-  - "Decide whether to push main (fast-forwarded to codex/linedraw-v3) and merge feat/territory-bench"
+  - "Sync the idkpi clone with main once the Pi is back"
   - "Continue remaining native and paper acceptance entries in HANDOFF.md"
 handoff_for: Codex
 ---
@@ -29,7 +29,7 @@ meander round comes next ([plan](docs/plans/territory-meander-round.md)). Source
 the research and briefs are in `docs/research/territory-v5/`. Roles on this track: Fable designs,
 Sonnet critiques. Everything was judged on screen; nothing has been plotted. Earlier the same day, local
 `main` was fast-forwarded to `codex/linedraw-v3`, which contains the plot-estimate
-commits. The full suite passed (1,688) before the merge, and nothing has been pushed.
+commits. The full suite passed (1,688) before the merge. Main was then merged with `feat/territory-bench` and pushed on 29 September.
 
 **Components and bench, 28 September:** Contours/form/cores can be independently
 included in the recipe or kept as aligned frozen layers in one undo step. Tonal

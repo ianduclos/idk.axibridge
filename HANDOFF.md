@@ -9,7 +9,7 @@ entries: 24
 - done: Web-artifact prototype v1 through v5 (Territory), with blind Sonnet reviews in rounds 1–4, Fable design briefs, and multi-agent brainstorm and research for v5. Ian's v5 verdict and the meander reference are recorded.
 - next: Run `docs/plans/territory-meander-round.md` from a fresh session: 3 Opus brainstorms, 2 Sonnet research agents, a Fable synthesis, then a build in `tools/territory-prototype/` (a new `t_meander.js`), review, and Ian.
 - blockers: none. The artifact URL is in the plan and `tools/territory-prototype/README.md`; publish with `url` from the new session.
-- context: [plan](docs/plans/territory-meander-round.md), [prototype sources](tools/territory-prototype/README.md), [v5 evidence and verdict](shots/territory-v5-0929/README.md), [reviews](docs/reviews/territory-v2-0929-sonnet.md). Branch `feat/territory-bench`, not merged.
+- context: [plan](docs/plans/territory-meander-round.md), [prototype sources](tools/territory-prototype/README.md), [v5 evidence and verdict](shots/territory-v5-0929/README.md), [reviews](docs/reviews/territory-v2-0929-sonnet.md). All of it is on `main` (pushed 2026-09-29).
 
 ### Linedraw v3 native and paper acceptance — opened 2026-09-28, owner: ian
 
@@ -54,7 +54,7 @@ entries: 24
   native-launch skip. The first browser server timed out at 30 s under load;
   rerunning its 101 tests with 120 s startup allowance passed, together with
   16 focused tests. Typecheck/build and isolated native-estimate UI smoke passed.
-- context: Branch `codex/plot-optimization-estimates`, now contained in local `main` (fast-forwarded 2026-09-29, not pushed). The previous 900k-point
+- context: Branch `codex/plot-optimization-estimates`, now contained in `main` (pushed 2026-09-29). The previous 900k-point
   Mosca job hit native 1 ms move minimums: about 393 s of planned ink motion
   versus the generic estimate's 70 s, excluding USB overhead.
 
