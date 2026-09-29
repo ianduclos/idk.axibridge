@@ -235,3 +235,39 @@ What still fails: (i) the tangle lives at terminals and turns, one or two per ce
 **Single most important next move.** Let one tangle per drawing run long: from a hook end, spread along a straight or gentle stretch for 60-100 mm and thin out into the void, so a tangle becomes a field for once and the middle of the drawing is not quiet contour. Test it at the tangle 1 setting on seed 21 or 13 (T02, T04), where the tangle is already legible; do not add another dial. The risk is that a long tangle becomes the hairball Ian rejected, so judge by whether the strands still lose order gradually and re-gather (T02 close is the model).
 
 **Limits.** Screen only, downscaled sheets, no paper. Closes cover the densest windows; quiet areas seen at sheet scale only. The tangle 0.6 vs 1 differences are small and by eye. One reviewer, one pass; not blind to earlier rounds; ordering of T cells was shuffled but the pairs were recognisable by composition.
+
+## Meander 3, round 1
+
+Screen only, sheets downscaled, no paper. Blind to recipes. Pairs identified by composition.
+
+**1. Registers.** Two registers are real in most cells: a long calm line (R03, R12, R13, R07, R11 are the clearest) and a chaotic passage. The calm line is still a hand: it wanders, leans and drops off mid-air, and the close views show no CAD arcs. The exception is where it is too even: R13's big oval and R11's egg are smooth, closed, nearly geometric bodies, which read as drafted shapes rather than a hand. The chaos is the weaker register. In R08, R09, R10, R14, R16, R17 and R18 it is a wavy 8-15 strand fray with the same wobble frequency everywhere, so it reads as one texture pasted at the ends of bands. That is the target's "small knot" scaled up 3x into fields, and it goes hairball-adjacent in R16 and R14. R03/R12/R15 are the only cells where the chaos is nearly absent, and they are the closest to the target.
+
+**2. Stated arcs.** The best are in R03/R12/R15 (left bend: 4 unequal, leaning arcs that start and stop at different points, the target's character), R07 (the fish-hook loop, arcs shortening and lopsided), R13 (the arc at far left, the oval's lower edge). They fall short in R08: nested even arcs on the big U-shaped bend and lower-left, which read as tree rings and ruled parallels. R06, R04 and R02 have stated arcs at the base of the bean, almost evenly spaced. R17 left is a thick 4-strand band, tight and ruled, and the weakest arc in the round. Rule of thumb: 3-4 members read as a hand, 5+ read as engraving.
+
+**3. Bridges.** Least certain finding. What I see that reads as a bridge: R03/R12/R15 at the knot, where a curl leaves one band and lands on the other (very close to Ian's small-fillet-in-a-corner); R08 top right, where a small loop joins two lines; R10 and R16 centre loop, where an oval seems to link the tangle to the round form. Those work as a calmer plane only when a single stroke does it. In R10/R16 the loop is doubled and tripled and tangled with the mass, so it is clutter, not another plane. In R09/R18 the lines crossing at the centre have several small fillets and continuations that read as tidying up (each crossing gets a small cleanup), which is the "resolve the whole picture" Ian warned about. Closed beans: R13 (oval, the most bean-like, closed with a double edge), R11 (egg), R05/R06 (the big pear/bean lower body, closed by the arcs), R04 (rounded pouch), R08 (the closed loop with doubled edge at centre right). R03/R12/R15 avoid closed forms because the two bands stay open.
+
+**4. Two rivers.** R03/R12/R15, R05/R06 and R09/R18 read as one composition when the second river meets the first at a junction with a sprout (R03 knot). In R13, R11, R07 and R17 the second river runs beside the first without meeting it; two drawings on one sheet. R09/R18 are the most integrated: the lens shape has both rivers pinched into it.
+
+**5. Sameness.** Yes. Across all cells the terminals of bands end in the same wobbly fray of 8-12 strands (R01, R02, R05, R06, R08, R09, R10, R14, R16, R17, R18), and the same fine hook curl on line ends (R01, R05, R07, R09, R10, R11, R12, R13). The fray is a stamp. Arcs beside bends are also a stamp; nearly every bend gets one, so "a few" becomes "every".
+
+**6. Pairs.**
+- R03 / R12 / R15 (same seed): R03 and R12 look identical at sheet scale; R15 adds a double loop and small fillets around the knot plus a bridge across the lower-left band. R12/R03 are better: the knot stays small and the bridge ends up as noise in R15.
+- R05 / R06: near-identical; R06 has slightly more arcs on the left lobe and a heavier fray. R05 is better for restraint, although the closed pear stays the problem.
+- R09 / R18: R18 has a much bigger fray and more fillets; R09 is better, as the fray stays inside the lens and the left arcs carry the stated register.
+- R10 / R16: R16 adds more chaos at upper left and more bridging strokes around the loop, and drifts to hairball. R10 is better.
+Pattern: in every pair the busier version loses. The extra version helps nothing.
+
+**7. Ranking.**
+Top 5:
+1. R12: nearest the target: two bands, one knot, uneven arcs, big calm void.
+2. R03: same drawing; ties R12.
+3. R07: strongest hook loop and a good, unequal arc set, calm elsewhere; the most figurative reading (a head) is a risk.
+4. R10: fray at left balanced by clean loop and calm sweeping curves; the most "dynamic".
+5. R09: the lens knot integrates both rivers; the strongest composition, but the fray runs long.
+Bottom 3:
+- R13: closed oval and egg, drafted feel, the arcs are the only life.
+- R17: ruled four-strand band and two identical frays, one at each end.
+- R16: hairball drift, loop and tangle merged, no calm plane.
+(R11 and R05/R06 are just above the bottom: closed bodies.)
+
+**Most important next change.** Cut fray and arc frequency: cap the round at one chaotic knot per drawing (as in R03/R12), make it small, and let at most two bends carry 3-4 unequal arcs. Leave everything else as bare calm line. Bridges should be a single stroke per crossing, and only at one or two crossings, with no bridges into the chaos. Do not add more variants of the fray to fix the sameness; subtract instances.
