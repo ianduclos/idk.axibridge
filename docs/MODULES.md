@@ -365,7 +365,7 @@ canvas's later quarter-turn from making the kept element exceed the bed. It does
 not constrain manual layer transforms or effects.
 
 
-Bench adapters currently registered at version 1 are `process`, `homeostat`,
+Bench adapters currently registered at version 1 are `process`, `homeostat`, `territory`,
 `second-reading`, and `magnetic-field`. Homeostat owns a grouped form schema in `homeostat_bench.js`;
 its generation recipe is unchanged. Schema groups may set `groupOpen: true` for
 an initially expanded group; a remembered user preference takes precedence.
@@ -507,3 +507,20 @@ apply. Preparation stays outside project assets; successful layer creation
 persists the recording, and normal save/load/ZIP carries it. Sources use a fixed
 `placement_frame` derived from the full recording, never from the prefix.
 See [Mosca recording bench](MOSCA-BENCH.md) for the pen-mask and import contracts.
+
+### Client-engine benches (Territory)
+
+Territory (`sources/territory.py`, `static/js/territory_bench.js`, adapter
+`territory` v1, `new`/`resume`) is the one bench whose geometry is computed in
+the browser. The engine is the approved meander prototype, generated as an ES
+module into `static/js/territory/engine.js` by `tools/territory-prototype/build.sh`.
+Never edit the generated file; `tests/test_territory_engine_js.py` fails when it
+is stale and pins the Version 10 output. It runs in a module worker
+(`territory/worker.js`), which works in both the built and the source-only
+(Pi) frontends.
+- **Keep** sends the stage's exact strokes, simplified at 0.05 mm and rounded
+  to 0.01 mm, together with the `recipe` (seed and dials).
+- **The source replays the strokes verbatim** and never recomputes, so the
+  single resolve path and the Pi need no JavaScript.
+- **Resume** re-runs the deterministic engine from the stored recipe, with
+  every dial live.

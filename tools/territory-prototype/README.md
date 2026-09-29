@@ -4,7 +4,7 @@ These are the plain-JS sources behind the private web artifacts:
 - *Territory*: https://claude.ai/artifact/Bawx12VN4uRgWR2wU2Lso3
 - *Cores and Skins* (v1): https://claude.ai/artifact/LPvKv1yKahSiEKVZv2Gf8M
 
-It is not part of the `axibridge/` package, and nothing here runs in the app.
+The engine here is also the Territory bench's engine in the app: `build.sh` writes an ES-module copy to `axibridge/static/js/territory/engine.js` (committed; never edit it there). Run `build.sh` after any change to a `t_*.js` part; `tests/test_territory_engine_js.py` fails if you forget, and pins the Version 10 output. The page and the node tools here stay a sketchbook outside the package.
 
 ## Build
 

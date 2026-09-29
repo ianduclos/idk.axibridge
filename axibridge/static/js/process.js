@@ -29,6 +29,7 @@ import { openLinedrawBench, closeLinedrawBench } from "./linedraw_bench.js";
 import { S, actions } from "./main.js";
 import { homeostatFormSchema } from "./homeostat_bench.js";
 import { openMoscaBench, closeMoscaBench } from "./mosca_bench.js";
+import { openTerritoryBench, closeTerritoryBench } from "./territory_bench.js";
 import { initMagneticBench, openMagneticBench, closeMagneticBench } from "./magnetic_bench.js";
 import { renderForm } from "./forms.js";
 import { openGallerySave } from "./gallery.js";
@@ -174,6 +175,7 @@ export async function openProcessPopup(id) {
   if (!$("process-popup")) return;
   closeLinedrawBench(false);
   closeMoscaBench(false);
+  closeTerritoryBench(false);
   closeMagneticBench(false);
   closeSecondReadingBench(false);
   stop();
@@ -198,6 +200,7 @@ export function openProcessLayerBench(id) {
   if (!layer || !adapter) return;
   closeLinedrawBench(false);
   closeMoscaBench(false);
+  closeTerritoryBench(false);
   closeMagneticBench(false);
   closeSecondReadingBench(false);
   stop();
@@ -233,6 +236,7 @@ export async function openProcessBench(entry) {
   if (!$("process-popup")) return;
   closeLinedrawBench(false);
   closeMoscaBench(false);
+  closeTerritoryBench(false);
   closeMagneticBench(false);
   const adapter = benchAdapter(entry.mod, 'new');
   if (!adapter) {
@@ -252,6 +256,7 @@ export async function openProcessBench(entry) {
 async function openGenericBench({ mod, params, onCreate, onReroll, onClose }) {
   closeLinedrawBench(false);
   closeMoscaBench(false);
+  closeTerritoryBench(false);
   closeMagneticBench(false);
   closeSecondReadingBench(false);
   axis = moduleAxis(mod);
@@ -285,6 +290,10 @@ registerBenchAdapter('second-reading', 1, { open: ({ mod, params, contextKey, on
 registerBenchAdapter('mosca', 1, { open: ({mod, params, contextKey, onCreate, onClose}) => {
   closeSecondReadingBench(false);
   openMoscaBench({mod, params, contextKey, onKeep:onCreate, onClose});
+} });
+registerBenchAdapter('territory', 1, { open: ({mod, params, contextKey, onCreate, onClose}) => {
+  closeSecondReadingBench(false);
+  openTerritoryBench({mod, params, contextKey, onKeep:onCreate, onClose});
 } });
 registerBenchAdapter('magnetic-field', 1, { open: ({ mod, params, contextKey, onCreate, onClose }) => {
   closeSecondReadingBench(false);

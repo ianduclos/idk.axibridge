@@ -6,7 +6,7 @@
 #process-popup .preview-modal { width:min(1200px,100%); height:100%; max-height:860px; min-height:0; padding:0; gap:0; overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--bench-edge); }
 #process-popup.expanded { padding:0; }
 #process-popup.expanded .preview-modal { width:100%; height:100%; max-height:none; }
-#process-popup .preview-head { flex:none; display:flex; align-items:center; gap:var(--space-2); padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--bench-edge); }
+#process-popup .preview-head { flex:none; display:flex; align-items:center; gap:var(--space-2); padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--bench-edge); box-shadow:0 6px 10px -6px rgba(0,0,0,.6); }
 #process-popup .preview-head > div { flex:1; min-width:0; }
 #process-popup .preview-head h2 { margin:0; }
 #process-origin { margin:3px 0 0; }
@@ -182,3 +182,47 @@
 #process-popup.linedraw .process-generic-actions,
 #process-popup.linedraw .preview-stage { display: none; }
 #linedraw-panel[hidden], .linedraw-workspace[hidden] { display: none; }
+
+/* Territory: one sheet on the stage, the next six seeds under it, dials with locks at the side. */
+.territory-bench .bench-transport, .territory-bench .process-generic-actions, .territory-bench #process-canvas, .territory-bench #process-reference { display:none !important; }
+#process-territory[hidden], #territory-canvas[hidden], #territory-variations[hidden], #territory-actions[hidden] { display:none; }
+#territory-canvas { display:block; width:min(100cqw,calc(100cqh * 1.376147)); aspect-ratio:300 / 218; height:auto; flex:none; background:var(--sheet); box-shadow:var(--sheet-shadow); }
+#process-territory { display:flex; flex-direction:column; gap:var(--space-3); }
+#process-territory .tb-seed { position:sticky; top:calc(-1 * var(--space-3)); z-index:1; background:var(--bench); margin:calc(-1 * var(--space-3)) calc(-1 * var(--space-4)) 0; padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--bench-edge); }
+#process-territory .tb-row { display:flex; align-items:center; gap:var(--space-2); margin-top:var(--space-1); }
+#process-territory .tb-row > button:not(.tb-icon):not(.tb-lock) { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+#tb-seed { flex:1; min-width:0; font-variant-numeric:tabular-nums; }
+.tb-icon, .tb-lock { display:inline-flex; align-items:center; justify-content:center; min-width:var(--compact-h); height:var(--compact-h); padding:0 4px; }
+.tb-lock { background:none; border:0; color:var(--ink-soft); opacity:.7; }
+.tb-lock .tool-icon { width:15px; height:15px; }
+.tb-lock-hint { margin:var(--space-1) 0 0; font-size:var(--type-note); }
+.tb-strip-label { writing-mode:vertical-rl; transform:rotate(180deg); font-size:var(--type-note); }
+.tb-thumb.current { border-color:var(--live); }
+.tb-keys { margin-left:auto; font-size:var(--type-note); }
+@media (max-width: 1150px) { .tb-keys { display:none; } }
+.tb-lock[aria-pressed="true"] { color:var(--live); opacity:1; }
+.tb-group { margin:var(--space-3) 0 0; color:var(--ink-hi); font-size:var(--type-title); font-weight:600; }
+.tb-dial { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; column-gap:var(--space-1); margin:var(--space-2) 0; }
+.tb-dial label { cursor:default; user-select:none; }
+.tb-dial output { font-variant-numeric:tabular-nums; color:var(--ink-hi); }
+.tb-dial output.over { font-weight:600; text-decoration:underline dotted; }
+.tb-dial input[type=range] { grid-column:1 / -1; width:100%; }
+.tb-dial small { grid-column:1 / -1; color:var(--ink-soft); font-size:var(--type-note); line-height:1.35; }
+#tb-sub { border-left:2px solid var(--bench-edge); padding-left:var(--space-3); }
+#tb-sub .tb-idle-hint { display:none; margin:var(--space-1) 0; }
+#tb-sub.tb-idle .tb-idle-hint { display:block; }
+#tb-sub.tb-idle .tb-dial { opacity:.45; }
+.tb-settings summary { cursor:pointer; }
+.tb-recipe { font-family:ui-monospace,Menlo,monospace; word-break:break-word; user-select:text; }
+.tb-settings button, .tb-settings input { width:100%; margin-top:var(--space-2); }
+.tb-settings button { display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+#territory-variations { display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) var(--space-3); border-top:1px solid var(--bench-edge); flex:none; }
+#tb-thumbs { flex:1; min-width:0; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:var(--space-2); }
+.tb-thumb { display:flex; flex-direction:column; align-items:stretch; gap:2px; padding:2px; background:none; border:1px solid transparent; border-radius:var(--r-sm); }
+.tb-thumb:hover, .tb-thumb:focus-visible { border-color:var(--accent); }
+.tb-thumb canvas { width:100%; aspect-ratio:300 / 218; display:block; }
+.tb-thumb span { font-size:var(--type-note); color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+#territory-actions { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3); border-top:1px solid var(--bench-edge); flex:none; }
+#tb-status { font-variant-numeric:tabular-nums; }
+#tb-kept { flex:1; }
+#tb-kept:empty { flex:0; }
