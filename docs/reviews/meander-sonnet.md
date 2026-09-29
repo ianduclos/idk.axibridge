@@ -76,3 +76,66 @@ K20 (spiral plus twiglike lower-left marks: what are those?), K19 (the tangled c
 - Inheritance visible: no (0/6 pairing guesses).
 
 **Limits.** Screen only, downsampled sheets, no paper. One reviewer, one pass; my pairings score is 6 guesses, too few to prove invisibility, only that I could not see it. Sheet-X was viewed at sheet scale only.
+
+## Meander round 2
+
+Reviewer: Sonnet 5.5, screen only, not blind to round 1. Images inspected: Ian's sketch, sheets A-C (about 1744x2000 displayed) and close-a/b/c (100x70 mm windows at plotted width). Line-level claims rest on the closes only.
+
+### 4. Image-only reading (recorded before recipes)
+
+**(a) Versus round 1.**
+Observations: Railway/tree rings: mostly gone. Bands in M04 close (the U-turn), M02 close (lower-right sweep), M11 close and M13 close now have members that start late, stop early, split and merge; outer members are short and drift off the parent line. Only M13 close (left, the concentric arc with an inner double) and M09 close (the doubled lower-right arc, two even strokes) still read as ruled doubles. Identical curls: better in that the terminal hooks are smaller and rarer, but M12/M15/M17 (right spiral) and M18 (lower-left spiral) still end in the same tight curl, and M10 has one at right. One handwriting: partly improved. There is now a smooth single line and a bunched band, with a few dashed outlines and short ticks, but the smooth line is still the same smooth line everywhere.
+Interpretation: the drop-out change is the visible win of the round; equidistance no longer dominates. One handwriting is reduced, not solved.
+
+**(b) Volume.**
+Observations: The best passages read as one mark that swells: M04 close, U-turn at centre (about 6 strokes, thickest on the inside of the turn, feathering outward); M02 close, the band from lower-left rising to upper right (a fat lens that thins to a single line then swells again); M11 close, the band down the right of the big form, which twists at the waist; M05 close, the nib-shaped band at the right end of the top form; M03 close, the ridge upper left. In these the tapered ends give a brush-stroke feeling of pressure and release.
+Where it fails: M09 close lower-right (two even parallels, reads as a double rail); M13 close left (concentric, reads as ring); M10 close, the long upper-right straight double (reads as a ruled line, not a stroke); M12 close top arc (a graded cluster along a perfectly regular arc: nice, but the arc itself is too circular so the mark reads as a contour). Interpretation: the illusion works where the parent line curves tightly or twists; on gentle arcs and straights it is a stack.
+
+**(c) Searching register.**
+Observations: Visible at close in M04 and M16 (lower-right, same passage): a horizontal knot of about 8 crossing, sagging strokes overlaid on a straight run. That is the only clear case; it reads as hesitant restatement, not noise, because it stays a horizontal band of one width. Elsewhere it is hard to tell: M10 close and M03 close have several crossing single lines but they look like separate strokes, not restatement. At sheet scale (A/B/C) the searching passage is a dark smudge, e.g. M04 lower right, M18 centre (feathered strokes above the central form). It does not mix into the rest so much as sit on one line as a dense patch. Interpretation: it is the closest thing to Ian's "nuanced tangle", but it is a single small event per cell, so the bunched band and the tangle are the same register at different thickness rather than two registers.
+
+**(d) Families and kinds.**
+By composition: {M04, M08, M16} (right-hand U-turn mass, two curls lower left); {M06, M07, M14} (lobed maze with a dashed egg, lower left); {M12, M15, M17} (bulb with stem at left, spiral at right). Then M09 and M13 look related to M02 or to nothing definite; M01 and M11 share a layout of curls around a central rounded form; M05, M10, M18 are one-offs.
+Kind: M03, M05, M18 look different: the most all-over, overlapping, crossing lines; M10 (low, wide, sprawling with straight strokes) and M02 (all in the right third, straight segments, a dashed section) too. I would call those M02, M03, M05, M10, M18 a second kind. They feel drawn, not derived from a shape.
+
+**(e) Keepers, weakest, associations.**
+Keepers: M04 (U-turn band plus knot plus voids; the strongest), M02 (extreme void, one lens band, a spare horizontal drift; most poster-like), M03 (a heavy ridge, crossing thin lines inside the form, curls trailing off), M18 (sprawl, feathered patches, spiral; dense but not a hairball), M11 (weight lives in one band, the rest is thin).
+Weakest: M06/M07/M14 (a maze of thin lines with nothing to rest on; dashed egg is the only event), M09 (elegant but legible; nose/elephant-trunk figuration), M10 (loose straight strokes read as sketchy scaffolding).
+What makes me ask: M04 knot at bottom right (why does that run get a tangle?), M18 centre (the feathered patches sit on no visible edge), M02 (what is the empty left two-thirds?).
+Associations: crescents (M13 left arc, M12), calligraphy/flourish (M12, M15, M17 spiral, M18 spiral, M11 curls), noses/trunks (M09, M13), a bulb/femur head (M12/M15/M17: a bone-like figure, the round head and stem is figurative enough to bother). River/map: not by eye. Tree rings: only locally in M13 close.
+
+### 5. After reading recipes
+
+Mapping: territory default (search 1): M01, M06, M09, M12, M13, M16. Source nothing: M02, M03, M05, M10, M11, M18. Search 0: M08, M14, M15 (seeds 21, 3, 13). Search 2: M04, M07, M17. Seeds: 7 (M01/M11), 58 (M09/M02), 13 (M12/M10/M15/M17), 34 (M13/M05), 21 (M16/M08/M04/M03), 3 (M06/M14/M07/M18).
+
+**Territory vs nothing, pairs.**
+- M01 vs M11 (7): M11 better; asymmetric mass with weight, a lot of shaped white. M01 is a scatter of curls, no protagonist.
+- M09 vs M02 (58): M02 is the more surprising; M09 is more finished and figurative. Split, lean M02 on Ian's line ("negative space, what's going on").
+- M12 vs M10 (13): M12 is stronger, but it is the bulb figure; M10 is more unpredictable but loose, and its bands are weak. Lean M12 with reservations.
+- M13 vs M05 (34): M05 better; a compact, weighty form; M13 has the ring failure and cut-off crescents.
+- M16 vs M03 (21): M03 more all-over and crossing; M16 stronger single mass. Split.
+- M06 vs M18 (3): M18 clearly, dense, and it has the most "what is going on"; M06 is a thin maze.
+So "nothing" is better in 4 of 6 pairs (M11, M02, M05, M18), split in 2 (M03/M16, M12/M10 lean territory). This matches round 1: the source-free cells are the more unpredictable, but they are also the least stable. The territory cells look like structured forms with fixed bones, hence the three obvious families I saw. Ian's "weird compositions" leans nothing; "more unified" leans territory. Fable will need to decide which.
+
+**Search 0 vs 1 vs 2.**
+- Seed 21: M08 (0) lacks the horizontal knot; M04 (2) and M16 (1) show it and look almost identical. So 1 and 2 barely differ there; the register is there at 1 and 0 removes it. M08 is visibly poorer: the lower right is a clean run with one small band.
+- Seed 3: M14 (0) is the plain arc; M07 (2) adds a doubled/thickened restatement along the arc and a hook cluster at the bottom-left; M06 (1) is between. Effect is small.
+- Seed 13: M15 (0) vs M17 (2): M17 has more layered bands at the upper left arc and right spiral and more scattered marks; a bit richer, still small.
+Verdict: search 1 is worth keeping; search 2 looks marginal to me (the tangle already appears at 1). Only one cell shows a true "searching" knot, so the register is under-delivering per cell.
+
+**Changes to my readings.** I took M01 for a second-kind cell; wrong (territory). M02 and M10, I guessed right. So the source-nothing cells are recognisable by eye now (M03, M05, M18, M02, M10 of 6; missed M11, mis-flagged M01): about 5/6 on the kind. I also read the searching register as one small event; the recipes confirm it is a single injected passage in each cell, off in M08/M14/M15 and I did see M08 as poorer.
+
+### 6. Recommendations for Ian's look
+
+1. Keep the drop-out/fuse band logic; it is the round's clear gain (M04, M02, M11, M05 closes). Do not go back toward equidistant.
+2. Loosen the band's parent: on gentle arcs and straights the stack still reads as a rail (M09, M10, M12 top, M13). Apply bands mostly at high-curvature or twisting places (as in M04 U-turn, M11 waist), and less on regular arcs.
+3. Keep search at 1, drop 2 as a default; then make the searching passage more than one patch per cell: 2-3 unequal ones, so the bunched-band and tangle registers stop collapsing into one (M04, M16 vs the rest).
+4. Blend, not choose, the source: territory gives unified figures (M12/M15/M17 family), nothing gives the void, sprawl and crossing (M02, M03, M18). Try territory at partial strength for compositions between M12 and M18. Note the risk: M12's bulb-with-stem is uncomfortably figurative.
+5. Vary the terminal curls: the spirals in M12, M15, M17, M18 and M10 are the same object; keep one per drawing at most, and make others open/cut-off.
+6. Reduce the thin-maze cells: M06/M07/M14 show what happens when there are few bands and no tangle; the drawing has nothing to rest on and looks like a lettering sketch. Push weight contrast harder rather than more thin lines.
+
+**Shortlist for Ian (screen, then paper):** M04, M02, M18, M03, M11, M05. Strongest on his brief: M04 and M18. M12 as an optional "unified" contrast; note it is figurative.
+
+**Kill criteria by eye.** River/map: not fired. Tree rings: fired only locally, M13 close. Railway doubles: partly fired (M09, M10 long line); mostly resolved elsewhere. Closed beans: not fired; forms are open, though M05's lower loop and M12's bulb come close. One handwriting: still fires, less. Hairball: not fired; M18 is the densest and is not one. No protagonist: fires in M01, M06/M07/M14. Flourish/ornament: fires at the spirals (M12/M15/M17, M18). White channel: off, fine. Searching register findable in ~2 s: only in M04/M16 at sheet scale, so weak.
+
+**Limits.** Screen only, sheets downscaled, no paper; only closes for windows of the densest parts, so sparse areas were not inspected at plotted width. The seed-21 comparison of M04 with M16 is by eye and they may not be identical; other differences could be below what I saw. One reviewer, one pass; not blind to round 1.
