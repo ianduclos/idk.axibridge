@@ -243,9 +243,9 @@ export function initComposeTab() {
       </div>
       <div id="gen-live-note" class="hint"></div>
     </div>
+    <div class="row"><button id="btn-gallery">Gallery</button></div>
     <div class="panel" data-collapse-default="1">
       <h2>Import &amp; assets</h2>
-      <div class="row"><button id="btn-gallery">Gallery</button></div>
       <div class="row">
         <input type="file" id="svg-file" accept=".svg,image/svg+xml" style="flex:1">
       </div>
