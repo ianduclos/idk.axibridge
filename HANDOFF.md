@@ -1,13 +1,13 @@
 ---
 project: idk.axibridge
-updated: 2026-09-29
+updated: 2026-09-30
 entries: 24
 ---
 
-### Territory bench: Ian's check and merge — opened 2026-09-29, owner: ian
+### Territory bench: native and paper acceptance — opened 2026-09-29, owner: ian
 
-- done: Meander rounds 3–5 and publication of the prototype artifact as Version 10. The port into axibridge: the `territory` source, the bench adapter with a worker engine, and the Grown / Version 8 planes fill. Tests and docs are done. Everything is on branch `feat/territory-bench` (last commit is the Fill switch).
-- next: Restart AxiBridge.app and try Generate → Territory → Bench. Then decide the merge to `main` (and whether to push and sync idkpi).
+- done: Meander rounds 3–5 and publication of the prototype artifact as Version 10. The port into axibridge: the `territory` source, the bench adapter with a worker engine, and the Grown / Version 8 planes fill. Tests and docs are done. Integrated on `main` on 30 September, along with the stable Compose sidebar.
+- next: Restart AxiBridge.app and try Generate → Territory → Bench. Native and paper acceptance remain; push and idkpi sync are separate follow-ups.
 - blockers: none. The server must restart to register the new source.
 - context: [MODULES.md "Client-engine benches"](docs/MODULES.md), [bench evidence](shots/territory-bench-0929/README.md), [meander 5 plan and notes](docs/plans/territory-meander-round-5.md), [prototype README](tools/territory-prototype/README.md), [reviews](docs/reviews/meander-sonnet.md).
 

@@ -1,11 +1,11 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-29
+updated: 2026-09-30
 machine: mac+pi
-summary: The Territory meander drawing is now a working axibridge bench (Grown or Version 8 fill, live dials, Keep as layer) on feat/territory-bench, awaiting Ian's check and a merge.
+summary: Territory and the stable Compose sidebar are integrated on main; native and paper acceptance remain pending.
 next:
-  - "Ian: restart AxiBridge.app and try Generate → Territory → Bench; then ask for the merge of feat/territory-bench to main"
+  - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
   - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
   - "After the active plot finishes, activate and check mandatory simplification and native timing"
@@ -15,6 +15,13 @@ handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Integration checkpoint, 30 September:** `main` now contains Territory and the
+stable Compose sidebar, including the Gallery accessibility correction. Full
+hardware-free suite: **1,698 passed, one native-launch skip**, one existing
+Starlette warning; typecheck/build passed. Native and paper acceptance remain
+pending. Recovery/groups/usability will proceed in an isolated worktree from
+this settled baseline. No push or Pi sync.
 
 **Territory bench, 29 September (evening):** The meander rounds 3–5 on the web prototype
 reached Version 10:
