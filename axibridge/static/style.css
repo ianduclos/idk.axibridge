@@ -301,7 +301,7 @@ main {
 #layers-dock {
   position: relative; flex: none;
   display: flex; flex-direction: column; min-height: 0;
-  height: var(--layers-dock-h, 210px);
+  height: var(--layers-dock-h, 260px);
   border-top: 1px solid var(--bench-edge);
   background: var(--bench);
   padding: 0 var(--space-4) var(--space-2);
@@ -350,7 +350,7 @@ main {
 #gen-fields { margin-top:var(--space-3); }
 #gen-fields > summary { color:var(--ink-soft); }
 #gen-latch { max-width:100%; }
-#layers-dock { height:var(--layers-dock-h,210px); }
+#layers-dock { height:var(--layers-dock-h,260px); }
 #layers-dock-title { cursor:default; letter-spacing:0; }
 #layers-dock-title::before { display:none; }
 #layers-dock-title::after { display:none; }
@@ -564,7 +564,7 @@ main {
   cursor: col-resize; z-index: 5;
 }
 #sidebar-resize:hover { background: var(--bench-edge); }
-#tabs { display: flex; border-bottom: 1px solid var(--bench-edge); }
+#tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-bottom: 1px solid var(--bench-edge); }
 #tabs button {
   flex: 1; background: var(--bench-deep); color: var(--ink-soft);
   border: none; border-right: 1px solid var(--bench-edge); padding: 9px 0 8px;
@@ -1278,3 +1278,18 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 .drawing-activity::after { content: ""; display: block; width: 45%; height: 100%; background: var(--flexoki-cyan-400); animation: drawing-activity 1.2s ease-in-out infinite alternate; }
 @keyframes drawing-activity { from { transform: translateX(-100%); } to { transform: translateX(225%); } }
 @media (prefers-reduced-motion: reduce) { .drawing-activity::after { animation: none; width: 100%; } }
+
+/* Five inspector tabs remain reachable at the minimum sidebar width. */
+#tabs button { min-width: 0; padding-inline: 4px; font-size: 10px; letter-spacing: 0; }
+#groups-toolbar { flex-wrap: wrap; padding: 0 8px 6px; gap: 4px; }
+#groups-toolbar select { flex: 1; min-width: 70px; max-width: 130px; }
+.group-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding: 7px 6px; }
+.group-row .lname { flex: 1; min-width: 100px; text-align: left; }
+.group-row button { font-size: 10px; padding: 3px 5px; }
+.group-breadcrumb { display: flex; align-items: center; gap: 8px; padding: 5px; }
+
+#layers-toolbar { margin: 4px 0; gap: 4px; }
+#layers-toolbar button { min-height: 28px; font-size: 11px; padding: 4px 6px; }
+#groups-toolbar { flex: none; margin: 2px 0 6px; padding: 0; }
+#groups-toolbar button, #groups-toolbar select { min-height: 24px; height: 24px; font-size: 10px; padding: 2px 4px; }
+#groups-toolbar select { min-width: 50px; max-width: 80px; }

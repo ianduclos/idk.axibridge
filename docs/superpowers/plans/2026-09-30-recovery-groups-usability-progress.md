@@ -1,0 +1,13 @@
+# Progress ledger — recovery/groups/usability
+
+- Baseline settled: 92ed5cf on main; Gallery correction b99dd0a. Baseline full suite: 1,698 passed / one native-launch skip / existing Starlette warning; build/typecheck passed. Original unrelated untracked Pi skill untouched.
+- Worktree: /Users/ianduclos/_SecondBrain/01_Projects/recovery-groups-usability/idk.axibridge
+- Branch: codex/recovery-groups-usability. No push, feature merge, live deployment or Pi sync.
+- Lead fixed shared snapshot/mutation/API and group coordinate contracts, then integrated three Sol workers with disjoint ownership. Workers did not delegate. A owned recovery storage/state and focused recovery regressions; B owned Assets/recovery UI and browser evidence; C owned seed/preset controls and focused group acceptance.
+- Bounded independent reviews found recovery Save/checkpoint/replacement races and ordinary group mutation gaps; all reported findings were corrected and kept as regressions. A final group contract review found no further concrete omission. Lead additionally fixed nested generator placement, reflected midpoint frames, ordinary-reference reparenting, Unanimate placement, failed asset replacement and stale asset publication.
+- Focused checks pass for recovery write failure/fallback, detached snapshots, crashes, retained projects, replacement/close/restart, undo/redo and assets. The real subprocess test waited for the 30-second checkpoint, forced SIGKILL, restarted and restored history.
+- Focused checks pass for identity/nested affine groups, fixed millimetre effects, nested visibility, complete Animate chains, linked/nested interpolation across distinct frames and topology, duplicate/delete reference integrity, reparent/Ungroup, history/save/load/capture and atomic shortcuts/focus rules.
+- A grouped region also passed identity/affine/Ungroup and portable ZIP round-trip verification; maximum observed coordinate drift was 3.6e-15 mm.
+- Seven integrated screenshots were captured and inspected at 1024×768 and 1500×950. All five tabs fit; 700 px overflow checks pass. At 1024 px ordinary row names remain compressed and Depth Pro requires Assets scrolling. Native and paper output remain Ian's acceptance.
+- Final evidence (1 October): `.venv/bin/python -m pytest -q` **1,786 passed** in 364.99 s, one existing Starlette deprecation warning. Typecheck/build and `git diff --check` pass. Frozen integrated code and built assets were used; no skips or hardware activity.
+- Implementation and documentation are complete. Native usability and paper output remain user acceptance; feature merge/push require a separate instruction.

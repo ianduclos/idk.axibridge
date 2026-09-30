@@ -203,14 +203,15 @@ def test_data_target_wins_over_the_items_own_id():
     assert menu.actions == (MenuItem("Thing", "#real-thing", "action", None),)
 
 
-def test_the_settings_menu_owns_restart_server():
+def test_the_settings_menu_owns_recovery_and_restart_server():
     """Restart server moved out of the Settings TAB entirely (Ian, 2026-08-11)
     — unlike Machine's items above (which forward via `data-target` to a
     button that stays visible in its own panel), this button has no other
     home, so it is addressed by its own id: the same shape as File's Save or
-    Edit's Undo/Redo, not the Machine-menu forwarding shape."""
+    Edit's Undo/Redo. Recovery is likewise addressed by its own menu id."""
     settings = next(m for m in menu_spec() if m.title == "Settings")
     assert settings.actions == (
+        MenuItem("Recover projects…", "#btn-recover-projects", "action", None),
         MenuItem("⟳ Restart server", "#btn-restart", "action", None),
     )
 

@@ -602,6 +602,14 @@ def plot_running() -> bool:
     return bool(state) and state.get("machine", {}).get("job_state") not in (None, "idle")
 
 
+def checkpoint_before_close() -> None:
+    """Server confirms the latest kept project is recoverable before window loss."""
+    req = urllib.request.Request(URL + "/api/recovery/checkpoint", data=b"{}",
+                                 headers={"Content-Type":"application/json"}, method="POST")
+    with urllib.request.urlopen(req, timeout=30) as response:
+        json.loads(response.read())
+
+
 def main() -> None:
     import webview  # deferred: import cost + lets tests import this module headless
 
@@ -649,6 +657,11 @@ def main() -> None:
             window.evaluate_js(
                 "alert('a plot is running — stop it (Plot tab) before closing the app')")
             return False  # cancels the close
+        try:
+            checkpoint_before_close()
+        except Exception as exc:
+            window.evaluate_js("alert(" + json.dumps("Recovery failed; the window remains open. " + str(exc)) + ")")
+            return False
         return True
 
     window.events.closing += on_closing

@@ -31,7 +31,7 @@ from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import calibration, compose, depth_pro, gencache, logbuf, project_io, svg_io, system_fonts, trajectory
-from .assets import SEQUENCE_FRAME_RE, asset_store, safe_asset_name
+from .assets import AssetStore, SEQUENCE_FRAME_RE, asset_store, safe_asset_name
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
 from .events import bus
@@ -104,7 +104,8 @@ def _fail(exc: Exception, code: int = 409) -> HTTPException:
 
 
 def _project_payload() -> dict[str, Any]:
-    return session.project.model_dump(exclude={"staging": {"__all__": {"snapshot"}}})
+    with session._lock:
+        return {**session.project.model_dump(exclude={"staging": {"__all__": {"snapshot"}}}), **session.recovery_status()}
 
 
 def _consts() -> EstimatorConstants:
@@ -161,7 +162,7 @@ def get_state() -> dict[str, Any]:
 
 
 @router.post("/server/restart")
-def restart_server() -> dict[str, str]:
+def restart_server(body: dict[str, Any] | None = None) -> dict[str, str]:
     """Re-exec the server process in place: same interpreter, same CLI args,
     same environment — picks up code changes without touching the launcher.
     The open project lives in memory only, so unsaved changes are lost (the
@@ -171,13 +172,26 @@ def restart_server() -> dict[str, str]:
     if manager.job_state != "idle":
         raise HTTPException(status_code=409, detail="stop the current job before restarting")
 
+    if session.recovery_status()["dirty"]:
+        if not (body or {}).get("continue_with_recovery"):
+            raise HTTPException(409, "unsaved work: explicitly continue with recovery before restarting")
+        _recovery_checkpoint()
+
     def _restart() -> None:
         time.sleep(0.5)  # let this response reach the browser first
-        try:
-            manager.shutdown()  # pen up, release the port politely
-        except Exception:
-            pass
-        os.execv(sys.executable, [sys.executable, "-m", "axibridge", *sys.argv[1:]])
+        # No edit may slip between the final checkpoint and exec. The first
+        # checkpoint above lets the HTTP caller receive any write failure.
+        with session._recovery_write_lock, session._lock:
+            if session.recovery_status()["dirty"]:
+                if not (body or {}).get("continue_with_recovery"):
+                    session._recovery_error = "Restart canceled: new unsaved work needs explicit continuation"
+                    return
+                try: _recovery_checkpoint()
+                except Exception: return
+            if manager.job_state != "idle": return
+            try: manager.shutdown()
+            except Exception: pass
+            os.execv(sys.executable, [sys.executable, "-m", "axibridge", *sys.argv[1:]])
 
     threading.Thread(target=_restart, name="axibridge-restart", daemon=True).start()
     return {"restarting": "now"}
@@ -528,20 +542,35 @@ async def upload_svg_layers(file: UploadFile, quantization_mm: float = 0.1) -> d
     return {"layers": [layer.model_dump() for layer in created]}
 
 
+def _asset_project_token():
+    with session._lock:
+        return session.recovery_status()["session_id"]
+
+
+def _check_asset_project(token):
+    # Caller holds Session._lock, as does project replacement.
+    if session.recovery_status()["session_id"] != token:
+        raise HTTPException(status_code=409, detail="project changed while processing assets")
+
+
 @router.post("/assets")
 async def upload_asset(file: UploadFile) -> dict[str, Any]:
     """Image asset (PNG/JPEG depth map). Stored with the project; effects
     reference it by name."""
+    token = _asset_project_token()
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail="empty file")
-    name = asset_store.put(file.filename or "asset.png", data)
+    probe = AssetStore()
+    name = probe.put(file.filename or "asset.png", data)
     try:
-        asset_store.grayscale(name)  # decode now: fail at upload, not at resolve
+        probe.grayscale(name)  # validate without replacing an existing asset
     except Exception as e:
-        asset_store.replace_all({k: v for k, v in asset_store.all().items() if k != name})
         raise _fail(e, 400)
-    return {"name": name, "assets": asset_store.info()}
+    with session._lock:
+        _check_asset_project(token)
+        asset_store.put(name, data)
+        return {"name": name, "assets": asset_store.info()}
 
 
 @router.post("/assets/font")
@@ -549,14 +578,18 @@ async def upload_font_asset(file: UploadFile) -> dict[str, Any]:
     """A dropped-in font file (TTF/OTF/TTC) — same store as images, but
     validated via fontTools instead of PIL. Referenced by name from
     text_fill.py's `font` param, same as an image asset is from `image`."""
+    token = _asset_project_token()
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail="empty file")
-    name = asset_store.put(file.filename or "font.ttf", data)
-    if asset_store.font_label(name) is None:
-        asset_store.replace_all({k: v for k, v in asset_store.all().items() if k != name})
+    probe = AssetStore()
+    name = probe.put(file.filename or "font.ttf", data)
+    if probe.font_label(name) is None:
         raise HTTPException(status_code=400, detail="not a valid font file")
-    return {"name": name, "fonts": _fonts_payload()}
+    with session._lock:
+        _check_asset_project(token)
+        asset_store.put(name, data)
+        return {"name": name, "fonts": _fonts_payload()}
 
 
 class DepthProAssetBody(BaseModel):
@@ -572,22 +605,24 @@ def depth_pro_asset_status() -> dict[str, Any]:
 
 @router.post("/assets/depth-pro")
 def create_depth_pro_asset(body: DepthProAssetBody) -> dict[str, Any]:
-    source = asset_store.resolve_frame(body.image, body.frame)
-    data = asset_store.get(source)
+    with session._lock:
+        token = _asset_project_token()
+        source = asset_store.resolve_frame(body.image, body.frame)
+        data = asset_store.get(source)
     if data is None:
         raise HTTPException(status_code=404, detail=f"no asset named {body.image!r}")
     name = depth_pro.depth_asset_name(body.image, body.frame)
-    stored = name
-    before = asset_store.all()
     try:
         png = depth_pro.depth_png_from_image(data, source, near_white=body.near_white)
-        stored = asset_store.put(name, png)
-        asset_store.grayscale(stored)  # validate bytes before handing it to generators
+        probe = AssetStore()
+        probe.grayscale(probe.put(name, png))
     except depth_pro.DepthProUnavailable as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
     except Exception as e:
-        asset_store.replace_all(before)
         raise _fail(e, 400)
+    with session._lock:
+        _check_asset_project(token)
+        stored = asset_store.put(name, png)
     return {
         "name": stored,
         "source": body.image,
@@ -718,6 +753,7 @@ async def upload_sequence(
     prefix + frame count."""
     from PIL import Image, ImageOps  # lazy, like the single-asset upload probe
 
+    token = _asset_project_token()
     if not files:
         raise HTTPException(status_code=400, detail="no files")
     sink = _gen_progress_sink()  # import progress rides the same SSE feed
@@ -756,18 +792,19 @@ async def upload_sequence(
             raise _fail(e, 400)
 
     prefix = f"{stem}#"
+    try:
+        probe = AssetStore()
+        probe.grayscale(probe.put(f"{prefix}0000.jpg", jpegs[0]))
+    except Exception as e:
+        raise _fail(e, 400)
     # collision: a re-import replaces the sequence wholesale — drop the old
     # frames of this prefix first so a shorter clip leaves no stale tail frames.
-    kept = {k: v for k, v in asset_store.all().items()
-            if not (k.startswith(prefix) and SEQUENCE_FRAME_RE.match(k))}
-    asset_store.replace_all(kept)
-    for i, jpg in enumerate(jpegs):
-        asset_store.put(f"{prefix}{i:04d}.jpg", jpg)
-    try:
-        asset_store.grayscale(f"{prefix}0000.jpg")  # decode now: fail here, not at resolve
-    except Exception as e:
+    with session._lock:
+        _check_asset_project(token)
+        kept = {k: v for k, v in asset_store.all().items()
+                if not (k.startswith(prefix) and SEQUENCE_FRAME_RE.match(k))}
+        kept.update({f"{prefix}{i:04d}.jpg": jpg for i, jpg in enumerate(jpegs)})
         asset_store.replace_all(kept)
-        raise _fail(e, 400)
     sink(1.0, "")  # done — clears the progress bar
     return {"name": prefix, "frames": len(jpegs), "assets": asset_store.info()}
 
@@ -861,16 +898,17 @@ def clear_assets(force: bool = Query(default=False)) -> dict[str, Any]:
     everything, including referenced assets — the next regenerate/resolve of
     a layer that depended on one raises "no asset named ..." until it's
     re-picked."""
-    current = asset_store.all()
-    if force:
-        removed = sorted(current)
-        asset_store.replace_all({})
-        return {"removed": removed, "kept": []}
-    keep = _expand_sequence_frames(_referenced_asset_names())
-    kept = {name: data for name, data in current.items() if name in keep}
-    removed = sorted(set(current) - keep)
-    asset_store.replace_all(kept)
-    return {"removed": removed, "kept": sorted(kept)}
+    with session._lock:
+        current = asset_store.all()
+        if force:
+            removed = sorted(current)
+            asset_store.replace_all({})
+            return {"removed": removed, "kept": []}
+        keep = _expand_sequence_frames(_referenced_asset_names())
+        kept = {name: data for name, data in current.items() if name in keep}
+        removed = sorted(set(current) - keep)
+        asset_store.replace_all(kept)
+        return {"removed": removed, "kept": sorted(kept)}
 
 
 @router.get("/assets/{name}")
@@ -1213,7 +1251,8 @@ def get_resolved(
         raise _fail(e, 400)
     pens = session.pens()
     layers_out = []
-    for layer in session.project.layers:
+    from .groups import placed_project
+    for layer in placed_project(session.project).layers:
         checkpoint()
         paths = resolved.get(layer.id, []) if layer.visible else []
         pen = pens.get(layer.pen_id or "")
@@ -2120,32 +2159,13 @@ class ProjectPatch(BaseModel):
 
 @router.put("/project")
 def patch_project(body: ProjectPatch) -> dict[str, Any]:
-    p = session.project
-    if body.name is not None:
-        p.name = body.name
-    if body.guide is not None:
-        p.guide = body.guide
-    if body.view is not None:
-        session.set_view(body.view)  # retroactively re-orients existing "geometry" layers too
-    if body.plot_options is not None:
-        p.plot_options = body.plot_options
+    session.update_project(body.model_dump(exclude_none=True))
     return _project_payload()
 
 
 @router.post("/project/new")
-def new_project() -> dict[str, Any]:
-    session.project = Project()
-    session.project_dir = None
-    session.source_geometry.clear()
-    session.svg_files.clear()
-    session.staging_documents.clear()
-    session._shaped_cache.clear()
-    session._tween_cache.clear()
-    session._clip_cache.clear()
-    session.clear_history()
-    asset_store.replace_all({})
-    gencache.clear()
-    trajectory.clear_cache()
+def new_project(body: dict[str, Any] | None = None) -> dict[str, Any]:
+    _replace_project((Project(),{}, {},{}, {},[]),None,(body or {}).get("recovery_action"))
     return _project_payload()
 
 
@@ -2163,25 +2183,32 @@ class SaveBody(BaseModel):
 
 @router.post("/project/save")
 def save_project(body: SaveBody) -> dict[str, str]:
-    if body.name:
-        session.project.name = body.name
-    name = project_io.safe_name(session.project.name)
-    target = settings_store.settings.projects_dir() / name
-    try:
-        project_io.save_project(
-            session.project, session.source_geometry, session.svg_files, target,
-            assets=asset_store.all(),
-            staging_documents=session.staging_documents,
-            history=session.history_for_save(),
-        )
-    except OSError as e:
-        raise _fail(e, 400)
-    session.project_dir = str(target)
-    return {"saved": str(target)}
+    with session._recovery_write_lock:
+        with session._lock:
+            if body.name and body.name != session.project.name:
+                session._checkpoint()
+                session.project.name = body.name
+            snapshot = session.capture_recovery()
+        name = project_io.safe_name(snapshot.project.name)
+        target = settings_store.settings.projects_dir() / name
+        try:
+            project_io.save_project(snapshot.project,snapshot.source_geometry,snapshot.svg_files,target,
+                                   assets=snapshot.assets,staging_documents=snapshot.staging_documents,
+                                   history=snapshot.history)
+        except OSError as exc: raise _fail(exc,400)
+        with session._lock:
+            status = session.recovery_status()
+            if status["session_id"] == snapshot.session_id:
+                session.project_dir = str(target)
+                if status["revision"] == snapshot.revision:
+                    session.mark_saved()
+                    session.recovery_store.discard(snapshot.session_id)
+        return {"saved":str(target)}
 
 
 class LoadBody(BaseModel):
     name: str
+    recovery_action: str | None = None
 
 
 @router.post("/project/load")
@@ -2193,59 +2220,208 @@ def load_project(body: LoadBody) -> dict[str, Any]:
         raise _fail(e, 404)
     except Exception as e:
         raise _fail(e, 400)
-    session.project = project
-    session.source_geometry = geometry
-    session.svg_files = svg_files
-    session.staging_documents = staging_documents
-    session.project_dir = str(target)
-    session._shaped_cache.clear()
-    session._tween_cache.clear()
-    session._clip_cache.clear()
-    session.restore_history(history)
-    asset_store.replace_all(assets)
-    gencache.clear()
-    trajectory.clear_cache()
+    _replace_project((project,geometry,svg_files,assets,staging_documents,history),str(target),body.recovery_action)
     return _project_payload()
 
 
 @router.get("/project/export.zip")
 def export_project() -> Response:
-    name = project_io.safe_name(session.project.name)
-    target = settings_store.settings.projects_dir() / name
-    project_io.save_project(
-        session.project, session.source_geometry, session.svg_files, target,
-        assets=asset_store.all(),
-        staging_documents=session.staging_documents,
-        history=session.history_for_save(),
-    )
-    session.project_dir = str(target)
-    data = project_io.export_zip(target)
-    return Response(
-        content=data,
-        media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="{name}.zip"'},
-    )
+    # Export remains an explicit save, using the same detached/revision-safe path.
+    with session._recovery_write_lock:
+        saved = save_project(SaveBody())
+        target = FsPath(saved["saved"])
+        data = project_io.export_zip(target)
+    return Response(content=data,media_type="application/zip",
+                    headers={"Content-Disposition":f'attachment; filename="{target.name}.zip"'})
 
 
 @router.post("/project/import")
-async def import_project(file: UploadFile) -> dict[str, Any]:
+async def import_project(file: UploadFile, recovery_action: str | None = Query(default=None)) -> dict[str, Any]:
     data = await file.read()
     name = FsPath(file.filename or "imported").stem
+    import tempfile
     try:
-        target = project_io.import_zip(data, settings_store.settings.projects_dir(), name)
-        project, geometry, svg_files, assets, staging_documents, history = project_io.load_project(target)
-    except (ValueError, FileExistsError) as e:
-        raise _fail(e, 400)
-    session.project = project
-    session.source_geometry = geometry
-    session.svg_files = svg_files
-    session.staging_documents = staging_documents
-    session.project_dir = str(target)
-    session._shaped_cache.clear()
-    session._tween_cache.clear()
-    session._clip_cache.clear()
-    session.restore_history(history)
-    asset_store.replace_all(assets)
-    gencache.clear()
-    trajectory.clear_cache()
+        with tempfile.TemporaryDirectory(prefix="axibridge-import-validation-") as work:
+            folder = project_io.import_zip(data,FsPath(work),name)
+            loaded = project_io.load_project(folder)
+    except Exception as exc: raise _fail(exc,400)
+
+    def install_validated_import():
+        try:
+            target = project_io.import_zip(data,settings_store.settings.projects_dir(),name)
+        except Exception as exc: raise _fail(exc,400)
+        return loaded,str(target)
+
+    _replace_project(install_validated_import,None,recovery_action)
     return _project_payload()
+
+
+# Recovery is machine-local and detached from named project folders.
+_recovery_offered = False
+
+
+def _recovery_checkpoint():
+    try:
+        for _ in range(3):
+            entry = session.checkpoint_recovery()
+            status = session.recovery_status()
+            if entry["id"] == status["session_id"] and entry["revision"] == status["revision"]:
+                return entry
+        raise RuntimeError("project changed during checkpoint; try again")
+    except Exception as exc:
+        raise _fail(exc, 409)
+
+
+def _guard_replacement(action):
+    status = session.recovery_status()
+    if not status["dirty"] or action == "discard":
+        return status
+    if action == "recover":
+        entry = _recovery_checkpoint()
+        return {"session_id":entry["id"],"revision":entry["revision"]}
+    if action == "save":
+        save_project(SaveBody())
+        status = session.recovery_status()
+        if not status["dirty"]: return status
+        raise HTTPException(409,"project changed during save; try again")
+    raise HTTPException(409,"unsaved work: choose Save, Continue with recovery, Discard or Cancel")
+
+
+def _replace_project(loaded,project_dir,action):
+    # Disk checkpoints and project transitions serialize; ordinary edits remain
+    # possible during disk I/O, then a revision check prevents their loss.
+    with session._recovery_write_lock:
+        token = _guard_replacement(action)
+        with session._lock:
+            current = session.recovery_status()
+            if (token["session_id"],token["revision"]) != (current["session_id"],current["revision"]):
+                raise HTTPException(409,"project changed during recovery; try again")
+            if callable(loaded): loaded,project_dir = loaded()
+            if action == "discard": session.recovery_store.discard(current["session_id"])
+            project,geometry,svg,assets,staging,history = loaded
+            session.project = project
+            session.project_dir = project_dir
+            session.source_geometry = geometry
+            session.svg_files = svg
+            session.staging_documents = staging
+            asset_store.replace_all(assets)
+            session._shaped_cache.clear(); session._tween_cache.clear(); session._clip_cache.clear()
+            session._occlusion_cache.clear()
+            session.restore_history(history)
+            session.begin_project()
+            gencache.clear(); trajectory.clear_cache()
+
+
+@router.get("/recovery")
+def recovery_entries():
+    global _recovery_offered
+    offered = not _recovery_offered and not session.recovery_status()["dirty"]
+    entries = session.recovery_store.list_entries()
+    return {"entries": entries, "offered": offered,
+            "limitation": "Only kept project content is recovered. Unkept bench drafts are excluded."}
+
+
+@router.post("/recovery/checkpoint")
+def recovery_checkpoint():
+    if not session.recovery_status()["dirty"]:
+        return {"checkpointed": False, **session.recovery_status()}
+    return {"checkpointed": True, **_recovery_checkpoint()}
+
+
+@router.post("/recovery/{recovery_id}/restore")
+def recovery_restore(recovery_id: str, body: dict[str,Any] | None = None):
+    try:
+        metadata, loaded = session.recovery_store.load(recovery_id)
+    except Exception as exc: raise _fail(exc,400)
+    with session._recovery_write_lock:
+        _replace_project(loaded,metadata.get("project_dir"),(body or {}).get("recovery_action"))
+        with session._lock:
+            session._recovery_baseline = None
+            session._recovery_session_id = recovery_id
+            session._recovery_revision = metadata["revision"]
+            session._recovery_metadata = metadata
+    return _project_payload()
+
+
+@router.post("/recovery/{recovery_id}/discard")
+def recovery_discard(recovery_id: str):
+    try: session.recovery_store.discard(recovery_id)
+    except Exception as exc: raise _fail(exc,400)
+    return {"discarded": recovery_id}
+
+
+class SelectionBody(BaseModel):
+    targets: list[dict[str,str]]
+
+
+class SelectionTransformBody(SelectionBody):
+    delta: compose.Affine
+
+
+class ReparentBody(SelectionBody):
+    parent_id: str | None = None
+    before_id: str | None = None
+
+
+@router.post("/compose/groups")
+def create_group(body: dict[str,Any]):
+    try:
+        g = session.create_group(body.get("targets",[]),body.get("name","Group"))
+        return {"group":g.model_dump(),"project":_project_payload()}
+    except Exception as exc: raise _fail(exc,400)
+
+
+@router.patch("/compose/groups/{group_id}")
+def update_group(group_id: str, patch: dict[str,Any]):
+    try: session.update_group(group_id,patch)
+    except Exception as exc: raise _fail(exc,400)
+    return _project_payload()
+
+
+@router.post("/compose/groups/{group_id}/ungroup")
+def ungroup(group_id: str):
+    try: targets = session.ungroup(group_id)
+    except Exception as exc: raise _fail(exc,400)
+    return {"targets":targets,"project":_project_payload()}
+
+
+@router.post("/compose/selection/transform")
+def transform_selection(body: SelectionTransformBody):
+    try: targets = session.transform_selection(body.targets,body.delta)
+    except Exception as exc: raise _fail(exc,400)
+    return {"targets":targets,"project":_project_payload()}
+
+
+@router.post("/compose/selection/reparent")
+def reparent_selection(body: ReparentBody):
+    try: targets = session.reparent_selection(body.targets,body.parent_id,body.before_id)
+    except Exception as exc: raise _fail(exc,400)
+    return {"targets":targets,"project":_project_payload()}
+
+
+@router.post("/compose/selection/duplicate")
+def duplicate_selection(body: SelectionBody):
+    try: targets = session.duplicate_selection(body.targets)
+    except Exception as exc: raise _fail(exc,400)
+    return {"targets":targets,"project":_project_payload()}
+
+
+@router.post("/compose/selection/delete")
+def delete_selection(body: SelectionBody):
+    try: removed = session.delete_selection(body.targets)
+    except Exception as exc: raise _fail(exc,400)
+    return {"removed":removed,"project":_project_payload()}
+
+
+@router.post("/compose/selection/ungroup")
+def ungroup_selection(body: SelectionBody):
+    try: targets = session.ungroup_selection(body.targets)
+    except Exception as exc: raise _fail(exc,400)
+    return {"targets":targets,"project":_project_payload()}
+
+
+@router.post("/recovery/ack")
+def recovery_ack():
+    global _recovery_offered
+    _recovery_offered = True
+    return {"acknowledged":True}

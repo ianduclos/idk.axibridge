@@ -17,12 +17,15 @@ history.
 
 ## Compose layout acceptance (2026-09-30)
 
-Generators retain a fixed first position; import/assets and Gallery follow,
-then selected-layer details. Selecting or creating a layer no longer relocates
-the generator form. The compact layer dock grows from 160 to 210 px and has
-New layer (blank drawing target) and Duplicate (one selected layer) actions.
-Native usability remains for Ian to check. A separate Assets/Gallery tab is
-an optional follow-up; general layer groups remain deferred below.
+Generators retain a fixed first position, followed by selected-layer details.
+Assets is now a separate tab between Compose and Plot, with Gallery, SVG/media
+import, Depth Pro and visible progress. The taller layer dock has New layer,
+atomic Duplicate/Group/Ungroup and Move controls. Nested groups, dirty tracking,
+recovery and editing shortcuts are implemented in the isolated
+`codex/recovery-groups-usability` worktree; final automated checks are recorded
+in STATUS. Native usability and paper acceptance remain with Ian. No feature
+merge or push yet. See [groups](docs/LAYER-GROUPS.md) and
+[recovery](docs/RECOVERY.md).
 
 ## Asset gallery acceptance (2026-09-10)
 
@@ -99,8 +102,8 @@ source scope and a compact expandable layer list. Versioned bench identity,
 shared presentation, specialised Second Reading comparison and grouped Homeostat
 controls/observed telemetry are implemented. See
 [implementation evidence](shots/ui-benches-0908/README.md). Native interaction
-acceptance remains with Ian. Durable recovery, unified unsaved-work prompts and
-richer application services remain deferred pending their own design.
+acceptance remains with Ian. Durable recovery and unified unsaved-work choices are implemented in the
+recovery/groups pass; richer application services remain deferred.
 
 **8 September: whole-app precision pass implemented.** Shared type/spacing,
 quieter hierarchy, paired values and consistent states now carry across all tabs
@@ -154,7 +157,7 @@ No paper test yet; no general aesthetic success claim. Current controls:
   collapsed-by-default effect steps showing a one-line param summary.
   The Compose tab with three layers + stacks is already a wall.
 - **Drag-to-reorder layers — shipped.** The list supports drag reordering and
-  Option-drag copying; general nested groups remain deferred (see below).
+  Option-drag copying; general nested groups are implemented in the recovery/groups pass (see below).
 - **Keyboard**: arrows nudge selection 1 mm (shift = 10), ⌘D duplicate,
   numbers 1–4 switch tabs. The keydown plumbing exists (main.js).
 - **🎲 seed reroll in the main forms** (IDEAS pass-1 UI principle 3): one
@@ -486,13 +489,11 @@ is nothing to see there yet — which argues both ways, and wants a bench
 opinion). Animation ownership shipped 2026-09-09: persisted master/keyframe
 families remain inseparable in ordering, copying and deletion.
 
-**Layer groups — agreed direction, implementation deferred (2026-09-09).**
-Ian wants nested containers to move, scale and hide multiple complete layers,
-including animations. Group visibility preserves individually hidden members;
-transforms preserve member editing. Scale positions/geometry while retaining
-physical pen widths and millimetre-based effects. Grouping does not initially
-change per-master occlusion or add a combined group mask. This is a future
-design/implementation pass, not part of the animation-family repair.
+**Layer groups — implemented, awaiting native/paper acceptance (2026-09-30).**
+Nested containers support names, visibility, affine handles, member editing,
+complete Animate chains and linked interpolation. Grouping preserves flat order;
+placement precedes millimetre effects and groups add no combined mask. Reparenting
+and Ungroup preserve live reference frames. See [group contract](docs/LAYER-GROUPS.md).
 
 **Drawing-tool completion shipped (2026-09-09).** Pen and Shape return to Select
 after a successful drawing, with an explicit Repeat toggle. Enter finishes a
@@ -767,13 +768,11 @@ deliberately:
 - Pen-plotter-specific test gap: nothing exercises the native backend
   against recorded EBB traffic; a replay harness would catch the next
   protocol drift without hardware.
-- **Unsaved-work guard**: the open project lives only in RAM until an
-  explicit save, `POST /api/project/save` 422s on a bare body, and
-  `/server/restart` drops everything with only a browser-side warning.
-  Wanted: a periodic autosave to a recovery slot (NOT the project folder —
-  don't clobber deliberate saves), and the restart endpoint refusing when
-  unsaved changes exist unless `force=true`. Cheap insurance for a
-  single-operator instrument.
+- **Recovery acceptance**: detached machine-local recovery, 30-second changed
+  checkpoints, startup choices, retained projects, replacement guards and native
+  close/restart protection are implemented in the isolated recovery/groups branch.
+  Native close/relaunch and paper checks remain with Ian. Unkept bench drafts are
+  intentionally excluded. See [recovery contract](docs/RECOVERY.md).
 
 ## Linedraw v3 research checkpoint — 2026-09-28
 

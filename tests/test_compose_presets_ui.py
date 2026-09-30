@@ -35,6 +35,12 @@ def _preset(ui, kind, module, params, name='Remembered settings'):
         'kind': kind, 'module': module, 'name': name, 'params': params})
 
 
+def _without_revision(project):
+    # Recovery revisions count edits, including undo. The project content
+    # should return to its prior value; the revision should move forward.
+    return {key: value for key, value in project.items() if key != 'revision'}
+
+
 def test_generator_browser_unlatches_and_prepares_without_mutation(ui):
     preset = _preset(ui, 'source', 'polygon', {'sides': 7, 'radius': 19})
     ui.select_option('#gen-select', 'polygon')
@@ -70,7 +76,9 @@ def test_existing_generator_preset_requires_apply_and_one_undo(ui):
         controls.get_by_role('button', name='Apply preset', exact=True).click()
     assert _get(f'{ui.base}/api/project')['layers'][0]['source']['params']['sides'] == 9
     _post(f'{ui.base}/api/undo')
-    assert _get(f'{ui.base}/api/project') == before
+    restored = _get(f'{ui.base}/api/project')
+    assert _without_revision(restored) == _without_revision(before)
+    assert restored['revision'] > before['revision']
     assert not ui.errors
 
 
@@ -105,5 +113,7 @@ def test_effect_browser_prepares_add_and_existing_apply_is_independent(ui):
     _request(ui.base, f"/api/module-library/presets/{second['id']}", 'DELETE')
     assert _get(f'{ui.base}/api/project') == applied
     _post(f'{ui.base}/api/undo')
-    assert _get(f'{ui.base}/api/project') == first
+    restored = _get(f'{ui.base}/api/project')
+    assert _without_revision(restored) == _without_revision(first)
+    assert restored['revision'] > first['revision']
     assert not ui.errors

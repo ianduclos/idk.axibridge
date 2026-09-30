@@ -345,6 +345,32 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
         set(store(v));
       };
       ctl.appendChild(num);
+      if (key === "seed" && Number.isFinite(min) && Number.isFinite(max) && max >= min) {
+        const reroll = document.createElement("button");
+        reroll.type = "button";
+        reroll.textContent = "🎲";
+        reroll.title = `Reroll ${title}`;
+        reroll.setAttribute("aria-label", `Reroll ${title}`);
+        reroll.onclick = () => {
+          let next;
+          if (s.type === "integer") {
+            const lo = s.exclusiveMinimum === undefined ? Math.ceil(min) : Math.floor(min) + 1;
+            const hi = s.exclusiveMaximum === undefined ? Math.floor(max) : Math.ceil(max) - 1;
+            if (!Number.isSafeInteger(lo) || !Number.isSafeInteger(hi) ||
+                !Number.isSafeInteger(hi - lo + 1) || hi < lo) return;
+            next = lo + Math.floor(Math.random() * (hi - lo + 1));
+            if (next === values[key] && hi > lo) next = next === hi ? lo : next + 1;
+          } else {
+            next = min + Math.random() * (max - min);
+            if (s.exclusiveMinimum !== undefined && next <= min) next = min + (max - min) * 1e-12;
+            if (s.exclusiveMaximum !== undefined && next >= max) next = max - (max - min) * 1e-12;
+          }
+          num.value = show(next);
+          if (range) range.value = num.value;
+          set(next);
+        };
+        ctl.appendChild(reroll);
+      }
     } else if (spec.format === "textarea" || s.format === "textarea") {
       const ta = document.createElement("textarea");
       ta.value = val ?? "";

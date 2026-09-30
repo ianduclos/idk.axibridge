@@ -1,8 +1,16 @@
 ---
 project: idk.axibridge
-updated: 2026-09-30
-entries: 24
+updated: 2026-10-01
+entries: 25
 ---
+
+### Recovery, groups and Assets: native/paper acceptance — opened 2026-10-01, owner: ian
+
+- done: Detached kept-project recovery, 30-second changed checkpoints, atomic fallback archives, startup/older recovery choices, safe replacement and close/restart guards. Version 3 nested affine groups, atomic editing and reparenting preserve plotting order, visibility and live interpolation reference frames. Assets is separate; generators stay first in Compose. Taller dock, shortcuts, seed dice and preset management disclosure are included.
+- verification: Full hardware-free suite: **1,786 passed**, one existing Starlette deprecation warning. Focused recovery crash/race/close/restart checks and group multi-frame/effect/visibility/reference checks pass. Typecheck/build pass. Seven integrated screenshots cover 1024×768 and 1500×950; native interaction remains provisional.
+- next: Try native recovery close/relaunch and older project restore; edit nested groups and Animate chains, nudge/duplicate and move between groups, and check Assets/Gallery selection. Judge actual overlap and fixed millimetre effects on paper. At 1024×768 the layer name is compressed and Depth Pro requires scrolling.
+- state: Isolated branch `codex/recovery-groups-usability`, worktree `/Users/ianduclos/_SecondBrain/01_Projects/recovery-groups-usability/idk.axibridge`. Original main remains at baseline `92ed5cf`. Feature merge/push and deployment require a separate instruction. Unkept bench drafts are intentionally outside recovery.
+- context: [Group contract](docs/LAYER-GROUPS.md), [recovery contract](docs/RECOVERY.md), [visual evidence](shots/recovery-groups-0930/README.md), [execution ledger](docs/superpowers/plans/2026-09-30-recovery-groups-usability-progress.md).
 
 ### Territory bench: native and paper acceptance — opened 2026-09-29, owner: ian
 

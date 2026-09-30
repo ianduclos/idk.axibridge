@@ -1,10 +1,12 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-30
+updated: 2026-10-01
 machine: mac+pi
-summary: Territory and the stable Compose sidebar are integrated on main; native and paper acceptance remain pending.
+summary: Recovery, nested groups and Assets are verified in an isolated worktree; native/paper acceptance and feature integration remain.
 next:
+  - "Merge/push the verified recovery/groups branch only on Ian’s separate instruction"
+  - "Ian: check recovery close/relaunch, group editing and Assets in the native app"
   - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
   - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
@@ -16,11 +18,23 @@ handoff_for: Codex
 
 # idk.axibridge — status
 
+**Recovery, groups and everyday usability, 1 October:** Implemented in
+`codex/recovery-groups-usability` from settled baseline `92ed5cf`. Recovery
+protects kept project content with detached atomic archives and replacement,
+close and restart guards. Nested affine groups preserve flat plotting order
+and live interpolation references. Assets is a separate tab; Compose retains
+generators first, with a taller layer dock, atomic editing shortcuts, seed dice
+and folded preset management. Full hardware-free suite: **1,786 passed**, one existing Starlette deprecation
+warning; typecheck/build passed. Recovery crash/race and multi-frame group
+regressions pass, with integrated screenshots inspected at both required sizes. Native/paper
+acceptance remains with Ian; no feature merge, push, live deployment or Pi sync.
+
+
 **Integration checkpoint, 30 September:** `main` now contains Territory and the
 stable Compose sidebar, including the Gallery accessibility correction. Full
 hardware-free suite: **1,698 passed, one native-launch skip**, one existing
 Starlette warning; typecheck/build passed. Native and paper acceptance remain
-pending. Recovery/groups/usability will proceed in an isolated worktree from
+pending. Recovery/groups/usability proceeds in an isolated worktree from
 this settled baseline. No push or Pi sync.
 
 **Territory bench, 29 September (evening):** The meander rounds 3–5 on the web prototype
@@ -35,7 +49,7 @@ That was then ported into the app as a bench:
 - the bench UI (`territory_bench.js`) has live dials with locks, Surprise and Back, a next-seeds strip, Keep as layer and resume;
 - a Fill switch chooses Grown or Version 8 planes.
 
-Parity with the prototype is pinned by `tests/test_territory_engine_js.py`. The new territory tests pass, and the full suite had 1695 passed and 1 stale-list failure, since fixed. All of it is on `feat/territory-bench`, not merged or pushed. Evidence is in `shots/meander{3,4,5}-0929/` and `shots/territory-bench-0929/`; reviews are in `docs/reviews/meander-sonnet.md`. Nothing has been plotted.
+Parity with the prototype is pinned by `tests/test_territory_engine_js.py`. The new territory tests pass, and the full suite had 1695 passed and 1 stale-list failure, since fixed. This checkpoint is now integrated on `main`; no subsequent push. Evidence is in `shots/meander{3,4,5}-0929/` and `shots/territory-bench-0929/`; reviews are in `docs/reviews/meander-sonnet.md`. Nothing has been plotted.
 
 **Territory bench prototype, 29 September:** An AARON-adjacent drawing bench is
 being prototyped as private web artifacts, with no `axibridge/` changes. *Cores and Skins*

@@ -524,3 +524,18 @@ is stale and pins the Version 10 output. It runs in a module worker
   single resolve path and the Pi need no JavaScript.
 - **Resume** re-runs the deterministic engine from the stored recipe, with
   every dial live.
+
+
+## Group placement and form comforts
+
+Sources remain local geometry. The compositor applies layer/group placement
+before effect stacks, so effect distances remain millimetres. Effects must never
+inspect or mutate group metadata. Reference-frame interpolation and visibility
+are resolver responsibilities; the plotting route stays the same. See
+[LAYER-GROUPS](LAYER-GROUPS.md).
+
+Numeric seed fields expose a reroll through their existing onChange path, using
+schema minimum/maximum bounds. Preset Select/Apply remains immediately available;
+Save/Update lives under Manage presets. Asset-field dropdowns refresh after
+Assets-tab import, clearing unused media or Depth Pro completion. Canvas drops
+continue binding the current generator without moving its Compose form.

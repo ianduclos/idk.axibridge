@@ -96,7 +96,7 @@ def test_project_new_and_load_clear_the_trajectory_cache():
     assert len(trajectory._CACHE) == 1
 
     with TestClient(create_app()) as client:
-        client.post("/api/project/new")
+        client.post("/api/project/new", json={"recovery_action":"discard"})
         assert len(trajectory._CACHE) == 0, "new_project must clear the trajectory cache"
 
         Counted.runs = 0

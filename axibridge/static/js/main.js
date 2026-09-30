@@ -1,3 +1,6 @@
+import { normalizeTargets, targetsForLayerIds, memberIds } from "./group_ui.js";
+import { initAssetsTab, setAssetProgress } from "./assets_tab.js";
+import { initRecoveryUI } from "./recovery_ui.js";
 import { beginDrawingUpdate, restartDrawingUpdate } from "./drawing_status.js";
 // axibridge v2 frontend orchestrator. Zero-build ES modules on purpose: no
 // toolchain on the Pi, view-source debuggable, and every control surface is
@@ -9,7 +12,7 @@ import { beginDrawingUpdate, restartDrawingUpdate } from "./drawing_status.js";
 
 import { api, subscribe } from "./api.js";
 import { CanvasEditor, mul, objToMat, matToObj, screenPxPerMm } from "./canvas.js";
-import { initComposeTab, initLayersDock, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, logDeleted, rerenderForView } from "./compose.js";
+import { initComposeTab, initLayersDock, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, refreshAssetChoices, logDeleted, rerenderForView } from "./compose.js";
 import { initPlotTab, renderPlotTab, applyCapabilities, renderPlotViewControls,
          cancelPlotQueue, invalidateLayoutCost } from "./plot.js";
 import { initTimelineBar, clearFetchedFrames } from "./timeline.js";
@@ -28,6 +31,8 @@ const $ = (id) => document.getElementById(id);
 export const S = {
   state: null,      // /api/state snapshot
   resolved: null,   // /api/compose/resolved payload
+  groupContext: null,
+  selectionTargets: [],
   selection: [],    // selected layer ids
   plotTarget: "all",
   plan: null,
@@ -131,23 +136,11 @@ const oops = (e) => {
 
 const canvas = new CanvasEditor($("canvas"), {
   onSelect(ids) {
-    S.selection = ids;
-    renderLayerList();
-    renderSelReadout();
+    actions.setSelectionTargets(targetsForLayerIds(S.state.project,ids,S.groupContext));
   },
   async onTransform(ids, delta) {
-    // commit delta ∘ transform for each dragged layer, then re-resolve
     try {
-      for (const id of ids) {
-        const layer = S.state.project.layers.find((l) => l.id === id);
-        if (!layer) continue;
-        const next = matToObj(mul(delta, objToMat(layer.transform)));
-        layer.transform = next; // optimistic, server confirms via refresh
-        await api.patch(`/api/layers/${id}`, { transform: next });
-      }
-      await actions.refreshProject();
-      await actions.refreshResolved();
-      renderLayerDetail(); // placement numerics track the drag
+      await actions.transformSelection(matToObj(delta));
     } catch (e) { oops(e); }
   },
   async onGuideMove(pos) {
@@ -160,8 +153,9 @@ const canvas = new CanvasEditor($("canvas"), {
     } catch (e) { oops(e); }
   },
   onDoubleClick(id) {
-    S.selection = [id];
-    renderLayerList();
+    const target = targetsForLayerIds(S.state.project,[id],S.groupContext)[0];
+    if (target?.kind === "group") actions.enterGroup(target.id);
+    else actions.setSelection([id]);
     document.querySelector('#tabs button[data-tab="compose"]').click();
   },
 });
@@ -186,6 +180,9 @@ export const actions = {
 
   async refreshAll() {
     await actions.refreshState();
+    S.groupContext = null;
+    S.selectionTargets = [];
+    S.selection = [];
     initTabs();          // re-init tab DOM against the new project
     await actions.refreshResolved();
   },
@@ -213,6 +210,13 @@ export const actions = {
 
   async refreshProject() {
     S.state.project = await api.get("/api/project");
+    if (!(S.state.project.groups || []).some(g => g.id === S.groupContext)) S.groupContext = null;
+    const ownedKey = S.selection.length === 1 && S.state.project.layers.find(l => l.id === S.selection[0] && l.animation_owner_id);
+    if (!ownedKey) {
+      S.selectionTargets = normalizeTargets(S.state.project,S.selectionTargets);
+      S.selection = memberIds(S.state.project,S.selectionTargets).filter(id => !S.state.project.layers.find(l => l.id === id)?.animation_owner_id);
+    }
+    canvas.setSelection(S.selection);
     // S5: refreshProject is what every mutating action calls once it's done
     // (add/edit/delete a layer, undo/redo, tween edits, staging…) — the
     // cheapest honest hook to invalidate the timeline bar's fetched-frame
@@ -235,6 +239,7 @@ export const actions = {
       crop: cropRectFor(S.state.project),
       view: S.state.project.view,
     });
+    renderHeader();
     renderPlotTab(); // target list may have changed
   },
 
@@ -391,7 +396,61 @@ export const actions = {
     invalidateResolved();
   },
 
+  setSelectionTargets(targets) {
+    S.selectionTargets = normalizeTargets(S.state.project,targets);
+    S.selection = memberIds(S.state.project,S.selectionTargets).filter(id => !S.state.project.layers.find(l => l.id === id)?.animation_owner_id);
+    canvas.setSelection(S.selection);
+    renderLayerList(); renderSelReadout();
+  },
+  enterGroup(id) {
+    S.groupContext = id; actions.setSelectionTargets([]);
+  },
+  exitGroup() {
+    const id = S.groupContext;
+    const g = (S.state.project.groups || []).find(g => g.id === id);
+    S.groupContext = g?.parent_id || null;
+    actions.setSelectionTargets(g ? [{kind:"group",id}] : []);
+  },
+  async transformSelection(delta) {
+    const key = S.selection.length === 1 && S.state.project.layers.find(l => l.id === S.selection[0] && l.animation_owner_id);
+    if (key) await api.patch(`/api/layers/${key.id}`, {transform:matToObj(mul(objToMat(delta),objToMat(key.transform)))});
+    else await api.post("/api/compose/selection/transform", {targets:S.selectionTargets,delta});
+    await actions.refreshProject(); await actions.refreshResolved();
+  },
+  async duplicateSelection() {
+    if (!S.selection.length) return;
+    try {
+      const key = S.selection.length === 1 && S.state.project.layers.find(l => l.id === S.selection[0] && l.animation_owner_id);
+      if (key) { const r = await api.post(`/api/layers/${key.id}/duplicate`,{}); await actions.refreshProject(); actions.setSelection([r.id]); }
+      else { const r = await api.post("/api/compose/selection/duplicate", {targets:S.selectionTargets}); await actions.refreshProject(); actions.setSelectionTargets(r.targets); }
+      await actions.refreshResolved();
+    } catch(e) { oops(e); }
+  },
+  async groupSelection() {
+    if (!S.selection.length) return;
+    try {
+      const r = await api.post("/api/compose/groups", {targets:S.selectionTargets});
+      await actions.refreshProject(); actions.setSelectionTargets([{kind:"group",id:r.group.id}]);
+      await actions.refreshResolved();
+    } catch(e) { oops(e); }
+  },
+  async ungroupSelection() {
+    const targets = S.selectionTargets.filter(t => t.kind === "group");
+    if (!targets.length) return;
+    try {
+      const r = await api.post("/api/compose/selection/ungroup", {targets});
+      await actions.refreshProject(); actions.setSelectionTargets(r.targets);
+      await actions.refreshResolved();
+    } catch(e) { oops(e); }
+  },
+  async reparentSelection(parent_id) {
+    try {
+      await api.post("/api/compose/selection/reparent", {targets:S.selectionTargets,parent_id});
+      await actions.refreshProject(); await actions.refreshResolved();
+    } catch(e) { oops(e); }
+  },
   setSelection(ids) {
+    S.selectionTargets = ids.map(id => ({kind:"layer",id}));
     S.selection = ids;
     canvas.setSelection(ids);
     renderLayerList();
@@ -574,7 +633,14 @@ function renderHeader() {
   if (m.connected) cls = m.job_state === "idle" ? "ok" : "busy";
   pill.textContent = `${backend?.label || m.backend} · ${m.connected ? m.job_state : "disconnected"}`;
   pill.className = `pill ${cls}`;
-  $("project-name").textContent = S.state.project.name;
+  const metadata = S.state.project;
+  const recoveryNotice = $("recovery-status");
+  recoveryNotice.hidden = !metadata.recovery?.error;
+  recoveryNotice.textContent = metadata.recovery?.error ? "Recovery failed" : "";
+  recoveryNotice.title = metadata.recovery?.error || "";
+  $("project-name").textContent = metadata.name + (metadata.dirty ? " •" : "");
+  $("project-name").title = metadata.recovery?.error ? `Recovery failed: ${metadata.recovery.error}` : metadata.recovery?.created_at ? `Recovery checkpoint: ${new Date(metadata.recovery.created_at).toLocaleString()}` : metadata.dirty ? "Unsaved changes · recovery protects kept project content" : "Saved project";
+
   // give the title bar a job: it and the in-page header both said "axibridge",
   // 40px apart. Both bars, because the app runs two ways — set_title is the
   // pywebview window and a no-op in a browser tab, document.title is the
@@ -613,6 +679,7 @@ async function saveProject() {
   try {
     const r = await api.post("/api/project/save", {});
     log(`saved: ${r.saved}`);
+    await actions.refreshProject();
     renderSettingsTab();
     // visible confirmation where the click happened — the job log lives on
     // the Plot tab, so from Compose a bare save looks like it did nothing
@@ -789,7 +856,7 @@ $("btn-animate").onclick = () => {
 for (const btn of document.querySelectorAll("#tabs button")) {
   btn.onclick = () => {
     document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b === btn));
-    for (const tab of ["compose", "plot", "pens", "settings"]) {
+    for (const tab of ["compose", "assets", "plot", "pens", "settings"]) {
       $(`tab-${tab}`).hidden = tab !== btn.dataset.tab;
     }
     // The dock belongs to Compose (Ian, 2026-08-08). It still lives in static
@@ -803,6 +870,7 @@ for (const btn of document.querySelectorAll("#tabs button")) {
 
 function initTabs() {
   initComposeTab();
+  initAssetsTab({ onAssetsChanged: refreshAssetChoices });
   // Settings BEFORE Plot: the machine panels are built by plot.js (their
   // handlers are its) but they live in the Settings tab now, so plot.js
   // appends into a tab body that must already exist. Reversed, initSettingsTab
@@ -1163,6 +1231,18 @@ function applyPanelCollapse() {
 document.addEventListener("keydown", async (e) => {
   const t = e.target;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+  if (toolMode !== "select" || [...document.querySelectorAll('dialog[open], [role="dialog"], [aria-modal="true"]')].some(el => el.getClientRects().length)) return;
+  if (e.key === "Escape" && S.groupContext) { e.preventDefault(); actions.exitGroup(); return; }
+  if (!e.metaKey && !e.ctrlKey && !e.altKey && /^[1-5]$/.test(e.key)) {
+    e.preventDefault(); document.querySelector(`#tabs button[data-tab="${["compose","assets","plot","pens","settings"][Number(e.key)-1]}"]`).click(); return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") { e.preventDefault(); await actions.duplicateSelection(); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "g") { e.preventDefault(); await (e.shiftKey ? actions.ungroupSelection() : actions.groupSelection()); return; }
+  if (S.selection.length && /^Arrow(Left|Right|Up|Down)$/.test(e.key)) {
+    e.preventDefault(); const n = e.shiftKey ? 10 : 1;
+    const delta = {a:1,b:0,c:0,d:1,e:e.key === "ArrowLeft" ? -n : e.key === "ArrowRight" ? n : 0,f:e.key === "ArrowUp" ? -n : e.key === "ArrowDown" ? n : 0};
+    try { await actions.transformSelection(delta); } catch(err) { oops(err); } return;
+  }
   if ((e.key === "Backspace" || e.key === "Delete") && S.selection.length) {
     e.preventDefault();
     const finishUpdate = beginDrawingUpdate();
@@ -1170,7 +1250,8 @@ document.addEventListener("keydown", async (e) => {
       actions.cancelLayerUpdates(S.selection);
       const names = S.selection.map((id) =>
         S.state.project.layers.find((l) => l.id === id)?.name || id);
-      const r = await api.post("/api/layers/delete", { ids: S.selection }); // one undo step
+      const key = S.selection.length === 1 && S.state.project.layers.find(l => l.id === S.selection[0] && l.animation_owner_id);
+      const r = key ? await api.post("/api/layers/delete", {ids:S.selection}) : await api.post("/api/compose/selection/delete", { targets: S.selectionTargets }); // one undo step
       actions.setSelection([]);
       await actions.refreshProject();
       await actions.refreshResolved();
@@ -1202,6 +1283,7 @@ function onEvent(ev) {
     onJobEvent(ev);
   } else if (ev.type === "gen") {
     setGenProgress(ev.frac ?? 0, ev.msg || "");
+    setAssetProgress(ev.frac ?? 0, ev.msg || "");
   }
 }
 
@@ -1251,11 +1333,16 @@ function onJobEvent(ev) {
 // ---- boot --------------------------------------------------------------------------
 
 subscribe(onEvent, () => actions.refreshAll().catch(oops));
+setInterval(async () => {
+  if (!S.state) return;
+  try { const p = await api.get("/api/project"); Object.assign(S.state.project,{dirty:p.dirty,revision:p.revision,recovery:p.recovery}); renderHeader(); } catch { /* reconnect will hydrate */ }
+}, 30000);
 (async () => {
   try {
     await actions.refreshState();
     initTabs();
     await actions.refreshResolved();
+    await initRecoveryUI();
   } catch (e) {
     $("status-pill").textContent = "backend unreachable";
     $("status-pill").className = "pill err";

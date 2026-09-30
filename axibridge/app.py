@@ -57,7 +57,30 @@ async def _lifespan(app: FastAPI):
     if not os.environ.get("AXIBRIDGE_NO_AUTOCONNECT"):
         threading.Thread(target=manager.auto_connect, name="axibridge-autoconnect",
                          daemon=True).start()
+    from .session import session
+    stop_recovery = asyncio.Event()
+
+    async def recover_changed_projects():
+        last = None
+        while not stop_recovery.is_set():
+            try:
+                await asyncio.wait_for(stop_recovery.wait(), timeout=30)
+            except asyncio.TimeoutError:
+                status = session.recovery_status()
+                token = (status["session_id"],status["revision"])
+                if status["dirty"] and token != last:
+                    try:
+                        metadata = await asyncio.to_thread(session.checkpoint_recovery)
+                        last = (metadata["id"],metadata["revision"])
+                    except Exception:
+                        logging.getLogger("axibridge").exception("recovery checkpoint failed")
+    recovery_task = asyncio.create_task(recover_changed_projects())
     yield
+    stop_recovery.set()
+    await recovery_task
+    if session.recovery_status()["dirty"]:
+        try: await asyncio.to_thread(session.checkpoint_recovery)
+        except Exception: logging.getLogger("axibridge").exception("shutdown recovery failed")
     bus.close()  # end the SSE streams so graceful shutdown doesn't wait them out
     from .linedraw.jobs import manager as linedraw_jobs
     linedraw_jobs.shutdown()
@@ -84,6 +107,14 @@ class _RevalidatedStatic(StaticFiles):
 
 def create_app() -> FastAPI:
     app = FastAPI(title="axibridge", lifespan=_lifespan)
+    @app.middleware("http")
+    async def observe_persistent_edits(request, call_next):
+        response = await call_next(request)
+        if request.method in {"POST","PUT","PATCH","DELETE"} and response.status_code < 400:
+            from .session import session
+            session.recovery_status()
+        return response
+
     app.include_router(router)
     app.include_router(linedraw_router)
     served = frontend_dir()

@@ -108,8 +108,9 @@
     <div class="menu" data-menu="settings">
       <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false">Settings</button>
       <div class="menu-panel" role="menu">
+      <button id="btn-recover-projects" class="menu-item" type="button">Recover projects…</button>
         <button id="btn-restart" class="menu-item" type="button"
-                title="Re-executes the server process in place (picks up code changes). Unsaved project changes are lost — save first. Refused while plotting. The page reconnects by itself.">⟳ Restart server</button>
+                title="Re-executes the server process in place (picks up code changes). Kept project changes are checkpointed for recovery. Refused while plotting. The page reconnects by itself.">⟳ Restart server</button>
       </div>
     </div>
   </nav>
@@ -118,6 +119,7 @@
        rest of the file actions are, File > Save As. -->
   <button id="bench-return" hidden>Return to bench</button>
   <span id="project-name" class="project-name readout">untitled</span>
+  <span id="recovery-status" class="hint" role="status" hidden></span>
   <div id="status-pill" class="pill">connecting…</div>
   <div id="estimate" class="estimate"></div>
 </header>
@@ -293,12 +295,14 @@
     <div id="sidebar-resize" title="drag to resize"></div>
     <nav id="tabs">
       <button data-tab="compose" class="on">Compose</button>
+      <button data-tab="assets">Assets</button>
       <button data-tab="plot">Plot</button>
       <button data-tab="pens">Pens</button>
       <button data-tab="settings">Settings</button>
     </nav>
 
     <div id="tab-compose" class="tab-body"></div>
+    <div id="tab-assets" class="tab-body" hidden></div>
     <div id="tab-plot" class="tab-body" hidden></div>
     <div id="tab-pens" class="tab-body" hidden></div>
     <div id="tab-settings" class="tab-body" hidden></div>
@@ -320,6 +324,12 @@
       <div class="row" id="layers-toolbar">
         <button id="layers-new" type="button" title="Create a blank layer for drawing">＋ New layer</button>
         <button id="layers-duplicate" type="button" disabled title="Duplicate the selected layer">Duplicate</button>
+      </div>
+      <div class="row" id="groups-toolbar">
+        <button id="layers-group" type="button" disabled title="Group neighboring items (⌘/Ctrl-G)">Group</button>
+        <button id="layers-ungroup" type="button" disabled title="Ungroup (Shift-⌘/Ctrl-G)">Ungroup</button>
+        <select id="layers-parent" aria-label="Destination group"><option value="">Root</option></select>
+        <button id="layers-reparent" type="button" disabled>Move</button>
       </div>
       <div id="layers-dock-body">
         <div class="hint">Top of the list draws last and occludes what's below.</div>

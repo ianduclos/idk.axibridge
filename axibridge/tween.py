@@ -754,6 +754,8 @@ def materialize(
         else:
             # exclusive in-betweens: evenly spaced strictly between the endpoints
             us = [i / (p.sweep + 1) for i in range(1, p.sweep + 1)]
+        from .groups import tween_frames, tween_source_correction, mul
+        input_tf, reference_tfs = tween_frames(project,layer)
         out: list[Path] = []
         for u in us:
             checkpoint()
@@ -761,10 +763,15 @@ def materialize(
             la, lb = layers[seg], layers[seg + 1]
             geo_a, geo_b = geos[seg], geos[seg + 1]
             paths = _source_paths_at(la, lb, geo_a, geo_b, t, master_t, project)
-            placed = transform_paths(paths, lerp_affine(la.transform, lb.transform, t))
+            ra, rb = reference_tfs[la.id], reference_tfs[lb.id]
+            if project.groups or any(l.tween_input_transform != Affine() or l.tween_reference_transforms for l in project.layers):
+                ra = mul(ra, tween_source_correction(project, la, master_t))
+                rb = mul(rb, tween_source_correction(project, lb, master_t))
+            placement = mul(input_tf,lerp_affine(ra,rb,t))
+            placed = transform_paths(paths, placement)
             ctx = EffectContext(
                 layer_id=layer.id,
-                translation=lerp_affine(la.transform, lb.transform, t).translation,
+                translation=placement.translation,
                 # Animate/append copies share this identity. Independently
                 # authored fields still keep their own endpoint identities.
                 seed=layer_effect_seed(la) if t < 0.5 else layer_effect_seed(lb),

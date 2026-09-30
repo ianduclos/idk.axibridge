@@ -241,7 +241,12 @@ def _interrupt_preview(method):
     return wrapped
 
 
-class Session:
+from .group_session import GroupSessionMixin
+from .recovery_state import RecoveryStateMixin
+from .groups import tween_frames, validate_hierarchy, placed_project, world, inverse, chain, descendants
+
+
+class Session(GroupSessionMixin, RecoveryStateMixin):
     def __init__(self) -> None:
         self._lock = threading.RLock()
         self.render_work = RenderWork()
@@ -301,6 +306,7 @@ class Session:
         #: so the shared-scale scan stops re-resolving every frame per page.
         self._frame_lru: "OrderedDict[tuple, dict[str, list[Path]]]" = OrderedDict()
         self._frame_bbox: dict[tuple, tuple[float, float, float, float] | None] = {}
+        self.init_recovery_state()
 
     # -- undo -----------------------------------------------------------------
 
@@ -627,7 +633,7 @@ class Session:
             "f": turned.f + _nudge_onto([c[1] for c in corners], compose.BED_HEIGHT),
         })
 
-    def set_view(self, view: str) -> None:
+    def set_view(self, view: str, *, checkpoint_edit: bool = True) -> None:
         """Change the project's display view (portrait/landscape) and
         retroactively re-orient every live ``"geometry"``-oriented layer to
         match — closes the gap ``_placement_transform`` left open: that
@@ -663,7 +669,7 @@ class Session:
             if src.orientation == "geometry":
                 targets.append(layer)
         with self._lock:
-            if targets:
+            if checkpoint_edit:
                 self._checkpoint()
             self.project.view = view
             if not targets:
@@ -683,6 +689,20 @@ class Session:
                     delta = step
                 layer.transform = _mul_affine(delta, layer.transform)
 
+    def update_project(self, patch: dict[str, Any]) -> None:
+        with self._lock:
+            values = {k:v for k,v in patch.items() if v is not None}
+            view = values.pop("view",None)
+            if view not in ("portrait","landscape") or view == self.project.view:
+                view = None
+            if not values and view is None: return
+            if set(values)-{"name","guide","plot_options"}: raise ValueError("invalid project setting")
+            candidate = Project.model_validate({**self.project.model_dump(),**values})
+            self._checkpoint()
+            for key in values: setattr(self.project,key,getattr(candidate,key))
+            if view is not None: self.set_view(view,checkpoint_edit=False)
+
+    @_interrupt_preview
     def add_generated_layer(self, generator_id: str, params: dict[str, Any]) -> CanvasLayer:
         src = get_source(generator_id)
         # The Compose form normally rolls a seed before POSTing, so this only
@@ -891,10 +911,14 @@ class Session:
 
     @_interrupt_preview
     def update_layer(self, layer_id: str, patch: dict[str, Any]) -> CanvasLayer:
-        allowed = {"name", "visible", "draw", "transform", "effects", "pen_id",
+        allowed = {"name", "visible", "inherited_visible", "draw", "transform", "effects", "pen_id",
                    "occluder", "receives_occlusion", "occlusion_margin_mm",
                    "occlude_groups", "receives_groups",
                    "region", "region_boundary", "frame_offset", "frame_follow", "effect_seed"}
+        if "visible" in patch:
+            patch = {**patch,"inherited_visible":True}
+        if "group_id" in patch:
+            raise ValueError("use reparent for layer membership")
         with self._lock:
             layer = self.project.layer(layer_id)
             if layer.animation_owner_id and (
@@ -1011,6 +1035,13 @@ class Session:
 
     def _restore_animation_key(self, master: CanvasLayer, survivor: CanvasLayer) -> None:
         """Caller checkpoints; move surviving source into its master's stack slot."""
+        # Restore A in the evaluated placement of its master, including group
+        # edits and input placement retained by structural reparenting.
+        from .groups import inverse, mul, tween_frames, world
+        input_frame, references = tween_frames(self.project, master)
+        survivor.transform = mul(inverse(world(self.project, survivor.group_id)),
+                                 mul(master.transform, mul(input_frame, references[survivor.id])))
+        survivor.inherited_visible = master.inherited_visible
         survivor.animation_owner_id = None
         survivor.visible = master.visible
         survivor.name = master.name
@@ -1044,6 +1075,7 @@ class Session:
                           self._tween_cache, self._clip_cache):
                 cache.pop(lid, None)
         self.project.normalize_animation_order()
+        self.project.groups = [g for g in self.project.groups if descendants(self.project,g.id)]
         return removed
 
     @_interrupt_preview
@@ -1093,10 +1125,13 @@ class Session:
         with self._lock:
             if sorted(ordered_ids) != sorted(l.id for l in self.project.layers):
                 raise ValueError("order must contain exactly the current layer ids")
+            candidate = self.project.model_copy(deep=True)
+            by_id = {l.id: l for l in candidate.layers}
+            candidate.layers = [by_id[i] for i in ordered_ids]
+            candidate.normalize_animation_order()
+            validate_hierarchy(candidate)
             self._checkpoint()
-            by_id = {l.id: l for l in self.project.layers}
-            self.project.layers = [by_id[i] for i in ordered_ids]
-            self.project.normalize_animation_order()
+            self.project = candidate
 
     def create_tween_layer(self, a_id: str, b_id: str) -> CanvasLayer:
         """Interpolation layer between two compatible layers (see tween.py).
@@ -1113,7 +1148,9 @@ class Session:
             if reason:
                 raise RuntimeError(reason)
             self._checkpoint()
+            shared = [a for a,b in zip(chain(self.project,la.group_id),chain(self.project,lb.group_id)) if a == b]
             layer = CanvasLayer(
+                group_id=shared[-1] if shared else None,
                 name=f"{la.name} ⇄ {lb.name}",
                 source=LayerSource(
                     type="tween",
@@ -1125,6 +1162,12 @@ class Session:
             # reverse. Insert just below the selected top layer so the new
             # interpolation appears directly under it in the UI.
             idx = max(self.project.layers.index(la), self.project.layers.index(lb))
+            # Do not split an existing child-group block when references have different parents.
+            upper = self.project.layers[idx]
+            child_chain = chain(self.project,upper.group_id)
+            deeper = child_chain[child_chain.index(layer.group_id)+1:] if layer.group_id else child_chain
+            if deeper:
+                idx = max(self.project.layers.index(l) for l in descendants(self.project,deeper[0])) + 1
             self.project.layers.insert(idx, layer)
             self.source_geometry[layer.id] = []  # materialised on next resolve
             self.project.normalize_animation_order()
@@ -1637,6 +1680,7 @@ class Session:
         return CaptureSnapshot(
             name=self.project.name,
             layers=[l.model_copy(deep=True) for l in self.project.layers],
+            groups=[g.model_copy(deep=True) for g in self.project.groups],
             guide=self.project.guide.model_copy(deep=True),
             view=self.project.view,
             pens_used={k: v.model_copy(deep=True) for k, v in self.project.pens_used.items()},
@@ -2124,7 +2168,7 @@ class Session:
         data["transform"] = tween.lerp_affine(la.transform, lb.transform, t).model_dump()
         data["frame_offset"] = self._lerp_num(la.frame_offset, lb.frame_offset, t)
         data["occlusion_margin_mm"] = self._lerp_num(la.occlusion_margin_mm, lb.occlusion_margin_mm, t)
-        for key in ("visible", "pen_id", "occluder", "receives_occlusion", "frame_follow", "name", "effect_seed", "animation_owner_id"):
+        for key in ("visible", "pen_id", "occluder", "receives_occlusion", "frame_follow", "name", "effect_seed", "animation_owner_id", "group_id", "inherited_visible"):
             data[key] = getattr(la, key) if t < 0.5 else getattr(lb, key)
 
         effects, stacks_matched = tween.blend_effect_stacks(la.effects, lb.effects, t)
@@ -2194,6 +2238,7 @@ class Session:
         project = Project(
             name=a.name if t < 0.5 else b.name,
             layers=out_layers,
+            groups=[g.model_copy(update={"transform":tween.lerp_affine(g.transform,next((h.transform for h in b.groups if h.id == g.id and h.parent_id == g.parent_id),g.transform),t)}) for g in a.groups] if [(g.id,g.parent_id) for g in a.groups] == [(g.id,g.parent_id) for g in b.groups] else [g.model_copy(deep=True) for g in (a.groups if t < .5 else b.groups)],
             guide=PaperGuide(
                 x=self._lerp_num(a.guide.x, b.guide.x, t),
                 y=self._lerp_num(a.guide.y, b.guide.y, t),
@@ -2376,6 +2421,7 @@ class Session:
         project = Project(
             name=snap.name,
             layers=[l.model_copy(deep=True) for l in snap.layers],
+            groups=[g.model_copy(deep=True) for g in snap.groups],
             guide=snap.guide.model_copy(deep=True),
             view=snap.view,
             pens_used={k: v.model_copy(deep=True) for k, v in snap.pens_used.items()},
@@ -2776,6 +2822,8 @@ class Session:
 
             # -- tween: create_tween_layer's logic, inlined ------------------
             tween_layer = CanvasLayer(
+                group_id=layer.group_id,
+                inherited_visible=layer.inherited_visible,
                 name=original_name,
                 source=LayerSource(
                     type="tween",
@@ -2953,10 +3001,10 @@ class Session:
             self._checkpoint()
             self._materialize_tweens()  # a stale tween must bake its CURRENT look
             shaped = compose.shape_layer(
-                layer, self.source_geometry.get(layer_id, []),
+                placed_project(self.project).layer(layer_id), self.source_geometry.get(layer_id, []),
                 compose.guide_page(self.project),
                 compose.line_diameter_for(layer, self.pens()))
-            self.source_geometry[layer_id] = shaped
+            self.source_geometry[layer_id] = compose.transform_paths(shaped,inverse(world(self.project,layer.group_id)))
             layer.transform = Affine()
             layer.effects = []
             layer.source.type = "baked"
@@ -3015,11 +3063,11 @@ class Session:
             merged: list[Path] = []
             for layer in chosen:
                 merged.extend(compose.shape_layer(
-                    layer, self.source_geometry.get(layer.id, []), page,
+                    placed_project(self.project).layer(layer.id), self.source_geometry.get(layer.id, []), page,
                     compose.line_diameter_for(layer, self.pens())))
 
             survivor = chosen[-1]
-            self.source_geometry[survivor.id] = merged
+            self.source_geometry[survivor.id] = compose.transform_paths(merged,inverse(world(self.project,survivor.group_id)))
             survivor.transform = Affine()
             survivor.effects = []
             survivor.source.type = "baked"
@@ -3030,6 +3078,7 @@ class Session:
                 self.source_geometry.pop(layer.id, None)
                 self.project.layers = [l for l in self.project.layers
                                        if l.id != layer.id]
+            self.project.groups = [g for g in self.project.groups if descendants(self.project,g.id)]
             self._occlusion_cache.clear()
             return survivor
 
@@ -3196,6 +3245,10 @@ class Session:
                 "refs": refs, "p": params, "mt": override_t,
                 "master": clamped_master,
             }
+            if self.project.groups or any(l.tween_input_transform != Affine() or l.tween_reference_transforms for l in self.project.layers):
+                key_data["groups"] = [g.model_dump() for g in self.project.groups]
+                if all(ref is not None for ref in refs):
+                    key_data["frames"] = [x.model_dump() if hasattr(x,"model_dump") else {i:v.model_dump() for i,v in x.items()} for x in tween_frames(self.project,layer)]
             # Endpoint effects run while materialising the tween and see the
             # pen assigned to the tween output. Keep the historic key bytes
             # unchanged when no enabled effect can observe that width.
@@ -3430,7 +3483,9 @@ class Session:
         backend = manager.backends[backend_id]
         validated = backend.Params(**values)
         dumped = validated.model_dump()
-        self.project.backend_params[backend_id] = dumped
+        with self._lock:
+            self._checkpoint()
+            self.project.backend_params[backend_id] = dumped
         # Mirror into the machine-level store so the values survive a server
         # restart and seed fresh projects (project-stored params still win).
         machine = dict(settings_store.settings.backend_params)

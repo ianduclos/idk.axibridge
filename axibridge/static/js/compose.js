@@ -1,8 +1,10 @@
+import { renderHierarchy, siblingTargets } from "./group_ui.js";
+import { uploadAssetFiles } from "./assets_tab.js";
 import { beginDrawingUpdate, restartDrawingUpdate } from "./drawing_status.js";
 // The catalogue distinguishes working benches from temporal Watch views.
 const isWorkingBench = mod => mod?.library_categories?.includes("bench");
 import { benchUnavailableReason } from "./bench_registry.js";
-import { openGallery, openGallerySave } from "./gallery.js";
+import { openGallerySave } from "./gallery.js";
 import { openModuleBrowser, createPresetControls, quickModules } from "./module_library.js";
 // Compose tab: sources (generate / upload), the layer list (z-order,
 // visibility, pen, occlusion), and the selected layer's detail editor
@@ -36,9 +38,6 @@ const expandedSteps = new Set(); // "layerId:index" — effect steps open in the
 const collapsedTweens = new Set(JSON.parse(localStorage.getItem("axb-collapsed-tweens") || "[]"));
 let selAnchor = null;            // last plain/cmd-clicked layer id, for shift-range
 let busyBtn = null;              // Generate/Regenerate button awaiting the server
-let depthProStatus = null;
-let depthProSource = "";
-const depthProFrames = {};
 
 // SSE "gen" events land here (main.js dispatches) while a generate request
 // is in flight; the request itself completing is what ends the busy state.
@@ -243,37 +242,6 @@ export function initComposeTab() {
       </div>
       <div id="gen-live-note" class="hint"></div>
     </div>
-    <div class="row"><button id="btn-gallery">Gallery</button></div>
-    <div class="panel" data-collapse-default="1">
-      <h2>Import &amp; assets</h2>
-      <div class="row">
-        <input type="file" id="svg-file" accept=".svg,image/svg+xml" style="flex:1">
-      </div>
-      <div class="row">
-        <label>curve tolerance</label>
-        <input type="number" id="quant" value="0.1" min="0.01" max="5" step="0.01" title="Lower is smoother. Maximum SVG curve approximation error in mm; higher values use fewer points and may show facets.">
-        <span class="hint">mm</span>
-        <button id="btn-upload" class="primary">Upload</button>
-      </div>
-      <div class="hint">An uploaded SVG contributes its layers as layers. Lower tolerance gives smoother curves and more points.</div>
-      <div class="row" style="margin-top:10px">
-        <input type="file" id="asset-file" multiple
-          accept="image/png,image/jpeg,video/mp4,video/quicktime,video/webm,video/x-matroska,video/x-msvideo"
-          style="flex:1">
-        <button id="btn-asset">Add image asset</button>
-      </div>
-      <div class="row">
-        <label>max frames</label><input type="number" id="asset-frames" min="1" max="240" placeholder="all">
-        <label>start</label><input type="number" id="asset-start" min="0" placeholder="0">
-        <label>every</label><input type="number" id="asset-every" min="1" placeholder="—">
-        <span class="hint">optional max / start / every — video or multiple files import as a frame sequence</span>
-      </div>
-      <div class="row">
-        <button id="btn-clear-assets" title="Remove image assets no layer currently uses (referenced assets are kept)">Clear unused assets</button>
-      </div>
-      <div class="hint">tip: dropping an image or video on the canvas imports it too</div>
-      <div id="asset-list"></div>
-    </div>
     <div class="panel" id="layer-detail-panel" hidden>
       <h2>Selected: <span id="detail-name"></span></h2>
       <div id="layer-detail"></div>
@@ -283,7 +251,6 @@ export function initComposeTab() {
   // image-driven generators (any param with format:"asset") group separately
   const usesImage = (m) => Object.values(m.schema.properties || {}).some(
     (p) => (p.format || ((p.anyOf || []).find((a) => a.format) || {}).format) === "asset");
-  $("btn-gallery").onclick = () => openGallery();
   $("gen-browse").onclick = () => openModuleBrowser({
     kind: "source", modules: S.state.modules.sources, currentModule: sel.value,
     getCurrentParams: () => genParams,
@@ -445,75 +412,6 @@ export function initComposeTab() {
     finally { genBusy(false, btn); }
   };
 
-  $("btn-upload").onclick = async () => {
-    const file = $("svg-file").files[0];
-    if (!file) return actions.oops(new Error("choose an SVG file first"));
-    const fd = new FormData();
-    fd.append("file", file);
-    try {
-      await api.upload(`/api/layers/upload?quantization_mm=${Number($("quant").value) || 0.1}`, fd);
-      await actions.refreshProject();
-      await actions.refreshResolved();
-    } catch (e) { actions.oops(e); }
-  };
-
-  $("btn-asset").onclick = async () => {
-    const files = [...$("asset-file").files];
-    if (!files.length) return actions.oops(new Error("choose a PNG/JPEG (or a video, or several images) first"));
-    try {
-      await uploadAssetFiles(files, {
-        frames: $("asset-frames").value,
-        start: $("asset-start").value,
-        every: $("asset-every").value,
-      }, $("btn-asset"));
-    } catch (e) { actions.oops(e); }
-  };
-
-  $("btn-clear-assets").onclick = async () => {
-    if (!confirm("Remove image assets not referenced by any layer's source or effects? "
-      + "Assets still in use are kept; this cannot be undone.")) return;
-    const btn = $("btn-clear-assets");
-    btn.disabled = true;
-    try {
-      const r = await api.del("/api/assets");
-      S.state.assets = (await api.get("/api/assets")).assets;
-      renderAssetList();
-      renderLayerDetail(); // asset selects in effect forms drop any removed name
-      actions.log(r.removed.length
-        ? `cleared ${r.removed.length} unused asset(s)`
-        : "no unused assets to clear");
-    } catch (e) { actions.oops(e); }
-    finally { btn.disabled = false; }
-  };
-  renderAssetList();
-  refreshDepthProStatus();
-}
-
-// One upload path for the panel button and the canvas drop: several files or
-// a single video import as a frame sequence, one image as a plain asset.
-async function uploadAssetFiles(files, { frames, start, every } = {}, busyEl = null) {
-  const isVideo = files.length === 1 && /\.(mp4|mov|webm|mkv|avi|m4v)$/i.test(files[0].name);
-  const isSequence = files.length > 1 || isVideo;
-  if (isSequence) genBusy(true, busyEl); // sequence import emits gen-progress SSE
-  try {
-    let r;
-    if (isSequence) {
-      const fd = new FormData();
-      for (const f of files) fd.append("files", f);
-      if (frames) fd.append("frames", frames);
-      if (start) fd.append("start", start);
-      if (every) fd.append("every", every);
-      r = await api.upload("/api/assets/sequence", fd);
-    } else {
-      const fd = new FormData();
-      fd.append("file", files[0]);
-      r = await api.upload("/api/assets", fd);
-    }
-    S.state.assets = r.assets;
-    renderAssetList();
-    renderLayerDetail(); // asset selects in effect forms pick up the new name
-    return r;
-  } finally { if (isSequence) genBusy(false, busyEl); }
 }
 
 async function uploadFontFile(file) {
@@ -531,7 +429,8 @@ async function uploadFontFile(file) {
 // that half scans the schema for whichever field is tagged format:"font".
 function initCanvasDrop() {
   const wrap = document.getElementById("canvas-wrap");
-  if (!wrap) return;
+  if (!wrap || wrap.dataset.assetDropWired) return;
+  wrap.dataset.assetDropWired = "1";
   const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
   wrap.addEventListener("dragover", (e) => {
     if (!hasFiles(e)) return;
@@ -576,116 +475,6 @@ function initCanvasDrop() {
       }
     } catch (err) { actions.oops(err); }
   });
-}
-
-function renderAssetList() {
-  const el = $("asset-list");
-  if (!el) return;
-  const assets = S.state.assets || [];
-  const names = assets.map((a) => a.name ?? a);
-  el.innerHTML = "";
-
-  const summary = document.createElement("div");
-  summary.className = "hint";
-  summary.textContent = names.length
-    ? `image assets: ${names.join(", ")} — feed the image-driven generators and depth effects`
-    : "Image assets feed the image-driven generators and depth effects.";
-  el.appendChild(summary);
-  if (!assets.length) return;
-
-  if (!depthProSource || !assets.some((a) => (a.name ?? a) === depthProSource)) {
-    depthProSource = names[0] || "";
-  }
-  const selected = assets.find((a) => (a.name ?? a) === depthProSource) || assets[0];
-  const selectedName = selected?.name ?? selected ?? "";
-  const frames = Math.max(Number(selected?.frames || 1), 1);
-  const maxFrame = Math.max(frames - 1, 0);
-  const frameValue = Math.min(Math.max(Number(depthProFrames[selectedName] || 0), 0), maxFrame);
-
-  const tool = document.createElement("div");
-  tool.className = "asset-tool";
-  const row = document.createElement("div");
-  row.className = "row";
-
-  const label = document.createElement("label");
-  label.textContent = "Depth Pro";
-  const select = document.createElement("select");
-  select.id = "depth-pro-source";
-  for (const asset of assets) {
-    const name = asset.name ?? asset;
-    const o = document.createElement("option");
-    o.value = name;
-    o.textContent = asset.frames > 1 ? `${name} (${asset.frames} frames)` : name;
-    select.appendChild(o);
-  }
-  select.value = selectedName;
-  select.onchange = () => {
-    depthProSource = select.value;
-    renderAssetList();
-  };
-
-  const frameLabel = document.createElement("label");
-  frameLabel.textContent = "frame";
-  const frame = document.createElement("input");
-  frame.type = "number";
-  frame.min = "0";
-  frame.max = String(maxFrame);
-  frame.step = "1";
-  frame.value = String(frameValue);
-  frame.disabled = frames <= 1;
-  frame.onchange = () => {
-    depthProFrames[selectedName] = Math.min(Math.max(Number(frame.value) || 0, 0), maxFrame);
-  };
-
-  const nearLabel = document.createElement("label");
-  nearLabel.title = "Foreground / nearer surfaces become white in the generated map";
-  const near = document.createElement("input");
-  near.type = "checkbox";
-  near.checked = localStorage.getItem("axb-depth-pro-near-white") !== "0";
-  near.onchange = () => localStorage.setItem("axb-depth-pro-near-white", near.checked ? "1" : "0");
-  nearLabel.append(near, " near = white");
-
-  const btn = document.createElement("button");
-  btn.id = "btn-depth-pro";
-  btn.textContent = "Create depth map";
-  btn.disabled = !depthProStatus?.available;
-  btn.title = depthProStatus?.detail || "Checking Depth Pro";
-  btn.onclick = async () => {
-    const frameIndex = Math.min(Math.max(Number(frame.value) || 0, 0), maxFrame);
-    const t = frames > 1 ? frameIndex / maxFrame : 0;
-    genBusy(true, btn);
-    try {
-      const r = await api.post("/api/assets/depth-pro", {
-        image: selectedName,
-        frame: t,
-        near_white: near.checked,
-      });
-      S.state.assets = r.assets;
-      renderAssetList();
-      renderLayerDetail();
-      actions.log(`created depth map: ${r.name}`);
-    } catch (e) { actions.oops(e); }
-    finally {
-      genBusy(false, btn);
-      refreshDepthProStatus();
-    }
-  };
-
-  row.append(label, select, frameLabel, frame, nearLabel, btn);
-  const status = document.createElement("div");
-  status.className = "hint";
-  status.textContent = depthProStatus?.detail || "Checking Depth Pro...";
-  tool.append(row, status);
-  el.appendChild(tool);
-}
-
-async function refreshDepthProStatus() {
-  try {
-    depthProStatus = await api.get("/api/assets/depth-pro/status");
-  } catch (e) {
-    depthProStatus = { available: false, detail: e.message || "Depth Pro status unavailable" };
-  }
-  renderAssetList();
 }
 
 // The lineart v2 generators (lineart_edges / lineart_hatch) get a one-click
@@ -1025,8 +814,8 @@ let renaming = null;
 // in index.html rather than something a tab body rebuilds.
 
 const DOCK_H = "axb-layers-dock-h";
-const DOCK_MIN = 150;          // below this the list shows nothing useful
-const DOCK_COMPACT = 210;
+const DOCK_MIN = 240;          // below this the list shows nothing useful
+const DOCK_COMPACT = 260;
 const TAB_BODY_MIN = 220;      // the tab above must stay usable
 
 function dockMax() {
@@ -1043,7 +832,7 @@ export function initLayersDock() {
   dock.classList.remove('collapsed');
   const saved = Number(localStorage.getItem(DOCK_H));
   // Upgrade the former compact default; retain other user-resized heights.
-  if (saved) dock.style.setProperty("--layers-dock-h", `${saved === 160 ? DOCK_COMPACT : saved}px`);
+  if (saved) dock.style.setProperty("--layers-dock-h", `${Math.min(dockMax(), Math.max(DOCK_MIN, [160,210].includes(saved) ? DOCK_COMPACT : saved))}px`);
 
   const title = $('layers-dock-title');
   const expand = document.createElement('button');
@@ -1055,20 +844,18 @@ export function initLayersDock() {
   title.appendChild(expand);
   const toggle = () => {
     const wide = dock.classList.toggle('expanded-list');
-    dock.style.setProperty('--layers-dock-h', `${wide ? Math.min(320,dockMax()) : DOCK_COMPACT}px`);
+    dock.style.setProperty('--layers-dock-h', `${wide ? Math.min(360,dockMax()) : DOCK_COMPACT}px`);
     expand.textContent = wide ? 'Compact list' : 'Expand list';
     expand.setAttribute('aria-expanded', String(wide));
     localStorage.setItem('layers-dock-expanded', String(wide));
-    localStorage.setItem(DOCK_H, String(wide ? Math.min(320,dockMax()) : DOCK_COMPACT));
+    localStorage.setItem(DOCK_H, String(wide ? Math.min(360,dockMax()) : DOCK_COMPACT));
   };
   expand.onclick = toggle;
   $("layers-new").onclick = () => $("btn-empty-layer").click();
-  $("layers-duplicate").onclick = async () => {
-    if (S.selection.length !== 1) return;
-    $("layers-duplicate").disabled = true;
-    try { await duplicate(S.selection[0], true); }
-    finally { renderLayerActions(); }
-  };
+  $("layers-duplicate").onclick = () => actions.duplicateSelection();
+  $("layers-group").onclick = () => actions.groupSelection();
+  $("layers-ungroup").onclick = () => actions.ungroupSelection();
+  $("layers-reparent").onclick = () => actions.reparentSelection($("layers-parent").value || null);
 
 
   // drag the top edge. Pointer capture rather than document-level listeners:
@@ -1141,7 +928,16 @@ function renderLayerActions() {
   const bar = $("layer-actions"), btn = $("layers-merge");
   if (!bar || !btn) return;
   const ids = S.selection || [];
-  $("layers-duplicate").disabled = ids.length !== 1;
+  $("layers-duplicate").disabled = !ids.length;
+  $("layers-group").disabled = !ids.length;
+  $("layers-ungroup").disabled = !(S.selectionTargets || []).some(t => t.kind === "group");
+  const parents = $("layers-parent");
+  const oldParent = parents.value;
+  parents.replaceChildren(new Option("Root", ""));
+  for (const g of S.state.project.groups || []) parents.add(new Option(g.name,g.id));
+  parents.value = oldParent;
+  $("layers-reparent").disabled = !ids.length;
+
   bar.hidden = ids.length < 2;
   btn.title = `bake ${ids.length} layers' transforms and effects, then join them `
     + "into one — the top-most keeps its name and pen (one undo step)";
@@ -1171,15 +967,16 @@ export function renderLayerList() {
   // briefly says otherwise.  Owned children never receive a second top-level
   // row.
   const dockLayers = [];
-  for (const layer of [...layers].reverse()) {
-    if (ownerByChild.has(layer.id)) continue;
+  for (const target of [...siblingTargets(S.state.project,S.groupContext)].reverse()) {
+    if (target.kind !== "layer") continue;
+    const layer = byId.get(target.id);
     dockLayers.push(layer);
     for (const childId of childrenByMaster.get(layer.id) || []) {
       const child = byId.get(childId);
       if (child) dockLayers.push(child);
     }
   }
-  dockLayers.forEach((layer) => {
+  const renderRow = (layer) => {
     const r = resolvedById[layer.id];
     const owner = ownerByChild.get(layer.id);
     if (owner && collapsedTweens.has(owner) && !S.selection.includes(layer.id)) return;
@@ -1209,10 +1006,10 @@ export function renderLayerList() {
 
     const eye = isAnimateKeyframe
       ? document.createElement("span")
-      : btn("", layer.visible ? "visible — click to hide" : "hidden — click to show",
-        () => actions.patchLayer(layer.id, { visible: !layer.visible }));
-    if (!isAnimateKeyframe) eye.append(icon(layer.visible ? EYE : EYE_OFF));
-    eye.className = "eye" + (layer.visible ? "" : " off");
+      : btn("", (layer.visible && layer.inherited_visible !== false) ? "visible — click to hide" : "hidden — click to show",
+        () => actions.patchLayer(layer.id, { visible: !(layer.visible && layer.inherited_visible !== false) }));
+    if (!isAnimateKeyframe) eye.append(icon((layer.visible && layer.inherited_visible !== false) ? EYE : EYE_OFF));
+    eye.className = "eye" + ((layer.visible && layer.inherited_visible !== false) ? "" : " off");
 
     const swatch = document.createElement("span");
     swatch.className = "swatch";
@@ -1336,8 +1133,18 @@ export function renderLayerList() {
       }
     };
     row.title = "click: select — shift-click: range — ⌘-click: toggle (select two layers to interpolate)";
-    wrap.appendChild(row);
-  });
+    return row;
+  };
+  if ((S.state.project.groups || []).length || S.groupContext) {
+    renderHierarchy(wrap, {
+      project:S.state.project, context:S.groupContext, selection:S.selectionTargets,
+      onSelect:targets => actions.setSelectionTargets(targets),
+      onEnter:id => actions.enterGroup(id), onExit:() => actions.exitGroup(),
+      onRefresh:async () => { await actions.refreshProject(); await actions.refreshResolved(); },
+      onError:actions.oops,
+      renderLayer:target => [byId.get(target.id), ...(childrenByMaster.get(target.id) || []).map(id => byId.get(id))].map(renderRow).filter(Boolean),
+    });
+  } else dockLayers.forEach(layer => { const row = renderRow(layer); if (row) wrap.appendChild(row); });
   renderBenchAction(); // latch chip follows renames; a deleted latch target clears
   renderTimelineBar();
   renderLayerDetail();
@@ -2534,4 +2341,10 @@ function swapEffects(layer, i, j) {
   const effects = [...layer.effects];
   [effects[i], effects[j]] = [effects[j], effects[i]];
   actions.patchLayer(layer.id, { effects });
+}
+
+export function refreshAssetChoices() {
+  const m = S.state.modules.sources.find(x => x.id === $("gen-select")?.value);
+  if (m) bindGenForm(m);
+  renderLayerDetail();
 }
