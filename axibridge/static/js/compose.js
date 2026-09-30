@@ -192,8 +192,6 @@ const genPreviewReq = (key, module, params, transform = null) => ({
 
 export function initComposeTab() {
   $("tab-compose").innerHTML = `
-    <div id="new-material-anchor"></div>
-    <div class="row"><button id="btn-gallery">Gallery</button></div>
     <div class="panel" id="gen-panel">
       <h2 id="gen-heading">New material</h2>
       <div class="row">
@@ -247,6 +245,7 @@ export function initComposeTab() {
     </div>
     <div class="panel" data-collapse-default="1">
       <h2>Import &amp; assets</h2>
+      <div class="row"><button id="btn-gallery">Gallery</button></div>
       <div class="row">
         <input type="file" id="svg-file" accept=".svg,image/svg+xml" style="flex:1">
       </div>
@@ -277,11 +276,9 @@ export function initComposeTab() {
     </div>
     <div class="panel" id="layer-detail-panel" hidden>
       <h2>Selected: <span id="detail-name"></span></h2>
-      <div id="selected-source"></div>
       <div id="layer-detail"></div>
     </div>`;
 
-  $("tab-compose").prepend($("layer-detail-panel"));
   const sel = $("gen-select");
   // image-driven generators (any param with format:"asset") group separately
   const usesImage = (m) => Object.values(m.schema.properties || {}).some(
@@ -840,16 +837,8 @@ function renderBenchAction() {
   const chip = $("gen-latch"), btn = $("btn-generate");
   if (!chip || !btn) return;
   const layer = latch && (S.state.project?.layers || []).find((l) => l.id === latch);
-  const genPanel = $('gen-panel');
-  if (genPanel) {
-    if (layer && S.selection.length === 1 && S.selection[0] === layer.id) {
-      $('selected-source').appendChild(genPanel);
-      $('gen-heading').textContent = 'Source controls';
-    } else {
-      $('new-material-anchor').after(genPanel);
-      $('gen-heading').textContent = 'New material';
-    }
-  }
+  // Keep the source editor in one place, even while it edits a kept layer.
+  $('gen-heading').textContent = layer ? 'Source controls' : 'New material';
   if (layer) {
     chip.hidden = false;
     chip.textContent = `⟿ editing “${layer.name}”`;
@@ -1036,8 +1025,8 @@ let renaming = null;
 // in index.html rather than something a tab body rebuilds.
 
 const DOCK_H = "axb-layers-dock-h";
-const DOCK_COLLAPSED = "axb-layers-dock-collapsed";
-const DOCK_MIN = 110;          // below this the list shows nothing useful
+const DOCK_MIN = 150;          // below this the list shows nothing useful
+const DOCK_COMPACT = 210;
 const TAB_BODY_MIN = 220;      // the tab above must stay usable
 
 function dockMax() {
@@ -1053,7 +1042,8 @@ export function initLayersDock() {
   // The compact list remains present; explicit expansion replaces hiding it.
   dock.classList.remove('collapsed');
   const saved = Number(localStorage.getItem(DOCK_H));
-  if (saved) dock.style.setProperty("--layers-dock-h", `${saved}px`);
+  // Upgrade the former compact default; retain other user-resized heights.
+  if (saved) dock.style.setProperty("--layers-dock-h", `${saved === 160 ? DOCK_COMPACT : saved}px`);
 
   const title = $('layers-dock-title');
   const expand = document.createElement('button');
@@ -1065,13 +1055,20 @@ export function initLayersDock() {
   title.appendChild(expand);
   const toggle = () => {
     const wide = dock.classList.toggle('expanded-list');
-    dock.style.setProperty('--layers-dock-h', `${wide ? Math.min(320,dockMax()) : 160}px`);
+    dock.style.setProperty('--layers-dock-h', `${wide ? Math.min(320,dockMax()) : DOCK_COMPACT}px`);
     expand.textContent = wide ? 'Compact list' : 'Expand list';
     expand.setAttribute('aria-expanded', String(wide));
     localStorage.setItem('layers-dock-expanded', String(wide));
-    localStorage.setItem(DOCK_H, String(wide ? Math.min(320,dockMax()) : 160));
+    localStorage.setItem(DOCK_H, String(wide ? Math.min(320,dockMax()) : DOCK_COMPACT));
   };
-  title.onclick = toggle;
+  expand.onclick = toggle;
+  $("layers-new").onclick = () => $("btn-empty-layer").click();
+  $("layers-duplicate").onclick = async () => {
+    if (S.selection.length !== 1) return;
+    $("layers-duplicate").disabled = true;
+    try { await duplicate(S.selection[0], true); }
+    finally { renderLayerActions(); }
+  };
 
 
   // drag the top edge. Pointer capture rather than document-level listeners:
@@ -1144,6 +1141,7 @@ function renderLayerActions() {
   const bar = $("layer-actions"), btn = $("layers-merge");
   if (!bar || !btn) return;
   const ids = S.selection || [];
+  $("layers-duplicate").disabled = ids.length !== 1;
   bar.hidden = ids.length < 2;
   btn.title = `bake ${ids.length} layers' transforms and effects, then join them `
     + "into one — the top-most keeps its name and pen (one undo step)";
@@ -1507,11 +1505,12 @@ async function dropLayer(movedId, targetId, above, copy) {
   } catch (e) { actions.oops(e); }
 }
 
-async function duplicate(id) {
+async function duplicate(id, selectCopy = false) {
   try {
-    await api.post(`/api/layers/${id}/duplicate`);
+    const copy = await api.post(`/api/layers/${id}/duplicate`);
     await actions.refreshProject();
     await actions.refreshResolved();
+    if (selectCopy) actions.setSelection([copy.id]);
   } catch (e) { actions.oops(e); }
 }
 

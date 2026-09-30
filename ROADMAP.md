@@ -11,8 +11,18 @@ Every numeric param stays bounded. Loose generator brainstorms (uncanny/
 Cohen-line direction, plus how the involved ones should meet the UI) live in
 `docs/IDEAS-generators.md`.
 
-Shipped work has been pruned from this file (2026-08-17) — see `git log` /
-`STATUS.md` for what landed and when. This file tracks what's still open.
+This file tracks open work and acceptance still pending. Shipped implementation
+notes remain beside their follow-ups; see `git log` and `STATUS.md` for delivery
+history.
+
+## Compose layout acceptance (2026-09-30)
+
+Generators retain a fixed first position; import/assets and Gallery follow,
+then selected-layer details. Selecting or creating a layer no longer relocates
+the generator form. The compact layer dock grows from 160 to 210 px and has
+New layer (blank drawing target) and Duplicate (one selected layer) actions.
+Native usability remains for Ian to check. A separate Assets/Gallery tab is
+an optional follow-up; general layer groups remain deferred below.
 
 ## Asset gallery acceptance (2026-09-10)
 
@@ -143,7 +153,8 @@ No paper test yet; no general aesthetic success claim. Current controls:
 - **Collapsible panels** (`<details>`/`<summary>` needs ~no JS) and
   collapsed-by-default effect steps showing a one-line param summary.
   The Compose tab with three layers + stacks is already a wall.
-- **Drag-to-reorder layers** in the list (replaces ↑/↓ spam).
+- **Drag-to-reorder layers — shipped.** The list supports drag reordering and
+  Option-drag copying; general nested groups remain deferred (see below).
 - **Keyboard**: arrows nudge selection 1 mm (shift = 10), ⌘D duplicate,
   numbers 1–4 switch tabs. The keydown plumbing exists (main.js).
 - **🎲 seed reroll in the main forms** (IDEAS pass-1 UI principle 3): one
@@ -170,10 +181,9 @@ No paper test yet; no general aesthetic success claim. Current controls:
   Eikonal wavefront instead. Most of the code already exists; it is the
   natural sibling of threshold + hatch.
 - **Generator quality-of-life**:
-  - *Presets & favourites*: named param sets per generator in a global JSON
-    store (pattern: `stores.py` pen library), plus starred generators
-    pinned at the top of the picker. This is also where the pass-1 **style
-    genome / "hand" presets** land ("nervous", "tired" freehand hands;
+  - *Presets & favourites — shipped 2026-09-10*: named starting settings and
+    starred generators in the module library. Still open: curated pass-1 **style
+    genome / "hand" presets** ("nervous", "tired" freehand hands;
     two_hands agent genomes — its params are already grouped for it):
     presets over parameters, per IDEAS pass-1 UI principle 2.
   - *Colour separation follow-ons* — the CMYK/RGB/tonal separation itself
@@ -226,8 +236,9 @@ No paper test yet; no general aesthetic success claim. Current controls:
 From the second idea pass (`docs/IDEAS-oehlen-pass.md` — read it first, the
 *why* lives there).
 
-- **Pen tool (⚓ béziers)** — briefed (`docs/plans/pen-brush-tools.md`,
-  combined with the (shipped) brush tool brief). Photoshop grammar: click =
+- **Pen tool (⚓ béziers) — shipped; interaction completion 2026-09-09.**
+  Design: `docs/plans/pen-brush-tools.md` (combined with the shipped brush
+  tool brief). Photoshop grammar: click =
   corner anchor, click-drag = smooth anchor with symmetric arms, rubber-band
   previews the next segment, Option-drag breaks arm symmetry, click-first-
   anchor closes (→ `filled=True` = instant occluder / region input; visible

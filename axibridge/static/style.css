@@ -296,12 +296,12 @@ main {
    Photoshop's arrangement, and for Photoshop's reason: the layer list is
    furniture, not a section of a scrolling page. It sits at the foot of the
    sidebar, keeps its own height, and the tab body above it is what flexes —
-   so picking a different layer never costs a scroll past Generate and Import.
+   so the list remains available while Generate and Import scroll above it.
    Only the SELECTION lives here; a layer's settings stay in Compose. */
 #layers-dock {
   position: relative; flex: none;
   display: flex; flex-direction: column; min-height: 0;
-  height: var(--layers-dock-h, 160px);
+  height: var(--layers-dock-h, 210px);
   border-top: 1px solid var(--bench-edge);
   background: var(--bench);
   padding: 0 var(--space-4) var(--space-2);
@@ -349,15 +349,13 @@ main {
 #tab-compose .row select { min-width:0; max-width:100%; }
 #gen-fields { margin-top:var(--space-3); }
 #gen-fields > summary { color:var(--ink-soft); }
-#selected-source:empty { display:none; }
-#selected-source #gen-panel { border-left:2px solid var(--live); padding-left:var(--space-3); margin:var(--space-2) 0 var(--space-4); }
-#selected-source #gen-panel > h2 { font-size:var(--type-label); }
 #gen-latch { max-width:100%; }
-#layers-dock { height:var(--layers-dock-h,160px); }
+#layers-dock { height:var(--layers-dock-h,210px); }
 #layers-dock-title { cursor:default; letter-spacing:0; }
 #layers-dock-title::before { display:none; }
 #layers-dock-title::after { display:none; }
 #layers-dock-expand { margin-left:auto; min-height:var(--compact-h); padding:0 var(--space-2); font-size:var(--type-note); }
+#layers-toolbar { flex: none; margin-bottom: var(--space-2); }
 #layers-dock-body > .hint { font-size:var(--type-note); }
 
 /* ---- the bed (the persistent centre workspace) ---- */

@@ -1056,6 +1056,34 @@ def test_the_layer_list_belongs_to_the_compose_tab(ui):
     assert not ui.errors
 
 
+def test_layer_toolbar_and_generator_position(ui):
+    """Creating/selecting layers keeps source controls above assets and detail;
+    dock actions create/select copies and blank layers, with normal undo."""
+    ui.select_option("#gen-select", "polygon")
+    ui.click("#btn-generate")
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 1")
+    select_layer(ui)
+    generator = ui.locator("#gen-panel").bounding_box()
+    detail = ui.locator("#layer-detail-panel").bounding_box()
+    assert generator["y"] < detail["y"], "selection must not push generators below detail"
+    assert ui.locator("#layers-dock").bounding_box()["height"] >= 210
+    original = _get(f"{ui.base}/api/state")["project"]["layers"][0]["id"]
+    ui.click("#layers-duplicate")
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 2")
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row.selected').length === 1")
+    ui.wait_for_function("original => document.querySelector('#layer-list .layer-row.selected') && document.querySelector('#layer-list .layer-row.selected').dataset.layerId !== original", arg=original)
+    assert ui.locator("#layer-list .layer-row.selected").get_attribute("data-layer-id") != original
+    ui.click("#layers-new")
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 3")
+    state = _get(f"{ui.base}/api/state")
+    assert state["project"]["layers"][-1]["source"]["generator"] in {"drawing", "shape"}
+    ui.keyboard.press("Meta+z")
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 2")
+    ui.keyboard.press("Meta+z")
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 1")
+    assert not ui.errors
+
+
 def test_the_layers_dock_remembers_how_you_left_it(ui):
     """Expanded-list state is a per-machine preference; compact never hides."""
     add_layer(ui, "polygon", {"sides": 4, "radius": 20})
