@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-10-05
 machine: mac+pi
-summary: Territory02 studies and a radical bulb/corner takeover probe are ready in the isolated worktree; Ian's aesthetic direction and convergence remain open.
+summary: Territory02 course-bound fill probes now accompany the bulb/corner curves; whole-sheet coherence and convergence remain open.
 next:
-  - "Ian: inspect tools/territory02/takeover/index.html and the follow-up report; respond to the bulb/corner probe and convergence strategies"
+  - "Ian: inspect tools/territory02/takeover/fill/index.html and the fill report; respond to the alternatives and suggested coherence tests"
   - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
   - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
@@ -16,6 +16,16 @@ handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Course-bound fills, 5 October:** Ian found stronger curve character but less
+coherence and pointed out the untouched fills. Two physical constructions now
+bind material between actual rewritten courses, alongside curves-alone and
+ordinary filled Territory. The [comparison](tools/territory02/takeover/fill/index.html)
+and [report](docs/reviews/territory02-fill-2026-10-05.md) retain gains and losses:
+local binding improves some cases; reliable whole-sheet coherence remains open.
+Frozen source preceded four fresh seeds. Eighty geometry cases and 160
+in-memory viewer images passed mechanical checks. No convergence or production
+integration selected; paper and actual in-app file navigation remain unverified.
 
 **Territory02 study, 5 October:** Three independent Sol makers completed three
 rounds of curve experiments, including tighter turns and unequal Bézier handles.

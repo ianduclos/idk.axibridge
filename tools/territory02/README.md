@@ -58,3 +58,11 @@ bends, compresses incoming handles and allows genuine tangent breaks. This does
 not integrate the three makers or change production. Its failed trials, current
 frozen source, fresh four-seed population and limits are in `takeover/NOTES.md`;
 the follow-up report is `../../docs/reviews/territory02-takeover-2026-10-05.md`.
+
+Ian then found the curves less coherent and the fills unexplored. The separate
+`takeover/fill/index.html` compares shared curved bands and hatched pockets
+against identical bare takeover curves and ordinary filled Territory. Fresh
+113/179/233/293 follow a fill-source freeze. Whole-sheet coherence remains
+mixed; no convergence selected. Construction and verification limits are in
+`takeover/fill/NOTES.md`, with the report at
+`../../docs/reviews/territory02-fill-2026-10-05.md`.

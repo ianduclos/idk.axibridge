@@ -1,5 +1,9 @@
 # Territory02 takeover probe
 
+The later [course-bound fill study](fill/index.html) responds to Ian's concern
+that stronger curves were less coherent and fills remained untouched. Its two
+constructions retain these curves; findings and limits are in [fill notes](fill/NOTES.md).
+
 A screen experiment after the independent three-maker study. Ian asked for a
 radical new curve regime: tighter stylized bends, more intricate passages, and
 permission to modify Territory's courses. His sketch and paintings are visual

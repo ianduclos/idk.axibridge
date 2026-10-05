@@ -1,0 +1,22 @@
+{
+  "files": {
+    "bind-fill.cjs": "974a414510fc5dc85487ee2266b701230d3701da203d59599bc54170fb0a0231",
+    "render.cjs": "aa78d0a82e58b3c8b81ca1a0ffe2836314714fff1b2d12e3803d639084f3079e"
+  },
+  "curveSha256": "f388f8afbd2d151e9a61578452fcbdcc5f2083e0936a3ab1fff5001a30872288",
+  "developmentSeeds": [
+    5,
+    13,
+    18,
+    24,
+    47,
+    82
+  ],
+  "freshHoldoutSeeds": [
+    113,
+    179,
+    233,
+    293
+  ],
+  "note": "Fill source frozen before first fill rendering/inspection of fresh holdouts. Curve source fixed across bare/bands/pockets and both densities."
+}

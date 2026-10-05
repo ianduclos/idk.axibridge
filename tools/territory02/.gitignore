@@ -11,3 +11,5 @@ evidence/**/*.html
 evidence/**/*.svg
 takeover/evidence/**/*.svg
 takeover/evidence/**/*.html
+takeover/fill/evidence/**/*.svg
+takeover/fill/evidence/**/*.html
