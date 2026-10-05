@@ -17,9 +17,11 @@ handoff_for: Codex
 
 # idk.axibridge — status
 
-**Report format:** Ian prefers HTML. All sixteen Territory02 reports and
+**Report format:** Ian prefers HTML. The Territory02 report history and
 independent critiques are available through the
 [HTML report index](docs/reviews/territory02-reports.html); galleries link to HTML.
+
+**Brainstorm, 5 October:** [A multidimensional exploration map](docs/reviews/territory02-brainstorm-2026-10-05.html) now separates curve character, connectivity, line roles, material, space, overlap, history and authorship. Six possible probes and combinations remain proposals; no further generator implementation or convergence selected.
 
 **Scaffold replacement, 5 October:** Ian rejected coexistence as barely changed,
 still starry and repetitive. [New constructions](tools/territory02/takeover/rupture/index.html)

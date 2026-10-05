@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Territory02 — a multidimensional brainstorm</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/takeover/rupture/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Study report</div><article><h1>Territory02 — a multidimensional brainstorm</h1><details><summary>On this page</summary><ol class="toc"><li><a href="#1-what-the-evidence-supports-and-what-it-does-not">1. What the evidence supports — and what it does not</a></li><li><a href="#2-ten-dimensions-we-have-been-conflating">2. Ten dimensions we have been conflating</a></li><li><a href="#3-tighter-contains-several-different-requests">3. “Tighter” contains several different requests</a></li><li><a href="#4-repetition-coherence-and-variety-need-separate-treatment">4. Repetition, coherence and variety need separate treatment</a></li><li><a href="#5-six-experiments-that-cross-several-dimensions">5. Six experiments that cross several dimensions</a></li><li><a href="#6-some-combinations-worth-arguing-about">6. Some combinations worth arguing about</a></li><li><a href="#7-change-the-agent-loop-as-well-as-the-generator">7. Change the agent loop as well as the generator</a></li><li><a href="#8-a-second-eye-challenges-the-diagnosis">8. A second eye challenges the diagnosis</a></li><li><a href="#9-my-present-position">9. My present position</a></li></ol></details>
+<p>5 October 2026. Proposals for discussion, not a new generator specification.
+No aesthetic direction, convergence or implementation is selected here.</p>
+<p>The opportunity is larger than making more curve shapes. A drawing can change
+through its curves, connectivity, material, empty spaces, scale, overlaps,
+history and the decisions made while looking at it. Our recent experiments
+changed a few of these while leaving the others on repeat.</p>
+<p>My current hunch: <strong>we should explore different ways for a drawing to develop,
+as well as different marks it can contain.</strong> That is a hypothesis, not a reason
+to abandon the user&#39;s direct request for tighter, more stylized curves.</p>
+<h2 id="1-what-the-evidence-supports-and-what-it-does-not">1. What the evidence supports — and what it does not</h2>
+<p>Ian&#39;s constraints are clear: thin lines; more character in tightening, bulbs and
+corners; intricate rough material with a convincing physical character;
+occasional smoothness; substantial departures; no literal tracing of his
+sketches; no recurring stock stars; no premature convergence. He liked the
+rough three-material direction and rejected the later replacements as boring.
+These preferences do not establish a desired amount of blank paper, a permanent
+ban on repetition, or a requirement that every part be locally connected.</p>
+<p>In the earlier material studies, long light routes and coarse banks have unequal
+authority. A bank can interrupt following a line; the space between banks can
+become a route of its own. The drawings also repeat obvious devices. We need not
+choose between accepting all their habits and discarding their physical grain.</p>
+<figure><a href="../../tools/territory02/takeover/material/evidence/F-587-close.png" aria-label="Open drawing at full size"><img src="../../tools/territory02/takeover/material/evidence/F-587-close.png" alt="Earlier pressure detail, seed 587. Intersections, grain and thin passages share a crowded region." loading="lazy"></a><figcaption>Earlier pressure detail, seed 587. Intersections, grain and thin passages share a crowded region. · Select to view full size</figcaption></figure>
+<p>The new open constructions are visibly different but often repeat a relationship:
+a faint route carries a little comb at a bend. The body trial sometimes offers
+more, especially where grain directions overlap. Those exceptions matter, but
+do not establish that the new population is more compelling. Likewise, the
+older material&#39;s attraction may partly depend on density. We have not isolated
+that from its other properties.</p>
+<figure><a href="../../tools/territory02/takeover/rupture/evidence/T-1277-close.png" aria-label="Open drawing at full size"><img src="../../tools/territory02/takeover/rupture/evidence/T-1277-close.png" alt="New body detail, seed 1277. A useful local collision does not settle the whole drawing or the population." loading="lazy"></a><figcaption>New body detail, seed 1277. A useful local collision does not settle the whole drawing or the population. · Select to view full size</figcaption></figure>
+<h2 id="2-ten-dimensions-we-have-been-conflating">2. Ten dimensions we have been conflating</h2>
+<p>These are axes to reason with, not ten new sliders or ten compulsory virtues.
+Some should remain stable while others change. Changing everything at once
+makes another random generator; fixing everything makes another narrow style.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr>
+<th>Handle</th>
+<th>Dimension</th>
+<th>Different possibilities</th>
+<th>A concrete question</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td><strong>Curvature and gesture</strong></td>
+<td>Long acceleration into a tiny turn; swollen outer curve with a pinched inner return; nearly straight span into a blunt corner; a confident curve abruptly abandoned.</td>
+<td>Where does the bend concentrate, and what does that change elsewhere along the line?</td>
+</tr>
+<tr>
+<td>B</td>
+<td><strong>Connectivity</strong></td>
+<td>Open strands; enclosed pockets; a route that changes partners at a crossing; shared boundaries; one line splitting into several and later leaving by another route.</td>
+<td>Are we changing the drawing&#39;s connections, or merely bending the same connections?</td>
+</tr>
+<tr>
+<td>C</td>
+<td><strong>The role of a line</strong></td>
+<td>Free gesture; edge of a mass; interior grain; seam; an apparent continuation across a gap. A single line could acquire different roles.</td>
+<td>Can following a line change what we think we are following?</td>
+</tr>
+<tr>
+<td>D</td>
+<td><strong>Material behaviour</strong></td>
+<td>Grain that accumulates, scrapes away, crosses itself, compacts, leaks beyond a boundary or survives as residue. Smooth and rough need not be separate fixed layers.</td>
+<td>Does a fill have an interior life, or is it the same contour repeated sideways?</td>
+</tr>
+<tr>
+<td>E</td>
+<td><strong>Space and scale</strong></td>
+<td>Large compressed encounter; small dense knot beside a huge plain passage; narrow channel opening into a chamber; activity partly beyond the frame.</td>
+<td>Does the empty space have a particular shape, and are several scales doing different work?</td>
+</tr>
+<tr>
+<td>F</td>
+<td><strong>Relationships across the sheet</strong></td>
+<td>Local contact; a near-miss; distant repetition with one changed property; opposed directions; shared omission; several independent objects.</td>
+<td>Must these parts touch to matter to each other?</td>
+</tr>
+<tr>
+<td>G</td>
+<td><strong>Overlap and depth</strong></td>
+<td>Visible crossing; interrupted crossing; one mass swallowing a line; a line appearing to continue behind material; flat coexistence with no depth cue.</td>
+<td>What would hiding part of a route let the viewer infer?</td>
+</tr>
+<tr>
+<td>H</td>
+<td><strong>History</strong></td>
+<td>One fluent pass; accumulated revisions; erased prior routes; an answer to an older state; interruption followed by an incomplete repair.</td>
+<td>Could the drawing retain evidence of a decision that changed?</td>
+</tr>
+<tr>
+<td>I</td>
+<td><strong>Recognition and ambiguity</strong></td>
+<td>Almost a letter, joint, tool, body, map or folded sheet, then a passage that prevents the reading from settling. Fully nonfigurative cases remain valid.</td>
+<td>Does a partial association give us something to follow without becoming a stock icon?</td>
+</tr>
+<tr>
+<td>J</td>
+<td><strong>Authorship and selection</strong></td>
+<td>One generator finishing a sheet; an agent editing a particular result; human-selected fragments; several incompatible continuations from one state.</td>
+<td>Is the agent choosing what this drawing needs, or merely choosing parameters for its next sample?</td>
+</tr>
+</tbody></table></div>
+<p>The reference paintings also open a <strong>colour and value</strong> question. Large colour
+areas can assign unequal authority or conceal crossings. Translating that into
+plotter work might use a second pen, paper colour, or packed thin strokes. None
+is required for the current monochrome investigation. Colour should be tested
+for what it changes structurally, rather than added as compensation for weak
+geometry. Thin individual lines can coexist with locally dark accumulations.</p>
+<h2 id="3-tighter-contains-several-different-requests">3. “Tighter” contains several different requests</h2>
+<p>We should stop treating it as one curvature multiplier.</p>
+<ol>
+<li><strong>A smaller turning radius:</strong> the path really reverses within a shorter distance.</li>
+<li><strong>A tighter gap:</strong> two passages approach closely; neither needs extreme curvature.</li>
+<li><strong>A squeezed neck:</strong> a bulb has a narrow entry or exit, with unequal sides.</li>
+<li><strong>Concentrated change:</strong> most of a sweep is calm; its direction changes abruptly
+in a short section, possibly at an actual corner.</li>
+<li><strong>A tighter relationship:</strong> several marks become harder to separate perceptually,
+through shared edges, overlapping runs or selective occlusion.</li>
+</ol>
+<p>These can disagree. A large generous bulb with one pinched exit can feel taut;
+a page of small loops can feel loose and mannered. A hard corner has more force
+when its neighbouring curves prepare a different expectation. Intricacy can come
+from a route changing roles or partners, not only from adding smaller bends.</p>
+<h2 id="4-repetition-coherence-and-variety-need-separate-treatment">4. Repetition, coherence and variety need separate treatment</h2>
+<p>Repetition is not the whole problem. The earlier grain gains much of its material
+character from repeated strokes. What fails is predictability at the wrong level:
+the next bend receives the same bundle, the next seed gets the same relationship,
+and the next intervention politely preserves the rest.</p>
+<p>A stronger family might repeat the <em>physical behaviour</em> of a mark while varying
+what the marks collectively become. Or repeat one strange shape but let its
+meaning change when cropped, interrupted or placed at another scale. Conversely,
+a sheet containing ten unrelated motifs can have broad vocabulary and little
+worth following.</p>
+<p>Coherence could come from shared direction, a dominant mass, a recurring interval,
+one restricted material, a shaped void, or an accumulated history. It need not
+come from uniform smoothness or making everything respond to nearby ink. We
+should be able to name several candidate sources of coherence, then test whether
+they are visible. A description alone does not establish them.</p>
+<h2 id="5-six-experiments-that-cross-several-dimensions">5. Six experiments that cross several dimensions</h2>
+<p>These are competing probes. They are not six filters to stack onto every seed.</p>
+<h3>P1 — Let material establish the body</h3>
+<p><strong>Combines C, D, E and G.</strong> Begin with a substantial irregular mass or two overlapping
+masses. Remove and reopen parts of them; retain selected boundary stretches as
+smooth curves. A line can enter as an independent sweep, disappear, then seem
+to emerge as an edge. Grain may continue across the supposed edge elsewhere.</p>
+<p>Imagine a coarse field whose missing interior becomes a bulb with a pinched
+opening. The bulb is made partly by what is absent. This reverses the recent
+habit of making a clean outline and placing tufts along it.</p>
+<p><strong>Risk:</strong> a textured blob with a decorative hole. <strong>Evidence to seek:</strong> moving
+or removing the cavity changes how several surviving passages are read. Inspect
+the uncarved version beside it; do not praise the carving merely because it occurred.</p>
+<h3>P2 — Change the partners, then redraw the joins</h3>
+<p><strong>Combines A, B and C.</strong> Start with actual curves from a promising drawing. Cut
+selected intervals and reconnect different continuations. Some stretches become
+shared boundaries; others remain unresolved. Redraw enough of the joining path
+to create a sharp return, bulb or long unequal sweep. There is no requirement to
+preserve the old endpoints, number of courses or route identities.</p>
+<p>A broad curve might enter a rough bundle and leave through a strand that previously
+belonged to another shape. The resulting enclosure could be impossible to get
+from merely displacing the original curve.</p>
+<p><strong>Risk:</strong> clever knots or spaghetti. <strong>Evidence to seek:</strong> compare the same marks
+with original and exchanged continuations. Connectivity must make a perceptible
+difference; the operation&#39;s name is irrelevant.</p>
+<h3>P3 — Give two incompatible constructions unequal authority</h3>
+<p><strong>Combines D, E, F and G.</strong> One construction can be broad, slow and smooth; another
+compressed, grainy and angular. They need not share local rules or fill each
+other. Test crossing, near-missing and partial concealment, with unequal scales.
+A small contact might organize a much larger interval elsewhere.</p>
+<p>This could be a large interrupted enclosure partly displaced from a dense rough
+body, with one shared edge and several disagreements. The shared edge is one
+possibility, not a mandatory compositional trick.</p>
+<p><strong>Risk:</strong> two unrelated layers or tasteful collage. <strong>Evidence to seek:</strong> translate
+one construction a substantial distance while leaving it otherwise unchanged.
+Does the original relation lose anything specific? A successful near-miss is as
+legitimate as a physically simulated contact.</p>
+<h3>P4 — Develop a drawing through revision</h3>
+<p><strong>Combines B, G, H and J.</strong> Let a first pass make a forceful proposal. A second pass
+can remove, overwrite, crop, reroute or answer an earlier state. Leave enough of
+the abandoned proposal to create uncertain continuities. Sometimes stop before
+repairing the interruption.</p>
+<p>This gives the smooth passages a possible temporal role: a later deliberate
+sweep can contradict rough earlier work, or rough material can interrupt an
+overconfident smooth construction. Neither order should become permanent.</p>
+<p><strong>Risk:</strong> fake distressed surfaces. <strong>Evidence to seek:</strong> inspect the sequence,
+including the stage before the final pass. The final image may be worse. An
+interesting history is not proof of an interesting drawing.</p>
+<h3>P5 — Compose with fragments that retain their internal character</h3>
+<p><strong>Combines E, F, H and J.</strong> Take irregular fragments from the stronger material
+studies, including awkward cuts and incomplete edges. Change their scale,
+orientation, overlap and neighbours, while preserving their fine structure as
+much as the physical medium allows. Allow a new curve only where it changes the
+reading of the assembly; empty gaps can remain unbridged.</p>
+<p>This treats the bench as a source of material for authorship. It may be a better
+route to good drawings than insisting each generator produce a complete sheet.</p>
+<p><strong>Risk:</strong> a reusable sticker library with recurring silhouettes. <strong>Evidence to
+seek:</strong> use the same fragments in genuinely different assemblies; compare those
+with replacing all fragments while keeping the arrangement. This separates the
+interest of the parts from the interest of their relationships.</p>
+<h3>P6 — Study curve character under several kinds of constraint</h3>
+<p><strong>Combines A, E and I.</strong> Keep the direct curve request alive. Take one long route
+and redraw it several ways: a swollen shoulder entering a slit; an off-centre
+return; a curve almost flattened by an adjacent boundary; an unresolved sharp
+turn. Work with both the curve and the shape of the neighbouring gap.</p>
+<p>The same curve should then be seen alone, against a coarse body, and partly
+hidden. The curve that wins in isolation may be too self-contained in a drawing.</p>
+<p><strong>Risk:</strong> another signature hook. <strong>Evidence to seek:</strong> vary where the concentration
+occurs and what the curve is asked to meet. Do not put a bulb/corner quota into
+every output. This probe is a component study, not a full artistic solution.</p>
+<h2 id="6-some-combinations-worth-arguing-about">6. Some combinations worth arguing about</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr>
+<th>Combination</th>
+<th>Why it might matter</th>
+<th>What could make it dull</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>P1 + P6</td>
+<td>A carved material body sets a difficult negative space; a deliberately redrawn curve can intensify it.</td>
+<td>Smooth outline tidies the material into a logo.</td>
+</tr>
+<tr>
+<td>P2 + P4</td>
+<td>Reconnecting routes leaves residues of the previous drawing; topology and history both change.</td>
+<td>Every image becomes a knot with ghost lines.</td>
+</tr>
+<tr>
+<td>P3 + P5</td>
+<td>Independent rough fragments and a smooth construction can relate at sheet scale without sharing a generator.</td>
+<td>Composition becomes a fixed large-shape/small-accent recipe.</td>
+</tr>
+<tr>
+<td>P4 + P6</td>
+<td>A precise later curve contradicts an earlier drawing while retaining some evidence of it.</td>
+<td>The same elegant flourish is always added at the end.</td>
+</tr>
+</tbody></table></div>
+<p>These combinations stay hypothetical until their separate evidence is useful.
+The multidimensional space is a way to keep options open, not a justification
+for converging all mechanisms.</p>
+<h2 id="7-change-the-agent-loop-as-well-as-the-generator">7. Change the agent loop as well as the generator</h2>
+<p>The previous loop encouraged small named mechanisms, strict preservation and
+long explanations of local effects. Independent reviewers could find a passage
+to discuss even when the overall result did not meet Ian&#39;s request. Our reports
+sometimes gave that interpretability too much credit.</p>
+<p>A different loop could work on <strong>particular drawings</strong>, not immediately on reusable
+styles. Give makers the same few starting states with permission to transform
+most of the sheet. Give each a different restriction, not a required motif:
+one begins with material; one changes connections and omissions; one composes
+independent constructions. They can stop, erase or abandon an intervention.
+Only after there are compelling examples should we ask what can generalize.</p>
+<p>Keep two kinds of experiment distinct. Free proposals allow several dimensions
+to change together and test artistic possibility. Controlled edits answer a
+narrow causal question. A controlled edit can be excellent evidence and a boring
+drawing. A compelling free proposal can be worth keeping even when we cannot
+attribute its interest to one operation yet.</p>
+<p>For the review:</p>
+<ol>
+<li>Show whole sheets before revealing mechanisms. Let a reviewer say none merits
+development; do not require a positive feature for each family.</li>
+<li>Include an untouched earlier drawing and a previous weak result anonymously.
+This can expose whether a new title is doing the persuasive work.</li>
+<li>Then inspect close views, line/material omissions and histories. A crop must
+not silently become evidence for the whole sheet.</li>
+<li>Ask which relationships recur across the population, not just whether the
+silhouettes differ. Leave uncertain judgements uncertain.</li>
+<li>Keep the thin physical stroke. Compare at enough resolution to see it, and
+separately assess whether accumulated ink has the intended weight on paper.</li>
+<li>Show Ian a small contact sheet before investing in a full gallery and report.
+Do not turn every new probe into another supposedly finished direction.</li>
+</ol>
+<h3>What the representation would need to allow</h3>
+<p>Each probe implies different editable state. Material-first work benefits from
+regions, holes and boundaries whose identities survive an edit. Reconnecting
+paths needs explicit connections and gaps, so changing partners is possible
+without hiding the operation inside a deformation. Independent composition
+needs movable groups that retain their internal grain. Revision needs a sequence
+with branches and partially retained earlier states.</p>
+<p>Those are alternative small representations to test. Building a universal engine
+for all of them now would be premature. At present, an array of finished strokes
+makes it easy to move coordinates and difficult to make decisions about what a
+boundary, opening or continuation is. Our approximate ownership heuristics are
+one symptom of that limit.</p>
+<p>The agent could also act first as an editor of actual geometry: inspect a sheet,
+choose a region, propose several concrete edits, and compare their consequences.
+Human choices would build an archive of preferred relationships and useful
+failures. General rules could be extracted from that archive later. More agents
+sampling the same narrow constructor will not by itself broaden what that
+constructor can express.</p>
+<h2 id="8-a-second-eye-challenges-the-diagnosis">8. A second eye challenges the diagnosis</h2>
+<p>A bounded Sol reader inspected the earlier pressure/unravelling populations,
+the 587 material close comparison, new open development sheets and new body
+fresh sheets. It knew the context; this was not a blind review or an independent
+brainstorm design. It challenged three assumptions rather than inventing a
+replacement instrument.</p>
+<p>It read pressure/unravelling 5 through changing authority among broad loops,
+hairlike fields and brittle crossings. It also found useful nonlocal relations
+in new open 24 and body 1213: a compressed dark elbow can affect how a distant
+pale contour and their intervening blank are followed. It found opening 587
+and parts of new open 47 weaker, where accents decorate a gap without changing
+much else. These are readings of appearance, not proof of a causal mechanism.</p>
+<p>This qualifies my previous claim that the new work is boring. I still find its
+population too restricted, but I should not turn Ian&#39;s rejection into a rule
+that sparse or cleaner work is inherently inert. The reader&#39;s counterexamples
+support testing relationships across space as a separate dimension. They do
+not override Ian&#39;s judgement or promote a new favourite.</p>
+<h2 id="9-my-present-position">9. My present position</h2>
+<p>I would first argue for <strong>P1, P2 and P3 as genuinely different starting questions</strong>:
+material establishes form; connectivity changes form; independent constructions
+create relationships across space. P4 concerns how any of them develops over
+time. P5 questions whether a complete-sheet generator is the right instrument.
+P6 protects the original demand for stronger curves from getting lost in theory.</p>
+<p>That is a proposed exploration map, not a selection. The unresolved priorities
+include how much density to retain, how strongly smooth passages should dominate,
+and whether the next output should be a complete sheet or useful material for
+further composition. Those choices belong in the discussion after this brainstorm.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>
