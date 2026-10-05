@@ -1,20 +1,36 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-30
+updated: 2026-10-05
 machine: mac+pi
-summary: Territory and the stable Compose sidebar are integrated on main; native and paper acceptance remain pending.
+summary: Territory and Compose are integrated; the separate Mosca flowing-composition study has Ian's positive screen feedback, with native and paper acceptance still pending.
 next:
-  - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
-  - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
-  - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
-  - "After the active plot finishes, activate and check mandatory simplification and native timing"
-  - "Sync the idkpi clone with main once the Pi is back"
-  - "Continue remaining native and paper acceptance entries in HANDOFF.md"
+  - Make further pieces by importing flowing SVGs into Compose; experiment entry points are in docs/MOSCA-TERRITORY-STUDIES.md
+  - Continue the brain/page-feedback composition instrument from the isolated lab, preserving the earlier flowing line
+  - Audit the remaining environment changes from the scratch-run dependency refresh
+  - Complete Territory, Mosca, Linedraw and plot-optimization native and paper checks in HANDOFF.md
+  - Sync the idkpi clone with main once the Pi is back
 handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Mosca × Territory, 5 October:** six compositions and seven original flowing
+source drawings are preserved in an isolated Codex lab, with SVG/PNG downloads,
+a six-page vector portfolio and visible source layers. Ian called this “good
+progress.” The page arrangements are authored using recorded fixed-weight model
+outputs; the brain has not encountered the new composites. Astra reviewed neutral
+contacts and close views. [Making more, sources and limits](docs/MOSCA-TERRITORY-STUDIES.md).
+The old Mosca K-series bench now has Flowing and Fine bundle options (mosca-draw
+commit `7d465dc`); the native AxiBridge Mosca bench is unchanged. No hardware used.
+
+Wrap-up verification: **1,698 passed, one skipped** (307 s); NumPy and Starlette
+deprecation warnings remain. The final artifact passed geometry,
+source-hash, export, PDF and desktop/mobile checks. Mosca: 10 Node checks and
+three snapshot tests passed. An earlier project-aware `uv run` changed this
+repository's environment; NumPy compatibility was repaired, but exact original
+dependency versions cannot be recovered and the depth-pro NumPy metadata conflict
+remains. Details and audit follow-up are in the guide and HANDOFF.md.
 
 **Integration checkpoint, 30 September:** `main` now contains Territory and the
 stable Compose sidebar, including the Gallery accessibility correction. Full

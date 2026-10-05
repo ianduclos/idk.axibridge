@@ -15,6 +15,25 @@ This file tracks open work and acceptance still pending. Shipped implementation
 notes remain beside their follow-ups; see `git log` and `STATUS.md` for delivery
 history.
 
+## Mosca × Territory composition instrument (2026-10-05)
+
+Ian wants “compositions not just doodles,” the earlier flowing line before fine
+bundle, and brain decisions that visibly matter rather than subtle parameter
+changes indistinguishable from randomness. Six authored pieces were good progress
+on screen. [Saved lab and how to make more](docs/MOSCA-TERRITORY-STUDIES.md).
+
+Shipped in mosca-draw: optional Flowing and Fine bundle treatments of old bench
+paths. Preserved outside both applications: exact earlier flowing drawings,
+matched page-contact/replay experiments, six source-traceable compositions and
+exports. These composite layouts are authored, not newly composed by the brain.
+
+Deferred: a direct composition UI and feeding the current composite back to the
+brain. The latest round tested whether the actual flowing material could carry
+pieces before building another instrument. New experiments must show meaningful
+page-level consequences and retain replay/reactive controls; no intelligence or
+learning claim follows from different paths. Consult Astra periodically as Ian
+requested, with neutral visual review and the lead retaining artistic judgment.
+
 ## Compose layout acceptance (2026-09-30)
 
 Generators retain a fixed first position; import/assets and Gallery follow,

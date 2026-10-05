@@ -1,8 +1,36 @@
 ---
 project: idk.axibridge
-updated: 2026-09-30
-entries: 24
+updated: 2026-10-05
+entries: 26
 ---
+
+### Mosca × Territory composition instrument — opened 2026-10-05, owner: Codex
+
+- done: Flowing and Fine bundle shipped in the original Mosca K-series bench;
+  isolated page-feedback/replay studies and six authored compositions are saved.
+  Ian judged the piece round good progress. Seven original flowing drawings,
+  provenance, prior arrangements, Astra critique and SVG/PNG/PDF exports remain
+  inspectable. No production AxiBridge source or hardware changes in this study.
+- next: Continue from the preserved lab toward perceptible brain decisions about
+  the current composition. Keep the earlier flowing line central; new page
+  arrangements currently remain authored, and a direct recipe UI is unbuilt.
+- blockers: no technical blocker for making more authored pieces. Brain-led
+  composition remains an experiment, not established intelligence or learning.
+- context: [Guide, script entry points and evidence](docs/MOSCA-TERRITORY-STUDIES.md).
+
+### Environment audit after experiment dependency refresh — opened 2026-10-05, owner: Codex
+
+- done: An earlier `uv run` executed inside this checkout refreshed `.venv`.
+  NumPy 2.5.3 broke nine existing tests; returning to 2.2.6 restored the non-UI
+  suite. Other refreshed dependencies remain; no source workaround was made.
+  Full wrap-up result is in STATUS.md.
+- next: Compare against any trustworthy prior environment record before changing
+  more packages; resolve or explicitly bound depth-pro's declared NumPy <2
+  conflict. Use an isolated scratch cwd and `--no-project` for future uv studies.
+- blockers: the original complete package list was not captured, so exact
+  restoration cannot be claimed. depth-pro imports but model inference was not
+  rerun as part of this art study.
+- context: [Incident location and scope](docs/MOSCA-TERRITORY-STUDIES.md#environment-follow-up).
 
 ### Territory bench: native and paper acceptance — opened 2026-09-29, owner: ian
 
