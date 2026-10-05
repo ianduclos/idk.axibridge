@@ -1,0 +1,110 @@
+[
+  {
+    "recipe": "sparse",
+    "seed": 5,
+    "inkM": 1.37,
+    "strokes": 42,
+    "points": 2793,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 13,
+    "inkM": 1.43,
+    "strokes": 38,
+    "points": 2907,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 18,
+    "inkM": 1.34,
+    "strokes": 31,
+    "points": 2713,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 24,
+    "inkM": 1.17,
+    "strokes": 39,
+    "points": 2375,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 47,
+    "inkM": 1.16,
+    "strokes": 47,
+    "points": 2386,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 82,
+    "inkM": 1.59,
+    "strokes": 36,
+    "points": 3214,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "full",
+    "seed": 5,
+    "inkM": 29.97,
+    "strokes": 787,
+    "points": 60737,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "full",
+    "seed": 13,
+    "inkM": 16.71,
+    "strokes": 424,
+    "points": 33866,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "full",
+    "seed": 18,
+    "inkM": 28.24,
+    "strokes": 700,
+    "points": 57171,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "full",
+    "seed": 24,
+    "inkM": 13.89,
+    "strokes": 384,
+    "points": 28170,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "full",
+    "seed": 47,
+    "inkM": 26.65,
+    "strokes": 729,
+    "points": 54022,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "full",
+    "seed": 82,
+    "inkM": 20.51,
+    "strokes": 478,
+    "points": 41503,
+    "finiteWithinBed": true,
+    "deterministic": true
+  }
+]

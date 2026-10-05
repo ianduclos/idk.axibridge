@@ -1,0 +1,66 @@
+[
+  {
+    "recipe": "sparse",
+    "seed": 5,
+    "inkM": 1.29,
+    "strokes": 43,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 13,
+    "inkM": 1.39,
+    "strokes": 38,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 18,
+    "inkM": 1.29,
+    "strokes": 31,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 24,
+    "inkM": 1.11,
+    "strokes": 39,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "full",
+    "seed": 5,
+    "inkM": 27.88,
+    "strokes": 722,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "full",
+    "seed": 13,
+    "inkM": 29.53,
+    "strokes": 694,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "full",
+    "seed": 18,
+    "inkM": 29.13,
+    "strokes": 711,
+    "finiteWithinBed": true,
+    "deterministic": true
+  },
+  {
+    "recipe": "full",
+    "seed": 24,
+    "inkM": 17.6,
+    "strokes": 435,
+    "finiteWithinBed": true,
+    "deterministic": true
+  }
+]

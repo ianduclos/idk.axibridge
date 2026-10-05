@@ -1,0 +1,338 @@
+[
+  {
+    "recipe": "sparse",
+    "seed": 5,
+    "mm": 1171,
+    "points": 2385,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "afterCross": [
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "recipe": "sparse",
+    "seed": 13,
+    "mm": 869,
+    "points": 1774,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1
+    ],
+    "afterCross": [
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1
+    ]
+  },
+  {
+    "recipe": "sparse",
+    "seed": 18,
+    "mm": 1444,
+    "points": 2929,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "afterCross": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  {
+    "recipe": "sparse",
+    "seed": 24,
+    "mm": 997,
+    "points": 2038,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      2,
+      0,
+      1,
+      1
+    ],
+    "afterCross": [
+      2,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "recipe": "sparse",
+    "seed": 47,
+    "mm": 1521,
+    "points": 3115,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "afterCross": [
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  {
+    "recipe": "sparse",
+    "seed": 82,
+    "mm": 1061,
+    "points": 2149,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      0,
+      2,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "afterCross": [
+      0,
+      2,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "recipe": "full",
+    "seed": 5,
+    "mm": 23447,
+    "points": 47531,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "afterCross": [
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "recipe": "full",
+    "seed": 13,
+    "mm": 23628,
+    "points": 47939,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1
+    ],
+    "afterCross": [
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1
+    ]
+  },
+  {
+    "recipe": "full",
+    "seed": 18,
+    "mm": 16214,
+    "points": 32838,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "afterCross": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  {
+    "recipe": "full",
+    "seed": 24,
+    "mm": 10421,
+    "points": 21227,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      2,
+      0,
+      1,
+      1
+    ],
+    "afterCross": [
+      2,
+      0,
+      1,
+      1
+    ]
+  },
+  {
+    "recipe": "full",
+    "seed": 47,
+    "mm": 21110,
+    "points": 42818,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "afterCross": [
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  {
+    "recipe": "full",
+    "seed": 82,
+    "mm": 25121,
+    "points": 50842,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true,
+    "beforeCross": [
+      0,
+      2,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "afterCross": [
+      0,
+      2,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  }
+]

@@ -1,0 +1,57 @@
+{
+  "title": "",
+  "cols": 2,
+  "w": 0.1,
+  "prm": {
+    "loose": 0.5,
+    "yieldP": 0.5,
+    "wander": 1,
+    "reach": 15,
+    "spread": 0.7,
+    "eps": 0.03,
+    "borders": true,
+    "outer": true,
+    "voids": true,
+    "interior": false,
+    "disregard": 0.15,
+    "hyst": 25,
+    "render": "meander",
+    "complexity": 0.5,
+    "drift": 0.6,
+    "band": 1,
+    "chaos": 0.5,
+    "accents": 0.5,
+    "bridges": 0.5,
+    "history": 0.6,
+    "density": 0,
+    "continue": 1,
+    "cover": 0.45,
+    "planes": 0.15,
+    "mutate": 1,
+    "slash": 1,
+    "surprise": 1,
+    "ink": 60
+  },
+  "cells": [
+    {
+      "id": "5",
+      "random": 5,
+      "order": "reversed"
+    },
+    {
+      "id": "13",
+      "random": 13,
+      "order": "reversed"
+    },
+    {
+      "id": "18",
+      "random": 18,
+      "order": "reversed"
+    },
+    {
+      "id": "24",
+      "random": 24,
+      "order": "reversed"
+    }
+  ]
+}

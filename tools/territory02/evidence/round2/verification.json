@@ -1,0 +1,386 @@
+[
+  {
+    "name": "baseline",
+    "mode": "sparse",
+    "seed": 5,
+    "points": 2470,
+    "strokes": 41,
+    "inkMm": 1211
+  },
+  {
+    "name": "baseline",
+    "mode": "sparse",
+    "seed": 13,
+    "points": 2742,
+    "strokes": 37,
+    "inkMm": 1348
+  },
+  {
+    "name": "baseline",
+    "mode": "sparse",
+    "seed": 18,
+    "points": 2461,
+    "strokes": 30,
+    "inkMm": 1214
+  },
+  {
+    "name": "baseline",
+    "mode": "sparse",
+    "seed": 24,
+    "points": 2160,
+    "strokes": 38,
+    "inkMm": 1058
+  },
+  {
+    "name": "baseline",
+    "mode": "sparse",
+    "seed": 47,
+    "points": 2181,
+    "strokes": 46,
+    "inkMm": 1063
+  },
+  {
+    "name": "baseline",
+    "mode": "sparse",
+    "seed": 82,
+    "points": 2929,
+    "strokes": 35,
+    "inkMm": 1441
+  },
+  {
+    "name": "baseline",
+    "mode": "full",
+    "seed": 5,
+    "points": 66319,
+    "strokes": 899,
+    "inkMm": 32702
+  },
+  {
+    "name": "baseline",
+    "mode": "full",
+    "seed": 13,
+    "points": 46799,
+    "strokes": 547,
+    "inkMm": 23130
+  },
+  {
+    "name": "baseline",
+    "mode": "full",
+    "seed": 18,
+    "points": 54919,
+    "strokes": 744,
+    "inkMm": 27076
+  },
+  {
+    "name": "baseline",
+    "mode": "full",
+    "seed": 24,
+    "points": 24034,
+    "strokes": 332,
+    "inkMm": 11852
+  },
+  {
+    "name": "baseline",
+    "mode": "full",
+    "seed": 47,
+    "points": 47536,
+    "strokes": 650,
+    "inkMm": 23426
+  },
+  {
+    "name": "baseline",
+    "mode": "full",
+    "seed": 82,
+    "points": 63016,
+    "strokes": 777,
+    "inkMm": 31137
+  },
+  {
+    "name": "pace",
+    "mode": "sparse",
+    "seed": 5,
+    "points": 2385,
+    "strokes": 33,
+    "inkMm": 1171
+  },
+  {
+    "name": "pace",
+    "mode": "sparse",
+    "seed": 13,
+    "points": 1774,
+    "strokes": 31,
+    "inkMm": 869
+  },
+  {
+    "name": "pace",
+    "mode": "sparse",
+    "seed": 18,
+    "points": 2929,
+    "strokes": 33,
+    "inkMm": 1444
+  },
+  {
+    "name": "pace",
+    "mode": "sparse",
+    "seed": 24,
+    "points": 2038,
+    "strokes": 32,
+    "inkMm": 997
+  },
+  {
+    "name": "pace",
+    "mode": "sparse",
+    "seed": 47,
+    "points": 3115,
+    "strokes": 60,
+    "inkMm": 1521
+  },
+  {
+    "name": "pace",
+    "mode": "sparse",
+    "seed": 82,
+    "points": 2149,
+    "strokes": 24,
+    "inkMm": 1061
+  },
+  {
+    "name": "pace",
+    "mode": "full",
+    "seed": 5,
+    "points": 47531,
+    "strokes": 625,
+    "inkMm": 23447
+  },
+  {
+    "name": "pace",
+    "mode": "full",
+    "seed": 13,
+    "points": 47939,
+    "strokes": 670,
+    "inkMm": 23628
+  },
+  {
+    "name": "pace",
+    "mode": "full",
+    "seed": 18,
+    "points": 32838,
+    "strokes": 403,
+    "inkMm": 16214
+  },
+  {
+    "name": "pace",
+    "mode": "full",
+    "seed": 24,
+    "points": 21227,
+    "strokes": 335,
+    "inkMm": 10421
+  },
+  {
+    "name": "pace",
+    "mode": "full",
+    "seed": 47,
+    "points": 42818,
+    "strokes": 597,
+    "inkMm": 21110
+  },
+  {
+    "name": "pace",
+    "mode": "full",
+    "seed": 82,
+    "points": 50842,
+    "strokes": 614,
+    "inkMm": 25121
+  },
+  {
+    "name": "silhouette",
+    "mode": "sparse",
+    "seed": 5,
+    "points": 2453,
+    "strokes": 43,
+    "inkMm": 1196
+  },
+  {
+    "name": "silhouette",
+    "mode": "sparse",
+    "seed": 13,
+    "points": 2335,
+    "strokes": 37,
+    "inkMm": 1144
+  },
+  {
+    "name": "silhouette",
+    "mode": "sparse",
+    "seed": 18,
+    "points": 2162,
+    "strokes": 30,
+    "inkMm": 1061
+  },
+  {
+    "name": "silhouette",
+    "mode": "sparse",
+    "seed": 24,
+    "points": 2283,
+    "strokes": 46,
+    "inkMm": 1111
+  },
+  {
+    "name": "silhouette",
+    "mode": "sparse",
+    "seed": 47,
+    "points": 2331,
+    "strokes": 53,
+    "inkMm": 1130
+  },
+  {
+    "name": "silhouette",
+    "mode": "sparse",
+    "seed": 82,
+    "points": 2886,
+    "strokes": 41,
+    "inkMm": 1418
+  },
+  {
+    "name": "silhouette",
+    "mode": "full",
+    "seed": 5,
+    "points": 66829,
+    "strokes": 810,
+    "inkMm": 33014
+  },
+  {
+    "name": "silhouette",
+    "mode": "full",
+    "seed": 13,
+    "points": 30465,
+    "strokes": 407,
+    "inkMm": 15016
+  },
+  {
+    "name": "silhouette",
+    "mode": "full",
+    "seed": 18,
+    "points": 46913,
+    "strokes": 602,
+    "inkMm": 23144
+  },
+  {
+    "name": "silhouette",
+    "mode": "full",
+    "seed": 24,
+    "points": 32514,
+    "strokes": 412,
+    "inkMm": 16062
+  },
+  {
+    "name": "silhouette",
+    "mode": "full",
+    "seed": 47,
+    "points": 45302,
+    "strokes": 607,
+    "inkMm": 22338
+  },
+  {
+    "name": "silhouette",
+    "mode": "full",
+    "seed": 82,
+    "points": 52452,
+    "strokes": 666,
+    "inkMm": 25894
+  },
+  {
+    "name": "void",
+    "mode": "sparse",
+    "seed": 5,
+    "points": 2793,
+    "strokes": 42,
+    "inkMm": 1375
+  },
+  {
+    "name": "void",
+    "mode": "sparse",
+    "seed": 13,
+    "points": 2907,
+    "strokes": 38,
+    "inkMm": 1431
+  },
+  {
+    "name": "void",
+    "mode": "sparse",
+    "seed": 18,
+    "points": 2713,
+    "strokes": 31,
+    "inkMm": 1341
+  },
+  {
+    "name": "void",
+    "mode": "sparse",
+    "seed": 24,
+    "points": 2375,
+    "strokes": 39,
+    "inkMm": 1166
+  },
+  {
+    "name": "void",
+    "mode": "sparse",
+    "seed": 47,
+    "points": 2386,
+    "strokes": 47,
+    "inkMm": 1165
+  },
+  {
+    "name": "void",
+    "mode": "sparse",
+    "seed": 82,
+    "points": 3214,
+    "strokes": 36,
+    "inkMm": 1585
+  },
+  {
+    "name": "void",
+    "mode": "full",
+    "seed": 5,
+    "points": 60737,
+    "strokes": 787,
+    "inkMm": 29973
+  },
+  {
+    "name": "void",
+    "mode": "full",
+    "seed": 13,
+    "points": 33866,
+    "strokes": 424,
+    "inkMm": 16714
+  },
+  {
+    "name": "void",
+    "mode": "full",
+    "seed": 18,
+    "points": 57171,
+    "strokes": 700,
+    "inkMm": 28235
+  },
+  {
+    "name": "void",
+    "mode": "full",
+    "seed": 24,
+    "points": 28170,
+    "strokes": 384,
+    "inkMm": 13887
+  },
+  {
+    "name": "void",
+    "mode": "full",
+    "seed": 47,
+    "points": 54022,
+    "strokes": 729,
+    "inkMm": 26649
+  },
+  {
+    "name": "void",
+    "mode": "full",
+    "seed": 82,
+    "points": 41503,
+    "strokes": 478,
+    "inkMm": 20510
+  }
+]

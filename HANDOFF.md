@@ -1,8 +1,15 @@
 ---
 project: idk.axibridge
-updated: 2026-09-30
-entries: 24
+updated: 2026-10-05
+entries: 25
 ---
+
+### Territory02: direction after independent curve studies — opened 2026-10-05, owner: ian
+
+- done: Three separate Sol makers, three frozen rounds, thin 0.1 mm matched sparse/full populations, independent aesthetic reviews, comparison viewer and report. Third round tests explicit unequal Bézier controls and tighter selected returns. Mechanical geometry and viewer checks passed.
+- next: Ian inspects the [comparison](tools/territory02/index.html) and [report](docs/reviews/territory02-2026-10-05.md), then suggests a convergence direction. No strategy has been selected or implemented.
+- state: Isolated `codex/territory02` worktree; production, original prototype and main unchanged. Some historical event geometry deliberately disagrees with reshaped curves; those limitations must be resolved if a mechanism moves into production. All six seeds were available by the later rounds; no fresh generalization or paper/interaction acceptance claim.
+- context: `tools/territory02/README.md` documents reproduction. Neutral PNG evidence and source snapshots are retained; large SVG/HTML copies are reproducible and ignored. No push, merge, running app, hardware or Pi action.
 
 ### Territory bench: native and paper acceptance — opened 2026-09-29, owner: ian
 

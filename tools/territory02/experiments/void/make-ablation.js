@@ -1,0 +1,2 @@
+const fs=require('fs');const cfg=JSON.parse(fs.readFileSync('population-full.json'));cfg.cols=4;cfg.title='18 / 47: baseline, mask only, passage + mask, passage + mask + growth';cfg.cells=[];
+for(const seed of [18,47])for(const [name,prm]of [['base',{pocketLip:false,pocketMask:false}],['mask',{pocketLip:false}],['passage',{}],['growth',{pocketGrowth:true}]])cfg.cells.push({id:seed+' '+name,random:seed,order:'reversed',prm});fs.writeFileSync('round2-ablation.json',JSON.stringify(cfg,null,2));

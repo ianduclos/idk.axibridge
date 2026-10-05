@@ -1,0 +1,74 @@
+[
+  {
+    "recipe": "sparse",
+    "seed": 5,
+    "mm": 1171,
+    "points": 2385,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 13,
+    "mm": 869,
+    "points": 1774,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 18,
+    "mm": 1443,
+    "points": 2926,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 24,
+    "mm": 1098,
+    "points": 2241,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true
+  },
+  {
+    "recipe": "full",
+    "seed": 5,
+    "mm": 23447,
+    "points": 47531,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true
+  },
+  {
+    "recipe": "full",
+    "seed": 13,
+    "mm": 24928,
+    "points": 50549,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true
+  },
+  {
+    "recipe": "full",
+    "seed": 18,
+    "mm": 20133,
+    "points": 40790,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true
+  },
+  {
+    "recipe": "full",
+    "seed": 24,
+    "mm": 14029,
+    "points": 28465,
+    "deterministic": true,
+    "finite": true,
+    "withinBed": true
+  }
+]

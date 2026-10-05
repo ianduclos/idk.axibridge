@@ -1,0 +1,99 @@
+{
+  "title": "18 / 47: baseline, mask only, passage + mask, passage + mask + growth",
+  "cols": 4,
+  "w": 0.1,
+  "prm": {
+    "loose": 0.5,
+    "yieldP": 0.5,
+    "wander": 1,
+    "reach": 15,
+    "spread": 0.7,
+    "eps": 0.03,
+    "borders": true,
+    "outer": true,
+    "voids": true,
+    "interior": false,
+    "disregard": 0.15,
+    "hyst": 25,
+    "render": "meander",
+    "complexity": 0.5,
+    "drift": 0.6,
+    "band": 1,
+    "chaos": 0.5,
+    "accents": 0.5,
+    "bridges": 0.5,
+    "history": 0.6,
+    "density": 1,
+    "continue": 1,
+    "cover": 0.45,
+    "planes": 0.15,
+    "mutate": 1,
+    "slash": 1,
+    "surprise": 1,
+    "ink": 60
+  },
+  "cells": [
+    {
+      "id": "18 base",
+      "random": 18,
+      "order": "reversed",
+      "prm": {
+        "pocketLip": false,
+        "pocketMask": false
+      }
+    },
+    {
+      "id": "18 mask",
+      "random": 18,
+      "order": "reversed",
+      "prm": {
+        "pocketLip": false
+      }
+    },
+    {
+      "id": "18 passage",
+      "random": 18,
+      "order": "reversed",
+      "prm": {}
+    },
+    {
+      "id": "18 growth",
+      "random": 18,
+      "order": "reversed",
+      "prm": {
+        "pocketGrowth": true
+      }
+    },
+    {
+      "id": "47 base",
+      "random": 47,
+      "order": "reversed",
+      "prm": {
+        "pocketLip": false,
+        "pocketMask": false
+      }
+    },
+    {
+      "id": "47 mask",
+      "random": 47,
+      "order": "reversed",
+      "prm": {
+        "pocketLip": false
+      }
+    },
+    {
+      "id": "47 passage",
+      "random": 47,
+      "order": "reversed",
+      "prm": {}
+    },
+    {
+      "id": "47 growth",
+      "random": 47,
+      "order": "reversed",
+      "prm": {
+        "pocketGrowth": true
+      }
+    }
+  ]
+}

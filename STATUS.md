@@ -1,10 +1,11 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-09-30
+updated: 2026-10-05
 machine: mac+pi
-summary: Territory and the stable Compose sidebar are integrated on main; native and paper acceptance remain pending.
+summary: Territory02 independent curve study is complete in its isolated worktree; Ian's direction on convergence and existing native/paper acceptance remain pending.
 next:
+  - "Ian: inspect tools/territory02/index.html and the report; respond to proposed convergence strategies"
   - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
   - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
@@ -15,6 +16,14 @@ handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Territory02 study, 5 October:** Three independent Sol makers completed three
+rounds of curve experiments, including tighter turns and unequal Bézier handles.
+Matched six-seed sparse/full evidence uses 0.1 mm lines. Independent aesthetic
+reviews and the [report](docs/reviews/territory02-2026-10-05.md) preserve gains,
+losses and possible convergence strategies. Ian explicitly deferred integration;
+the experiments stay separate on `codex/territory02`. Production and original
+Territory remain unchanged. Screen study only; no app restart, plotting or Pi sync.
 
 **Integration checkpoint, 30 September:** `main` now contains Territory and the
 stable Compose sidebar, including the Gallery accessibility correction. Full
