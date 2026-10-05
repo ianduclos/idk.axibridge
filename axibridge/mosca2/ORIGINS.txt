@@ -1,0 +1,7 @@
+Mosca 2 uses the earlier action-study flowing body and renderer, not the later broad-arc encounter body. Renderer copied unchanged; decoder has only final whitespace normalized, copied from 5 October scratch action-study; drawing wrapper changes only Node lookup and shutdown. Renderer engine is the earlier generated Territory bundle/field code, preserved for exact line character. Sources: tools/territory-prototype and original Mosca study. Materials are recorded simulated-model drawings; source hashes travel with each entry. Page layouts are authored. Janelia FlyEM/Google connectome attribution: CC BY.
+Original source hashes:
+{
+  "decoder.py": "5d0794171d2e4f64f7c0b55809542d1281da938c3b6631153579ec62ea2f253a",
+  "renderer.mjs": "3e39489493897d303a5cd82640b7b1b1ff2c5a32fa0755c70a5b0e39b61e433b",
+  "renderer-engine.mjs": "42def5885ca1e824705f1cff13061e6366c63d96b76cbf25ec44e468ac986a81"
+}

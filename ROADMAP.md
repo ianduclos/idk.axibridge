@@ -27,10 +27,11 @@ paths. Preserved outside both applications: exact earlier flowing drawings,
 matched page-contact/replay experiments, six source-traceable compositions and
 exports. These composite layouts are authored, not newly composed by the brain.
 
-Deferred: a direct composition UI and feeding the current composite back to the
-brain. The latest round tested whether the actual flowing material could carry
-pieces before building another instrument. New experiments must show meaningful
-page-level consequences and retain replay/reactive controls; no intelligence or
+Implemented on `codex/mosca2-bench`: [Mosca 2](docs/MOSCA2.md), a native composer
+with preserved flowing material, Territory, current-page feedback, fresh neural
+bouts and portable Keep/Resume. Main integration and user/native/paper acceptance
+remain. New experiments should test placement-specific responses at the same
+seed/contact strength, keeping the contact-off control; no intelligence or
 learning claim follows from different paths. Consult Astra periodically as Ian
 requested, with neutral visual review and the lead retaining artistic judgment.
 

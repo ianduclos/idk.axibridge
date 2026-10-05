@@ -72,7 +72,7 @@ axibridge = "axibridge.__main__:main"
 include = ["axibridge*"]
 
 [tool.setuptools.package-data]
-axibridge = ["static/**/*"]
+axibridge = ["static/**/*", "mosca2/*.json", "mosca2/*.mjs", "mosca2/*.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
