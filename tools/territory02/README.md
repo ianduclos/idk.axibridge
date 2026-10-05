@@ -85,3 +85,15 @@ and four fresh frozen-source seeds. The new vocabulary remains loop-heavy;
 no convergence or production replacement is selected. Reproduction is in each
 folder’s NOTES.md; the lead report is
 `../../docs/reviews/territory02-material-2026-10-05.md`.
+
+## Rough and smooth coexistence
+
+Ian's latest direction restores the rough three-material studies as the base,
+with occasional substantial smooth passages. `takeover/coexist/index.html`
+compares continuity, interference and independent coexistence, plus unchanged
+rough and smooth-only references. These remain separate experiments. Twelve
+base cases include two fresh seeds generated after a source freeze; sixty final
+drawings and 120 in-memory viewer images passed mechanical checks. The source
+notes retain provenance limitations, weak cases and reproduction commands.
+See `takeover/coexist/NOTES.md` and
+`../../docs/reviews/territory02-coexist-2026-10-05.md`. No convergence selected.

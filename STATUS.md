@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-10-05
 machine: mac+pi
-summary: Territory02 retains three material experiments and a separate grammar probe after Ian rejected recurring stars and curves; no convergence selected.
+summary: Territory02 now compares three rough/smooth coexistence trials on the earlier material bases; no convergence selected.
 next:
-  - "Ian: inspect tools/territory02/takeover/grammar/index.html and the material report; new paths remove stock ornaments but remain loop-heavy"
+  - "Ian: inspect tools/territory02/takeover/coexist/index.html and the coexistence report; choose a direction after comparing the separate trials"
   - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
   - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
@@ -16,6 +16,17 @@ handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Rough/smooth coexistence, 5 October:** Ian prefers the rough three-material
+foundation with occasional substantial smooth passages. The new
+[comparison](tools/territory02/takeover/coexist/index.html) keeps continuity,
+interference and independent coexistence separate, beside rough and smooth-only
+references. Twelve base cases / sixty drawings passed geometry checks; 120
+in-memory viewer images passed. Source was frozen before fresh 1009/1061.
+Continuity can make strained angular bridges; interference can be visually
+slight; independent paths sometimes remain overlays. The
+[report](docs/reviews/territory02-coexist-2026-10-05.md) retains these limits and
+independent critique. No convergence or production/paper acceptance.
 
 **Material and grammar studies, 5 October:** Three independent makers tested opening,
 pressure and unravelling against curves-only/course-led references. Ian identified

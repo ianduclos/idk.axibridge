@@ -1,0 +1,3528 @@
+[
+  {
+    "seed": 1009,
+    "base": "opening",
+    "mode": "rough",
+    "fresh": true,
+    "points": 8727,
+    "inkMm": 2788.156075128055,
+    "strokes": 102,
+    "geometryHash": "ca3be414ffe6b324b2c8ea7870a71f75f0a1ec198ef8b8bca28eb36f46f7e07f",
+    "inputHash": "6ecc7e82ab0ab628482dd33beb74204ec530906685f583f30c1ede0426aee72f",
+    "closeWindow": [
+      10.67213253537198,
+      36.71276806257549,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1009,
+    "base": "opening",
+    "mode": "smooth",
+    "fresh": true,
+    "points": 2764,
+    "inkMm": 465.87124552652284,
+    "strokes": 2,
+    "geometryHash": "f0484af2a4121a0fdf636f9ad64e764df559e554d9a9b13a0b820bb83678cf67",
+    "inputHash": "6ecc7e82ab0ab628482dd33beb74204ec530906685f583f30c1ede0426aee72f",
+    "closeWindow": [
+      10.67213253537198,
+      36.71276806257549,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1009,
+    "base": "opening",
+    "mode": "continuity",
+    "fresh": true,
+    "points": 10328,
+    "inkMm": 3688.884853835487,
+    "strokes": 107,
+    "geometryHash": "db1d18e35367cb7a542e69764b551145a92e88c776060b2582d44d6b7cfd0d5f",
+    "inputHash": "6ecc7e82ab0ab628482dd33beb74204ec530906685f583f30c1ede0426aee72f",
+    "closeWindow": [
+      10.67213253537198,
+      36.71276806257549,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "source-interval-continuity",
+        "passage": 0,
+        "sourceStroke": 0,
+        "originalVertexRange": [
+          138,
+          838
+        ],
+        "startSegmentFraction": 0.8804350771652837,
+        "endSegmentFraction": 0.9583554235838629,
+        "preparedVertexRange": [
+          55,
+          296
+        ],
+        "removedSourceMm": 168.20805602393636,
+        "smoothReplacementMm": 227.4734991458062,
+        "smoothDisplacementFactor": 0.6468281408849034,
+        "donorRecords": [
+          {
+            "sourceStroke": 66,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              75
+            ],
+            "originalLengthMm": 18.14188531019686,
+            "passageStationRange": [
+              0.873455761747293,
+              0.9180565803103404
+            ],
+            "meanSourceDistanceMm": 1.3541979551366705,
+            "captureAt": 0.19155445382697509,
+            "releaseAt": 0.8206386357615701,
+            "tearFractionRange": [
+              0.8556386357615702,
+              0.8789768820432946
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.4836214716510404,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  69
+                ],
+                "points": 72,
+                "lengthMm": 31.12907153751128
+              },
+              {
+                "originalVertexRange": [
+                  71,
+                  75
+                ],
+                "points": 7,
+                "lengthMm": 5.57379373743421
+              }
+            ],
+            "discardedFragments": []
+          }
+        ]
+      },
+      {
+        "kind": "source-interval-continuity",
+        "passage": 1,
+        "sourceStroke": 11,
+        "originalVertexRange": [
+          29,
+          493
+        ],
+        "startSegmentFraction": 0.10361418738135948,
+        "endSegmentFraction": 0.9908888464840614,
+        "preparedVertexRange": [
+          26,
+          152
+        ],
+        "removedSourceMm": 87.7815916681246,
+        "smoothReplacementMm": 238.39774638071665,
+        "smoothDisplacementFactor": 1,
+        "donorRecords": [
+          {
+            "sourceStroke": 44,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              111
+            ],
+            "originalLengthMm": 54.96552658182978,
+            "passageStationRange": [
+              0.15820670747167645,
+              0.47760818964209295
+            ],
+            "meanSourceDistanceMm": 0.14248755918512548,
+            "captureAt": 0.18513373214984313,
+            "releaseAt": 0.6836681283731013,
+            "tearFractionRange": [
+              0.7186681283731013,
+              0.7315528718642891
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 1.0443055978907294,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  79
+                ],
+                "points": 80,
+                "lengthMm": 86.53975814106153
+              },
+              {
+                "originalVertexRange": [
+                  82,
+                  111
+                ],
+                "points": 30,
+                "lengthMm": 28.04204691444728
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 45,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              49
+            ],
+            "originalLengthMm": 24.70158516759971,
+            "passageStationRange": [
+              0.13761988263552885,
+              0.420070343952465
+            ],
+            "meanSourceDistanceMm": 0.5834022337899551,
+            "captureAt": 0.05071208740817383,
+            "releaseAt": 0.629868254805915,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  49
+                ],
+                "points": 50,
+                "lengthMm": 117.90239925796118
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 48,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              110
+            ],
+            "originalLengthMm": 51.625987048587184,
+            "passageStationRange": [
+              0.07693244906519624,
+              0.4421266820440564
+            ],
+            "meanSourceDistanceMm": 1.514027196111776,
+            "captureAt": 0.05071269895182923,
+            "releaseAt": 0.6725030935322865,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  110
+                ],
+                "points": 112,
+                "lengthMm": 113.46790732730555
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 43,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              86
+            ],
+            "originalLengthMm": 41.5664004931973,
+            "passageStationRange": [
+              0.10950760917481024,
+              0.35138797453748466
+            ],
+            "meanSourceDistanceMm": 0.2915088403255912,
+            "captureAt": 0.07880396755645053,
+            "releaseAt": 0.7193884887802414,
+            "tearFractionRange": [
+              0.7543884887802415,
+              0.7804722728044726
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.9118825741696326,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  65
+                ],
+                "points": 66,
+                "lengthMm": 99.6948352208326
+              },
+              {
+                "originalVertexRange": [
+                  68,
+                  86
+                ],
+                "points": 19,
+                "lengthMm": 20.638585676147258
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 42,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              113
+            ],
+            "originalLengthMm": 54.004086770779715,
+            "passageStationRange": [
+              0.07076021007184978,
+              0.364221800719346
+            ],
+            "meanSourceDistanceMm": 0.9779769586364325,
+            "captureAt": 0.2039294836204499,
+            "releaseAt": 0.6184231662610545,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  113
+                ],
+                "points": 114,
+                "lengthMm": 108.24669015102138
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 39,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              219
+            ],
+            "originalLengthMm": 104.62705031674354,
+            "passageStationRange": [
+              0.05986206450763163,
+              0.35029089258890117
+            ],
+            "meanSourceDistanceMm": 2.5375689873173988,
+            "captureAt": 0.1024532968713902,
+            "releaseAt": 0.7918473143782466,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  219
+                ],
+                "points": 220,
+                "lengthMm": 236.52210079224923
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 52,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              97
+            ],
+            "originalLengthMm": 40.89139866336013,
+            "passageStationRange": [
+              0.049965133786293005,
+              0.27308287481370763
+            ],
+            "meanSourceDistanceMm": 2.4349537959255754,
+            "captureAt": 0.12706509357783943,
+            "releaseAt": 0.7047352790669538,
+            "tearFractionRange": [
+              0.7397352790669538,
+              0.7530225498247891
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.35149583463431794,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  72
+                ],
+                "points": 74,
+                "lengthMm": 67.17836603127226
+              },
+              {
+                "originalVertexRange": [
+                  74,
+                  97
+                ],
+                "points": 24,
+                "lengthMm": 27.708187172987508
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 50,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              47
+            ],
+            "originalLengthMm": 20.52522804518977,
+            "passageStationRange": [
+              0.07302552547281622,
+              0.25855759447379967
+            ],
+            "meanSourceDistanceMm": 3.2760500605488585,
+            "captureAt": 0.04854147257050499,
+            "releaseAt": 0.6464242143393494,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  47
+                ],
+                "points": 48,
+                "lengthMm": 85.71418297658236
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 55,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              35
+            ],
+            "originalLengthMm": 17.822281477089078,
+            "passageStationRange": [
+              0.03914355766108464,
+              0.14419223271616885
+            ],
+            "meanSourceDistanceMm": 1.4711423330017859,
+            "captureAt": 0.1506514219962992,
+            "releaseAt": 0.7662885892624035,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  35
+                ],
+                "points": 36,
+                "lengthMm": 40.18153727182936
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 37,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              29
+            ],
+            "originalLengthMm": 14.067581587201047,
+            "passageStationRange": [
+              0.2689335331642283,
+              0.4195005526858395
+            ],
+            "meanSourceDistanceMm": 4.201762979931252,
+            "captureAt": 0.08909351974958554,
+            "releaseAt": 0.7654569173883646,
+            "tearFractionRange": [
+              0.8004569173883647,
+              0.8153597484547644
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.48663552920090686,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  22
+                ],
+                "points": 23,
+                "lengthMm": 58.55301563026773
+              },
+              {
+                "originalVertexRange": [
+                  24,
+                  29
+                ],
+                "points": 6,
+                "lengthMm": 7.604066803772308
+              }
+            ],
+            "discardedFragments": []
+          }
+        ]
+      }
+    ],
+    "info": {
+      "mechanism": "real source interval exchanged; sparse actual surviving base fibers follow, release and sometimes snag again",
+      "baseName": "opening",
+      "sourceIntervals": 2,
+      "changedBaseStrokes": 11,
+      "donorClassification": "material-versus-bare inferred from an approximate unclipped bare-stroke prefix; prior clipping can remove or split strokes",
+      "approximateExcludedPrefix": 17,
+      "baseElsewhereRetained": true,
+      "donorVerticesPreservedExceptRecordedTearsAndTinyFragments": true,
+      "limitation": "long capture transitions can become stretched fibers; projection folds are split, not connected; donor material attribution is inferred"
+    }
+  },
+  {
+    "seed": 1009,
+    "base": "opening",
+    "mode": "interference",
+    "fresh": true,
+    "points": 10133,
+    "inkMm": 3032.726924656926,
+    "strokes": 106,
+    "geometryHash": "a60a9693f61e1ddfffd6a313d1d61b4847e3bea9dd10b5bebb9cad8cfe643e91",
+    "inputHash": "6ecc7e82ab0ab628482dd33beb74204ec530906685f583f30c1ede0426aee72f",
+    "closeWindow": [
+      10.67213253537198,
+      36.71276806257549,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 11,
+        "at": [
+          117.22699396621327,
+          45.56858088762189
+        ],
+        "after": [
+          107.81433941038118,
+          44.343537290803475
+        ],
+        "weightedInkMm": 29.100322025582564,
+        "materialCenter": [
+          117.91350032438143,
+          45.67161966701783
+        ],
+        "sideInkMm": [
+          14.649862783425757,
+          40.72545344673531
+        ],
+        "reachMm": 24.07404508358156,
+        "curveDisplacementMm": 9.49203864306991,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 1009,
+      "baseName": "opening",
+      "contacts": 1,
+      "affectedMaterialStrokes": 21,
+      "materialStrokes": 84,
+      "affectedOriginalPoints": 533,
+      "tornStrokes": 4,
+      "transferredFragments": 4,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 35,
+          "localFragmentVertex": 28,
+          "contact": [
+            117.22699396621327,
+            45.56858088762189
+          ],
+          "translation": [
+            1.1899641259093554,
+            0.15487213774201977
+          ],
+          "sourceFragmentMm": 11.11222971928833
+        },
+        {
+          "sourceStroke": 36,
+          "localFragmentVertex": 17,
+          "contact": [
+            117.22699396621327,
+            45.56858088762189
+          ],
+          "translation": [
+            1.1899641259093554,
+            0.15487213774201977
+          ],
+          "sourceFragmentMm": 10.19840862165961
+        },
+        {
+          "sourceStroke": 37,
+          "localFragmentVertex": 6,
+          "contact": [
+            117.22699396621327,
+            45.56858088762189
+          ],
+          "translation": [
+            1.1899641259093554,
+            0.15487213774201977
+          ],
+          "sourceFragmentMm": 6.960010123111116
+        },
+        {
+          "sourceStroke": 38,
+          "localFragmentVertex": 17,
+          "contact": [
+            117.22699396621327,
+            45.56858088762189
+          ],
+          "translation": [
+            -1.1899641259093554,
+            -0.15487213774201977
+          ],
+          "sourceFragmentMm": 11.284073085214146
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 1009,
+    "base": "opening",
+    "mode": "independent",
+    "fresh": true,
+    "points": 11491,
+    "inkMm": 3254.027320654578,
+    "strokes": 104,
+    "geometryHash": "ecc097207c2859c9924037a0fec2bb7f1683a8338959267d1590f3d292360b77",
+    "inputHash": "6ecc7e82ab0ab628482dd33beb74204ec530906685f583f30c1ede0426aee72f",
+    "closeWindow": [
+      10.67213253537198,
+      36.71276806257549,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 0,
+        "at": [
+          60.67213253537198,
+          71.71276806257549
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 11,
+        "at": [
+          129.97811406003794,
+          31.25146762112872
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  },
+  {
+    "seed": 1009,
+    "base": "pressure",
+    "mode": "rough",
+    "fresh": true,
+    "points": 64052,
+    "inkMm": 32127.994906627784,
+    "strokes": 832,
+    "geometryHash": "f01ed220b0712a2a92762ec50919db571fd974ea0901a7a2825c27ca3e1d5092",
+    "inputHash": "9d44f6b04ee08daf1806dd1d08bee2d878e516c3dd11f308577f5e150eaf6c4a",
+    "closeWindow": [
+      8.763477204293572,
+      27.444595781743267,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1009,
+    "base": "pressure",
+    "mode": "smooth",
+    "fresh": true,
+    "points": 2858,
+    "inkMm": 471.84396629895247,
+    "strokes": 2,
+    "geometryHash": "53f6c9f279ae5c818a325057bca1cb2a0151b04e85aaf23129c58d4fc21b1eae",
+    "inputHash": "9d44f6b04ee08daf1806dd1d08bee2d878e516c3dd11f308577f5e150eaf6c4a",
+    "closeWindow": [
+      8.763477204293572,
+      27.444595781743267,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1009,
+    "base": "pressure",
+    "mode": "continuity",
+    "fresh": true,
+    "points": 66568,
+    "inkMm": 32808.66307653848,
+    "strokes": 840,
+    "geometryHash": "a51b6aeb3a5af41c9ddb0efebc78c0fbd92e4e1cd40fd8cb33e9ef041a68d2e0",
+    "inputHash": "9d44f6b04ee08daf1806dd1d08bee2d878e516c3dd11f308577f5e150eaf6c4a",
+    "closeWindow": [
+      8.763477204293572,
+      27.444595781743267,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "source-interval-continuity",
+        "passage": 0,
+        "sourceStroke": 0,
+        "originalVertexRange": [
+          52,
+          313
+        ],
+        "startSegmentFraction": 0.5148668508956848,
+        "endSegmentFraction": 0.17216485256096511,
+        "preparedVertexRange": [
+          61,
+          330
+        ],
+        "removedSourceMm": 187.93225193383702,
+        "smoothReplacementMm": 226.73454780773304,
+        "smoothDisplacementFactor": 0.5857012280967242,
+        "donorRecords": []
+      },
+      {
+        "kind": "source-interval-continuity",
+        "passage": 1,
+        "sourceStroke": 11,
+        "originalVertexRange": [
+          26,
+          161
+        ],
+        "startSegmentFraction": 0.06585380725243555,
+        "endSegmentFraction": 0.6155924398486747,
+        "preparedVertexRange": [
+          32,
+          184
+        ],
+        "removedSourceMm": 105.76850471702991,
+        "smoothReplacementMm": 245.10941849121943,
+        "smoothDisplacementFactor": 1,
+        "donorRecords": [
+          {
+            "sourceStroke": 101,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              89
+            ],
+            "originalLengthMm": 44.01937872326887,
+            "passageStationRange": [
+              0.042335788914427915,
+              0.6179811898578381
+            ],
+            "meanSourceDistanceMm": 6.631584291997963,
+            "captureAt": 0.15432607452850788,
+            "releaseAt": 0.7497978934389539,
+            "tearFractionRange": [
+              0.7847978934389539,
+              0.8055056090867146
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 1.0043851841656106,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  4
+                ],
+                "points": 5,
+                "lengthMm": 1.9853105105252586
+              },
+              {
+                "originalVertexRange": [
+                  5,
+                  69
+                ],
+                "points": 65,
+                "lengthMm": 103.81178620600242
+              },
+              {
+                "originalVertexRange": [
+                  72,
+                  89
+                ],
+                "points": 18,
+                "lengthMm": 9.981241836855093
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 52,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              111
+            ],
+            "originalLengthMm": 63.438226887525715,
+            "passageStationRange": [
+              0.3315810116587677,
+              0.5862442293761747
+            ],
+            "meanSourceDistanceMm": 2.7944518139286645,
+            "captureAt": 0.1551982659287751,
+            "releaseAt": 0.5831709895702079,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  111
+                ],
+                "points": 139,
+                "lengthMm": 107.96627006601275
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 53,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              49
+            ],
+            "originalLengthMm": 26.8378670983882,
+            "passageStationRange": [
+              0.3197797625789219,
+              0.5467492087620398
+            ],
+            "meanSourceDistanceMm": 3.130260712541211,
+            "captureAt": 0.11642076829448342,
+            "releaseAt": 0.6579015793814323,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  49
+                ],
+                "points": 61,
+                "lengthMm": 70.67684213966781
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 66,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              111
+            ],
+            "originalLengthMm": 55.32194021097846,
+            "passageStationRange": [
+              0.03541965847013173,
+              0.3486543984543964
+            ],
+            "meanSourceDistanceMm": 4.818043798832702,
+            "captureAt": 0.04984346157638356,
+            "releaseAt": 0.5922881040442735,
+            "tearFractionRange": [
+              0.6272881040442735,
+              0.6428786183902994
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.9974572161155936,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  44
+                ],
+                "points": 45,
+                "lengthMm": 57.12406541471199
+              },
+              {
+                "originalVertexRange": [
+                  45,
+                  65
+                ],
+                "points": 22,
+                "lengthMm": 6.6758668802348655
+              },
+              {
+                "originalVertexRange": [
+                  66,
+                  69
+                ],
+                "points": 4,
+                "lengthMm": 8.188181070282015
+              },
+              {
+                "originalVertexRange": [
+                  72,
+                  111
+                ],
+                "points": 40,
+                "lengthMm": 41.302581416764035
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 54,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              52
+            ],
+            "originalLengthMm": 28.49595311412257,
+            "passageStationRange": [
+              0.2868622732085499,
+              0.5317414679937793
+            ],
+            "meanSourceDistanceMm": 4.009173632413966,
+            "captureAt": 0.22839704268611968,
+            "releaseAt": 0.7659864415600895,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  52
+                ],
+                "points": 67,
+                "lengthMm": 64.9759849512396
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 60,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              90
+            ],
+            "originalLengthMm": 46.40977262851121,
+            "passageStationRange": [
+              0.2999014492920121,
+              0.49946638200008764
+            ],
+            "meanSourceDistanceMm": 3.9490910490904585,
+            "captureAt": 0.11352302774088457,
+            "releaseAt": 0.7331612001708708,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  90
+                ],
+                "points": 93,
+                "lengthMm": 102.03002528093175
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 68,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              47
+            ],
+            "originalLengthMm": 23.55417135518578,
+            "passageStationRange": [
+              0.052776113172568466,
+              0.2758784399075814
+            ],
+            "meanSourceDistanceMm": 4.697684162557058,
+            "captureAt": 0.16169917856808752,
+            "releaseAt": 0.7756081114476546,
+            "tearFractionRange": [
+              0.8106081114476547,
+              0.8253745794184506
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  10
+                ],
+                "points": 11,
+                "lengthMm": 6.471900996226302
+              },
+              {
+                "originalVertexRange": [
+                  11,
+                  47
+                ],
+                "points": 37,
+                "lengthMm": 108.9397554218312
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 97,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              97
+            ],
+            "originalLengthMm": 49.01104379686328,
+            "passageStationRange": [
+              0.07486533070823503,
+              0.24811464554793697
+            ],
+            "meanSourceDistanceMm": 3.6977915587678294,
+            "captureAt": 0.06390664710197598,
+            "releaseAt": 0.7059589390247129,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  26
+                ],
+                "points": 27,
+                "lengthMm": 66.93498731551836
+              },
+              {
+                "originalVertexRange": [
+                  27,
+                  55
+                ],
+                "points": 30,
+                "lengthMm": 12.358951089870883
+              },
+              {
+                "originalVertexRange": [
+                  56,
+                  97
+                ],
+                "points": 42,
+                "lengthMm": 71.18880682991899
+              }
+            ],
+            "discardedFragments": []
+          }
+        ]
+      }
+    ],
+    "info": {
+      "mechanism": "real source interval exchanged; sparse actual surviving base fibers follow, release and sometimes snag again",
+      "baseName": "pressure",
+      "sourceIntervals": 2,
+      "changedBaseStrokes": 8,
+      "donorClassification": "material-versus-bare inferred from an approximate unclipped bare-stroke prefix; prior clipping can remove or split strokes",
+      "approximateExcludedPrefix": 17,
+      "baseElsewhereRetained": true,
+      "donorVerticesPreservedExceptRecordedTearsAndTinyFragments": true,
+      "limitation": "long capture transitions can become stretched fibers; projection folds are split, not connected; donor material attribution is inferred"
+    }
+  },
+  {
+    "seed": 1009,
+    "base": "pressure",
+    "mode": "interference",
+    "fresh": true,
+    "points": 66526,
+    "inkMm": 32364.570080067642,
+    "strokes": 836,
+    "geometryHash": "40293f84221465eb2a12fb3ce2829ebcd9c7185b8522306b78caed17626de63e",
+    "inputHash": "9d44f6b04ee08daf1806dd1d08bee2d878e516c3dd11f308577f5e150eaf6c4a",
+    "closeWindow": [
+      8.763477204293572,
+      27.444595781743267,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 11,
+        "at": [
+          119.46612305630788,
+          62.69372777169734
+        ],
+        "after": [
+          127.73971722276674,
+          70.90830129363755
+        ],
+        "weightedInkMm": 47.15808230326923,
+        "materialCenter": [
+          119.5880547847304,
+          62.143683037535425
+        ],
+        "sideInkMm": [
+          35.16999431770791,
+          54.712253041329234
+        ],
+        "reachMm": 26.602131522457693,
+        "curveDisplacementMm": 11.65896987639231,
+        "boundaryScale": 1
+      },
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 0,
+        "at": [
+          65.57715733841833,
+          63.636384346518994
+        ],
+        "after": [
+          60.18860029383529,
+          68.45232796031806
+        ],
+        "weightedInkMm": 10.225190785418842,
+        "materialCenter": [
+          66.0345546330319,
+          63.24201842197803
+        ],
+        "sideInkMm": [
+          4.814717131953155,
+          11.333732483155416
+        ],
+        "reachMm": 21.43152670995864,
+        "curveDisplacementMm": 7.227022894250264,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 1009,
+      "baseName": "pressure",
+      "contacts": 2,
+      "affectedMaterialStrokes": 34,
+      "materialStrokes": 719,
+      "affectedOriginalPoints": 905,
+      "tornStrokes": 4,
+      "transferredFragments": 4,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 42,
+          "localFragmentVertex": 52,
+          "contact": [
+            119.46612305630788,
+            62.69372777169734
+          ],
+          "translation": [
+            -0.8515600524754768,
+            -0.8454853499783206
+          ],
+          "sourceFragmentMm": 11.855317249186548
+        },
+        {
+          "sourceStroke": 108,
+          "localFragmentVertex": 92,
+          "contact": [
+            119.46612305630788,
+            62.69372777169734
+          ],
+          "translation": [
+            -0.8515600524754768,
+            -0.8454853499783206
+          ],
+          "sourceFragmentMm": 8.770401273474924
+        },
+        {
+          "sourceStroke": 109,
+          "localFragmentVertex": 12,
+          "contact": [
+            119.46612305630788,
+            62.69372777169734
+          ],
+          "translation": [
+            -0.8515600524754768,
+            -0.8454853499783206
+          ],
+          "sourceFragmentMm": 4.607404538236297
+        },
+        {
+          "sourceStroke": 110,
+          "localFragmentVertex": 34,
+          "contact": [
+            119.46612305630788,
+            62.69372777169734
+          ],
+          "translation": [
+            -0.8515600524754768,
+            -0.8454853499783206
+          ],
+          "sourceFragmentMm": 9.434267491122066
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 1009,
+    "base": "pressure",
+    "mode": "independent",
+    "fresh": true,
+    "points": 66910,
+    "inkMm": 32599.838872926735,
+    "strokes": 834,
+    "geometryHash": "a5c806ff52b9501f7e991e6093b50a212cf1d2e40a02d477163b7acaa1b1a673",
+    "inputHash": "9d44f6b04ee08daf1806dd1d08bee2d878e516c3dd11f308577f5e150eaf6c4a",
+    "closeWindow": [
+      8.763477204293572,
+      27.444595781743267,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 0,
+        "at": [
+          58.76347720429357,
+          62.44459578174327
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 11,
+        "at": [
+          131.32547471299242,
+          35.70557346520052
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  },
+  {
+    "seed": 1009,
+    "base": "unravel",
+    "mode": "rough",
+    "fresh": true,
+    "points": 66794,
+    "inkMm": 32036.948465800248,
+    "strokes": 1132,
+    "geometryHash": "09b273f8f984388c770bde8fa6da3cfab6fe919a9875b8df4105982989477738",
+    "inputHash": "0a0f07b6687ed352a5fa106a3f271ccfdeb5cbb819e6462f64f8e7f85aaa8766",
+    "closeWindow": [
+      10.67213253537198,
+      36.71276806257549,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1009,
+    "base": "unravel",
+    "mode": "smooth",
+    "fresh": true,
+    "points": 2764,
+    "inkMm": 465.87124552652284,
+    "strokes": 2,
+    "geometryHash": "f0484af2a4121a0fdf636f9ad64e764df559e554d9a9b13a0b820bb83678cf67",
+    "inputHash": "0a0f07b6687ed352a5fa106a3f271ccfdeb5cbb819e6462f64f8e7f85aaa8766",
+    "closeWindow": [
+      10.67213253537198,
+      36.71276806257549,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1009,
+    "base": "unravel",
+    "mode": "continuity",
+    "fresh": true,
+    "points": 68395,
+    "inkMm": 32766.47678252485,
+    "strokes": 1136,
+    "geometryHash": "7593ddfb8868eba55a75803532b11d1831fb0de1c104b6eeaccde7c797b6936f",
+    "inputHash": "0a0f07b6687ed352a5fa106a3f271ccfdeb5cbb819e6462f64f8e7f85aaa8766",
+    "closeWindow": [
+      10.67213253537198,
+      36.71276806257549,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "source-interval-continuity",
+        "passage": 0,
+        "sourceStroke": 0,
+        "originalVertexRange": [
+          138,
+          838
+        ],
+        "startSegmentFraction": 0.8804350771652837,
+        "endSegmentFraction": 0.9583554235838629,
+        "preparedVertexRange": [
+          55,
+          296
+        ],
+        "removedSourceMm": 168.20805602393636,
+        "smoothReplacementMm": 227.4734991458062,
+        "smoothDisplacementFactor": 0.6468281408849034,
+        "donorRecords": [
+          {
+            "sourceStroke": 33,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              46
+            ],
+            "originalLengthMm": 23.670235157175036,
+            "passageStationRange": [
+              0.04388851412015646,
+              0.10015724004711242
+            ],
+            "meanSourceDistanceMm": 3.6637243455996718,
+            "captureAt": 0.19155445382697509,
+            "releaseAt": 0.8206386357615701,
+            "tearFractionRange": [
+              0.8556386357615702,
+              0.8789768820432946
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.500275650677178,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  39
+                ],
+                "points": 41,
+                "lengthMm": 23.37918475007768
+              },
+              {
+                "originalVertexRange": [
+                  41,
+                  46
+                ],
+                "points": 6,
+                "lengthMm": 3.306207528539841
+              }
+            ],
+            "discardedFragments": []
+          }
+        ]
+      },
+      {
+        "kind": "source-interval-continuity",
+        "passage": 1,
+        "sourceStroke": 11,
+        "originalVertexRange": [
+          29,
+          493
+        ],
+        "startSegmentFraction": 0.10361418738135948,
+        "endSegmentFraction": 0.9908888464840614,
+        "preparedVertexRange": [
+          26,
+          152
+        ],
+        "removedSourceMm": 87.7815916681246,
+        "smoothReplacementMm": 238.39774638071665,
+        "smoothDisplacementFactor": 1,
+        "donorRecords": [
+          {
+            "sourceStroke": 52,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              111
+            ],
+            "originalLengthMm": 55.359139402297885,
+            "passageStationRange": [
+              0.1523153344425892,
+              0.4728007242046874
+            ],
+            "meanSourceDistanceMm": 0.951146223136963,
+            "captureAt": 0.13191477628191933,
+            "releaseAt": 0.7315766656957566,
+            "tearFractionRange": [
+              0.7665766656957567,
+              0.7799732394297607
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.5004644818786795,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  85
+                ],
+                "points": 86,
+                "lengthMm": 99.690603807638
+              },
+              {
+                "originalVertexRange": [
+                  87,
+                  111
+                ],
+                "points": 25,
+                "lengthMm": 24.582979069951566
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 50,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              86
+            ],
+            "originalLengthMm": 42.92391448467331,
+            "passageStationRange": [
+              0.11182276276528982,
+              0.35701207922596867
+            ],
+            "meanSourceDistanceMm": 0.9603687034233424,
+            "captureAt": 0.13963253055932,
+            "releaseAt": 0.6805536424927413,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  86
+                ],
+                "points": 87,
+                "lengthMm": 107.76167961768078
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 51,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              166
+            ],
+            "originalLengthMm": 84.02541178297227,
+            "passageStationRange": [
+              0.15225757203899593,
+              0.38770812374581026
+            ],
+            "meanSourceDistanceMm": 1.6013772689424282,
+            "captureAt": 0.11878777756355702,
+            "releaseAt": 0.5929519231268204,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  166
+                ],
+                "points": 169,
+                "lengthMm": 144.08665489902356
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 49,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              113
+            ],
+            "originalLengthMm": 56.44431685653625,
+            "passageStationRange": [
+              0.07197417998477178,
+              0.36752721891964935
+            ],
+            "meanSourceDistanceMm": 3.108323579123511,
+            "captureAt": 0.07789987365249545,
+            "releaseAt": 0.8278908456396311,
+            "tearFractionRange": [
+              0.8628908456396311,
+              0.8759057329087518
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 1.0100690407513913,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  97
+                ],
+                "points": 99,
+                "lengthMm": 144.7334585775201
+              },
+              {
+                "originalVertexRange": [
+                  100,
+                  113
+                ],
+                "points": 14,
+                "lengthMm": 27.609279229045868
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 104,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              60
+            ],
+            "originalLengthMm": 29.915787330518064,
+            "passageStationRange": [
+              0.06620887926035161,
+              0.33350030288458876
+            ],
+            "meanSourceDistanceMm": 2.8622504007020377,
+            "captureAt": 0.11030235108453781,
+            "releaseAt": 0.6767408259748481,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  60
+                ],
+                "points": 61,
+                "lengthMm": 106.86211081865716
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 53,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              49
+            ],
+            "originalLengthMm": 24.46273926529566,
+            "passageStationRange": [
+              0.14660688292535323,
+              0.4278802310591661
+            ],
+            "meanSourceDistanceMm": 3.453827715445658,
+            "captureAt": 0.1459352514729835,
+            "releaseAt": 0.7401304981159046,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  49
+                ],
+                "points": 50,
+                "lengthMm": 103.56790492866104
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 106,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              35
+            ],
+            "originalLengthMm": 17.174748531700168,
+            "passageStationRange": [
+              0.03798626293557456,
+              0.13999699381184727
+            ],
+            "meanSourceDistanceMm": 3.054941162533193,
+            "captureAt": 0.06920160635840147,
+            "releaseAt": 0.6114561146078631,
+            "tearFractionRange": [
+              0.6464561146078631,
+              0.6643727427325211
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.4991823675523001,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  22
+                ],
+                "points": 23,
+                "lengthMm": 23.600135376433094
+              },
+              {
+                "originalVertexRange": [
+                  24,
+                  35
+                ],
+                "points": 12,
+                "lengthMm": 8.177441414659556
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 41,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              27
+            ],
+            "originalLengthMm": 13.429652914811397,
+            "passageStationRange": [
+              0.055266618778730445,
+              0.1715112745544552
+            ],
+            "meanSourceDistanceMm": 5.937355904010069,
+            "captureAt": 0.20100395892746747,
+            "releaseAt": 0.620986192470882,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  27
+                ],
+                "points": 28,
+                "lengthMm": 50.60537690616205
+              }
+            ],
+            "discardedFragments": []
+          }
+        ]
+      }
+    ],
+    "info": {
+      "mechanism": "real source interval exchanged; sparse actual surviving base fibers follow, release and sometimes snag again",
+      "baseName": "unravel",
+      "sourceIntervals": 2,
+      "changedBaseStrokes": 9,
+      "donorClassification": "material-versus-bare inferred from an approximate unclipped bare-stroke prefix; prior clipping can remove or split strokes",
+      "approximateExcludedPrefix": 17,
+      "baseElsewhereRetained": true,
+      "donorVerticesPreservedExceptRecordedTearsAndTinyFragments": true,
+      "limitation": "long capture transitions can become stretched fibers; projection folds are split, not connected; donor material attribution is inferred"
+    }
+  },
+  {
+    "seed": 1009,
+    "base": "unravel",
+    "mode": "interference",
+    "fresh": true,
+    "points": 68200,
+    "inkMm": 32257.496395434664,
+    "strokes": 1136,
+    "geometryHash": "b478aac8e0d3bc0926ceaf1105762a59ad7591a72663f033fee00fe0a1df367b",
+    "inputHash": "0a0f07b6687ed352a5fa106a3f271ccfdeb5cbb819e6462f64f8e7f85aaa8766",
+    "closeWindow": [
+      10.67213253537198,
+      36.71276806257549,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 11,
+        "at": [
+          122.4644081134376,
+          55.840725130987266
+        ],
+        "after": [
+          127.10851457662203,
+          47.97579167420926
+        ],
+        "weightedInkMm": 26.114361654454513,
+        "materialCenter": [
+          121.7144829371223,
+          56.90803193608617
+        ],
+        "sideInkMm": [
+          48.94148439306456,
+          5.053732758636221
+        ],
+        "reachMm": 23.656010631623634,
+        "curveDisplacementMm": 9.133723398534542,
+        "boundaryScale": 1
+      },
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 0,
+        "at": [
+          68.77987494841695,
+          75.18096848845431
+        ],
+        "after": [
+          63.11606329269976,
+          79.06051447853538
+        ],
+        "weightedInkMm": 7.209191885152675,
+        "materialCenter": [
+          69.61137641456838,
+          75.05450288502726
+        ],
+        "sideInkMm": [
+          1.8153233950242447,
+          7.131729429258869
+        ],
+        "reachMm": 21.009286863921375,
+        "curveDisplacementMm": 6.865103026218325,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 1009,
+      "baseName": "unravel",
+      "contacts": 2,
+      "affectedMaterialStrokes": 22,
+      "materialStrokes": 1030,
+      "affectedOriginalPoints": 675,
+      "tornStrokes": 4,
+      "transferredFragments": 4,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 42,
+          "localFragmentVertex": 41,
+          "contact": [
+            122.4644081134376,
+            55.840725130987266
+          ],
+          "translation": [
+            0.6101485136626162,
+            -1.0333047910831055
+          ],
+          "sourceFragmentMm": 24.020805947346435
+        },
+        {
+          "sourceStroke": 43,
+          "localFragmentVertex": 22,
+          "contact": [
+            122.4644081134376,
+            55.840725130987266
+          ],
+          "translation": [
+            0.6101485136626162,
+            -1.0333047910831055
+          ],
+          "sourceFragmentMm": 3.3278505406253336
+        },
+        {
+          "sourceStroke": 44,
+          "localFragmentVertex": 7,
+          "contact": [
+            122.4644081134376,
+            55.840725130987266
+          ],
+          "translation": [
+            0.6101485136626162,
+            -1.0333047910831055
+          ],
+          "sourceFragmentMm": 3.6922472218470936
+        },
+        {
+          "sourceStroke": 47,
+          "localFragmentVertex": 2,
+          "contact": [
+            122.4644081134376,
+            55.840725130987266
+          ],
+          "translation": [
+            0.6101485136626162,
+            -1.0333047910831055
+          ],
+          "sourceFragmentMm": 1.0264224228083352
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 1009,
+    "base": "unravel",
+    "mode": "independent",
+    "fresh": true,
+    "points": 69558,
+    "inkMm": 32502.81971132677,
+    "strokes": 1134,
+    "geometryHash": "c4551f3007e5df548bb2818cad4691ce83ef9450e4e780c7c0b2826dd6eb0541",
+    "inputHash": "0a0f07b6687ed352a5fa106a3f271ccfdeb5cbb819e6462f64f8e7f85aaa8766",
+    "closeWindow": [
+      10.67213253537198,
+      36.71276806257549,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 0,
+        "at": [
+          60.67213253537198,
+          71.71276806257549
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 11,
+        "at": [
+          129.97811406003794,
+          31.25146762112872
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  },
+  {
+    "seed": 1061,
+    "base": "opening",
+    "mode": "rough",
+    "fresh": true,
+    "points": 7679,
+    "inkMm": 1948.9591277290126,
+    "strokes": 86,
+    "geometryHash": "061f5c932f27c32678ca17fbfb6aba7f67a5f99552500f9d7f32454a6f602da2",
+    "inputHash": "0244f689d31e81d5dd1a5cd3f6705fc93b188844a37bde6c1767a375b92737c1",
+    "closeWindow": [
+      200,
+      117.36679935419491,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1061,
+    "base": "opening",
+    "mode": "smooth",
+    "fresh": true,
+    "points": 2768,
+    "inkMm": 520.0623145627522,
+    "strokes": 2,
+    "geometryHash": "f29cb8b8e076ff1cd384fe3ee340247810476fc78ccff0930cb4177b15682853",
+    "inputHash": "0244f689d31e81d5dd1a5cd3f6705fc93b188844a37bde6c1767a375b92737c1",
+    "closeWindow": [
+      200,
+      117.36679935419491,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1061,
+    "base": "opening",
+    "mode": "continuity",
+    "fresh": true,
+    "points": 8614,
+    "inkMm": 2315.5786237483826,
+    "strokes": 88,
+    "geometryHash": "15a01615da29089a8a4acc2973ca09d8eef2ec7bf016d9a47e36650af78cfcf8",
+    "inputHash": "0244f689d31e81d5dd1a5cd3f6705fc93b188844a37bde6c1767a375b92737c1",
+    "closeWindow": [
+      200,
+      117.36679935419491,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "source-interval-continuity",
+        "passage": 0,
+        "sourceStroke": 2,
+        "originalVertexRange": [
+          81,
+          1171
+        ],
+        "startSegmentFraction": 0.20202719832802574,
+        "endSegmentFraction": 0.97652741971899,
+        "preparedVertexRange": [
+          40,
+          395
+        ],
+        "removedSourceMm": 247.88509633210987,
+        "smoothReplacementMm": 212.65531288236073,
+        "smoothDisplacementFactor": 0.8031366302823494,
+        "donorRecords": [
+          {
+            "sourceStroke": 50,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              75
+            ],
+            "originalLengthMm": 22.25191468394312,
+            "passageStationRange": [
+              0.04540207805543173,
+              0.12850849280419702
+            ],
+            "meanSourceDistanceMm": 4.561812130789729,
+            "captureAt": 0.21853742912877352,
+            "releaseAt": 0.6250293659232556,
+            "tearFractionRange": [
+              0.6600293659232557,
+              0.6870217616078443
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.7115553518394447,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  54
+                ],
+                "points": 55,
+                "lengthMm": 14.559046957308299
+              },
+              {
+                "originalVertexRange": [
+                  57,
+                  75
+                ],
+                "points": 19,
+                "lengthMm": 10.209883460896146
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 54,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              41
+            ],
+            "originalLengthMm": 13.382798721348083,
+            "passageStationRange": [
+              0.11977642156296896,
+              0.1698238139348902
+            ],
+            "meanSourceDistanceMm": 5.7948944264926965,
+            "captureAt": 0.05943916467251256,
+            "releaseAt": 0.6361793621163815,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  41
+                ],
+                "points": 43,
+                "lengthMm": 38.19885521932034
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 47,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              51
+            ],
+            "originalLengthMm": 11.585291367776993,
+            "passageStationRange": [
+              0.03990256527193654,
+              0.08223786575899514
+            ],
+            "meanSourceDistanceMm": 4.3922186146716795,
+            "captureAt": 0.07487971448106692,
+            "releaseAt": 0.795117476589512,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  51
+                ],
+                "points": 52,
+                "lengthMm": 15.796078180016465
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 46,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              56
+            ],
+            "originalLengthMm": 13.020984222364978,
+            "passageStationRange": [
+              0.03805272470754513,
+              0.07865899928834677
+            ],
+            "meanSourceDistanceMm": 6.469860132140095,
+            "captureAt": 0.16837395111331718,
+            "releaseAt": 0.6107227930170483,
+            "tearFractionRange": [
+              0.6457227930170484,
+              0.659739739282988
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.1853864276058983,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  30
+                ],
+                "points": 31,
+                "lengthMm": 13.301976498765406
+              },
+              {
+                "originalVertexRange": [
+                  32,
+                  56
+                ],
+                "points": 25,
+                "lengthMm": 5.503482302208411
+              }
+            ],
+            "discardedFragments": []
+          }
+        ]
+      },
+      {
+        "kind": "source-interval-continuity",
+        "passage": 1,
+        "sourceStroke": 0,
+        "originalVertexRange": [
+          141,
+          961
+        ],
+        "startSegmentFraction": 0.06063344170425563,
+        "endSegmentFraction": 0.08586482919976299,
+        "preparedVertexRange": [
+          51,
+          300
+        ],
+        "removedSourceMm": 173.7779028181337,
+        "smoothReplacementMm": 307.40700168039155,
+        "smoothDisplacementFactor": 1,
+        "donorRecords": [
+          {
+            "sourceStroke": 19,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              17
+            ],
+            "originalLengthMm": 13.541617557880684,
+            "passageStationRange": [
+              0.5675438827777212,
+              0.6480268230686195
+            ],
+            "meanSourceDistanceMm": 1.0263976937661257,
+            "captureAt": 0.12298758608754726,
+            "releaseAt": 0.6124192009866237,
+            "tearFractionRange": [
+              0.6474192009866238,
+              0.6705177853968926
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  17
+                ],
+                "points": 32,
+                "lengthMm": 94.81071527040247
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 16,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              23
+            ],
+            "originalLengthMm": 12.037949976094401,
+            "passageStationRange": [
+              0.5678745228876587,
+              0.6394659900402629
+            ],
+            "meanSourceDistanceMm": 0.5711451102075926,
+            "captureAt": 0.17176109394291417,
+            "releaseAt": 0.7786797217978164,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  23
+                ],
+                "points": 24,
+                "lengthMm": 93.08601520009445
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 18,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              69
+            ],
+            "originalLengthMm": 49.62813781937174,
+            "passageStationRange": [
+              0.5883879534760373,
+              0.6649788561166833
+            ],
+            "meanSourceDistanceMm": 1.6967419259265986,
+            "captureAt": 0.043950400194153194,
+            "releaseAt": 0.707142786688637,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  69
+                ],
+                "points": 133,
+                "lengthMm": 119.33982271638651
+              }
+            ],
+            "discardedFragments": []
+          }
+        ]
+      }
+    ],
+    "info": {
+      "mechanism": "real source interval exchanged; sparse actual surviving base fibers follow, release and sometimes snag again",
+      "baseName": "opening",
+      "sourceIntervals": 2,
+      "changedBaseStrokes": 7,
+      "donorClassification": "material-versus-bare inferred from an approximate unclipped bare-stroke prefix; prior clipping can remove or split strokes",
+      "approximateExcludedPrefix": 14,
+      "baseElsewhereRetained": true,
+      "donorVerticesPreservedExceptRecordedTearsAndTinyFragments": true,
+      "limitation": "long capture transitions can become stretched fibers; projection folds are split, not connected; donor material attribution is inferred"
+    }
+  },
+  {
+    "seed": 1061,
+    "base": "opening",
+    "mode": "interference",
+    "fresh": true,
+    "points": 8214,
+    "inkMm": 2083.858191312554,
+    "strokes": 90,
+    "geometryHash": "c3f7d6559ab07b4662f9aa0fd5520950b0f3c276690792704ded3c4c17b24c6a",
+    "inputHash": "0244f689d31e81d5dd1a5cd3f6705fc93b188844a37bde6c1767a375b92737c1",
+    "closeWindow": [
+      200,
+      117.36679935419491,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 0,
+        "at": [
+          171.16212925916838,
+          167.2543746613865
+        ],
+        "after": [
+          170.08695516533973,
+          176.18670590510524
+        ],
+        "weightedInkMm": 24.97339378978358,
+        "materialCenter": [
+          171.70319390768253,
+          166.76667057946085
+        ],
+        "sideInkMm": [
+          16.16804775933754,
+          7.89252601720067
+        ],
+        "reachMm": 23.4962751305697,
+        "curveDisplacementMm": 8.99680725477402,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 1061,
+      "baseName": "opening",
+      "contacts": 1,
+      "affectedMaterialStrokes": 7,
+      "materialStrokes": 72,
+      "affectedOriginalPoints": 157,
+      "tornStrokes": 4,
+      "transferredFragments": 4,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 18,
+          "localFragmentVertex": 61,
+          "contact": [
+            171.16212925916838,
+            167.2543746613865
+          ],
+          "translation": [
+            0.14340741954983546,
+            -1.1914001477329341
+          ],
+          "sourceFragmentMm": 5.640158342899739
+        },
+        {
+          "sourceStroke": 19,
+          "localFragmentVertex": 9,
+          "contact": [
+            171.16212925916838,
+            167.2543746613865
+          ],
+          "translation": [
+            0.14340741954983546,
+            -1.1914001477329341
+          ],
+          "sourceFragmentMm": 6.855449709686976
+        },
+        {
+          "sourceStroke": 20,
+          "localFragmentVertex": 8,
+          "contact": [
+            171.16212925916838,
+            167.2543746613865
+          ],
+          "translation": [
+            0.14340741954983546,
+            -1.1914001477329341
+          ],
+          "sourceFragmentMm": 6.726450726598531
+        },
+        {
+          "sourceStroke": 21,
+          "localFragmentVertex": 4,
+          "contact": [
+            171.16212925916838,
+            167.2543746613865
+          ],
+          "translation": [
+            -0.14340741954983546,
+            1.1914001477329341
+          ],
+          "sourceFragmentMm": 2.108903232605378
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 1061,
+    "base": "opening",
+    "mode": "independent",
+    "fresh": true,
+    "points": 10447,
+    "inkMm": 2469.021442291765,
+    "strokes": 88,
+    "geometryHash": "5b89de059118e19daaf264f5aab47a0a9fe25fde35f12e1c6ad6b64a6f837b34",
+    "inputHash": "0244f689d31e81d5dd1a5cd3f6705fc93b188844a37bde6c1767a375b92737c1",
+    "closeWindow": [
+      200,
+      117.36679935419491,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 2,
+        "at": [
+          270.94446892228694,
+          152.3667993541949
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 0,
+        "at": [
+          135.49697740956321,
+          134.7944087190292
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  },
+  {
+    "seed": 1061,
+    "base": "pressure",
+    "mode": "rough",
+    "fresh": true,
+    "points": 55170,
+    "inkMm": 28256.6443864828,
+    "strokes": 681,
+    "geometryHash": "468be83f2e26f46f257338ee6f1c952bfa1a91510d210ff1f34c1224d75c7b67",
+    "inputHash": "0767d771d2f857c99a3c1124ac596572c5b03e3818c6463cae1b28251a7d5f9a",
+    "closeWindow": [
+      200,
+      116.06216721272577,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1061,
+    "base": "pressure",
+    "mode": "smooth",
+    "fresh": true,
+    "points": 2912,
+    "inkMm": 471.50110312313205,
+    "strokes": 2,
+    "geometryHash": "ff47fb8bfa2cd89298d160cad2b159c478a2cd2a1c56257a5d8085f11c9ac4ac",
+    "inputHash": "0767d771d2f857c99a3c1124ac596572c5b03e3818c6463cae1b28251a7d5f9a",
+    "closeWindow": [
+      200,
+      116.06216721272577,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1061,
+    "base": "pressure",
+    "mode": "continuity",
+    "fresh": true,
+    "points": 57702,
+    "inkMm": 28603.00998747306,
+    "strokes": 697,
+    "geometryHash": "582ac080d0c07eaae24c4728224955d30f09c71cbf634312021d810a19502af4",
+    "inputHash": "0767d771d2f857c99a3c1124ac596572c5b03e3818c6463cae1b28251a7d5f9a",
+    "closeWindow": [
+      200,
+      116.06216721272577,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "source-interval-continuity",
+        "passage": 0,
+        "sourceStroke": 2,
+        "originalVertexRange": [
+          49,
+          415
+        ],
+        "startSegmentFraction": 0.5384616631693099,
+        "endSegmentFraction": 0.9742443844606952,
+        "preparedVertexRange": [
+          46,
+          452
+        ],
+        "removedSourceMm": 283.24485557355064,
+        "smoothReplacementMm": 191.38087401625222,
+        "smoothDisplacementFactor": 0.7343533111635105,
+        "donorRecords": [
+          {
+            "sourceStroke": 488,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              28
+            ],
+            "originalLengthMm": 32.41535598886725,
+            "passageStationRange": [
+              0.7248554902766537,
+              0.9327002710185748
+            ],
+            "meanSourceDistanceMm": 1.9463198950489549,
+            "captureAt": 0.21466601822059603,
+            "releaseAt": 0.7882277178415097,
+            "tearFractionRange": [
+              0.8232277178415097,
+              0.8392726319138892
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  1.5
+                ],
+                "points": 3,
+                "lengthMm": 1.0344665904544048
+              },
+              {
+                "originalVertexRange": [
+                  2,
+                  12.5
+                ],
+                "points": 17,
+                "lengthMm": 6.434443166895412
+              },
+              {
+                "originalVertexRange": [
+                  13,
+                  22
+                ],
+                "points": 15,
+                "lengthMm": 13.458375849699102
+              },
+              {
+                "originalVertexRange": [
+                  22.5,
+                  23.615384615384617
+                ],
+                "points": 10,
+                "lengthMm": 2.418075466958693
+              },
+              {
+                "originalVertexRange": [
+                  23.692307692307693,
+                  24.285714285714285
+                ],
+                "points": 9,
+                "lengthMm": 2.9711737891809196
+              },
+              {
+                "originalVertexRange": [
+                  24.357142857142858,
+                  28
+                ],
+                "points": 14,
+                "lengthMm": 15.22089933963371
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 487,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              38
+            ],
+            "originalLengthMm": 28.92138428567713,
+            "passageStationRange": [
+              0.7079855109988038,
+              0.9612527615891253
+            ],
+            "meanSourceDistanceMm": 3.048591209447635,
+            "captureAt": 0.08565192122245208,
+            "releaseAt": 0.6818355541746132,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  18
+                ],
+                "points": 32,
+                "lengthMm": 15.43312793679877
+              },
+              {
+                "originalVertexRange": [
+                  19,
+                  21
+                ],
+                "points": 3,
+                "lengthMm": 0.8537655832727842
+              },
+              {
+                "originalVertexRange": [
+                  22,
+                  25
+                ],
+                "points": 6,
+                "lengthMm": 1.7525597031163258
+              },
+              {
+                "originalVertexRange": [
+                  26,
+                  38
+                ],
+                "points": 22,
+                "lengthMm": 9.958571338471781
+              }
+            ],
+            "discardedFragments": [
+              {
+                "originalVertexRange": [
+                  18.5,
+                  18.5
+                ],
+                "points": 1,
+                "lengthMm": 0
+              }
+            ]
+          },
+          {
+            "sourceStroke": 489,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              20
+            ],
+            "originalLengthMm": 13.276493918148365,
+            "passageStationRange": [
+              0.7257025598205505,
+              0.9424608266670698
+            ],
+            "meanSourceDistanceMm": 2.906069359852313,
+            "captureAt": 0.10167299030348659,
+            "releaseAt": 0.7059716335334815,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  1
+                ],
+                "points": 3,
+                "lengthMm": 0.8212759724407852
+              },
+              {
+                "originalVertexRange": [
+                  2,
+                  5
+                ],
+                "points": 4,
+                "lengthMm": 7.7112840516829655
+              },
+              {
+                "originalVertexRange": [
+                  6,
+                  7
+                ],
+                "points": 2,
+                "lengthMm": 0.46680563762918537
+              },
+              {
+                "originalVertexRange": [
+                  7.5,
+                  11
+                ],
+                "points": 6,
+                "lengthMm": 2.0295039418013565
+              },
+              {
+                "originalVertexRange": [
+                  11.5,
+                  19
+                ],
+                "points": 13,
+                "lengthMm": 5.183193314018918
+              }
+            ],
+            "discardedFragments": [
+              {
+                "originalVertexRange": [
+                  1.5,
+                  1.5
+                ],
+                "points": 1,
+                "lengthMm": 0
+              },
+              {
+                "originalVertexRange": [
+                  20,
+                  20
+                ],
+                "points": 1,
+                "lengthMm": 0
+              }
+            ]
+          },
+          {
+            "sourceStroke": 485,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              36
+            ],
+            "originalLengthMm": 24.544367740961967,
+            "passageStationRange": [
+              0.46212275990701857,
+              0.7068264360591691
+            ],
+            "meanSourceDistanceMm": 5.515686784609338,
+            "captureAt": 0.1796790375490673,
+            "releaseAt": 0.6080131425824947,
+            "tearFractionRange": [
+              0.6430131425824948,
+              0.6695245096827858
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0.5587769419950223,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  6
+                ],
+                "points": 7,
+                "lengthMm": 3.203979636046812
+              },
+              {
+                "originalVertexRange": [
+                  6.5,
+                  23.6
+                ],
+                "points": 24,
+                "lengthMm": 51.89251050077924
+              },
+              {
+                "originalVertexRange": [
+                  23.8,
+                  25
+                ],
+                "points": 4,
+                "lengthMm": 13.963870662740389
+              },
+              {
+                "originalVertexRange": [
+                  26,
+                  36
+                ],
+                "points": 15,
+                "lengthMm": 5.529077027804425
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 490,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              55
+            ],
+            "originalLengthMm": 27.905097907968635,
+            "passageStationRange": [
+              0.44700591741574597,
+              0.4973404399059167
+            ],
+            "meanSourceDistanceMm": 1.9583650228123828,
+            "captureAt": 0.2271681855688803,
+            "releaseAt": 0.6192191024147905,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  50.5
+                ],
+                "points": 52,
+                "lengthMm": 106.99904190641021
+              },
+              {
+                "originalVertexRange": [
+                  51,
+                  55
+                ],
+                "points": 5,
+                "lengthMm": 2.03869462128292
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 484,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              39
+            ],
+            "originalLengthMm": 19.625211110869277,
+            "passageStationRange": [
+              0.44265948675659317,
+              0.4788415559306931
+            ],
+            "meanSourceDistanceMm": 1.1326827923531138,
+            "captureAt": 0.06655721085844561,
+            "releaseAt": 0.7341470056981779,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  39
+                ],
+                "points": 40,
+                "lengthMm": 100.77771278251615
+              }
+            ],
+            "discardedFragments": []
+          }
+        ]
+      },
+      {
+        "kind": "source-interval-continuity",
+        "passage": 1,
+        "sourceStroke": 8,
+        "originalVertexRange": [
+          15,
+          115
+        ],
+        "startSegmentFraction": 0.07694796345174752,
+        "endSegmentFraction": 0.21329092812315667,
+        "preparedVertexRange": [
+          14,
+          106
+        ],
+        "removedSourceMm": 64.35139200367168,
+        "smoothReplacementMm": 280.12022910687983,
+        "smoothDisplacementFactor": 0.913328786197153,
+        "donorRecords": []
+      }
+    ],
+    "info": {
+      "mechanism": "real source interval exchanged; sparse actual surviving base fibers follow, release and sometimes snag again",
+      "baseName": "pressure",
+      "sourceIntervals": 2,
+      "changedBaseStrokes": 6,
+      "donorClassification": "material-versus-bare inferred from an approximate unclipped bare-stroke prefix; prior clipping can remove or split strokes",
+      "approximateExcludedPrefix": 14,
+      "baseElsewhereRetained": true,
+      "donorVerticesPreservedExceptRecordedTearsAndTinyFragments": true,
+      "limitation": "long capture transitions can become stretched fibers; projection folds are split, not connected; donor material attribution is inferred"
+    }
+  },
+  {
+    "seed": 1061,
+    "base": "pressure",
+    "mode": "interference",
+    "fresh": true,
+    "points": 57605,
+    "inkMm": 28439.899290696372,
+    "strokes": 684,
+    "geometryHash": "6e17aa44c72926aae410c57915b85a242079d23d2bec34fb65eed1b5e3471a13",
+    "inputHash": "0767d771d2f857c99a3c1124ac596572c5b03e3818c6463cae1b28251a7d5f9a",
+    "closeWindow": [
+      200,
+      116.06216721272577,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 2,
+        "at": [
+          219.8378820062224,
+          155.26914558703803
+        ],
+        "after": [
+          212.10420760400902,
+          154.90701628504874
+        ],
+        "weightedInkMm": 14.517900934767386,
+        "materialCenter": [
+          220.7950183154617,
+          154.96210156046655
+        ],
+        "sideInkMm": [
+          11.366863464993356,
+          2.6728902508804135
+        ],
+        "reachMm": 22.032506130867436,
+        "curveDisplacementMm": 7.742148112172083,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 1061,
+      "baseName": "pressure",
+      "contacts": 1,
+      "affectedMaterialStrokes": 5,
+      "materialStrokes": 568,
+      "affectedOriginalPoints": 157,
+      "tornStrokes": 3,
+      "transferredFragments": 3,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 484,
+          "localFragmentVertex": 20,
+          "contact": [
+            219.8378820062224,
+            155.26914558703803
+          ],
+          "translation": [
+            1.198686611027958,
+            0.05612850026776773
+          ],
+          "sourceFragmentMm": 15.66316489034335
+        },
+        {
+          "sourceStroke": 485,
+          "localFragmentVertex": 21,
+          "contact": [
+            219.8378820062224,
+            155.26914558703803
+          ],
+          "translation": [
+            1.198686611027958,
+            0.05612850026776773
+          ],
+          "sourceFragmentMm": 16.8325054362406
+        },
+        {
+          "sourceStroke": 490,
+          "localFragmentVertex": 27,
+          "contact": [
+            219.8378820062224,
+            155.26914558703803
+          ],
+          "translation": [
+            1.198686611027958,
+            0.05612850026776773
+          ],
+          "sourceFragmentMm": 21.20556480216626
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 1061,
+    "base": "pressure",
+    "mode": "independent",
+    "fresh": true,
+    "points": 58082,
+    "inkMm": 28728.145489605933,
+    "strokes": 683,
+    "geometryHash": "3db849cb183ab2f0ce9a065fd03d14d92b347a4ab037245ebafb658580c3bebb",
+    "inputHash": "0767d771d2f857c99a3c1124ac596572c5b03e3818c6463cae1b28251a7d5f9a",
+    "closeWindow": [
+      200,
+      116.06216721272577,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 2,
+        "at": [
+          266.7548906444035,
+          151.06216721272577
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 8,
+        "at": [
+          270.62984580929793,
+          147.90327816652714
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  },
+  {
+    "seed": 1061,
+    "base": "unravel",
+    "mode": "rough",
+    "fresh": true,
+    "points": 58462,
+    "inkMm": 27714.205509930427,
+    "strokes": 983,
+    "geometryHash": "6b5bd1d68d39d97609fb66d842b4372b714bc423c19d9a9781adfaaeb6058100",
+    "inputHash": "e37379c17800b6d009095f04bdfa7ba741c70f9a61659cdeea184b4caeb2c0e2",
+    "closeWindow": [
+      200,
+      117.36679935419491,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1061,
+    "base": "unravel",
+    "mode": "smooth",
+    "fresh": true,
+    "points": 2768,
+    "inkMm": 520.0623145627522,
+    "strokes": 2,
+    "geometryHash": "f29cb8b8e076ff1cd384fe3ee340247810476fc78ccff0930cb4177b15682853",
+    "inputHash": "e37379c17800b6d009095f04bdfa7ba741c70f9a61659cdeea184b4caeb2c0e2",
+    "closeWindow": [
+      200,
+      117.36679935419491,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 1061,
+    "base": "unravel",
+    "mode": "continuity",
+    "fresh": true,
+    "points": 59324,
+    "inkMm": 28256.558263754505,
+    "strokes": 988,
+    "geometryHash": "4833af7700ee28eaa77a08012a9c1d36974e2006cd825ea0744ab318ce7c45fa",
+    "inputHash": "e37379c17800b6d009095f04bdfa7ba741c70f9a61659cdeea184b4caeb2c0e2",
+    "closeWindow": [
+      200,
+      117.36679935419491,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "source-interval-continuity",
+        "passage": 0,
+        "sourceStroke": 2,
+        "originalVertexRange": [
+          81,
+          1171
+        ],
+        "startSegmentFraction": 0.20202719832802574,
+        "endSegmentFraction": 0.97652741971899,
+        "preparedVertexRange": [
+          40,
+          395
+        ],
+        "removedSourceMm": 247.88509633210987,
+        "smoothReplacementMm": 212.65531288236073,
+        "smoothDisplacementFactor": 0.8031366302823494,
+        "donorRecords": [
+          {
+            "sourceStroke": 568,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              38
+            ],
+            "originalLengthMm": 19.013184966259566,
+            "passageStationRange": [
+              0.8173546112694292,
+              0.9345323861724352
+            ],
+            "meanSourceDistanceMm": 1.0402018419236796,
+            "captureAt": 0.07422231810167432,
+            "releaseAt": 0.8098237081849947,
+            "tearFractionRange": [
+              0.8448237081849947,
+              0.8586653132592328
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  6
+                ],
+                "points": 7,
+                "lengthMm": 6.85375701622164
+              },
+              {
+                "originalVertexRange": [
+                  7,
+                  38
+                ],
+                "points": 32,
+                "lengthMm": 32.335332765820745
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 567,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              107
+            ],
+            "originalLengthMm": 53.794692734631475,
+            "passageStationRange": [
+              0.8146909680090456,
+              0.9445403255526318
+            ],
+            "meanSourceDistanceMm": 1.8510542179461116,
+            "captureAt": 0.08269631520844996,
+            "releaseAt": 0.6400683173979632,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  31
+                ],
+                "points": 32,
+                "lengthMm": 27.841262888302808
+              },
+              {
+                "originalVertexRange": [
+                  32,
+                  58
+                ],
+                "points": 27,
+                "lengthMm": 10.817511821845999
+              },
+              {
+                "originalVertexRange": [
+                  59,
+                  92
+                ],
+                "points": 35,
+                "lengthMm": 22.175636325153445
+              },
+              {
+                "originalVertexRange": [
+                  93,
+                  107
+                ],
+                "points": 15,
+                "lengthMm": 4.839946372846711
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 569,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              28
+            ],
+            "originalLengthMm": 13.977880523753837,
+            "passageStationRange": [
+              0.8360075013351712,
+              0.8879138921558587
+            ],
+            "meanSourceDistanceMm": 0.7485116485871842,
+            "captureAt": 0.2034892822080292,
+            "releaseAt": 0.661148671451956,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  28
+                ],
+                "points": 29,
+                "lengthMm": 33.75156587864818
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 565,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              39
+            ],
+            "originalLengthMm": 19.625211110869277,
+            "passageStationRange": [
+              0.5224296480430001,
+              0.5637722914425263
+            ],
+            "meanSourceDistanceMm": 1.134002283491806,
+            "captureAt": 0.06334932269295677,
+            "releaseAt": 0.7637882073014043,
+            "tearFractionRange": [
+              0.7987882073014043,
+              0.8203879228048027
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  39
+                ],
+                "points": 40,
+                "lengthMm": 71.27633482802213
+              }
+            ],
+            "discardedFragments": []
+          }
+        ]
+      },
+      {
+        "kind": "source-interval-continuity",
+        "passage": 1,
+        "sourceStroke": 0,
+        "originalVertexRange": [
+          141,
+          961
+        ],
+        "startSegmentFraction": 0.06063344170425563,
+        "endSegmentFraction": 0.08586482919976299,
+        "preparedVertexRange": [
+          51,
+          300
+        ],
+        "removedSourceMm": 173.7779028181337,
+        "smoothReplacementMm": 307.40700168039155,
+        "smoothDisplacementFactor": 1,
+        "donorRecords": [
+          {
+            "sourceStroke": 233,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              211
+            ],
+            "originalLengthMm": 105.04515847438108,
+            "passageStationRange": [
+              0.5639159455652971,
+              0.6553568697952475
+            ],
+            "meanSourceDistanceMm": 1.2044409594685312,
+            "captureAt": 0.13290383206447587,
+            "releaseAt": 0.5851978949923068,
+            "tearFractionRange": [
+              0.6201978949923068,
+              0.6333382462929003
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 1.5064030610634083,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  131
+                ],
+                "points": 133,
+                "lengthMm": 145.29451875157798
+              },
+              {
+                "originalVertexRange": [
+                  135,
+                  211
+                ],
+                "points": 78,
+                "lengthMm": 64.7392783952688
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 739,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              68
+            ],
+            "originalLengthMm": 33.996410198675456,
+            "passageStationRange": [
+              0.12934624652770188,
+              0.3653144437958175
+            ],
+            "meanSourceDistanceMm": 7.779327868034428,
+            "captureAt": 0.05368768763495609,
+            "releaseAt": 0.769404574688524,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  68
+                ],
+                "points": 69,
+                "lengthMm": 81.02565983743
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 231,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              139
+            ],
+            "originalLengthMm": 69.43497876443841,
+            "passageStationRange": [
+              0.5693152557917442,
+              0.6560327277745248
+            ],
+            "meanSourceDistanceMm": 2.6951485067903524,
+            "captureAt": 0.08091815749416129,
+            "releaseAt": 0.5913469674251973,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  139
+                ],
+                "points": 141,
+                "lengthMm": 123.67235344670384
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 232,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              23
+            ],
+            "originalLengthMm": 11.544800753899437,
+            "passageStationRange": [
+              0.5692724935303453,
+              0.6411294627762844
+            ],
+            "meanSourceDistanceMm": 1.4673868870777296,
+            "captureAt": 0.1962695605191402,
+            "releaseAt": 0.7725880248309113,
+            "tearFractionRange": [
+              0.8075880248309113,
+              0.823193904211279
+            ],
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  23
+                ],
+                "points": 24,
+                "lengthMm": 100.6018713322997
+              }
+            ],
+            "discardedFragments": []
+          },
+          {
+            "sourceStroke": 740,
+            "sourceClassification": "material-inferred-from-approximate-prefix",
+            "sourceVertexRange": [
+              0,
+              141
+            ],
+            "originalLengthMm": 69.2587999412265,
+            "passageStationRange": [
+              0.13431870558216444,
+              0.1924459532984439
+            ],
+            "meanSourceDistanceMm": 6.579532327063719,
+            "captureAt": 0.09550628680270165,
+            "releaseAt": 0.8150194670725613,
+            "tearFractionRange": null,
+            "displacementFactor": 1,
+            "removedGapMm": 0,
+            "changedFragments": [
+              {
+                "originalVertexRange": [
+                  0,
+                  141
+                ],
+                "points": 143,
+                "lengthMm": 115.55652706931593
+              }
+            ],
+            "discardedFragments": []
+          }
+        ]
+      }
+    ],
+    "info": {
+      "mechanism": "real source interval exchanged; sparse actual surviving base fibers follow, release and sometimes snag again",
+      "baseName": "unravel",
+      "sourceIntervals": 2,
+      "changedBaseStrokes": 9,
+      "donorClassification": "material-versus-bare inferred from an approximate unclipped bare-stroke prefix; prior clipping can remove or split strokes",
+      "approximateExcludedPrefix": 14,
+      "baseElsewhereRetained": true,
+      "donorVerticesPreservedExceptRecordedTearsAndTinyFragments": true,
+      "limitation": "long capture transitions can become stretched fibers; projection folds are split, not connected; donor material attribution is inferred"
+    }
+  },
+  {
+    "seed": 1061,
+    "base": "unravel",
+    "mode": "interference",
+    "fresh": true,
+    "points": 58997,
+    "inkMm": 27857.499685361923,
+    "strokes": 987,
+    "geometryHash": "8f3c813eea67049e43ec1011e1ac3a83ab3b0a75db4762669dd941b190e8aa84",
+    "inputHash": "e37379c17800b6d009095f04bdfa7ba741c70f9a61659cdeea184b4caeb2c0e2",
+    "closeWindow": [
+      200,
+      117.36679935419491,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 0,
+        "at": [
+          171.16212925916838,
+          167.2543746613865
+        ],
+        "after": [
+          172.31129238770268,
+          157.70735732153935
+        ],
+        "weightedInkMm": 30.13275269449783,
+        "materialCenter": [
+          170.9056568352653,
+          167.73169384971098
+        ],
+        "sideInkMm": [
+          9.736678904988985,
+          32.54322545307195
+        ],
+        "reachMm": 24.218585377229697,
+        "curveDisplacementMm": 9.615930323339743,
+        "boundaryScale": 1
+      },
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 2,
+        "at": [
+          278.7514660486845,
+          181.75576891867746
+        ],
+        "after": [
+          275.8316528778434,
+          190.08014586556703
+        ],
+        "weightedInkMm": 23.513302134585203,
+        "materialCenter": [
+          278.0915367930534,
+          181.09061209673627
+        ],
+        "sideInkMm": [
+          14.910756445086584,
+          23.856501901695882
+        ],
+        "reachMm": 23.291862298841927,
+        "curveDisplacementMm": 8.821596256150231,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 1061,
+      "baseName": "unravel",
+      "contacts": 2,
+      "affectedMaterialStrokes": 23,
+      "materialStrokes": 877,
+      "affectedOriginalPoints": 715,
+      "tornStrokes": 4,
+      "transferredFragments": 4,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 231,
+          "localFragmentVertex": 68,
+          "contact": [
+            171.16212925916838,
+            167.2543746613865
+          ],
+          "translation": [
+            0.14340741954983546,
+            -1.1914001477329341
+          ],
+          "sourceFragmentMm": 41.15021722642567
+        },
+        {
+          "sourceStroke": 232,
+          "localFragmentVertex": 12,
+          "contact": [
+            171.16212925916838,
+            167.2543746613865
+          ],
+          "translation": [
+            0.14340741954983546,
+            -1.1914001477329341
+          ],
+          "sourceFragmentMm": 5.607033742599777
+        },
+        {
+          "sourceStroke": 293,
+          "localFragmentVertex": 12,
+          "contact": [
+            278.7514660486845,
+            181.75576891867746
+          ],
+          "translation": [
+            0.39718161013848297,
+            -1.1323633553624926
+          ],
+          "sourceFragmentMm": 2.2781732234385217
+        },
+        {
+          "sourceStroke": 295,
+          "localFragmentVertex": 51,
+          "contact": [
+            278.7514660486845,
+            181.75576891867746
+          ],
+          "translation": [
+            0.39718161013848297,
+            -1.1323633553624926
+          ],
+          "sourceFragmentMm": 11.035159221574522
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 1061,
+    "base": "unravel",
+    "mode": "independent",
+    "fresh": true,
+    "points": 61230,
+    "inkMm": 28234.26782449318,
+    "strokes": 985,
+    "geometryHash": "919c883959b960f3285af735b1fb6905981d42143f9f36bb1b59547ce09aca3f",
+    "inputHash": "e37379c17800b6d009095f04bdfa7ba741c70f9a61659cdeea184b4caeb2c0e2",
+    "closeWindow": [
+      200,
+      117.36679935419491,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 2,
+        "at": [
+          270.94446892228694,
+          152.3667993541949
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 0,
+        "at": [
+          135.49697740956321,
+          134.7944087190292
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  }
+]

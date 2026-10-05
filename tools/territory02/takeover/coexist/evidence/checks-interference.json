@@ -1,0 +1,888 @@
+[
+  {
+    "seed": 13,
+    "base": "opening",
+    "mode": "rough",
+    "fresh": false,
+    "points": 9939,
+    "inkMm": 2773.4096424091003,
+    "strokes": 111,
+    "geometryHash": "28c35b8cd8474d194222c2811e5c616b810d132dff7011057d7a1f1622b267c9",
+    "inputHash": "f8360c41baf428a13261e86fa5dbf7e96da3831d5e00bcb91f87a0ed2f42b599",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "opening",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2875,
+    "inkMm": 458.36662596880535,
+    "strokes": 2,
+    "geometryHash": "c4e53bc84bf9a54bbcc06222fc3e8d55d219a71013fe635f0328db468812e963",
+    "inputHash": "f8360c41baf428a13261e86fa5dbf7e96da3831d5e00bcb91f87a0ed2f42b599",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "opening",
+    "mode": "interference",
+    "fresh": false,
+    "points": 9916,
+    "inkMm": 2679.459659615196,
+    "strokes": 111,
+    "geometryHash": "2e58edb92c96fc14bcc2ebf80a3ac6ff42ca775128237a00997538fbac7597ff",
+    "inputHash": "f8360c41baf428a13261e86fa5dbf7e96da3831d5e00bcb91f87a0ed2f42b599",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 13,
+      "baseName": "opening",
+      "contacts": 0,
+      "affectedMaterialStrokes": 0,
+      "materialStrokes": 94,
+      "affectedOriginalPoints": 0,
+      "tornStrokes": 0,
+      "transferredFragments": 0,
+      "fragmentRecords": [],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 13,
+    "base": "pressure",
+    "mode": "rough",
+    "fresh": false,
+    "points": 46408,
+    "inkMm": 23819.732197545298,
+    "strokes": 567,
+    "geometryHash": "d5f6bf29495873103143bb6c66faeeb9af7f8284347fe8dbf7529449a21b02be",
+    "inputHash": "7e892de31d603a7d7c4320ce4b859925bca500b9677877f5ea66cb1560ccc5cb",
+    "closeWindow": [
+      42.18906946094776,
+      52.9461933384313,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "pressure",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2841,
+    "inkMm": 451.1834130083693,
+    "strokes": 2,
+    "geometryHash": "551fc7141e52546738a07326a7f629aa55bad78538062608a9c96c2d53f46977",
+    "inputHash": "7e892de31d603a7d7c4320ce4b859925bca500b9677877f5ea66cb1560ccc5cb",
+    "closeWindow": [
+      42.18906946094776,
+      52.9461933384313,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "pressure",
+    "mode": "interference",
+    "fresh": false,
+    "points": 48421,
+    "inkMm": 23746.184185082384,
+    "strokes": 571,
+    "geometryHash": "0bf1ba7fa5ce6bd20484a4e76762e30adf26527e45bf28bc628f230552b09dfe",
+    "inputHash": "7e892de31d603a7d7c4320ce4b859925bca500b9677877f5ea66cb1560ccc5cb",
+    "closeWindow": [
+      42.18906946094776,
+      52.9461933384313,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 10,
+        "at": [
+          82.83766435657215,
+          140.79436586401343
+        ],
+        "after": [
+          82.19520141075107,
+          129.94812270674186
+        ],
+        "weightedInkMm": 40.543785165970924,
+        "materialCenter": [
+          82.93856744218843,
+          141.53107799116336
+        ],
+        "sideInkMm": [
+          63.59752102224487,
+          20.74620383432193
+        ],
+        "reachMm": 25.67612992323593,
+        "curveDisplacementMm": 10.86525421991651,
+        "boundaryScale": 1
+      },
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 0,
+        "at": [
+          16.361751208650723,
+          116.43194156521184
+        ],
+        "after": [
+          17.685714232331655,
+          104.66453507570053
+        ],
+        "weightedInkMm": 48.68043737568994,
+        "materialCenter": [
+          15.974345569223663,
+          116.76190904780326
+        ],
+        "sideInkMm": [
+          26.896706204125984,
+          41.49255527097084
+        ],
+        "reachMm": 26.81526123259659,
+        "curveDisplacementMm": 11.841652485082788,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 13,
+      "baseName": "pressure",
+      "contacts": 2,
+      "affectedMaterialStrokes": 65,
+      "materialStrokes": 467,
+      "affectedOriginalPoints": 1696,
+      "tornStrokes": 4,
+      "transferredFragments": 4,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 25,
+          "localFragmentVertex": 51,
+          "contact": [
+            16.361751208650723,
+            116.43194156521184
+          ],
+          "translation": [
+            0.13416671620945717,
+            -1.1924761181095287
+          ],
+          "sourceFragmentMm": 7.015241109704731
+        },
+        {
+          "sourceStroke": 26,
+          "localFragmentVertex": 10,
+          "contact": [
+            16.361751208650723,
+            116.43194156521184
+          ],
+          "translation": [
+            0.13416671620945717,
+            -1.1924761181095287
+          ],
+          "sourceFragmentMm": 4.435698762643801
+        },
+        {
+          "sourceStroke": 27,
+          "localFragmentVertex": 92,
+          "contact": [
+            16.361751208650723,
+            116.43194156521184
+          ],
+          "translation": [
+            0.13416671620945717,
+            -1.1924761181095287
+          ],
+          "sourceFragmentMm": 4.820680173172539
+        },
+        {
+          "sourceStroke": 28,
+          "localFragmentVertex": 7,
+          "contact": [
+            16.361751208650723,
+            116.43194156521184
+          ],
+          "translation": [
+            0.13416671620945717,
+            -1.1924761181095287
+          ],
+          "sourceFragmentMm": 3.8766443860962827
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 13,
+    "base": "unravel",
+    "mode": "rough",
+    "fresh": false,
+    "points": 50470,
+    "inkMm": 23543.021130843557,
+    "strokes": 963,
+    "geometryHash": "1bbc4474606207f21f4332d9c43c3a8bda88416d5e0573e41f3e5021a5ac8dba",
+    "inputHash": "42c25919624e7c51e9d5023cb8a8efd26d6a75a45a11b00cb6a8cf14d144297c",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "unravel",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2875,
+    "inkMm": 458.36662596880535,
+    "strokes": 2,
+    "geometryHash": "c4e53bc84bf9a54bbcc06222fc3e8d55d219a71013fe635f0328db468812e963",
+    "inputHash": "42c25919624e7c51e9d5023cb8a8efd26d6a75a45a11b00cb6a8cf14d144297c",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "unravel",
+    "mode": "interference",
+    "fresh": false,
+    "points": 50451,
+    "inkMm": 23463.926928544035,
+    "strokes": 967,
+    "geometryHash": "f86b50c092dfaf557bc89da4390b68ecd674906cebdf4bb6c54cffc3e6ce5d4d",
+    "inputHash": "42c25919624e7c51e9d5023cb8a8efd26d6a75a45a11b00cb6a8cf14d144297c",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 0,
+        "at": [
+          38.433405731762484,
+          141.07053991487237
+        ],
+        "after": [
+          27.43146421744887,
+          138.64831149681677
+        ],
+        "weightedInkMm": 43.87858130230914,
+        "materialCenter": [
+          39.16884648653495,
+          141.43272681199485
+        ],
+        "sideInkMm": [
+          47.438217191700716,
+          13.948291224318334
+        ],
+        "reachMm": 26.14300138232328,
+        "curveDisplacementMm": 11.265429756277097,
+        "boundaryScale": 1
+      },
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 9,
+        "at": [
+          95.25303480217649,
+          126.99038935174917
+        ],
+        "after": [
+          89.28791144619534,
+          122.19604701609786
+        ],
+        "weightedInkMm": 13.775003312148844,
+        "materialCenter": [
+          96.30034817864913,
+          128.1306855287414
+        ],
+        "sideInkMm": [
+          23.06822479709049,
+          1.3190632520491885
+        ],
+        "reachMm": 21.92850046370084,
+        "curveDisplacementMm": 7.653000397457865,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 13,
+      "baseName": "unravel",
+      "contacts": 2,
+      "affectedMaterialStrokes": 51,
+      "materialStrokes": 878,
+      "affectedOriginalPoints": 1077,
+      "tornStrokes": 4,
+      "transferredFragments": 4,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 47,
+          "localFragmentVertex": 31,
+          "contact": [
+            38.433405731762484,
+            141.07053991487237
+          ],
+          "translation": [
+            -1.1719330822528098,
+            -0.2580171519907717
+          ],
+          "sourceFragmentMm": 16.512524213329517
+        },
+        {
+          "sourceStroke": 48,
+          "localFragmentVertex": 28,
+          "contact": [
+            38.433405731762484,
+            141.07053991487237
+          ],
+          "translation": [
+            -1.1719330822528098,
+            -0.2580171519907717
+          ],
+          "sourceFragmentMm": 16.08173971908914
+        },
+        {
+          "sourceStroke": 51,
+          "localFragmentVertex": 35,
+          "contact": [
+            38.433405731762484,
+            141.07053991487237
+          ],
+          "translation": [
+            -1.1719330822528098,
+            -0.2580171519907717
+          ],
+          "sourceFragmentMm": 15.030437333627813
+        },
+        {
+          "sourceStroke": 53,
+          "localFragmentVertex": 33,
+          "contact": [
+            38.433405731762484,
+            141.07053991487237
+          ],
+          "translation": [
+            -1.1719330822528098,
+            -0.2580171519907717
+          ],
+          "sourceFragmentMm": 20.567604048523453
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 24,
+    "base": "opening",
+    "mode": "rough",
+    "fresh": false,
+    "points": 8440,
+    "inkMm": 2538.9836416258863,
+    "strokes": 112,
+    "geometryHash": "9312c31a526dddc6efdbb4631caba429de1d064f613fd5c453d6371a5cfb8305",
+    "inputHash": "21b2d8e86e94fd76af83066d7801b31c49f2a59ed2a56e0e7288da38d95818c3",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "opening",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2219,
+    "inkMm": 439.37336589827623,
+    "strokes": 2,
+    "geometryHash": "8b4329f3f827c140d6b0fb746d8898eae7b68feedc4904879bc5e42943050728",
+    "inputHash": "21b2d8e86e94fd76af83066d7801b31c49f2a59ed2a56e0e7288da38d95818c3",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "opening",
+    "mode": "interference",
+    "fresh": false,
+    "points": 9063,
+    "inkMm": 2664.073620601025,
+    "strokes": 114,
+    "geometryHash": "8438901d4960bb3354984d7bb2c815ec63f861f54f83155cf2774fe5fdba8334",
+    "inputHash": "21b2d8e86e94fd76af83066d7801b31c49f2a59ed2a56e0e7288da38d95818c3",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 7,
+        "at": [
+          263.77305565117376,
+          139.51182910142168
+        ],
+        "after": [
+          260.0153078758597,
+          133.41531146688132
+        ],
+        "weightedInkMm": 9.679814433136173,
+        "materialCenter": [
+          264.071342633677,
+          139.79971448806555
+        ],
+        "sideInkMm": [
+          3.781895755685735,
+          12.540402422291717
+        ],
+        "reachMm": 21.355174020639065,
+        "curveDisplacementMm": 7.161577731976331,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 24,
+      "baseName": "opening",
+      "contacts": 1,
+      "affectedMaterialStrokes": 6,
+      "materialStrokes": 93,
+      "affectedOriginalPoints": 195,
+      "tornStrokes": 2,
+      "transferredFragments": 2,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 65,
+          "localFragmentVertex": 11,
+          "contact": [
+            263.77305565117376,
+            139.51182910142168
+          ],
+          "translation": [
+            -0.6296513839740795,
+            -1.0215376325224277
+          ],
+          "sourceFragmentMm": 6.300811940680358
+        },
+        {
+          "sourceStroke": 69,
+          "localFragmentVertex": 7,
+          "contact": [
+            263.77305565117376,
+            139.51182910142168
+          ],
+          "translation": [
+            0.6296513839740795,
+            1.0215376325224277
+          ],
+          "sourceFragmentMm": 8.064440544348571
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 24,
+    "base": "pressure",
+    "mode": "rough",
+    "fresh": false,
+    "points": 19980,
+    "inkMm": 10845.075782152748,
+    "strokes": 236,
+    "geometryHash": "f7c6cd740835f62339af238278d5304bbfdb57f51448037ecce721d51a7be675",
+    "inputHash": "13b106636d0b5ba2c0433ccbd109cf5a55665b171e2420a4e4b35e0204bfee84",
+    "closeWindow": [
+      173.695144383742,
+      87.16665543430922,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "pressure",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2142,
+    "inkMm": 426.30497529659465,
+    "strokes": 2,
+    "geometryHash": "1fcb629b3a369ae4ff052d7312230ab95422214fed34f212e81e4f66faf73b79",
+    "inputHash": "13b106636d0b5ba2c0433ccbd109cf5a55665b171e2420a4e4b35e0204bfee84",
+    "closeWindow": [
+      173.695144383742,
+      87.16665543430922,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "pressure",
+    "mode": "interference",
+    "fresh": false,
+    "points": 21693,
+    "inkMm": 11066.238156875019,
+    "strokes": 240,
+    "geometryHash": "962f7c33f810bf3f4ec49277dbdd7166af9453132e201cfb914bccf4afc806ee",
+    "inputHash": "13b106636d0b5ba2c0433ccbd109cf5a55665b171e2420a4e4b35e0204bfee84",
+    "closeWindow": [
+      173.695144383742,
+      87.16665543430922,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 121,
+        "at": [
+          278.40415507527933,
+          100.84736790737618
+        ],
+        "after": [
+          287.03703985064664,
+          108.13648139740225
+        ],
+        "weightedInkMm": 44.15482042568127,
+        "materialCenter": [
+          278.2623795781952,
+          100.80994185551751
+        ],
+        "sideInkMm": [
+          49.04463648862484,
+          36.239464241214684
+        ],
+        "reachMm": 26.18167485959538,
+        "curveDisplacementMm": 11.298578451081736,
+        "boundaryScale": 1
+      },
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 7,
+        "at": [
+          251.3431869015943,
+          148.07539320774114
+        ],
+        "after": [
+          248.1848382554654,
+          140.49001986669293
+        ],
+        "weightedInkMm": 18.4719401640744,
+        "materialCenter": [
+          252.30541060205712,
+          149.42115154133666
+        ],
+        "sideInkMm": [
+          4.675985672684563,
+          35.687446176425276
+        ],
+        "reachMm": 22.586071622970415,
+        "curveDisplacementMm": 8.216632819688924,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 24,
+      "baseName": "pressure",
+      "contacts": 2,
+      "affectedMaterialStrokes": 46,
+      "materialStrokes": 187,
+      "affectedOriginalPoints": 1064,
+      "tornStrokes": 4,
+      "transferredFragments": 4,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 81,
+          "localFragmentVertex": 7,
+          "contact": [
+            278.40415507527933,
+            100.84736790737618
+          ],
+          "translation": [
+            -0.9168818692805502,
+            -0.7741625396417753
+          ],
+          "sourceFragmentMm": 2.3427894113059895
+        },
+        {
+          "sourceStroke": 98,
+          "localFragmentVertex": 90,
+          "contact": [
+            251.3431869015943,
+            148.07539320774114
+          ],
+          "translation": [
+            -0.46126174292137295,
+            -1.107807566555283
+          ],
+          "sourceFragmentMm": 6.831712217876066
+        },
+        {
+          "sourceStroke": 99,
+          "localFragmentVertex": 4,
+          "contact": [
+            251.3431869015943,
+            148.07539320774114
+          ],
+          "translation": [
+            0.46126174292137295,
+            1.107807566555283
+          ],
+          "sourceFragmentMm": 7.239479789984678
+        },
+        {
+          "sourceStroke": 108,
+          "localFragmentVertex": 47,
+          "contact": [
+            278.40415507527933,
+            100.84736790737618
+          ],
+          "translation": [
+            -0.9168818692805502,
+            -0.7741625396417753
+          ],
+          "sourceFragmentMm": 13.912200012307476
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  },
+  {
+    "seed": 24,
+    "base": "unravel",
+    "mode": "rough",
+    "fresh": false,
+    "points": 23015,
+    "inkMm": 10392.554056271778,
+    "strokes": 455,
+    "geometryHash": "f10255bddbd3f0acd956b370582a55987e2e9b249270a08eb7855962c97fdeb4",
+    "inputHash": "47ba88e0d3053a2889b0cca0bdaccbb9452bdd375effab943c67583b54edc8cc",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "unravel",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2219,
+    "inkMm": 439.37336589827623,
+    "strokes": 2,
+    "geometryHash": "8b4329f3f827c140d6b0fb746d8898eae7b68feedc4904879bc5e42943050728",
+    "inputHash": "47ba88e0d3053a2889b0cca0bdaccbb9452bdd375effab943c67583b54edc8cc",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "unravel",
+    "mode": "interference",
+    "fresh": false,
+    "points": 23640,
+    "inkMm": 10605.76696825163,
+    "strokes": 459,
+    "geometryHash": "1f6e58167c94f349a48d5e2541ac28a1e1fe0a344931d369430cfdb12bc6f65d",
+    "inputHash": "47ba88e0d3053a2889b0cca0bdaccbb9452bdd375effab943c67583b54edc8cc",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 12,
+        "at": [
+          251.21213596419267,
+          156.72308327554282
+        ],
+        "after": [
+          252.09460177123972,
+          142.750923310119
+        ],
+        "weightedInkMm": 126.41381647296397,
+        "materialCenter": [
+          250.97266827090195,
+          157.76228906901136
+        ],
+        "sideInkMm": [
+          49.05551562829112,
+          161.062223411372
+        ],
+        "reachMm": 30,
+        "curveDisplacementMm": 13.999999999999984,
+        "boundaryScale": 1
+      },
+      {
+        "kind": "mutual-material-contact",
+        "smoothSourceStroke": 7,
+        "at": [
+          215.63147515997684,
+          151.3317922378024
+        ],
+        "after": [
+          214.0993825599727,
+          162.6392718644288
+        ],
+        "weightedInkMm": 45.09001701661079,
+        "materialCenter": [
+          215.71599361833475,
+          151.16435184614815
+        ],
+        "sideInkMm": [
+          47.43776309509798,
+          28.721749967961884
+        ],
+        "reachMm": 26.31260238232551,
+        "curveDisplacementMm": 11.410802041993295,
+        "boundaryScale": 1
+      }
+    ],
+    "info": {
+      "mechanism": "measured existing material indents the smooth excursion; nearby original grain yields and a few real crossings tear",
+      "seed": 24,
+      "baseName": "unravel",
+      "contacts": 2,
+      "affectedMaterialStrokes": 120,
+      "materialStrokes": 410,
+      "affectedOriginalPoints": 2540,
+      "tornStrokes": 4,
+      "transferredFragments": 4,
+      "fragmentRecords": [
+        {
+          "sourceStroke": 90,
+          "localFragmentVertex": 20,
+          "contact": [
+            251.21213596419267,
+            156.72308327554282
+          ],
+          "translation": [
+            -0.07563992631832019,
+            1.1976137113220435
+          ],
+          "sourceFragmentMm": 6.227559703161408
+        },
+        {
+          "sourceStroke": 92,
+          "localFragmentVertex": 17,
+          "contact": [
+            251.21213596419267,
+            156.72308327554282
+          ],
+          "translation": [
+            0.07563992631832019,
+            -1.1976137113220435
+          ],
+          "sourceFragmentMm": 9.081576367136474
+        },
+        {
+          "sourceStroke": 191,
+          "localFragmentVertex": 15,
+          "contact": [
+            215.63147515997684,
+            151.3317922378024
+          ],
+          "translation": [
+            -0.16112023617963098,
+            1.1891342520899058
+          ],
+          "sourceFragmentMm": 4.016303381083648
+        },
+        {
+          "sourceStroke": 192,
+          "localFragmentVertex": 22,
+          "contact": [
+            215.63147515997684,
+            151.3317922378024
+          ],
+          "translation": [
+            -0.16112023617963098,
+            1.1891342520899058
+          ],
+          "sourceFragmentMm": 4.743605492082255
+        }
+      ],
+      "materialRegrown": false,
+      "materialClassification": "inferred short grain runs, excluding exact smooth source indices and strokes closely matching original bare guides",
+      "limitation": "long material is left intact; short displaced bare courses may enter the inferred grain set; contact may be absent when excursions miss dense material; no aesthetic acceptance inferred"
+    }
+  }
+]
