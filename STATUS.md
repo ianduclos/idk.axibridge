@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-10-05
 machine: mac+pi
-summary: Territory02 course-bound fill probes now accompany the bulb/corner curves; whole-sheet coherence and convergence remain open.
+summary: Territory02 restores the earlier textural baseline after rejected panel fills; integration with the new curves and convergence remain open.
 next:
-  - "Ian: inspect tools/territory02/takeover/fill/index.html and the fill report; respond to the alternatives and suggested coherence tests"
+  - "Ian: inspect tools/territory02/takeover/texture/index.html and the texture report; judge recovery toward the baseline and integration with new lines"
   - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
   - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
@@ -17,12 +17,22 @@ handoff_for: Codex
 
 # idk.axibridge — status
 
+**Texture recovery, 5 October:** Ian rejected the panel fills as worse than
+the earlier textural baseline. The [new comparison](tools/territory02/takeover/texture/index.html)
+restores the original full recipe and density generator, applying it to the
+unchanged new curves with inherited or rebuilt guidance. Original baseline
+parity and 40 geometry cases passed; 80 in-memory viewer images passed.
+Source was frozen before four fresh seeds. Texture returns, but material can
+still grow away from principal new courses. The [report](docs/reviews/territory02-texture-2026-10-05.md)
+retains this limitation. Panel trials are archived as rejected; no convergence.
+
 **Course-bound fills, 5 October:** Ian found stronger curve character but less
 coherence and pointed out the untouched fills. Two physical constructions now
 bind material between actual rewritten courses, alongside curves-alone and
 ordinary filled Territory. The [comparison](tools/territory02/takeover/fill/index.html)
 and [report](docs/reviews/territory02-fill-2026-10-05.md) retain gains and losses:
-local binding improves some cases; reliable whole-sheet coherence remains open.
+the initial machine reading found local binding in some cases, but Ian later
+rejected the shading as a regression from the baseline. These trials are archived.
 Frozen source preceded four fresh seeds. Eighty geometry cases and 160
 in-memory viewer images passed mechanical checks. No convergence or production
 integration selected; paper and actual in-app file navigation remain unverified.

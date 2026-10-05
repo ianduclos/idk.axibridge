@@ -1,5 +1,9 @@
 # Territory02 takeover probe
 
+Ian rejected the later panel fills; the current [texture study](texture/index.html)
+restores the earlier full textural baseline and tests its growth on these
+unchanged curves. Integration remains open. [Texture notes](texture/NOTES.md).
+
 The later [course-bound fill study](fill/index.html) responds to Ian's concern
 that stronger curves were less coherent and fills remained untouched. Its two
 constructions retain these curves; findings and limits are in [fill notes](fill/NOTES.md).

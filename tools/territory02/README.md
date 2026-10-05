@@ -66,3 +66,11 @@ against identical bare takeover curves and ordinary filled Territory. Fresh
 mixed; no convergence selected. Construction and verification limits are in
 `takeover/fill/NOTES.md`, with the report at
 `../../docs/reviews/territory02-fill-2026-10-05.md`.
+
+Ian rejected those panel fills as worse than the earlier textural baseline.
+`takeover/texture/index.html` restores the original full recipe and actual
+density generator, beside two regrowth probes on the new curves. Original
+baseline parity is checked for every seed. Fresh331/389/419/463 follow a
+source freeze; texture recovery does not establish reliable course integration.
+The panel trials remain archived. See `takeover/texture/NOTES.md` and
+`../../docs/reviews/territory02-texture-2026-10-05.md`.

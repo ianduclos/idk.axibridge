@@ -1,0 +1,24 @@
+{
+  "files": {
+    "regrow.cjs": "15fff2151c3736ce5e02cea0745134ca7e5b37f6048f4b7b4d0638d8aefbdd90",
+    "render.cjs": "f60caf4cfe14be35858fec5cb4cab1da6fc66152ee3699eaa79dd5ab742cf2ea",
+    "original-engine.cjs": "d1a05fe3a77144b211fb8d2b11424590ea5a2021553de638b613aaffda6fd460",
+    "full.json": "ca52a38c56fc42fa66d485b4bda6eee00e293b9b32e9c6a77b550e21aa33dfda"
+  },
+  "curveSha256": "f388f8afbd2d151e9a61578452fcbdcc5f2083e0936a3ab1fff5001a30872288",
+  "developmentSeeds": [
+    5,
+    13,
+    18,
+    24,
+    47,
+    82
+  ],
+  "freshHoldoutSeeds": [
+    331,
+    389,
+    419,
+    463
+  ],
+  "note": "Curve, original texture, adapter and renderer frozen before first fresh holdout generation or viewing. Earlier fill trials retained separately; no production integration."
+}

@@ -1,5 +1,11 @@
 # Territory02 — course-bound fill follow-up, 5 October 2026
 
+**Subsequent human response:** Ian rejected this shading as substantially worse
+than the earlier baseline. He wants the baseline's texture and stronger
+integration with the lines. The observations below remain the earlier machine
+reading, not human acceptance. The next probe restores the original generator:
+[texture follow-up](territory02-texture-2026-10-05.md).
+
 Ian's correction was that the curves had gained character while losing overall
 coherence, and that fills had not been explored. The earlier takeover used
 zero density, so that omission was real. Ian chose binding the courses as the

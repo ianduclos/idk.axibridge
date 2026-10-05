@@ -1,5 +1,10 @@
 # Course-bound fill probes
 
+**Subsequent human response:** Ian rejected these fills as a regression from
+the earlier textural baseline. They remain an archived test, not a direction
+to integrate. The follow-up restores the earlier generator in
+[the texture comparison](../texture/index.html).
+
 Ian found more character in the takeover curves but less overall coherence,
 and pointed out that fills had not changed. He chose binding the courses as
 the next test. These two probes retain identical takeover base strokes and

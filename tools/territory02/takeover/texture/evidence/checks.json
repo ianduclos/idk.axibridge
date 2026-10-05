@@ -1,0 +1,1885 @@
+[
+  {
+    "seed": 5,
+    "mode": "baseline",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 32702.321839666773,
+    "points": 66319,
+    "strokes": 899,
+    "closeWindow": [
+      160,
+      135,
+      100,
+      70
+    ],
+    "baseHash": null,
+    "textureHash": null,
+    "layers": [],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 20781,
+          "strokes": 651
+        },
+        "ground": {
+          "mm": 2237,
+          "strokes": 43
+        },
+        "wedge": {
+          "mm": 1840,
+          "strokes": 37
+        },
+        "ribbon": {
+          "mm": 4657,
+          "strokes": 104
+        },
+        "cont": {
+          "mm": 486,
+          "strokes": 6
+        },
+        "surprise": {
+          "mm": 439,
+          "strokes": 9
+        },
+        "chord": {
+          "mm": 1051,
+          "strokes": 8
+        }
+      },
+      "surprise": "thorn",
+      "voids": 1,
+      "grow": {
+        "stop": {
+          "run": 45,
+          "ring": 4,
+          "blocked": 4,
+          "K": 17,
+          "long": 1
+        },
+        "trains": 66,
+        "echoes": 614,
+        "swale": 23,
+        "buckle": 26,
+        "oxbow": 0,
+        "chute": 18,
+        "fan": 33,
+        "split": 2,
+        "gen": 13,
+        "mm": 20612,
+        "ring": 0.12,
+        "cands": 132
+      },
+      "events": 2,
+      "inkM": 32.7,
+      "lifts": 899,
+      "baseVis": 0.842,
+      "juncClear": 0.902
+    }
+  },
+  {
+    "seed": 5,
+    "mode": "bare",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 1076.448745290223,
+    "points": 3863,
+    "strokes": 16,
+    "closeWindow": [
+      160,
+      135,
+      100,
+      70
+    ],
+    "baseHash": "ee16ae18678c23030c7af625dc3f9d1a408000e8926c54a22e2bdb094fd1c761",
+    "textureHash": null,
+    "layers": [],
+    "info": {}
+  },
+  {
+    "seed": 5,
+    "mode": "grown",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 27462.748093824408,
+    "points": 57298,
+    "strokes": 707,
+    "closeWindow": [
+      160,
+      135,
+      100,
+      70
+    ],
+    "baseHash": "ee16ae18678c23030c7af625dc3f9d1a408000e8926c54a22e2bdb094fd1c761",
+    "textureHash": "496a34c5e80eeaa64ae8c4d20fbf0ab8f11ca74eff762023c6804338d64d521a",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 534,
+        "inkMm": 17876.552011091066
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 45,
+        "inkMm": 2240.909221384065
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 88,
+        "inkMm": 4501.950238072711
+      },
+      {
+        "kind": "d-cont",
+        "strokes": 5,
+        "inkMm": 709.5421640766376
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 16,
+        "inkMm": 589.6430212588323
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 3,
+        "inkMm": 467.70269265087506
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 17877,
+          "strokes": 534
+        },
+        "ground": {
+          "mm": 2241,
+          "strokes": 45
+        },
+        "ribbon": {
+          "mm": 4502,
+          "strokes": 88
+        },
+        "cont": {
+          "mm": 710,
+          "strokes": 5
+        },
+        "surprise": {
+          "mm": 590,
+          "strokes": 16
+        },
+        "chord": {
+          "mm": 468,
+          "strokes": 3
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 2,
+      "grow": {
+        "stop": {
+          "run": 46,
+          "long": 2,
+          "K": 11,
+          "ring": 1,
+          "blocked": 5
+        },
+        "trains": 62,
+        "echoes": 593,
+        "swale": 20,
+        "buckle": 19,
+        "oxbow": 0,
+        "chute": 19,
+        "fan": 34,
+        "split": 1,
+        "gen": 9,
+        "mm": 17719,
+        "ring": 0.06,
+        "cands": 127
+      },
+      "events": 2,
+      "inkM": 27.5,
+      "lifts": 707,
+      "baseVis": 0.886,
+      "juncClear": 0.841
+    }
+  },
+  {
+    "seed": 5,
+    "mode": "led",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 32443.38474159718,
+    "points": 67482,
+    "strokes": 899,
+    "closeWindow": [
+      160,
+      135,
+      100,
+      70
+    ],
+    "baseHash": "ee16ae18678c23030c7af625dc3f9d1a408000e8926c54a22e2bdb094fd1c761",
+    "textureHash": "9c7e0218f0df693d4bc094793371add004468549e70f30f57c4d67076d9c901e",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 726,
+        "inkMm": 22966.324273926977
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 49,
+        "inkMm": 2253.2822676728456
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 89,
+        "inkMm": 4476.56318148597
+      },
+      {
+        "kind": "d-cont",
+        "strokes": 5,
+        "inkMm": 709.561252289788
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 11,
+        "inkMm": 493.5023282804955
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 3,
+        "inkMm": 467.702692650876
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 22966,
+          "strokes": 726
+        },
+        "ground": {
+          "mm": 2253,
+          "strokes": 49
+        },
+        "ribbon": {
+          "mm": 4477,
+          "strokes": 89
+        },
+        "cont": {
+          "mm": 710,
+          "strokes": 5
+        },
+        "surprise": {
+          "mm": 494,
+          "strokes": 11
+        },
+        "chord": {
+          "mm": 468,
+          "strokes": 3
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 4,
+      "grow": {
+        "stop": {
+          "run": 52,
+          "blocked": 7,
+          "ring": 4,
+          "K": 16,
+          "long": 1
+        },
+        "trains": 76,
+        "echoes": 720,
+        "swale": 30,
+        "buckle": 22,
+        "oxbow": 0,
+        "chute": 16,
+        "fan": 42,
+        "split": 2,
+        "gen": 13,
+        "mm": 22795,
+        "ring": 0.1,
+        "cands": 123
+      },
+      "events": 2,
+      "inkM": 32.4,
+      "lifts": 899,
+      "baseVis": 0.84,
+      "juncClear": 0.835
+    }
+  },
+  {
+    "seed": 13,
+    "mode": "baseline",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 23130.39869448104,
+    "points": 46799,
+    "strokes": 547,
+    "closeWindow": [
+      20,
+      148,
+      100,
+      70
+    ],
+    "baseHash": null,
+    "textureHash": null,
+    "layers": [],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 14933,
+          "strokes": 428
+        },
+        "ground": {
+          "mm": 2211,
+          "strokes": 30
+        },
+        "wedge": {
+          "mm": 583,
+          "strokes": 8
+        },
+        "ribbon": {
+          "mm": 3241,
+          "strokes": 37
+        },
+        "surprise": {
+          "mm": 256,
+          "strokes": 5
+        },
+        "chord": {
+          "mm": 557,
+          "strokes": 2
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 1,
+      "grow": {
+        "stop": {
+          "ring": 3,
+          "run": 31,
+          "K": 8,
+          "blocked": 4
+        },
+        "trains": 41,
+        "echoes": 408,
+        "swale": 16,
+        "buckle": 19,
+        "oxbow": 0,
+        "chute": 11,
+        "fan": 24,
+        "split": 1,
+        "gen": 6,
+        "mm": 14807,
+        "ring": 0.09,
+        "cands": 97
+      },
+      "events": 2,
+      "inkM": 23.1,
+      "lifts": 547,
+      "baseVis": 0.893,
+      "juncClear": 0.947
+    }
+  },
+  {
+    "seed": 13,
+    "mode": "bare",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 1382.9456977213965,
+    "points": 5417,
+    "strokes": 21,
+    "closeWindow": [
+      20,
+      148,
+      100,
+      70
+    ],
+    "baseHash": "453ea3aa8bb0bc40a8b3cd8d1c0593b0d3301a92d1d9f9020a895961b80dc4ba",
+    "textureHash": null,
+    "layers": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "mode": "grown",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 27973.290334639794,
+    "points": 59247,
+    "strokes": 697,
+    "closeWindow": [
+      20,
+      148,
+      100,
+      70
+    ],
+    "baseHash": "453ea3aa8bb0bc40a8b3cd8d1c0593b0d3301a92d1d9f9020a895961b80dc4ba",
+    "textureHash": "a4957502051decb1a105cce209272f012d9f0d4488e7922bf2331a12b371e031",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 592,
+        "inkMm": 20333.109041254236
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 28,
+        "inkMm": 2245.5833652013716
+      },
+      {
+        "kind": "d-wedge",
+        "strokes": 3,
+        "inkMm": 119.07529581941014
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 40,
+        "inkMm": 2974.4668995809293
+      },
+      {
+        "kind": "d-cont",
+        "strokes": 4,
+        "inkMm": 247.8888518863789
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 7,
+        "inkMm": 295.18145450333674
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 2,
+        "inkMm": 375.03972867271295
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 20333,
+          "strokes": 592
+        },
+        "ground": {
+          "mm": 2246,
+          "strokes": 28
+        },
+        "wedge": {
+          "mm": 119,
+          "strokes": 3
+        },
+        "ribbon": {
+          "mm": 2974,
+          "strokes": 40
+        },
+        "cont": {
+          "mm": 248,
+          "strokes": 4
+        },
+        "surprise": {
+          "mm": 295,
+          "strokes": 7
+        },
+        "chord": {
+          "mm": 375,
+          "strokes": 2
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 2,
+      "grow": {
+        "stop": {
+          "run": 38,
+          "K": 16,
+          "ring": 7,
+          "blocked": 4
+        },
+        "trains": 57,
+        "echoes": 658,
+        "swale": 19,
+        "buckle": 24,
+        "oxbow": 0,
+        "chute": 17,
+        "fan": 34,
+        "split": 1,
+        "gen": 12,
+        "mm": 20161,
+        "ring": 0.06,
+        "cands": 114
+      },
+      "events": 2,
+      "inkM": 28,
+      "lifts": 697,
+      "baseVis": 0.848,
+      "juncClear": 0.889
+    }
+  },
+  {
+    "seed": 13,
+    "mode": "led",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 23274.073592961962,
+    "points": 49682,
+    "strokes": 566,
+    "closeWindow": [
+      20,
+      148,
+      100,
+      70
+    ],
+    "baseHash": "453ea3aa8bb0bc40a8b3cd8d1c0593b0d3301a92d1d9f9020a895961b80dc4ba",
+    "textureHash": "e42069eae850a5c8ed3b529cbdfc7cf5e7ccc8f258eb368d6365066394033923",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 446,
+        "inkMm": 15641.767746253601
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 41,
+        "inkMm": 2218.0645605931245
+      },
+      {
+        "kind": "d-wedge",
+        "strokes": 3,
+        "inkMm": 119.07529581941014
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 41,
+        "inkMm": 2986.420883612028
+      },
+      {
+        "kind": "d-cont",
+        "strokes": 4,
+        "inkMm": 245.94076803768746
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 8,
+        "inkMm": 304.9187565158938
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 2,
+        "inkMm": 374.9398844088254
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 15642,
+          "strokes": 446
+        },
+        "ground": {
+          "mm": 2218,
+          "strokes": 41
+        },
+        "wedge": {
+          "mm": 119,
+          "strokes": 3
+        },
+        "ribbon": {
+          "mm": 2986,
+          "strokes": 41
+        },
+        "cont": {
+          "mm": 246,
+          "strokes": 4
+        },
+        "surprise": {
+          "mm": 305,
+          "strokes": 8
+        },
+        "chord": {
+          "mm": 375,
+          "strokes": 2
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 4,
+      "grow": {
+        "stop": {
+          "run": 36,
+          "blocked": 5,
+          "K": 12,
+          "ring": 2
+        },
+        "trains": 48,
+        "echoes": 426,
+        "swale": 13,
+        "buckle": 19,
+        "oxbow": 0,
+        "chute": 13,
+        "fan": 29,
+        "split": 2,
+        "gen": 9,
+        "mm": 15490,
+        "ring": 0.01,
+        "cands": 90
+      },
+      "events": 2,
+      "inkM": 23.3,
+      "lifts": 566,
+      "baseVis": 0.883,
+      "juncClear": 0.884
+    }
+  },
+  {
+    "seed": 18,
+    "mode": "baseline",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 27075.60945929856,
+    "points": 54919,
+    "strokes": 744,
+    "closeWindow": [
+      120,
+      148,
+      100,
+      70
+    ],
+    "baseHash": null,
+    "textureHash": null,
+    "layers": [],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 17902,
+          "strokes": 572
+        },
+        "ground": {
+          "mm": 2230,
+          "strokes": 46
+        },
+        "wedge": {
+          "mm": 872,
+          "strokes": 23
+        },
+        "ribbon": {
+          "mm": 2203,
+          "strokes": 26
+        },
+        "cont": {
+          "mm": 533,
+          "strokes": 6
+        },
+        "surprise": {
+          "mm": 740,
+          "strokes": 30
+        },
+        "chord": {
+          "mm": 1382,
+          "strokes": 11
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 0,
+      "grow": {
+        "stop": {
+          "run": 31,
+          "K": 12,
+          "ring": 4,
+          "blocked": 2
+        },
+        "trains": 47,
+        "echoes": 606,
+        "swale": 26,
+        "buckle": 16,
+        "oxbow": 0,
+        "chute": 17,
+        "fan": 26,
+        "split": 2,
+        "gen": 8,
+        "mm": 17739,
+        "ring": 0.04,
+        "cands": 94
+      },
+      "events": 2,
+      "inkM": 27.1,
+      "lifts": 744,
+      "baseVis": 0.818,
+      "juncClear": 0.842
+    }
+  },
+  {
+    "seed": 18,
+    "mode": "bare",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 1009.8947578137105,
+    "points": 3946,
+    "strokes": 18,
+    "closeWindow": [
+      120,
+      148,
+      100,
+      70
+    ],
+    "baseHash": "540c61520c6be79fd220754b14b4644bb5af2fd65077f59c9162410f76a3787e",
+    "textureHash": null,
+    "layers": [],
+    "info": {}
+  },
+  {
+    "seed": 18,
+    "mode": "grown",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 18631.510971210402,
+    "points": 39622,
+    "strokes": 438,
+    "closeWindow": [
+      120,
+      148,
+      100,
+      70
+    ],
+    "baseHash": "540c61520c6be79fd220754b14b4644bb5af2fd65077f59c9162410f76a3787e",
+    "textureHash": "89a07a75922b17c27f80738af65709dc414c0f73ec1a4ea6000377bc0647ade2",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 293,
+        "inkMm": 8264.59487989256
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 34,
+        "inkMm": 2218.7742637773067
+      },
+      {
+        "kind": "d-wedge",
+        "strokes": 3,
+        "inkMm": 106.83599613346807
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 70,
+        "inkMm": 5709.9507694623635
+      },
+      {
+        "kind": "d-cont",
+        "strokes": 3,
+        "inkMm": 335.9393016979519
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 15,
+        "inkMm": 516.9514529138818
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 2,
+        "inkMm": 468.56954951916293
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 8265,
+          "strokes": 293
+        },
+        "ground": {
+          "mm": 2219,
+          "strokes": 34
+        },
+        "wedge": {
+          "mm": 107,
+          "strokes": 3
+        },
+        "ribbon": {
+          "mm": 5710,
+          "strokes": 70
+        },
+        "cont": {
+          "mm": 336,
+          "strokes": 3
+        },
+        "surprise": {
+          "mm": 517,
+          "strokes": 15
+        },
+        "chord": {
+          "mm": 469,
+          "strokes": 2
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 3,
+      "grow": {
+        "stop": {
+          "ring": 3,
+          "run": 26,
+          "long": 1,
+          "K": 6,
+          "blocked": 5
+        },
+        "trains": 36,
+        "echoes": 281,
+        "swale": 16,
+        "buckle": 9,
+        "oxbow": 0,
+        "chute": 9,
+        "fan": 26,
+        "split": 1,
+        "gen": 4,
+        "mm": 8202,
+        "ring": 0.06,
+        "cands": 64
+      },
+      "events": 2,
+      "inkM": 18.6,
+      "lifts": 438,
+      "baseVis": 0.924,
+      "juncClear": 0.852
+    }
+  },
+  {
+    "seed": 18,
+    "mode": "led",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 19696.862299839424,
+    "points": 41845,
+    "strokes": 509,
+    "closeWindow": [
+      120,
+      148,
+      100,
+      70
+    ],
+    "baseHash": "540c61520c6be79fd220754b14b4644bb5af2fd65077f59c9162410f76a3787e",
+    "textureHash": "4cb803d619a957aeb205c171365b080b221316ab6a0093312aa464d8b8f7611b",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 413,
+        "inkMm": 12680.621602332101
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 24,
+        "inkMm": 2239.7196599197146
+      },
+      {
+        "kind": "d-wedge",
+        "strokes": 5,
+        "inkMm": 101.81023946800637
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 28,
+        "inkMm": 2267.340005395198
+      },
+      {
+        "kind": "d-cont",
+        "strokes": 3,
+        "inkMm": 399.81267016665186
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 16,
+        "inkMm": 529.0938152248709
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 2,
+        "inkMm": 468.5695495191638
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 12681,
+          "strokes": 413
+        },
+        "ground": {
+          "mm": 2240,
+          "strokes": 24
+        },
+        "wedge": {
+          "mm": 102,
+          "strokes": 5
+        },
+        "ribbon": {
+          "mm": 2267,
+          "strokes": 28
+        },
+        "cont": {
+          "mm": 400,
+          "strokes": 3
+        },
+        "surprise": {
+          "mm": 529,
+          "strokes": 16
+        },
+        "chord": {
+          "mm": 469,
+          "strokes": 2
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 2,
+      "grow": {
+        "stop": {
+          "run": 25,
+          "ring": 3,
+          "blocked": 4,
+          "K": 8,
+          "long": 1
+        },
+        "trains": 37,
+        "echoes": 384,
+        "swale": 23,
+        "buckle": 14,
+        "oxbow": 0,
+        "chute": 12,
+        "fan": 23,
+        "split": 0,
+        "gen": 7,
+        "mm": 12584,
+        "ring": 0.03,
+        "cands": 68
+      },
+      "events": 2,
+      "inkM": 19.7,
+      "lifts": 509,
+      "baseVis": 0.86,
+      "juncClear": 0.904
+    }
+  },
+  {
+    "seed": 24,
+    "mode": "baseline",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 11852.181773541357,
+    "points": 24034,
+    "strokes": 332,
+    "closeWindow": [
+      0,
+      115,
+      100,
+      70
+    ],
+    "baseHash": null,
+    "textureHash": null,
+    "layers": [],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 5588,
+          "strokes": 180
+        },
+        "ground": {
+          "mm": 2174,
+          "strokes": 59
+        },
+        "wedge": {
+          "mm": 309,
+          "strokes": 4
+        },
+        "ribbon": {
+          "mm": 806,
+          "strokes": 30
+        },
+        "cont": {
+          "mm": 577,
+          "strokes": 6
+        },
+        "surprise": {
+          "mm": 541,
+          "strokes": 10
+        },
+        "chord": {
+          "mm": 800,
+          "strokes": 5
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 1,
+      "grow": {
+        "stop": {
+          "K": 4,
+          "ring": 3,
+          "run": 12,
+          "long": 1,
+          "blocked": 2
+        },
+        "trains": 22,
+        "echoes": 210,
+        "swale": 12,
+        "buckle": 8,
+        "oxbow": 0,
+        "chute": 4,
+        "fan": 12,
+        "split": 0,
+        "gen": 5,
+        "mm": 5518,
+        "ring": 0.01,
+        "cands": 44
+      },
+      "events": 2,
+      "inkM": 11.9,
+      "lifts": 332,
+      "baseVis": 0.879,
+      "juncClear": 0.892
+    }
+  },
+  {
+    "seed": 24,
+    "mode": "bare",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 1246.608488227982,
+    "points": 4513,
+    "strokes": 18,
+    "closeWindow": [
+      0,
+      115,
+      100,
+      70
+    ],
+    "baseHash": "9fa9ae5a336971407be8cda7c2433af0d0ee9765fdbc25f63342e1093b28539e",
+    "textureHash": null,
+    "layers": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "mode": "grown",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 27204.439201052108,
+    "points": 57085,
+    "strokes": 644,
+    "closeWindow": [
+      0,
+      115,
+      100,
+      70
+    ],
+    "baseHash": "9fa9ae5a336971407be8cda7c2433af0d0ee9765fdbc25f63342e1093b28539e",
+    "textureHash": "80fcdfc4081fd2ea5d3808f1cf4f6cc425d1fede6fe3397ac5bc9e71822160a4",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 543,
+        "inkMm": 18750.769035658595
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 35,
+        "inkMm": 2231.580038480744
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 31,
+        "inkMm": 4023.2100483855593
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 14,
+        "inkMm": 451.6492551905416
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 3,
+        "inkMm": 500.6223351086901
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 18751,
+          "strokes": 543
+        },
+        "ground": {
+          "mm": 2232,
+          "strokes": 35
+        },
+        "ribbon": {
+          "mm": 4023,
+          "strokes": 31
+        },
+        "surprise": {
+          "mm": 452,
+          "strokes": 14
+        },
+        "chord": {
+          "mm": 501,
+          "strokes": 3
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 0,
+      "grow": {
+        "stop": {
+          "blocked": 9,
+          "run": 22,
+          "ring": 4,
+          "K": 9
+        },
+        "trains": 38,
+        "echoes": 377,
+        "swale": 15,
+        "buckle": 15,
+        "oxbow": 0,
+        "chute": 10,
+        "fan": 25,
+        "split": 0,
+        "gen": 7,
+        "mm": 18641,
+        "ring": 0.17,
+        "cands": 66
+      },
+      "events": 1,
+      "inkM": 27.2,
+      "lifts": 644,
+      "baseVis": 0.889,
+      "juncClear": 0.873
+    }
+  },
+  {
+    "seed": 24,
+    "mode": "led",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 10170.37987442101,
+    "points": 22580,
+    "strokes": 235,
+    "closeWindow": [
+      0,
+      115,
+      100,
+      70
+    ],
+    "baseHash": "9fa9ae5a336971407be8cda7c2433af0d0ee9765fdbc25f63342e1093b28539e",
+    "textureHash": "7ed04b718bb3387ef7df439defaf9d7cab4c38c4c9f1a4cba71e0f666d96ced2",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 145,
+        "inkMm": 4497.522162374838
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 26,
+        "inkMm": 2254.585642161154
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 23,
+        "inkMm": 1069.4208188574562
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 20,
+        "inkMm": 596.6216186950343
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 3,
+        "inkMm": 505.62114410454944
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 4498,
+          "strokes": 145
+        },
+        "ground": {
+          "mm": 2255,
+          "strokes": 26
+        },
+        "ribbon": {
+          "mm": 1069,
+          "strokes": 23
+        },
+        "surprise": {
+          "mm": 597,
+          "strokes": 20
+        },
+        "chord": {
+          "mm": 506,
+          "strokes": 3
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 0,
+      "grow": {
+        "stop": {
+          "K": 1,
+          "ring": 2,
+          "blocked": 2,
+          "run": 12
+        },
+        "trains": 15,
+        "echoes": 143,
+        "swale": 6,
+        "buckle": 7,
+        "oxbow": 0,
+        "chute": 4,
+        "fan": 12,
+        "split": 0,
+        "gen": 1,
+        "mm": 4460,
+        "ring": 0,
+        "cands": 36
+      },
+      "events": 1,
+      "inkM": 10.2,
+      "lifts": 235,
+      "baseVis": 0.846,
+      "juncClear": 0.887
+    }
+  },
+  {
+    "seed": 47,
+    "mode": "baseline",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 23426.157971742534,
+    "points": 47536,
+    "strokes": 650,
+    "closeWindow": [
+      20,
+      35,
+      100,
+      70
+    ],
+    "baseHash": null,
+    "textureHash": null,
+    "layers": [],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 18020,
+          "strokes": 526
+        },
+        "ground": {
+          "mm": 2240,
+          "strokes": 38
+        },
+        "ribbon": {
+          "mm": 1103,
+          "strokes": 16
+        },
+        "cont": {
+          "mm": 541,
+          "strokes": 4
+        },
+        "surprise": {
+          "mm": 459,
+          "strokes": 20
+        }
+      },
+      "surprise": "thorn",
+      "voids": 1,
+      "grow": {
+        "stop": {
+          "blocked": 7,
+          "ring": 7,
+          "run": 18,
+          "K": 10,
+          "long": 1
+        },
+        "trains": 36,
+        "echoes": 469,
+        "swale": 25,
+        "buckle": 10,
+        "oxbow": 0,
+        "chute": 12,
+        "fan": 22,
+        "split": 3,
+        "gen": 10,
+        "mm": 17863,
+        "ring": 0,
+        "cands": 77
+      },
+      "events": 2,
+      "inkM": 23.4,
+      "lifts": 650,
+      "baseVis": 0.922,
+      "juncClear": 0.952
+    }
+  },
+  {
+    "seed": 47,
+    "mode": "bare",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 1094.107045519404,
+    "points": 3895,
+    "strokes": 21,
+    "closeWindow": [
+      20,
+      35,
+      100,
+      70
+    ],
+    "baseHash": "21bfdc0dd76eca530a33f7070d6dfc735da7483995e555433dc34643f8c88e5f",
+    "textureHash": null,
+    "layers": [],
+    "info": {}
+  },
+  {
+    "seed": 47,
+    "mode": "grown",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 13430.245035420205,
+    "points": 28874,
+    "strokes": 361,
+    "closeWindow": [
+      20,
+      35,
+      100,
+      70
+    ],
+    "baseHash": "21bfdc0dd76eca530a33f7070d6dfc735da7483995e555433dc34643f8c88e5f",
+    "textureHash": "ac4555e9bbd2d01f75260e1d755579256c146e7483e1be29f43d5a434551957f",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 238,
+        "inkMm": 6384.589756725106
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 39,
+        "inkMm": 2227.6943551787163
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 33,
+        "inkMm": 1894.9867497756118
+      },
+      {
+        "kind": "d-cont",
+        "strokes": 8,
+        "inkMm": 793.187659801023
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 19,
+        "inkMm": 598.7667598559683
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 3,
+        "inkMm": 436.9127085643757
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 6385,
+          "strokes": 238
+        },
+        "ground": {
+          "mm": 2228,
+          "strokes": 39
+        },
+        "ribbon": {
+          "mm": 1895,
+          "strokes": 33
+        },
+        "cont": {
+          "mm": 793,
+          "strokes": 8
+        },
+        "surprise": {
+          "mm": 599,
+          "strokes": 19
+        },
+        "chord": {
+          "mm": 437,
+          "strokes": 3
+        }
+      },
+      "surprise": "thorn",
+      "voids": 1,
+      "grow": {
+        "stop": {
+          "run": 32,
+          "K": 2,
+          "blocked": 8,
+          "ring": 2
+        },
+        "trains": 41,
+        "echoes": 263,
+        "swale": 9,
+        "buckle": 8,
+        "oxbow": 0,
+        "chute": 7,
+        "fan": 36,
+        "split": 0,
+        "mm": 6296,
+        "ring": 0.08,
+        "cands": 87
+      },
+      "events": 1,
+      "inkM": 13.4,
+      "lifts": 361,
+      "baseVis": 0.908,
+      "juncClear": 0.911
+    }
+  },
+  {
+    "seed": 47,
+    "mode": "led",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 20952.58528719685,
+    "points": 44149,
+    "strokes": 583,
+    "closeWindow": [
+      20,
+      35,
+      100,
+      70
+    ],
+    "baseHash": "21bfdc0dd76eca530a33f7070d6dfc735da7483995e555433dc34643f8c88e5f",
+    "textureHash": "637205dfb6e24f1b74155d0b1e01a97dd8b4792deda89e8b9450fc33c22561dc",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 488,
+        "inkMm": 14881.357973658542
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 33,
+        "inkMm": 2208.4519811325517
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 16,
+        "inkMm": 1102.8945685855633
+      },
+      {
+        "kind": "d-cont",
+        "strokes": 8,
+        "inkMm": 807.3455835070548
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 14,
+        "inkMm": 421.51542622934676
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 3,
+        "inkMm": 436.9127085643757
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 14881,
+          "strokes": 488
+        },
+        "ground": {
+          "mm": 2208,
+          "strokes": 33
+        },
+        "ribbon": {
+          "mm": 1103,
+          "strokes": 16
+        },
+        "cont": {
+          "mm": 807,
+          "strokes": 8
+        },
+        "surprise": {
+          "mm": 422,
+          "strokes": 14
+        },
+        "chord": {
+          "mm": 437,
+          "strokes": 3
+        }
+      },
+      "surprise": "thorn",
+      "voids": 2,
+      "grow": {
+        "stop": {
+          "ring": 3,
+          "run": 22,
+          "long": 3,
+          "K": 7,
+          "blocked": 2
+        },
+        "trains": 36,
+        "echoes": 332,
+        "swale": 14,
+        "buckle": 16,
+        "oxbow": 1,
+        "chute": 9,
+        "fan": 22,
+        "split": 0,
+        "gen": 6,
+        "mm": 14738,
+        "ring": 0.13,
+        "cands": 73
+      },
+      "events": 1,
+      "inkM": 21,
+      "lifts": 583,
+      "baseVis": 0.923,
+      "juncClear": 0.932
+    }
+  },
+  {
+    "seed": 82,
+    "mode": "baseline",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 31136.856176377434,
+    "points": 63016,
+    "strokes": 777,
+    "closeWindow": [
+      0,
+      0,
+      100,
+      70
+    ],
+    "baseHash": null,
+    "textureHash": null,
+    "layers": [],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 22105,
+          "strokes": 619
+        },
+        "ground": {
+          "mm": 2113,
+          "strokes": 46
+        },
+        "ribbon": {
+          "mm": 4576,
+          "strokes": 64
+        },
+        "cont": {
+          "mm": 75,
+          "strokes": 2
+        },
+        "surprise": {
+          "mm": 307,
+          "strokes": 9
+        },
+        "chord": {
+          "mm": 519,
+          "strokes": 2
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 1,
+      "grow": {
+        "stop": {
+          "ring": 7,
+          "run": 30,
+          "blocked": 9,
+          "K": 13
+        },
+        "trains": 50,
+        "echoes": 567,
+        "swale": 29,
+        "buckle": 22,
+        "oxbow": 3,
+        "chute": 10,
+        "fan": 33,
+        "split": 1,
+        "gen": 10,
+        "mm": 21851,
+        "ring": 0.11,
+        "cands": 119
+      },
+      "events": 2,
+      "inkM": 31.1,
+      "lifts": 777,
+      "baseVis": 0.868,
+      "juncClear": 0.822
+    }
+  },
+  {
+    "seed": 82,
+    "mode": "bare",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 1453.8073289490696,
+    "points": 5733,
+    "strokes": 18,
+    "closeWindow": [
+      0,
+      0,
+      100,
+      70
+    ],
+    "baseHash": "d2effd4a6ad8d0f61f4d3aa9883017768f1f69f5810e7b229f43c1c8aceae443",
+    "textureHash": null,
+    "layers": [],
+    "info": {}
+  },
+  {
+    "seed": 82,
+    "mode": "grown",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 25646.76717136176,
+    "points": 54703,
+    "strokes": 595,
+    "closeWindow": [
+      0,
+      0,
+      100,
+      70
+    ],
+    "baseHash": "d2effd4a6ad8d0f61f4d3aa9883017768f1f69f5810e7b229f43c1c8aceae443",
+    "textureHash": "1f380224766e254774e36917daf0812850c40363c2611eedeb7858b880d6f934",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 435,
+        "inkMm": 15859.091958078281
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 43,
+        "inkMm": 2209.7632374898503
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 80,
+        "inkMm": 4743.103494291137
+      },
+      {
+        "kind": "d-cont",
+        "strokes": 3,
+        "inkMm": 105.48093352667044
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 10,
+        "inkMm": 482.36538957497555
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 6,
+        "inkMm": 793.1548294517895
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 15859,
+          "strokes": 435
+        },
+        "ground": {
+          "mm": 2210,
+          "strokes": 43
+        },
+        "ribbon": {
+          "mm": 4743,
+          "strokes": 80
+        },
+        "cont": {
+          "mm": 105,
+          "strokes": 3
+        },
+        "surprise": {
+          "mm": 482,
+          "strokes": 10
+        },
+        "chord": {
+          "mm": 793,
+          "strokes": 6
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 1,
+      "grow": {
+        "stop": {
+          "K": 16,
+          "run": 30,
+          "blocked": 9,
+          "ring": 5
+        },
+        "trains": 49,
+        "echoes": 464,
+        "swale": 19,
+        "buckle": 14,
+        "oxbow": 0,
+        "chute": 12,
+        "fan": 34,
+        "split": 3,
+        "gen": 10,
+        "mm": 15721,
+        "ring": 0.08,
+        "cands": 109
+      },
+      "events": 2,
+      "inkM": 25.6,
+      "lifts": 595,
+      "baseVis": 0.886,
+      "juncClear": 0.922
+    }
+  },
+  {
+    "seed": 82,
+    "mode": "led",
+    "holdout": false,
+    "nominalInkMm": 60000,
+    "inkMm": 20108.7526717771,
+    "points": 43525,
+    "strokes": 505,
+    "closeWindow": [
+      0,
+      0,
+      100,
+      70
+    ],
+    "baseHash": "d2effd4a6ad8d0f61f4d3aa9883017768f1f69f5810e7b229f43c1c8aceae443",
+    "textureHash": "bc7f0b49c4c00fbfd6ad4cb6d58f9f9e3507e9ab6f2918ff093071766d594b88",
+    "layers": [
+      {
+        "kind": "d-grow",
+        "strokes": 341,
+        "inkMm": 10227.651920248123
+      },
+      {
+        "kind": "d-ground",
+        "strokes": 44,
+        "inkMm": 2217.5931795917268
+      },
+      {
+        "kind": "d-ribbon",
+        "strokes": 76,
+        "inkMm": 4792.020978412969
+      },
+      {
+        "kind": "d-cont",
+        "strokes": 3,
+        "inkMm": 104.36129535740199
+      },
+      {
+        "kind": "d-surprise",
+        "strokes": 17,
+        "inkMm": 520.1631397660312
+      },
+      {
+        "kind": "d-chord",
+        "strokes": 6,
+        "inkMm": 793.15482945179
+      }
+    ],
+    "info": {
+      "D": 1,
+      "target": 60000,
+      "layers": {
+        "grow": {
+          "mm": 10228,
+          "strokes": 341
+        },
+        "ground": {
+          "mm": 2218,
+          "strokes": 44
+        },
+        "ribbon": {
+          "mm": 4792,
+          "strokes": 76
+        },
+        "cont": {
+          "mm": 104,
+          "strokes": 3
+        },
+        "surprise": {
+          "mm": 520,
+          "strokes": 17
+        },
+        "chord": {
+          "mm": 793,
+          "strokes": 6
+        }
+      },
+      "X": 1,
+      "surprise": "thorn",
+      "voids": 4,
+      "grow": {
+        "stop": {
+          "run": 30,
+          "K": 10,
+          "ring": 5,
+          "blocked": 9
+        },
+        "trains": 44,
+        "echoes": 346,
+        "swale": 18,
+        "buckle": 8,
+        "oxbow": 0,
+        "chute": 14,
+        "fan": 29,
+        "split": 3,
+        "gen": 8,
+        "mm": 10147,
+        "ring": 0.16,
+        "cands": 92
+      },
+      "events": 2,
+      "inkM": 20.1,
+      "lifts": 505,
+      "baseVis": 0.881,
+      "juncClear": 0.898
+    }
+  }
+]
