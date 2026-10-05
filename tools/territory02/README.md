@@ -1,5 +1,11 @@
 # territory02 — independent curve studies
 
+Ian prefers HTML reports. Deliver reports in HTML, with readable images and
+links. The [report index](../../docs/reviews/territory02-reports.html) includes
+the complete study history and independent critiques. Markdown files remain
+editable source; `render-reports.cjs` rebuilds HTML using the `marked` package
+(the Codex bundled Node runtime supplies it through `NODE_PATH`).
+
 Screen-only exploration requested by Ian on 5 October 2026. Three Sol makers,
 loose starting questions, matched populations, three critique/development rounds,
 and three independent Sol evaluations. Original Territory stays intact. Ian later

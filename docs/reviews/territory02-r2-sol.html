@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Territory 02 — round 2 independent Sol review</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/takeover/rupture/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Independent critique</div><article><h1>Territory 02 — round 2 independent Sol review</h1>
+<h2 id="calibration-image-only-blind-reading">Calibration: image-only blind reading</h2>
+<p>Mechanisms and prior preferences were withheld. Labels below refer only to the visible A/B/C/D cells in <code>calibration-r2/sheet.png</code>.</p>
+<ul>
+<li><strong>A</strong>: The small pinched loop at the centre is the consequential passage. It catches the long descending hook, the left cluster and the right swollen contour in one uneasy joint; following it makes the right-hand void feel attached yet resistant. The short inner capsule partly repeats the outer bulb without neatly explaining it. I would protect the awkward central pinch and the mismatch between capsule and bulb. The upper sweep into the mast is comparatively fluent and may be doing less.</li>
+<li><strong>B</strong>: Angular changes give separate curves different jobs: the right contour hesitates through broad facets, the small centre form becomes a blunt shard, and the left cluster splinters. The crooked void between centre and bulb becomes stranger and less easily named. Some short diagonal fragments near the centre-left do not yet enter a readable relation; they may be useful abrasion or simply residue. This is the most uncertain cell because screen reduction may exaggerate the brokenness.</li>
+<li><strong>C</strong>: The sparse, smooth passages make the large right oval and the left cluster immediately legible as two masses joined by a narrow bridge. The tiny central loop is attractive but subordinate; once found, it does not much alter the rest. The broad empty field is clear, though the oval risks becoming a separate balloon-like sign because the connection does not push back strongly enough. Removing or regularising the little hooked descent would cost one of the few changes of character along a curve.</li>
+<li><strong>D</strong>: The repeated oscillation creates energetic density at the left and a lively frayed perimeter, but nearly every passage receives the same answer. The mast, outer contours, bridge and inner loops lose distinct authority, so the first surprise exhausts itself quickly. The worthwhile exception is the tangled left knot against the comparatively open centre: that local compression makes the adjacent void press outward. I would not infer from that one knot that the pervasive tremor is useful across the whole drawing.</li>
+</ul>
+<p>Across the set, A and B sustain attention through local disagreements among line behaviours; C clarifies the skeleton but loses some consequence at the joint; D makes the whole silhouette stranger at the cost of individual curves changing character. A useful next comparison would hold the overall skeleton constant while varying only the central joint and one outer contour, to see whether strangeness can propagate through relationships rather than one global surface treatment. This is a screen-only reading of 0.1 mm drawn strokes; line survival and authority on paper are unknown.</p>
+<h2 id="round-2-population-review">Round 2 population review</h2>
+<h3>Initial image-only reading</h3>
+<p>Identities and mechanisms were withheld. I inspected all eight six-cell sheets first, then the 13/18/47/82 close views. The sparse and full populations behave as two different tests: sparse exposes the shape grammar; full shows whether a change can retain authority among parallel fields, beams and small collisions.</p>
+<ul>
+<li><strong>K, sparse:</strong> Individual lines do sometimes change character locally: the tripled cusp and abrupt droop in K-13, the pinched leaf/long vertical encounter in K-47, and the sequence of lobes, hooks and doubled rims in K-82. These alterations matter because they sit at joints rather than coating every contour. Across the population, however, the largest enclosing curves remain fluent and familiar; the strangeness is often concentrated in a small central knot. K-18 is a useful weak case: its huge outline has unusual scale, but the close view shows mostly long, uninflected arcs, so the shape is stranger at sheet scale than the curves are along their course.</li>
+<li><strong>K, full:</strong> The full drawings contain welcome incompatibility between contour swarms, isolated beams and untouched base curves. K-13&#39;s large empty interval between the left skeleton and lower-right stream lets both retain authority; K-82 has several distinct curved behaviours instead of one continuous texture. K-18 is less convincing: streams, radiating scratches and diagonals accumulate as separate vocabularies without making each other read differently. The broad tendency is still a recurring bank of parallel lines with blunt clipped ends.</li>
+<li><strong>M, sparse:</strong> The six overall silhouettes vary substantially, especially the swollen suspended mass in M-18, paired sacs in M-24 and long bent descent in M-82. At close scale the main curves are notably smooth and continuous; character changes happen where lines meet or multiply, rarely within a single course. M-47&#39;s small hook under the upper contour is worth protecting because it momentarily turns a clean boundary into a joint, but much of its large central void remains passive. M-13 is coherent but close to a face-plus-bulb sign; the central pinch does not quite destabilise that reading.</li>
+<li><strong>M, full:</strong> Density often produces stronger local authority than the sparse counterpart. M-18&#39;s compact vertical thicket against very long crossing beams and M-47&#39;s off-centre stream against an almost empty middle create useful unequal pressures. M-82 is an ambiguous excess: the crossed bars, smooth loops, parallel ribbons and field marks are visibly unlike one another, yet the whole becomes difficult to traverse because several assertive systems arrive at once. In M-13 the lower-right field is potent in close view but peripheral in the whole; it does not strongly alter the sparse skeleton.</li>
+<li><strong>P, sparse:</strong> P is visually close to M in most seeds, with one or two straight or kinked interventions: the long diagonal in P-5, a vertical interruption on the right form in P-13, a diagonal chord in P-18, a small loop/stitch at the joint in P-47, and a long internal slash in P-82. P-47&#39;s little loop is the best relational use: it makes a crossing into a temporary fastening. The weaker cases read as an annotation laid across a shape rather than a curve changing character. P-18&#39;s diagonal divides the large empty body but does not make the enclosing contour newly consequential.</li>
+<li><strong>P, full:</strong> Added directional passages can reorganise the dense fields. P-47&#39;s tall compressed stream acts as a hinge between open skeleton and massed texture, and P-13&#39;s upper-right flow pulls attention across an otherwise broad quiet centre. But long diagonals recur as a ready-made disruption in P-18 and P-82; they cut through multiple zones while remaining indifferent to them. The risk is a visible intervention that announces difference without entering a specific relation.</li>
+<li><strong>R, sparse:</strong> R changes the large shapes most decisively. R-5&#39;s central folded oval is an effective awkward joint between several long, differently oriented curves; R-18 makes the large right bulb, small lower circle and narrow inner loop disagree in scale; R-47 stacks loops into a precarious vertical body. These cases give empty space a particular contour rather than treating it as leftover paper. Yet a common smooth inflated line remains across the set, so global novelty does not consistently become within-curve change. R-13 is the weak/uncertain case: the parts are rearranged, but the central loops still settle into a fairly readable head/profile cluster. R-82 is more consequential because its upper hooks and broad lower sweep keep exchanging figure and enclosure.</li>
+<li><strong>R, full:</strong> The changed skeleton remains perceptible in R-13, R-47 and R-82 instead of disappearing beneath the fields. R-13&#39;s broad curved banks bend around the sparse scaffold, and R-47&#39;s nearly empty centre makes the lower-right fan feel like a local event rather than wallpaper. R-18 is a useful failure: long diagonal bundles dominate the close view and sever the relation between the large curved masses. R-82 preserves more incompatible authorities, though its many edge-bound clusters risk leaving the centre as a corridor rather than an active void.</li>
+</ul>
+<p>Across labels, K, M and P often share nearly identical large contours in the selected sparse close views; their differences are local additions or reroutings. R supplies the clearest evidence of stranger overall shapes. None fully joins both desires yet: K changes local curve behaviour more often but usually inside a familiar skeleton; R changes skeleton and void more often but keeps many individual curves smoothly inflated. In full sheets, all four repeatedly return to parallel contour banks, clipped ribbons, radiating scratches and long beams. Those are useful materials, but they make the populations feel more related than the sparse shape differences suggest.</p>
+<p>Focused questions for a later experiment, not convergence prescriptions:</p>
+<ol>
+<li><strong>K:</strong> Can one outer enclosing curve undergo the sort of local role changes now concentrated in the central knots, while most other marks remain untouched?</li>
+<li><strong>M:</strong> Can a smooth large contour keep its calm authority but acquire one consequential change of behaviour away from a junction?</li>
+<li><strong>P:</strong> Can a disruptive passage visibly inherit direction or curvature from what it crosses, so it feels relational rather than overlaid?</li>
+<li><strong>R:</strong> Can the strong shape/void rearrangement be retained while one selected curve changes character two or three times along its course?</li>
+</ol>
+<p>This is a screen-only reading of 0.1 mm drawn strokes. Close views confirm geometry and hierarchy at larger scale, but paper survival, pen pressure and accumulation remain unknown.</p>
+<h3>Round 1 comparison</h3>
+<p>The comparison changes the picture unevenly; round two is not a general advance.</p>
+<ul>
+<li><strong>K changed most in the sparse skeleton.</strong> Round two K-13 replaces round one&#39;s large rounded lobes with a more discontinuous set of pinches, forks and suspended hooks; the new joints are less immediately nameable, though the cell loses some of round one&#39;s strange compound mass. K-82 gains several local changes of direction and doubling that make one passage hand attention to the next. K-47 is a real loss: round one&#39;s long contour moved through arch, narrow neck, folded basin and small hook, while round two simplifies this into cleaner isolated shapes around a large passive centre. K-18 remains mostly long smooth arcs in both rounds. In full K, round two often gives the parallel fields more scale and authority—especially the lower-right stream in K-13—but sometimes exchanges the sparse skeleton&#39;s awkward contour changes for another large field vocabulary.</li>
+<li><strong>M is visually inert across the matched evidence.</strong> Sparse and full populations, including all selected close views, appear unchanged. Its useful unequal densities and its smooth-contour limitation therefore both carry over intact.</li>
+<li><strong>P&#39;s interventions become larger, with mixed consequence.</strong> Round-two P-47 turns a crossing into a small looped fastening; round one only lays a line through the area. That is a specific improvement because it changes how the joint is read. Round-two P-13 also lets a short passage meet and briefly ride an enclosing contour. P-18 moves the other way: a modest bent internal line becomes a long diagonal chord that partitions the body but remains unrelated to its curvature. In full cells, round two generally opens the fields and makes them more directional. P-47&#39;s compressed vertical S-bank gains focal authority; P-82 becomes easier to traverse, but loses some of round one&#39;s irregular layered thickness.</li>
+<li><strong>R&#39;s sparse shapes are unchanged.</strong> The strongest evidence for stranger silhouettes and shaped voids was already present in round one, as was the reliance on smooth inflated curves. Round-two full R redistributes and often thins the contour banks. R-47 benefits from a local fan entering the otherwise empty centre; R-18 loses some smothering density but the diagonal bundles still sever rather than negotiate the curved masses. R-13&#39;s relocated large banks remain forceful but do not clearly deepen the sparse joint. This is variation in full-field emphasis, not an answer to within-curve change.</li>
+</ul>
+<p>The concrete round-two gains are narrow: K-82, P-47 and parts of K-full-13/P-full-47. The losses are equally informative: K-47 shows that simplifying a complex contour into separated readable parts can remove the very change of character being sought, while P-18 shows that making a disruption larger does not make it more consequential. M and sparse R demonstrate that some apparent round-two strengths were inherited unchanged rather than newly earned. My focused questions above still stand, with one added caution: preserve the round-one K-47 kind of multi-stage contour while testing stranger global arrangement; it is rare evidence of both desires beginning to coexist.</p>
+<p>Comparison remains screen-only at a matched 0.1 mm stroke width. I did not inspect mechanisms, maker notes, prior reviews or identities.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>

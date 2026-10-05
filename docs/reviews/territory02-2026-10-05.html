@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>territory02 — independent curve studies</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/takeover/rupture/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Study report</div><article><h1>territory02 — independent curve studies</h1><details><summary>On this page</summary><ol class="toc"><li><a href="#brief-and-evidence">Brief and evidence</a></li><li><a href="#what-each-experiment-changed">What each experiment changed</a></li><li><a href="#independent-readings-of-rounds-1-and-2">Independent readings of rounds 1 and 2</a></li><li><a href="#third-round-tighter-bends-and-unequal-b-zier-controls">Third round — tighter bends and unequal Bézier controls</a></li><li><a href="#possible-convergence-strategies-proposals-only">Possible convergence strategies — proposals only</a></li><li><a href="#verification-and-limits">Verification and limits</a></li></ol></details>
+<p>5 October 2026. Three rounds of three independent Sol experiments, with separate
+Sol evaluations. Convergence and production integration are deliberately deferred
+until Ian has inspected the results and offered a direction.</p>
+<p>Unequal Bézier controls produced clearer departures than the restrained second
+round, but tighter geometry did not reliably produce more interesting drawings.
+The most useful material includes abrupt returns, long off-axis passages and
+earlier awkward constructions that later rounds lost. Full-density growth still
+often covers those distinctions with familiar banks and fans. This is a set of
+alternatives to inspect, rather than a single best version of Territory.</p>
+<p><a href="../../tools/territory02/index.html">Open the visual comparison</a>. It puts original
+Territory and all three experiments beside each other at the same seed, density
+and round. Click a drawing for its full SVG. Start with sparse curves, then switch
+to full density; return to rounds 1 and 2 to see both gains and losses.</p>
+<figure><a href="../../tools/territory02/evidence/comparison-sparse-18.png" aria-label="Open drawing at full size"><img src="../../tools/territory02/evidence/comparison-sparse-18.png" alt="Round 3, seed 18: original and three independent sparse studies" loading="lazy"></a><figcaption>Round 3, seed 18: original and three independent sparse studies · Select to view full size</figcaption></figure>
+<h2 id="brief-and-evidence">Brief and evidence</h2>
+<p>Ian wanted curves that change character along their course and have stranger
+overall shapes. The makers shared that brief, with loose starting questions:
+<strong>1 — pacing</strong>, what makes a curve worth following; <strong>2 — silhouette</strong>, what makes
+its overall shape unfamiliar; <strong>3 — empty space</strong>, what a curve does to a void.
+These were starting questions, not compulsory motifs or three prescribed styles.</p>
+<p>All three used the existing Territory Version 10 engine in isolated prototype
+copies. Six common seeds are shown under two fixed recipes: sparse (density 0)
+and full (density 1, cover 0.45, grown fields). Seeds 5, 13, 18 and 24 were the
+initial development population; 47 and 82 were withheld from the first makers,
+then disclosed through the first critique and available in round 2. They are
+not fresh holdouts for the second round. Both recipes retain the same other
+drawing dials and input cores. Quiet, weak and nearly promising cases remain.</p>
+<p>During round 1 Ian requested thinner strokes. All current comparisons use
+<strong>0.1 mm</strong>, down from the initial 0.3 mm. This changes presentation, not bundle
+geometry, spacing or the stored paths. The first reviewer re-examined the same
+geometry after thinning; its reassessment materially softened the earlier
+saturation criticism. Small thumbnails can make these fine lines pale; SVGs
+and close views are better evidence for continuity than thumbnail darkness.</p>
+<p>The makers were <strong>gpt-6.1-sol</strong>; the three independent reviewers were fresh
+<strong>gpt-5.6-sol</strong> agents, following the drawing-review skill. Reviewers received
+neutral labels M/R/K/P, matched populations and close views before identities,
+mechanisms and prior preferences. The second reviewer did not receive the first
+review. The third reviewer likewise began without the earlier reports. The
+primary&#39;s reading was informed by maker mechanisms and is not blind.</p>
+<p>Calibration included coarsened, agitated and passage-removal variants. The first
+removal accidentally intersected no geometry, so A/C were exact duplicates;
+the first reviewer correctly refused to invent a difference. The second
+calibration used an actual removal through the central joint. These exercises
+check the reasoning and sensitivity of the reviewer, not agreement with a
+preferred winner; they do not establish that agent judgment substitutes for Ian.</p>
+<p>After seeing those conservative results, Ian approved a third round: tighter
+selected curves and explicitly unbalanced Bézier controls. The earlier rounds
+remain intact; larger detours, foldbacks and changed crossings are permitted in
+this study. Physical bounds, purity, determinism and geometry budgets remain.
+This gives the third round a shared cubic question, so its mechanisms are closer
+than the earlier lenses; its implementations and outputs remain independent.</p>
+<h2 id="what-each-experiment-changed">What each experiment changed</h2>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr>
+<th>Study</th>
+<th>Round 1</th>
+<th>Round 2</th>
+<th>Material limitation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>1 — Pacing / R</strong></td>
+<td>Redistributes inherited turning before migration: longer hesitation and compressed turning intervals, with endpoint correction.</td>
+<td>Adds one restrained hinge to the selected main curve after migration; backs off changes that alter sampled interchannel crossing counts.</td>
+<td>Small course changes can reorganize the later density population. Crossing-count preservation is not a proof of all topology.</td>
+</tr>
+<tr>
+<td><strong>2 — Silhouette / K</strong></td>
+<td>Applies asymmetric detours to migrated snapshots, aiming for unequal shoulders and returns.</td>
+<td>Applies one shared spatial deformation to snapshots, final channels, event points and cutoff loops, resolving round-1 coordinate inconsistency.</td>
+<td>Some cavity intricacy is lost; transported speed values are activity scalars rather than recomputed physical speeds. The deformation has no injectivity proof.</td>
+</tr>
+<tr>
+<td><strong>3 — Empty space / P</strong></td>
+<td>Selects a bend-derived pocket that resists fill, with an incomplete, often bracket-like return lip.</td>
+<td>Makes the passage overlap an existing curve before departing and meeting a second boundary; separates its role from automatic growth seeding.</td>
+<td>A relation can become a diagrammatic diagonal link. Some useful alien bluntness or horizontal shelf is lost.</td>
+</tr>
+</tbody></table></div>
+<p>Source and detailed maker evidence: <a href="../../tools/territory02/experiments/pace/NOTES.md">pacing notes</a>,
+<a href="../../tools/territory02/experiments/silhouette/NOTES.md">silhouette notes</a>,
+<a href="../../tools/territory02/experiments/void/NOTES.md">empty-space notes</a>.
+Each preserves sources for all three rounds alongside discarded trials.</p>
+<h2 id="independent-readings-of-rounds-1-and-2">Independent readings of rounds 1 and 2</h2>
+<p>The <a href="territory02-r1-sol.html">first blind review</a> found the pacing study most
+consistent in producing unfamiliar whole shapes, especially 18 and 47. It found
+original Territory&#39;s sparse pressure/release relations worth retaining, while
+some long passages remained fluent in one manner. The silhouette study kept
+quiet fragmentation but sometimes left episodes unrelated. The empty-space
+study offered useful incompatible straight passages, especially 18, but often
+inserted them rather than changing a course. Full-density fields could overwhelm
+those distinctions; thinner lines revealed tributaries and gaps that the first
+rendering obscured.</p>
+<p>The revisions did not attempt to agree with each other. Pacing kept its large
+lobes and satellites while testing a local hinge. Silhouette tried to let a
+longer route connect separated episodes without adding connector marks. Empty
+space tried to make the blunt insertion consequential while preserving its
+incompatible voice. Their maker notes retain losses, including the pacing
+teardrop in 24, simplified silhouette cavities in 47, and the lost empty-space
+shelf in 18.</p>
+<p>The <a href="territory02-r2-sol.html">second independent review</a> found narrow gains rather
+than general progress: K-82 gained changes of direction and doubling; P-47 gained
+a looped fastening; K-full-13 gained a forceful stream. K-47 lost its first-round
+arch → neck → folded basin → hook by simplifying into more readable separate
+parts. P-18 became a less consequential diagonal overlay. Sparse pacing was
+visually unchanged to that reviewer even though the code made a small hinge
+edit; dense pacing mostly redistributed the familiar banks. That distinction
+between a measured edit and a perceptible gain matters.</p>
+<p>The second reviewer also separated the two goals: pacing altered whole shapes
+and voids more consistently, while silhouette more often changed local curve
+behavior inside a familiar enclosing skeleton. Neither consistently joined
+both desires. This supports Ian&#39;s &quot;conservative&quot; reading without treating every
+quiet passage as a defect.</p>
+<h2 id="third-round-tighter-bends-and-unequal-b-zier-controls">Third round — tighter bends and unequal Bézier controls</h2>
+<p>Pacing now replaces selected substantial passages with explicit cubics using
+incoming/outgoing handle ratios measured at 7.5:1–15.5:1 after bed bounding,
+sideways controls and short escapes. It drops the previous 6 mm displacement
+ceiling and crossing guard; plain remote passages remain. This is a change of
+control geometry rather than a renamed smoothing or tremor pass.</p>
+<p>Silhouette restores its first-round route proportions, then replaces selected
+passages with one strongly unequal cubic or two cubics through an off-axis
+pivot. Long departure handles oppose short sideways arrival handles. Some routes
+with several existing changes of character receive only a short late edit.
+This protects some earlier range, but returns to path-specific shaping: historical
+cutoff events and loops no longer necessarily coincide with the shaped routes.</p>
+<p>Empty space stops emitting the bracket/lip and removes its pocket mask. It
+replaces one inherited subarc with two unequal cubics through a displaced
+shoulder: an extended hinge or a crossed recoil. Most other courses remain
+plain. It locally protects the shoulder from bundle smoothing; the ordinary
+hand still processes the resulting path. Stored history and activity values
+describe the earlier migration and can contradict the rewritten course.</p>
+<p>All three retain the real hand rendering; the evidence shows its emitted paths,
+not control-point overlays. Long controls sometimes shorten near the bed, and
+resampling/smoothing rounds some intended tight turns. Strong handle inequality
+is therefore a verified mechanism, not proof of a visible cusp or an aesthetic gain.</p>
+<h3>Primary reading of the rendered third round</h3>
+<p>I inspected all eight whole populations and selected same-window closes. <strong>K-18</strong>
+offers a substantial alternative to the familiar large U: a long diagonal and
+turn toward the right edge. It changes the distribution of air, but could become
+dependent on the frame or too simple. <strong>K-13</strong>&#39;s skew folded passage holds more
+unequal directions in one course; its thin edge also risks reading as a bar.
+<strong>K-47</strong> recovers some of its lower folded range, while its new small upper knot
+feels less consequential. Restoring an earlier discovery and adding a questionable
+curl can happen in the same drawing.</p>
+<p><strong>R-5</strong> makes its approach and short escape visibly unequal; the flattened return
+can look mechanical. <strong>R-18</strong> retains its strange large hanging shape and satellite,
+but the compressed inner diagonal risks becoming an annotation inside the body.
+<strong>R-24</strong> gains an upper recovery that competes with the lower teardrop; the dense
+version creates a large repeated mass that could become ornamental. <strong>R-47</strong> loses
+some earlier junction irregularity. These are stronger changes than its tiny
+second-round hinge, with costs worth keeping.</p>
+<p><strong>P-18</strong>&#39;s crossed return changes an actual course and the basin it borders; it
+answers the earlier diagonal-overlay problem more directly. <strong>P-82</strong>&#39;s unequal
+lobes and narrow waist alter a longer passage while retaining layered interior
+material. Across the population P remains modest: <strong>P-24</strong>&#39;s notch is a weak
+departure, and <strong>P-47</strong> loses the earlier useful fastening. Its first-round shelf
+in 18 and second-round fastening in 47 remain alternatives, not superseded steps.</p>
+<p>At full density, the changed curves reorganize fields, but repeated banks,
+combing and peripheral traffic remain prominent. R-full-18 opens a large area on
+the upper left; K-full-18 gives diagonal traffic more authority. Neither permits
+crediting all field changes to tight curvature alone. Sparse and dense versions
+deserve separate decisions.</p>
+<p>The common 100×70 mm close window misses newly displaced turns in 18 and the
+small upper knot in 47. Additional identically framed sparse course windows are
+included for all four round-3 variants. Whole sheets and full SVGs remain essential.</p>
+<h3>Independent third-round reading</h3>
+<p>The <a href="territory02-r3-sol.html">third independent review</a> finds conditional gains:
+longer course changes in P-18 and K-47, field/scaffold pressure in K-full-13/18,
+and shaped central air in P-full-13/47. It also values useful material already
+present in original Territory, including the small pinch/return in sparse13
+and the changing roles of the course in sparse82. A new mechanism need not
+invalidate the original.</p>
+<p>Its initial reading called K-sparse-18 the clearest failure and P-sparse18&#39;s
+change merely local. The larger common course window softened the first call
+and strengthened the second: both active passages had moved beyond the original
+close. This is evidence about framing as well as drawing. The reviewer kept its
+first reading and correction separate; the unresolved question is whether a
+close repairs a drawing that remains under-readable as a whole, or reveals a
+useful shift of scale.</p>
+<p>The reviewer prefers some earlier K-13/82 internal interlocking over round3&#39;s
+clearer, quieter construction. My interest in K-13&#39;s skew fold does not remove
+that loss. It also cautions that full-mode banks can become a reusable wave
+vocabulary, agreeing with the concern that denser material can obscure the
+different curve discoveries. Its proposed controlled follow-up fixes a sparse
+scaffold and compares one dense field crossing a structural change, stopping
+before it, or occupying unrelated air. This is a proposal, not an implemented
+convergence rule.</p>
+<p>The evaluator initially called sparse R stable across all three rounds. Direct
+comparison of the whole sheets contradicted that claim; a bounded recheck
+confirmed visible changes in 5, 18 and especially24. Its appended correction
+keeps visual change separate from mixed aesthetic value. M remains the valid
+unchanged reference. This is why the primary checks reviewer reports against
+the images rather than treating confident prose as automatic acceptance.</p>
+<h2 id="possible-convergence-strategies-proposals-only">Possible convergence strategies — proposals only</h2>
+<p><strong>A — Keep three independent voices available.</strong> Preserve the experiments as
+alternatives before combining their rules. This retains disagreements and makes
+future comparisons honest. It postpones the question of a single instrument;
+it does not establish that all three deserve production modes.</p>
+<p><strong>B — Give different passages different authority.</strong> Let one approach establish
+a long course, another alter one consequential hinge, and another affect a
+particular void. Keep unaffected passages. This could carry the discoveries
+without putting every curve through every rule. The risk is a fixed recipe of
+“sweep, hinge, pocket” or visible seams between assigned roles.</p>
+<p><strong>C — Treat order as the experiment.</strong> Compare the transformations at different
+stages and in different orders, with the same starting inputs. Turning before
+migration, shaping the shared history afterward, and resisting fill operate at
+different points; they are not interchangeable. The fill-resistance mechanism
+belongs to the earlier empty-space rounds; its current version rewrites a course.
+Source stages and historical event consistency must be made explicit in any
+ordering trial. This could produce surprising
+interaction, but a small change can reorganize the whole density growth and
+make attribution difficult. It requires actual comparisons, not an assumption
+that stacking mechanisms adds their strengths.</p>
+<p><strong>D — Compose their material instead of merging their engines.</strong> Keep drawings
+or passages as separate layers and test juxtaposition, interruption and partial
+overlap. This tests whether incompatible voices matter together without forcing
+one grammar. It risks doubling scaffold and fill until every passage has equal
+authority. A successful composition would not prove a reusable combined engine.</p>
+<p>None of these strategies has been implemented or selected. Ian&#39;s response to
+the visible results is the next direction-setting input.</p>
+<h2 id="verification-and-limits">Verification and limits</h2>
+<p>This is a screen study of generated populations, not a paper or live
+human/machine exchange test. The same random input cores and recipe are held
+constant across variants; there is no recorded intervention sequence from which
+to claim perceptible responsiveness. Native bench acceptance remains separate.</p>
+<p>The unchanged original Territory engine/source tests passed (7 checks). Shared
+geometry verification checks identical core inputs, input purity, repeatability,
+finite coordinates, the 300×218 mm bed, the 100 m ink limit and the kept-source
+250,000-point budget. All 48 matched cases passed in each of the three rounds.
+Maker checks additionally cover their changed helpers. The first- and
+second-round SVGs were exactly reproduced from retained source snapshots while
+later-round files changed. The viewer loaded all 144 drawings across 36
+selections, wrapped its seed arrows correctly and raised no page errors.
+All four current engines/pages rebuilt from preserved source files; the engines
+matched the checked builds exactly. Round3 frozen-source render metrics match
+the checked builds in all48 cases.
+These checks establish mechanical evidence;
+they make no claim about aesthetic success.</p>
+<p>All work stays in the isolated <code>codex/territory02</code> worktree. Production
+<code>axibridge/</code>, original <code>tools/territory-prototype/</code>, tests, the running app,
+hardware and main remain unchanged. No push, merge or Pi sync.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>

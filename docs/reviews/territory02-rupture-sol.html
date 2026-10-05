@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rupture review — blinded image-only calibration</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/takeover/rupture/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Independent critique</div><article><h1>Rupture review — blinded image-only calibration</h1>
+<p>D first attracts through the collision between a faint, bag-like perimeter and a dense branching spine: the large empty interior makes the black convergence feel both structural and invasive. F isolates that spine and reveals its strongest relation—parallel strands repeatedly change role, from horizontal beam to knotted joint, zigzag chamber and dangling brush. Its severed lower-left echo is promising but uncertain: it may activate the gap, or merely repeat the same line dialect at lower authority. E is the weak case for sustained attention; its sparse contour shapes an oddly specific void, yet most passages remain mutually indifferent. D gains from combining these incompatible authorities, though the perimeter’s long lower sweep risks simply enclosing the livelier event. I would protect the abrupt angular notch and untidy crossings in the spine; smoothing them would reduce its internal changes. Screen evidence only.</p>
+<h2 id="neutral-population-reading">Neutral population reading</h2>
+<p>K establishes a broad field: wandering outlines and straight crossings are repeatedly accompanied by parallel, contour-following tufts. Density shifts across K-13, K-24 and K-47, yet the same rounded combing returns in K-1151, K-1213 and K-1277. Different outlines receive the same answer, so K’s variety is largely relocation and scaling of one curve/fill habit. K-24 is open, but its crossings remain a loose accumulation rather than a relation that changes either passage.</p>
+<p>P departs in distribution and authority: it removes most of the field, leaving pale outline bodies with a few dark edge events. P-13, P-24, P-47 and P-1151 repeatedly place short bundles at a kink or boundary and run them with the host curve. Those silhouettes therefore seldom become different relations. P-1213 is the strongest exception: its dark shelf, arcing upper blade, detached ribbed fragments and diagonal cuts pull the void in competing directions. The close view shows changes from fan to notch to beam. P-1277 is the weak/quiet case; viewed whole, its huge outline and separated lower accents remain indifferent, and the livelier close crop would overstate the drawing.</p>
+<p>T retains the selective emptiness but expands the encounters. T-13 makes a branching hinge bear against a faint enclosure; T-47 sets a small internal barb against a separate thicket, activating the interval. T-1213 and especially T-1277 cross bundles, switching between sweep, zigzag, mesh and contour escort. This is visibly farther from K than P is. Still, T-24 is weak and T-1151 uncertain: isolated folded tufts can read as the same garnish moved to another boundary. Both P and T risk making every outline a support for curve-following fill. Protect T’s abrupt cross-grain collision, particularly T-1277: it forces neighbouring bundles to change direction rather than merely decorate a new silhouette. Screen evidence only; no claim about paper weight or plotting.</p>
+<h2 id="post-reveal">Post-reveal</h2>
+<p>The reveal strengthens the claim that P/T visibly depart from K: no complete K layer or main course remains; cropped d-grow grain is reused, so sparsity is not K with material removed. That still does not prove the new relation consequential. Since RNG streams differ, P/T silhouettes are not controlled causal comparisons. D being T-13 full, with E its lines and F its material, confirms my initial judgment that their combination gains something: the enclosure turns the spine into an intrusion, while the spine gives the enclosure unequal authority. The v1 radial-fan account explains a recurring convergence; freezing finite chord frames before the untouched held-out set makes persistence more diagnostic. P-1213 remains promising; open P-1277 remains weak. The stepped-comb family persists after the mechanism change, so it is still the clearest habit to challenge.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>

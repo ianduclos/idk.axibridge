@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Territory 02 — Coexistence review (Sol)</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/takeover/rupture/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Independent critique</div><article><h1>Territory 02 — Coexistence review (Sol)</h1><details><summary>On this page</summary><ol class="toc"><li><a href="#calibration-initial-image-only-comparison">Calibration: initial image-only comparison</a></li><li><a href="#blind-population-reading">Blind population reading</a></li><li><a href="#post-reveal-reassessment">Post-reveal reassessment</a></li></ol></details>
+<h2 id="calibration-initial-image-only-comparison">Calibration: initial image-only comparison</h2>
+<p>All three hold the same right-heavy field against a large, unusually shaped quiet area at left. D differs most: its lower-centre angular ribbon and loose polygonal crossings make a brittle bridge into the dense right cluster. That bridge changes the surrounding curves from separate flourishes into something like interrupted traffic. It also risks becoming a diagram laid over the drawing; I cannot yet tell whether that imposition deepens the incompatibility or merely crowds a passage that E lets remain active through absence.</p>
+<p>E gives the central pale oval and the left void more authority. The few cut-off dashes inside that opening are the awkwardness I would protect: they keep the emptiness from reading as polished negative space. F adds a long descending diagonal and a soft, dangling contour near the bottom. The contour usefully gives the central vacancy a low, bodily edge, but the diagonal may over-connect the top and bottom. My uncertain comparison is E versus F: at sheet scale F feels more consequential; close up, E&#39;s unsupported gap feels stranger and less explained.</p>
+<h2 id="blind-population-reading">Blind population reading</h2>
+<p>Across the ten sheets, two habits recur: broad, lightly drawn contours establish large openings, while repeated lines, fans and hair-like bundles collect into rougher islands. Their coexistence feels consequential only when one family changes how the other is followed. Difference of texture alone often leaves two vocabularies sharing space without affecting each other.</p>
+<p>M is the clearest quiet extreme. M·13·a–c and M·24·a–c remain sparse, smooth and nearly frictionless; M·1009·b and M·1061·b add crossings, but the additions feel like more of the same gesture. These cells preserve space well, yet across the population the answer is so consistent that the particular starting configuration seems to matter little. K supplies the opposite recurring habit: dense striated waves and dark hooks. K·13·b/c and K·1009·b/c have ample internal motion, but much of it sits beside the thin contours as a separate weather system. K·24·c is more active because the diagonal scaffolding cuts across the right-hand bundles, making their curves feel deflected rather than merely displayed.</p>
+<p>N more often makes a local collision alter the whole. In N·24·c, a blunt angular ribbon crosses the pale central oval and points into the crowded right edge; the close view confirms that its flat, awkward geometry interrupts several smoother routes. I would protect that incompatibility, while remaining unsure whether the second lower ribbon repeats the point once too often. N·1009·b/c also turns a top-centre opening into a congested hinge: the close view shows a large smooth mouth facing stepped fragments and a compact mesh. That relation gives the empty centre a particular pressure. In N·13·c, however, added loops disappear into an already active field and feel less discriminating.</p>
+<p><strong>Attribution correction after the blind pass:</strong> the supplied N·1009 close view is N·1009·a, not N·1009·b/c. The whole sheet still suggests a congested top-centre hinge in b/c, but the close-view evidence supports only the claim about a: its broad smooth mouth faces stepped fragments and a compact mesh. I have left the original misattribution above visible rather than silently rewriting it.</p>
+<p>S tends to use fewer intrusions. S·1009·b/c lets pointed fans and stepped ribbons puncture slow curves without filling the central opening; in close view, the changes of speed stay legible. S·24·b is ambiguous: its little lower loop and scratches may be a useful hesitation, or may simply be too slight to redirect the larger structure. W works at a broader scale. W·1061·b/c brings loose loops through an open field, and the close view shows a good near-miss between the looping contour and a short repeated bend. W·24·c is less settled: the long diagonal gives the vacancy a hard axis, but may over-connect top and bottom.</p>
+<p>A focused next comparison would hold one field constant and place the same rough passage crossing, just touching, and narrowly missing one smooth boundary. That would test whether contact is doing the work or whether proximity is enough. These are screen readings; the finest bunching and apparent darkness still need paper evidence.</p>
+<h2 id="post-reveal-reassessment">Post-reveal reassessment</h2>
+<p>The reveal changes attribution more than the visible preferences. M&#39;s smooth-only construction explains its narrow, frictionless range; K&#39;s reuse of rough prior outputs explains why its dense passages often felt like a separate weather system. W&#39;s exact preservation of the rough base weakens my positive reading of W·1061&#39;s near-miss: it remains visually useful, but cannot count as evidence of a consequential response. Conversely, N&#39;s neighboring-fragment following gives a plausible basis for why N·24·c&#39;s angular bridge visibly redirects several routes. I still think its second lower ribbon risks restating the interruption, so mechanism does not remove that reservation. S&#39;s contact displacement fits the legible speed changes in S·1009, but the heuristic ownership and zero-contact S·13·a warn against reading every local alignment as caused interaction. The calibration reveal also separates two values: E&#39;s unsupported gap remains stranger to me, while D/N·24·c demonstrates more active coexistence; F/W·24·c&#39;s long diagonal still feels over-connecting. Ian&#39;s wish to retain the rough foundation and allow occasional stronger smooth passages suits the visible evidence, provided coexistence does not become convergence or a repeated bridge motif.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>

@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Territory02 — recover the textural baseline, 5 October 2026</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/takeover/rupture/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Study report</div><article><h1>Territory02 — recover the textural baseline, 5 October 2026</h1><details><summary>On this page</summary><ol class="toc"><li><a href="#what-is-restored">What is restored</a></li><li><a href="#primary-visual-reading">Primary visual reading</a></li><li><a href="#independent-reading-and-retained-disagreement">Independent reading and retained disagreement</a></li><li><a href="#what-this-test-can-establish">What this test can establish</a></li><li><a href="#unselected-continuation-strategies">Unselected continuation strategies</a></li></ol></details>
+<p>Ian rejected the preceding panel fills as worse than the earlier baseline.
+He values that baseline&#39;s texture, sense of material and integration with
+the lines, and wants the integration to go further. The flat-fill trials are
+now explicitly archived as rejected. This follow-up returns to the actual
+previous texture generator and full recipe, rather than inventing another
+shading vocabulary. <a href="../../tools/territory02/takeover/texture/index.html">Comparison</a>
+and <a href="../../tools/territory02/takeover/texture/NOTES.md">construction/reproduction</a>.</p>
+<h2 id="what-is-restored">What is restored</h2>
+<p>The earlier texture gets its variation through inherited line families:
+successive echoes distort, pinch, spread, break, retrace and acquire dry skips.
+Those qualities were lost in my bounded patch construction. The previous
+fill trial also reduced nominal ink from the full baseline&#39;s 60 m to 8/18 m;
+its comparison was therefore not a faithful continuation of the full baseline.
+The earlier report&#39;s local gains do not override Ian&#39;s rejection.</p>
+<p>Here the original full Territory output is verified identical against its
+unmodified engine at every seed. Two probes apply that same density/texture
+machinery to the unchanged takeover curves. One retains original activity
+and history guidance. The other rebuilds those guides around actual first-
+and second-pass courses and their geometric change. Present geometry,
+tangents, junctions and occupancy follow the new curves in both probes.
+Both retain the original finish and full recipe. No new default or
+production convergence has been selected.</p>
+<h2 id="primary-visual-reading">Primary visual reading</h2>
+<p>The material quality returns substantially: the new sheets have feathered,
+uneven families, pinched grain and doubled-back marks rather than dark panels.
+That is recovery toward the baseline, not proof that either new population
+surpasses it. The original remains particularly valuable for how a family
+grows and fades along a course and how sparse crossings counter its weight.</p>
+<p>Seed 13&#39;s inherited-guidance version produces a divided, curving passage in
+the lower half. Rebuilt guidance moves much of that authority toward the left
+and leaves another long weighted course on the right. Both recover texture,
+but the tight central curves can become minor beside those larger families.
+In 24, inherited guidance creates a large left fan that feels less particular
+than the original&#39;s quieter diagonal construction; rebuilt guidance leaves
+more of the blank field available. In 47, rebuilt guidance spreads large
+families across the right half. Their richness does not settle whether they
+belong to the important new-line encounter.</p>
+<p>Fresh 331 is an explicit weak case for integration: a major family appears
+in the left field, away from the bare drawing&#39;s strongest right-side activity.
+Fresh 389 recovers varied grain and crossings, but the automatically selected
+texture detail contains no bare principal course. The density machinery can
+seed from its own secondary continuation/ribbon strokes, allowing the texture
+to develop elsewhere. Fresh 419 and 463 recover useful interrupted families
+around some bends, while also adding accents that compete with the thin line
+construction. Whole-sheet authority remains uneven.</p>
+<h2 id="independent-reading-and-retained-disagreement">Independent reading and retained disagreement</h2>
+<p>Sol first saw neutral populations and whole/detail removals before receiving
+identities or preferences. It found texture consequential in 419, 331 and the
+original 13, and valued the quiet rebuilt-guidance 24. It also found broad
+coverage liable to turn curves into supports for familiar ornamental bundles.
+Its suggested test holds placement at two 419 encounters while varying local
+interruption, unequal retracing and removal.</p>
+<p>I agree that those local endings and interruptions carry much of the material
+interest. I challenged 331 as evidence of integration: the strong left family
+is remote from the bare drawing&#39;s main right-side activity. After context,
+Sol retained its asymmetry reading but withdrew that lobe as evidence of
+integration. These are distinct claims; the initial account remains recorded.
+I also regard recurring grain as a legitimate part of Ian&#39;s established
+baseline. Its familiarity alone is not a reason to replace it; the problem is
+whether its placement and weight make the encountered curves more consequential.
+No reviewer preference is automatic acceptance.</p>
+<h2 id="what-this-test-can-establish">What this test can establish</h2>
+<p>The bare and two new textured versions have byte-identical base strokes;
+their differences isolate texture addition and its guidance. Original full
+Territory has different courses and remains the artistic baseline, not a
+fill-only before/after control. All use the same nominal 60 m recipe, but
+actual ink differs: original 11.9–32.8 m, inherited guidance 11.4–33.1 m,
+rebuilt guidance 10.2–32.4 m across these ten seeds. More marks are not a score.</p>
+<p>Source was frozen before fresh 331/389/419/463; no texture or curve tuning
+followed those images. All 40 cases passed original baseline parity,
+repeatability, input/base purity, finite geometry, bed and physical limits.
+The 80 whole/detail viewer images and controls/layout passed in-memory checks
+using own SVG/CSS text, with no URL navigation or external requests. Actual
+in-app local-file navigation remains unverified after the earlier automatic
+security rejection. Everything is a screen probe; paper and interactive
+drawing acceptance remain open.</p>
+<p>The matched details deliberately frame a densely occupied grown-ink tile.
+They can miss a better baseline passage or the central new-line encounter.
+Fine strokes can merge at thumbnail size. Whole populations and removal
+calibration remain necessary evidence, not selected detail highlights.</p>
+<h2 id="unselected-continuation-strategies">Unselected continuation strategies</h2>
+<p>The next narrow test could retain this baseline texture but allow growth
+seeds only on principal rewritten courses, separating integration from the
+extra material generated by secondary continuations. That could also remove
+valuable counterweights, so it should be compared rather than assumed better.
+Another path would let an established family alter the course that produced
+it, making line and texture negotiate through a second pass. A more restrained
+path would preserve the full baseline&#39;s distribution and apply tighter turns
+only where its existing families have authority. These are proposals for
+Ian&#39;s response, not a convergence chosen on his behalf.</p>
+<p>The bounded blind second-eye reading is retained separately in
+<a href="territory02-texture-sol.html">the Sol report</a>. Primary acceptance remains based
+on the drawings and Ian&#39;s direction, not agreement with that report.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>

@@ -17,12 +17,16 @@ handoff_for: Codex
 
 # idk.axibridge — status
 
+**Report format:** Ian prefers HTML. All sixteen Territory02 reports and
+independent critiques are available through the
+[HTML report index](docs/reviews/territory02-reports.html); galleries link to HTML.
+
 **Scaffold replacement, 5 October:** Ian rejected coexistence as barely changed,
 still starry and repetitive. [New constructions](tools/territory02/takeover/rupture/index.html)
 replace every main course and reuse only cropped d-grow grain. Open paths and
 partly enclosed bodies stay separate. Moving-normal texture collapse was removed
 after a development probe; sources frozen before fresh 1151/1213/1277. The
-[report](docs/reviews/territory02-rupture-2026-10-05.md) records remaining repeated
+[report](docs/reviews/territory02-rupture-2026-10-05.html) records remaining repeated
 comb-like material and weak cases. No production change or convergence.
 
 **Rough/smooth coexistence, 5 October:** Ian prefers the rough three-material
@@ -33,7 +37,7 @@ references. Twelve base cases / sixty drawings passed geometry checks; 120
 in-memory viewer images passed. Source was frozen before fresh 1009/1061.
 Continuity can make strained angular bridges; interference can be visually
 slight; independent paths sometimes remain overlays. The
-[report](docs/reviews/territory02-coexist-2026-10-05.md) retains these limits and
+[report](docs/reviews/territory02-coexist-2026-10-05.html) retains these limits and
 independent critique. No convergence or production/paper acceptance.
 
 **Material and grammar studies, 5 October:** Three independent makers tested opening,
@@ -41,7 +45,7 @@ pressure and unravelling against curves-only/course-led references. Ian identifi
 their limited inherited grammar. A separate [grammar comparison](tools/territory02/takeover/grammar/index.html)
 removes explicit thorn/chord ornaments and constructs different paths. Both
 comparisons retain fresh frozen-source populations and mechanical checks; the
-[report](docs/reviews/territory02-material-2026-10-05.md) records weak cases and
+[report](docs/reviews/territory02-material-2026-10-05.html) records weak cases and
 independent critique. New paths remain loop-heavy; no selected replacement or
 convergence, and no production or paper acceptance.
 
@@ -51,14 +55,14 @@ restores the original full recipe and density generator, applying it to the
 unchanged new curves with inherited or rebuilt guidance. Original baseline
 parity and 40 geometry cases passed; 80 in-memory viewer images passed.
 Source was frozen before four fresh seeds. Texture returns, but material can
-still grow away from principal new courses. The [report](docs/reviews/territory02-texture-2026-10-05.md)
+still grow away from principal new courses. The [report](docs/reviews/territory02-texture-2026-10-05.html)
 retains this limitation. Panel trials are archived as rejected; no convergence.
 
 **Course-bound fills, 5 October:** Ian found stronger curve character but less
 coherence and pointed out the untouched fills. Two physical constructions now
 bind material between actual rewritten courses, alongside curves-alone and
 ordinary filled Territory. The [comparison](tools/territory02/takeover/fill/index.html)
-and [report](docs/reviews/territory02-fill-2026-10-05.md) retain gains and losses:
+and [report](docs/reviews/territory02-fill-2026-10-05.html) retain gains and losses:
 the initial machine reading found local binding in some cases, but Ian later
 rejected the shading as a regression from the baseline. These trials are archived.
 Frozen source preceded four fresh seeds. Eighty geometry cases and 160
@@ -68,7 +72,7 @@ integration selected; paper and actual in-app file navigation remain unverified.
 **Territory02 study, 5 October:** Three independent Sol makers completed three
 rounds of curve experiments, including tighter turns and unequal Bézier handles.
 Matched six-seed sparse/full evidence uses 0.1 mm lines. Independent aesthetic
-reviews and the [report](docs/reviews/territory02-2026-10-05.md) preserve gains,
+reviews and the [report](docs/reviews/territory02-2026-10-05.html) preserve gains,
 losses and possible convergence strategies. Ian explicitly deferred integration;
 the experiments stay separate on `codex/territory02`. Production and original
 Territory remain unchanged. Screen study only; no app restart, plotting or Pi sync.
@@ -77,7 +81,7 @@ Territory remain unchanged. Screen study only; no app restart, plotting or Pi sy
 bulbs/corners. A second regime now changes actual course continuations and
 locally inflates bends, compresses returns and permits tangent breaks. The
 [comparison](tools/territory02/takeover/index.html), failed trials and
-[follow-up report](docs/reviews/territory02-takeover-2026-10-05.md) retain gains
+[follow-up report](docs/reviews/territory02-takeover-2026-10-05.html) retain gains
 and losses. Current source was frozen before four new seeds; all 30 stage/seed
 geometry cases and 60 whole/detail viewer images passed mechanical checks.
 Aesthetic and paper acceptance remain open. No convergence, production change,

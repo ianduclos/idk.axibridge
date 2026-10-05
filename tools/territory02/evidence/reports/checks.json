@@ -1,0 +1,29 @@
+{
+  "reports": 17,
+  "widths": [
+    1280,
+    390
+  ],
+  "checked": [
+    "territory02-2026-10-05.html",
+    "territory02-coexist-2026-10-05.html",
+    "territory02-coexist-sol.html",
+    "territory02-fill-2026-10-05.html",
+    "territory02-fill-sol.html",
+    "territory02-material-2026-10-05.html",
+    "territory02-material-sol.html",
+    "territory02-r1-sol.html",
+    "territory02-r2-sol.html",
+    "territory02-r3-sol.html",
+    "territory02-reports.html",
+    "territory02-rupture-2026-10-05.html",
+    "territory02-rupture-sol.html",
+    "territory02-takeover-2026-10-05.html",
+    "territory02-takeover-sol.html",
+    "territory02-texture-2026-10-05.html",
+    "territory02-texture-sol.html"
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "method": "Own report HTML and images inline at about:blank. Static links resolved; actual file navigation not exercised."
+}
