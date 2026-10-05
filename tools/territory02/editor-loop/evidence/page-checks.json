@@ -1,0 +1,64 @@
+{
+  "checks": [
+    {
+      "page": "index.html",
+      "width": 1440,
+      "images": 8,
+      "noOverflow": true,
+      "linksResolve": true
+    },
+    {
+      "page": "index.html",
+      "width": 390,
+      "images": 8,
+      "noOverflow": true,
+      "linksResolve": true
+    },
+    {
+      "page": "history.html",
+      "width": 1440,
+      "images": 14,
+      "noOverflow": true,
+      "linksResolve": true
+    },
+    {
+      "page": "history.html",
+      "width": 390,
+      "images": 14,
+      "noOverflow": true,
+      "linksResolve": true
+    },
+    {
+      "page": "territory02-editor-round1-2026-10-05.html",
+      "width": 1440,
+      "images": 0,
+      "noOverflow": true,
+      "linksResolve": true
+    },
+    {
+      "page": "territory02-editor-round1-2026-10-05.html",
+      "width": 390,
+      "images": 0,
+      "noOverflow": true,
+      "linksResolve": true
+    },
+    {
+      "page": "territory02-editor-round1-sol.html",
+      "width": 1440,
+      "images": 0,
+      "noOverflow": true,
+      "linksResolve": true
+    },
+    {
+      "page": "territory02-editor-round1-sol.html",
+      "width": 390,
+      "images": 0,
+      "noOverflow": true,
+      "linksResolve": true
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "method": "Own artifact HTML with inlined PNGs at about:blank; requests blocked.",
+  "limits": "Links resolved on disk; actual link/file navigation and paper not tested."
+}

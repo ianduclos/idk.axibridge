@@ -9,11 +9,13 @@ editable source; `render-reports.cjs` rebuilds HTML using the `marked` package
 ## Current agent workflow
 
 Use the [revised agent loop](../../docs/reviews/territory02-agent-loop-2026-10-05.html)
-for the next study: three bounded makers edit the same two actual drawings,
+for the editing studies: three bounded makers start with the same two drawings,
 one independent Sol reviews whole sheets before mechanisms, and Ian sees an
 eight-cell contact sheet before round two. Keep revisions and disagreements;
 no automatic convergence. This supersedes the historical round workflow below.
-The protocol is adopted; its first drawing round has not yet run.
+The [first checkpoint](editor-loop/index.html) now contains six maker choices and
+two older controls. [All revisions](editor-loop/history.html) remain visible.
+Round one ends here; Ian’s response shapes any next branch.
 
 ## Historical studies
 

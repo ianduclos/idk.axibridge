@@ -1,8 +1,8 @@
 # Territory02 — revised agent loop
 
 Adopted on 5 October after Ian asked to change the loop. This is the operating
-protocol for the next study. The workflow has changed; a new drawing round has
-not been run. The [brainstorm](territory02-brainstorm-2026-10-05.html) remains a
+protocol for the study. The [first run](territory02-editor-round1-2026-10-05.html)
+now reaches the early contact-sheet checkpoint; round two awaits Ian. The [brainstorm](territory02-brainstorm-2026-10-05.html) remains a
 set of possibilities, not a requirement to implement every mechanism.
 
 **The unit of work is a particular drawing and its revisions.** Three makers

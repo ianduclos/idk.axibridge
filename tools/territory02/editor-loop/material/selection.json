@@ -1,0 +1,82 @@
+{
+  "S1": {
+    "stage": 2,
+    "file": "S1-stage2.json",
+    "note": "Stage2 makes the actual rough grain collide across the cut instead of leaving three bodies separated by broad smooth arches. It loses the long slow return and much of the initial sheet\u2019s distributed activity. The right grain remains stacked and the new isolated bulbs may still read as decoration."
+  },
+  "S2": {
+    "stage": 2,
+    "file": "S2-stage2.json",
+    "note": "Stage2 opens the lower smooth enclosure so the existing rough growth can determine the outer edge. It loses the clear enclosing silhouette of stage1 and leaves a less resolved lower stop. The remaining rough fan repeats parallel hooked arcs; this does not solve the inherited comb grammar."
+  },
+  "stage1Inspection": {
+    "S1": "Whole view: a rectangular slot and turned lower tongue made three sticker-like bodies; the wide upper arch softened the cut. Stage2 removed the tongue/arch, shifted the upper lobe into the lower and tightened both smooth continuations.",
+    "S2": "Whole view: the two smooth long flanks enclosed the remaining rough fan as an obvious pod; the isolated left slash was generic. Stage2 removed the lower right flank and upper comb cap, cut the right spill and exchanged the slash for a small return."
+  },
+  "inspection": "All four whole renders and all four close renders inspected. Close views confirm actual polygonal/jagged inherited grain with crossing strands, but also expose persistent parallel fan repetition.",
+  "mechanical": {
+    "finiteBounded": true,
+    "minPointsPerPath": 2,
+    "pageMm": [
+      300,
+      218
+    ],
+    "strokeMm": 0.1,
+    "reproducedIdentically": true,
+    "states": [
+      {
+        "file": "S1-stage1.json",
+        "paths": 265,
+        "points": 50543,
+        "maxSegmentMm": 0.3953549973964975,
+        "sha256": "11ce6271e3a6a48f0ae9c391989117b69ec303c83d524ec2c16d68dfcf05147e",
+        "boundsMm": [
+          73,
+          39.642542861477764,
+          228.51945333333333,
+          182.6185555300899
+        ]
+      },
+      {
+        "file": "S1-stage2.json",
+        "paths": 207,
+        "points": 36693,
+        "maxSegmentMm": 0.404016799078873,
+        "sha256": "9580eb1aa7000d02c5a2d189d84fbfa0fe5a799248b8ad3f072ce04b7d29887a",
+        "boundsMm": [
+          74,
+          74,
+          246.0,
+          158.8558261265362
+        ]
+      },
+      {
+        "file": "S2-stage1.json",
+        "paths": 237,
+        "points": 28130,
+        "maxSegmentMm": 0.4841199611456502,
+        "sha256": "8ce258fb6d49168e6374864dfc778aabb179850ebbd320f2296cdbf54cb74777",
+        "boundsMm": [
+          74,
+          43.01396999999999,
+          232.0,
+          184.1109167733868
+        ]
+      },
+      {
+        "file": "S2-stage2.json",
+        "paths": 216,
+        "points": 30392,
+        "maxSegmentMm": 0.38668084355662047,
+        "sha256": "145238d811b85dd6887405c5bddfd01485115648c8a970de10e191779e3f579f",
+        "boundsMm": [
+          94.63956495115906,
+          53.03060360652197,
+          232.0,
+          177.15991968715403
+        ]
+      }
+    ]
+  },
+  "limits": "Screen geometry study only; no physical plotting or production integration. Grain is edited source geometry rather than invented raster texture. Some original sparse crossing segments survive inside extracted rough patches."
+}

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Territory02 — first editing round, independent Sol review</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/editor-loop/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Independent critique</div><article><h1>Territory02 — first editing round, independent Sol review</h1>
+<p>Bounded <code>gpt-5.6-sol</code> review. The initial account was saved before revealing
+identities, briefs and histories. No numerical scores or implementation changes.
+<a href="../../tools/territory02/editor-loop/index.html">Eight drawings</a> ·
+<a href="../../tools/territory02/editor-loop/history.html">All revisions</a>.</p>
+<h2 id="first-pass-anonymous-images">First pass — anonymous images</h2>
+<p>Scope: neutral IDs only; whole PNGs plus close views, seen on screen. At 300 × 218 mm and 0.1 mm stroke, apparent weight and small separations remain provisional until plotted.</p>
+<p>The calibration difference is consequential. V leaves an open diagonal corridor between the upper-left coil and lower-right field. W inserts a dense oblique knot there, creating a third dark anchor and making the distant families contest one passage. V gives the long traversals more authority; W is less comfortably bipartite, though its pileup approaches uniform urgency. Neither is a simple improvement.</p>
+<p>Across the candidates, N2–N8 repeatedly oppose a large, mostly single-line enclosure to a compact bundle of parallel, crossed, or comb-like paths. The worthwhile departures occur when neither system merely frames the other.</p>
+<p>N1 sustains the longest whole-sheet reading. Its coil, central knot, upper-right crest, and lower-right field have unequal authority, while thin traversals keep revising their distances. Protect the abrupt breaks, stray uprights, and awkward crossings: regularising them would turn incompatible passages into one fluent all-over manner. Its risk is repetition—many nested bands eventually flatten into texture.</p>
+<p>N4 and N5 are the strongest compact assemblies. N4’s looping outline, clipped upper cluster, and dark lower fold shape the empty left field. Its awkward central loop delays the otherwise forceful downward sweep. N5 has clearer diagonal torque, with dark slashes entering and leaving a curved comb. It is more immediately legible than N4, but closer to exhausting itself in one gesture.</p>
+<p>N3 and N8 reward close viewing more than whole-sheet viewing. N3 negotiates among oblique reeds, wavering horizontals, and a warped grid, but reads as a specimen in blank space. N8 preserves several directions close up; at whole scale they compress into one dark centre with weak hierarchy. N6 is dominated by its broad dark band: the curved fringe changes its underside, but the outer contour mostly supports it.</p>
+<p>N2 is uncertain rather than inert. Its crossings interrupt a peculiar open enclosure, yet much of that enclosure remains scaffolding. N7 is weakest: two dark passages do not alter the large outline or the empty field between them. Sparseness is not the problem; the parts leave one another unchanged.</p>
+<p>On image evidence alone, I would not ask N1, N4, or N5 to become richer. N2 is the only plausible candidate for one further edit, specifically one that makes a dense passage visibly alter, evade, or interrupt the enclosing line. The risk is losing its exposed, oddly shaped emptiness. I want the histories before deciding whether that opportunity already occurred or whether “none” is the better answer.</p>
+<h2 id="second-pass-histories-and-identities">Second pass — histories and identities</h2>
+<p>Scope: screen review of the two inputs, fourteen-state history, selected whole/close renders, and operation records. This free editing study does not isolate causal effects, and 0.1 mm paths still need paper verification. An initial image-tool presentation showed a shallow strip for one calibration whole; reload/downscaling resolved it. Both calibration files are full pages.</p>
+<p>The calibration reveal changes attribution, not the visible judgement. W is unchanged S1; V removes 121 whole strokes by centroid. The open diagonal corridor in V is therefore produced by subtraction, while W’s central knot belongs to the source. Removal gives the traversals more authority but also weakens the contested third anchor. This is a useful counterfactual because neither “more” nor “less” wins automatically.</p>
+<p>History makes N1 more important as a baseline and less persuasive as evidence for editing: it is untouched S1, and none of the S1 revisions sustains its sheet-wide exchange among unequal regions. The editors consistently gain a portable, compact element while losing distributed courses and shaped intervals. That trade can be valid for the bench, but it is a loss at whole-sheet scale.</p>
+<p>N5 remains the clearest consequential response. Connections-S2 stage2 turns stage1’s floating upper-left grain and vertical feather into one kinked diagonal course; the overlap changes both rather than merely placing them together. It loses stage1’s long, empty-headed suspense, and the added bulb still reads as a separate authored contour. N4 also survives the reveal: material-S2 stage2 opens the enclosure so the rough fold helps determine the edge. Its central loop and uneven descent remain worth protecting, but the repeated comb still limits a third pass.</p>
+<p>I disagree with the material maker’s S1 selection as a whole drawing. Material-S1 stage1 has an ungainly remote lower-right lobe and broad smooth arch, yet those make the central grain answer two distant areas. N3/stage2 tightens the material but confirms my initial “specimen in blank space” concern. Preserve stage1 as an ambiguous alternative, even if stage2 is the more reusable element.</p>
+<p>The histories strengthen my reservations about N6 and N8: both second stages consolidate successfully, then compress hierarchy into a dominant band or knot. N7 remains weak because its sparse parts leave one another unchanged. Composition-S2 stage2/N2 loses stage1’s broad hanging rhythm but retains the isolated left comb and clipped gaps. I therefore withdraw my initial suggestion to edit N2 again. The sequence already tested simplification, and another move would more likely polish the same compact answer than produce a new relation.</p>
+<p>Recommendation: no candidate merits another edit in this round. Retain N5 and N4 as useful compact outcomes, N1 as the stronger whole-sheet baseline, and material-S1 stage1 as the earlier disagreement worth keeping visible.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>

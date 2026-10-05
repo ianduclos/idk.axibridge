@@ -1,0 +1,191 @@
+{
+  "finiteAndBounded": true,
+  "pageMm": [
+    300,
+    218
+  ],
+  "strokeMm": 0.1,
+  "records": [
+    {
+      "maker": "untouched reference",
+      "input": "S1",
+      "stage": 0,
+      "source": "inputs/S1.json",
+      "label": "N1",
+      "id": "S1",
+      "points": 65295,
+      "strokes": 899,
+      "inkMm": 33086.21744422377,
+      "geometrySha256": "cbc8699e9debe95b495f640783baf4f413d84aee82e9692f9c30864d75a9488b"
+    },
+    {
+      "maker": "composition",
+      "input": "S2",
+      "stage": 2,
+      "source": "composition/S2-stage2.json",
+      "label": "N2",
+      "id": "composition-S2-stage2",
+      "points": 32478,
+      "strokes": 341,
+      "inkMm": 6685.955016368308,
+      "geometrySha256": "828dd44b0f24890199074ac2532c93a4a3607099a35d7a83aace0afa0a02b9e5"
+    },
+    {
+      "maker": "material",
+      "input": "S1",
+      "stage": 2,
+      "source": "material/S1-stage2.json",
+      "label": "N3",
+      "id": "material-S1-stage2",
+      "points": 36693,
+      "strokes": 207,
+      "inkMm": 6349.165893121825,
+      "geometrySha256": "be4e7862b41dc54061c5fbe10febda892b1f7c4c27436fe5ba8165299fac3fbc"
+    },
+    {
+      "maker": "material",
+      "input": "S2",
+      "stage": 2,
+      "source": "material/S2-stage2.json",
+      "label": "N4",
+      "id": "material-S2-stage2",
+      "points": 30392,
+      "strokes": 216,
+      "inkMm": 5626.971319549555,
+      "geometrySha256": "c9d7b8fa4fa0d2b805001dbafeed278032ef152324e66d426ffb43d331c16083"
+    },
+    {
+      "maker": "connections",
+      "input": "S2",
+      "stage": 2,
+      "source": "connections/S2-stage2.json",
+      "label": "N5",
+      "id": "connections-S2-stage2",
+      "points": 13719,
+      "strokes": 497,
+      "inkMm": 7688.511775084091,
+      "geometrySha256": "38baaf22f6b354765ccb2e51e6f17e94e41b41cdb46b8e47fb34041be1514b16"
+    },
+    {
+      "maker": "connections",
+      "input": "S1",
+      "stage": 2,
+      "source": "connections/S1-stage2.json",
+      "label": "N6",
+      "id": "connections-S1-stage2",
+      "points": 20096,
+      "strokes": 502,
+      "inkMm": 11695.557300748573,
+      "geometrySha256": "5630ab33f78d451fc89972a4b7e59167a9750bb442592f20e3886845fa3480ad"
+    },
+    {
+      "maker": "earlier weak control",
+      "input": "rupture open 1277",
+      "stage": 0,
+      "source": "inputs/control-weak.json",
+      "label": "N7",
+      "id": "control-weak",
+      "points": 5537,
+      "strokes": 92,
+      "inkMm": 3205.500580080239,
+      "geometrySha256": "dac8f16baff1110b1ada89e3afa85819d79b400a8de2706cbdc6871f80456a42"
+    },
+    {
+      "maker": "composition",
+      "input": "S1",
+      "stage": 2,
+      "source": "composition/S1-stage2.json",
+      "label": "N8",
+      "id": "composition-S1-stage2",
+      "points": 70326,
+      "strokes": 501,
+      "inkMm": 10875.544088945755,
+      "geometrySha256": "40ac89d9f7ae410b37aaee9508a0b98e9696e2415b6362056beeb44e984cbeac"
+    },
+    {
+      "source": "material/S1-stage1.json",
+      "points": 50543,
+      "strokes": 265,
+      "inkMm": 8440.487498188668,
+      "geometrySha256": "5d1c32668eb98c1668c3040f2f0dda2d95a977e512faf6e3bc1e45eff733ceb7"
+    },
+    {
+      "source": "connections/S1-stage1.json",
+      "points": 17353,
+      "strokes": 405,
+      "inkMm": 8727.906513742035,
+      "geometrySha256": "fe4aedc352e6707481b6c91e533f49e3922b7efb7dfa5927de1e999eeac350f5"
+    },
+    {
+      "source": "composition/S1-stage1.json",
+      "points": 55318,
+      "strokes": 306,
+      "inkMm": 9519.257379393774,
+      "geometrySha256": "40a3bbd7ae28f69ea083bfe1a330ed6d8c304f7594d772ba47bda7e23f62974d"
+    },
+    {
+      "source": "material/S1-stage2.json",
+      "points": 36693,
+      "strokes": 207,
+      "inkMm": 6349.165893121825,
+      "geometrySha256": "be4e7862b41dc54061c5fbe10febda892b1f7c4c27436fe5ba8165299fac3fbc"
+    },
+    {
+      "source": "connections/S1-stage2.json",
+      "points": 20096,
+      "strokes": 502,
+      "inkMm": 11695.557300748573,
+      "geometrySha256": "5630ab33f78d451fc89972a4b7e59167a9750bb442592f20e3886845fa3480ad"
+    },
+    {
+      "source": "composition/S1-stage2.json",
+      "points": 70326,
+      "strokes": 501,
+      "inkMm": 10875.544088945755,
+      "geometrySha256": "40ac89d9f7ae410b37aaee9508a0b98e9696e2415b6362056beeb44e984cbeac"
+    },
+    {
+      "source": "material/S2-stage1.json",
+      "points": 28130,
+      "strokes": 237,
+      "inkMm": 6042.379643012741,
+      "geometrySha256": "d6594113721a77276f6880c5c9114002b98e4afa80ea1a8bc71ec719a7f8951e"
+    },
+    {
+      "source": "connections/S2-stage1.json",
+      "points": 13539,
+      "strokes": 436,
+      "inkMm": 6063.580236947759,
+      "geometrySha256": "5c8e737cb50d189ddbb0bc6bd42c40c515c8712f435b6b985687a60bfdbe9d10"
+    },
+    {
+      "source": "composition/S2-stage1.json",
+      "points": 42137,
+      "strokes": 342,
+      "inkMm": 7511.597992873184,
+      "geometrySha256": "a7debde4291d1b9c44b70f900b4875669b5257e6f617c6a7a65eb636e9a442a7"
+    },
+    {
+      "source": "material/S2-stage2.json",
+      "points": 30392,
+      "strokes": 216,
+      "inkMm": 5626.971319549555,
+      "geometrySha256": "c9d7b8fa4fa0d2b805001dbafeed278032ef152324e66d426ffb43d331c16083"
+    },
+    {
+      "source": "connections/S2-stage2.json",
+      "points": 13719,
+      "strokes": 497,
+      "inkMm": 7688.511775084091,
+      "geometrySha256": "38baaf22f6b354765ccb2e51e6f17e94e41b41cdb46b8e47fb34041be1514b16"
+    },
+    {
+      "source": "composition/S2-stage2.json",
+      "points": 32478,
+      "strokes": 341,
+      "inkMm": 6685.955016368308,
+      "geometrySha256": "828dd44b0f24890199074ac2532c93a4a3607099a35d7a83aace0afa0a02b9e5"
+    }
+  ],
+  "limits": "Saved geometry verification; no generalization or paper acceptance."
+}

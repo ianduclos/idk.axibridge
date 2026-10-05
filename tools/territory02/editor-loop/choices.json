@@ -1,0 +1,14 @@
+{
+  "material": {
+    "S1": 2,
+    "S2": 2
+  },
+  "connections": {
+    "S1": 2,
+    "S2": 2
+  },
+  "composition": {
+    "S1": 2,
+    "S2": 2
+  }
+}

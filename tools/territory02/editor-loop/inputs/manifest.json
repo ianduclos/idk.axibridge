@@ -1,0 +1,38 @@
+[
+  {
+    "id": "S1",
+    "parent": null,
+    "pageMm": [
+      300,
+      218
+    ],
+    "strokeMm": 0.1,
+    "source": {
+      "seed": 5,
+      "mode": "pressure",
+      "path": "tools/territory02/takeover/material/evidence/5-pressure.svg",
+      "sha256": "5d1b06733317db7040354b004c1dbe96b09adb126b1235c85a63f7920a1d8d3a",
+      "precisionMm": 0.001
+    },
+    "selectionReason": "Dense competing grain bodies, long courses and brittle crossings.",
+    "geometrySha256": "cbc8699e9debe95b495f640783baf4f413d84aee82e9692f9c30864d75a9488b"
+  },
+  {
+    "id": "S2",
+    "parent": null,
+    "pageMm": [
+      300,
+      218
+    ],
+    "strokeMm": 0.1,
+    "source": {
+      "seed": 24,
+      "mode": "unravel",
+      "path": "tools/territory02/takeover/material/evidence/24-unravel.svg",
+      "sha256": "0c73dc29fccb3fa886d1c42d2d5b33f07bbd594e1247ac456a53b39b87681cf0",
+      "precisionMm": 0.001
+    },
+    "selectionReason": "Less resolved: activity concentrated at right, sparse left and inherited radial crossings.",
+    "geometrySha256": "2d4c105047990149a17b0f5d8a129a57155e6fa87104f8358fcb6a83e6c88621"
+  }
+]

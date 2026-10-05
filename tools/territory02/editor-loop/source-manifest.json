@@ -1,0 +1,20 @@
+{
+  "baseCommit": "4032b2f",
+  "sha256": {
+    "assemble.py": "34161a751d055d2ce79aab681db63a8d7be1a5f62389211414a512de2172b87f",
+    "calibrate.py": "3afeb54ddf7c73faab2dbe0ad294249a1ac23345b0c57683839024132f92675b",
+    "check-pages.py": "5ceccbb92f1091c82d607dc156db0e60b380ff26cf519ba418de7751c6d11a5c",
+    "composition/edit.py": "3fa9c1dbdf48e71cd107225d4cd799c3df51160814e486c3c1fdbe6f7f6f48ea",
+    "connections/edit.py": "733c97c0a964c83dee48633e656eac8b9e758a5b32eda964f8901c469364092a",
+    "material/edit.py": "4af2b2962255412cfb733dded1179042b8c3696a8a54c636c1c0a8992f317494",
+    "prepare.py": "80b46fb8a0b9f83153c6ad943a5681cef8531f55bc6bc89ead19710404def193",
+    "render.py": "3f9a177979ae38b701e944a8fcce3c21bad67fbcbf8a5d494bf84a81774afd2e",
+    "verify.py": "bc6a65587ca0ec1ea46dcd31ac384c18ac4f3cdffa765f7c6615bf16d4bb42d1",
+    "inputs/S1.json": "a490da817028ddf5f73df8a96a23cafdcf4812b0e4e41420a78822ae417cd9ba",
+    "inputs/S2.json": "fc99b497233a597aed5fb9b7218320eac3c70c10a1ba0e9f637891961a76d40d",
+    "inputs/control-weak.json": "93c5af5b9b5dde81bf905f5f86ba4d679d64afcaca8996c2d186c97695213dcf",
+    "inputs/manifest.json": "c897868b60e232b07328b32246bb570b11513dbe0a4656359ccb5bb2e8d55fdb",
+    "choices.json": "d06a172a8fb4e72b80059ad2de227dccb23559ae22b696cae6bfde3a75541f08"
+  },
+  "scope": "First round fixed-state edits; no held-out generator test."
+}
