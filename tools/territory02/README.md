@@ -48,3 +48,13 @@ important passage elsewhere, so full sheets remain the primary evidence.
 Third-round sparse18/47 also have larger identically framed course windows.
 No physical plotting, native application restart, or interactive human/machine
 response acceptance took place.
+
+## Takeover probe
+
+Ian subsequently asked for a radical second regime, then rejected literal curve
+recipes and insufficient tightening. `takeover/index.html` compares original
+Territory with two actual successive rewrites; the current fit inflates selected
+bends, compresses incoming handles and allows genuine tangent breaks. This does
+not integrate the three makers or change production. Its failed trials, current
+frozen source, fresh four-seed population and limits are in `takeover/NOTES.md`;
+the follow-up report is `../../docs/reviews/territory02-takeover-2026-10-05.md`.

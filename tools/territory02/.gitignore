@@ -9,3 +9,5 @@ experiments/**/*.png
 evidence/**/*.html
 # Large vector copies are reproducible from source snapshots; PNGs retain inspected evidence.
 evidence/**/*.svg
+takeover/evidence/**/*.svg
+takeover/evidence/**/*.html

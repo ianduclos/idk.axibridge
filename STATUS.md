@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-10-05
 machine: mac+pi
-summary: Territory02 independent curve study is complete in its isolated worktree; Ian's direction on convergence and existing native/paper acceptance remain pending.
+summary: Territory02 studies and a radical bulb/corner takeover probe are ready in the isolated worktree; Ian's aesthetic direction and convergence remain open.
 next:
-  - "Ian: inspect tools/territory02/index.html and the report; respond to proposed convergence strategies"
+  - "Ian: inspect tools/territory02/takeover/index.html and the follow-up report; respond to the bulb/corner probe and convergence strategies"
   - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
   - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
@@ -24,6 +24,16 @@ reviews and the [report](docs/reviews/territory02-2026-10-05.md) preserve gains,
 losses and possible convergence strategies. Ian explicitly deferred integration;
 the experiments stay separate on `codex/territory02`. Production and original
 Territory remain unchanged. Screen study only; no app restart, plotting or Pi sync.
+
+**Takeover probe, 5 October:** Ian rejected literal curve recipes and insufficient
+bulbs/corners. A second regime now changes actual course continuations and
+locally inflates bends, compresses returns and permits tangent breaks. The
+[comparison](tools/territory02/takeover/index.html), failed trials and
+[follow-up report](docs/reviews/territory02-takeover-2026-10-05.md) retain gains
+and losses. Current source was frozen before four new seeds; all 30 stage/seed
+geometry cases and 60 whole/detail viewer images passed mechanical checks.
+Aesthetic and paper acceptance remain open. No convergence, production change,
+app/hardware action, push or merge.
 
 **Integration checkpoint, 30 September:** `main` now contains Territory and the
 stable Compose sidebar, including the Gallery accessibility correction. Full
