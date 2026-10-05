@@ -97,3 +97,13 @@ drawings and 120 in-memory viewer images passed mechanical checks. The source
 notes retain provenance limitations, weak cases and reproduction commands.
 See `takeover/coexist/NOTES.md` and
 `../../docs/reviews/territory02-coexist-2026-10-05.md`. No convergence selected.
+
+## Scaffold replacement after rejection
+
+Ian rejected the coexistence trial as barely changed and still repetitive.
+`takeover/rupture/index.html` replaces the main paths entirely and reuses only
+cropped grown grain; open constructions and folded bodies remain separate.
+Six seeds include three generated after the source freeze. The earlier
+coexistence output is a reference, not an accepted baseline. See
+`takeover/rupture/NOTES.md` and
+`../../docs/reviews/territory02-rupture-2026-10-05.md` for limits and critique.

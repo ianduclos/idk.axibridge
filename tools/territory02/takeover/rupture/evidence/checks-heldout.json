@@ -1,0 +1,706 @@
+{
+  "fresh": true,
+  "seeds": [
+    1151,
+    1213,
+    1277
+  ],
+  "repeatability": true,
+  "records": [
+    {
+      "seed": 1151,
+      "mode": "earlier",
+      "fresh": true,
+      "points": 70817,
+      "inkMm": 32701.26272977807,
+      "strokes": 1233,
+      "geometryHash": "4772db6a3012bdc586aaf4eb693945f9ed8ad55e9bee057bf725063302378319",
+      "closeWindow": [
+        100,
+        74,
+        100,
+        70
+      ],
+      "info": {
+        "unchangedRough": true,
+        "passages": 2
+      }
+    },
+    {
+      "seed": 1151,
+      "mode": "open",
+      "fresh": true,
+      "points": 9439,
+      "inkMm": 4703.072880715603,
+      "strokes": 213,
+      "geometryHash": "8584b5def37aa2600453b33633187a5ce60c84481a9d1a9feac1ac965bdd6d0e",
+      "lineStats": {
+        "points": 1688,
+        "inkMm": 683.4584960422402,
+        "strokes": 4,
+        "geometryHash": "87ccf4b6d88534612f8e9f91519b382dfc027933273d9977eaa27d27c3544a88"
+      },
+      "materialStats": {
+        "points": 7751,
+        "inkMm": 4019.6143846733794,
+        "strokes": 209,
+        "geometryHash": "440e061df6a0763c6918adea45a3303ab6f7f1afdbeebf4bf9ae13c3017fa7af"
+      },
+      "closeWindow": [
+        100,
+        74,
+        100,
+        70
+      ],
+      "info": {
+        "seed": 1151,
+        "mode": "open",
+        "routes": 4,
+        "corners": 8,
+        "straightSpans": 7,
+        "closed": 0,
+        "events": [
+          {
+            "route": 0,
+            "start": 94.06373032156121,
+            "span": 24.84897193685174,
+            "width": 12.754689793568105,
+            "offset": 11.416002612095326,
+            "sourceFragments": 8
+          },
+          {
+            "route": 0,
+            "start": 153.31382928207745,
+            "span": 55.434598789550364,
+            "width": 4.959432324394584,
+            "offset": 17.418367630336434,
+            "sourceFragments": 13
+          },
+          {
+            "route": 1,
+            "start": 104.73386675682774,
+            "span": 27.16079321410507,
+            "width": 11.107615096028894,
+            "offset": 0,
+            "sourceFragments": 44
+          },
+          {
+            "route": 1,
+            "start": 79.13723825283722,
+            "span": 42.32420397643,
+            "width": 3.0419231057167053,
+            "offset": 0,
+            "sourceFragments": 38
+          },
+          {
+            "route": 2,
+            "start": 45.728500636806345,
+            "span": 76.70472458191216,
+            "width": 9.334234611596912,
+            "offset": 0,
+            "sourceFragments": 40
+          },
+          {
+            "route": 2,
+            "start": 4.652076320444359,
+            "span": 62.16360341012478,
+            "width": 12.750671117566526,
+            "offset": 22.47864426812157,
+            "sourceFragments": 31
+          },
+          {
+            "route": 3,
+            "start": 21.508993754500807,
+            "span": 57.918764722533524,
+            "width": 12.963098134845495,
+            "offset": 19.65543791372329,
+            "sourceFragments": 35
+          }
+        ],
+        "sourceLayer": "d-grow only",
+        "oldScaffoldRetained": false,
+        "thornLayerRetained": false,
+        "slashLayerRetained": false
+      }
+    },
+    {
+      "seed": 1151,
+      "mode": "body",
+      "fresh": true,
+      "points": 14585,
+      "inkMm": 11808.528216468858,
+      "strokes": 329,
+      "geometryHash": "21ad27bd868f229cd0bff2af7c441f88f897b547c675039d29960e70a340e36e",
+      "lineStats": {
+        "points": 2986,
+        "inkMm": 1675.7934257292802,
+        "strokes": 11,
+        "geometryHash": "d8c4b461a9081e6912bbe22f17cc94e7176541ea137da56ebc668971efaa28ac"
+      },
+      "materialStats": {
+        "points": 11599,
+        "inkMm": 10132.734790739563,
+        "strokes": 318,
+        "geometryHash": "9e0dc6cbf74774e046518d1bd75801625b1f6682a09c6fc154b3f6fb57d844f6"
+      },
+      "closeWindow": [
+        100,
+        74,
+        100,
+        70
+      ],
+      "info": {
+        "seed": 1151,
+        "mode": "body",
+        "routes": 4,
+        "corners": 7,
+        "straightSpans": 5,
+        "closed": 1,
+        "events": [
+          {
+            "route": 0,
+            "start": 57.63723622016302,
+            "span": 52.8491550560575,
+            "width": 24.483663718681782,
+            "offset": 0,
+            "sourceFragments": 29
+          },
+          {
+            "route": 0,
+            "start": 1.495944655872459,
+            "span": 89.83417577622458,
+            "width": 34.68402613373473,
+            "offset": 0,
+            "sourceFragments": 45
+          },
+          {
+            "route": 1,
+            "start": 7.064833778228182,
+            "span": 67.45264338026755,
+            "width": 31.30311480211094,
+            "offset": 0,
+            "sourceFragments": 42
+          },
+          {
+            "route": 1,
+            "start": 55.921280493293395,
+            "span": 55.17363199428655,
+            "width": 31.192825126461685,
+            "offset": 0,
+            "sourceFragments": 16
+          },
+          {
+            "route": 2,
+            "start": 30.33074526092212,
+            "span": 94.9542074946221,
+            "width": 34.10277909785509,
+            "offset": 0,
+            "sourceFragments": 36
+          },
+          {
+            "route": 2,
+            "start": 38.60677348369722,
+            "span": 95.34644880960695,
+            "width": 31.762904037721455,
+            "offset": 0,
+            "sourceFragments": 17
+          },
+          {
+            "route": 3,
+            "start": 70.56814329705087,
+            "span": 53.95055714691989,
+            "width": 38.96605013590306,
+            "offset": 0,
+            "sourceFragments": 23
+          },
+          {
+            "route": 3,
+            "start": 32.847393507287734,
+            "span": 57.083701704861596,
+            "width": 18.026400797069073,
+            "offset": 0,
+            "sourceFragments": 44
+          },
+          {
+            "route": 3,
+            "start": 19.50948112236038,
+            "span": 86.05250507523306,
+            "width": 19.154272907879204,
+            "offset": 0,
+            "sourceFragments": 66
+          }
+        ],
+        "sourceLayer": "d-grow only",
+        "oldScaffoldRetained": false,
+        "thornLayerRetained": false,
+        "slashLayerRetained": false
+      }
+    },
+    {
+      "seed": 1213,
+      "mode": "earlier",
+      "fresh": true,
+      "points": 68347,
+      "inkMm": 31524.723978335805,
+      "strokes": 1226,
+      "geometryHash": "097e871bf34710fdaea24f1a6614a0583591420931b7e17e7ed69ca1bb219835",
+      "closeWindow": [
+        100,
+        74,
+        100,
+        70
+      ],
+      "info": {
+        "unchangedRough": true,
+        "passages": 2
+      }
+    },
+    {
+      "seed": 1213,
+      "mode": "open",
+      "fresh": true,
+      "points": 12501,
+      "inkMm": 6597.93705253775,
+      "strokes": 316,
+      "geometryHash": "e6b8126fec2e6cbc9966132a3416e42246d78edfb018496701acee64136f1a0e",
+      "lineStats": {
+        "points": 1321,
+        "inkMm": 1053.4872319725107,
+        "strokes": 4,
+        "geometryHash": "1ecd46d632abe94f038ff0d2994d526a4d317f9b7b746d25d5d3d2aad8df85e1"
+      },
+      "materialStats": {
+        "points": 11180,
+        "inkMm": 5544.449820565222,
+        "strokes": 312,
+        "geometryHash": "df4c8357156a2218d5a80a4ba898faeac07234bfc98a9397a01b4a6bcfb23658"
+      },
+      "closeWindow": [
+        100,
+        74,
+        100,
+        70
+      ],
+      "info": {
+        "seed": 1213,
+        "mode": "open",
+        "routes": 4,
+        "corners": 7,
+        "straightSpans": 5,
+        "closed": 0,
+        "events": [
+          {
+            "route": 0,
+            "start": 36.590940583804034,
+            "span": 69.94962667766958,
+            "width": 3.987750290427357,
+            "offset": 0,
+            "sourceFragments": 49
+          },
+          {
+            "route": 0,
+            "start": 31.391570155213994,
+            "span": 21.86818062979728,
+            "width": 13.811478654854,
+            "offset": 0,
+            "sourceFragments": 93
+          },
+          {
+            "route": 1,
+            "start": 138.7660108491651,
+            "span": 27.72458607517183,
+            "width": 3.705866690725088,
+            "offset": 0,
+            "sourceFragments": 21
+          },
+          {
+            "route": 1,
+            "start": 2.0764288457186937,
+            "span": 61.650394887663424,
+            "width": 8.723839142825454,
+            "offset": 0,
+            "sourceFragments": 26
+          },
+          {
+            "route": 2,
+            "start": 183.69649786911856,
+            "span": 38.000453791581094,
+            "width": 9.790377515368164,
+            "offset": 21.382814188022166,
+            "sourceFragments": 34
+          },
+          {
+            "route": 2,
+            "start": 156.8282036564677,
+            "span": 49.77045006304979,
+            "width": 14.64922991907224,
+            "offset": 16.379110374022275,
+            "sourceFragments": 14
+          },
+          {
+            "route": 2,
+            "start": 106.34306714246623,
+            "span": 31.834988591261208,
+            "width": 9.005950245074928,
+            "offset": 0,
+            "sourceFragments": 41
+          },
+          {
+            "route": 3,
+            "start": 64.64740881804583,
+            "span": 65.4086788482964,
+            "width": 10.017157399561256,
+            "offset": 0,
+            "sourceFragments": 34
+          }
+        ],
+        "sourceLayer": "d-grow only",
+        "oldScaffoldRetained": false,
+        "thornLayerRetained": false,
+        "slashLayerRetained": false
+      }
+    },
+    {
+      "seed": 1213,
+      "mode": "body",
+      "fresh": true,
+      "points": 15772,
+      "inkMm": 13936.39947943107,
+      "strokes": 344,
+      "geometryHash": "2aff4cd018ab73d70571a502d6294399d59da7d9dfe302b4f0990a905808e06f",
+      "lineStats": {
+        "points": 3202,
+        "inkMm": 1361.6893762739935,
+        "strokes": 13,
+        "geometryHash": "17479fae7fe355c942ddfea570a83f66a5a8a25745dcd3b6048e7a249fe8e7dc"
+      },
+      "materialStats": {
+        "points": 12570,
+        "inkMm": 12574.710103157058,
+        "strokes": 331,
+        "geometryHash": "ede4a909db560faca7e93c9e4723ef0360ff19aea8125e9c059a38796bfc8a07"
+      },
+      "closeWindow": [
+        100,
+        74,
+        100,
+        70
+      ],
+      "info": {
+        "seed": 1213,
+        "mode": "body",
+        "routes": 3,
+        "corners": 7,
+        "straightSpans": 3,
+        "closed": 3,
+        "events": [
+          {
+            "route": 0,
+            "start": 277.43182717179496,
+            "span": 51.39637697301805,
+            "width": 42.38327484065667,
+            "offset": 0,
+            "sourceFragments": 26
+          },
+          {
+            "route": 0,
+            "start": 312.5180311413535,
+            "span": 80.47964344196953,
+            "width": 13.306900786235929,
+            "offset": 0,
+            "sourceFragments": 44
+          },
+          {
+            "route": 0,
+            "start": 175.44313417237925,
+            "span": 63.0785831999965,
+            "width": 18.639787772670388,
+            "offset": 0,
+            "sourceFragments": 22
+          },
+          {
+            "route": 0,
+            "start": 273.76263792231293,
+            "span": 95.52359831216745,
+            "width": 37.72303962800652,
+            "offset": 0,
+            "sourceFragments": 28
+          },
+          {
+            "route": 1,
+            "start": 19.625837789409598,
+            "span": 43.981711499392986,
+            "width": 37.71120808273554,
+            "offset": 0,
+            "sourceFragments": 16
+          },
+          {
+            "route": 1,
+            "start": 132.95917179815743,
+            "span": 35.802432984812185,
+            "width": 17.78512220317498,
+            "offset": 0,
+            "sourceFragments": 25
+          },
+          {
+            "route": 1,
+            "start": 14.081400157911045,
+            "span": 50.43386411899701,
+            "width": 20.316288317088038,
+            "offset": 0,
+            "sourceFragments": 18
+          },
+          {
+            "route": 2,
+            "start": 75.48310328280726,
+            "span": 49.55291236448102,
+            "width": 39.19232515105978,
+            "offset": 0,
+            "sourceFragments": 38
+          },
+          {
+            "route": 2,
+            "start": 185.64709155654856,
+            "span": 81.81146396137774,
+            "width": 18.182546104770154,
+            "offset": 0,
+            "sourceFragments": 20
+          },
+          {
+            "route": 2,
+            "start": 16.18067350293683,
+            "span": 39.228823066689074,
+            "width": 19.14847634686157,
+            "offset": 0,
+            "sourceFragments": 31
+          },
+          {
+            "route": 2,
+            "start": 196.14579828538194,
+            "span": 34.14744475437328,
+            "width": 27.792056283913553,
+            "offset": 0,
+            "sourceFragments": 63
+          }
+        ],
+        "sourceLayer": "d-grow only",
+        "oldScaffoldRetained": false,
+        "thornLayerRetained": false,
+        "slashLayerRetained": false
+      }
+    },
+    {
+      "seed": 1277,
+      "mode": "earlier",
+      "fresh": true,
+      "points": 55366,
+      "inkMm": 24618.469026036364,
+      "strokes": 987,
+      "geometryHash": "f10277ca93cb02919a6c98293019253ba7b688471efa767c54080721ca47a2f6",
+      "closeWindow": [
+        100,
+        74,
+        100,
+        70
+      ],
+      "info": {
+        "unchangedRough": true,
+        "passages": 2
+      }
+    },
+    {
+      "seed": 1277,
+      "mode": "open",
+      "fresh": true,
+      "points": 5537,
+      "inkMm": 3205.4969304878323,
+      "strokes": 92,
+      "geometryHash": "fa2bc31aa05b0d51fb278af688bf7f2de1096b286b216fbcf70837bed69dad19",
+      "lineStats": {
+        "points": 2535,
+        "inkMm": 879.8136688060879,
+        "strokes": 4,
+        "geometryHash": "cfa42477bd2a28f1b4e26164728f51939daa5a8809c78900946dcccef56971cc"
+      },
+      "materialStats": {
+        "points": 3002,
+        "inkMm": 2325.683261681732,
+        "strokes": 88,
+        "geometryHash": "212065d1cbab6927375f3577a8269a885d6f53fb8f50015d699e6e57bc581941"
+      },
+      "closeWindow": [
+        100,
+        74,
+        100,
+        70
+      ],
+      "info": {
+        "seed": 1277,
+        "mode": "open",
+        "routes": 4,
+        "corners": 3,
+        "straightSpans": 2,
+        "closed": 0,
+        "events": [
+          {
+            "route": 0,
+            "start": 225.05229766390016,
+            "span": 23.107410927303135,
+            "width": 12.090279827360064,
+            "offset": 11.147386504337192,
+            "sourceFragments": 1
+          },
+          {
+            "route": 0,
+            "start": 178.4990447038565,
+            "span": 46.51445300504565,
+            "width": 13.104753857012838,
+            "offset": 12.371402714401484,
+            "sourceFragments": 20
+          },
+          {
+            "route": 1,
+            "start": 3.422794199243979,
+            "span": 25.713147774338722,
+            "width": 3.708639963530004,
+            "offset": 0,
+            "sourceFragments": 12
+          },
+          {
+            "route": 2,
+            "start": 19.07699587032302,
+            "span": 43.489945616573095,
+            "width": 16.411706664133817,
+            "offset": 20.73683231929317,
+            "sourceFragments": 13
+          },
+          {
+            "route": 3,
+            "start": 42.55527848284379,
+            "span": 67.34738078154624,
+            "width": 8.0125778215006,
+            "offset": 15.398572557140142,
+            "sourceFragments": 42
+          }
+        ],
+        "sourceLayer": "d-grow only",
+        "oldScaffoldRetained": false,
+        "thornLayerRetained": false,
+        "slashLayerRetained": false
+      }
+    },
+    {
+      "seed": 1277,
+      "mode": "body",
+      "fresh": true,
+      "points": 10810,
+      "inkMm": 6720.177315116751,
+      "strokes": 219,
+      "geometryHash": "225c4015ae51569722d330b4c389dcb95742ab1eba604be9e781ec5306eed79f",
+      "lineStats": {
+        "points": 2907,
+        "inkMm": 930.1500431230068,
+        "strokes": 13,
+        "geometryHash": "4a332b02ce8e77247d63de05d3fd85005ad2bc5645b688dfab7b72bc15c75fd7"
+      },
+      "materialStats": {
+        "points": 7903,
+        "inkMm": 5790.027271993746,
+        "strokes": 206,
+        "geometryHash": "9ad876042076e61825c1b6839d0f5bd972da7f51cb3caa5860bd9416d76ba810"
+      },
+      "closeWindow": [
+        100,
+        74,
+        100,
+        70
+      ],
+      "info": {
+        "seed": 1277,
+        "mode": "body",
+        "routes": 3,
+        "corners": 5,
+        "straightSpans": 1,
+        "closed": 0,
+        "events": [
+          {
+            "route": 0,
+            "start": 73.4476091286204,
+            "span": 32.52844435325824,
+            "width": 39.73920889850706,
+            "offset": 0,
+            "sourceFragments": 29
+          },
+          {
+            "route": 0,
+            "start": 24.190955637471436,
+            "span": 90.57229826156981,
+            "width": 16.97115726256743,
+            "offset": 0,
+            "sourceFragments": 13
+          },
+          {
+            "route": 0,
+            "start": 23.541213509946576,
+            "span": 84.0227147534024,
+            "width": 24.23546466929838,
+            "offset": 0,
+            "sourceFragments": 29
+          },
+          {
+            "route": 1,
+            "start": 40.57917597371563,
+            "span": 105.17358854226768,
+            "width": 20.50966712133959,
+            "offset": 0,
+            "sourceFragments": 12
+          },
+          {
+            "route": 1,
+            "start": 71.3753579030671,
+            "span": 56.32257450185716,
+            "width": 24.54219364048913,
+            "offset": 0,
+            "sourceFragments": 17
+          },
+          {
+            "route": 1,
+            "start": 67.24319600604468,
+            "span": 73.41815221402794,
+            "width": 22.707748689688742,
+            "offset": 0,
+            "sourceFragments": 6
+          },
+          {
+            "route": 2,
+            "start": 73.21337525807884,
+            "span": 111.17702957289293,
+            "width": 22.44186202948913,
+            "offset": 0,
+            "sourceFragments": 21
+          },
+          {
+            "route": 2,
+            "start": 114.41929280910834,
+            "span": 73.28348059253767,
+            "width": 22.322108689229935,
+            "offset": 0,
+            "sourceFragments": 42
+          },
+          {
+            "route": 2,
+            "start": 144.47969180659635,
+            "span": 52.593304057838395,
+            "width": 14.131303054280579,
+            "offset": 0,
+            "sourceFragments": 37
+          }
+        ],
+        "sourceLayer": "d-grow only",
+        "oldScaffoldRetained": false,
+        "thornLayerRetained": false,
+        "slashLayerRetained": false
+      }
+    }
+  ]
+}

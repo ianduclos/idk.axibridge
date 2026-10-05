@@ -2,6 +2,11 @@
 
 5 October 2026. Screen study, in the existing `codex/territory02` worktree.
 
+**Later user verdict:** Ian rejected these changes as barely noticeable, still
+starry and repetitive. The machine readings below are retained as evidence of
+that failed judgement, not acceptance. The follow-up
+[replaces the scaffold](territory02-rupture-2026-10-05.md).
+
 [Comparison](../../tools/territory02/takeover/coexist/index.html) ·
 [Construction and reproduction](../../tools/territory02/takeover/coexist/NOTES.md) ·
 [Independent Sol reading](territory02-coexist-sol.md)

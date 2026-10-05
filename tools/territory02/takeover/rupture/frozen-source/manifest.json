@@ -1,0 +1,35 @@
+{
+  "development": [
+    13,
+    24,
+    47
+  ],
+  "fresh": [
+    1151,
+    1213,
+    1277
+  ],
+  "frozen_before_fresh_generation": true,
+  "sha256": {
+    "generate.cjs": "453aa0013b7fb2b88686f067618293cab9395acdffea0b8e647d80698954261b",
+    "render.cjs": "ba9674ab32cd5c8191997601aecbe8a3cb88416b6cb39011d8ba43de377d2a3c",
+    "../material/common.cjs": "b63e0e69020d6e5cf7570d7593b8d8bfa1a604b86b38741307f73d370c9c0926",
+    "../texture/regrow.cjs": "15fff2151c3736ce5e02cea0745134ca7e5b37f6048f4b7b4d0638d8aefbdd90",
+    "../rewrite.cjs": "f388f8afbd2d151e9a61578452fcbdcc5f2083e0936a3ab1fff5001a30872288",
+    "../../full.json": "ca52a38c56fc42fa66d485b4bda6eee00e293b9b32e9c6a77b550e21aa33dfda",
+    "../coexist/common.cjs": "04ee2a6b7d811a1d803dd7b99657382e7d7b047f540587c452a6bb563d02f859",
+    "../coexist/independent.cjs": "3cfd5f5c92472c69193a4f1e8abacf9a7f1ecb8156ed206fdae58e5243850c04",
+    "../material/opening.cjs": "fde2d51c1d34bbb4e7f27f52b89e585448d378c9033aa894b6336502f21d87b2",
+    "../material/pressure.cjs": "81172a0e7b748485edb39117b3594aad0d1dd4be8af8d1d50bc7a5fe4dc48161",
+    "../material/unravel.cjs": "90672a19f4f252ca5dbc1ab2d7f57739aae53c3e00a74722daea8bd1f4c54951",
+    "../../experiments/baseline/t_forms.js": "a53623503358bf06c1501678dfdcdc9ef17b36228d9d9acf13790d989f38ffbe",
+    "../../experiments/baseline/t_meander.js": "cb6218a7f885e904d35b61a3744dbf7df949e300b4432bc6eece7b00fbb7ffe3",
+    "../../experiments/baseline/t_v5.js": "d8097991e08997becbbc8c9e234b925be86bd2ef0b75c67a4b8a485133d0fe3c",
+    "../../experiments/baseline/t_body.js": "0f8164297428c9f442f7b9b7b37050281c9a566c6eebdec01de40569a5a60809",
+    "../../experiments/baseline/t_density.js": "f1ef24a4aa146fc80fe1ba4fc4c15f3fe70be171403bb1bae489d73b17c2386a",
+    "../../experiments/baseline/t_hand.js": "1ef6231814b470e7a9c013b60cb81fbc52d958fbd75f8155a04da07dea65e05c",
+    "../../experiments/baseline/t_flood.js": "55a88efe53b67d242952042df3f7df043473643d010c5e756921146b2adb5e96",
+    "../../experiments/baseline/t_graph.js": "8a39fe258f307287033595511bee3ded794c907085999114343997395d4707a8",
+    "../../experiments/baseline/t_head.js": "b52383fd6d015c0ee40357ed7a6ff5f060d437d52c1fa039cfbec425d44c700e"
+  }
+}

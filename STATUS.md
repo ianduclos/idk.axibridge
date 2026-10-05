@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-10-05
 machine: mac+pi
-summary: Territory02 now compares three rough/smooth coexistence trials on the earlier material bases; no convergence selected.
+summary: Ian rejected the conservative coexistence trial; Territory02 now tests replacement scaffolds with only cropped grown grain retained.
 next:
-  - "Ian: inspect tools/territory02/takeover/coexist/index.html and the coexistence report; choose a direction after comparing the separate trials"
+  - "Ian: inspect tools/territory02/takeover/rupture/index.html; assess visible change and remaining repeated grain habits"
   - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
   - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
@@ -16,6 +16,14 @@ handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Scaffold replacement, 5 October:** Ian rejected coexistence as barely changed,
+still starry and repetitive. [New constructions](tools/territory02/takeover/rupture/index.html)
+replace every main course and reuse only cropped d-grow grain. Open paths and
+partly enclosed bodies stay separate. Moving-normal texture collapse was removed
+after a development probe; sources frozen before fresh 1151/1213/1277. The
+[report](docs/reviews/territory02-rupture-2026-10-05.md) records remaining repeated
+comb-like material and weak cases. No production change or convergence.
 
 **Rough/smooth coexistence, 5 October:** Ian prefers the rough three-material
 foundation with occasional substantial smooth passages. The new
