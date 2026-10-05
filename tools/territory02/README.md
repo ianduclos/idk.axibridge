@@ -6,6 +6,17 @@ the complete study history and independent critiques. Markdown files remain
 editable source; `render-reports.cjs` rebuilds HTML using the `marked` package
 (the Codex bundled Node runtime supplies it through `NODE_PATH`).
 
+## Current agent workflow
+
+Use the [revised agent loop](../../docs/reviews/territory02-agent-loop-2026-10-05.html)
+for the next study: three bounded makers edit the same two actual drawings,
+one independent Sol reviews whole sheets before mechanisms, and Ian sees an
+eight-cell contact sheet before round two. Keep revisions and disagreements;
+no automatic convergence. This supersedes the historical round workflow below.
+The protocol is adopted; its first drawing round has not yet run.
+
+## Historical studies
+
 Screen-only exploration requested by Ian on 5 October 2026. Three Sol makers,
 loose starting questions, matched populations, three critique/development rounds,
 and three independent Sol evaluations. Original Territory stays intact. Ian later

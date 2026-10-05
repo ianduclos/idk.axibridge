@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Territory02 — revised agent loop</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/takeover/rupture/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Study report</div><article><h1>Territory02 — revised agent loop</h1><details><summary>On this page</summary><ol class="toc"><li><a href="#1-prepare-a-small-shared-starting-set">1. Prepare a small, shared starting set</a></li><li><a href="#2-three-briefs-different-decisions">2. Three briefs, different decisions</a></li><li><a href="#3-assemble-evidence-before-naming-mechanisms">3. Assemble evidence before naming mechanisms</a></li><li><a href="#4-review-in-two-passes">4. Review in two passes</a></li><li><a href="#5-show-ian-the-first-sheet-then-branch">5. Show Ian the first sheet, then branch</a></li><li><a href="#6-generalize-only-after-examples-warrant-it">6. Generalize only after examples warrant it</a></li></ol></details>
+<p>Adopted on 5 October after Ian asked to change the loop. This is the operating
+protocol for the next study. The workflow has changed; a new drawing round has
+not been run. The <a href="territory02-brainstorm-2026-10-05.html">brainstorm</a> remains a
+set of possibilities, not a requirement to implement every mechanism.</p>
+<p><strong>The unit of work is a particular drawing and its revisions.</strong> Three makers
+receive the same starting states, make consequential whole-sheet proposals,
+and return actual geometry. The primary owns direction and integration; a
+separate Sol reads the results. Ian sees the first small sheet before round two.
+No automatic convergence, winner selection or production replacement.</p>
+<h2 id="1-prepare-a-small-shared-starting-set">1. Prepare a small, shared starting set</h2>
+<p>The primary inspects and freezes two actual drawings from the rough
+three-material studies, including a less resolved case. Select them by looking
+at whole drawings and details; record paths, seeds, source hashes and why each
+is useful. Earlier enthusiasm for a family does not establish a preferred seed.
+All three makers receive both identical states and full-resolution views.</p>
+<p>Use the existing 0.1 mm stroke and physical page dimensions. A maker may change
+most of a drawing, remove inherited stars, replace paths, change fills, cut,
+reconnect or abandon an edit. Retain the starting state and intermediate files.
+There is no preservation quota and no required number of bulbs or corners.
+References describe possibilities; do not copy Ian&#39;s drawn contours.</p>
+<h2 id="2-three-briefs-different-decisions">2. Three briefs, different decisions</h2>
+<p>These are starting restrictions for one small round, not permanent styles.
+Each maker owns a separate folder under <code>tools/territory02/editor-loop/</code> and
+must not modify shared renderers, other makers&#39; files, old studies or production.
+Use Sol for the bounded maker assignments; at most three supporting agents run
+at once. Makers do not delegate. The primary sets contracts and inspects work.</p>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Comparison table"><table>
+<thead>
+<tr>
+<th>Maker</th>
+<th>Opening move</th>
+<th>Freedom after that move</th>
+<th>Failure to watch</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A — material</td>
+<td>Begin by editing an actual rough body: carve, compact, remove, split or expose it.</td>
+<td>Rebuild smooth edges or passages wherever the changed material suggests them; alter the whole sheet.</td>
+<td>A textured blob with decorative holes; grain pasted along the familiar curves.</td>
+</tr>
+<tr>
+<td>B — connections</td>
+<td>Change what connects, continues, stops or disappears in the existing geometry.</td>
+<td>Cut and exchange continuations; merge boundaries; rearrange or replace material and paths.</td>
+<td>Spaghetti, ornamental knots, or an unchanged drawing with extra junctions.</td>
+</tr>
+<tr>
+<td>C — composition</td>
+<td>Reorganize groups at the scale of the sheet: placement, scale, omission or overlap.</td>
+<td>Introduce an independent smooth or angular construction, allow unequal dominance, redraw groups.</td>
+<td>A collage of isolated stickers or the same silhouette under a new arrangement.</td>
+</tr>
+</tbody></table></div>
+<p>Shared dispatch brief:</p>
+<blockquote>
+<p>Inspect both starting drawings at whole-sheet and close scale. For each,
+make one substantial proposal and one revision in response to looking at
+that proposal. You may keep the earlier stage if the revision loses something.
+Work with actual geometry, using a local script or explicit edits as useful;
+do not first build a reusable generator. Render and inspect each stage.
+Return both stages, your chosen stage, and at most three sentences about
+what changed, what may have been lost, and what still feels repetitive.
+A direction may fail. Do not compensate with an elaborate explanation.</p>
+</blockquote>
+<p>Each maker delivers four edited states in total: two inputs × two stages.
+Only one chosen stage per input enters the first contact sheet. Preserve all
+four for population and history review. If a brief proves unproductive, record
+that rather than inventing a success. Use only the smallest representation the
+edit needs; there is no shared new engine to build yet.</p>
+<h2 id="3-assemble-evidence-before-naming-mechanisms">3. Assemble evidence before naming mechanisms</h2>
+<p>The primary checks finite, bounded, reproducible geometry and consistent stroke
+and framing. Keep these checks separate from artistic judgement. Record page
+scale, clipping, accumulated ink and any export limitation; do not equate those
+measurements with quality. No physical plotting is part of this screen study.</p>
+<p>The first contact sheet contains <strong>eight whole drawings</strong>: six maker choices,
+an untouched earlier reference, and a previously weak result. Give all cells
+stable neutral IDs and keep the mapping in a separate manifest. Randomize their
+order once and retain it across review. The full-resolution drawings must be
+available alongside the sheet: thin lines cannot be judged from thumbnails alone.
+Controls test the review; they do not establish objective winners or losers.</p>
+<p>Archive the twelve edited states and two inputs in a separate history sheet.
+Do not build a new gallery interface before this first checkpoint. Reuse a
+simple HTML sheet with full-size links and a short accompanying reading.</p>
+<h2 id="4-review-in-two-passes">4. Review in two passes</h2>
+<p>Once the makers finish, use one separate <code>gpt-5.6-sol</code> reviewer under the
+<a href="../../.agents/skills/drawing-review/SKILL.md">drawing-review skill</a>. Give it
+actual images, neutral IDs and the decision under review. Withhold maker briefs,
+preferences, identities and control labels for its initial reading where possible.
+Use a small unlabeled pair with an omitted or moved passage to calibrate its
+reasoning; disclose the change afterward. Record any prior exposure honestly.</p>
+<p>First read whole sheets and full-size views. Ask:</p>
+<ul>
+<li>Which drawings invite another look, and what visibly causes that? None is a valid answer.</li>
+<li>Which relationships recur across the set even when the silhouettes differ?</li>
+<li>Which awkward passage would you protect? What is weak or still uncertain?</li>
+</ul>
+<p>Then reveal starting states, both stages, relevant close views and calibration
+changes. Ask what the edits gained or lost, and whether the history changes the
+initial reading. Mechanism descriptions come last. A crop can support a local
+observation; it cannot establish that the whole sheet works. Do not require
+praise for every maker, beauty scores or agreement with the primary.</p>
+<p>The primary inspects all stages too, retains disagreements and rejects unsupported
+attribution. A compelling result can remain causally unexplained; a controlled
+comparison can be informative while aesthetically dull.</p>
+<h2 id="5-show-ian-the-first-sheet-then-branch">5. Show Ian the first sheet, then branch</h2>
+<p>Deliver the eight-cell HTML sheet, full-size access and a short reading before
+investing in another round. Invite responses to concrete cells or passages:
+keep, undo, intensify, combine provisionally, or leave alone. This checkpoint
+implements Ian&#39;s request to see evidence before choosing convergence. Silence
+selects nothing. The first round is complete at this handoff.</p>
+<p>Round two follows Ian&#39;s response rather than an automatic three-maker repeat.
+The primary assigns edits to named drawing states and visible relationships,
+incorporating both his response and the independent critique. A maker may switch
+briefs, retain a failure, or fork two incompatible continuations. The number of
+branches follows the useful questions; it need not stay three.</p>
+<p>Repeat the neutral whole-sheet review, then inspect histories. Keep unchanged
+ancestors in the comparison so accumulating complexity cannot masquerade as
+progress. End with separate results and possible convergence strategies, each
+linked to specific evidence and a risk of loss. Ian chooses whether to combine.</p>
+<h2 id="6-generalize-only-after-examples-warrant-it">6. Generalize only after examples warrant it</h2>
+<p>A useful individual drawing does not prove a useful generator. If Ian wants a
+repeatable instrument after these edits, identify which relationships should
+survive and test the smallest rule set on unseen starting states. Freeze the
+rules before that test and show the entire test population, including failures.
+Free editing and this generalization test answer different questions.</p>
+<p>The record for each state needs only: stable ID, parent ID, maker, source input,
+reproduction command or saved editable geometry, render path, brief edit note,
+and any reviewer/user response. Store this beside the study; preserve branches
+instead of overwriting earlier results. Reports are HTML. Do not infer a new
+production default, a merge of directions, or paper success from screen review.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>

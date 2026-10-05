@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-10-05
 machine: mac+pi
-summary: Ian rejected the conservative coexistence trial; Territory02 now tests replacement scaffolds with only cropped grown grain retained.
+summary: Territory02 agent workflow revised after rejected studies; whole-drawing edits and an early user checkpoint replace automatic generator rounds.
 next:
-  - "Ian: inspect tools/territory02/takeover/rupture/index.html; assess visible change and remaining repeated grain habits"
+  - "Territory02: next drawing study follows the adopted agent-loop protocol; first revised round has not run"
   - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
   - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
@@ -20,6 +20,8 @@ handoff_for: Codex
 **Report format:** Ian prefers HTML. The Territory02 report history and
 independent critiques are available through the
 [HTML report index](docs/reviews/territory02-reports.html); galleries link to HTML.
+
+**Agent loop, 5 October:** Ian adopted a [revised workflow](docs/reviews/territory02-agent-loop-2026-10-05.html): three makers edit two shared drawing states, independent Sol reads whole sheets before mechanisms, and an eight-cell HTML sheet reaches Ian before round two. No new drawing round has run; no convergence selected. The later scaffold replacements were also rejected as boring.
 
 **Brainstorm, 5 October:** [A multidimensional exploration map](docs/reviews/territory02-brainstorm-2026-10-05.html) now separates curve character, connectivity, line roles, material, space, overlap, history and authorship. Six possible probes and combinations remain proposals; no further generator implementation or convergence selected.
 
