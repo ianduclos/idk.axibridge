@@ -15,3 +15,7 @@ takeover/fill/evidence/**/*.svg
 takeover/fill/evidence/**/*.html
 takeover/texture/evidence/**/*.svg
 takeover/texture/evidence/**/*.html
+takeover/material/evidence/**/*.svg
+takeover/material/evidence/**/*.html
+takeover/grammar/evidence/**/*.svg
+takeover/grammar/evidence/**/*.html

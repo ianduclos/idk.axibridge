@@ -3,9 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-10-05
 machine: mac+pi
-summary: Territory02 restores the earlier textural baseline after rejected panel fills; integration with the new curves and convergence remain open.
+summary: Territory02 retains three material experiments and a separate grammar probe after Ian rejected recurring stars and curves; no convergence selected.
 next:
-  - "Ian: inspect tools/territory02/takeover/texture/index.html and the texture report; judge recovery toward the baseline and integration with new lines"
+  - "Ian: inspect tools/territory02/takeover/grammar/index.html and the material report; new paths remove stock ornaments but remain loop-heavy"
   - "Ian: restart AxiBridge.app and try Generate → Territory → Bench"
   - "Plot a first Territory sheet (nothing has been plotted yet; watch pen-lift count on dense sheets)"
   - "Try Linedraw v3 components, tonal shading, Smoothen and the revised bench"
@@ -16,6 +16,15 @@ handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Material and grammar studies, 5 October:** Three independent makers tested opening,
+pressure and unravelling against curves-only/course-led references. Ian identified
+their limited inherited grammar. A separate [grammar comparison](tools/territory02/takeover/grammar/index.html)
+removes explicit thorn/chord ornaments and constructs different paths. Both
+comparisons retain fresh frozen-source populations and mechanical checks; the
+[report](docs/reviews/territory02-material-2026-10-05.md) records weak cases and
+independent critique. New paths remain loop-heavy; no selected replacement or
+convergence, and no production or paper acceptance.
 
 **Texture recovery, 5 October:** Ian rejected the panel fills as worse than
 the earlier textural baseline. The [new comparison](tools/territory02/takeover/texture/index.html)

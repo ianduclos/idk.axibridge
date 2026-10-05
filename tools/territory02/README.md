@@ -74,3 +74,14 @@ baseline parity is checked for every seed. Fresh331/389/419/463 follow a
 source freeze; texture recovery does not establish reliable course integration.
 The panel trials remain archived. See `takeover/texture/NOTES.md` and
 `../../docs/reviews/territory02-texture-2026-10-05.md`.
+
+## Material and grammar studies
+
+`takeover/material/index.html` keeps opening, pressure and unravelling beside
+bare/course-led references. Ian then criticized recurring stars and curves.
+`takeover/grammar/index.html` compares an alternative path constructor and
+stripped texture recipe against those references. Both retain six development
+and four fresh frozen-source seeds. The new vocabulary remains loop-heavy;
+no convergence or production replacement is selected. Reproduction is in each
+folder’s NOTES.md; the lead report is
+`../../docs/reviews/territory02-material-2026-10-05.md`.

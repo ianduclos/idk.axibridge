@@ -1,0 +1,386 @@
+[
+  {
+    "seed": 13,
+    "mode": "bare",
+    "heldout": false,
+    "inkMm": 1382.9456977213965,
+    "points": 5417,
+    "strokes": 21,
+    "geometryHash": "453ea3aa8bb0bc40a8b3cd8d1c0593b0d3301a92d1d9f9020a895961b80dc4ba",
+    "inputHash": "ae36202894871745ce44e2ccbc7feb4f2a8e25245ddeef40259cfea254914093",
+    "closeWindow": [
+      67.37577375757665,
+      17.689758648754804,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "mode": "led",
+    "heldout": false,
+    "inkMm": 23274.073592961962,
+    "points": 49682,
+    "strokes": 566,
+    "geometryHash": "f44fa23fcc8a202196744a536a2b4448e415e0f8f7a7251a1cff99c4554eac2d",
+    "inputHash": "ae36202894871745ce44e2ccbc7feb4f2a8e25245ddeef40259cfea254914093",
+    "closeWindow": [
+      67.37577375757665,
+      17.689758648754804,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "mode": "opening",
+    "heldout": false,
+    "inkMm": 2773.4096424091003,
+    "points": 9939,
+    "strokes": 111,
+    "geometryHash": "28c35b8cd8474d194222c2811e5c616b810d132dff7011057d7a1f1622b267c9",
+    "inputHash": "ae36202894871745ce44e2ccbc7feb4f2a8e25245ddeef40259cfea254914093",
+    "closeWindow": [
+      67.37577375757665,
+      17.689758648754804,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "opening",
+        "course": 0,
+        "startMm": 25.98,
+        "endMm": 71.59,
+        "widthMm": 20.28,
+        "dominantSide": -1,
+        "sourceStrokes": 39,
+        "drawnFragments": 48,
+        "projectionBreaks": 0,
+        "unusedNearbyStrokes": 5,
+        "thinnedWholeDonors": 81,
+        "release": "early-collapse",
+        "sourceLayer": "d-grow"
+      },
+      {
+        "kind": "opening",
+        "course": 4,
+        "startMm": 69.45,
+        "endMm": 134.93,
+        "widthMm": 21.9,
+        "dominantSide": 1,
+        "sourceStrokes": 20,
+        "drawnFragments": 20,
+        "projectionBreaks": 0,
+        "unusedNearbyStrokes": 0,
+        "thinnedWholeDonors": 28,
+        "release": "broken-shoulder",
+        "sourceLayer": "d-grow"
+      },
+      {
+        "kind": "opening",
+        "course": 2,
+        "startMm": 8.96,
+        "endMm": 62.34,
+        "widthMm": 27.2,
+        "dominantSide": 1,
+        "sourceStrokes": 5,
+        "drawnFragments": 5,
+        "projectionBreaks": 1,
+        "unusedNearbyStrokes": 6,
+        "thinnedWholeDonors": 31,
+        "release": "late-fray",
+        "sourceLayer": "d-grow"
+      },
+      {
+        "kind": "opening",
+        "course": 1,
+        "startMm": 24.38,
+        "endMm": 47.82,
+        "widthMm": 27.28,
+        "dominantSide": -1,
+        "sourceStrokes": 15,
+        "drawnFragments": 17,
+        "projectionBreaks": 0,
+        "unusedNearbyStrokes": 25,
+        "thinnedWholeDonors": 51,
+        "release": "early-collapse",
+        "sourceLayer": "d-grow"
+      }
+    ],
+    "info": {
+      "mechanism": "sparse actual grown strands broaden into unequal openings with staggered release",
+      "textureSource": "d-grow",
+      "materialFragments": 90,
+      "bareCourses": 9,
+      "limitation": "nearest-course mapping can split folded donor strands; no surrounding ground is retained",
+      "eventWindow": [
+        4.39422478557298,
+        107.99940658029058,
+        100,
+        70
+      ],
+      "eventSelection": "first recorded event, not best-looking event"
+    }
+  },
+  {
+    "seed": 24,
+    "mode": "bare",
+    "heldout": false,
+    "inkMm": 1246.608488227982,
+    "points": 4513,
+    "strokes": 18,
+    "geometryHash": "9fa9ae5a336971407be8cda7c2433af0d0ee9765fdbc25f63342e1093b28539e",
+    "inputHash": "7d9a19a3a4c2410120f7868bb9447715cfb78964b12eec1f072217701c5c1774",
+    "closeWindow": [
+      124.07617433147956,
+      93.62161186610905,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "mode": "led",
+    "heldout": false,
+    "inkMm": 10170.37987442101,
+    "points": 22580,
+    "strokes": 235,
+    "geometryHash": "2acb733c9c9572d0c8861c6db96a9b8acecf19b51afb2effab28bcc0801cb849",
+    "inputHash": "7d9a19a3a4c2410120f7868bb9447715cfb78964b12eec1f072217701c5c1774",
+    "closeWindow": [
+      124.07617433147956,
+      93.62161186610905,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "mode": "opening",
+    "heldout": false,
+    "inkMm": 2538.9836416258863,
+    "points": 8440,
+    "strokes": 112,
+    "geometryHash": "9312c31a526dddc6efdbb4631caba429de1d064f613fd5c453d6371a5cfb8305",
+    "inputHash": "7d9a19a3a4c2410120f7868bb9447715cfb78964b12eec1f072217701c5c1774",
+    "closeWindow": [
+      124.07617433147956,
+      93.62161186610905,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "opening",
+        "course": 0,
+        "startMm": 2.9,
+        "endMm": 58.37,
+        "widthMm": 24.1,
+        "dominantSide": 1,
+        "sourceStrokes": 13,
+        "drawnFragments": 16,
+        "projectionBreaks": 0,
+        "unusedNearbyStrokes": 9,
+        "thinnedWholeDonors": 27,
+        "release": "late-fray",
+        "sourceLayer": "d-grow"
+      },
+      {
+        "kind": "opening",
+        "course": 3,
+        "startMm": 7.54,
+        "endMm": 81.59,
+        "widthMm": 21.54,
+        "dominantSide": 1,
+        "sourceStrokes": 16,
+        "drawnFragments": 25,
+        "projectionBreaks": 10,
+        "unusedNearbyStrokes": 10,
+        "thinnedWholeDonors": 40,
+        "release": "early-collapse",
+        "sourceLayer": "d-grow"
+      },
+      {
+        "kind": "opening",
+        "course": 6,
+        "startMm": 11.53,
+        "endMm": 78.8,
+        "widthMm": 28.59,
+        "dominantSide": -1,
+        "sourceStrokes": 25,
+        "drawnFragments": 37,
+        "projectionBreaks": 11,
+        "unusedNearbyStrokes": 7,
+        "thinnedWholeDonors": 44,
+        "release": "broken-shoulder",
+        "sourceLayer": "d-grow"
+      },
+      {
+        "kind": "opening",
+        "course": 2,
+        "startMm": 70,
+        "endMm": 143.06,
+        "widthMm": 26.54,
+        "dominantSide": 1,
+        "sourceStrokes": 16,
+        "drawnFragments": 16,
+        "projectionBreaks": 0,
+        "unusedNearbyStrokes": 3,
+        "thinnedWholeDonors": 28,
+        "release": "late-fray",
+        "sourceLayer": "d-grow"
+      }
+    ],
+    "info": {
+      "mechanism": "sparse actual grown strands broaden into unequal openings with staggered release",
+      "textureSource": "d-grow",
+      "materialFragments": 94,
+      "bareCourses": 10,
+      "limitation": "nearest-course mapping can split folded donor strands; no surrounding ground is retained",
+      "eventWindow": [
+        164.69486736535674,
+        57.13349847925693,
+        100,
+        70
+      ],
+      "eventSelection": "first recorded event, not best-looking event"
+    }
+  },
+  {
+    "seed": 47,
+    "mode": "bare",
+    "heldout": false,
+    "inkMm": 1094.107045519404,
+    "points": 3895,
+    "strokes": 21,
+    "geometryHash": "21bfdc0dd76eca530a33f7070d6dfc735da7483995e555433dc34643f8c88e5f",
+    "inputHash": "6f8be78ebb3372ffd16beaf54705ded0814559c02316e58904e7814c96da20dc",
+    "closeWindow": [
+      0,
+      113.35253286741212,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 47,
+    "mode": "led",
+    "heldout": false,
+    "inkMm": 20952.58528719685,
+    "points": 44149,
+    "strokes": 583,
+    "geometryHash": "118d16d0fcc587f7690ae8e2cffad36c37eba3a4f8079d33364c18a362d5c6b7",
+    "inputHash": "6f8be78ebb3372ffd16beaf54705ded0814559c02316e58904e7814c96da20dc",
+    "closeWindow": [
+      0,
+      113.35253286741212,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 47,
+    "mode": "opening",
+    "heldout": false,
+    "inkMm": 1683.0786039631382,
+    "points": 5809,
+    "strokes": 63,
+    "geometryHash": "fb548e03e70a6eb25bccd5908a9f395e543e66388b0b519c9cf6e1c74f0888cb",
+    "inputHash": "6f8be78ebb3372ffd16beaf54705ded0814559c02316e58904e7814c96da20dc",
+    "closeWindow": [
+      0,
+      113.35253286741212,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "opening",
+        "course": 0,
+        "startMm": 3.08,
+        "endMm": 68.99,
+        "widthMm": 21.73,
+        "dominantSide": 1,
+        "sourceStrokes": 1,
+        "drawnFragments": 2,
+        "projectionBreaks": 0,
+        "unusedNearbyStrokes": 7,
+        "thinnedWholeDonors": 13,
+        "release": "broken-shoulder",
+        "sourceLayer": "d-grow"
+      },
+      {
+        "kind": "opening",
+        "course": 6,
+        "startMm": 21.05,
+        "endMm": 77.81,
+        "widthMm": 28.72,
+        "dominantSide": 1,
+        "sourceStrokes": 12,
+        "drawnFragments": 12,
+        "projectionBreaks": 0,
+        "unusedNearbyStrokes": 2,
+        "thinnedWholeDonors": 13,
+        "release": "late-fray",
+        "sourceLayer": "d-grow"
+      },
+      {
+        "kind": "opening",
+        "course": 7,
+        "startMm": 73.47,
+        "endMm": 132.72,
+        "widthMm": 24.36,
+        "dominantSide": -1,
+        "sourceStrokes": 21,
+        "drawnFragments": 21,
+        "projectionBreaks": 0,
+        "unusedNearbyStrokes": 6,
+        "thinnedWholeDonors": 35,
+        "release": "early-collapse",
+        "sourceLayer": "d-grow"
+      },
+      {
+        "kind": "opening",
+        "course": 5,
+        "startMm": 1.77,
+        "endMm": 42.74,
+        "widthMm": 26.57,
+        "dominantSide": -1,
+        "sourceStrokes": 5,
+        "drawnFragments": 7,
+        "projectionBreaks": 4,
+        "unusedNearbyStrokes": 5,
+        "thinnedWholeDonors": 17,
+        "release": "broken-shoulder",
+        "sourceLayer": "d-grow"
+      }
+    ],
+    "info": {
+      "mechanism": "sparse actual grown strands broaden into unequal openings with staggered release",
+      "textureSource": "d-grow",
+      "materialFragments": 42,
+      "bareCourses": 10,
+      "limitation": "nearest-course mapping can split folded donor strands; no surrounding ground is retained",
+      "eventWindow": [
+        14.809460648786413,
+        148,
+        100,
+        70
+      ],
+      "eventSelection": "first recorded event, not best-looking event"
+    }
+  }
+]

@@ -1,0 +1,27 @@
+{
+  "development": [
+    5,
+    13,
+    18,
+    24,
+    47,
+    82
+  ],
+  "fresh": [
+    521,
+    587,
+    631,
+    683
+  ],
+  "frozen_before_fresh_generation": true,
+  "sha256": {
+    "common.cjs": "b63e0e69020d6e5cf7570d7593b8d8bfa1a604b86b38741307f73d370c9c0926",
+    "opening.cjs": "fde2d51c1d34bbb4e7f27f52b89e585448d378c9033aa894b6336502f21d87b2",
+    "pressure.cjs": "81172a0e7b748485edb39117b3594aad0d1dd4be8af8d1d50bc7a5fe4dc48161",
+    "unravel.cjs": "90672a19f4f252ca5dbc1ab2d7f57739aae53c3e00a74722daea8bd1f4c54951",
+    "render.cjs": "6f629dfd1910fffb23b0a9c705d7f10120ce3b107a2b0bcef794e4f692f8112c",
+    "rewrite.cjs": "f388f8afbd2d151e9a61578452fcbdcc5f2083e0936a3ab1fff5001a30872288",
+    "regrow.cjs": "15fff2151c3736ce5e02cea0745134ca7e5b37f6048f4b7b4d0638d8aefbdd90",
+    "full.json": "ca52a38c56fc42fa66d485b4bda6eee00e293b9b32e9c6a77b550e21aa33dfda"
+  }
+}

@@ -1,0 +1,628 @@
+[
+  {
+    "seed": 13,
+    "mode": "bare",
+    "heldout": false,
+    "inkMm": 1382.9456977213965,
+    "points": 5417,
+    "strokes": 21,
+    "geometryHash": "453ea3aa8bb0bc40a8b3cd8d1c0593b0d3301a92d1d9f9020a895961b80dc4ba",
+    "inputHash": "ae36202894871745ce44e2ccbc7feb4f2a8e25245ddeef40259cfea254914093",
+    "closeWindow": [
+      67.37577375757665,
+      17.689758648754804,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "mode": "led",
+    "heldout": false,
+    "inkMm": 23274.073592961962,
+    "points": 49682,
+    "strokes": 566,
+    "geometryHash": "f44fa23fcc8a202196744a536a2b4448e415e0f8f7a7251a1cff99c4554eac2d",
+    "inputHash": "ae36202894871745ce44e2ccbc7feb4f2a8e25245ddeef40259cfea254914093",
+    "closeWindow": [
+      67.37577375757665,
+      17.689758648754804,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "mode": "pressure",
+    "heldout": false,
+    "inkMm": 23819.732197545298,
+    "points": 46408,
+    "strokes": 567,
+    "geometryHash": "d5f6bf29495873103143bb6c66faeeb9af7f8284347fe8dbf7529449a21b02be",
+    "inputHash": "ae36202894871745ce44e2ccbc7feb4f2a8e25245ddeef40259cfea254914093",
+    "closeWindow": [
+      67.37577375757665,
+      17.689758648754804,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "material-pressure",
+        "courseId": 0,
+        "sourceIds": [
+          0
+        ],
+        "at": [
+          20.467542913532174,
+          114.83130161382769
+        ],
+        "materialCenter": [
+          21.55831373379021,
+          114.81120489061668
+        ],
+        "weightedInkMm": 60.14173204829952,
+        "sideInkMm": [
+          14.429565752432483,
+          89.74339061288005
+        ],
+        "demand": [
+          -26.163296120923135,
+          0.6427906588330512
+        ],
+        "arclengthReach": [
+          18,
+          20.415441381002314
+        ],
+        "after": [
+          -3.075796909713084,
+          115.40972410486894
+        ],
+        "displacementMm": 23.550444212603473
+      },
+      {
+        "kind": "material-pressure",
+        "courseId": 4,
+        "sourceIds": [
+          3,
+          1,
+          2
+        ],
+        "at": [
+          106.45148519074316,
+          136.92745019116202
+        ],
+        "materialCenter": [
+          106.46620313594784,
+          136.49862043652197
+        ],
+        "weightedInkMm": 86.51872746894209,
+        "sideInkMm": [
+          122.39825698365723,
+          67.07666984709039
+        ],
+        "demand": [
+          -0.1976166277216415,
+          27.999310991177477
+        ],
+        "arclengthReach": [
+          19.39301467963434,
+          23.65215539758556
+        ],
+        "after": [
+          106.25585658395612,
+          164.64508844535018
+        ],
+        "displacementMm": 27.71832861017829
+      },
+      {
+        "kind": "material-pressure",
+        "courseId": 0,
+        "sourceIds": [
+          0
+        ],
+        "at": [
+          49.09203398462896,
+          157.22144489032215
+        ],
+        "materialCenter": [
+          48.863279495489834,
+          157.22951697466897
+        ],
+        "weightedInkMm": 46.32450032124866,
+        "sideInkMm": [
+          73.50886509241305,
+          40.73192178744189
+        ],
+        "demand": [
+          -23.765818535810514,
+          -7.915765631757528
+        ],
+        "arclengthReach": [
+          21.86022535461503,
+          23.298972275875713
+        ],
+        "after": [
+          25.6087875622926,
+          149.39979655652184
+        ],
+        "displacementMm": 24.751586720649136
+      },
+      {
+        "kind": "material-pressure",
+        "courseId": 2,
+        "sourceIds": [
+          2,
+          1
+        ],
+        "at": [
+          130.27367990390286,
+          67.33036304314525
+        ],
+        "materialCenter": [
+          131.19427326547833,
+          66.1475661838542
+        ],
+        "weightedInkMm": 19.896092187340045,
+        "sideInkMm": [
+          12.065873195347805,
+          1.168159253868592
+        ],
+        "demand": [
+          -12.06037953204469,
+          18.729580620420357
+        ],
+        "arclengthReach": [
+          18,
+          24.41266714655338
+        ],
+        "after": [
+          118.45670477977761,
+          85.68194042831253
+        ],
+        "displacementMm": 21.82707707431249
+      },
+      {
+        "kind": "material-pressure",
+        "courseId": 0,
+        "sourceIds": [
+          0
+        ],
+        "at": [
+          109.49648033000541,
+          48.12055208584699
+        ],
+        "materialCenter": [
+          110.80384081607761,
+          46.795792874485066
+        ],
+        "weightedInkMm": 18.70259124023985,
+        "sideInkMm": [
+          4.6969918076124335,
+          30.02621596872505
+        ],
+        "demand": [
+          -22.2721626489921,
+          -0.5376253623167515
+        ],
+        "arclengthReach": [
+          18.245413126502644,
+          18.52101511143576
+        ],
+        "after": [
+          87.68560586470933,
+          47.59406170987173
+        ],
+        "displacementMm": 21.817227987462093
+      }
+    ],
+    "info": {
+      "mechanism": "measured texture ink resists courses; sparse exits yield",
+      "seed": 13,
+      "occupiedCells": 2714,
+      "densityThresholdInkMm": 13.853808277836592,
+      "encounters": 5,
+      "yieldedTexturePoints": 7014,
+      "regrowth": false
+    }
+  },
+  {
+    "seed": 24,
+    "mode": "bare",
+    "heldout": false,
+    "inkMm": 1246.608488227982,
+    "points": 4513,
+    "strokes": 18,
+    "geometryHash": "9fa9ae5a336971407be8cda7c2433af0d0ee9765fdbc25f63342e1093b28539e",
+    "inputHash": "7d9a19a3a4c2410120f7868bb9447715cfb78964b12eec1f072217701c5c1774",
+    "closeWindow": [
+      124.07617433147956,
+      93.62161186610905,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "mode": "led",
+    "heldout": false,
+    "inkMm": 10170.37987442101,
+    "points": 22580,
+    "strokes": 235,
+    "geometryHash": "2acb733c9c9572d0c8861c6db96a9b8acecf19b51afb2effab28bcc0801cb849",
+    "inputHash": "7d9a19a3a4c2410120f7868bb9447715cfb78964b12eec1f072217701c5c1774",
+    "closeWindow": [
+      124.07617433147956,
+      93.62161186610905,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "mode": "pressure",
+    "heldout": false,
+    "inkMm": 10845.075782152748,
+    "points": 19980,
+    "strokes": 236,
+    "geometryHash": "f7c6cd740835f62339af238278d5304bbfdb57f51448037ecce721d51a7be675",
+    "inputHash": "7d9a19a3a4c2410120f7868bb9447715cfb78964b12eec1f072217701c5c1774",
+    "closeWindow": [
+      124.07617433147956,
+      93.62161186610905,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "material-pressure",
+        "courseId": 6,
+        "sourceIds": [
+          6
+        ],
+        "at": [
+          251.66701034040793,
+          150.44399554475353
+        ],
+        "materialCenter": [
+          253.28487488306908,
+          152.34205397835396
+        ],
+        "weightedInkMm": 105.48313488740143,
+        "sideInkMm": [
+          6.059173260564338,
+          226.4498694835538
+        ],
+        "demand": [
+          -20.242898797195377,
+          -19.352538097023746
+        ],
+        "arclengthReach": [
+          21.177014256493447,
+          20.774070409274756
+        ],
+        "after": [
+          231.62603794739496,
+          131.28450234590042
+        ],
+        "displacementMm": 27.725922060310396
+      },
+      {
+        "kind": "material-pressure",
+        "courseId": 6,
+        "sourceIds": [
+          6
+        ],
+        "at": [
+          279.5527505282593,
+          109.74331731399727
+        ],
+        "materialCenter": [
+          278.1415324527979,
+          109.33790994957671
+        ],
+        "weightedInkMm": 54.94950216080217,
+        "sideInkMm": [
+          99.2586623556535,
+          16.251955431025948
+        ],
+        "demand": [
+          23.98026709945686,
+          6.8495444904206835
+        ],
+        "arclengthReach": [
+          23.199105965852997,
+          21.897802068115215
+        ],
+        "after": [
+          303.2786755675771,
+          116.520213433328
+        ],
+        "displacementMm": 24.67480172126066
+      },
+      {
+        "kind": "material-pressure",
+        "courseId": 3,
+        "sourceIds": [
+          3
+        ],
+        "at": [
+          210.14535029728412,
+          143.77861606217868
+        ],
+        "materialCenter": [
+          211.77349112233205,
+          144.33667815521503
+        ],
+        "weightedInkMm": 36.79728020997213,
+        "sideInkMm": [
+          5.197655982689375,
+          53.82763140469522
+        ],
+        "demand": [
+          -21.9786339907073,
+          -8.310139014627612
+        ],
+        "arclengthReach": [
+          21.90687716084965,
+          21.702527037474272
+        ],
+        "after": [
+          188.44056248033326,
+          135.57201850392647
+        ],
+        "displacementMm": 23.204440472934703
+      },
+      {
+        "kind": "material-pressure",
+        "courseId": 7,
+        "sourceIds": [
+          7,
+          0,
+          2
+        ],
+        "at": [
+          193.62091587812793,
+          75.46644852670222
+        ],
+        "materialCenter": [
+          195.57222757044434,
+          76.04763463161639
+        ],
+        "weightedInkMm": 33.22345403982474,
+        "sideInkMm": [
+          1.4221496288921511,
+          46.63790141025816
+        ],
+        "demand": [
+          -21.950617102908556,
+          -7.429811050318892
+        ],
+        "arclengthReach": [
+          23.275430025548395,
+          18.141852004078995
+        ],
+        "after": [
+          172.00227596600283,
+          68.14900460433118
+        ],
+        "displacementMm": 22.823465495125262
+      },
+      {
+        "kind": "material-pressure",
+        "courseId": 0,
+        "sourceIds": [
+          0,
+          2,
+          7
+        ],
+        "at": [
+          175.66600874950635,
+          125.83585476415948
+        ],
+        "materialCenter": [
+          176.1284129584004,
+          127.45782024119464
+        ],
+        "weightedInkMm": 36.36751192026269,
+        "sideInkMm": [
+          4.3368445465192575,
+          31.17468795490837
+        ],
+        "demand": [
+          -4.478000168281338,
+          -23.029459553013314
+        ],
+        "arclengthReach": [
+          24.84552746483913,
+          18.57742654098215
+        ],
+        "after": [
+          171.2467728245427,
+          103.10860796545407
+        ],
+        "displacementMm": 23.152913276945405
+      }
+    ],
+    "info": {
+      "mechanism": "measured texture ink resists courses; sparse exits yield",
+      "seed": 24,
+      "occupiedCells": 1310,
+      "densityThresholdInkMm": 30.88490376997556,
+      "encounters": 5,
+      "yieldedTexturePoints": 8452,
+      "regrowth": false
+    }
+  },
+  {
+    "seed": 47,
+    "mode": "bare",
+    "heldout": false,
+    "inkMm": 1094.107045519404,
+    "points": 3895,
+    "strokes": 21,
+    "geometryHash": "21bfdc0dd76eca530a33f7070d6dfc735da7483995e555433dc34643f8c88e5f",
+    "inputHash": "6f8be78ebb3372ffd16beaf54705ded0814559c02316e58904e7814c96da20dc",
+    "closeWindow": [
+      0,
+      113.35253286741212,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 47,
+    "mode": "led",
+    "heldout": false,
+    "inkMm": 20952.58528719685,
+    "points": 44149,
+    "strokes": 583,
+    "geometryHash": "118d16d0fcc587f7690ae8e2cffad36c37eba3a4f8079d33364c18a362d5c6b7",
+    "inputHash": "6f8be78ebb3372ffd16beaf54705ded0814559c02316e58904e7814c96da20dc",
+    "closeWindow": [
+      0,
+      113.35253286741212,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 47,
+    "mode": "pressure",
+    "heldout": false,
+    "inkMm": 21225.275980361057,
+    "points": 41941,
+    "strokes": 584,
+    "geometryHash": "e6acb627ce3e4430512538c7220a7643be65afed5405e28803fb8c0c5fbf2432",
+    "inputHash": "6f8be78ebb3372ffd16beaf54705ded0814559c02316e58904e7814c96da20dc",
+    "closeWindow": [
+      0,
+      113.35253286741212,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "material-pressure",
+        "courseId": 0,
+        "sourceIds": [
+          0,
+          5
+        ],
+        "at": [
+          48.29736642367815,
+          201.69725040331173
+        ],
+        "materialCenter": [
+          47.53101428280743,
+          200.21207486243804
+        ],
+        "weightedInkMm": 37.3673355120881,
+        "sideInkMm": [
+          37.73930046895888,
+          3.054511835703002
+        ],
+        "demand": [
+          17.426766856882594,
+          21.92562325963318
+        ],
+        "arclengthReach": [
+          18.05039718153945,
+          18
+        ],
+        "after": [
+          65.4184667946875,
+          223.23829697884784
+        ],
+        "displacementMm": 27.51633633832078
+      },
+      {
+        "kind": "material-pressure",
+        "courseId": 7,
+        "sourceIds": [
+          6
+        ],
+        "at": [
+          59.603088360022106,
+          53.517264043918686
+        ],
+        "materialCenter": [
+          60.486790595833455,
+          53.98439002952456
+        ],
+        "weightedInkMm": 37.31824372411958,
+        "sideInkMm": [
+          64.99294578610483,
+          18.964677982353926
+        ],
+        "demand": [
+          -24.16360082041912,
+          -14.132320759265161
+        ],
+        "arclengthReach": [
+          19.254335513890148,
+          23.327589867318103
+        ],
+        "after": [
+          35.77025585551229,
+          39.578396403341124
+        ],
+        "displacementMm": 27.609707283663113
+      },
+      {
+        "kind": "material-pressure",
+        "courseId": 3,
+        "sourceIds": [
+          3
+        ],
+        "at": [
+          128.26145834517894,
+          163.5746612153014
+        ],
+        "materialCenter": [
+          128.60831814427942,
+          163.21544104880053
+        ],
+        "weightedInkMm": 19.313771085733862,
+        "sideInkMm": [
+          8.082258585232477,
+          12.647268173549802
+        ],
+        "demand": [
+          -24.908127640492456,
+          -0.6841051115922867
+        ],
+        "arclengthReach": [
+          21.308876063954404,
+          18
+        ],
+        "after": [
+          108.84357594369821,
+          163.04134643552825
+        ],
+        "displacementMm": 19.425204802319573
+      }
+    ],
+    "info": {
+      "mechanism": "measured texture ink resists courses; sparse exits yield",
+      "seed": 47,
+      "occupiedCells": 3751,
+      "densityThresholdInkMm": 13.290923376721686,
+      "encounters": 3,
+      "yieldedTexturePoints": 2099,
+      "regrowth": false
+    }
+  }
+]
