@@ -61,6 +61,8 @@ async def _lifespan(app: FastAPI):
     bus.close()  # end the SSE streams so graceful shutdown doesn't wait them out
     from .linedraw.jobs import manager as linedraw_jobs
     linedraw_jobs.shutdown()
+    from .mosca2.jobs import manager as mosca2_jobs
+    mosca2_jobs.shutdown()
     manager.shutdown()
 
 

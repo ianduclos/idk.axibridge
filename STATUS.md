@@ -3,10 +3,10 @@ project: idk.axibridge
 state: active
 updated: 2026-10-05
 machine: mac+pi
-summary: Territory and Compose are integrated; the separate Mosca flowing-composition study has Ian's positive screen feedback, with native and paper acceptance still pending.
+summary: Mosca 2 is implemented on codex/mosca2-bench with Territory composition, original flowing material, isolated brain responses and portable Keep/Resume; integration and user acceptance remain pending.
 next:
-  - Make further pieces by importing flowing SVGs into Compose; experiment entry points are in docs/MOSCA-TERRITORY-STUDIES.md
-  - Continue the brain/page-feedback composition instrument from the isolated lab, preserving the earlier flowing line
+  - Review Mosca 2 in the isolated preview, then authorize main integration and normal-app activation
+  - Compare the same seed after moving one nearby passage; preserve contact-off as the control
   - Audit the remaining environment changes from the scratch-run dependency refresh
   - Complete Territory, Mosca, Linedraw and plot-optimization native and paper checks in HANDOFF.md
   - Sync the idkpi clone with main once the Pi is back
@@ -14,6 +14,27 @@ handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Mosca 2 bench, 5 October:** native source and bench implemented on
+`codex/mosca2-bench`. It combines six starting pieces, seven earlier flowing
+drawings, fresh Territory generation, editable parts, isolated full-brain
+responses and recorded before/added/combined views. Keep/Resume and saved
+projects preserve exact geometry without the neural runtime. Every Run starts
+a fresh bout; there is no neural checkpoint or learning claim. Real matched
+contact-on/off runs changed motor output and pen lifts with identical weights.
+Astra reviewed the physical/sensory contract and caught a historical-view Run
+mismatch, now corrected. [Usage and limits](docs/MOSCA2.md).
+The normal app and original Mosca bench have not been restarted or modified;
+main integration and native/paper acceptance remain pending.
+
+Verification: full hardware-free run **1,730 passed, one skipped**, with one
+outdated bench-picker inventory expectation failing; it was updated for Mosca 2
+and passed in the **57-test final regression run**. That run also covers the
+corrected portrait/landscape Keep placement and new UI/history checks.
+Typecheck/build passed. Actual Run → SVG → Keep → Resume, Territory generation
+and part transformation were exercised against the isolated backend. Removing
+a single 6 mm cue changed motor output at the same seed/contact settings and
+identical source/weight hashes. No hardware was used.
 
 **Mosca × Territory, 5 October:** six compositions and seven original flowing
 source drawings are preserved in an isolated Codex lab, with SVG/PNG downloads,

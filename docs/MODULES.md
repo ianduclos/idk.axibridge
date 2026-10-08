@@ -508,6 +508,16 @@ persists the recording, and normal save/load/ZIP carries it. Sources use a fixed
 `placement_frame` derived from the full recording, never from the prefix.
 See [Mosca recording bench](MOSCA-BENCH.md) for the pen-mask and import contracts.
 
+### Mosca 2 composition bench
+
+Mosca 2 uses the `mosca2` v1 adapter (`new`, `resume`). Its pure frozen source
+stores bounded parts, settings and before/added exchanges; it resolves without
+Mosca data. `mosca2_api.py` owns draft jobs, while `mosca2/worker.py` runs the
+full model and flowing renderer in an isolated process. Keep uses the ordinary
+source endpoint; no alternate plotting path exists. The browser composer
+reuses Territory's worker generator and bundled earlier flowing material.
+See [Mosca 2](MOSCA2.md) for sensing, portability and runtime contracts.
+
 ### Client-engine benches (Territory)
 
 Territory (`sources/territory.py`, `static/js/territory_bench.js`, adapter

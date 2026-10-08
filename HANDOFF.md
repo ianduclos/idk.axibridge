@@ -6,17 +6,31 @@ entries: 26
 
 ### Mosca × Territory composition instrument — opened 2026-10-05, owner: Codex
 
-- done: Flowing and Fine bundle shipped in the original Mosca K-series bench;
-  isolated page-feedback/replay studies and six authored compositions are saved.
-  Ian judged the piece round good progress. Seven original flowing drawings,
-  provenance, prior arrangements, Astra critique and SVG/PNG/PDF exports remain
-  inspectable. No production AxiBridge source or hardware changes in this study.
-- next: Continue from the preserved lab toward perceptible brain decisions about
-  the current composition. Keep the earlier flowing line central; new page
-  arrangements currently remain authored, and a direct recipe UI is unbuilt.
-- blockers: no technical blocker for making more authored pieces. Brain-led
-  composition remains an experiment, not established intelligence or learning.
-- context: [Guide, script entry points and evidence](docs/MOSCA-TERRITORY-STUDIES.md).
+- done: Native Mosca 2 source/bench implemented on `codex/mosca2-bench` in
+  `/Users/ianduclos/_SecondBrain/01_Projects/mosca2-bench/idk.axibridge`.
+  Six starting pieces, seven original flowing drawings, Territory generation,
+  part transforms, live fresh-brain bouts, cancellation, history and portable
+  Keep/Resume are connected through the ordinary source/resolve pipeline.
+  Actual page-contact on/off changes motor output with identical brain weights.
+  Astra reviewed the runtime/sensing contract; historical inspection now blocks
+  Run so displayed and submitted pages cannot differ.
+- verification: Full run 1,730 passed, one skipped and one stale expected
+  bench list; corrected list plus final Mosca 2/orientation/UI checks: 57 passed.
+  Typecheck/build passed. Actual browser Run/Keep/Resume and generation/editing
+  were exercised. Keep's physical placement now remains identity in both views.
+  Current normal-app project `yoyomah` (three layers) has a read-only ZIP backup
+  at the study lab's `mosca2-delivery/normal-app-before-mosca2.zip`; its backend
+  on 2942 was idle and connected to the Pi when checked. Recheck before activation.
+- next: Ian checks the preview at `http://127.0.0.1:54826` (isolated config,
+  no autoconnect). Main integration and normal-app activation need explicit
+  authorization under the workshop Git rules; do not restart an active plot.
+  Compare a matched local-passage intervention and contact-off, then paper.
+- blockers: User/native/paper acceptance remains. Brain-led composition is
+  experimental, not established intelligence or learning. A new Run resets
+  neural state; Resume only restores the composed page and recorded history.
+- context: [Native bench usage](docs/MOSCA2.md),
+  [implementation plan](docs/plans/2026-10-05-mosca2-bench.md),
+  [preserved studies and evidence](docs/MOSCA-TERRITORY-STUDIES.md).
 
 ### Environment audit after experiment dependency refresh — opened 2026-10-05, owner: Codex
 
