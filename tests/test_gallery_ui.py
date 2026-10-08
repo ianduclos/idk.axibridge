@@ -40,6 +40,7 @@ def _seed_asset(page, name: str = "Five sides", tags: list[str] | None = None,
 
 
 def _open_gallery(page) -> None:
+    page.locator('#tabs button[data-tab="assets"]').click()
     page.click("#btn-gallery")
     page.locator('.gallery-browser [role="dialog"]').wait_for(timeout=10_000)
 

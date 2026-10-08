@@ -154,7 +154,7 @@ def ui(server):
             browser = p.chromium.launch(headless=True)
         except Exception as e:  # no browser binary on this machine
             pytest.skip(f"no chromium: {str(e)[:120]}")
-        _post(f"{server}/api/project/new")
+        _post(f"{server}/api/project/new", {"recovery_action":"discard"})
         page = browser.new_page(viewport={"width": 1500, "height": 950})
         errors: list[str] = []
         page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
@@ -283,7 +283,7 @@ def test_app_loads_with_tabs_and_an_empty_layer_list(ui):
     # case-insensitive: the tabs are uppercased in CSS today and Slice 4's
     # typography pass may sentence-case them. That is a look, not a contract.
     assert [b.inner_text().lower() for b in ui.locator("#tabs button").all()] == \
-        ["compose", "plot", "pens", "settings"]
+        ["compose", "assets", "plot", "pens", "settings"]
     assert ui.locator("#tabs button.on").inner_text().lower() == "compose"
     assert rows(ui) == 0
     assert ui.locator("#canvas").is_visible()
@@ -3262,7 +3262,7 @@ def test_restart_menu_uses_visible_confirmation_before_request(ui, accept):
     ui.on("dialog", answer)
     ui.locator('[data-menu="settings"] .menu-trigger').click()
     ui.locator("#btn-restart").click()
-    assert dialogs == [("confirm", "Restart the server? Unsaved project changes will be lost.")]
+    assert dialogs == [("confirm", "Restart the server? Kept project changes will be checkpointed for recovery.")]
     if accept:
         ui.wait_for_function("document.querySelector('#btn-restart').disabled")
         assert requests == ["POST"]

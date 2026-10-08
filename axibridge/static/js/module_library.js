@@ -144,7 +144,9 @@ export function createPresetControls({ kind, mod, getParams, onApply, applyLabel
   const save = el("button", "module-preset-save", "Save as preset"); save.type = "button";
   const update = el("button", "module-preset-update", "Update selected"); update.type = "button";
   const error = el("span", "module-preset-error"); error.hidden = true; error.setAttribute("role", "alert");
-  root.append(select, apply, save, update, error);
+  const manage = el("details", "module-preset-manage");
+  manage.append(el("summary", "", "Manage presets"), save, update);
+  root.append(select, apply, manage, error);
   let data = { presets: [], preferences: [], warnings: [] };
   let loadRevision = 0;
   let actionRevision = 0;

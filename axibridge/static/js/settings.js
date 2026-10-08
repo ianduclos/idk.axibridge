@@ -1,3 +1,4 @@
+import { resolveProjectReplacement, reopenRecoveries } from "./recovery_ui.js";
 import { resetBenchProject } from "./bench_host.js";
 // Settings tab: machine-level configuration (estimator calibration, holder
 // vector, projects root, host/port) and project file operations
@@ -136,12 +137,13 @@ export function initSettingsTab() {
   // server actions; the id lookup works unchanged since the menu bar is
   // static markup, present before initSettingsTab ever runs.
   const restart = $("btn-restart");
+  $("btn-recover-projects").onclick = () => reopenRecoveries();
   restart.onclick = async () => {
     // Menu selections close immediately, so an armed second click would hide
     // its own confirmation. Use a dialog that stays visible until answered.
-    if (!confirm("Restart the server? Unsaved project changes will be lost.")) return;
+    if (!confirm("Restart the server? Kept project changes will be checkpointed for recovery.")) return;
     try {
-      await api.post("/api/server/restart");
+      await api.post("/api/server/restart", { continue_with_recovery: true });
       restart.textContent = "restarting…";
       restart.disabled = true;
       // the SSE stream drops, auto-reconnects, and onReconnect re-hydrates
@@ -180,9 +182,10 @@ export function initSettingsTab() {
   rememberDetails(logDetails, "server-log", false);
 
   $("btn-proj-new").onclick = async () => {
-    if (!confirm("Start a new empty project? Unsaved changes are lost.")) return;
     try {
-      await api.post("/api/project/new");
+      const recovery = await resolveProjectReplacement();
+      if (!recovery) return;
+      await api.post("/api/project/new", recovery);
       resetBenchProject();
       await actions.refreshAll();
     } catch (e) { actions.oops(e); }
@@ -191,7 +194,9 @@ export function initSettingsTab() {
     const name = $("proj-list").value;
     if (!name) return;
     try {
-      await api.post("/api/project/load", { name });
+      const recovery = await resolveProjectReplacement();
+      if (!recovery) return;
+      await api.post("/api/project/load", { name, ...recovery });
       resetBenchProject();
       await actions.refreshAll();
       actions.log(`loaded project: ${name}`);
@@ -204,7 +209,9 @@ export function initSettingsTab() {
     const fd = new FormData();
     fd.append("file", file);
     try {
-      await api.upload("/api/project/import", fd);
+      const recovery = await resolveProjectReplacement();
+      if (!recovery) return;
+      await api.upload(`/api/project/import?recovery_action=${recovery.recovery_action || ""}`, fd);
       resetBenchProject();
       await actions.refreshAll();
       actions.log(`imported: ${file.name}`);

@@ -79,6 +79,7 @@ def test_failed_save_keeps_dialog_name_and_does_not_duplicate(ui):
     select_layer(ui)
     controls = ui.locator('#layer-detail .module-preset-controls[data-module="polygon"]')
     controls.wait_for()
+    controls.locator("details summary").click()
     controls.get_by_role("button", name="Save as preset", exact=True).click()
     name = ui.get_by_role("textbox", name="Preset name")
     name.fill("Taken")

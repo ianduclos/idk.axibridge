@@ -646,3 +646,38 @@ cancelled stage results are not inserted. Occlusion cache finalization runs in
 409 / `render_cancelled`; the browser rejects stale responses separately,
 because cancelling HTTP alone does not stop a worker thread. A native geometry
 call already in progress must return before cancellation takes effect.
+
+
+## Nested editing hierarchy and recovery (September 2026)
+
+Project format 3 keeps flat drawing order and animation ownership while adding
+nested group metadata. `groups.py` owns world matrices, common reference frames,
+visibility and contiguous-block validation; `group_session.py` validates detached
+candidates and commits one undo checkpoint. Group placement precedes millimetre
+effects in the existing resolver. Linked interpolation factors common ancestry
+out of endpoints, then applies output placement once; persisted frame adjustments
+preserve live relationships through reparenting/Ungroup. Normal consolidation
+bakes world output back into the surviving parent frame. See
+[Layer groups](docs/LAYER-GROUPS.md) for the model and editing contract.
+
+`recovery_state.py` observes persistent Session semantics, excluding derived
+tween geometry, scrub overlays and serializer provenance. Detached snapshots
+carry kept sources/assets/sheets and existing saved-history depth. `recovery.py`
+writes per-session atomic archives with previous-valid fallback below CONFIG_DIR.
+Save and recovery writes serialize, while revision checks prevent concurrent
+edits being marked clean or replaced. App lifecycle supplies the 30-second task;
+native close and restart require the final checkpoint. See
+[Recovery](docs/RECOVERY.md). Unkept bench drafts are intentionally excluded.
+
+Compose retains generators first; `assets_tab.js` owns the separate Assets tab.
+`group_ui.js` provides typed targets/context and injects existing rich layer rows.
+`main.js` bridges canvas selections and atomic API operations; `recovery_ui.js`
+handles startup and replacement choices. Shortcut guards defer to input fields,
+active drawing tools and visible modal editors.
+
+Nested generator interpolation carries the extra hierarchy placement relative
+to its legacy parameter-morph frame. Structural edits retain per-reference
+baselines as well as input/reference adjustments, so reparenting an ordinary
+endpoint cannot move an external nested tween. Shared placement factors out
+before interpolation; a reflected midpoint does not require inverting a
+collapsed reference frame. The ungrouped cache key remains byte-compatible.

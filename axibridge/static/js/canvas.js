@@ -582,6 +582,7 @@ export class CanvasEditor {
       return;
     }
     if (layerId) {
+      this._lastHit = {id:layerId, point:p, at:performance.now()};
       if (e.shiftKey || e.metaKey || e.ctrlKey) { // toggle into multi-selection
         this.selection.has(layerId) ? this.selection.delete(layerId) : this.selection.add(layerId);
         this._renderSelection();
@@ -694,7 +695,11 @@ export class CanvasEditor {
   }
 
   _onDbl(e) {
-    const layerId = e.target.getAttribute?.("data-id");
+    let layerId = e.target.getAttribute?.("data-id");
+    // Selection can repaint the hit path between the two clicks. Keep the
+    // actual first hit for this short click sequence, even if SVG retargets.
+    const p = this.toBed(e), hit = this._lastHit;
+    if (!layerId && hit && performance.now()-hit.at < 600 && Math.hypot(p.x-hit.point.x,p.y-hit.point.y) < 2) layerId = hit.id;
     if (layerId) this.cb.onDoubleClick(layerId);
     else this.resetView();
   }

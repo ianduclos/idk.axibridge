@@ -77,7 +77,7 @@ def _upload_image(page, name, size=(40, 60), *, exif_orientation=None):
         mime = 'image/jpeg'
     file = page.locator('#asset-file')
     if not file.is_visible():
-        page.get_by_role('heading', name='Import & assets').click()
+        page.locator('#tabs button[data-tab="assets"]').click()
     file.set_input_files({'name': name, 'mimeType': mime, 'buffer': image.getvalue()})
     with page.expect_response(lambda response: response.url.endswith('/api/assets')
                               and response.request.method == 'POST') as upload:
@@ -85,6 +85,7 @@ def _upload_image(page, name, size=(40, 60), *, exif_orientation=None):
     assert upload.value.ok
     page.wait_for_function(
         '(name) => document.getElementById("asset-list").textContent.includes(name)', arg=name)
+    page.locator('#tabs button[data-tab="compose"]').click()
 
 
 def _load_images(page, *names):

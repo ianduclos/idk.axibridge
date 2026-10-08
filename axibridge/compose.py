@@ -40,7 +40,7 @@ import uuid
 from collections import OrderedDict
 from typing import Any, Literal, NamedTuple
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 import shapely
 from shapely.geometry import LineString, Point as ShPoint, Polygon
 from shapely.geometry.base import BaseGeometry
@@ -120,6 +120,12 @@ class LayerSource(BaseModel):
 class CanvasLayer(BaseModel):
     id: str = Field(default_factory=lambda: uuid.uuid4().hex[:8])
     name: str = "layer"
+    group_id: str | None = None
+    inherited_visible: bool = True
+    _effect_translation: tuple[float, float] | None = PrivateAttr(default=None)
+    tween_input_transform: Affine = Field(default_factory=Affine)
+    tween_reference_transforms: dict[str, Affine] = Field(default_factory=dict)
+    tween_reference_baselines: dict[str, Affine] = Field(default_factory=dict)
     animation_owner_id: str | None = None
     visible: bool = True
     draw: bool = True
@@ -229,6 +235,15 @@ class PlotOptions(BaseModel):
     crop_h: float = Field(default=210.0, ge=1, le=218, title="Custom crop height (mm)")
 
 
+class LayerGroup(BaseModel):
+    inherited_visible: bool = True
+    id: str = Field(default_factory=lambda: uuid.uuid4().hex[:8])
+    name: str = "Group"
+    parent_id: str | None = None
+    visible: bool = True
+    transform: Affine = Field(default_factory=Affine)
+
+
 class CaptureSnapshot(BaseModel):
     """Project/source state at capture time, excluding staging itself.
 
@@ -239,6 +254,7 @@ class CaptureSnapshot(BaseModel):
 
     name: str = "untitled"
     layers: list[CanvasLayer] = Field(default_factory=list)
+    groups: list[LayerGroup] = Field(default_factory=list)
     guide: PaperGuide = Field(default_factory=PaperGuide)
     view: Literal["portrait", "landscape"] = "portrait"
     pens_used: dict[str, Pen] = Field(default_factory=dict)
@@ -276,9 +292,10 @@ class CaptureGroup(BaseModel):
 
 
 class Project(BaseModel):
-    version: int = 2
+    version: int = 3
     name: str = "untitled"
     layers: list[CanvasLayer] = Field(default_factory=list)
+    groups: list[LayerGroup] = Field(default_factory=list)
     guide: PaperGuide = Field(default_factory=PaperGuide)
     # Not display-only: changing it through Session.set_view() retroactively
     # re-orients every live "geometry"-oriented layer's transform to match
@@ -327,6 +344,9 @@ class Project(BaseModel):
                 raise ValueError("animation must own every keyframe")
             kid.visible = False
         self.normalize_animation_order()
+        from .groups import validate_hierarchy
+        validate_hierarchy(self)
+        self.version = 3
         return self
 
     def normalize_animation_order(self) -> None:
@@ -382,7 +402,7 @@ def _layer_ctx(layer: CanvasLayer,
                line_diameter_mm: float = DEFAULT_LINE_DIAMETER_MM) -> EffectContext:
     return EffectContext(
         layer_id=layer.id,
-        translation=layer.transform.translation,
+        translation=layer._effect_translation or layer.transform.translation,
         seed=layer_effect_seed(layer),
         page=page,
         line_diameter_mm=line_diameter_mm,
@@ -911,6 +931,8 @@ def resolve_project(
     :class:`OcclusionCache`. Both are pure accelerators: passing neither
     produces byte-identical output, just slower.
     """
+    from .groups import placed_project
+    project = placed_project(project)
     # 1. shape every visible layer (cached). Region layers are skipped: their
     # effect stack is a payload for the layers below, never for themselves.
     page = guide_page(project)
@@ -1052,6 +1074,7 @@ def _shape_key(layer: CanvasLayer, src: list[Path],
     key_data = {
         "t": layer.transform.model_dump(),
         "e": [s.model_dump() for s in layer.effects],
+        "origin": layer._effect_translation,
         # page-relative effects (invert) must re-run when the guide moves
         "p": page,
     }

@@ -38,4 +38,7 @@ def fresh_session(tmp_path):
         "backend_params": {},
         "soft_limits": {},
     })
+    from axibridge.recovery import RecoveryStore
+    session._recovery_store = RecoveryStore(tmp_path / "recovery")
+    session.begin_project()
     yield
