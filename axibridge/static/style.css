@@ -211,6 +211,7 @@ header {
 }
 .estimate {
   color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: var(--type-label);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 /* App-shell chrome. launch/axibridge_app.py sets data-shell="native" once the
@@ -1186,8 +1187,12 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 
 @media (max-width: 1050px) {
   main { grid-template-columns: minmax(0,1fr) min(var(--sidebar-w,290px),45vw); }
-  header { flex-wrap: wrap; gap: var(--space-2); }
   .project-name { max-width: 10em; }
+}
+/* Keep the sheet's top edge stable through the supported 900px width,
+   including a dirty project name and the disconnected simulator label. */
+@media (max-width: 899px) {
+  header { flex-wrap: wrap; gap: var(--space-2); }
 }
 
 /* draw tool (draw.js): the in-progress stroke previewed on the canvas */

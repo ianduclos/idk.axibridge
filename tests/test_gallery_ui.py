@@ -81,7 +81,8 @@ def test_gallery_edits_metadata_and_inserts_an_independent_layer(ui):
     ui.fill(".gallery-detail textarea", "A revised note")
     ui.locator(".gallery-detail-actions button", has_text="Save details").click()
     ui.wait_for_function(
-        "() => document.querySelector('.gallery-detail input[type=text]')?.value === 'Pentagonal field'")
+        "(id) => [...document.querySelectorAll('.gallery-card')].find(el => el.dataset.id === id)?.querySelector('.gallery-card-name')?.textContent === 'Pentagonal field'",
+        arg=asset_id)
     assert _get(f"{ui.base}/api/gallery/{asset_id}")["note"] == "A revised note"
 
     before = len(_get(f"{ui.base}/api/project")["layers"])
