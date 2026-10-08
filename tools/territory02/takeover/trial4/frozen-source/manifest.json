@@ -1,0 +1,18 @@
+{
+  "sha256": "2a8df7102540ff9572d61f6d9e4ee7a99b40534181e4a1f321ae93fd4d65492f",
+  "developmentSeeds": [
+    5,
+    13,
+    18,
+    24,
+    47,
+    82
+  ],
+  "freshHoldoutSeeds": [
+    31,
+    69,
+    103,
+    151
+  ],
+  "note": "Frozen before first holdout rendering and inspection. No parameter selection using holdouts."
+}

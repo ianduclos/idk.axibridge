@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>territory02 — course-bound fill studies</title>
+  <link rel="stylesheet" href="../../../../axibridge/static/css/flexoki.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--flexoki-paper); color: var(--flexoki-black); font: 15px/1.45 system-ui, sans-serif; }
+    main { max-width: 1450px; margin: auto; padding: 24px; }
+    h1 { margin: 0 0 8px; font-size: 26px; }
+    h2 { margin: 0 0 8px; font-size: 17px; }
+    p { max-width: 85ch; margin: 0 0 16px; }
+    .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 0; border-block: 1px solid var(--flexoki-200); }
+    label { display: flex; align-items: center; gap: 8px; }
+    select, button { font: inherit; color: inherit; background: var(--flexoki-paper); border: 1px solid var(--flexoki-200); border-radius: 5px; padding: 8px 12px; min-height: 44px; }
+    button { cursor: pointer; min-width: 44px; }
+    .arrows { display: flex; gap: 8px; }
+    input { accent-color: var(--flexoki-cyan-600); width: 18px; height: 18px; }
+    .detail-control { min-height: 44px; }
+    a { color: var(--flexoki-cyan-600); }
+    :is(button, select, input, a):focus-visible { outline: 3px solid var(--flexoki-cyan-600); outline-offset: 3px; }
+    #status { min-height: 42px; padding: 12px 0; color: var(--flexoki-700); font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    figure { min-width: 0; margin: 0; }
+    .drawing { display: block; }
+    img { width: 100%; display: block; border: 1px solid var(--flexoki-200); background: var(--flexoki-paper); }
+    figcaption { padding-top: 8px; font-size: 13px; color: var(--flexoki-700); }
+    footer { margin-top: 24px; }
+    footer nav { display: flex; gap: 20px; flex-wrap: wrap; }
+    @media (max-width: 750px) { main { padding: 16px; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>territory02 · course-bound fill studies</h1>
+  <p>Archived trial. <a href="../texture/index.html">Continue to the textural baseline comparison</a>.</p>
+  <p>Two fill explorations bind material to the takeover courses. Compare both against filled Territory and the curves alone, at the same seed, ink allowance, and frame.</p>
+  <nav class="controls" aria-label="Comparison controls">
+    <label for="seed">Seed
+      <select id="seed">
+        <option>5</option><option selected>13</option><option>18</option><option>24</option><option>47</option><option>82</option>
+        <option value="113">113 · fresh holdout</option><option value="179">179 · fresh holdout</option><option value="233">233 · fresh holdout</option><option value="293">293 · fresh holdout</option>
+      </select>
+    </label>
+    <div class="arrows"><button id="previous" type="button" aria-label="Previous seed">←</button><button id="next" type="button" aria-label="Next seed">→</button></div>
+    <label for="density">Ink allowance <select id="density"><option value="light">Light</option><option value="dense">Dense</option></select></label>
+    <label class="detail-control" for="detail"><input id="detail" type="checkbox"> Same-framed detail</label>
+  </nav>
+  <div id="status" role="status" aria-live="polite" aria-atomic="true"></div>
+  <section class="grid" aria-label="Four fill comparisons at the selected seed and ink allowance">
+    <figure data-variant="original"><h2>Original filled Territory</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>Territory courses and fill · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+    <figure data-variant="bare"><h2>Takeover curves only</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>Takeover courses before fill · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+    <figure data-variant="bands"><h2>Shared bands</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>Band fill bound to courses · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+    <figure data-variant="pockets"><h2>Shared pockets</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>Pocket fill bound to courses · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+  </section>
+  <footer>
+    <p>The detail view uses the same frame for all four panels. Click a drawing to open its full SVG. Seeds 113, 179, 233, and 293 are fresh holdouts. Screen study only; paper acceptance is still open.</p>
+    <nav aria-label="Study links"><a href="../../../../docs/reviews/territory02-fill-2026-10-05.html">Report</a><a href="../index.html">Curve study</a><a href="NOTES.md">Fill notes</a></nav>
+  </footer>
+</main>
+<script>
+  const seeds = [5, 13, 18, 24, 47, 82, 113, 179, 233, 293];
+  const seedControl = document.getElementById('seed');
+  const densityControl = document.getElementById('density');
+  const detailControl = document.getElementById('detail');
+  function sync() {
+    const seed = seedControl.value;
+    const density = densityControl.value;
+    const detail = detailControl.checked;
+    for (const figure of document.querySelectorAll('figure')) {
+      const prefix = `evidence/${seed}-${density}-${figure.dataset.variant}`;
+      const full = `${prefix}.svg`;
+      const img = figure.querySelector('img');
+      img.src = `${prefix}${detail ? '-close' : ''}.svg`;
+      img.alt = `${figure.querySelector('h2').textContent}, seed ${seed}, ${density} ink allowance, ${detail ? 'same-framed detail' : 'whole drawing'}`;
+      figure.querySelector('.drawing').href = full;
+      figure.querySelector('.full').href = full;
+      figure.querySelector('.drawing').setAttribute('aria-label', `Open full SVG: ${figure.querySelector('h2').textContent}, seed ${seed}, ${density} ink allowance`);
+    }
+    document.getElementById('status').textContent = `Seed ${seed} · ${density} ink allowance · ${detail ? 'same-framed detail' : 'whole drawing'}${seeds.indexOf(Number(seed)) >= 6 ? ' · fresh holdout' : ''}`;
+  }
+  for (const control of [seedControl, densityControl, detailControl]) control.addEventListener('change', sync);
+  for (const [id, step] of [['previous', -1], ['next', 1]]) {
+    document.getElementById(id).addEventListener('click', () => {
+      seedControl.value = seeds[(seeds.indexOf(Number(seedControl.value)) + step + seeds.length) % seeds.length];
+      sync();
+    });
+  }
+  sync();
+</script>
+</body>
+</html>

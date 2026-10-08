@@ -1,0 +1,98 @@
+[
+  {
+    "recipe": "sparse",
+    "seed": 5,
+    "strokes": 40,
+    "points": 2484,
+    "inkMm": 1217,
+    "maxSegmentMm": 0.617,
+    "finite": true,
+    "withinBed": true,
+    "deterministic": true,
+    "inputPreserved": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 13,
+    "strokes": 28,
+    "points": 2170,
+    "inkMm": 1067,
+    "maxSegmentMm": 0.653,
+    "finite": true,
+    "withinBed": true,
+    "deterministic": true,
+    "inputPreserved": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 18,
+    "strokes": 32,
+    "points": 2197,
+    "inkMm": 1079,
+    "maxSegmentMm": 0.63,
+    "finite": true,
+    "withinBed": true,
+    "deterministic": true,
+    "inputPreserved": true
+  },
+  {
+    "recipe": "sparse",
+    "seed": 24,
+    "strokes": 34,
+    "points": 2051,
+    "inkMm": 1006,
+    "maxSegmentMm": 0.586,
+    "finite": true,
+    "withinBed": true,
+    "deterministic": true,
+    "inputPreserved": true
+  },
+  {
+    "recipe": "full",
+    "seed": 5,
+    "strokes": 822,
+    "points": 62058,
+    "inkMm": 30626,
+    "maxSegmentMm": 1.782,
+    "finite": true,
+    "withinBed": true,
+    "deterministic": true,
+    "inputPreserved": true
+  },
+  {
+    "recipe": "full",
+    "seed": 13,
+    "strokes": 446,
+    "points": 33267,
+    "inkMm": 16407,
+    "maxSegmentMm": 1.198,
+    "finite": true,
+    "withinBed": true,
+    "deterministic": true,
+    "inputPreserved": true
+  },
+  {
+    "recipe": "full",
+    "seed": 18,
+    "strokes": 535,
+    "points": 42116,
+    "inkMm": 20803,
+    "maxSegmentMm": 1.198,
+    "finite": true,
+    "withinBed": true,
+    "deterministic": true,
+    "inputPreserved": true
+  },
+  {
+    "recipe": "full",
+    "seed": 24,
+    "strokes": 461,
+    "points": 34743,
+    "inkMm": 17147,
+    "maxSegmentMm": 1.196,
+    "finite": true,
+    "withinBed": true,
+    "deterministic": true,
+    "inputPreserved": true
+  }
+]

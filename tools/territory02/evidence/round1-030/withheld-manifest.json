@@ -1,0 +1,346 @@
+[
+  {
+    "label": "M",
+    "name": "baseline",
+    "mode": "sparse",
+    "metrics": [
+      {
+        "seed": 5,
+        "points": 2470,
+        "strokes": 41,
+        "mm": 1211
+      },
+      {
+        "seed": 13,
+        "points": 2742,
+        "strokes": 37,
+        "mm": 1348
+      },
+      {
+        "seed": 18,
+        "points": 2461,
+        "strokes": 30,
+        "mm": 1214
+      },
+      {
+        "seed": 24,
+        "points": 2160,
+        "strokes": 38,
+        "mm": 1058
+      },
+      {
+        "seed": 47,
+        "points": 2181,
+        "strokes": 46,
+        "mm": 1063
+      },
+      {
+        "seed": 82,
+        "points": 2929,
+        "strokes": 35,
+        "mm": 1441
+      }
+    ]
+  },
+  {
+    "label": "M",
+    "name": "baseline",
+    "mode": "full",
+    "metrics": [
+      {
+        "seed": 5,
+        "points": 66319,
+        "strokes": 899,
+        "mm": 32702
+      },
+      {
+        "seed": 13,
+        "points": 46799,
+        "strokes": 547,
+        "mm": 23130
+      },
+      {
+        "seed": 18,
+        "points": 54919,
+        "strokes": 744,
+        "mm": 27076
+      },
+      {
+        "seed": 24,
+        "points": 24034,
+        "strokes": 332,
+        "mm": 11852
+      },
+      {
+        "seed": 47,
+        "points": 47536,
+        "strokes": 650,
+        "mm": 23426
+      },
+      {
+        "seed": 82,
+        "points": 63016,
+        "strokes": 777,
+        "mm": 31137
+      }
+    ]
+  },
+  {
+    "label": "R",
+    "name": "pace",
+    "mode": "sparse",
+    "metrics": [
+      {
+        "seed": 5,
+        "points": 2385,
+        "strokes": 33,
+        "mm": 1171
+      },
+      {
+        "seed": 13,
+        "points": 1774,
+        "strokes": 31,
+        "mm": 869
+      },
+      {
+        "seed": 18,
+        "points": 2926,
+        "strokes": 33,
+        "mm": 1443
+      },
+      {
+        "seed": 24,
+        "points": 2241,
+        "strokes": 33,
+        "mm": 1098
+      },
+      {
+        "seed": 47,
+        "points": 3131,
+        "strokes": 60,
+        "mm": 1529
+      },
+      {
+        "seed": 82,
+        "points": 2158,
+        "strokes": 24,
+        "mm": 1066
+      }
+    ]
+  },
+  {
+    "label": "R",
+    "name": "pace",
+    "mode": "full",
+    "metrics": [
+      {
+        "seed": 5,
+        "points": 47531,
+        "strokes": 625,
+        "mm": 23447
+      },
+      {
+        "seed": 13,
+        "points": 50549,
+        "strokes": 730,
+        "mm": 24928
+      },
+      {
+        "seed": 18,
+        "points": 40790,
+        "strokes": 524,
+        "mm": 20133
+      },
+      {
+        "seed": 24,
+        "points": 28465,
+        "strokes": 418,
+        "mm": 14029
+      },
+      {
+        "seed": 47,
+        "points": 49296,
+        "strokes": 614,
+        "mm": 24349
+      },
+      {
+        "seed": 82,
+        "points": 55432,
+        "strokes": 682,
+        "mm": 27379
+      }
+    ]
+  },
+  {
+    "label": "K",
+    "name": "silhouette",
+    "mode": "sparse",
+    "metrics": [
+      {
+        "seed": 5,
+        "points": 2484,
+        "strokes": 40,
+        "mm": 1217
+      },
+      {
+        "seed": 13,
+        "points": 2170,
+        "strokes": 28,
+        "mm": 1067
+      },
+      {
+        "seed": 18,
+        "points": 2197,
+        "strokes": 32,
+        "mm": 1079
+      },
+      {
+        "seed": 24,
+        "points": 2051,
+        "strokes": 34,
+        "mm": 1006
+      },
+      {
+        "seed": 47,
+        "points": 2432,
+        "strokes": 52,
+        "mm": 1183
+      },
+      {
+        "seed": 82,
+        "points": 2542,
+        "strokes": 37,
+        "mm": 1247
+      }
+    ]
+  },
+  {
+    "label": "K",
+    "name": "silhouette",
+    "mode": "full",
+    "metrics": [
+      {
+        "seed": 5,
+        "points": 62058,
+        "strokes": 822,
+        "mm": 30626
+      },
+      {
+        "seed": 13,
+        "points": 33267,
+        "strokes": 446,
+        "mm": 16407
+      },
+      {
+        "seed": 18,
+        "points": 42116,
+        "strokes": 535,
+        "mm": 20803
+      },
+      {
+        "seed": 24,
+        "points": 34743,
+        "strokes": 461,
+        "mm": 17147
+      },
+      {
+        "seed": 47,
+        "points": 29463,
+        "strokes": 443,
+        "mm": 14523
+      },
+      {
+        "seed": 82,
+        "points": 51524,
+        "strokes": 705,
+        "mm": 25423
+      }
+    ]
+  },
+  {
+    "label": "P",
+    "name": "void",
+    "mode": "sparse",
+    "metrics": [
+      {
+        "seed": 5,
+        "points": 2656,
+        "strokes": 43,
+        "mm": 1293
+      },
+      {
+        "seed": 13,
+        "points": 2841,
+        "strokes": 38,
+        "mm": 1393
+      },
+      {
+        "seed": 18,
+        "points": 2636,
+        "strokes": 31,
+        "mm": 1287
+      },
+      {
+        "seed": 24,
+        "points": 2272,
+        "strokes": 39,
+        "mm": 1109
+      },
+      {
+        "seed": 47,
+        "points": 2280,
+        "strokes": 47,
+        "mm": 1108
+      },
+      {
+        "seed": 82,
+        "points": 3091,
+        "strokes": 36,
+        "mm": 1513
+      }
+    ]
+  },
+  {
+    "label": "P",
+    "name": "void",
+    "mode": "full",
+    "metrics": [
+      {
+        "seed": 5,
+        "points": 56483,
+        "strokes": 722,
+        "mm": 27883
+      },
+      {
+        "seed": 13,
+        "points": 59714,
+        "strokes": 694,
+        "mm": 29531
+      },
+      {
+        "seed": 18,
+        "points": 58989,
+        "strokes": 711,
+        "mm": 29127
+      },
+      {
+        "seed": 24,
+        "points": 35639,
+        "strokes": 435,
+        "mm": 17598
+      },
+      {
+        "seed": 47,
+        "points": 50880,
+        "strokes": 718,
+        "mm": 25070
+      },
+      {
+        "seed": 82,
+        "points": 48382,
+        "strokes": 572,
+        "mm": 23910
+      }
+    ]
+  }
+]

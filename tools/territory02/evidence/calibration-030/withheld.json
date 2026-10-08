@@ -1,0 +1,6 @@
+{
+  "A": "original sparse seed 13",
+  "B": "coarsened and smoothed trajectories",
+  "C": "removed passage in radius34mm around190,150",
+  "D": "gratuitous short-wave point displacement"
+}

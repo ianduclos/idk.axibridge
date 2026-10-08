@@ -1,0 +1,238 @@
+{
+  "scope": "ten seeds, whole and same-framed detail",
+  "method": "page.set_content at about:blank with CSS and generated SVG text inlined; viewer controller preserved; no URL navigation",
+  "seeds": [
+    5,
+    13,
+    18,
+    24,
+    47,
+    82,
+    331,
+    389,
+    419,
+    463
+  ],
+  "views_checked": 20,
+  "images_checked": 80,
+  "arrow_wrap": "passed",
+  "full_svg_links": "passed in both views",
+  "desktop_equal_2_by_2_panels": "passed",
+  "controls_minimum_44px": "passed",
+  "mobile_stacking_and_overflow": "passed at 390px for seeds 13 and 389, whole and detail",
+  "pageerrors": [],
+  "external_requests": [],
+  "screenshots": [
+    "comparison-13.png",
+    "comparison-13-close.png",
+    "comparison-13-mobile.png",
+    "comparison-13-close-mobile.png",
+    "comparison-389.png",
+    "comparison-389-close.png",
+    "comparison-389-mobile.png",
+    "comparison-389-close-mobile.png"
+  ],
+  "checks": [
+    {
+      "seed": 5,
+      "view": "whole",
+      "images": [
+        "evidence/5-baseline.svg",
+        "evidence/5-bare.svg",
+        "evidence/5-grown.svg",
+        "evidence/5-led.svg"
+      ]
+    },
+    {
+      "seed": 5,
+      "view": "detail",
+      "images": [
+        "evidence/5-baseline-close.svg",
+        "evidence/5-bare-close.svg",
+        "evidence/5-grown-close.svg",
+        "evidence/5-led-close.svg"
+      ]
+    },
+    {
+      "seed": 13,
+      "view": "whole",
+      "images": [
+        "evidence/13-baseline.svg",
+        "evidence/13-bare.svg",
+        "evidence/13-grown.svg",
+        "evidence/13-led.svg"
+      ]
+    },
+    {
+      "seed": 13,
+      "view": "detail",
+      "images": [
+        "evidence/13-baseline-close.svg",
+        "evidence/13-bare-close.svg",
+        "evidence/13-grown-close.svg",
+        "evidence/13-led-close.svg"
+      ]
+    },
+    {
+      "seed": 18,
+      "view": "whole",
+      "images": [
+        "evidence/18-baseline.svg",
+        "evidence/18-bare.svg",
+        "evidence/18-grown.svg",
+        "evidence/18-led.svg"
+      ]
+    },
+    {
+      "seed": 18,
+      "view": "detail",
+      "images": [
+        "evidence/18-baseline-close.svg",
+        "evidence/18-bare-close.svg",
+        "evidence/18-grown-close.svg",
+        "evidence/18-led-close.svg"
+      ]
+    },
+    {
+      "seed": 24,
+      "view": "whole",
+      "images": [
+        "evidence/24-baseline.svg",
+        "evidence/24-bare.svg",
+        "evidence/24-grown.svg",
+        "evidence/24-led.svg"
+      ]
+    },
+    {
+      "seed": 24,
+      "view": "detail",
+      "images": [
+        "evidence/24-baseline-close.svg",
+        "evidence/24-bare-close.svg",
+        "evidence/24-grown-close.svg",
+        "evidence/24-led-close.svg"
+      ]
+    },
+    {
+      "seed": 47,
+      "view": "whole",
+      "images": [
+        "evidence/47-baseline.svg",
+        "evidence/47-bare.svg",
+        "evidence/47-grown.svg",
+        "evidence/47-led.svg"
+      ]
+    },
+    {
+      "seed": 47,
+      "view": "detail",
+      "images": [
+        "evidence/47-baseline-close.svg",
+        "evidence/47-bare-close.svg",
+        "evidence/47-grown-close.svg",
+        "evidence/47-led-close.svg"
+      ]
+    },
+    {
+      "seed": 82,
+      "view": "whole",
+      "images": [
+        "evidence/82-baseline.svg",
+        "evidence/82-bare.svg",
+        "evidence/82-grown.svg",
+        "evidence/82-led.svg"
+      ]
+    },
+    {
+      "seed": 82,
+      "view": "detail",
+      "images": [
+        "evidence/82-baseline-close.svg",
+        "evidence/82-bare-close.svg",
+        "evidence/82-grown-close.svg",
+        "evidence/82-led-close.svg"
+      ]
+    },
+    {
+      "seed": 331,
+      "view": "whole",
+      "images": [
+        "evidence/331-baseline.svg",
+        "evidence/331-bare.svg",
+        "evidence/331-grown.svg",
+        "evidence/331-led.svg"
+      ]
+    },
+    {
+      "seed": 331,
+      "view": "detail",
+      "images": [
+        "evidence/331-baseline-close.svg",
+        "evidence/331-bare-close.svg",
+        "evidence/331-grown-close.svg",
+        "evidence/331-led-close.svg"
+      ]
+    },
+    {
+      "seed": 389,
+      "view": "whole",
+      "images": [
+        "evidence/389-baseline.svg",
+        "evidence/389-bare.svg",
+        "evidence/389-grown.svg",
+        "evidence/389-led.svg"
+      ]
+    },
+    {
+      "seed": 389,
+      "view": "detail",
+      "images": [
+        "evidence/389-baseline-close.svg",
+        "evidence/389-bare-close.svg",
+        "evidence/389-grown-close.svg",
+        "evidence/389-led-close.svg"
+      ]
+    },
+    {
+      "seed": 419,
+      "view": "whole",
+      "images": [
+        "evidence/419-baseline.svg",
+        "evidence/419-bare.svg",
+        "evidence/419-grown.svg",
+        "evidence/419-led.svg"
+      ]
+    },
+    {
+      "seed": 419,
+      "view": "detail",
+      "images": [
+        "evidence/419-baseline-close.svg",
+        "evidence/419-bare-close.svg",
+        "evidence/419-grown-close.svg",
+        "evidence/419-led-close.svg"
+      ]
+    },
+    {
+      "seed": 463,
+      "view": "whole",
+      "images": [
+        "evidence/463-baseline.svg",
+        "evidence/463-bare.svg",
+        "evidence/463-grown.svg",
+        "evidence/463-led.svg"
+      ]
+    },
+    {
+      "seed": 463,
+      "view": "detail",
+      "images": [
+        "evidence/463-baseline-close.svg",
+        "evidence/463-bare-close.svg",
+        "evidence/463-grown-close.svg",
+        "evidence/463-led-close.svg"
+      ]
+    }
+  ],
+  "limits": "Mechanical in-memory browser checks only. Actual in-app/file navigation, link opening, aesthetics and paper acceptance unverified."
+}

@@ -1,19 +1,42 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-10-05
+updated: 2026-10-08
 machine: mac+pi
-summary: Mosca 2 is implemented on codex/mosca2-bench with Territory composition, original flowing material, isolated brain responses and portable Keep/Resume; integration and user acceptance remain pending.
+summary: Mosca 2, recovery/groups/Assets and Territory02 study sources are integrated locally; native activation and paper acceptance remain.
 next:
-  - Review Mosca 2 in the isolated preview, then authorize main integration and normal-app activation
-  - Compare the same seed after moving one nearby passage; preserve contact-off as the control
-  - Audit the remaining environment changes from the scratch-run dependency refresh
-  - Complete Territory, Mosca, Linedraw and plot-optimization native and paper checks in HANDOFF.md
+  - Activate matching backend/frontend only after checking the running app is idle and preserving its open project
+  - Check recovery close/relaunch, nested groups and Assets in the native app
+  - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
+  - Inspect the Territory02 first editing checkpoint before choosing any further study or convergence
+  - Audit the remaining environment changes recorded in HANDOFF.md
+  - Complete the remaining native and paper checks in HANDOFF.md
   - Sync the idkpi clone with main once the Pi is back
 handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Cleanup integration, 8 October:** locally integrated `codex/mosca2-bench`,
+`codex/recovery-groups-usability` and all eleven `codex/territory02` commits.
+Territory02 remains an independent study under `tools/territory02/`; its
+mechanisms do not replace the production Territory renderer. Both Mosca 2 job
+cleanup and recovery checkpointing are preserved. Branches remain available.
+
+Final isolated verification: **1,819 passed, one native-launch skip** (376 s),
+with existing Starlette and NumPy deprecation warnings; typecheck/build passed.
+Twelve Territory02 edited states replayed byte for byte. Integration testing
+caught narrow-header wrapping and a Gallery test that checked before its save
+completed; the header now stays stable through 900 px and that check waits for
+the saved card. An initial bench preview timeout passed on rerun. No app restart,
+push, plotting or Pi sync. Native and paper acceptance remain with Ian.
+
+All old AxiBridge worktree folders in `01_Projects` were removed safely.
+Full archives remain outside the vault under
+`/Users/ianduclos/worktrees/codex-archives/2026-10-08-01-projects-cleanup`:
+local study output, notes and two changed comparison images are not all in Git.
+Do not retire those archives until this content is separately preserved or Ian
+approves its disposal; `axibridge-backup-retirement-preview.json` inventories it.
 
 **Mosca 2 bench, 5 October:** native source and bench implemented on
 `codex/mosca2-bench`. It combines six starting pieces, seven earlier flowing
@@ -64,6 +87,80 @@ warning; typecheck/build passed. Recovery crash/race and multi-frame group
 regressions pass, with integrated screenshots inspected at both required sizes. Native/paper
 acceptance remains with Ian; no feature merge, push, live deployment or Pi sync.
 
+
+**Report format:** Ian prefers HTML. The Territory02 report history and
+independent critiques are available through the
+[HTML report index](docs/reviews/territory02-reports.html); galleries link to HTML.
+
+**Agent loop, 5 October:** Ian adopted a [revised workflow](docs/reviews/territory02-agent-loop-2026-10-05.html): three makers edit two shared drawing states, independent Sol reads whole sheets before mechanisms, and an eight-cell HTML sheet reaches Ian before round two. The [first checkpoint](tools/territory02/editor-loop/index.html) now preserves twelve edits from two shared inputs, six chosen candidates and two older controls. Independent image-first review and histories accompany the HTML sheet. Geometry replay/bounds verified; screen only. Await Ian before round two; no convergence selected. The later scaffold replacements were also rejected as boring.
+
+**Brainstorm, 5 October:** [A multidimensional exploration map](docs/reviews/territory02-brainstorm-2026-10-05.html) now separates curve character, connectivity, line roles, material, space, overlap, history and authorship. Six possible probes and combinations remain proposals; no further generator implementation or convergence selected.
+
+**Scaffold replacement, 5 October:** Ian rejected coexistence as barely changed,
+still starry and repetitive. [New constructions](tools/territory02/takeover/rupture/index.html)
+replace every main course and reuse only cropped d-grow grain. Open paths and
+partly enclosed bodies stay separate. Moving-normal texture collapse was removed
+after a development probe; sources frozen before fresh 1151/1213/1277. The
+[report](docs/reviews/territory02-rupture-2026-10-05.html) records remaining repeated
+comb-like material and weak cases. No production change or convergence.
+
+**Rough/smooth coexistence, 5 October:** Ian prefers the rough three-material
+foundation with occasional substantial smooth passages. The new
+[comparison](tools/territory02/takeover/coexist/index.html) keeps continuity,
+interference and independent coexistence separate, beside rough and smooth-only
+references. Twelve base cases / sixty drawings passed geometry checks; 120
+in-memory viewer images passed. Source was frozen before fresh 1009/1061.
+Continuity can make strained angular bridges; interference can be visually
+slight; independent paths sometimes remain overlays. The
+[report](docs/reviews/territory02-coexist-2026-10-05.html) retains these limits and
+independent critique. No convergence or production/paper acceptance.
+
+**Material and grammar studies, 5 October:** Three independent makers tested opening,
+pressure and unravelling against curves-only/course-led references. Ian identified
+their limited inherited grammar. A separate [grammar comparison](tools/territory02/takeover/grammar/index.html)
+removes explicit thorn/chord ornaments and constructs different paths. Both
+comparisons retain fresh frozen-source populations and mechanical checks; the
+[report](docs/reviews/territory02-material-2026-10-05.html) records weak cases and
+independent critique. New paths remain loop-heavy; no selected replacement or
+convergence, and no production or paper acceptance.
+
+**Texture recovery, 5 October:** Ian rejected the panel fills as worse than
+the earlier textural baseline. The [new comparison](tools/territory02/takeover/texture/index.html)
+restores the original full recipe and density generator, applying it to the
+unchanged new curves with inherited or rebuilt guidance. Original baseline
+parity and 40 geometry cases passed; 80 in-memory viewer images passed.
+Source was frozen before four fresh seeds. Texture returns, but material can
+still grow away from principal new courses. The [report](docs/reviews/territory02-texture-2026-10-05.html)
+retains this limitation. Panel trials are archived as rejected; no convergence.
+
+**Course-bound fills, 5 October:** Ian found stronger curve character but less
+coherence and pointed out the untouched fills. Two physical constructions now
+bind material between actual rewritten courses, alongside curves-alone and
+ordinary filled Territory. The [comparison](tools/territory02/takeover/fill/index.html)
+and [report](docs/reviews/territory02-fill-2026-10-05.html) retain gains and losses:
+the initial machine reading found local binding in some cases, but Ian later
+rejected the shading as a regression from the baseline. These trials are archived.
+Frozen source preceded four fresh seeds. Eighty geometry cases and 160
+in-memory viewer images passed mechanical checks. No convergence or production
+integration selected; paper and actual in-app file navigation remain unverified.
+
+**Territory02 study, 5 October:** Three independent Sol makers completed three
+rounds of curve experiments, including tighter turns and unequal Bézier handles.
+Matched six-seed sparse/full evidence uses 0.1 mm lines. Independent aesthetic
+reviews and the [report](docs/reviews/territory02-2026-10-05.html) preserve gains,
+losses and possible convergence strategies. Ian explicitly deferred integration;
+the experiments stay separate on `codex/territory02`. Production and original
+Territory remain unchanged. Screen study only; no app restart, plotting or Pi sync.
+
+**Takeover probe, 5 October:** Ian rejected literal curve recipes and insufficient
+bulbs/corners. A second regime now changes actual course continuations and
+locally inflates bends, compresses returns and permits tangent breaks. The
+[comparison](tools/territory02/takeover/index.html), failed trials and
+[follow-up report](docs/reviews/territory02-takeover-2026-10-05.html) retain gains
+and losses. Current source was frozen before four new seeds; all 30 stage/seed
+geometry cases and 60 whole/detail viewer images passed mechanical checks.
+Aesthetic and paper acceptance remain open. No convergence, production change,
+app/hardware action, push or merge.
 
 **Integration checkpoint, 30 September:** `main` now contains Territory and the
 stable Compose sidebar, including the Gallery accessibility correction. Full

@@ -1,0 +1,475 @@
+{
+  "scope": "ten seeds, both densities, whole and same-framed detail",
+  "method": "page.set_content with CSS and generated SVG text inlined; controller preserved; no URL navigation",
+  "seeds": [
+    5,
+    13,
+    18,
+    24,
+    47,
+    82,
+    113,
+    179,
+    233,
+    293
+  ],
+  "views_checked": 40,
+  "images_checked": 160,
+  "arrow_wrap": "passed",
+  "full_svg_links": "passed in both views",
+  "desktop_equal_2_by_2_panels": "passed",
+  "controls_minimum_44px": "passed",
+  "mobile_stacking_and_overflow": "passed at 390px",
+  "pageerrors": [],
+  "external_requests": [],
+  "screenshots": [
+    "comparison-13-light.png",
+    "comparison-13-light-close.png",
+    "comparison-13-dense.png",
+    "comparison-13-dense-close.png",
+    "comparison-13-light-mobile.png"
+  ],
+  "checks": [
+    {
+      "seed": 5,
+      "density": "light",
+      "view": "whole",
+      "images": [
+        "evidence/5-light-original.svg",
+        "evidence/5-light-bare.svg",
+        "evidence/5-light-bands.svg",
+        "evidence/5-light-pockets.svg"
+      ]
+    },
+    {
+      "seed": 5,
+      "density": "light",
+      "view": "detail",
+      "images": [
+        "evidence/5-light-original-close.svg",
+        "evidence/5-light-bare-close.svg",
+        "evidence/5-light-bands-close.svg",
+        "evidence/5-light-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 5,
+      "density": "dense",
+      "view": "whole",
+      "images": [
+        "evidence/5-dense-original.svg",
+        "evidence/5-dense-bare.svg",
+        "evidence/5-dense-bands.svg",
+        "evidence/5-dense-pockets.svg"
+      ]
+    },
+    {
+      "seed": 5,
+      "density": "dense",
+      "view": "detail",
+      "images": [
+        "evidence/5-dense-original-close.svg",
+        "evidence/5-dense-bare-close.svg",
+        "evidence/5-dense-bands-close.svg",
+        "evidence/5-dense-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 13,
+      "density": "light",
+      "view": "whole",
+      "images": [
+        "evidence/13-light-original.svg",
+        "evidence/13-light-bare.svg",
+        "evidence/13-light-bands.svg",
+        "evidence/13-light-pockets.svg"
+      ]
+    },
+    {
+      "seed": 13,
+      "density": "light",
+      "view": "detail",
+      "images": [
+        "evidence/13-light-original-close.svg",
+        "evidence/13-light-bare-close.svg",
+        "evidence/13-light-bands-close.svg",
+        "evidence/13-light-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 13,
+      "density": "dense",
+      "view": "whole",
+      "images": [
+        "evidence/13-dense-original.svg",
+        "evidence/13-dense-bare.svg",
+        "evidence/13-dense-bands.svg",
+        "evidence/13-dense-pockets.svg"
+      ]
+    },
+    {
+      "seed": 13,
+      "density": "dense",
+      "view": "detail",
+      "images": [
+        "evidence/13-dense-original-close.svg",
+        "evidence/13-dense-bare-close.svg",
+        "evidence/13-dense-bands-close.svg",
+        "evidence/13-dense-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 18,
+      "density": "light",
+      "view": "whole",
+      "images": [
+        "evidence/18-light-original.svg",
+        "evidence/18-light-bare.svg",
+        "evidence/18-light-bands.svg",
+        "evidence/18-light-pockets.svg"
+      ]
+    },
+    {
+      "seed": 18,
+      "density": "light",
+      "view": "detail",
+      "images": [
+        "evidence/18-light-original-close.svg",
+        "evidence/18-light-bare-close.svg",
+        "evidence/18-light-bands-close.svg",
+        "evidence/18-light-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 18,
+      "density": "dense",
+      "view": "whole",
+      "images": [
+        "evidence/18-dense-original.svg",
+        "evidence/18-dense-bare.svg",
+        "evidence/18-dense-bands.svg",
+        "evidence/18-dense-pockets.svg"
+      ]
+    },
+    {
+      "seed": 18,
+      "density": "dense",
+      "view": "detail",
+      "images": [
+        "evidence/18-dense-original-close.svg",
+        "evidence/18-dense-bare-close.svg",
+        "evidence/18-dense-bands-close.svg",
+        "evidence/18-dense-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 24,
+      "density": "light",
+      "view": "whole",
+      "images": [
+        "evidence/24-light-original.svg",
+        "evidence/24-light-bare.svg",
+        "evidence/24-light-bands.svg",
+        "evidence/24-light-pockets.svg"
+      ]
+    },
+    {
+      "seed": 24,
+      "density": "light",
+      "view": "detail",
+      "images": [
+        "evidence/24-light-original-close.svg",
+        "evidence/24-light-bare-close.svg",
+        "evidence/24-light-bands-close.svg",
+        "evidence/24-light-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 24,
+      "density": "dense",
+      "view": "whole",
+      "images": [
+        "evidence/24-dense-original.svg",
+        "evidence/24-dense-bare.svg",
+        "evidence/24-dense-bands.svg",
+        "evidence/24-dense-pockets.svg"
+      ]
+    },
+    {
+      "seed": 24,
+      "density": "dense",
+      "view": "detail",
+      "images": [
+        "evidence/24-dense-original-close.svg",
+        "evidence/24-dense-bare-close.svg",
+        "evidence/24-dense-bands-close.svg",
+        "evidence/24-dense-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 47,
+      "density": "light",
+      "view": "whole",
+      "images": [
+        "evidence/47-light-original.svg",
+        "evidence/47-light-bare.svg",
+        "evidence/47-light-bands.svg",
+        "evidence/47-light-pockets.svg"
+      ]
+    },
+    {
+      "seed": 47,
+      "density": "light",
+      "view": "detail",
+      "images": [
+        "evidence/47-light-original-close.svg",
+        "evidence/47-light-bare-close.svg",
+        "evidence/47-light-bands-close.svg",
+        "evidence/47-light-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 47,
+      "density": "dense",
+      "view": "whole",
+      "images": [
+        "evidence/47-dense-original.svg",
+        "evidence/47-dense-bare.svg",
+        "evidence/47-dense-bands.svg",
+        "evidence/47-dense-pockets.svg"
+      ]
+    },
+    {
+      "seed": 47,
+      "density": "dense",
+      "view": "detail",
+      "images": [
+        "evidence/47-dense-original-close.svg",
+        "evidence/47-dense-bare-close.svg",
+        "evidence/47-dense-bands-close.svg",
+        "evidence/47-dense-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 82,
+      "density": "light",
+      "view": "whole",
+      "images": [
+        "evidence/82-light-original.svg",
+        "evidence/82-light-bare.svg",
+        "evidence/82-light-bands.svg",
+        "evidence/82-light-pockets.svg"
+      ]
+    },
+    {
+      "seed": 82,
+      "density": "light",
+      "view": "detail",
+      "images": [
+        "evidence/82-light-original-close.svg",
+        "evidence/82-light-bare-close.svg",
+        "evidence/82-light-bands-close.svg",
+        "evidence/82-light-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 82,
+      "density": "dense",
+      "view": "whole",
+      "images": [
+        "evidence/82-dense-original.svg",
+        "evidence/82-dense-bare.svg",
+        "evidence/82-dense-bands.svg",
+        "evidence/82-dense-pockets.svg"
+      ]
+    },
+    {
+      "seed": 82,
+      "density": "dense",
+      "view": "detail",
+      "images": [
+        "evidence/82-dense-original-close.svg",
+        "evidence/82-dense-bare-close.svg",
+        "evidence/82-dense-bands-close.svg",
+        "evidence/82-dense-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 113,
+      "density": "light",
+      "view": "whole",
+      "images": [
+        "evidence/113-light-original.svg",
+        "evidence/113-light-bare.svg",
+        "evidence/113-light-bands.svg",
+        "evidence/113-light-pockets.svg"
+      ]
+    },
+    {
+      "seed": 113,
+      "density": "light",
+      "view": "detail",
+      "images": [
+        "evidence/113-light-original-close.svg",
+        "evidence/113-light-bare-close.svg",
+        "evidence/113-light-bands-close.svg",
+        "evidence/113-light-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 113,
+      "density": "dense",
+      "view": "whole",
+      "images": [
+        "evidence/113-dense-original.svg",
+        "evidence/113-dense-bare.svg",
+        "evidence/113-dense-bands.svg",
+        "evidence/113-dense-pockets.svg"
+      ]
+    },
+    {
+      "seed": 113,
+      "density": "dense",
+      "view": "detail",
+      "images": [
+        "evidence/113-dense-original-close.svg",
+        "evidence/113-dense-bare-close.svg",
+        "evidence/113-dense-bands-close.svg",
+        "evidence/113-dense-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 179,
+      "density": "light",
+      "view": "whole",
+      "images": [
+        "evidence/179-light-original.svg",
+        "evidence/179-light-bare.svg",
+        "evidence/179-light-bands.svg",
+        "evidence/179-light-pockets.svg"
+      ]
+    },
+    {
+      "seed": 179,
+      "density": "light",
+      "view": "detail",
+      "images": [
+        "evidence/179-light-original-close.svg",
+        "evidence/179-light-bare-close.svg",
+        "evidence/179-light-bands-close.svg",
+        "evidence/179-light-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 179,
+      "density": "dense",
+      "view": "whole",
+      "images": [
+        "evidence/179-dense-original.svg",
+        "evidence/179-dense-bare.svg",
+        "evidence/179-dense-bands.svg",
+        "evidence/179-dense-pockets.svg"
+      ]
+    },
+    {
+      "seed": 179,
+      "density": "dense",
+      "view": "detail",
+      "images": [
+        "evidence/179-dense-original-close.svg",
+        "evidence/179-dense-bare-close.svg",
+        "evidence/179-dense-bands-close.svg",
+        "evidence/179-dense-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 233,
+      "density": "light",
+      "view": "whole",
+      "images": [
+        "evidence/233-light-original.svg",
+        "evidence/233-light-bare.svg",
+        "evidence/233-light-bands.svg",
+        "evidence/233-light-pockets.svg"
+      ]
+    },
+    {
+      "seed": 233,
+      "density": "light",
+      "view": "detail",
+      "images": [
+        "evidence/233-light-original-close.svg",
+        "evidence/233-light-bare-close.svg",
+        "evidence/233-light-bands-close.svg",
+        "evidence/233-light-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 233,
+      "density": "dense",
+      "view": "whole",
+      "images": [
+        "evidence/233-dense-original.svg",
+        "evidence/233-dense-bare.svg",
+        "evidence/233-dense-bands.svg",
+        "evidence/233-dense-pockets.svg"
+      ]
+    },
+    {
+      "seed": 233,
+      "density": "dense",
+      "view": "detail",
+      "images": [
+        "evidence/233-dense-original-close.svg",
+        "evidence/233-dense-bare-close.svg",
+        "evidence/233-dense-bands-close.svg",
+        "evidence/233-dense-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 293,
+      "density": "light",
+      "view": "whole",
+      "images": [
+        "evidence/293-light-original.svg",
+        "evidence/293-light-bare.svg",
+        "evidence/293-light-bands.svg",
+        "evidence/293-light-pockets.svg"
+      ]
+    },
+    {
+      "seed": 293,
+      "density": "light",
+      "view": "detail",
+      "images": [
+        "evidence/293-light-original-close.svg",
+        "evidence/293-light-bare-close.svg",
+        "evidence/293-light-bands-close.svg",
+        "evidence/293-light-pockets-close.svg"
+      ]
+    },
+    {
+      "seed": 293,
+      "density": "dense",
+      "view": "whole",
+      "images": [
+        "evidence/293-dense-original.svg",
+        "evidence/293-dense-bare.svg",
+        "evidence/293-dense-bands.svg",
+        "evidence/293-dense-pockets.svg"
+      ]
+    },
+    {
+      "seed": 293,
+      "density": "dense",
+      "view": "detail",
+      "images": [
+        "evidence/293-dense-original-close.svg",
+        "evidence/293-dense-bare-close.svg",
+        "evidence/293-dense-bands-close.svg",
+        "evidence/293-dense-pockets-close.svg"
+      ]
+    }
+  ],
+  "limits": "Mechanical in-memory browser checks only. File URL navigation, link opening, aesthetics and paper acceptance unverified."
+}

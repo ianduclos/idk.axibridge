@@ -1,0 +1,19 @@
+{
+  "labels": {
+    "L": 2,
+    "Q": 0,
+    "T": 1
+  },
+  "calibration": {
+    "D": "Current seed 13 detail minus first emitted path",
+    "E": "Current seed 13 detail unchanged",
+    "F": "Current seed 13 detail minus final two emitted paths"
+  },
+  "seeds": [
+    13,
+    47,
+    82,
+    31,
+    103
+  ]
+}

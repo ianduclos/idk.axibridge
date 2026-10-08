@@ -1,0 +1,125 @@
+{
+  "byteIdenticalReplay": true,
+  "inputsUnchanged": true,
+  "sourceHashes": {
+    "assemble.py": "34161a751d055d2ce79aab681db63a8d7be1a5f62389211414a512de2172b87f",
+    "calibrate.py": "3afeb54ddf7c73faab2dbe0ad294249a1ac23345b0c57683839024132f92675b",
+    "composition/edit.py": "3fa9c1dbdf48e71cd107225d4cd799c3df51160814e486c3c1fdbe6f7f6f48ea",
+    "connections/edit.py": "733c97c0a964c83dee48633e656eac8b9e758a5b32eda964f8901c469364092a",
+    "material/edit.py": "4af2b2962255412cfb733dded1179042b8c3696a8a54c636c1c0a8992f317494",
+    "prepare.py": "80b46fb8a0b9f83153c6ad943a5681cef8531f55bc6bc89ead19710404def193",
+    "render.py": "3f9a177979ae38b701e944a8fcce3c21bad67fbcbf8a5d494bf84a81774afd2e",
+    "verify.py": "bc6a65587ca0ec1ea46dcd31ac384c18ac4f3cdffa765f7c6615bf16d4bb42d1"
+  },
+  "records": [
+    {
+      "file": "composition/S1-stage1.json",
+      "id": "composition-S1-stage1",
+      "parent": "S1",
+      "points": 55318,
+      "inkMm": 9519.257379393774,
+      "maxSegmentMm": 1.184068854476179,
+      "sha256": "0cc775659d05c74f42e4f37e1dafacb0449e4eeef9ee90d4ef0ac50395da2607"
+    },
+    {
+      "file": "composition/S1-stage2.json",
+      "id": "composition-S1-stage2",
+      "parent": "composition-S1-stage1",
+      "points": 70326,
+      "inkMm": 10875.544088945755,
+      "maxSegmentMm": 13.601470508735444,
+      "sha256": "42096cac73d837a50d030779c6a9d0b55ef08f3267cd5490575a6bd6c5dd0e7c"
+    },
+    {
+      "file": "composition/S2-stage1.json",
+      "id": "composition-S2-stage1",
+      "parent": "S2",
+      "points": 42137,
+      "inkMm": 7511.597992873184,
+      "maxSegmentMm": 63.56099432828282,
+      "sha256": "f0ec3aa717df3dfb9e504871f174e51037ada983ea34d15bb9001bf10dbe51e8"
+    },
+    {
+      "file": "composition/S2-stage2.json",
+      "id": "composition-S2-stage2",
+      "parent": "composition-S2-stage1",
+      "points": 32478,
+      "inkMm": 6685.955016368308,
+      "maxSegmentMm": 56.0,
+      "sha256": "797b461bd814023c7ebd947b959537029a66f5db24048d047dc2f7b7f3a2b886"
+    },
+    {
+      "file": "connections/S1-stage1.json",
+      "id": "connections-S1-stage1",
+      "parent": "S1",
+      "points": 17353,
+      "inkMm": 8727.906513742035,
+      "maxSegmentMm": 36.345563690772494,
+      "sha256": "da85c4e8c61c7ba5ec6dccabd111432dd4b7ae8256493586c6e34cb8047053cc"
+    },
+    {
+      "file": "connections/S1-stage2.json",
+      "id": "connections-S1-stage2",
+      "parent": "connections-S1-stage1",
+      "points": 20096,
+      "inkMm": 11695.557300748573,
+      "maxSegmentMm": 104.0768946500615,
+      "sha256": "614db2d0d01fab8775b0276d973d64b31280abb2a99652434825907b8c1a4771"
+    },
+    {
+      "file": "connections/S2-stage1.json",
+      "id": "connections-S2-stage1",
+      "parent": "S2",
+      "points": 13539,
+      "inkMm": 6063.580236947759,
+      "maxSegmentMm": 55.226805085936306,
+      "sha256": "cb06e93160f14d9f784e63f2235152ca13e41674cbbcb295f64cdd1b9e640536"
+    },
+    {
+      "file": "connections/S2-stage2.json",
+      "id": "connections-S2-stage2",
+      "parent": "connections-S2-stage1",
+      "points": 13719,
+      "inkMm": 7688.511775084091,
+      "maxSegmentMm": 62.64982043070834,
+      "sha256": "b37b822c7912e78407a186ff1bd3e47ebf3b962651c2129a9b56f7c1460553b5"
+    },
+    {
+      "file": "material/S1-stage1.json",
+      "id": "material-S1-stage1",
+      "parent": "S1",
+      "points": 50543,
+      "inkMm": 8440.487498188668,
+      "maxSegmentMm": 0.3953549973964975,
+      "sha256": "11ce6271e3a6a48f0ae9c391989117b69ec303c83d524ec2c16d68dfcf05147e"
+    },
+    {
+      "file": "material/S1-stage2.json",
+      "id": "material-S1-stage2",
+      "parent": "material-S1-stage1",
+      "points": 36693,
+      "inkMm": 6349.165893121825,
+      "maxSegmentMm": 0.404016799078873,
+      "sha256": "9580eb1aa7000d02c5a2d189d84fbfa0fe5a799248b8ad3f072ce04b7d29887a"
+    },
+    {
+      "file": "material/S2-stage1.json",
+      "id": "material-S2-stage1",
+      "parent": "S2",
+      "points": 28130,
+      "inkMm": 6042.379643012741,
+      "maxSegmentMm": 0.4841199611456502,
+      "sha256": "8ce258fb6d49168e6374864dfc778aabb179850ebbd320f2296cdbf54cb74777"
+    },
+    {
+      "file": "material/S2-stage2.json",
+      "id": "material-S2-stage2",
+      "parent": "material-S2-stage1",
+      "points": 30392,
+      "inkMm": 5626.971319549555,
+      "maxSegmentMm": 0.38668084355662047,
+      "sha256": "145238d811b85dd6887405c5bddfd01485115648c8a970de10e191779e3f579f"
+    }
+  ],
+  "limits": "Long intentional straight spans are allowed; bounds/replay checks do not judge appearance or establish a general generator."
+}

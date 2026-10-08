@@ -1,0 +1,210 @@
+{
+  "scope": "all ten seeds",
+  "seeds": [
+    5,
+    13,
+    18,
+    24,
+    47,
+    82,
+    31,
+    69,
+    103,
+    151
+  ],
+  "views_checked": 20,
+  "images_checked": 60,
+  "arrow_wrap": "passed",
+  "full_svg_links": "passed in both views",
+  "desktop_equal_panels": "passed",
+  "mobile_stacking_and_overflow": "passed at 390px",
+  "pageerrors": [],
+  "screenshots": [
+    "comparison-13.png",
+    "comparison-13-close.png",
+    "comparison-13-mobile.png"
+  ],
+  "checks": [
+    {
+      "seed": 5,
+      "view": "whole",
+      "images": [
+        "evidence/5-0.svg",
+        "evidence/5-1.svg",
+        "evidence/5-2.svg"
+      ]
+    },
+    {
+      "seed": 5,
+      "view": "detail",
+      "images": [
+        "evidence/5-0-close.svg",
+        "evidence/5-1-close.svg",
+        "evidence/5-2-close.svg"
+      ]
+    },
+    {
+      "seed": 13,
+      "view": "whole",
+      "images": [
+        "evidence/13-0.svg",
+        "evidence/13-1.svg",
+        "evidence/13-2.svg"
+      ]
+    },
+    {
+      "seed": 13,
+      "view": "detail",
+      "images": [
+        "evidence/13-0-close.svg",
+        "evidence/13-1-close.svg",
+        "evidence/13-2-close.svg"
+      ]
+    },
+    {
+      "seed": 18,
+      "view": "whole",
+      "images": [
+        "evidence/18-0.svg",
+        "evidence/18-1.svg",
+        "evidence/18-2.svg"
+      ]
+    },
+    {
+      "seed": 18,
+      "view": "detail",
+      "images": [
+        "evidence/18-0-close.svg",
+        "evidence/18-1-close.svg",
+        "evidence/18-2-close.svg"
+      ]
+    },
+    {
+      "seed": 24,
+      "view": "whole",
+      "images": [
+        "evidence/24-0.svg",
+        "evidence/24-1.svg",
+        "evidence/24-2.svg"
+      ]
+    },
+    {
+      "seed": 24,
+      "view": "detail",
+      "images": [
+        "evidence/24-0-close.svg",
+        "evidence/24-1-close.svg",
+        "evidence/24-2-close.svg"
+      ]
+    },
+    {
+      "seed": 47,
+      "view": "whole",
+      "images": [
+        "evidence/47-0.svg",
+        "evidence/47-1.svg",
+        "evidence/47-2.svg"
+      ]
+    },
+    {
+      "seed": 47,
+      "view": "detail",
+      "images": [
+        "evidence/47-0-close.svg",
+        "evidence/47-1-close.svg",
+        "evidence/47-2-close.svg"
+      ]
+    },
+    {
+      "seed": 82,
+      "view": "whole",
+      "images": [
+        "evidence/82-0.svg",
+        "evidence/82-1.svg",
+        "evidence/82-2.svg"
+      ]
+    },
+    {
+      "seed": 82,
+      "view": "detail",
+      "images": [
+        "evidence/82-0-close.svg",
+        "evidence/82-1-close.svg",
+        "evidence/82-2-close.svg"
+      ]
+    },
+    {
+      "seed": 31,
+      "view": "whole",
+      "images": [
+        "evidence/31-0.svg",
+        "evidence/31-1.svg",
+        "evidence/31-2.svg"
+      ]
+    },
+    {
+      "seed": 31,
+      "view": "detail",
+      "images": [
+        "evidence/31-0-close.svg",
+        "evidence/31-1-close.svg",
+        "evidence/31-2-close.svg"
+      ]
+    },
+    {
+      "seed": 69,
+      "view": "whole",
+      "images": [
+        "evidence/69-0.svg",
+        "evidence/69-1.svg",
+        "evidence/69-2.svg"
+      ]
+    },
+    {
+      "seed": 69,
+      "view": "detail",
+      "images": [
+        "evidence/69-0-close.svg",
+        "evidence/69-1-close.svg",
+        "evidence/69-2-close.svg"
+      ]
+    },
+    {
+      "seed": 103,
+      "view": "whole",
+      "images": [
+        "evidence/103-0.svg",
+        "evidence/103-1.svg",
+        "evidence/103-2.svg"
+      ]
+    },
+    {
+      "seed": 103,
+      "view": "detail",
+      "images": [
+        "evidence/103-0-close.svg",
+        "evidence/103-1-close.svg",
+        "evidence/103-2-close.svg"
+      ]
+    },
+    {
+      "seed": 151,
+      "view": "whole",
+      "images": [
+        "evidence/151-0.svg",
+        "evidence/151-1.svg",
+        "evidence/151-2.svg"
+      ]
+    },
+    {
+      "seed": 151,
+      "view": "detail",
+      "images": [
+        "evidence/151-0-close.svg",
+        "evidence/151-1-close.svg",
+        "evidence/151-2-close.svg"
+      ]
+    }
+  ],
+  "limits": "Mechanical browser checks only; no aesthetic or paper acceptance."
+}

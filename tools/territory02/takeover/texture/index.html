@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>territory02 — grown texture studies</title>
+  <link rel="stylesheet" href="../../../../axibridge/static/css/flexoki.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--flexoki-paper); color: var(--flexoki-black); font: 15px/1.45 system-ui, sans-serif; }
+    main { max-width: 1450px; margin: auto; padding: 24px; }
+    h1 { margin: 0 0 8px; font-size: 26px; }
+    h2 { margin: 0 0 8px; font-size: 17px; }
+    p { max-width: 85ch; margin: 0 0 16px; }
+    .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 0; border-block: 1px solid var(--flexoki-200); }
+    label { display: flex; align-items: center; gap: 8px; }
+    select, button { font: inherit; color: inherit; background: var(--flexoki-paper); border: 1px solid var(--flexoki-200); border-radius: 5px; padding: 8px 12px; min-height: 44px; }
+    button { cursor: pointer; min-width: 44px; }
+    .arrows { display: flex; gap: 8px; }
+    input { accent-color: var(--flexoki-cyan-600); width: 18px; height: 18px; }
+    .detail-control { min-height: 44px; }
+    a { color: var(--flexoki-cyan-600); }
+    :is(button, select, input, a):focus-visible { outline: 3px solid var(--flexoki-cyan-600); outline-offset: 3px; }
+    #status { min-height: 42px; padding: 12px 0; color: var(--flexoki-700); font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    figure { min-width: 0; margin: 0; }
+    .drawing { display: block; }
+    img { width: 100%; display: block; border: 1px solid var(--flexoki-200); background: var(--flexoki-paper); }
+    figcaption { padding-top: 8px; font-size: 13px; color: var(--flexoki-700); }
+    footer { margin-top: 24px; }
+    footer nav { display: flex; gap: 20px; flex-wrap: wrap; }
+    @media (max-width: 750px) { main { padding: 16px; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>territory02 · grown texture studies</h1>
+  <p>Compare original grown texture with takeover curves, baseline texture applied to those curves, and texture led by their courses. The original full recipe is fixed at nominal 60 m.</p>
+  <nav class="controls" aria-label="Comparison controls">
+    <label for="seed">Seed
+      <select id="seed">
+        <option>5</option><option selected>13</option><option>18</option><option>24</option><option>47</option><option>82</option>
+        <option value="331">331 · fresh holdout</option><option value="389">389 · fresh holdout</option><option value="419">419 · fresh holdout</option><option value="463">463 · fresh holdout</option>
+      </select>
+    </label>
+    <div class="arrows"><button id="previous" type="button" aria-label="Previous seed">←</button><button id="next" type="button" aria-label="Next seed">→</button></div>
+    <label class="detail-control" for="detail"><input id="detail" type="checkbox"> Same-framed detail</label>
+  </nav>
+  <div id="status" role="status" aria-live="polite" aria-atomic="true"></div>
+  <section class="grid" aria-label="Four texture comparisons at the selected seed">
+    <figure data-variant="baseline"><h2>Original grown Territory</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>Original courses and grown texture · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+    <figure data-variant="bare"><h2>Takeover curves only</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>Takeover courses before texture · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+    <figure data-variant="grown"><h2>Baseline texture on new curves</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>Baseline texture applied to takeover courses · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+    <figure data-variant="led"><h2>Course-led texture</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>Texture responds to takeover courses · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+  </section>
+  <footer>
+    <p>Whole drawings use a 300 × 218 mm frame; all details share a 100 × 70 mm frame. Click a drawing to open its full SVG. Seeds 331, 389, 419, and 463 are fresh holdouts. Screen study only; paper acceptance is still open.</p>
+    <nav aria-label="Study links"><a href="../../../../docs/reviews/territory02-texture-2026-10-05.html">Report</a><a href="../grammar/index.html">Grammar break</a><a href="../index.html">Curve study</a><a href="../fill/index.html">Earlier fill comparison</a><a href="NOTES.md">Texture notes</a></nav>
+  </footer>
+</main>
+<script>
+  const seeds = [5, 13, 18, 24, 47, 82, 331, 389, 419, 463];
+  const seedControl = document.getElementById('seed');
+  const detailControl = document.getElementById('detail');
+  function sync() {
+    const seed = seedControl.value;
+    const detail = detailControl.checked;
+    for (const figure of document.querySelectorAll('figure')) {
+      const prefix = `evidence/${seed}-${figure.dataset.variant}`;
+      const full = `${prefix}.svg`;
+      const img = figure.querySelector('img');
+      img.src = `${prefix}${detail ? '-close' : ''}.svg`;
+      img.alt = `${figure.querySelector('h2').textContent}, seed ${seed}, ${detail ? 'same-framed detail' : 'whole drawing'}`;
+      figure.querySelector('.drawing').href = full;
+      figure.querySelector('.full').href = full;
+      figure.querySelector('.drawing').setAttribute('aria-label', `Open full SVG: ${figure.querySelector('h2').textContent}, seed ${seed}`);
+    }
+    document.getElementById('status').textContent = `Seed ${seed} · ${detail ? 'same-framed detail' : 'whole drawing'}${seeds.indexOf(Number(seed)) >= 6 ? ' · fresh holdout' : ''}`;
+  }
+  for (const control of [seedControl, detailControl]) control.addEventListener('change', sync);
+  for (const [id, step] of [['previous', -1], ['next', 1]]) {
+    document.getElementById(id).addEventListener('click', () => {
+      seedControl.value = seeds[(seeds.indexOf(Number(seedControl.value)) + step + seeds.length) % seeds.length];
+      sync();
+    });
+  }
+  sync();
+</script>
+</body>
+</html>

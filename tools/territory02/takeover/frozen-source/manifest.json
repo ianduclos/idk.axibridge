@@ -1,0 +1,24 @@
+{
+  "sha256": "f388f8afbd2d151e9a61578452fcbdcc5f2083e0936a3ab1fff5001a30872288",
+  "developmentSeeds": [
+    5,
+    13,
+    18,
+    24,
+    47,
+    82
+  ],
+  "previouslyInspectedSeeds": [
+    31,
+    69,
+    103,
+    151
+  ],
+  "freshHoldoutSeeds": [
+    107,
+    173,
+    227,
+    281
+  ],
+  "note": "Bulb/corner fit frozen before new holdouts. Previous holdouts belong to trial4 and were seen before latest change."
+}

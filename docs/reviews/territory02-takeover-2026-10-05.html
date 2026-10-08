@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Territory02: takeover, bulbs and corners — 5 October 2026</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/editor-loop/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Study report</div><article><h1>Territory02: takeover, bulbs and corners — 5 October 2026</h1><details><summary>On this page</summary><ol class="toc"><li><a href="#the-correction">The correction</a></li><li><a href="#what-is-visibly-different">What is visibly different</a></li><li><a href="#independent-review-and-retained-disagreement">Independent review and retained disagreement</a></li><li><a href="#scope-and-verification">Scope and verification</a></li><li><a href="#strategies-to-discuss-after-looking">Strategies to discuss after looking</a></li></ol></details>
+<p>The new probe makes real changes to course shape and continuity. Selected bends
+can swell into lobes, return through a compressed throat, and leave through a
+corner. This is exploratory material for Ian&#39;s judgement; it does not establish
+that the requested aesthetic has been reached. The three earlier maker studies
+remain separate, and no convergence strategy has been selected.</p>
+<p><a href="../../tools/territory02/takeover/index.html">Open the comparison</a>.
+<a href="../../tools/territory02/takeover/NOTES.md">Implementation, reproduction and limits</a>.
+<a href="territory02-takeover-sol.html">Independent Sol review</a>.</p>
+<h2 id="the-correction">The correction</h2>
+<p>Ian asked for tighter, more stylized curves and permission for another regime
+to take over Territory. His sketch was illustrative; the earlier Territory
+image and the paintings supplied relationships and intricacy, not templates.
+The first drafts nevertheless used preset folds and pinches. His criticism
+that the curves were being followed literally was correct.</p>
+<p>The next construction used contacts, pressure and exchanges of actual course
+continuations. It changed the network but its elastic relaxation and short
+cubic controls still softened the turns. Ian&#39;s further correction—“not enough
+bulbs or corners”—changed the fitting stage directly. Inflation now follows
+substantial bends found in the generated courses, adjacent spans have unequal
+control reaches, selected incoming handles collapse to 4.5% of their span, and
+entry/exit tangents can disagree. No reference-image tracing or fixed tuple of
+curve nodes is used. These remain aesthetic biases written into geometry; a
+more elaborate mechanism alone is not an artistic result.</p>
+<p>A trial with enlarged controls everywhere produced rows of teeth and spikes.
+That was discarded. Current inflation is localized to separated bends and joins.
+The failed literal, angular, softened and overinflated trials are retained in
+<code>tools/territory02/takeover/trial1</code> through <code>trial5</code>.</p>
+<h2 id="what-is-visibly-different">What is visibly different</h2>
+<p>The primary inspected both whole populations and matched close views. In current
+seed <strong>47</strong>, the doubled upper course makes an abrupt elbow, swells into a round
+lower passage and returns through a narrow crossing. Its companions stop at
+unequal points. It offers a stronger bulb/corner contrast than the previous fit,
+although the whole drawing still scatters its attention.</p>
+<p><strong>13</strong> develops a tall narrow lobe next to a short returning hook. Those two
+forms have different proportions and release into long diagonal passages.
+The current version also loses some of the previous fit&#39;s concentrated central
+entanglement. It is not simply more intricate everywhere.</p>
+<p><strong>82</strong> gives the upper-left passage a larger rounded interior, a corner on its
+approach and a small junction where companions depart from the main course.
+The large lower-right return remains quite gentle. <strong>18</strong> has a clearer short
+neck between a bulb and a diagonal reach, alongside detached marks whose role
+is uncertain. <strong>5</strong> and <strong>24</strong> retain long quiet stretches; the local treatment
+does not yet change the authority of every course.</p>
+<p>The new source was frozen before first rendering <strong>107, 173, 227, 281</strong>. These
+are fresh screen evidence; no tuning followed their inspection. <strong>107</strong> spreads
+small lobes across long crossing directions. <strong>227</strong> concentrates a doubled
+compressed return near the upper middle. <strong>173</strong> and especially <strong>281</strong> remain
+sparse and loosely related as wholes. That limits any claim that the new fit
+reliably delivers intricate construction. Earlier holdouts 31/69/103/151 belonged
+to the previous fit and were seen before this change; they are archived, not
+reported as fresh current evidence.</p>
+<h2 id="independent-review-and-retained-disagreement">Independent review and retained disagreement</h2>
+<p>A fresh bounded Sol reviewer first inspected neutral populations and removal
+counterfactuals, then the current neutral population, before seeing mappings,
+mechanisms, Ian&#39;s corrections or the lead&#39;s preferences. Its image account
+notices actual current bulb/corner changes in 47/107/227, but distinguishes that
+from reliable intricacy. It also preserves the loss of earlier entanglement in
+13 and the weak fresh 173/281 cases. It preferred a trial4 variant with one path
+removed while finding a different two-path removal damaging; omission was
+consequential, not a general instruction to simplify.</p>
+<p>Sol finds current47 the strongest new argument for a course governing a large
+blank interior. The primary finds its local bulb/corner contrast useful while
+remaining less convinced by the whole sheet&#39;s scattered attention. Both views
+are retained. An explicit curve bias can still produce a recognizable device:
+absence of a fixed coordinate library does not establish aesthetic independence
+or variety. The review is evidence for discussion, not automatic acceptance.</p>
+<h2 id="scope-and-verification">Scope and verification</h2>
+<p>Stage 0 shows the ordinary sparse Territory rendering. The first rewrite uses
+its latent migration centrelines, bypassing the usual hand and bundles, rather
+than editing every emitted stroke. The second rewrite consumes the first pass&#39;s
+actual returned course geometry; it can exchange continuations and leave cuts.
+Short restatement strands are rebuilt, not fed back as extra courses. All visible
+paths use 0.1 mm line width; density is zero. No filled or opacity-based weight
+was added.</p>
+<p>Synthetic checks passed for frozen inputs, repeatability, changed geometry and
+successive passes. Thirty stage/seed cases passed repeatability, unchanged
+Territory input, finite coordinates, bed bounds and point/ink budgets. All 60
+whole/detail SVG views loaded in headless browser verification of the comparison; navigation, full-SVG links,
+equal desktop panels and mobile stacking passed with no page errors. PNGs and
+statistics record the inspected populations; SVGs are locally reproducible.</p>
+<p>This is an isolated screen prototype, committed on <code>codex/territory02</code>. Production,
+original Territory and the earlier study sources are unchanged. Native event and
+density contracts are not implemented by this replacement. Paper and interactive
+response acceptance remain open. There was no app restart, plotting, Pi action,
+push or merge. Opening the local page in the in-app browser was blocked by its
+<code>file:</code> URL policy; saved PNG previews and the comparison file remain available.</p>
+<h2 id="strategies-to-discuss-after-looking">Strategies to discuss after looking</h2>
+<ol>
+<li>Keep Territory&#39;s broad courses and apply the new inflation/corner rule only
+to selected interactions. This may preserve useful empty interiors but may
+leave the overall result too familiar.</li>
+<li>Let the replacement own the course network early, including continuations
+and cuts. This gives more freedom and can also dismantle promising relations.</li>
+<li>Treat both intermediate and takeover outputs as elements for composition,
+rather than always keeping the last stage. This preserves losses and alternate
+directions at the cost of making selection part of the working process.</li>
+</ol>
+<p>These are proposals for Ian&#39;s response. None has been integrated or chosen as a
+new default. The earlier report&#39;s three-maker convergence proposals remain
+available alongside this additional path.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>

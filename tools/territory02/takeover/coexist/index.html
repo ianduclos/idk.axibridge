@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>territory02 — coexistence</title>
+  <link rel="stylesheet" href="../../../../axibridge/static/css/flexoki.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--flexoki-paper); color: var(--flexoki-black); font: 15px/1.45 system-ui, sans-serif; }
+    main { max-width: 1450px; margin: auto; padding: 24px; }
+    h1 { margin: 0 0 8px; font-size: 26px; }
+    h2 { margin: 0 0 8px; font-size: 17px; }
+    p { max-width: 85ch; margin: 0 0 16px; }
+    .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 0; border-block: 1px solid var(--flexoki-200); }
+    label { display: flex; align-items: center; gap: 8px; }
+    select, button { font: inherit; color: inherit; background: var(--flexoki-paper); border: 1px solid var(--flexoki-200); border-radius: 5px; padding: 8px 12px; min-height: 44px; }
+    button { cursor: pointer; min-width: 44px; }
+    .arrows { display: flex; gap: 8px; }
+    input { accent-color: var(--flexoki-cyan-600); width: 18px; height: 18px; }
+    .detail-control { min-height: 44px; }
+    a { color: var(--flexoki-cyan-600); }
+    :is(button, select, input, a):focus-visible { outline: 3px solid var(--flexoki-cyan-600); outline-offset: 3px; }
+    #status { min-height: 42px; padding: 12px 0; color: var(--flexoki-700); font-size: 13px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    figure { min-width: 0; margin: 0; }
+    .drawing { display: block; }
+    img { width: 100%; display: block; border: 1px solid var(--flexoki-200); background: var(--flexoki-paper); }
+    figcaption { padding-top: 8px; font-size: 13px; color: var(--flexoki-700); }
+    footer { margin-top: 24px; }
+    footer nav { display: flex; gap: 20px; flex-wrap: wrap; }
+    @media (max-width: 750px) { main { padding: 16px; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>territory02 · coexistence</h1>
+  <p>Three ways for substantial smooth passages to coexist with rough lines and material. Keep all three possibilities open: a line changes character, materials interfere, or they remain independent.</p>
+  <nav class="controls" aria-label="Comparison controls">
+   <label for="base">Rough drawing <select id="base"><option value="opening">Opening</option><option value="pressure">Pressure</option><option value="unravel" selected>Unravelling</option></select></label>
+   <label for="seed">Seed <select id="seed"><option selected>13</option><option>24</option><option value="1009">1009 · fresh</option><option value="1061">1061 · fresh</option></select></label>
+   <div class="arrows"><button id="previous" aria-label="Previous seed">←</button><button id="next" aria-label="Next seed">→</button></div>
+   <label class="detail-control"><input id="detail" type="checkbox"> Same-framed detail</label>
+  </nav>
+  <div id="status" role="status" aria-live="polite"></div>
+  <section class="grid" aria-label="Five coexistence comparisons at the selected seed">
+    <figure data-variant="rough"><h2>Earlier rough drawing</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>The existing material experiment · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+    <figure data-variant="smooth"><h2>Smooth passages alone</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>The same passages used in all three trials · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+    <figure data-variant="continuity"><h2>Continuity</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>A course opens into fibers and changes character · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+    <figure data-variant="interference"><h2>Interference</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>A smooth passage and rough material alter each other · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+    <figure data-variant="independent"><h2>Independent coexistence</h2><a class="drawing" target="_blank" rel="noopener"><img alt=""></a><figcaption>The rough drawing remains intact · <a class="full" target="_blank" rel="noopener">Open full SVG</a></figcaption></figure>
+  </section>
+  <footer><p>Whole sheets: 300 × 218 mm. Matched details: 100 × 70 mm around the first smooth passage; they can miss another encounter. Thin 0.1 mm strokes throughout. These remain separate screen experiments.</p><nav aria-label="Study links"><a href="../rupture/index.html">New constructions after this trial</a><a href="../material/index.html">Earlier material studies</a><a href="../grammar/index.html">Earlier smoother trial</a><a href="NOTES.md">Notes and reproduction</a><a href="../../../../docs/reviews/territory02-coexist-2026-10-05.html">Report</a></nav></footer>
+</main>
+<script>
+ const seeds=[13,24,1009,1061],seed=document.getElementById('seed'),base=document.getElementById('base'),detail=document.getElementById('detail');
+ function sync(){
+  for(const f of document.querySelectorAll('figure')){
+   const prefix=`evidence/${seed.value}-${base.value}-${f.dataset.variant}`,full=`${prefix}.svg`,img=f.querySelector('img');
+   img.src=`${prefix}${detail.checked?'-close':''}.svg`;img.alt=`${f.querySelector('h2').textContent}, ${base.value}, seed ${seed.value}, ${detail.checked?'detail':'whole'}`;
+   f.querySelector('.drawing').href=full;f.querySelector('.full').href=full;
+  }
+  document.getElementById('status').textContent=`${base.options[base.selectedIndex].text} · seed ${seed.value} · ${detail.checked?'matched detail':'whole drawing'}${Number(seed.value)>1000?' · fresh case':''}`;
+ }
+ for(const c of [seed,base,detail])c.addEventListener('change',sync);
+ for(const[id,step]of [['previous',-1],['next',1]])document.getElementById(id).addEventListener('click',()=>{seed.value=seeds[(seeds.indexOf(Number(seed.value))+step+seeds.length)%seeds.length];sync();});
+ sync();
+</script></body></html>

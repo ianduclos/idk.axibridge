@@ -1,0 +1,476 @@
+[
+  {
+    "seed": 13,
+    "base": "opening",
+    "mode": "rough",
+    "fresh": false,
+    "points": 9939,
+    "inkMm": 2773.4096424091003,
+    "strokes": 111,
+    "geometryHash": "28c35b8cd8474d194222c2811e5c616b810d132dff7011057d7a1f1622b267c9",
+    "inputHash": "f8360c41baf428a13261e86fa5dbf7e96da3831d5e00bcb91f87a0ed2f42b599",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "opening",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2875,
+    "inkMm": 458.36662596880535,
+    "strokes": 2,
+    "geometryHash": "c4e53bc84bf9a54bbcc06222fc3e8d55d219a71013fe635f0328db468812e963",
+    "inputHash": "f8360c41baf428a13261e86fa5dbf7e96da3831d5e00bcb91f87a0ed2f42b599",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "opening",
+    "mode": "independent",
+    "fresh": false,
+    "points": 12814,
+    "inkMm": 3231.7762683779056,
+    "strokes": 113,
+    "geometryHash": "3564bc75617917338f133b53ad9addbe99f9bdc70e21de536194d92b1fb36e93",
+    "inputHash": "f8360c41baf428a13261e86fa5dbf7e96da3831d5e00bcb91f87a0ed2f42b599",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 9,
+        "at": [
+          92.09720541871668,
+          73.35509913655169
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 0,
+        "at": [
+          39.299984530260964,
+          113.54377708023371
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  },
+  {
+    "seed": 13,
+    "base": "pressure",
+    "mode": "rough",
+    "fresh": false,
+    "points": 46408,
+    "inkMm": 23819.732197545298,
+    "strokes": 567,
+    "geometryHash": "d5f6bf29495873103143bb6c66faeeb9af7f8284347fe8dbf7529449a21b02be",
+    "inputHash": "7e892de31d603a7d7c4320ce4b859925bca500b9677877f5ea66cb1560ccc5cb",
+    "closeWindow": [
+      42.18906946094776,
+      52.9461933384313,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "pressure",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2841,
+    "inkMm": 451.1834130083693,
+    "strokes": 2,
+    "geometryHash": "551fc7141e52546738a07326a7f629aa55bad78538062608a9c96c2d53f46977",
+    "inputHash": "7e892de31d603a7d7c4320ce4b859925bca500b9677877f5ea66cb1560ccc5cb",
+    "closeWindow": [
+      42.18906946094776,
+      52.9461933384313,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "pressure",
+    "mode": "independent",
+    "fresh": false,
+    "points": 49249,
+    "inkMm": 24270.915610553664,
+    "strokes": 569,
+    "geometryHash": "05f3c70382b454962333249812d4b9a0e9a737fda4a25f1e9c863eee0778344d",
+    "inputHash": "7e892de31d603a7d7c4320ce4b859925bca500b9677877f5ea66cb1560ccc5cb",
+    "closeWindow": [
+      42.18906946094776,
+      52.9461933384313,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 10,
+        "at": [
+          92.18906946094776,
+          87.9461933384313
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 0,
+        "at": [
+          38.27498362212443,
+          111.64309310783929
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  },
+  {
+    "seed": 13,
+    "base": "unravel",
+    "mode": "rough",
+    "fresh": false,
+    "points": 50470,
+    "inkMm": 23543.021130843557,
+    "strokes": 963,
+    "geometryHash": "1bbc4474606207f21f4332d9c43c3a8bda88416d5e0573e41f3e5021a5ac8dba",
+    "inputHash": "42c25919624e7c51e9d5023cb8a8efd26d6a75a45a11b00cb6a8cf14d144297c",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "unravel",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2875,
+    "inkMm": 458.36662596880535,
+    "strokes": 2,
+    "geometryHash": "c4e53bc84bf9a54bbcc06222fc3e8d55d219a71013fe635f0328db468812e963",
+    "inputHash": "42c25919624e7c51e9d5023cb8a8efd26d6a75a45a11b00cb6a8cf14d144297c",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 13,
+    "base": "unravel",
+    "mode": "independent",
+    "fresh": false,
+    "points": 53345,
+    "inkMm": 24001.387756812364,
+    "strokes": 965,
+    "geometryHash": "e821c4de96e71c81044b533b1e6af842762daaab75a068224e27122af44d9aa4",
+    "inputHash": "42c25919624e7c51e9d5023cb8a8efd26d6a75a45a11b00cb6a8cf14d144297c",
+    "closeWindow": [
+      42.09720541871668,
+      38.35509913655169,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 9,
+        "at": [
+          92.09720541871668,
+          73.35509913655169
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 0,
+        "at": [
+          39.299984530260964,
+          113.54377708023371
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  },
+  {
+    "seed": 24,
+    "base": "opening",
+    "mode": "rough",
+    "fresh": false,
+    "points": 8440,
+    "inkMm": 2538.9836416258863,
+    "strokes": 112,
+    "geometryHash": "9312c31a526dddc6efdbb4631caba429de1d064f613fd5c453d6371a5cfb8305",
+    "inputHash": "21b2d8e86e94fd76af83066d7801b31c49f2a59ed2a56e0e7288da38d95818c3",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "opening",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2219,
+    "inkMm": 439.37336589827623,
+    "strokes": 2,
+    "geometryHash": "8b4329f3f827c140d6b0fb746d8898eae7b68feedc4904879bc5e42943050728",
+    "inputHash": "21b2d8e86e94fd76af83066d7801b31c49f2a59ed2a56e0e7288da38d95818c3",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "opening",
+    "mode": "independent",
+    "fresh": false,
+    "points": 10659,
+    "inkMm": 2978.357007524163,
+    "strokes": 114,
+    "geometryHash": "617c93a0fd2f5334a7c1036a13818d6756bfb00a7e80feb2122d93b8ad29f1f7",
+    "inputHash": "21b2d8e86e94fd76af83066d7801b31c49f2a59ed2a56e0e7288da38d95818c3",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 7,
+        "at": [
+          224.6781139712952,
+          119.44367013224615
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 12,
+        "at": [
+          249.46294768889155,
+          156.60304128927208
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  },
+  {
+    "seed": 24,
+    "base": "pressure",
+    "mode": "rough",
+    "fresh": false,
+    "points": 19980,
+    "inkMm": 10845.075782152748,
+    "strokes": 236,
+    "geometryHash": "f7c6cd740835f62339af238278d5304bbfdb57f51448037ecce721d51a7be675",
+    "inputHash": "13b106636d0b5ba2c0433ccbd109cf5a55665b171e2420a4e4b35e0204bfee84",
+    "closeWindow": [
+      173.695144383742,
+      87.16665543430922,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "pressure",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2142,
+    "inkMm": 426.30497529659465,
+    "strokes": 2,
+    "geometryHash": "1fcb629b3a369ae4ff052d7312230ab95422214fed34f212e81e4f66faf73b79",
+    "inputHash": "13b106636d0b5ba2c0433ccbd109cf5a55665b171e2420a4e4b35e0204bfee84",
+    "closeWindow": [
+      173.695144383742,
+      87.16665543430922,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "pressure",
+    "mode": "independent",
+    "fresh": false,
+    "points": 22122,
+    "inkMm": 11271.380757449344,
+    "strokes": 238,
+    "geometryHash": "133f1a0297f8307a012a89cc6dc5ec08d00dfd539c53d68c4dc1376036c55a10",
+    "inputHash": "13b106636d0b5ba2c0433ccbd109cf5a55665b171e2420a4e4b35e0204bfee84",
+    "closeWindow": [
+      173.695144383742,
+      87.16665543430922,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 7,
+        "at": [
+          223.695144383742,
+          122.16665543430922
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 121,
+        "at": [
+          236.2473865532846,
+          126.8549292320246
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  },
+  {
+    "seed": 24,
+    "base": "unravel",
+    "mode": "rough",
+    "fresh": false,
+    "points": 23015,
+    "inkMm": 10392.554056271778,
+    "strokes": 455,
+    "geometryHash": "f10255bddbd3f0acd956b370582a55987e2e9b249270a08eb7855962c97fdeb4",
+    "inputHash": "47ba88e0d3053a2889b0cca0bdaccbb9452bdd375effab943c67583b54edc8cc",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "unravel",
+    "mode": "smooth",
+    "fresh": false,
+    "points": 2219,
+    "inkMm": 439.37336589827623,
+    "strokes": 2,
+    "geometryHash": "8b4329f3f827c140d6b0fb746d8898eae7b68feedc4904879bc5e42943050728",
+    "inputHash": "47ba88e0d3053a2889b0cca0bdaccbb9452bdd375effab943c67583b54edc8cc",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [],
+    "info": {}
+  },
+  {
+    "seed": 24,
+    "base": "unravel",
+    "mode": "independent",
+    "fresh": false,
+    "points": 25234,
+    "inkMm": 10831.927422170053,
+    "strokes": 457,
+    "geometryHash": "d17fde1e7f91c9b6a04708695ab0e0859501faa0988e3897e8858e2ab0d63c2e",
+    "inputHash": "47ba88e0d3053a2889b0cca0bdaccbb9452bdd375effab943c67583b54edc8cc",
+    "closeWindow": [
+      174.6781139712952,
+      84.44367013224615,
+      100,
+      70
+    ],
+    "events": [
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 7,
+        "at": [
+          224.6781139712952,
+          119.44367013224615
+        ],
+        "roughAltered": false
+      },
+      {
+        "kind": "independent-passage",
+        "sourceIndex": 12,
+        "at": [
+          249.46294768889155,
+          156.60304128927208
+        ],
+        "roughAltered": false
+      }
+    ],
+    "info": {
+      "unchangedRough": true,
+      "passages": 2
+    }
+  }
+]

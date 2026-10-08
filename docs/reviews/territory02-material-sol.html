@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Territory 02 material review — initial blind reading</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/editor-loop/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Independent critique</div><article><h1>Territory 02 material review — initial blind reading</h1><details><summary>On this page</summary><ol class="toc"><li><a href="#calibration">Calibration</a></li><li><a href="#population">Population</a></li><li><a href="#contextual-reconsideration">Contextual reconsideration</a></li><li><a href="#final-structural-grammar-addendum">Final structural-grammar addendum</a></li></ol></details>
+<h2 id="calibration">Calibration</h2>
+<p>J first reads as the most continuous of the three. Its central diagonal bundle carries the eye from lower left into the upper-right fan without a hard interruption, and the parallel curves on the right remain clearly grouped. That continuity is also its limitation: after the main sweep is understood, much of the sheet settles into repeated contour-following bands, so the center feels fluent rather than consequential.</p>
+<p>H interrupts that route with a pale, angular pocket inside the central knot, crossed and edged by short dark strokes. Several long, thin diagonals escape the knot and cut across otherwise separate curve families. Following the interruption changes the surrounding arcs: the lower loop becomes a void pushing upward, while the right-hand waves feel resisted rather than merely adjacent. I would protect this awkward, partly unfilled central pocket. Smoothing or filling it would likely recover flow but lose the strongest local incompatibility.</p>
+<p>P is very close to H at full-sheet scale. In the close view, its central knot appears marginally more consolidated: fewer crossings read as detached excursions, and the rightward bundle reconnects sooner. H holds attention longer for me, though some of that may be incidental overlap rather than a durable relation; the H/P distinction is much weaker than either one&#39;s difference from J. I cannot infer which passages were introduced, removed or regularized, nor whether the fine crossings will remain distinct on paper.</p>
+<h2 id="population">Population</h2>
+<p>The ten sheets show real variation in placement, scale and density. T-24 is open and angular; T-47 is dominated by broad nested curves; T-587 concentrates several trajectories in a central knot; T-683 leaves more air around a few crossings. Yet T, F and R repeatedly answer with the same limited vocabulary: parallel contour banks, long doubled bars, radiating straight-line crossings, short combs and occasional tight curls. Across the held-out seeds, the distribution changes more than the kinds of event. The recurrence makes some initially forceful incidents feel like stock gestures once the population is visible.</p>
+<p>The clearest gains occur when an addition changes how an existing passage is read. In F-5, a sharp central cusp turns several unrelated sweeps into a collision with a shared hinge. F-587&#39;s irregular three-way junction reroutes the central knot and makes the surrounding straight bars feel like pressures on it. R-587 also gives unequal authority to the right-hand mass and the central crossing, rather than spreading emphasis evenly. These are consequential local relations, although none establishes a preferred label across seeds.</p>
+<p>The weaker cases expose the limits. L-5 and L-631 barely alter the close view, while L-47 and L-587 add isolated stepped or zigzag fragments that read as annotations without changing the larger emptiness. F-18, F-24 and F-683 introduce more material, but their repeated waviness and serration begin to announce a reusable mannerism. R-82 is ambiguous: the strong crossing has presence, yet it mostly amplifies a structure already present in T-82. C&#39;s sparse passages sometimes retain more peculiar negative shapes than the denser variants; density alone is not the gain.</p>
+<p>After the calibration reading, I was exposed to the user&#39;s complaint about limited grammar, recurring “goofy stars” and repeated curves. That reveals a preference and may sharpen my attention to recurrence, but I still have no mechanism or label identity. This remains a screen-only reading; I cannot judge physical line separation, pen emphasis or paper-scale authority.</p>
+<h2 id="contextual-reconsideration">Contextual reconsideration</h2>
+<p>The mechanism reveal strengthens the distinction between visible consequence and traceability. H is R-5; P is the same result with exposed pulls and carried scraps removed, while the cavity remains. Their near-equivalence in my blind reading means those provenance-bearing traces contribute little visually in this case. The consequential change is the cavity and its interruption of the surrounding course, not the fact that remnants can be followed back to grown material. J&#39;s identity as T-5 explains why H/J was the stronger distinction.</p>
+<p>Across the population, the reveal makes F-5 and F-587 more convincing as examples of measured displacement becoming visible through rerouted junctions and yielding filaments. It does not rescue F cases where serration merely recurs as a mannerism. L&#39;s local donor openings often remain too slight or detached to alter the sheet, despite their legitimate derivation. R&#39;s torn rims can create unequal authority, as in R-587, but scraps and pulls should be retained only when they materially alter a relation. Mechanistic accountability is useful evidence; it does not guarantee an event worth seeing.</p>
+<h2 id="final-structural-grammar-addendum">Final structural-grammar addendum</h2>
+<p>Against A/B/D, Q/V show a visible change in how paths inhabit the sheet. A&#39;s bare curves often alternate long straight or gently bent reaches with small knots; Q replaces that with sustained turning, broad loops and rounded returns. V&#39;s texture consequently travels around bends as ribbons and eddies instead of repeatedly meeting at radiating chord or thorn-like junctions. The shift is clearest in the V-797 close view: several banks fold through compound turns while retaining different spacing and lengths, so the underlying Q-797 loop becomes a route rather than a scaffold for a starburst. The fresh held-out sheet sustains this distinction without looking like a special-case demonstration.</p>
+<p>The stripped D sheets show that recipe reduction alone already removes much of B&#39;s conspicuous linear clutter. D is not a pure one-feature ablation under the stated settings, and it still repeatedly produces detached fans, plumes and whorls. Q/V go further by changing the underlying continuity, although the new family has its own repetition: Q frequently ends in soft hooks or bulbous U-turns, while V still answers through parallel contour banks and wave-like tufts. V-739 is a useful weak case: its selected close view is effectively unchanged from Q-739; the whole sheet receives additions elsewhere, but this passage gains no new relation. V-13 likewise leaves the selected close passage bare while surrounding areas accumulate coarse banks.</p>
+<p>No single label dominates every seed. The main gain is a broader topology and fewer stock radial collisions; the remaining constraint is that texture still resolves into recognizably similar bundled contours. In the earlier population section, “F-18, F-24 and F-683 introduce more material” described perceived density on screen. Context now establishes that F preserves and moves existing texture rather than adding a new layer.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>

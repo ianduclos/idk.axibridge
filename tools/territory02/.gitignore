@@ -1,0 +1,25 @@
+# Rebuildable engines/pages; source fragments and snapshots are preserved.
+experiments/**/territory-engine.js
+experiments/**/territory.html
+# Makers' local duplicate renderings remain available but neutral lead evidence is primary.
+experiments/**/*.html
+!experiments/**/territory-page.html
+experiments/**/*.png
+# Neutral SVG and PNG evidence is preserved; these embedding wrappers are rebuildable.
+evidence/**/*.html
+# Large vector copies are reproducible from source snapshots; PNGs retain inspected evidence.
+evidence/**/*.svg
+takeover/evidence/**/*.svg
+takeover/evidence/**/*.html
+takeover/fill/evidence/**/*.svg
+takeover/fill/evidence/**/*.html
+takeover/texture/evidence/**/*.svg
+takeover/texture/evidence/**/*.html
+takeover/material/evidence/**/*.svg
+takeover/material/evidence/**/*.html
+takeover/grammar/evidence/**/*.svg
+takeover/grammar/evidence/**/*.html
+takeover/coexist/evidence/**/*.svg
+takeover/coexist/evidence/**/*.html
+
+takeover/rupture/evidence/**/*.svg

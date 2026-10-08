@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Territory02 — rough and smooth coexistence</title><style>:root {
+  --flexoki-black:           #100F0F;
+  --flexoki-paper:           #FFFCF0;
+
+  --flexoki-50:              #F2F0E5;
+  --flexoki-100:             #E6E4D9;
+  --flexoki-150:             #DAD8CE;
+  --flexoki-200:             #CECDC3;
+  --flexoki-300:             #B7B5AC;
+  --flexoki-400:             #9F9D96;
+  --flexoki-500:             #878580;
+  --flexoki-600:             #6F6E69;
+  --flexoki-700:             #575653;
+  --flexoki-800:             #403E3C;
+  --flexoki-850:             #343331;
+  --flexoki-900:             #282726;
+  --flexoki-950:             #1C1B1A;
+
+  --flexoki-red-50:          #FFE1D5;
+  --flexoki-red-100:         #FFCABB;
+  --flexoki-red-150:         #FDB2A2;
+  --flexoki-red-200:         #F89A8A;
+  --flexoki-red-300:         #E8705F;
+  --flexoki-red-400:         #D14D41;
+  --flexoki-red-500:         #C03E35;
+  --flexoki-red-600:         #AF3029;
+  --flexoki-red-700:         #942822;
+  --flexoki-red-800:         #6C201C;
+  --flexoki-red-850:         #551B18;
+  --flexoki-red-900:         #3E1715;
+  --flexoki-red-950:         #261312;
+
+  --flexoki-orange-50:       #FFE7CE;
+  --flexoki-orange-100:      #FED3AF;
+  --flexoki-orange-150:      #FCC192;
+  --flexoki-orange-200:      #F9AE77;
+  --flexoki-orange-300:      #EC8B49;
+  --flexoki-orange-400:      #DA702C;
+  --flexoki-orange-500:      #CB6120;
+  --flexoki-orange-600:      #BC5215;
+  --flexoki-orange-700:      #9D4310;
+  --flexoki-orange-800:      #71320D;
+  --flexoki-orange-850:      #59290D;
+  --flexoki-orange-900:      #40200D;
+  --flexoki-orange-950:      #27180E;
+
+  --flexoki-yellow-50:       #FAEEC6;
+  --flexoki-yellow-100:      #F6E2A0;
+  --flexoki-yellow-150:      #F1D67E;
+  --flexoki-yellow-200:      #ECCB60;
+  --flexoki-yellow-300:      #DFB431;
+  --flexoki-yellow-400:      #D0A215;
+  --flexoki-yellow-500:      #BE9207;
+  --flexoki-yellow-600:      #AD8301;
+  --flexoki-yellow-700:      #8E6B01;
+  --flexoki-yellow-800:      #664D01;
+  --flexoki-yellow-850:      #503D02;
+  --flexoki-yellow-900:      #3A2D04;
+  --flexoki-yellow-950:      #241E08;
+
+  --flexoki-green-50:        #EDEECF;
+  --flexoki-green-100:       #DDE2B2;
+  --flexoki-green-150:       #CDD597;
+  --flexoki-green-200:       #BEC97E;
+  --flexoki-green-300:       #A0AF54;
+  --flexoki-green-400:       #879A39;
+  --flexoki-green-500:       #768D21;
+  --flexoki-green-600:       #66800B;
+  --flexoki-green-700:       #536907;
+  --flexoki-green-800:       #3D4C07;
+  --flexoki-green-850:       #313D07;
+  --flexoki-green-900:       #252D09;
+  --flexoki-green-950:       #1A1E0C;
+
+  --flexoki-cyan-50:         #DDF1E4;
+  --flexoki-cyan-100:        #BFE8D9;
+  --flexoki-cyan-150:        #A2DECE;
+  --flexoki-cyan-200:        #87D3C3;
+  --flexoki-cyan-300:        #5ABDAC;
+  --flexoki-cyan-400:        #3AA99F;
+  --flexoki-cyan-500:        #2F968D;
+  --flexoki-cyan-600:        #24837B;
+  --flexoki-cyan-700:        #1C6C66;
+  --flexoki-cyan-800:        #164F4A;
+  --flexoki-cyan-850:        #143F3C;
+  --flexoki-cyan-900:        #122F2C;
+  --flexoki-cyan-950:        #101F1D;
+
+  --flexoki-blue-50:         #E1ECEB;
+  --flexoki-blue-100:        #C6DDE8;
+  --flexoki-blue-150:        #ABCFE2;
+  --flexoki-blue-200:        #92BFDB;
+  --flexoki-blue-300:        #66A0C8;
+  --flexoki-blue-400:        #4385BE;
+  --flexoki-blue-500:        #3171B2;
+  --flexoki-blue-600:        #205EA6;
+  --flexoki-blue-700:        #1A4F8C;
+  --flexoki-blue-800:        #163B66;
+  --flexoki-blue-850:        #133051;
+  --flexoki-blue-900:        #12253B;
+  --flexoki-blue-950:        #101A24;
+
+  --flexoki-purple-50:       #F0EAEC;
+  --flexoki-purple-100:      #E2D9E9;
+  --flexoki-purple-150:      #D3CAE6;
+  --flexoki-purple-200:      #C4B9E0;
+  --flexoki-purple-300:      #A699D0;
+  --flexoki-purple-400:      #8B7EC8;
+  --flexoki-purple-500:      #735EB5;
+  --flexoki-purple-600:      #5E409D;
+  --flexoki-purple-700:      #4F3685;
+  --flexoki-purple-800:      #3C2A62;
+  --flexoki-purple-850:      #31234E;
+  --flexoki-purple-900:      #261C39;
+  --flexoki-purple-950:      #1A1623;
+
+  --flexoki-magenta-50:      #FEE4E5;
+  --flexoki-magenta-100:     #FCCFDA;
+  --flexoki-magenta-150:     #F9B9CF;
+  --flexoki-magenta-200:     #F4A4C2;
+  --flexoki-magenta-300:     #E47DA8;
+  --flexoki-magenta-400:     #CE5D97;
+  --flexoki-magenta-500:     #B74583;
+  --flexoki-magenta-600:     #A02F6F;
+  --flexoki-magenta-700:     #87285E;
+  --flexoki-magenta-800:     #641F46;
+  --flexoki-magenta-850:     #4F1B39;
+  --flexoki-magenta-900:     #39172B;
+  --flexoki-magenta-950:     #24131D;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--flexoki-paper);color:var(--flexoki-black);font:17px/1.7 system-ui,-apple-system,sans-serif}main{max-width:1100px;margin:auto;padding:38px 28px 80px}a{color:var(--flexoki-cyan-600);text-underline-offset:.18em}a:hover{color:var(--flexoki-cyan-800)}a:focus-visible{outline:3px solid var(--flexoki-cyan-600);outline-offset:4px}nav{display:flex;flex-wrap:wrap;gap:12px 28px;font-size:.86rem;margin-bottom:38px}nav a{min-height:44px;display:inline-flex;align-items:center}.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--flexoki-600)}h1{font-size:clamp(1.9rem,4vw,3.1rem);line-height:1.15;letter-spacing:-.035em;font-weight:650;max-width:24ch;margin:12px 0 28px}h2{font-size:1.45rem;line-height:1.3;letter-spacing:-.025em;margin:44px 0 16px;scroll-margin-top:24px}h3{font-size:1.1rem;margin-top:32px}p,ul,ol,blockquote{max-width:75ch}p{margin:0 0 20px}li{padding-left:.3em;margin-bottom:10px}article>p:has(img){max-width:none}figure{margin:30px 0}figure a{display:block}figure img{display:block;width:100%;height:auto;border:1px solid var(--flexoki-200)}figcaption{font-size:.82rem;color:var(--flexoki-600);margin-top:8px;line-height:1.5}code{font: .88em ui-monospace,monospace;overflow-wrap:anywhere}pre{background:var(--flexoki-50);padding:20px;overflow:auto;max-width:100%}blockquote{border-left:3px solid var(--flexoki-300);padding-left:20px;color:var(--flexoki-700)}.table-scroll{max-width:100%;overflow-x:auto;margin:28px 0}table{border-collapse:collapse;min-width:680px;font-size:.88rem}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--flexoki-200);padding:12px}th{background:var(--flexoki-50)}details{max-width:75ch;border-block:1px solid var(--flexoki-200);margin:24px 0 32px;padding:10px 0}summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-size:.9rem}.toc{margin-top:0}.toc li{margin-bottom:5px}footer{margin-top:50px;border-top:1px solid var(--flexoki-200);padding-top:20px;font-size:.85rem;color:var(--flexoki-600)}.reports{padding:0;list-style:none;max-width:800px}.reports li{padding:20px 0;border-bottom:1px solid var(--flexoki-200)}.reports a{font-size:1.15rem;font-weight:600}.reports p{font-size:.92rem;color:var(--flexoki-700);margin:4px 0 0}@media(max-width:650px){body{font-size:16px}main{padding:22px 18px 50px}nav{margin-bottom:26px;gap:4px 20px}}@media print{body{background:white;font-size:11pt}main{max-width:none;padding:0}nav,details,footer{display:none}h2{break-after:avoid}figure{break-inside:avoid}a{color:inherit}*{scroll-behavior:auto}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style></head><body><main><nav aria-label="Report navigation"><a href="territory02-reports.html">All reports</a><a href="../../tools/territory02/editor-loop/index.html">Latest drawing comparison</a></nav><div class="eyebrow">Territory02 · Study report</div><article><h1>Territory02 — rough and smooth coexistence</h1><details><summary>On this page</summary><ol class="toc"><li><a href="#what-this-responds-to">What this responds to</a></li><li><a href="#what-changes-and-what-remains-unresolved">What changes, and what remains unresolved</a></li><li><a href="#evidence-and-limits">Evidence and limits</a></li><li><a href="#independent-critique">Independent critique</a></li><li><a href="#possible-next-relationships-not-selected">Possible next relationships — not selected</a></li></ol></details>
+<p>5 October 2026. Screen study, in the existing <code>codex/territory02</code> worktree.</p>
+<p><strong>Later user verdict:</strong> Ian rejected these changes as barely noticeable, still
+starry and repetitive. The machine readings below are retained as evidence of
+that failed judgement, not acceptance. The follow-up
+<a href="territory02-rupture-2026-10-05.html">replaces the scaffold</a>.</p>
+<p><a href="../../tools/territory02/takeover/coexist/index.html">Comparison</a> ·
+<a href="../../tools/territory02/takeover/coexist/NOTES.md">Construction and reproduction</a> ·
+<a href="territory02-coexist-sol.html">Independent Sol reading</a></p>
+<p>The three relationships are now visible beside the actual earlier rough drawing
+and the new smooth passages alone. Continuity makes the strongest disturbances,
+sometimes producing awkward stretched bridges. Interference is often subtle.
+Independent coexistence preserves the contrast most literally, but its new
+curves can look superimposed. These are separate propositions for Ian to inspect;
+no winner, combined generator or production default has been selected.</p>
+<figure><a href="../../tools/territory02/takeover/coexist/evidence/comparison-24-unravel.png" aria-label="Open drawing at full size"><img src="../../tools/territory02/takeover/coexist/evidence/comparison-24-unravel.png" alt="Matched unravelling case, seed 24" loading="lazy"></a><figcaption>Matched unravelling case, seed 24 · Select to view full size</figcaption></figure>
+<h2 id="what-this-responds-to">What this responds to</h2>
+<p>Ian liked the rough three-material experiments, sometimes more than the smoother
+grammar probe. The latest hand drawing suggests broad sweeps, swollen returns,
+tight necks and concentrated corners, with different kinds of line sharing a
+sheet. It is a qualitative reference: no points, colours or contours were traced.
+The rough opening, pressure and unravelling results remain the foundation,
+including their inherited oddities. Their material was not regenerated using a
+cleaner recipe. All drawings retain a thin 0.1 mm physical stroke.</p>
+<p>Two substantial smooth paths are constructed in relation to actual surviving
+rough strokes. The construction uses unequal Bézier handles, large unequal
+excursions and an abrupt tangent change. It remains a bounded four-segment
+vocabulary. The smooth-only populations expose a remaining habit of curled,
+open lobes and pointed returns; this round does not establish an unrestricted
+new grammar. On dense sheets, the new paths can also become hard to distinguish
+at whole-sheet scale.</p>
+<h2 id="what-changes-and-what-remains-unresolved">What changes, and what remains unresolved</h2>
+<p><strong>Continuity</strong> exchanges part of an actual rough stroke for a smooth passage;
+a few nearby existing fragments partially follow it. At 24/unravelling, an angular
+ribbon crosses the pale belly. This is an interesting incompatible texture,
+but it can also resemble a stretched diagram imposed on the drawing. Fresh
+1009/opening develops an unusually dense angular weave at the upper right of
+the altered passage. That intervention has more consequence than a decorative
+smooth overlay, but greater consequence alone does not make it coherent.</p>
+<p><strong>Interference</strong> exchanges the source interval, then moves the smooth path and
+nearby short grain at measured dense contacts. Its local exchanges leave more of
+the earlier drawing intact. Some differences disappear at sheet scale; the
+1009/pressure close view makes the meeting of the broad return and angular grain
+legible, but does not prove a convincing mutual response everywhere.
+13/opening has no qualifying contact and 24/opening only one. These quiet cases
+remain in the population rather than being supplemented with a stock flourish.</p>
+<p><strong>Independent coexistence</strong> adds the smooth paths while preserving every rough
+stroke exactly. Original and new routes can enclose an unfamiliar space. Fresh
+1061/unravelling has a rounded hanging shape among interrupted fan-like lines;
+the curve can be read both as an enclosure and as a crossing. This keeps the
+rough material&#39;s autonomy. Elsewhere it risks adding another contour without
+changing how the material is read. It is also a different intervention from the
+other two: its original source intervals remain present.</p>
+<p>Material ownership in the interacting trials is inferred from earlier stroke
+ordering or short-run geometry. These are real surviving base strokes, but not
+an exact semantic fill layer. Some displaced bare fragments can qualify and
+some long material strokes are excluded. A future implementation should not
+mistake this prototype heuristic for reliable provenance.</p>
+<h2 id="evidence-and-limits">Evidence and limits</h2>
+<p>Development seeds 13/24 and fresh seeds 1009/1061 each run on three rough bases.
+That is twelve base cases and sixty final drawings, including both controls.
+The fresh population contains two independent seeds, not six: the bases share
+underlying drawings. Generator sources and dependencies were hash-frozen before
+the fresh seeds were generated. No geometry tuning followed their inspection.</p>
+<p>Repeatability, unchanged input hashes, finite coordinates, bed bounds, stroke
+budgets and optional stage geometry passed. Independent coexistence&#39;s rough
+prefix is exact. Largest output is 69,558 points; longest is about 32.81 m,
+below the study&#39;s 250k-point/100 m ceilings. These are mechanical checks.</p>
+<p>The gallery passed 120 image states at desktop/mobile sizes using its own
+SVG/CSS embedded at <code>about:blank</code>, with no external requests. Actual in-app file
+navigation and link opening remain unverified after the earlier security block.
+Whole sheets and matched 100×70 mm close views were inspected; the fixed close
+can miss the second smooth path or a material contact. Nothing was plotted.</p>
+<h2 id="independent-critique">Independent critique</h2>
+<p>The bounded Sol reviewer saw neutral calibration D/E/F and all ten neutral
+population sheets before learning their construction, plus selected close views.
+Its initial reading valued the central unsupported gap in the source-exchanged
+calibration as much as the more consequential additions. Across the population,
+it found continuity&#39;s angular interruptions worth protecting, while questioning
+whether repeated ribbons explained the same point twice. It also found a useful
+near-miss in independent coexistence&#39;s 1061 close view.</p>
+<p>I retain a more skeptical reading of the stretched bridges: their visible
+consequence can still look mechanically imposed. Conversely, the review&#39;s
+attention to an unsupported gap argues against treating every quiet interference
+case as a failure. Its proposed follow-up is especially useful: hold the field
+constant and place one rough passage crossing, touching and narrowly missing
+the same smooth boundary. That would separate the effect of contact from the
+effect of proximity. The complete review preserves initial readings and any
+later attribution corrections; it is evidence, not automatic acceptance.</p>
+<p>After the reveal, the reviewer separated the useful appearance of W/independent&#39;s
+near-miss from a claim of causal response: the rough base is unchanged. I agree
+with that distinction while retaining proximity as a legitimate aesthetic
+relationship. It corrected one close-view attribution from N·1009·b/c to
+N·1009·a; the original reading and explicit correction remain in its report.</p>
+<h2 id="possible-next-relationships-not-selected">Possible next relationships — not selected</h2>
+<ul>
+<li>Start from independent coexistence and allow only one local exchange where
+a smooth passage meets rough material. This could preserve the rough base&#39;s
+autonomy without leaving every meeting incidental.</li>
+<li>Keep continuity&#39;s angular bridges as occasional ruptures, with long smooth
+stretches before and after them. Their rarity would need testing; applying
+the same bridge everywhere would create another obvious repeated device.</li>
+<li>Let a rough fragment change the <em>kind</em> of smooth continuation: an open arc
+could split, stall, double back or end. That would change the current fixed
+path construction more deeply than increasing displacement.</li>
+</ul>
+<p>These are proposals for discussion after Ian sees the results. The three current
+trials and their weak cases remain available without a merged style.</p>
+</article><footer>Territory02 · Screen studies · 5 October 2026</footer></main></body></html>

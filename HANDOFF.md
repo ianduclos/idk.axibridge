@@ -1,13 +1,20 @@
 ---
 project: idk.axibridge
-updated: 2026-10-05
-entries: 26
+updated: 2026-10-08
+entries: 29
 ---
+
+### Integrated branches: native activation and archive retirement — opened 2026-10-08, owner: ian
+
+- done: Mosca 2, recovery/groups/Assets and the Territory02 study source/history are integrated locally. The three branches are retained; the old vault worktree folders are gone. Territory02 remains a separate study, without production renderer convergence.
+- verification: Final isolated suite: 1,819 passed, one native-launch skip (376 s); typecheck/build passed. Twelve Territory02 revisions replayed byte-identically. Narrow-header wrapping and a Gallery test save race were corrected; an initial bench preview timeout passed on rerun. Existing Starlette and NumPy deprecation warnings remain.
+- next: Before activation, recheck the running app/backend ownership and job state, preserve its open project and use matching backend/frontend builds. Then check recovery, groups, Assets and Mosca 2 in the native app; paper acceptance remains. This integration did not restart the app, push or sync the Pi.
+- archives: Four AxiBridge full archives (1,193,667,789 bytes) remain in `/Users/ianduclos/worktrees/codex-archives/2026-10-08-01-projects-cleanup`. Their Git commits are on main, but local notes, ignored study output and two modified comparison PNGs still need preservation before full-archive retirement. See `axibridge-backup-retirement-preview.json` in that folder. Never infer that merging alone preserves ignored or uncommitted content.
 
 ### Mosca × Territory composition instrument — opened 2026-10-05, owner: Codex
 
-- done: Native Mosca 2 source/bench implemented on `codex/mosca2-bench` in
-  `/Users/ianduclos/_SecondBrain/01_Projects/mosca2-bench/idk.axibridge`.
+- done: Native Mosca 2 source/bench implemented on `codex/mosca2-bench`,
+  locally integrated on 8 October; the original worktree is archived and removed.
   Six starting pieces, seven original flowing drawings, Territory generation,
   part transforms, live fresh-brain bouts, cancellation, history and portable
   Keep/Resume are connected through the ordinary source/resolve pipeline.
@@ -21,10 +28,9 @@ entries: 26
   Current normal-app project `yoyomah` (three layers) has a read-only ZIP backup
   at the study lab's `mosca2-delivery/normal-app-before-mosca2.zip`; its backend
   on 2942 was idle and connected to the Pi when checked. Recheck before activation.
-- next: Ian checks the preview at `http://127.0.0.1:54826` (isolated config,
-  no autoconnect). Main integration and normal-app activation need explicit
-  authorization under the workshop Git rules; do not restart an active plot.
-  Compare a matched local-passage intervention and contact-off, then paper.
+- next: Activate through the normal app only after preserving its project and
+  checking the backend is idle; do not restart an active plot. Then compare a
+  matched local-passage intervention and contact-off, followed by paper.
 - blockers: User/native/paper acceptance remains. Brain-led composition is
   experimental, not established intelligence or learning. A new Run resets
   neural state; Resume only restores the composed page and recorded history.
@@ -51,8 +57,22 @@ entries: 26
 - done: Detached kept-project recovery, 30-second changed checkpoints, atomic fallback archives, startup/older recovery choices, safe replacement and close/restart guards. Version 3 nested affine groups, atomic editing and reparenting preserve plotting order, visibility and live interpolation reference frames. Assets is separate; generators stay first in Compose. Taller dock, shortcuts, seed dice and preset management disclosure are included.
 - verification: Full hardware-free suite: **1,786 passed**, one existing Starlette deprecation warning. Focused recovery crash/race/close/restart checks and group multi-frame/effect/visibility/reference checks pass. Typecheck/build pass. Seven integrated screenshots cover 1024×768 and 1500×950; native interaction remains provisional.
 - next: Try native recovery close/relaunch and older project restore; edit nested groups and Animate chains, nudge/duplicate and move between groups, and check Assets/Gallery selection. Judge actual overlap and fixed millimetre effects on paper. At 1024×768 the layer name is compressed and Depth Pro requires scrolling.
-- state: Isolated branch `codex/recovery-groups-usability`, worktree `/Users/ianduclos/_SecondBrain/01_Projects/recovery-groups-usability/idk.axibridge`. Original main remains at baseline `92ed5cf`. Feature merge/push and deployment require a separate instruction. Unkept bench drafts are intentionally outside recovery.
+- state: Locally integrated on 8 October; `codex/recovery-groups-usability` is retained and the old worktree archived/removed. Native activation and push remain separate. Unkept bench drafts are intentionally outside recovery.
 - context: [Group contract](docs/LAYER-GROUPS.md), [recovery contract](docs/RECOVERY.md), [visual evidence](shots/recovery-groups-0930/README.md), [execution ledger](docs/superpowers/plans/2026-09-30-recovery-groups-usability-progress.md).
+
+### Territory02: direction after independent curve studies — opened 2026-10-05, owner: ian
+
+- done: Three separate Sol makers, three frozen rounds, thin 0.1 mm matched sparse/full populations, independent aesthetic reviews, comparison viewer and report. Third round tests explicit unequal Bézier controls and tighter selected returns. Mechanical geometry and viewer checks passed.
+- brainstorm: [Multidimensional brainstorm](docs/reviews/territory02-brainstorm-2026-10-05.html) responds to the rejection of boring new work. Ten dimensions, six cross-dimension probes, combination risks and an alternative agent loop. Bounded second-eye disagreement retained. Discussion only; do not infer permission to implement all proposals or converge them.
+- next: Follow the [adopted agent loop](docs/reviews/territory02-agent-loop-2026-10-05.html) for the next drawing study. Three makers edit two shared actual drawings; separate Sol review; eight-cell HTML contact sheet before round two. [Round one is complete](tools/territory02/editor-loop/index.html): twelve saved edits, six selections, two controls; all histories retained. Ian responds before round two. Makers all concentrated material with peripheral smooth paths; broader grammar remains unproven. Connections branch implies continuation without literal endpoint exchange. Geometry replay and page checks recorded in editor-loop/evidence. Preserve branches; no automatic convergence.
+- rupture: Primary-generated open constructions/folded bodies, bounded Sol mechanical support and independent calibrated review. Development13/24/47; source frozen before fresh1151/1213/1277. All main courses new, no old thorn/slash/base layers emitted; actual d-grow fragments cropped/warped on finite chord frames. V1 moving-normal collapse archived. Remaining texture can still repeat angular combs; no general grammar or aesthetic success claim. Geometry/viewer evidence and reproduction in `tools/territory02/takeover/rupture/NOTES.md`.
+- coexistence: Two bounded Sol makers, primary-owned smooth paths and independent branch, neutral calibrated Sol review. Development 13/24 and fresh 1009/1061 each span opening/pressure/unravelling: sixty final drawings, 120 in-memory viewer images. Frozen source/hash manifest preceded fresh generation; no subsequent geometry tuning. Input purity, repeatability, finite/bounded geometry and independent rough-prefix preservation passed. Material provenance in the two interacting branches is inferred, not exact. Source and limits in `tools/territory02/takeover/coexist/NOTES.md`.
+- probe: New contact/continuation regime consumes actual earlier-pass courses. Failed trials and current frozen source retained; fresh seeds 107/173/227/281 follow the latest freeze. Thirty geometry cases and 60 viewer images passed. Screen only; no interactive or paper acceptance. Implementation/reproduction limitations in `tools/territory02/takeover/NOTES.md`.
+- fill: Shared bands and hatched pockets use identical base curves, course-derived paired boundaries and strict new-fill ink allowances. Source frozen before fresh 113/179/233/293; 80 geometry cases and 160 in-memory viewer images passed. Ordinary filled Territory is a reference with different curves and recorded nominal-budget overshoot. Blind Sol review and primary disagreement retained. Pair connectivity alone does not explain coherence (13/179 already share a principal course). Automatic security blocked local file navigation; own-artifact in-memory rendering verified controls/layout. Limits/reproduction in `tools/territory02/takeover/fill/NOTES.md`.
+- texture: Actual original density/texture code and nominal60m full recipe restored, original output identical. Two regrowth probes retain identical takeover base curves; one retains prior activity/history, the other rebuilds those guides from actual earlier/current courses. Forty cases and 80 in-memory viewer images passed. Source frozen before fresh331/389/419/463; no tuning after viewing. Texture returns but can seed from secondary continuations away from principal new courses; seed389 bare detail is genuinely empty, not a loading fault. Screen only, not paper/interaction/IAB navigation acceptance. Panel fills now explicitly rejected. Limits/reproduction in `tools/territory02/takeover/texture/NOTES.md`.
+- material/grammar: Three Sol makers, one bounded opening revision and independent calibrated review. Both studies have 50 geometry cases and 100 in-memory image states. Material frozen before 521/587/631/683; grammar frozen before 739/797/853/911. No tuning after fresh populations. Failed sources, matched frames, causal event crops and reports retained. Original baseline parity rechecked. No paper/IAB-navigation acceptance; source and reproduction in each NOTES.md.
+- state: Study sources/history locally preserved on main on 8 October; `codex/territory02` is retained and the old worktree archived/removed. Production renderer and original prototype are unchanged. Some historical event geometry deliberately disagrees with reshaped curves; those limitations must be resolved if a mechanism moves into production. All six seeds were available by the later three-maker rounds; those rounds make no fresh generalization claim. The takeover probe has its own fresh screen population, without paper/interaction acceptance.
+- context: `tools/territory02/README.md` documents reproduction. Neutral PNG evidence and source snapshots are retained; large SVG/HTML copies are reproducible and ignored. No push, merge, running app, hardware or Pi action.
 
 ### Territory bench: native and paper acceptance — opened 2026-09-29, owner: ian
 

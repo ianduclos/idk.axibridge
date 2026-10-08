@@ -1,0 +1,10 @@
+{
+  "S1": 2,
+  "S2": 2,
+  "notes": {
+    "S1": "Stage2 has a denser damaged diagonal bank and a more consequential angular lower passage than stage1, whose material islands and long sleeves floated apart. The revision loses the source's competing sheet-wide courses and stage1's remote grain corner. Parallel inherited grain and two similar smooth caps still repeat; the close view shows woven line texture, not a fully grown rough body.",
+    "S2": "Stage2 makes the bank kink across the sheet and overlaps its foot with the compressed fan instead of preserving stage1's feather column and floating loops. It loses the long empty-headed suspense of the starting state. Inherited combs and a small knotted upper passage remain, and the added bulb still feels more authored beside the texture than grown from it."
+  },
+  "inspection": "Inspected both inputs whole and close, then every stage whole and close; stage2 decisions are based on those renders.",
+  "limits": "Source strands were clipped, removed, transformed, overlapped and partly warped. Newly authored courses imply continuations by placement; no literal endpoint exchange, joined-strand topology or connectivity representation was implemented. Shared .1mm stroke, 300x218mm page; screen study only."
+}

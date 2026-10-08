@@ -1,0 +1,30 @@
+{
+  "development": [
+    13,
+    24
+  ],
+  "fresh": [
+    1009,
+    1061
+  ],
+  "bases": [
+    "opening",
+    "pressure",
+    "unravel"
+  ],
+  "frozen_before_fresh_generation": true,
+  "sha256": {
+    "common.cjs": "04ee2a6b7d811a1d803dd7b99657382e7d7b047f540587c452a6bb563d02f859",
+    "continuity.cjs": "f73550dcec5cc8e927d0946fc774ca65a9c8dffa7c6a78be7a6d66e213a425b3",
+    "interference.cjs": "5b15e98e96e252f6a20448ac998fdb652f2b5ff7df53bdf467612280c27f018b",
+    "independent.cjs": "3cfd5f5c92472c69193a4f1e8abacf9a7f1ecb8156ed206fdae58e5243850c04",
+    "render.cjs": "1925959a5dfafedc41b9ffaea1a5e4b50626ae70b35b55fba86e84c0c1267a12",
+    "../material/common.cjs": "b63e0e69020d6e5cf7570d7593b8d8bfa1a604b86b38741307f73d370c9c0926",
+    "../material/opening.cjs": "fde2d51c1d34bbb4e7f27f52b89e585448d378c9033aa894b6336502f21d87b2",
+    "../material/pressure.cjs": "81172a0e7b748485edb39117b3594aad0d1dd4be8af8d1d50bc7a5fe4dc48161",
+    "../material/unravel.cjs": "90672a19f4f252ca5dbc1ab2d7f57739aae53c3e00a74722daea8bd1f4c54951",
+    "../rewrite.cjs": "f388f8afbd2d151e9a61578452fcbdcc5f2083e0936a3ab1fff5001a30872288",
+    "../texture/regrow.cjs": "15fff2151c3736ce5e02cea0745134ca7e5b37f6048f4b7b4d0638d8aefbdd90",
+    "../../full.json": "ca52a38c56fc42fa66d485b4bda6eee00e293b9b32e9c6a77b550e21aa33dfda"
+  }
+}

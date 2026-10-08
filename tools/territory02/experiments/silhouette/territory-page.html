@@ -1,0 +1,245 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Territory</title>
+<style>
+/* Layout: sheet left, dials right; a contact sheet of seeds below. Flexoki, system faces. */
+:root {
+  --bg: #FFFCF0; --bg2: #F2F0E5; --ui: #E6E4D9; --ui2: #DAD8CE; --ui3: #CECDC3;
+  --tx: #100F0F; --tx2: #6F6E69;
+  --accent: #BC5215; --accent-soft: rgba(188,82,21,.12);
+  --paper: #FFFCF0; --ink: #100F0F; --paper-edge: #CECDC3;
+  --c1: #24837B; --c2: #BC5215; --c3: #5E409D; --c0: #878580;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #100F0F; --bg2: #1C1B1A; --ui: #282726; --ui2: #343331; --ui3: #403E3C;
+  --tx: #CECDC3; --tx2: #878580; --accent: #DA702C; --accent-soft: rgba(218,112,44,.16); --paper-edge: #403E3C; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #100F0F; --bg2: #1C1B1A; --ui: #282726; --ui2: #343331; --ui3: #403E3C;
+  --tx: #CECDC3; --tx2: #878580; --accent: #DA702C; --accent-soft: rgba(218,112,44,.16); --paper-edge: #403E3C; color-scheme: dark }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--tx); font-family: var(--sans); margin: 0; }
+.wrap { padding-inline: 16px; padding-block: 20px 40px; max-width: 1320px; margin: 0 auto; display: grid; gap: 18px; }
+h1 { font-size: 22px; font-weight: 650; letter-spacing: -.01em; margin: 0; }
+.sub { color: var(--tx2); margin: 4px 0 0; font-size: 13.5px; max-width: 64ch; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bench { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 18px; align-items: start; }
+@media (max-width: 860px) { .bench { grid-template-columns: minmax(0,1fr); } }
+.sheet { width: 100%; aspect-ratio: 300 / 218; display: block; border: 1px solid var(--paper-edge); border-radius: 2px; background: var(--paper); }
+.sheetmeta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-top: 8px; font-size: 12px; color: var(--tx2); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+aside { display: grid; gap: 12px; background: var(--bg2); border: 1px solid var(--ui); border-radius: 8px; padding: 14px; min-width: 0; }
+.label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--tx2); font-weight: 600; }
+.dial { display: grid; grid-template-columns: 1fr auto auto; gap: 2px 8px; font-size: 13px; align-items: center; }
+.dial.sub { padding-left: 10px; border-left: 2px solid var(--ui2); }
+#dials { display: grid; gap: 12px; }
+.dial output { font-family: var(--mono); font-size: 12px; color: var(--tx2); font-variant-numeric: tabular-nums; }
+.dial small { grid-column: 1 / -1; color: var(--tx2); font-size: 11.5px; line-height: 1.35; }
+.dial input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin: 2px 0 0; }
+.lock { border: 0; background: none; padding: 2px; color: var(--tx2); cursor: pointer; display: grid; place-items: center; border-radius: 4px; }
+.lock svg { width: 14px; height: 14px; }
+.lock[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
+.lock .shut { display: none; } .lock[aria-pressed="true"] .shut { display: inline; } .lock[aria-pressed="true"] .open { display: none; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.btn { font: inherit; font-size: 12.5px; border: 1px solid var(--ui2); background: var(--bg); color: var(--tx); padding: 6px 10px; border-radius: 5px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.btn svg { width: 14px; height: 14px; }
+.btn:hover { border-color: var(--ui3); }
+.btn.primary { border-color: var(--accent); color: var(--accent); }
+.chk { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+.chk input { accent-color: var(--accent); }
+#seed, #recipeIn { font: inherit; font-family: var(--mono); font-size: 12.5px; padding: 5px 6px; border: 1px solid var(--ui2); border-radius: 5px; background: var(--bg); color: var(--tx); }
+#seed { width: 76px; }
+#recipeIn { width: 100%; box-sizing: border-box; }
+.recipe { font-family: var(--mono); font-size: 11.5px; color: var(--tx2); line-height: 1.4; word-break: break-word; margin: 0; }
+.hint { font-size: 12px; color: var(--tx2); margin: 0; min-height: 1em; }
+section.contact { display: grid; gap: 12px; border-top: 1px solid var(--ui); padding-top: 16px; }
+.contact h2 { font-size: 15px; margin: 0; font-weight: 650; }
+.minis { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+figure { margin: 0; display: grid; gap: 4px; min-width: 0; }
+figure canvas { width: 100%; aspect-ratio: 300 / 218; display: block; background: var(--paper); border: 1px solid var(--paper-edge); border-radius: 2px; cursor: pointer; }
+figcaption { font-size: 11.5px; color: var(--tx2); font-family: var(--mono); font-variant-numeric: tabular-nums; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Territory</h1>
+    <p class="sub">Rivers migrate over a few scattered cores. Bends swell into bundles, tangle where they work hardest and leave traces where they were. Curves bridge the places where they cross. One pen; the plot is the black ink only.</p>
+  </header>
+
+  <div class="bench">
+    <div>
+      <canvas class="sheet" id="sheet" aria-label="Drawing sheet, 300 by 218 millimetres"></canvas>
+      <div class="sheetmeta"><span id="stats"></span><span>300 × 218 mm</span></div>
+    </div>
+    <aside>
+      <div class="row">
+        <button class="btn primary" id="randomize"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></svg>Randomize</button>
+        <span class="hint">locked dials stay</span>
+      </div>
+      <div class="dial">
+        <label for="seed">Seed</label>
+        <input id="seed" type="number" min="1" max="99999" value="22">
+        <button class="lock" data-lock="seed" aria-pressed="false" aria-label="Lock seed"></button>
+        <small>Picks the cores and every chance in the drawing.</small>
+      </div>
+      <div id="dials"></div>
+      <label class="chk"><input type="checkbox" id="showCores"> Show cores</label>
+      <div class="label">Settings</div>
+      <p class="recipe" id="recipe"></p>
+      <div class="row">
+        <button class="btn" id="copyRecipe">Copy settings</button>
+        <button class="btn" id="copySvg">Copy SVG</button>
+      </div>
+      <input id="recipeIn" placeholder="Paste settings and press Enter" aria-label="Paste settings">
+      <p class="hint" id="msg" aria-live="polite"></p>
+    </aside>
+  </div>
+
+  <section class="contact">
+    <div class="row" style="justify-content: space-between">
+      <h2>Twelve seeds</h2>
+      <div class="row"><button class="btn" id="prev12">Previous 12</button><button class="btn" id="next12">Next 12</button></div>
+    </div>
+    <p class="hint">Current dials, twelve seeds from the one on the sheet. Click one to load it.</p>
+    <div class="minis" id="minis"></div>
+  </section>
+</div>
+
+<script>
+/*ENGINE*/
+</script>
+<script>
+const $ = id => document.getElementById(id);
+const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+// Dials: [key, label, min, max, randomize range, note]. Defaults come from the engine.
+const DIALS = [
+  ['complexity', 'Complexity', 0, 1, [0.2, 0.9], 'How many channels, and whether a second river crosses the first.'],
+  ['drift', 'Drift', 0.2, 1, [0.35, 0.9], 'How far the bends migrate from where they started.'],
+  ['band', 'Band', 0.5, 2, [0.7, 1.5], 'Width of the strand bundles; low is nearly single lines.'],
+  ['chaos', 'Chaos', 0, 1, [0.2, 0.8], 'Tangles, searching passes and events, kept to a few places; the rest stays deliberate.'],
+  ['accents', 'Accents', 0, 1, [0.2, 0.9], 'Tight stated arcs beside sharp bends and next to the chaos.'],
+  ['bridges', 'Bridges', 0, 1, [0.2, 0.9], 'Curves that join lines where they cross or nearly meet, on a plane of their own.'],
+  ['history', 'History', 0, 1, [0.3, 0.9], 'How often an event leaves traces of where a channel was.'],
+  ['density', 'Density', 0, 1.5, [0.3, 1.2], 'How busy the sheet gets: shapes carry on, fields fill, cuts and surprises arrive. 0 is the calm drawing; past 1 is over.', 'Density'],
+  ['continue', 'Continue', 0, 2, [0.2, 1.6], 'Bands run past their ends, wrap, and cross the sheet as ribbons. Past 1 is over.', 'sub'],
+  ['cover', 'Cover', 0, 1, [0.3, 0.55], 'How much of the ground gets filled; some voids stay dark.', 'sub'],
+  ['planes', 'Planes', 0, 1, [0, 0.6], 'Where the fill comes from. 0: grown out of the lines as echoes. Below 0.5 brushed planes are rare events that cross the lines; 1 is all planes.', 'sub'],
+  ['mutate', 'Mutate', 0, 1.5, [0.3, 1.3], 'Changes inside the grown fields, passed on echo to echo: spacing jumps, buckles, oxbows, breaks, fans, splits. Past 1 is over.', 'sub'],
+  ['slash', 'Slash', 0, 2, [0, 1.6], 'Straight cuts and shard wedges across the forms. Past 1 is over.', 'sub'],
+  ['surprise', 'Surprise', 0, 2, [0, 1.6], 'A region that switches register; past 1.3, two. Past 1 is over.', 'sub'],
+  ['ink', 'Ink limit (m)', 5, 100, [20, 80], 'Most ink a sheet may use. Plot time grows with ink and pen lifts.', 'sub'],
+];
+const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path class="shut" d="M7 11V7a5 5 0 0 1 10 0v4"/><path class="open" d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
+const BASE = { loose: 0.5, yieldP: 0.5, wander: 1, reach: 15, spread: 0.7, eps: 0.03, borders: true, outer: true, voids: true, interior: false, disregard: 0.15, hyst: 25, render: 'meander' };
+const DEF = { ...MEANDER_MACROS, cover: 0.45, planes: 0.15, mutate: 1 };
+let v8 = false;   // a pasted Version 8 recipe (no planes) runs exactly as it did: the engine's planes-only path
+let locks = store.get('meander.locks', {}), last = null, contactFrom = null;
+
+for (const [k, name, lo, hi, , note, grp] of DIALS) {
+  if (grp && grp !== 'sub') { const h = document.createElement('div'); h.className = 'label'; h.style.marginTop = '6px'; h.textContent = grp; $('dials').append(h); }
+  const d = document.createElement('div'); d.className = 'dial' + (grp === 'sub' ? ' sub' : '');
+  d.innerHTML = `<label for="d_${k}">${name}</label><output id="d_${k}V"></output><button class="lock" data-lock="${k}" aria-pressed="false" aria-label="Lock ${name.toLowerCase()}"></button><input type="range" id="d_${k}" min="${lo}" max="${hi}" step="any"><small>${note}</small>`;
+  $('dials').append(d);
+}
+for (const b of document.querySelectorAll('.lock')) {
+  b.innerHTML = LOCK_SVG;
+  b.setAttribute('aria-pressed', String(!!locks[b.dataset.lock]));
+  b.addEventListener('click', () => { locks[b.dataset.lock] = !locks[b.dataset.lock]; b.setAttribute('aria-pressed', String(locks[b.dataset.lock])); store.set('meander.locks', locks); });
+}
+
+function seed() { return Math.max(1, Math.floor(+$('seed').value || 1)); }
+function dials() { const o = {}; for (const [k] of DIALS) o[k] = +(+$('d_' + k).value).toFixed(2); return o; }
+function setDials(o) { for (const [k] of DIALS) if (o[k] !== undefined && isFinite(o[k])) $('d_' + k).value = o[k]; if (o.seed) $('seed').value = Math.floor(o.seed); sync(); }
+const fmt = (k, v) => k === 'ink' ? String(Math.round(v)) : (+v).toFixed(2);
+function sync() { for (const [k] of DIALS) $('d_' + k + 'V').textContent = fmt(k, $('d_' + k).value); $('recipe').textContent = recipe(); }
+function recipe() { const d = dials(); return `seed ${seed()} · ` + DIALS.filter(([k]) => !(v8 && (k === 'planes' || k === 'mutate'))).map(([k]) => `${k} ${fmt(k, d[k])}`).join(' · ') + (v8 ? ' · version 8' : ''); }
+function parseRecipe(s) { const o = {}; for (const m of s.matchAll(/([a-z]+)\s+(-?[\d.]+)/gi)) o[m[1].toLowerCase()] = +m[2]; return o; }
+function run(sd, d, quality) { const sh = randomSheet(sd); if (v8) { d = { ...d }; delete d.planes; delete d.mutate; } return runTerritory(sh.cores, { ...BASE, camps: Math.max(2, sh.camps), ...d, ...(quality ? { quality } : {}) }, sd, 'reversed'); }
+
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function sizeCanvas(cv) {
+  const r = cv.getBoundingClientRect(), dpr = Math.min(3, window.devicePixelRatio || 1);
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.width * 218 / 300 * dpr));
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  return cv.width / 300;
+}
+function drawSheet(cv, res, opt = {}) {
+  const k = sizeCanvas(cv), g = cv.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = css('--paper'); g.fillRect(0, 0, cv.width, cv.height);
+  g.setTransform(k, 0, 0, k, 0, 0);
+  if (opt.cores) {
+    g.save(); g.lineCap = 'round'; g.lineWidth = Math.max(0.35, 1.2 / k); g.globalAlpha = 0.8;
+    for (const c of res.cores) {
+      g.strokeStyle = css(c.camp === 0 ? '--c0' : '--c' + c.camp); g.setLineDash(c.camp === 0 ? [0.5, 1.6] : [2.2, 1.6]);
+      g.beginPath(); c.pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke();
+    }
+    g.restore();
+  }
+  g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = css('--ink'); g.lineWidth = Math.max(opt.thin ? 0.45 : 0.6, 0.2 * k) / k;
+  for (const l of res.lines) for (const st of l.strokes) { g.beginPath(); st.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); }
+}
+const lifts = res => res.lines.reduce((a, l) => a + l.strokes.length, 0);
+const inkM = res => (res.lines.reduce((a, l) => a + l.strokes.reduce((b, s) => b + polyLen(s), 0), 0) / 1000).toFixed(1);
+
+let timer = 0;
+function render(delay = 0) { clearTimeout(timer); timer = setTimeout(renderNow, delay); }
+function renderNow() {
+  sync();
+  last = run(seed(), dials());
+  redraw();
+  $('stats').textContent = `seed ${seed()} · ${inkM(last)} m ink · ${lifts(last)} strokes`;
+  store.set('meander.settings', { seed: seed(), ...dials() });
+}
+function redraw() { if (last) drawSheet($('sheet'), last, { cores: $('showCores').checked }); }
+
+let contactRun = 0;
+function contact(from) {
+  contactFrom = Math.max(1, from); const my = ++contactRun, host = $('minis'), d = dials(); host.innerHTML = '';
+  let i = 0;
+  const step = () => {
+    if (my !== contactRun || i >= 12) return;
+    const sd = contactFrom + i++, f = document.createElement('figure'), cv = document.createElement('canvas'), cap = document.createElement('figcaption');
+    f.append(cv, cap); host.append(f);
+    const res = run(sd, d, 'thumb'); cap.textContent = `seed ${sd} · ${inkM(res)} m`;
+    requestAnimationFrame(() => drawSheet(cv, res, { cores: $('showCores').checked, thin: true }));
+    cv.title = 'Load onto the sheet';
+    cv.addEventListener('click', () => { $('seed').value = sd; renderNow(); $('sheet').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    setTimeout(step, 0);
+  };
+  step();
+}
+
+for (const [k] of DIALS) {
+  $('d_' + k).addEventListener('input', () => { if (k === 'planes' || k === 'mutate') v8 = false; sync(); render(90); });
+  $('d_' + k).addEventListener('change', () => contact(contactFrom));
+}
+$('seed').addEventListener('change', () => { renderNow(); contact(seed()); });
+$('showCores').addEventListener('change', () => { redraw(); contact(contactFrom); });
+$('prev12').addEventListener('click', () => contact(contactFrom - 12));
+$('next12').addEventListener('click', () => contact(contactFrom + 12));
+$('randomize').addEventListener('click', () => {
+  const o = {};
+  for (const [k, , , , [a, b]] of DIALS) if (!locks[k]) o[k] = +(a + (b - a) * Math.random()).toFixed(k === 'ink' ? 0 : 2);
+  if (!locks.seed) o.seed = 1 + Math.floor(Math.random() * 9999);
+  v8 = false; setDials(o); renderNow(); contact(seed());
+});
+const say = t => { $('msg').textContent = t; };
+function copy(text, ok) { try { navigator.clipboard.writeText(text).then(() => say(ok), () => say('The clipboard is not available here.')); } catch { say('The clipboard is not available here.'); } }
+$('copyRecipe').addEventListener('click', () => copy(recipe(), 'Copied the settings.'));
+$('recipeIn').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const o = parseRecipe($('recipeIn').value);
+  if (!Object.keys(o).length) return say('No settings found in that text.');
+  v8 = o.density > 0 && o.planes === undefined; setDials(o); renderNow(); contact(seed()); say(v8 ? 'Loaded a Version 8 recipe; it runs as it did. Move Planes or Mutate to leave that mode.' : 'Loaded the settings.'); $('recipeIn').value = '';
+});
+$('copySvg').addEventListener('click', () => {
+  const paths = last.lines.flatMap(l => l.strokes).map(st => `<path d="M${st.map(p => p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join(' L')}"/>`).join('\n');
+  copy(`<svg xmlns="http://www.w3.org/2000/svg" width="300mm" height="218mm" viewBox="0 0 300 218"><g fill="none" stroke="#000" stroke-width="0.2" stroke-linecap="round" stroke-linejoin="round">\n${paths}\n</g></svg>`, 'Copied the plotted lines as SVG, in millimetres.');
+});
+window.addEventListener('resize', redraw);
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { redraw(); contact(contactFrom); });
+
+setDials({ ...DEF, seed: 22, ...store.get('meander.settings', {}) });
+renderNow(); contact(seed());
+</script>

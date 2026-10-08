@@ -1,0 +1,94 @@
+{
+  "maker": "composition",
+  "selections": [
+    {
+      "sourceInput": "S1",
+      "chosenStage": 2,
+      "id": "composition-S1-stage2",
+      "geometry": "S1-stage2.json",
+      "render": "S1-stage2.png",
+      "close": "S1-stage2-close.png",
+      "stage1Inspection": "Long inflated smooth ends made banana chambers, and a lone droplet became a sticker; tighten both voids and join the angular counterweight to the grain.",
+      "note": "The dispersed field becomes one unequal oblique body with narrow folded passages and intersecting grain directions. The scattered air of the original is lost. The lower curved comb still repeats its inherited sweep."
+    },
+    {
+      "sourceInput": "S2",
+      "chosenStage": 2,
+      "id": "composition-S2-stage2",
+      "geometry": "S2-stage2.json",
+      "render": "S2-stage2.png",
+      "close": "S2-stage2-close.png",
+      "stage1Inspection": "The wide empty U framed the inherited fan like a cartoon; remove its hanging arcs, flatten the bed, and bring the angular flank into the material.",
+      "note": "The right-side column becomes a low wider body crossed by one angular flank and a tighter smooth construction. The first stage loses its broad hanging rhythm. The isolated left comb and clipped rectangular gaps remain weak."
+    }
+  ],
+  "allStagesInspected": [
+    "S1-stage1.png",
+    "S1-stage1-close.png",
+    "S1-stage2.png",
+    "S1-stage2-close.png",
+    "S2-stage1.png",
+    "S2-stage1-close.png",
+    "S2-stage2.png",
+    "S2-stage2-close.png"
+  ],
+  "checks": {
+    "S1-stage1": {
+      "sha256": "0cc775659d05c74f42e4f37e1dafacb0449e4eeef9ee90d4ef0ac50395da2607",
+      "strokes": 306,
+      "points": 55318,
+      "inkMm": 9519.26,
+      "boundsMm": [
+        55,
+        35,
+        240,
+        195.7465567524739
+      ],
+      "finiteBounded": true,
+      "reproducedIdentically": true
+    },
+    "S1-stage2": {
+      "sha256": "42096cac73d837a50d030779c6a9d0b55ef08f3267cd5490575a6bd6c5dd0e7c",
+      "strokes": 501,
+      "points": 70326,
+      "inkMm": 10875.54,
+      "boundsMm": [
+        49,
+        44,
+        251,
+        171.17626308602638
+      ],
+      "finiteBounded": true,
+      "reproducedIdentically": true
+    },
+    "S2-stage1": {
+      "sha256": "f0ec3aa717df3dfb9e504871f174e51037ada983ea34d15bb9001bf10dbe51e8",
+      "strokes": 342,
+      "points": 42137,
+      "inkMm": 7511.6,
+      "boundsMm": [
+        39.44444444444445,
+        42,
+        249,
+        184
+      ],
+      "finiteBounded": true,
+      "reproducedIdentically": true
+    },
+    "S2-stage2": {
+      "sha256": "797b461bd814023c7ebd947b959537029a66f5db24048d047dc2f7b7f3a2b886",
+      "strokes": 341,
+      "points": 32478,
+      "inkMm": 6685.96,
+      "boundsMm": [
+        44.815120697021484,
+        39,
+        233,
+        179
+      ],
+      "finiteBounded": true,
+      "reproducedIdentically": true
+    }
+  },
+  "limits": "Screen study only; fixed 0.1 mm paths on 300 x 218 mm, no physical plotting. Crops split into separate strokes at omitted regions; dense crossings accumulate ink and can hide thin passages in thumbnails."
+}

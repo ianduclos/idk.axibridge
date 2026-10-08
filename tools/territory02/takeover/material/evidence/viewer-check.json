@@ -1,0 +1,258 @@
+{
+  "scope": "ten seeds, whole and same-framed detail",
+  "method": "page.set_content at about:blank with CSS and generated SVG text inlined; viewer controller preserved; no URL navigation",
+  "seeds": [
+    5,
+    13,
+    18,
+    24,
+    47,
+    82,
+    521,
+    587,
+    631,
+    683
+  ],
+  "views_checked": 20,
+  "images_checked": 100,
+  "arrow_wrap": "passed",
+  "full_svg_links": "passed in both views",
+  "desktop_equal_two_column_panels": "passed",
+  "controls_minimum_44px": "passed",
+  "mobile_stacking_and_overflow": "passed at 390px for seeds 13 and 587, whole and detail",
+  "pageerrors": [],
+  "external_requests": [],
+  "screenshots": [
+    "comparison-13.png",
+    "comparison-13-close.png",
+    "comparison-13-mobile.png",
+    "comparison-13-close-mobile.png",
+    "comparison-587.png",
+    "comparison-587-close.png",
+    "comparison-587-mobile.png",
+    "comparison-587-close-mobile.png"
+  ],
+  "checks": [
+    {
+      "seed": 5,
+      "view": "whole",
+      "images": [
+        "evidence/5-bare.svg",
+        "evidence/5-led.svg",
+        "evidence/5-opening.svg",
+        "evidence/5-pressure.svg",
+        "evidence/5-unravel.svg"
+      ]
+    },
+    {
+      "seed": 5,
+      "view": "detail",
+      "images": [
+        "evidence/5-bare-close.svg",
+        "evidence/5-led-close.svg",
+        "evidence/5-opening-close.svg",
+        "evidence/5-pressure-close.svg",
+        "evidence/5-unravel-close.svg"
+      ]
+    },
+    {
+      "seed": 13,
+      "view": "whole",
+      "images": [
+        "evidence/13-bare.svg",
+        "evidence/13-led.svg",
+        "evidence/13-opening.svg",
+        "evidence/13-pressure.svg",
+        "evidence/13-unravel.svg"
+      ]
+    },
+    {
+      "seed": 13,
+      "view": "detail",
+      "images": [
+        "evidence/13-bare-close.svg",
+        "evidence/13-led-close.svg",
+        "evidence/13-opening-close.svg",
+        "evidence/13-pressure-close.svg",
+        "evidence/13-unravel-close.svg"
+      ]
+    },
+    {
+      "seed": 18,
+      "view": "whole",
+      "images": [
+        "evidence/18-bare.svg",
+        "evidence/18-led.svg",
+        "evidence/18-opening.svg",
+        "evidence/18-pressure.svg",
+        "evidence/18-unravel.svg"
+      ]
+    },
+    {
+      "seed": 18,
+      "view": "detail",
+      "images": [
+        "evidence/18-bare-close.svg",
+        "evidence/18-led-close.svg",
+        "evidence/18-opening-close.svg",
+        "evidence/18-pressure-close.svg",
+        "evidence/18-unravel-close.svg"
+      ]
+    },
+    {
+      "seed": 24,
+      "view": "whole",
+      "images": [
+        "evidence/24-bare.svg",
+        "evidence/24-led.svg",
+        "evidence/24-opening.svg",
+        "evidence/24-pressure.svg",
+        "evidence/24-unravel.svg"
+      ]
+    },
+    {
+      "seed": 24,
+      "view": "detail",
+      "images": [
+        "evidence/24-bare-close.svg",
+        "evidence/24-led-close.svg",
+        "evidence/24-opening-close.svg",
+        "evidence/24-pressure-close.svg",
+        "evidence/24-unravel-close.svg"
+      ]
+    },
+    {
+      "seed": 47,
+      "view": "whole",
+      "images": [
+        "evidence/47-bare.svg",
+        "evidence/47-led.svg",
+        "evidence/47-opening.svg",
+        "evidence/47-pressure.svg",
+        "evidence/47-unravel.svg"
+      ]
+    },
+    {
+      "seed": 47,
+      "view": "detail",
+      "images": [
+        "evidence/47-bare-close.svg",
+        "evidence/47-led-close.svg",
+        "evidence/47-opening-close.svg",
+        "evidence/47-pressure-close.svg",
+        "evidence/47-unravel-close.svg"
+      ]
+    },
+    {
+      "seed": 82,
+      "view": "whole",
+      "images": [
+        "evidence/82-bare.svg",
+        "evidence/82-led.svg",
+        "evidence/82-opening.svg",
+        "evidence/82-pressure.svg",
+        "evidence/82-unravel.svg"
+      ]
+    },
+    {
+      "seed": 82,
+      "view": "detail",
+      "images": [
+        "evidence/82-bare-close.svg",
+        "evidence/82-led-close.svg",
+        "evidence/82-opening-close.svg",
+        "evidence/82-pressure-close.svg",
+        "evidence/82-unravel-close.svg"
+      ]
+    },
+    {
+      "seed": 521,
+      "view": "whole",
+      "images": [
+        "evidence/521-bare.svg",
+        "evidence/521-led.svg",
+        "evidence/521-opening.svg",
+        "evidence/521-pressure.svg",
+        "evidence/521-unravel.svg"
+      ]
+    },
+    {
+      "seed": 521,
+      "view": "detail",
+      "images": [
+        "evidence/521-bare-close.svg",
+        "evidence/521-led-close.svg",
+        "evidence/521-opening-close.svg",
+        "evidence/521-pressure-close.svg",
+        "evidence/521-unravel-close.svg"
+      ]
+    },
+    {
+      "seed": 587,
+      "view": "whole",
+      "images": [
+        "evidence/587-bare.svg",
+        "evidence/587-led.svg",
+        "evidence/587-opening.svg",
+        "evidence/587-pressure.svg",
+        "evidence/587-unravel.svg"
+      ]
+    },
+    {
+      "seed": 587,
+      "view": "detail",
+      "images": [
+        "evidence/587-bare-close.svg",
+        "evidence/587-led-close.svg",
+        "evidence/587-opening-close.svg",
+        "evidence/587-pressure-close.svg",
+        "evidence/587-unravel-close.svg"
+      ]
+    },
+    {
+      "seed": 631,
+      "view": "whole",
+      "images": [
+        "evidence/631-bare.svg",
+        "evidence/631-led.svg",
+        "evidence/631-opening.svg",
+        "evidence/631-pressure.svg",
+        "evidence/631-unravel.svg"
+      ]
+    },
+    {
+      "seed": 631,
+      "view": "detail",
+      "images": [
+        "evidence/631-bare-close.svg",
+        "evidence/631-led-close.svg",
+        "evidence/631-opening-close.svg",
+        "evidence/631-pressure-close.svg",
+        "evidence/631-unravel-close.svg"
+      ]
+    },
+    {
+      "seed": 683,
+      "view": "whole",
+      "images": [
+        "evidence/683-bare.svg",
+        "evidence/683-led.svg",
+        "evidence/683-opening.svg",
+        "evidence/683-pressure.svg",
+        "evidence/683-unravel.svg"
+      ]
+    },
+    {
+      "seed": 683,
+      "view": "detail",
+      "images": [
+        "evidence/683-bare-close.svg",
+        "evidence/683-led-close.svg",
+        "evidence/683-opening-close.svg",
+        "evidence/683-pressure-close.svg",
+        "evidence/683-unravel-close.svg"
+      ]
+    }
+  ],
+  "limits": "Mechanical in-memory browser checks only. Actual in-app/file navigation, link opening, aesthetics and paper acceptance unverified."
+}
