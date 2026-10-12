@@ -9,6 +9,7 @@ from pydantic import Field
 
 from .render import png, render_layers
 from .targets import TargetName, Targets
+from .ui import UiStep, screenshot
 
 
 def _source_label(source: dict) -> str:
@@ -77,3 +78,17 @@ def register(tool, targets: Targets) -> None:
         n = len(layers)
         caption = f"{n} layer{'s' if n != 1 else ''}, {paths} paths, {view}"
         return [caption, png(data)]
+
+    @tool
+    def see_ui(target: TargetName = "live",
+               tab: Literal["compose", "assets", "plot", "pens", "settings"] | None = None,
+               steps: list[UiStep] | None = None,
+               width: Annotated[int, Field(ge=800, le=2560)] = 1440,
+               height: Annotated[int, Field(ge=600, le=1600)] = 900) -> list:
+        """Screenshot the app's UI in a headless browser, optionally after
+        switching tab and running steps (click/fill/press/wait). This is a
+        separate browser, not Ian's window — but clicks are real edits on the
+        target, so dogfood on the sandbox."""
+        c = targets.client(target)
+        data = screenshot(c.base_url, tab, steps or [], width, height)
+        return [f"{target} UI{f' — {tab} tab' if tab else ''}", png(data)]
