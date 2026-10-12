@@ -79,6 +79,8 @@ def register(tool, targets: Targets) -> None:
                 continue
             extra = " (decimated)" if r.get("decimated") else ""
             tiles.append((fit_lines(r["lines"], tile), f"{i}: {r['points']} pts{extra}"))
+        if len(notes) == len(param_sets):
+            raise ToolError(f"{module}: every param set failed\n" + "\n".join(notes))
         head = f"{module} — " + "; ".join(f"{i}={json.dumps(p)}" for i, p in enumerate(param_sets, 1))
         return ["\n".join([head, *notes]), png(contact_sheet(tiles))]
 
@@ -102,4 +104,6 @@ def register(tool, targets: Targets) -> None:
                 continue
             label = " + ".join(s.get("effect", "?") for s in chain) or "bare"
             tiles.append((fit_lines(r["lines"], tile), f"{i}: {label}, {r['points']} pts"))
+        if len(notes) == len(chains):
+            raise ToolError(f"layer {layer_id}: every chain failed\n" + "\n".join(notes))
         return ["\n".join([f"layer {layer_id}", *notes]), png(contact_sheet(tiles))]

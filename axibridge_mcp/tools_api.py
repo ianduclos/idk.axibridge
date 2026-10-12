@@ -67,6 +67,11 @@ def register(tool, targets: Targets) -> None:
         reachable through call_api."""
         m = method.upper()
         check_allowed(m, path, target)
+        if (m != "GET" and normalize(path) == "/api/settings"
+                and isinstance(body, dict) and "projects_root" in body):
+            # on the sandbox it would point a later save at Ian's real folders
+            raise ToolError("refused: projects_root is fixed — the sandbox is isolated, "
+                            "and on live Ian changes it in the app")
         r = targets.client(target).request(m, normalize(path),
                                            body=None if m == "GET" else body, params=query)
         ctype = r.headers.get("content-type", "")

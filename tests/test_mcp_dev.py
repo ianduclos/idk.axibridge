@@ -163,3 +163,47 @@ def test_failed_seed_on_fresh_start_stops_sandbox(srv, targets):
     r = call(srv, "sandbox", {"action": "start", "seed_project": "no-such-project"})
     assert r.is_error
     assert not targets.sandbox.running
+
+
+def test_assess_flags_two_listeners_on_one_port():
+    # the 2026-08-07 failure: a stale 127.0.0.1 listener shadowing a fresh 0.0.0.0 one
+    from axibridge_mcp.diagnose import assess
+    out = assess(facts(port=2942, others=[(456, "/Users/x/old/idk.axibridge")]), REPO)
+    hit = [p for p in out if "processes listen" in p]
+    assert len(hit) == 1
+    assert hit[0].startswith("2 processes listen on port 2942")
+    assert "pid 123" in hit[0] and f"cwd {REPO}" in hit[0]
+    assert "pid 456 (cwd /Users/x/old/idk.axibridge)" in hit[0]
+    assert "wrong one" in hit[0]
+
+
+def test_stale_warning_treats_two_listeners_as_serious(monkeypatch):
+    from axibridge_mcp import diagnose
+    monkeypatch.setattr(diagnose, "gather",
+                        lambda url: facts(port=2942, others=[(456, None), (789, "/tmp")]))
+    w = diagnose.stale_warning("http://127.0.0.1:2942")
+    assert w and "3 processes listen on port 2942" in w and "pid 789 (cwd /tmp)" in w
+
+
+def test_report_lists_every_listener(monkeypatch):
+    from axibridge_mcp import diagnose
+    monkeypatch.setattr(diagnose, "gather",
+                        lambda url: facts(port=2942, others=[(456, "/Users/x/old")]))
+    out = diagnose.report("http://127.0.0.1:2942")
+    assert "pid 123" in out and "also listening: pid 456" in out and "cwd /Users/x/old" in out
+
+
+def test_gather_inspects_every_distinct_listener(monkeypatch):
+    from axibridge_mcp import diagnose
+
+    def fake_run(*args):
+        if args[:2] == ("lsof", "-nP"):
+            return "111\n222\n111"
+        if args[:2] == ("lsof", "-a"):
+            return f"p{args[3]}\nfcwd\nn/cwd/of/{args[3]}"
+        return ""
+    monkeypatch.setattr(diagnose, "_run", fake_run)
+    monkeypatch.setattr(diagnose.shutil, "which", lambda name: "/usr/sbin/lsof")
+    f = diagnose.gather("http://127.0.0.1:2942")
+    assert f.pid == 111 and f.cwd == "/cwd/of/111"
+    assert f.others == [(222, "/cwd/of/222")] and f.port == 2942

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Annotated, Literal
 
+from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
 from .render import png, render_layers
@@ -66,6 +67,12 @@ def register(tool, targets: Targets) -> None:
         c = targets.client(target)
         resolved = c.get("/api/compose/resolved", t=t, stats="false")
         project = c.get("/api/project")
+        if layer_ids is not None:
+            known = {l["id"] for l in resolved["layers"]}
+            unknown = [i for i in layer_ids if i not in known]
+            if unknown:
+                raise ToolError(f"no layer {', '.join(map(repr, unknown))} — "
+                                "`state` lists the layer ids")
         layers = [l for l in resolved["layers"] if layer_ids is None or l["id"] in layer_ids]
         moves = None
         if travel:

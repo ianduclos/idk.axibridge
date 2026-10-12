@@ -38,7 +38,8 @@ def register(tool, targets: Targets) -> None:
                    target: TargetName = "live") -> str:
         """Change a layer. `patch` sets layer fields (name, visible, pen_id,
         transform {a,b,c,d,e,f}, effects [{effect, params}], occluder, …);
-        `params` re-runs a generator layer with new params."""
+        `params` re-runs a generator layer with new params. Passing both
+        makes two edits, so ⌘Z takes two steps then."""
         if not patch and not params:
             raise ToolError("nothing to change — pass `patch`, `params` or both")
         c = targets.client(target)

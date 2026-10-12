@@ -43,7 +43,9 @@ Every tool takes `target`:
   live ("changes the machine's soft limits") and (on live) server restart,
   after normalising the path (percent-encoding, dot segments, slashes).
   Paths are percent-decoded before sending, so endpoints that need encoded
-  characters are not reachable through `call_api`.
+  characters are not reachable through `call_api`. On every target it also
+  refuses a non-GET `/api/settings` whose body sets `projects_root`: on the
+  sandbox that would aim a later save at Ian's real project folders.
 - The HTTP client refuses any path containing `..`, `?`, `#`, `\`, `%` or
   whitespace. Ids are never trusted.
 - `project(new|open)` on a dirty project fails with "unsaved work" unless
@@ -63,6 +65,12 @@ Every tool takes `target`:
    They only raise the pen.
 4. `stop`/`pause` on the sandbox start it needlessly.
 5. The `pi_ssh` "returned home" caveat above.
+6. Saving under the same name doesn't bump `edit_rev`, so another open
+   window may keep showing a stale "unsaved" marker until its next refetch.
+7. An MCP edit that lands mid-way through one of Ian's slider drags breaks
+   the coalesced undo run, so that drag takes two ⌘Z steps to undo.
+8. SIGKILL of the MCP process (no SIGTERM, no stdin close) orphans the
+   sandbox server and its temp dir.
 
 ## Tools
 
@@ -100,11 +108,15 @@ mutating request that moved it, the server emits
 `{"type": "project", "rev", "origin"}` on `/api/events`; `origin` is the
 request's `X-Axb-Client` header (each browser tab sends its own id; the MCP
 sends `mcp`). Tabs refetch on changes they didn't make, deferred while a
-pointer is held or their own mutation is in flight.
+pointer is held, while a text field has focus with an uncommitted edit, or
+while their own mutation is in flight. A context menu, window blur or a
+buttonless pointer move also ends a held pointer (a native menu can swallow
+`pointerup`). A handler that raises after its checkpoint still announces.
 
 ## Stale-server warning
 
 The first live call of an MCP session runs `diagnose`; if port 2942 is
 serving code older than the working tree, from another checkout, or with a
-frontend build older than its source, that call's result starts with a
-WARNING line.
+frontend build older than its source, or by two or more processes at once
+(a stale `127.0.0.1` listener silently shadows a fresh `0.0.0.0` one), that
+call's result starts with a WARNING line.

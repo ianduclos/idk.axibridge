@@ -9,7 +9,7 @@ import os
 import shutil
 import subprocess
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -27,6 +27,10 @@ class Facts:
     newest_frontend: tuple[str, float] | None
     dist_built: float | None
     error: str | None
+    # every OTHER process listening on the same port, as (pid, cwd) — a stale
+    # one on 127.0.0.1 silently shadows a fresh one on 0.0.0.0 (CLAUDE.md)
+    others: list[tuple[int, str | None]] = field(default_factory=list)
+    port: int | None = None
 
 
 def _run(*args: str) -> str:
@@ -77,26 +81,32 @@ def gather(url: str) -> Facts:
     if not shutil.which("lsof"):
         return Facts(**blank, error="lsof not available")
     port = u.port or 80
-    pids = _run("lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t").split()
-    if not pids:
+    raw = _run("lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t").split()
+    if not raw:
         return Facts(**blank, error=f"nothing listening on port {port}")
     try:
-        pid = int(pids[0])
+        pids = list(dict.fromkeys(int(p) for p in raw))  # distinct, lsof order
     except ValueError:
         return Facts(**blank, error=f"could not read the listener on port {port}")
+    pid = pids[0]
     command = _run("ps", "-p", str(pid), "-o", "command=")
     lstart = _run("ps", "-p", str(pid), "-o", "lstart=")
     try:
         started = time.mktime(time.strptime(lstart, "%a %b %d %H:%M:%S %Y"))
     except ValueError:
         started = None
-    cwd_lines = _run("lsof", "-a", "-p", str(pid), "-d", "cwd", "-Fn").splitlines()
-    cwd = next((l[1:] for l in cwd_lines if l.startswith("n")), None)
+    cwd = _cwd(pid)
     ppid = _run("ps", "-p", str(pid), "-o", "ppid=")
     parent = _run("ps", "-p", ppid, "-o", "command=") if ppid else None
     return Facts(pid=pid, command=command, cwd=cwd, started=started, parent=parent,
                  newest_backend=newest_backend, newest_frontend=newest_frontend,
-                 dist_built=dist_built, error=None)
+                 dist_built=dist_built, error=None,
+                 others=[(p, _cwd(p)) for p in pids[1:]], port=port)
+
+
+def _cwd(pid: int) -> str | None:
+    lines = _run("lsof", "-a", "-p", str(pid), "-d", "cwd", "-Fn").splitlines()
+    return next((l[1:] for l in lines if l.startswith("n")), None)
 
 
 def _when(ts: float) -> str:
@@ -107,6 +117,12 @@ def assess(f: Facts, repo: Path) -> list[str]:
     if f.error:
         return [f.error]
     problems = []
+    if f.others:
+        listeners = [(f.pid, f.cwd), *f.others]
+        port = f" on port {f.port}" if f.port else ""
+        problems.append(f"{len(listeners)} processes listen{port}: " + ", ".join(
+            f"pid {p} (cwd {c or '?'})" for p, c in listeners)
+            + " — the browser may be talking to the wrong one")
     here = str(repo)
     is_here = f.cwd == here or any(
         x and (x == here or (here + os.sep) in x) for x in (f.cwd, f.command))
@@ -145,6 +161,9 @@ def report(url: str) -> str:
     if f.pid is not None:
         lines += [f"pid {f.pid}", f"command {f.command}", f"cwd {f.cwd}",
                   f"started {_when(f.started) if f.started else '?'}", f"parent {f.parent}"]
+        for p, c in f.others:
+            lines += [f"also listening: pid {p}", f"  command {_run('ps', '-p', str(p), '-o', 'command=')}",
+                      f"  cwd {c}"]
     if f.newest_backend:
         lines.append(f"newest backend source {f.newest_backend[0]} at {_when(f.newest_backend[1])}")
     lines.append(f"frontend build {_when(f.dist_built) if f.dist_built else 'absent (serving source)'}")

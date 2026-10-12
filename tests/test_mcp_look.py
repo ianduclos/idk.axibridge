@@ -79,3 +79,26 @@ def test_module_schema_returns_schema_and_defaults(srv):
 def test_module_schema_names_unknown_modules(srv):
     r = call(srv, "module_schema", {"module_id": "nope"})
     assert r.is_error and "nope" in text(r)
+
+
+def test_see_names_unknown_layer_ids(srv, axb):
+    with http(axb) as h:
+        lid = h.post("/api/layers/generate", json=POLY).json()["id"]
+    r = call(srv, "see", {"size": 600, "layer_ids": [lid, "nope-1", "nope-2"]})
+    assert r.is_error
+    assert "'nope-1'" in text(r) and "'nope-2'" in text(r) and lid not in text(r)
+    assert not call(srv, "see", {"size": 600, "layer_ids": [lid]}).is_error
+
+
+def test_try_generator_errors_when_every_set_fails(srv):
+    r = call(srv, "try_generator", {"module": "polygon",
+                                    "param_sets": [{"sides": "many"}, {"sides": "few"}], "tile": 200})
+    assert r.is_error
+    assert "every param set failed" in text(r) and "1: error" in text(r) and "2: error" in text(r)
+    assert not images(r)
+
+
+def test_try_effects_errors_on_a_missing_layer(srv):
+    r = call(srv, "try_effects", {"layer_id": "no-such-layer", "tile": 200, "chains": [[], []]})
+    assert r.is_error
+    assert "every chain failed" in text(r) and "1: error" in text(r)

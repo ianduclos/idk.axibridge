@@ -77,3 +77,28 @@ def test_case_and_semicolon_spellings_move_nothing(srv, axb, path):
     after = httpx.get(axb + "/api/state").json()["machine"]
     assert after["job_state"] == "idle" == before["job_state"]
     assert after["position"] == before["position"]
+
+
+@pytest.mark.parametrize("target", ["live", "sandbox"])
+@pytest.mark.parametrize("method", ["PUT", "post", "PATCH"])
+def test_call_api_refuses_projects_root_changes(srv, targets, axb, target, method):
+    import httpx
+    before = httpx.get(axb + "/api/settings").json()["projects_root"]
+    r = call(srv, "call_api", {"method": method, "path": "/api/./settings/",
+                               "body": {"projects_root": "/Users/ian/AxidrawProjects",
+                                        "pen_swing_s": 0.2},
+                               "target": target})
+    assert r.is_error and "projects_root is fixed" in text(r), text(r)
+    assert httpx.get(axb + "/api/settings").json()["projects_root"] == before
+    assert not targets.sandbox.running  # refused before a sandbox was even started
+
+
+def test_call_api_allows_other_settings(srv, axb):
+    import httpx
+    r = call(srv, "call_api", {"method": "PUT", "path": "/api/settings",
+                               "body": {"pen_swing_s": 0.2}})
+    assert not r.is_error and text(r).startswith("200"), text(r)
+    assert httpx.get(axb + "/api/settings").json()["pen_swing_s"] == 0.2
+    r = call(srv, "call_api", {"method": "GET", "path": "/api/settings",
+                               "body": {"projects_root": "/x"}})
+    assert not r.is_error, text(r)  # GET never sends a body
