@@ -10,7 +10,7 @@ import sys
 
 from mcp.server.mcpserver import MCPServer
 
-from . import tools_look, tools_modules
+from . import tools_compose, tools_look, tools_modules
 from .targets import Targets
 
 INSTRUCTIONS = """\
@@ -23,7 +23,7 @@ Motion tools (plot, pen, jog, go_home) are live-only and Ian approves each
 call: show him `see` + `estimate` first. `stop` is always safe.
 """
 
-MODULES = (tools_look, tools_modules)
+MODULES = (tools_look, tools_modules, tools_compose)
 
 
 def make_tool_decorator(srv: MCPServer, targets: Targets):
