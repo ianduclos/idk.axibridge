@@ -105,16 +105,16 @@ def test_client_transport_and_non_json_errors_are_toolerrors():
     from axibridge_mcp.client import ApiClient
 
     def handler(req):
-        if req.url.path == "/bad":
+        if req.url.path == "/api/bad":
             return hx.Response(200, content=b"<html>")
         raise hx.ReadError("boom")
 
     c = ApiClient("http://x", "live", lambda: "down")
     c._http = hx.Client(base_url="http://x", transport=hx.MockTransport(handler))
     with pytest.raises(ToolError, match="non-JSON"):
-        c.get("/bad")
+        c.get("/api/bad")
     with pytest.raises(ToolError, match="failed: boom"):
-        c.get("/other")
+        c.get("/api/other")
 
 
 import pytest
