@@ -1,0 +1,89 @@
+"""Live sync: every project change bumps Session.edit_rev and is announced
+once on the event bus as {type: "project", rev, origin} — after the request
+finished, so a subscriber that refetches sees the post-mutation state."""
+
+import pytest
+from fastapi.testclient import TestClient
+
+from axibridge.app import create_app
+from axibridge.events import bus
+
+POLY = {"module": "polygon", "params": {"sides": 5, "radius": 20}}
+
+
+@pytest.fixture()
+def api(monkeypatch):
+    seen: list[dict] = []
+    with TestClient(create_app()) as c:
+        monkeypatch.setattr(bus, "emit", lambda ev: seen.append(ev))
+        yield c, seen
+
+
+def project_events(seen):
+    return [e for e in seen if e.get("type") == "project"]
+
+
+def emits(seen, fn) -> list[dict]:
+    """Run fn and return the project events it caused."""
+    before = len(project_events(seen))
+    fn()
+    return project_events(seen)[before:]
+
+
+def test_edit_rev_is_in_the_project_payload_and_moves_on_edit(api):
+    c, _ = api
+    r0 = c.get("/api/project").json()["edit_rev"]
+    c.post("/api/layers/generate", json=POLY)
+    assert c.get("/api/project").json()["edit_rev"] > r0
+
+
+def test_one_event_per_changing_request_carrying_origin_and_rev(api):
+    c, seen = api
+    ev = emits(seen, lambda: c.post("/api/layers/generate", json=POLY,
+                                    headers={"X-Axb-Client": "tab-1"}))
+    assert len(ev) == 1
+    assert ev[0]["origin"] == "tab-1"
+    assert ev[0]["rev"] == c.get("/api/project").json()["edit_rev"]
+
+
+def test_origin_is_null_without_the_header(api):
+    c, seen = api
+    ev = emits(seen, lambda: c.post("/api/layers/generate", json=POLY))
+    assert len(ev) == 1 and ev[0]["origin"] is None
+
+
+def test_reads_and_refused_requests_announce_nothing(api):
+    c, seen = api
+    assert emits(seen, lambda: c.get("/api/project")) == []
+    assert emits(seen, lambda: c.get("/api/compose/resolved")) == []
+    # nothing to undo → 409, no state change
+    assert emits(seen, lambda: c.post("/api/undo")) == []
+    # unknown layer → 404 before any checkpoint
+    assert emits(seen, lambda: c.patch("/api/layers/nope", json={"name": "x"})) == []
+
+
+def test_every_kind_of_change_is_announced(api):
+    c, seen = api
+    lid = c.post("/api/layers/generate", json=POLY).json()["id"]
+    assert len(emits(seen, lambda: c.patch(f"/api/layers/{lid}", json={"name": "renamed"}))) == 1
+    assert len(emits(seen, lambda: c.post(f"/api/layers/{lid}/regenerate",
+                                          json={"params": {"sides": 6}, "coalesce": True}))) == 1
+    # a coalesced run still changes state, so it is still announced
+    assert len(emits(seen, lambda: c.post(f"/api/layers/{lid}/regenerate",
+                                          json={"params": {"sides": 7}, "coalesce": True}))) == 1
+    assert len(emits(seen, lambda: c.post("/api/undo"))) == 1
+    assert len(emits(seen, lambda: c.post("/api/redo"))) == 1
+    assert len(emits(seen, lambda: c.post("/api/project/save", json={"name": "sync-test"}))) == 1
+    assert len(emits(seen, lambda: c.post("/api/project/new",
+                                          json={"recovery_action": "discard"}))) == 1
+    assert len(emits(seen, lambda: c.post("/api/project/load",
+                                          json={"name": "sync-test",
+                                                "recovery_action": "discard"}))) == 1
+
+
+def test_edit_rev_never_goes_backwards_across_projects(api):
+    c, _ = api
+    c.post("/api/layers/generate", json=POLY)
+    before = c.get("/api/project").json()["edit_rev"]
+    c.post("/api/project/new", json={"recovery_action": "discard"})
+    assert c.get("/api/project").json()["edit_rev"] > before

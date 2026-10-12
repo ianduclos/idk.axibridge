@@ -251,6 +251,11 @@ class Session(GroupSessionMixin, RecoveryStateMixin):
         self._lock = threading.RLock()
         self.render_work = RenderWork()
         self.project = Project()
+        #: Monotonic count of project changes for the whole process lifetime
+        #: (never reset — not even by New/Load). The live-sync middleware
+        #: (app.announce_project_edits) compares it before/after each request.
+        #: Distinct from the recovery revision, which resets per project.
+        self.edit_rev = 0
         self.project_dir: str | None = None
         #: layer id -> source paths in the layer's LOCAL frame (pre-transform)
         self.source_geometry: dict[str, list[Path]] = {}
@@ -310,7 +315,11 @@ class Session(GroupSessionMixin, RecoveryStateMixin):
 
     # -- undo -----------------------------------------------------------------
 
+    def _bump_edit_rev(self) -> None:
+        self.edit_rev += 1
+
     def _checkpoint(self, coalesce: tuple | None = None) -> None:
+        self._bump_edit_rev()
         self._redo.clear()  # a fresh edit abandons the branch redo led into
         if coalesce is not None and coalesce == self._coalesce_key and self._history:
             # same coalesce run as the previous checkpoint: keep the run's
@@ -415,6 +424,7 @@ class Session(GroupSessionMixin, RecoveryStateMixin):
                 return False
             self._redo.append(self._snapshot())
             self._restore(self._history.pop())
+            self._bump_edit_rev()
             return True
 
     @_interrupt_preview
@@ -427,6 +437,7 @@ class Session(GroupSessionMixin, RecoveryStateMixin):
                 return False
             self._history.append(self._snapshot())
             self._restore(self._redo.pop())
+            self._bump_edit_rev()
             return True
 
     def can_undo(self) -> bool:

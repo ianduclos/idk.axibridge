@@ -36,9 +36,9 @@ def _preset(ui, kind, module, params, name='Remembered settings'):
 
 
 def _without_revision(project):
-    # Recovery revisions count edits, including undo. The project content
+    # Recovery and live-sync revisions count edits, including undo. The project content
     # should return to its prior value; the revision should move forward.
-    return {key: value for key, value in project.items() if key != 'revision'}
+    return {key: value for key, value in project.items() if key not in ('revision', 'edit_rev')}
 
 
 def test_generator_browser_unlatches_and_prepares_without_mutation(ui):

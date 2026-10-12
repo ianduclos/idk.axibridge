@@ -117,6 +117,24 @@ def create_app() -> FastAPI:
             session.recovery_status()
         return response
 
+    @app.middleware("http")
+    async def announce_project_edits(request, call_next):
+        """Live sync: one {type: "project"} event per request that changed the
+        project, emitted AFTER the handler returned so subscribers refetch the
+        new state (Session._checkpoint runs before the mutation, so it cannot
+        announce). Concurrent requests may each see the other's bump; that only
+        costs a duplicate refetch, and every change still gets an event that
+        carries its own request's origin."""
+        if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
+            return await call_next(request)
+        from .session import session
+        before = session.edit_rev
+        response = await call_next(request)
+        if session.edit_rev != before:
+            bus.emit({"type": "project", "rev": session.edit_rev,
+                      "origin": request.headers.get("x-axb-client")})
+        return response
+
     app.include_router(router)
     app.include_router(linedraw_router)
     served = frontend_dir()
