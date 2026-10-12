@@ -9,7 +9,9 @@ import shutil
 import socket
 import subprocess
 import sys
+import json
 import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Callable, Literal
@@ -37,17 +39,27 @@ class Sandbox:
         self.dir: Path | None = None
         self.url: str | None = None
         self._log = None
+        self._lock = threading.RLock()
 
     @property
     def running(self) -> bool:
         return self.proc is not None and self.proc.poll() is None
 
     def start(self, timeout: float = 45.0) -> str:
+        with self._lock:
+            return self._start(timeout)
+
+    def _start(self, timeout: float) -> str:
         if self.running:
             return self.url  # type: ignore[return-value]
         self.stop()  # clear a dead one
         self.dir = Path(tempfile.mkdtemp(prefix="axibridge-mcp-sandbox-"))
         port = _free_port()
+        # projects_root goes into the config dir BEFORE the server exists, so
+        # there is never a window where it points at Ian's real folder
+        (self.dir / "config").mkdir()
+        (self.dir / "config" / "settings.json").write_text(
+            json.dumps({"projects_root": str(self.dir / "projects")}))
         env = {**os.environ, "AXIBRIDGE_CONFIG_DIR": str(self.dir / "config"),
                "AXIBRIDGE_NO_AUTOCONNECT": "1"}
         python = str(PYTHON if PYTHON.exists() else sys.executable)
@@ -71,9 +83,6 @@ class Sandbox:
         else:
             self.stop()
             raise ToolError(f"sandbox server did not answer within {timeout:.0f} s")
-        httpx.put(self.url + "/api/settings",
-                  json={"projects_root": str(self.dir / "projects")},
-                  timeout=10).raise_for_status()
         return self.url
 
     def log_tail(self, n: int = 20) -> str:
@@ -83,6 +92,10 @@ class Sandbox:
         return "\n".join(lines[-n:]) or "(sandbox log empty)"
 
     def stop(self) -> None:
+        with self._lock:
+            self._stop()
+
+    def _stop(self) -> None:
         if self.proc is not None and self.proc.poll() is None:
             self.proc.terminate()
             try:
@@ -111,9 +124,14 @@ class Targets:
             lambda: f"the live app isn't running at {self.live_url} — open AxiBridge.app")
         self._sandbox_client: ApiClient | None = None
         self._live_checked = False
+        self._lock = threading.RLock()
         self._warning: str | None = None
 
     def client(self, target: TargetName) -> ApiClient:
+        with self._lock:
+            return self._client(target)
+
+    def _client(self, target: TargetName) -> ApiClient:
         if target == "live":
             if not self._live_checked:
                 self._live_checked = True
@@ -137,12 +155,14 @@ class Targets:
         return self.client("live")
 
     def take_warning(self) -> str | None:
-        warning, self._warning = self._warning, None
-        return warning
+        with self._lock:
+            warning, self._warning = self._warning, None
+            return warning
 
     def close(self) -> None:
-        self.sandbox.stop()
-        self._live.close()
-        if self._sandbox_client is not None:
-            self._sandbox_client.close()
-            self._sandbox_client = None
+        with self._lock:
+            self.sandbox.stop()
+            self._live.close()
+            if self._sandbox_client is not None:
+                self._sandbox_client.close()
+                self._sandbox_client = None

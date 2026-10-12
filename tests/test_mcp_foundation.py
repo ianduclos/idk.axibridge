@@ -67,3 +67,51 @@ def test_api_errors_come_back_as_readable_text(targets):
 
     with pytest.raises(ToolError, match=r"live: PATCH /api/layers/nope → 404"):
         targets.client("live").patch("/api/layers/nope", {"name": "x"})
+
+
+def _wait_down(url, seconds=10):
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        try:
+            httpx.get(url + "/api/project", timeout=0.5)
+            time.sleep(0.2)
+        except httpx.HTTPError:
+            return
+    raise AssertionError("still answering")
+
+
+def test_concurrent_first_sandbox_calls_share_one_server(targets):
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(2) as ex:
+        urls = list(ex.map(lambda _: targets.client("sandbox").base_url, range(2)))
+    assert urls[0] == urls[1]
+    targets.close()
+    _wait_down(urls[0])
+
+
+def test_sandbox_projects_root_is_inside_its_own_dir(targets):
+    from pathlib import Path
+
+    targets.client("sandbox")
+    root = targets.client("sandbox").get("/api/settings")["projects_root"]
+    assert Path(root).resolve().is_relative_to(targets.sandbox.dir.resolve())
+
+
+def test_client_transport_and_non_json_errors_are_toolerrors():
+    import httpx as hx
+    import pytest
+    from mcp.server.mcpserver.exceptions import ToolError
+    from axibridge_mcp.client import ApiClient
+
+    def handler(req):
+        if req.url.path == "/bad":
+            return hx.Response(200, content=b"<html>")
+        raise hx.ReadError("boom")
+
+    c = ApiClient("http://x", "live", lambda: "down")
+    c._http = hx.Client(base_url="http://x", transport=hx.MockTransport(handler))
+    with pytest.raises(ToolError, match="non-JSON"):
+        c.get("/bad")
+    with pytest.raises(ToolError, match="failed: boom"):
+        c.get("/other")

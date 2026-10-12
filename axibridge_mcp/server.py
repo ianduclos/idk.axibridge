@@ -28,7 +28,9 @@ MODULES = (tools_look,)
 
 def make_tool_decorator(srv: MCPServer, targets: Targets):
     """Register fn as an unstructured tool whose result gets the one-time
-    stale-server warning prefixed (see Targets.client)."""
+    stale-server warning prefixed (see Targets.client). Tools must be sync
+    functions: an async tool would return an un-awaited coroutine through the
+    wrapper."""
     def tool(fn):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):

@@ -29,6 +29,8 @@ class ApiClient:
             raise ToolError(self._hint()) from None
         except httpx.TimeoutException:
             raise ToolError(f"{self.label}: {method} {path} timed out") from None
+        except httpx.TransportError as exc:
+            raise ToolError(f"{self.label}: {method} {path} failed: {exc}") from None
         if r.status_code >= 400:
             raise ToolError(f"{self.label}: {method} {path} → {r.status_code}: {_detail(r)}")
         return r
@@ -36,7 +38,13 @@ class ApiClient:
     def json(self, method: str, path: str, body: Any = None,
              params: dict[str, Any] | None = None) -> Any:
         r = self.request(method, path, body, params)
-        return r.json() if r.content else None
+        if not r.content:
+            return None
+        try:
+            return r.json()
+        except ValueError:
+            raise ToolError(f"{self.label}: {method} {path} returned a non-JSON body: "
+                            f"{r.text[:200]!r}") from None
 
     def get(self, path: str, **params: Any) -> Any:
         return self.json("GET", path, params={k: v for k, v in params.items() if v is not None} or None)
