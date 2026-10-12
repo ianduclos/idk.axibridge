@@ -57,3 +57,23 @@ def test_call_api_passes_png_through_as_an_image(srv, axb):
     if r.is_error:
         pytest.skip(f"preview.png needs an animation here: {text(r)[:120]}")
     assert images(r)
+
+
+def test_limits_writes_refused_on_live_only():
+    from mcp.server.mcpserver.exceptions import ToolError
+    from axibridge_mcp.tools_api import check_allowed
+    with pytest.raises(ToolError, match="soft limits"):
+        check_allowed("PUT", "/api/limits", "live")
+    check_allowed("PUT", "/api/limits", "sandbox")
+    check_allowed("GET", "/api/limits", "live")
+
+
+@pytest.mark.parametrize("path", ["/api/Machine/jog", "/api/machine/jog;x"])
+def test_case_and_semicolon_spellings_move_nothing(srv, axb, path):
+    import httpx
+    before = httpx.get(axb + "/api/state").json()["machine"]
+    r = call(srv, "call_api", {"method": "POST", "path": path, "body": {"dx": 5, "dy": 5}})
+    assert r.is_error or "404" in text(r) or "405" in text(r), text(r)
+    after = httpx.get(axb + "/api/state").json()["machine"]
+    assert after["job_state"] == "idle" == before["job_state"]
+    assert after["position"] == before["position"]

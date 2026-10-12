@@ -22,6 +22,8 @@ _MOTION = [
     (re.compile(r"^/api/calibration(/.*)?$"), "calibration moves the pen"),
 ]
 _LIVE_ONLY = [(re.compile(r"^/api/server/restart$"), "restarts Ian's app")]
+# widening soft limits loosens the protection on later approved jogs/plots
+_LIVE_WRITE_ONLY = [(re.compile(r"^/api/limits$"), "changes the machine's soft limits")]
 
 
 def normalize(path: str) -> str:
@@ -41,6 +43,8 @@ def check_allowed(method: str, path: str, target: str) -> None:
     if not p.startswith("/api/"):
         raise ToolError(f"refused: {p!r} is not an /api/ path")
     rules = _MOTION + (_LIVE_ONLY if target == "live" else [])
+    if target == "live" and method.upper() != "GET":
+        rules = rules + _LIVE_WRITE_ONLY
     for rx, why in rules:
         if rx.match(p):
             raise ToolError(f"refused: {method.upper()} {p} {why} — use the dedicated tool "
@@ -57,7 +61,10 @@ def register(tool, targets: Targets) -> None:
                  max_chars: Annotated[int, Field(ge=200, le=200_000)] = 20_000) -> list | str:
         """Any axibridge endpoint not covered by a dedicated tool (FastAPI docs
         at <target>/docs list them). Machine motion, calibration and (on live)
-        server restart are refused. JSON comes back as text, PNGs as images."""
+        server restart are refused. JSON comes back as text, PNGs as images.
+        Paths are percent-decoded before sending, so an endpoint whose path
+        needs encoded characters (e.g. an asset name with a space) is not
+        reachable through call_api."""
         m = method.upper()
         check_allowed(m, path, target)
         r = targets.client(target).request(m, normalize(path),
@@ -66,7 +73,10 @@ def register(tool, targets: Targets) -> None:
         if ctype.startswith("image/png"):
             return [f"{r.status_code} {ctype}", png(r.content)]
         if "json" in ctype:
-            out = json.dumps(r.json(), indent=1)
+            try:
+                out = json.dumps(r.json(), indent=1)
+            except ValueError:  # JSON content-type but empty/malformed body
+                out = r.text
         else:
             out = r.text
         if len(out) > max_chars:
