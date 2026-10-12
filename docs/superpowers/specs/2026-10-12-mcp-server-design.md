@@ -114,10 +114,11 @@ Every tool takes `target: "live" | "sandbox"` (default `live`) unless noted.
 **Machine** (motion tools: live target only, never allow-listed)
 13. `estimate`: time and travel for the plot target (`/api/plan`), plus the
     project revision it was computed at.
-14. `plot`: takes the same target/`master_t` as `/api/plot/start`'s default
-    route, plus the `revision` returned by `estimate`; refuses if the project
-    has changed since, so what gets plotted is what was previewed. Sheet and
-    staged-tray routes are out of scope for v1 (use the app's ▶).
+14. `plot`: takes the plot target (`all` or a layer id) of `/api/plot/start`'s
+    default route, plus the `revision` returned by `estimate`; refuses if the
+    project has changed since, so what gets plotted is what was previewed.
+    `master_t`, sheet and staged-tray routes are out of scope for v1 (use the
+    app's ▶), because `/api/plan` cannot estimate a scrubbed `t`.
     `pen` (up/down), `jog`, `go_home`: prompted motion.
 15. `stop` (with `return_home`) and `pause`: not motion-gated, since stopping
     is the safe direction.
@@ -125,8 +126,10 @@ Every tool takes `target: "live" | "sandbox"` (default `live`) unless noted.
 **Dev**
 16. `logs`: `/api/logs` with level and text filters, newest last.
 17. `diagnose`: listener PID on the target port, its command path and start
-    time, parent (app shell or orphan), repo HEAD commit time,
-    `static_dist` mtime; flags "older than HEAD" and "path is not this repo".
+    time, parent (app shell or orphan), newest backend/frontend source
+    mtimes, `static_dist` mtime; flags "source changed after the server
+    started" (catches uncommitted edits, not just commits), "frontend build
+    older than its source" and "path is not this repo".
 18. `sandbox`: start, stop, reset, optional seed project.
 
 **Escape hatch**
@@ -142,8 +145,19 @@ Every tool takes `target: "live" | "sandbox"` (default `live`) unless noted.
 - Sandbox crash: error includes the last 20 lines of its log.
 - API errors: status + server `detail` as text, never a traceback.
 - Stale live server: the first tool call per MCP session runs `diagnose`
-  and prefixes a warning to that call's result when the server predates
-  HEAD or runs from another path.
+  and prefixes a warning to that call's result when the server is older than
+  the working tree's source or runs from another path.
+- Stale MCP process: every tool warns once per change when `axibridge_mcp/`
+  source is newer than the running MCP (reconnect with `/mcp`).
+
+## Freshness (added 2026-10-12)
+
+The app is still in active development, so drift is caught by tests in the
+normal suite: every endpoint the MCP calls must exist in the app's OpenAPI;
+every non-GET route whose path looks like motion must be refused by
+`call_api` or explicitly reviewed; `docs/MCP.md` must name every tool.
+Modules and schemas are read live, so new generators/effects need no MCP
+change.
 
 ## Testing
 
