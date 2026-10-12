@@ -115,3 +115,24 @@ def test_client_transport_and_non_json_errors_are_toolerrors():
         c.get("/bad")
     with pytest.raises(ToolError, match="failed: boom"):
         c.get("/other")
+
+
+import pytest
+
+
+@pytest.mark.parametrize("path", [
+    "/api/layers/../plot/start", "/api/layers/x?y=1", "/api/x#f", "/api/a\\b",
+    "/api/%2e%2e/plot", "/api/a b", "/api/a\nb", "/other/x", "api/x",
+])
+def test_client_refuses_suspicious_paths(path):
+    import httpx as hx
+    from mcp.server.mcpserver.exceptions import ToolError
+    from axibridge_mcp.client import ApiClient
+
+    def handler(request):
+        pytest.fail(f"request reached transport: {request.url}")
+
+    c = ApiClient("http://x", "live", lambda: "down")
+    c._http = hx.Client(base_url="http://x", transport=hx.MockTransport(handler))
+    with pytest.raises(ToolError, match="refused suspicious path"):
+        c.post(path)

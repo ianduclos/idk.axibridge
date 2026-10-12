@@ -23,6 +23,8 @@ class ApiClient:
 
     def request(self, method: str, path: str, body: Any = None,
                 params: dict[str, Any] | None = None) -> httpx.Response:
+        if _suspicious(path):
+            raise ToolError(f"{self.label}: refused suspicious path {path!r}")
         try:
             r = self._http.request(method, path, json=body, params=params)
         except httpx.ConnectError:
@@ -70,6 +72,14 @@ class ApiClient:
 
     def close(self) -> None:
         self._http.close()
+
+
+def _suspicious(path: str) -> bool:
+    """Ids are pasted into paths; a `..` would let httpx resolve one tool's
+    request into another endpoint (e.g. plot/start). Queries go via `params`."""
+    return (not path.startswith("/api/")
+            or any(t in path for t in ("..", "?", "#", "\\", "%"))
+            or any(ch.isspace() or ord(ch) < 32 or ord(ch) == 127 for ch in path))
 
 
 def _detail(r: httpx.Response) -> str:

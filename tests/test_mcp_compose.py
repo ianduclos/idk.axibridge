@@ -79,3 +79,10 @@ def test_project_status_reports_name_dirty_and_recovery(srv):
 
 def test_open_needs_a_name(srv):
     assert call(srv, "project", {"action": "open"}).is_error
+
+
+def test_edit_layer_cannot_traverse_into_other_endpoints(srv, axb):
+    r = call(srv, "edit_layer", {"layer_id": "../plot/start?x=", "patch": {"name": "x"}})
+    assert r.is_error and "suspicious path" in text(r)
+    with http(axb) as h:
+        assert h.get("/api/state").json()["machine"]["job_state"] == "idle"
