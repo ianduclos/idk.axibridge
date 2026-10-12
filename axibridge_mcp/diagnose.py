@@ -5,6 +5,7 @@ macOS/Linux via lsof + ps; degrades to an `error` fact without them."""
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import time
@@ -29,16 +30,25 @@ class Facts:
 
 
 def _run(*args: str) -> str:
-    return subprocess.run(args, capture_output=True, text=True, timeout=10).stdout.strip()
+    try:
+        return subprocess.run(args, capture_output=True, text=True, timeout=3).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return ""
 
 
-def _newest(root: Path, pattern: str) -> tuple[str, float] | None:
+def _newest(root: Path, pattern: str, rel: Path = REPO) -> tuple[str, float] | None:
     best: tuple[str, float] | None = None
     for p in root.glob(pattern):
+        n = p.name
+        if n.startswith(".") or n.endswith(("~", ".swp", ".tmp")):
+            continue
         if p.is_file() and "__pycache__" not in p.parts:
-            m = p.stat().st_mtime
+            try:
+                m = p.stat().st_mtime
+            except OSError:
+                continue
             if best is None or m > best[1]:
-                best = (str(p.relative_to(REPO)), m)
+                best = (str(p.relative_to(rel)), m)
     return best
 
 
@@ -59,7 +69,10 @@ def gather(url: str) -> Facts:
     pids = _run("lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t").split()
     if not pids:
         return Facts(**blank, error=f"nothing listening on port {port}")
-    pid = int(pids[0])
+    try:
+        pid = int(pids[0])
+    except ValueError:
+        return Facts(**blank, error=f"could not read the listener on port {port}")
     command = _run("ps", "-p", str(pid), "-o", "command=")
     lstart = _run("ps", "-p", str(pid), "-o", "lstart=")
     try:
@@ -83,8 +96,11 @@ def assess(f: Facts, repo: Path) -> list[str]:
     if f.error:
         return [f.error]
     problems = []
-    where = f.cwd or f.command or ""
-    if str(repo) not in where:
+    here = str(repo)
+    is_here = f.cwd == here or any(
+        x and (x == here or (here + os.sep) in x) for x in (f.cwd, f.command))
+    if not is_here:
+        where = f.cwd or f.command or ""
         problems.append(f"server runs from {where!r}, not this repo ({repo}) — "
                         "a leftover process; check it before trusting anything it serves")
     if f.started and f.newest_backend and f.newest_backend[1] > f.started:
@@ -102,10 +118,13 @@ def assess(f: Facts, repo: Path) -> list[str]:
 def stale_warning(url: str) -> str | None:
     """One line for the first live call of a session, or None. Only the
     'serving the wrong code' problems — orphans and missing lsof stay quiet."""
-    f = gather(url)
-    if f.error:
+    try:
+        f = gather(url)
+        if f.error:
+            return None
+        serious = [p for p in assess(f, REPO) if "orphan" not in p]
+    except Exception:
         return None
-    serious = [p for p in assess(f, REPO) if "orphan" not in p]
     return ("WARNING — live server may be stale: " + "; ".join(serious)) if serious else None
 
 

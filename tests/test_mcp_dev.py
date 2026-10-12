@@ -106,3 +106,60 @@ def test_first_live_call_carries_the_stale_warning_once(axb):
         t.close()
     assert first.startswith("WARNING: stale test server")
     assert "WARNING" not in second
+
+
+def test_assess_accepts_command_in_repo_with_foreign_cwd():
+    from axibridge_mcp.diagnose import assess
+    assert assess(facts(cwd="/"), REPO) == []
+
+
+def test_assess_flags_sibling_repo_prefix():
+    from axibridge_mcp.diagnose import assess
+    out = assess(facts(cwd="/", command=f"{REPO}-old/.venv/bin/python -m axibridge"), REPO)
+    assert any("not this repo" in p for p in out)
+
+
+def test_newest_skips_junk_files(tmp_path, monkeypatch):
+    from axibridge_mcp import diagnose
+    monkeypatch.setattr(diagnose, "REPO", tmp_path)
+    (tmp_path / "a.js").write_text("x")
+    import os
+    os.utime(tmp_path / "a.js", (1000, 1000))
+    for n in (".DS_Store", "b.js~", "c.swp", "d.tmp"):
+        (tmp_path / n).write_text("x")
+    best = diagnose._newest(tmp_path, "**/*", tmp_path)
+    assert best[0] == "a.js"
+
+
+def test_raising_stale_check_does_not_break_first_call(axb):
+    from axibridge_mcp.server import build_server
+    from axibridge_mcp.targets import Targets
+
+    def boom(url):
+        raise RuntimeError("boom")
+    t = Targets(live_url=axb, stale_check=boom)
+    try:
+        r = call(build_server(t), "state")
+    finally:
+        t.close()
+    assert not r.is_error, text(r)
+
+
+def test_stale_warning_swallows_gather_errors(monkeypatch):
+    from axibridge_mcp import diagnose
+    monkeypatch.setattr(diagnose, "gather", lambda url: 1 / 0)
+    assert diagnose.stale_warning("http://127.0.0.1:1") is None
+
+
+def test_sandbox_rejects_bad_seed_names(srv, targets, tmp_path):
+    for bad in ("../x", str(tmp_path), "a/b", ".."):
+        r = call(srv, "sandbox", {"action": "start", "seed_project": bad})
+        assert r.is_error, bad
+        assert not targets.sandbox.running
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_failed_seed_on_fresh_start_stops_sandbox(srv, targets):
+    r = call(srv, "sandbox", {"action": "start", "seed_project": "no-such-project"})
+    assert r.is_error
+    assert not targets.sandbox.running

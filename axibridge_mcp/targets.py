@@ -50,17 +50,38 @@ class Sandbox:
         # seeding happens under the same lock as start/stop, so it covers both
         # the already-running and the fresh-start branch
         with self._lock:
+            if seed:
+                self._check_seed_name(seed)  # before any start or copy
+            fresh = not self.running
             url = self._start(timeout)
             if seed:
-                self._seed(seed, seed_root)
+                try:
+                    self._seed(seed, seed_root)
+                except BaseException:
+                    if fresh:
+                        self._stop()
+                    raise
             return url
+
+    @staticmethod
+    def _check_seed_name(name: str) -> None:
+        if (not name or name in (".", "..") or "/" in name or "\\" in name
+                or "\0" in name or Path(name).name != name):
+            raise ToolError(f"invalid project name {name!r} — a plain folder name is required")
 
     def _seed(self, name: str, root: Path | None) -> None:
         """Copy a saved project folder into the sandbox and open it there."""
-        src = (root or Path("~/AxidrawProjects").expanduser()) / name
+        self._check_seed_name(name)
+        base = (root or Path("~/AxidrawProjects").expanduser()).resolve()
+        src = (base / name).resolve()
+        if src.parent != base:
+            raise ToolError(f"invalid project name {name!r}")
         if not src.is_dir():
             raise ToolError(f"no saved project folder {src}")
-        dest = self.dir / "projects" / name  # type: ignore[operator]
+        proj_root = (self.dir / "projects").resolve()  # type: ignore[operator]
+        dest = (proj_root / name).resolve()
+        if dest.parent != proj_root:
+            raise ToolError(f"invalid project name {name!r}")
         shutil.copytree(src, dest, dirs_exist_ok=True)
         r = httpx.post(self.url + "/api/project/load",  # type: ignore[operator]
                        json={"name": name, "recovery_action": "discard"}, timeout=120)
@@ -154,7 +175,10 @@ class Targets:
             if not self._live_checked:
                 self._live_checked = True
                 if self._stale_check is not None:
-                    self._warning = self._stale_check(self.live_url)
+                    try:
+                        self._warning = self._stale_check(self.live_url)
+                    except Exception:
+                        self._warning = None  # a diagnostic must never break the call
             return self._live
         if target == "sandbox":
             url = self.sandbox.start()

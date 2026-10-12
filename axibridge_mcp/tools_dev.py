@@ -61,7 +61,7 @@ def register(tool, targets: Targets) -> None:
         if seed_project:
             try:
                 root = Path(targets.client("live").get("/api/settings")["projects_root"]).expanduser()
-            except ToolError:
+            except (ToolError, KeyError):
                 root = None  # live app down: fall back to ~/AxidrawProjects
         url = sb.start(seed=seed_project, seed_root=root)
         return f"sandbox running at {url}" + (f" with a copy of {seed_project}" if seed_project else "")
