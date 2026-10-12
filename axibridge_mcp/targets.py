@@ -45,9 +45,27 @@ class Sandbox:
     def running(self) -> bool:
         return self.proc is not None and self.proc.poll() is None
 
-    def start(self, timeout: float = 45.0) -> str:
+    def start(self, timeout: float = 45.0, seed: str | None = None,
+              seed_root: Path | None = None) -> str:
+        # seeding happens under the same lock as start/stop, so it covers both
+        # the already-running and the fresh-start branch
         with self._lock:
-            return self._start(timeout)
+            url = self._start(timeout)
+            if seed:
+                self._seed(seed, seed_root)
+            return url
+
+    def _seed(self, name: str, root: Path | None) -> None:
+        """Copy a saved project folder into the sandbox and open it there."""
+        src = (root or Path("~/AxidrawProjects").expanduser()) / name
+        if not src.is_dir():
+            raise ToolError(f"no saved project folder {src}")
+        dest = self.dir / "projects" / name  # type: ignore[operator]
+        shutil.copytree(src, dest, dirs_exist_ok=True)
+        r = httpx.post(self.url + "/api/project/load",  # type: ignore[operator]
+                       json={"name": name, "recovery_action": "discard"}, timeout=120)
+        if r.status_code >= 400:
+            raise ToolError(f"sandbox could not open {name}: {r.text[:300]}")
 
     def _start(self, timeout: float) -> str:
         if self.running:

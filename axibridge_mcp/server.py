@@ -10,7 +10,7 @@ import sys
 
 from mcp.server.mcpserver import MCPServer
 
-from . import tools_compose, tools_look, tools_machine, tools_modules
+from . import tools_compose, tools_dev, tools_look, tools_machine, tools_modules
 from .targets import Targets
 
 INSTRUCTIONS = """\
@@ -23,7 +23,7 @@ Motion tools (plot, pen, jog, go_home) are live-only and Ian approves each
 call: show him `see` + `estimate` first. `stop` is always safe.
 """
 
-MODULES = (tools_look, tools_modules, tools_compose, tools_machine)
+MODULES = (tools_look, tools_modules, tools_compose, tools_machine, tools_dev)
 
 
 def make_tool_decorator(srv: MCPServer, targets: Targets):
@@ -55,7 +55,8 @@ def build_server(targets: Targets | None = None) -> MCPServer:
 
 
 def main() -> None:
-    targets = Targets()
+    from .diagnose import stale_warning
+    targets = Targets(stale_check=stale_warning)
     atexit.register(targets.close)
     for sig in (signal.SIGTERM, signal.SIGHUP):
         signal.signal(sig, lambda *_: sys.exit(0))  # sys.exit runs atexit → sandbox stops
