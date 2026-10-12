@@ -77,6 +77,22 @@ Every tool takes `target`:
 
 \* moves the machine; always prompted.
 
+## Keeping it fresh
+
+The app is still moving, so drift is caught by tests, not by memory:
+
+- `tests/test_mcp_freshness.py` (normal suite, no server) fails when a tool
+  calls an endpoint the app no longer has, when a new motion-shaped endpoint
+  is reachable through `call_api`, when a tool is missing from this page, or
+  when a tool has no description.
+- Modules, params and schemas are read live, so new generators and effects
+  work through `modules` / `try_generator` / `add_layer` with no MCP change.
+- Every tool warns once when the MCP process is older than its own source
+  (reconnect with `/mcp`), and the first live call warns when port 2942 is
+  serving older code than the working tree.
+- Tool behaviour against a real server is covered by the `tests/test_mcp_*`
+  modules, so a request/response shape change fails there.
+
 ## Live sync (app side)
 
 `Session.edit_rev` counts project changes for the process lifetime. After any

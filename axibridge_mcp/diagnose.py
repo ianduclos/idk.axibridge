@@ -52,6 +52,17 @@ def _newest(root: Path, pattern: str, rel: Path = REPO) -> tuple[str, float] | N
     return best
 
 
+def mcp_self_warning() -> tuple[str, float] | None:
+    """(message, newest mtime) when this MCP process predates its own source."""
+    import axibridge_mcp
+
+    newest = _newest(REPO / "axibridge_mcp", "*.py")
+    if newest is None or newest[1] <= axibridge_mcp.STARTED:
+        return None
+    return (f"WARNING — this MCP server is older than its source ({newest[0]} changed at "
+            f"{_when(newest[1])}); reconnect it with /mcp to load the change", newest[1])
+
+
 def gather(url: str) -> Facts:
     newest_backend = _newest(REPO / "axibridge", "**/*.py")
     newest_frontend = _newest(REPO / "axibridge" / "static", "**/*")

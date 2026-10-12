@@ -147,6 +147,16 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
 - In the svgelements-based reader, mm conversion uses svgelements' own
   constant (`_SE_PX_PER_MM` ≠ 96/25.4) — required for exact save/load
   reproducibility. vpype conversions keep 96/25.4.
+- **The MCP follows the API, in the same change** (`axibridge_mcp/`,
+  `docs/MCP.md`). Renaming or removing an endpoint the MCP calls fails
+  `tests/test_mcp_freshness.py` with the tool file named: fix the tool in the
+  same commit. A new non-GET endpoint whose path smells like motion
+  (`machine`, `plot`, `jog`, `home`, `calibration`, …) fails the same file until
+  it is blocked in `tools_api._MOTION` or listed as reviewed. New generators
+  and effects need no MCP change, since tools read modules and schemas live. Add a
+  dedicated tool only when `call_api` use of an endpoint becomes routine,
+  and name it in `docs/MCP.md` (a test checks the roster). After editing
+  `axibridge_mcp/`, reconnect with `/mcp`; tools warn until you do.
 
 ## Hardware notes
 

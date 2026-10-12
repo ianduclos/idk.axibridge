@@ -66,8 +66,8 @@ def register(tool, targets: Targets) -> None:
 
     def _history(direction: str, steps: int, target: TargetName) -> str:
         c = targets.client(target)
-        # literal paths, not f"/api/{direction}": the freshness test (Task 11)
-        # finds endpoints by their string literals
+        # whole literal paths, not a computed one: the freshness test finds
+        # endpoints by scanning for their string literals
         path = "/api/undo" if direction == "undo" else "/api/redo"
         done = 0
         for _ in range(steps):
