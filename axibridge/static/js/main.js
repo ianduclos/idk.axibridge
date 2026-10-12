@@ -10,7 +10,7 @@ import { beginDrawingUpdate, restartDrawingUpdate } from "./drawing_status.js";
 // geometry from /api/compose/resolved (the same resolve the plotter consumes)
 // → SSE pushes machine status & job progress one-way.
 
-import { api, subscribe } from "./api.js";
+import { api, subscribe, CLIENT_ID, mutationsPending, onMutationsIdle } from "./api.js";
 import { CanvasEditor, mul, objToMat, matToObj, screenPxPerMm } from "./canvas.js";
 import { initComposeTab, initLayersDock, renderLayerList, renderLayerDetail, setGenProgress, setSeqProgress, refreshAssetChoices, logDeleted, rerenderForView } from "./compose.js";
 import { initPlotTab, renderPlotTab, applyCapabilities, renderPlotViewControls,
@@ -1284,8 +1284,51 @@ function onEvent(ev) {
   } else if (ev.type === "gen") {
     setGenProgress(ev.frac ?? 0, ev.msg || "");
     setAssetProgress(ev.frac ?? 0, ev.msg || "");
+  } else if (ev.type === "project") {
+    onProjectEvent(ev);
   }
 }
+
+// ---- live sync: follow edits made outside this tab --------------------------
+// The server announces every project change as {type: "project", rev, origin}
+// (app.announce_project_edits). This tab's own edits already refresh through
+// their action; anything else (the MCP, another window, an undo from
+// elsewhere) refetches here — but never mid-gesture: not while a pointer is
+// held (slider drag, pen anchor, marquee) and not while this tab still has a
+// mutation in flight. Release/settle re-runs the flush.
+let externalChangePending = false;
+let pointerHeld = false;
+let externalTimer = null;
+
+function onProjectEvent(ev) {
+  if (ev.origin === CLIENT_ID || !S.state) return;
+  externalChangePending = true;
+  flushExternalChange();
+}
+
+function flushExternalChange() {
+  if (!externalChangePending || pointerHeld || mutationsPending() > 0) return;
+  clearTimeout(externalTimer);
+  externalTimer = setTimeout(async () => {
+    if (pointerHeld || mutationsPending() > 0) return;
+    externalChangePending = false;
+    try {
+      // the same sequence historyStep() uses after an undo
+      await actions.refreshProject();
+      actions.setSelection(S.selection.filter((id) => S.state.project.layers.some((l) => l.id === id)));
+      await actions.refreshResolved();
+      renderLayerDetail();
+    } catch (err) {
+      oops(err);
+    }
+  }, 120);
+}
+
+addEventListener("pointerdown", () => { pointerHeld = true; }, true);
+for (const type of ["pointerup", "pointercancel"]) {
+  addEventListener(type, () => { pointerHeld = false; flushExternalChange(); }, true);
+}
+onMutationsIdle(flushExternalChange);
 
 function onJobEvent(ev) {
   const bar = $("progress-bar");

@@ -2,12 +2,15 @@
 once on the event bus as {type: "project", rev, origin} — after the request
 finished, so a subscriber that refetches sees the post-mutation state."""
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
 from axibridge.app import create_app
 from axibridge.events import bus
 
+REPO = Path(__file__).resolve().parent.parent
 POLY = {"module": "polygon", "params": {"sides": 5, "radius": 20}}
 
 
@@ -87,3 +90,11 @@ def test_edit_rev_never_goes_backwards_across_projects(api):
     before = c.get("/api/project").json()["edit_rev"]
     c.post("/api/project/new", json={"recovery_action": "discard"})
     assert c.get("/api/project").json()["edit_rev"] > before
+
+
+def test_client_id_does_not_need_a_secure_context():
+    # Review Focus 1: the app is opened over plain http from the LAN, where
+    # crypto.randomUUID is undefined. The tab id must not depend on it.
+    src = (REPO / "axibridge" / "static" / "js" / "api.js").read_text()
+    assert "X-Axb-Client" in src
+    assert "randomUUID" not in src
