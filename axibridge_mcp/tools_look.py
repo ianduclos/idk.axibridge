@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 import json
+from typing import Annotated, Literal
 
+from pydantic import Field
+
+from .render import png, render_layers
 from .targets import TargetName, Targets
 
 
@@ -45,3 +49,31 @@ def register(tool, targets: Targets) -> None:
             "machine": {"backend": m.get("backend"), "connected": m.get("connected"),
                         "job_state": m.get("job_state"), "position": m.get("position")},
         }, indent=1)
+
+    @tool
+    def see(target: TargetName = "live",
+            layer_ids: list[str] | None = None,
+            t: Annotated[float | None, Field(ge=0.0, le=1.0)] = None,
+            travel: bool = False,
+            size: Annotated[int, Field(ge=200, le=2400)] = 1200,
+            orient: Literal["view", "machine"] = "view") -> list:
+        """PNG of the resolved canvas — exactly what plotting consumes.
+        `layer_ids` limits it to some layers; `t` scrubs the master timeline
+        (tweens that follow it); `travel` overlays pen-up moves in red (from
+        the stored-t plan); `orient="view"` matches Ian's screen (portrait is
+        rotated, origin top-right), "machine" is the raw machine frame."""
+        c = targets.client(target)
+        resolved = c.get("/api/compose/resolved", t=t, stats="false")
+        project = c.get("/api/project")
+        layers = [l for l in resolved["layers"] if layer_ids is None or l["id"] in layer_ids]
+        moves = None
+        if travel:
+            moves = [m["points"] for m in c.get("/api/plan")["job"]["moves"] if not m["pen_down"]]
+        view = project.get("view", "landscape") if orient == "view" else "landscape"
+        bed = (resolved["bed"]["width"], resolved["bed"]["height"])
+        data = render_layers(layers, bed=bed, guide=project.get("guide"), travel=moves,
+                             view=view, size=size)
+        paths = sum(len(l["paths"]) for l in layers if l.get("visible", True))
+        n = len(layers)
+        caption = f"{n} layer{'s' if n != 1 else ''}, {paths} paths, {view}"
+        return [caption, png(data)]
