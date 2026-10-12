@@ -24,8 +24,10 @@ def register(tool, targets: Targets) -> None:
         plus the project revision it was computed at. Show Ian this and a
         `see` image, then pass the revision to `plot`."""
         c = targets.client(target)
+        rev = c.get("/api/project")["edit_rev"]
         plan = c.get("/api/plan", target=plot_target)
-        p = c.get("/api/project")
+        if c.get("/api/project")["edit_rev"] != rev:
+            raise ToolError("project changed while estimating — run estimate again")
         st = c.get("/api/state")["machine"]
         job = plan["job"]
         lines = [
@@ -34,7 +36,7 @@ def register(tool, targets: Targets) -> None:
             f"{job['travel_distance'] / 1000:.2f} m travel, {job['pen_lifts']} lifts",
             f"backend {st.get('backend')} ({'connected' if st.get('connected') else 'NOT connected'}), "
             f"job {st.get('job_state')}",
-            f"revision {p['edit_rev']} — call plot(revision={p['edit_rev']}) to plot exactly this",
+            f"revision {rev} — call plot(revision={rev}, plot_target=\"{plot_target}\") to plot exactly this",
         ]
         lines += [f"warning: {w}" for w in plan.get("warnings", [])]
         if plan.get("estimator_note"):
@@ -66,14 +68,16 @@ def register(tool, targets: Targets) -> None:
     def jog(dx: Annotated[float, Field(ge=-300.0, le=300.0)] = 0.0,
             dy: Annotated[float, Field(ge=-218.0, le=218.0)] = 0.0,
             target: TargetName = "live") -> str:
-        """MOVES THE MACHINE. Relative move in mm (pen as it is)."""
+        """MOVES THE MACHINE. Pen-up relative move in mm."""
         c = targets.live_only(target)
         r = c.post("/api/machine/jog", {"dx": dx, "dy": dy})
         return f"position {r['position']}"
 
     @tool
     def go_home(target: TargetName = "live") -> str:
-        """MOVES THE MACHINE. Travel to (0, 0), the home corner."""
+        """MOVES THE MACHINE. Pen-up travel to the design origin (0, 0) — the
+        physical home corner only when no custom origin is set. Errors on the
+        pi_ssh backend, which has no goto."""
         c = targets.live_only(target)
         r = c.post("/api/machine/goto", {"x": 0.0, "y": 0.0})
         return f"position {r['position']}"

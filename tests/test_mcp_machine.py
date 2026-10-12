@@ -1,4 +1,3 @@
-import json
 import re
 import time
 
@@ -86,3 +85,34 @@ def test_stop_halts_a_running_plot(srv, axb):
 
 def test_stop_when_idle_is_harmless(srv):
     assert not call(srv, "stop").is_error
+
+
+def test_estimate_refuses_when_the_project_changes_mid_plan(srv, axb, targets):
+    call(srv, "add_layer", {"module": "polygon", "params": {"sides": 5, "radius": 10}})
+    real = targets.client
+
+    class Wrapped:
+        def __init__(self, c):
+            self.c = c
+
+        def get(self, path, **kw):
+            if path == "/api/plan":
+                with http(axb) as h:
+                    lid = h.get("/api/project").json()["layers"][0]["id"]
+                    h.patch(f"/api/layers/{lid}", json={"name": "mid-plan"})
+            return self.c.get(path, **kw)
+
+        def __getattr__(self, n):
+            return getattr(self.c, n)
+
+    targets.client = lambda t: Wrapped(real(t))
+    r = call(srv, "estimate")
+    assert r.is_error and "changed while estimating" in text(r)
+
+
+def test_estimate_suggests_plot_with_its_target(srv, axb):
+    call(srv, "add_layer", {"module": "polygon", "params": {"sides": 5, "radius": 10}})
+    with http(axb) as h:
+        lid = h.get("/api/project").json()["layers"][0]["id"]
+    out = text(call(srv, "estimate", {"plot_target": lid}))
+    assert f'plot_target="{lid}"' in out
