@@ -124,16 +124,18 @@ def create_app() -> FastAPI:
         new state (Session._checkpoint runs before the mutation, so it cannot
         announce). Concurrent requests may each see the other's bump; that only
         costs a duplicate refetch, and every change still gets an event that
-        carries its own request's origin."""
+        carries its own request's origin. A handler that raises after its
+        checkpoint still changed edit_rev, so the comparison runs in `finally`."""
         if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
             return await call_next(request)
         from .session import session
         before = session.edit_rev
-        response = await call_next(request)
-        if session.edit_rev != before:
-            bus.emit({"type": "project", "rev": session.edit_rev,
-                      "origin": request.headers.get("x-axb-client")})
-        return response
+        try:
+            return await call_next(request)
+        finally:
+            if session.edit_rev != before:
+                bus.emit({"type": "project", "rev": session.edit_rev,
+                          "origin": request.headers.get("x-axb-client")})
 
     app.include_router(router)
     app.include_router(linedraw_router)

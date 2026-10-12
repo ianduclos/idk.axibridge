@@ -1294,11 +1294,30 @@ function onEvent(ev) {
 // (app.announce_project_edits). This tab's own edits already refresh through
 // their action; anything else (the MCP, another window, an undo from
 // elsewhere) refetches here — but never mid-gesture: not while a pointer is
-// held (slider drag, pen anchor, marquee) and not while this tab still has a
-// mutation in flight. Release/settle re-runs the flush.
+// held (slider drag, pen anchor, marquee), not while a text field has focus
+// with an uncommitted edit (the re-render would steal it mid-word), and not
+// while this tab still has a mutation in flight. Release/blur/change/settle
+// re-runs the flush.
 let externalChangePending = false;
 let pointerHeld = false;
 let externalTimer = null;
+// set by `change` (Enter, picking an option): the focused field's edit is
+// committed, so a refetch no longer loses anything; any new input clears it
+let fieldCommitted = false;
+const NON_TEXT_INPUTS = new Set(["checkbox", "radio", "range", "color", "file",
+  "button", "submit", "reset", "image", "hidden"]);
+
+function editingField() {
+  const el = document.activeElement;
+  if (!el || fieldCommitted) return false;
+  if (el.isContentEditable) return true;
+  if (el.tagName === "TEXTAREA" || el.tagName === "SELECT") return true;
+  return el.tagName === "INPUT" && !NON_TEXT_INPUTS.has(el.type);
+}
+
+function syncBlocked() {
+  return pointerHeld || editingField() || mutationsPending() > 0;
+}
 
 function onProjectEvent(ev) {
   if (ev.origin === CLIENT_ID || !S.state) return;
@@ -1307,10 +1326,10 @@ function onProjectEvent(ev) {
 }
 
 function flushExternalChange() {
-  if (!externalChangePending || pointerHeld || mutationsPending() > 0) return;
+  if (!externalChangePending || syncBlocked()) return;
   clearTimeout(externalTimer);
   externalTimer = setTimeout(async () => {
-    if (pointerHeld || mutationsPending() > 0) return;
+    if (syncBlocked()) return;
     externalChangePending = false;
     try {
       // the same sequence historyStep() uses after an undo
@@ -1324,10 +1343,26 @@ function flushExternalChange() {
   }, 120);
 }
 
-addEventListener("pointerdown", () => { pointerHeld = true; }, true);
-for (const type of ["pointerup", "pointercancel"]) {
-  addEventListener(type, () => { pointerHeld = false; flushExternalChange(); }, true);
+function releasePointer() {
+  pointerHeld = false;
+  flushExternalChange();
 }
+addEventListener("pointerdown", () => { pointerHeld = true; }, true);
+// a native context menu (WKWebView, Chrome on macOS) can swallow pointerup,
+// which would latch pointerHeld and stall live sync — so a context menu, the
+// window losing focus, or a move with no button down also count as release
+for (const type of ["pointerup", "pointercancel", "contextmenu"]) {
+  addEventListener(type, releasePointer, true);
+}
+addEventListener("blur", (e) => { if (e.target === window) releasePointer(); });
+addEventListener("pointermove", (e) => {
+  if (pointerHeld && e.buttons === 0) releasePointer();
+}, true);
+addEventListener("focusin", () => { fieldCommitted = false; }, true);
+addEventListener("input", () => { fieldCommitted = false; }, true);
+addEventListener("change", () => { fieldCommitted = true; flushExternalChange(); }, true);
+// during focusout activeElement can still be the field; re-check once focus settled
+addEventListener("focusout", () => { setTimeout(flushExternalChange, 0); }, true);
 onMutationsIdle(flushExternalChange);
 
 function onJobEvent(ev) {

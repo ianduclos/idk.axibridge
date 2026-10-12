@@ -98,3 +98,24 @@ def test_client_id_does_not_need_a_secure_context():
     src = (REPO / "axibridge" / "static" / "js" / "api.js").read_text()
     assert "X-Axb-Client" in src
     assert "randomUUID" not in src
+
+
+def test_a_handler_that_raises_after_checkpointing_still_announces(api, monkeypatch):
+    # PUT /api/project has no try/except, so an exception escapes the handler
+    # after Session._checkpoint() already moved edit_rev — the middleware must
+    # still announce it, or open windows silently miss a real change.
+    from axibridge.session import session
+    c, seen = api
+
+    def checkpoint_then_fail(patch):
+        with session._lock:
+            session._checkpoint()
+        raise RuntimeError("boom after checkpoint")
+    monkeypatch.setattr(session, "update_project", checkpoint_then_fail)
+    before, n0 = session.edit_rev, len(project_events(seen))
+    with pytest.raises(RuntimeError, match="boom after checkpoint"):
+        c.put("/api/project", json={"name": "x"}, headers={"X-Axb-Client": "tab-9"})
+    ev = project_events(seen)[n0:]
+    assert session.edit_rev != before
+    assert len(ev) == 1
+    assert ev[0]["rev"] == session.edit_rev and ev[0]["origin"] == "tab-9"
