@@ -90,6 +90,7 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
 | Menu bar — ONE definition: the macOS menu is parsed out of `#menubar`'s markup | `axibridge/menu_spec.py`, `static/js/menu.js`, `launch/axibridge_app.py` |
 | Canvas editor / tabs | `axibridge/static/js/canvas.js`, `compose.js`, `plot.js`, … |
 | Bottom timeline bar (scrub, frame snap, checkpoint jumps) — owns the master-`t` scrub; it must never PATCH the project | `axibridge/static/js/timeline.js` |
+| MCP server for agents (live/sandbox targets, see/compose/tune/diagnose; motion tools always prompted) + live sync (`edit_rev`, `project` SSE event) | `axibridge_mcp/`, `docs/MCP.md` |
 
 ## Conventions & invariants (break these and the tool lies)
 
