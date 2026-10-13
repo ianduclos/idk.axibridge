@@ -35,6 +35,11 @@ Every tool takes `target`:
   project changed since — show Ian `see` + `estimate` first.
 - `plot`: `estimate` reads the revision before and after timing and refuses
   if it moved during the estimate. Its suggested call names `plot_target`.
+- Ian's local allow-list (2026-10-13, gitignored `.claude/settings.local.json`)
+  lets the look, module, dev, `estimate`/`stop`/`pause`, layer-editing
+  (`add_layer`, `edit_layer`, `delete_layers`, `reorder_layers`, `undo`,
+  `redo`) and `sandbox` tools run unprompted, since ⌘Z covers the edits.
+  `project`, `save_project` and `call_api` stay prompted: ⌘Z can't undo them.
 - `jog` is a pen-up move.
 - `go_home` goes to the design origin (0, 0): the physical home corner only
   when there is no custom origin. The `pi_ssh` backend has no goto.
