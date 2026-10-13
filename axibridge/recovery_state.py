@@ -144,6 +144,7 @@ class RecoveryStateMixin:
     def begin_project(self) -> None:
         """Reset tracking after New/Load; the present state is the baseline."""
         with self._lock:
+            self._bump_edit_rev()  # New/Load/recovery restore replace the whole project
             self._recovery_session_id = uuid.uuid4().hex
             self._recovery_revision = 0
             self._recovery_baseline = self._recovery_seen = _fingerprint(self)

@@ -64,6 +64,9 @@ fast = ["scikit-fmm>=2024"]
 # deliberately overlapping contours. Deliberately excluded from the Pi's
 # normal install, same rationale as `fast`.
 text = ["skia-pathops>=0.8"]
+# The agent-facing MCP server (axibridge_mcp/, docs/MCP.md). Mac bench only:
+# the Pi never installs it, and its tests skip without it.
+mcp = ["mcp>=2.3,<3", "httpx>=0.27"]
 
 [project.scripts]
 axibridge = "axibridge.__main__:main"

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "axibridge": {
+      "command": "/Users/ianduclos/_SecondBrain/02_Areas/_Coding/idk.axibridge/.venv/bin/python",
+      "args": ["-m", "axibridge_mcp"]
+    }
+  }
+}

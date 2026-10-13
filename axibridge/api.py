@@ -107,7 +107,7 @@ def _fail(exc: Exception, code: int = 409) -> HTTPException:
 
 def _project_payload() -> dict[str, Any]:
     with session._lock:
-        return {**session.project.model_dump(exclude={"staging": {"__all__": {"snapshot"}}}), **session.recovery_status()}
+        return {**session.project.model_dump(exclude={"staging": {"__all__": {"snapshot"}}}), **session.recovery_status(), "edit_rev": session.edit_rev}
 
 
 def _consts() -> EstimatorConstants:
