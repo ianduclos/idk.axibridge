@@ -1,14 +1,21 @@
 ---
 project: idk.axibridge
-updated: 2026-10-08
-entries: 29
+updated: 2026-10-13
+entries: 30
 ---
+
+### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
+
+- done: `axibridge_mcp/` (26 tools, live/sandbox targets, motion tools live-only and always prompted, revision-guarded plot, call_api motion blocklist, dev tools, freshness guards) and live sync (`edit_rev`, `project` SSE event, UI refetch) merged to main as 069e11b. Full suite on the merged result 1,954 passed; build/typecheck clean. Live app relaunched on it 2026-10-13 and `/api/project` carries `edit_rev`. `.mcp.json` registers the server.
+- next: Load the MCP in a fresh Claude Code session here (approve the project server), then try it against the live app: `state`, `see`, an `add_layer` while watching the window follow, ⌘Z of an MCP edit. Then decide the two parked follow-ups in the review record (focus-latched live sync; host/port writable via call_api) and the open product question: should a deliberately cancelled render answer HTTP 409 at all (Chromium logs it as a console error)?
+- blockers: none. Unverified by tests: live sync in the real WKWebView window (incl. the context-menu release fix) and any plot through the MCP on hardware.
+- context: [usage + safety + residuals](docs/MCP.md), [review record: rulings, parked, deferred minors](docs/reviews/mcp-server-2026-10-12.md), [spec](docs/superpowers/specs/2026-10-12-mcp-server-design.md), [plan](docs/superpowers/plans/2026-10-12-mcp-server.md). Allow-list for read-only tools proposed in session, not yet written.
 
 ### Integrated branches: native activation and archive retirement — opened 2026-10-08, owner: ian
 
 - done: Mosca 2, recovery/groups/Assets and the Territory02 study source/history are integrated locally. The three branches are retained; the old vault worktree folders are gone. Territory02 remains a separate study, without production renderer convergence.
 - verification: Final isolated suite: 1,819 passed, one native-launch skip (376 s); typecheck/build passed. Twelve Territory02 revisions replayed byte-identically. Narrow-header wrapping and a Gallery test save race were corrected; an initial bench preview timeout passed on rerun. Existing Starlette and NumPy deprecation warnings remain.
-- next: Before activation, recheck the running app/backend ownership and job state, preserve its open project and use matching backend/frontend builds. Then check recovery, groups, Assets and Mosca 2 in the native app; paper acceptance remains. This integration did not restart the app, push or sync the Pi.
+- next: Activated 2026-10-13: AxiBridge.app relaunched on merged main (069e11b, includes this integration), app-owned backend verified. Check recovery, groups, Assets and Mosca 2 in the native app; paper acceptance remains. Not pushed; Pi not synced.
 - archives: Four AxiBridge full archives (1,193,667,789 bytes) remain in `/Users/ianduclos/worktrees/codex-archives/2026-10-08-01-projects-cleanup`. Their Git commits are on main, but local notes, ignored study output and two modified comparison PNGs still need preservation before full-archive retirement. See `axibridge-backup-retirement-preview.json` in that folder. Never infer that merging alone preserves ignored or uncommitted content.
 
 ### Mosca × Territory composition instrument — opened 2026-10-05, owner: Codex

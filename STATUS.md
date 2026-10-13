@@ -1,21 +1,30 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-10-08
+updated: 2026-10-13
 machine: mac+pi
-summary: Mosca 2, recovery/groups/Assets and Territory02 study sources are integrated locally; native activation and paper acceptance remain.
+summary: The MCP server and live sync are merged and the live app runs them; native acceptance of the MCP, live sync and the 8 October integration remains with Ian.
 next:
-  - Activate matching backend/frontend only after checking the running app is idle and preserving its open project
-  - Check recovery close/relaunch, nested groups and Assets in the native app
+  - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
+  - Check recovery close/relaunch, nested groups, Assets and Mosca 2 in the native app
+  - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
-  - Inspect the Territory02 first editing checkpoint before choosing any further study or convergence
-  - Audit the remaining environment changes recorded in HANDOFF.md
-  - Complete the remaining native and paper checks in HANDOFF.md
-  - Sync the idkpi clone with main once the Pi is back
+  - Sync the idkpi clone with main (Pi is reachable again)
 handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**MCP server + live sync, 12–13 October:** `axibridge_mcp/` lets an agent see,
+compose, tune and diagnose through the HTTP API, with `live`/`sandbox` targets;
+plot, pen, jog and go_home are live-only and always prompted, and `plot` refuses
+if the project changed since `estimate`. The app gained `edit_rev` and a
+`project` SSE event so an open window follows external edits. Built by
+subagent-driven execution (12 tasks, per-task reviews, final Fable review +
+fix wave), merged as 069e11b: 1,954 passed on the merged result. The live app
+was relaunched on it 2026-10-13. Freshness tests fail the normal suite when the
+app drifts from what the MCP calls. Usage: `docs/MCP.md`; decisions and
+deferred findings: `docs/reviews/mcp-server-2026-10-12.md`.
 
 **Cleanup integration, 8 October:** locally integrated `codex/mosca2-bench`,
 `codex/recovery-groups-usability` and all eleven `codex/territory02` commits.
