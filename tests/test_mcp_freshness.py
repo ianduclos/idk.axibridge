@@ -130,6 +130,6 @@ def test_the_mcp_notices_its_own_source_changed(tmp_path, monkeypatch):
     from axibridge_mcp import diagnose
 
     assert diagnose.mcp_self_warning() is None or axibridge_mcp.STARTED < time.time()
-    monkeypatch.setattr(axibridge_mcp, "STARTED", time.time() - 10_000)
+    monkeypatch.setattr(axibridge_mcp, "STARTED", 0.0)  # older than any source file
     hit = diagnose.mcp_self_warning()
     assert hit is not None and "/mcp" in hit[0]
