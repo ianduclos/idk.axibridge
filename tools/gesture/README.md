@@ -1,0 +1,67 @@
+# tools/gesture — gesture-bank research code
+
+Stages 0–2 of `docs/IDEAS-gesture-bank.md`: corpus tooling, raster → strokes
+extraction, κ(s) segment fitting, the measurement panel and the
+discrimination experiments. **Research code, not part of the `axibridge`
+package** — same status as `tools/territory02/`. Nothing here is imported by
+the app, and the app's test suite never runs it.
+
+## Environment
+
+Its own interpreter, so the pinned `.venv` is never touched:
+
+```bash
+uv venv .local/gesture/.venv --python 3.13
+uv pip install --python .local/gesture/.venv/bin/python \
+  numpy scipy scikit-image sknw networkx pillow matplotlib pytest scikit-learn shapely
+```
+
+Run from the repo root:
+
+```bash
+.local/gesture/.venv/bin/python -m pytest -q tools/gesture/tests
+.local/gesture/.venv/bin/python -m tools.gesture.experiments.<name>
+```
+
+## Data on disk (never committed)
+
+- `.local/gesture/corpus/{matisse,hokusai,ingres}/` — scans. Manifests with
+  rights and download URLs: `docs/research/gesture-corpus/*.csv`.
+- `.local/gesture/out/` — generated drawings, extracted strokes, figures,
+  per-run JSON. Experiments write here; small summaries worth keeping are
+  copied into `tools/gesture/results/` (committed, text/PNG only, < 1 MB each).
+
+## Contract (shared by every module — change it here first)
+
+- **`Stroke`** (`gesture/core.py`): `points` float64 `(N, 2)`, ordered along
+  the stroke, in **pixels** of the source raster (or of the synthetic
+  canvas); `width` optional float64 `(N,)` in the same units (full line
+  width, not radius); `closed: bool` (closed strokes do NOT repeat the first
+  point); `meta: dict`.
+- **`Drawing`** (`gesture/core.py`): `strokes: list[Stroke]`, `source: str`,
+  `size: (width_px, height_px)`, `meta: dict`.
+- **Units.** The physical size of a museum scan is unreliable, so
+  scale-dependent statistics are made dimensionless by the drawing's
+  **reference length** `Drawing.ref_length()` = diagonal of the bounding box
+  of all stroke points. κ is reported as κ·ref_length, lengths as
+  length/ref_length. Line width gets its own dimensionless ratio. Never mix
+  raw-pixel statistics across drawings.
+- **Curvature** comes from `gesture/curvature.py` only — one implementation:
+  uniform arc-length resampling, Gaussian smoothing of x(s), y(s) with σ in
+  the same units as the points, signed κ = (x'y'' − y'x'')/|r'|³. Smoothing
+  scale is always explicit; never compute κ on unsmoothed scan polylines.
+- **Purity.** Functions never mutate their inputs.
+- **Determinism.** Anything random takes a `seed` or `np.random.Generator`.
+
+## Modules
+
+| Module | Stage | Purpose |
+|---|---|---|
+| `core.py` | — | `Stroke`, `Drawing`, JSON (de)serialisation |
+| `curvature.py` | — | resample, smooth, κ(s), turning angle, scale space |
+| `synth.py` | 0 | known strokes → rendered ink raster (ground truth) |
+| `nulls.py` | 0 | null drawings (random walks, shuffled segments, …) |
+| `clothoid.py` | 2 | piecewise-linear κ(s) fit → line/arc/clothoid segments |
+| `extract.py` | 1 | scan → binary → skeleton graph → strokes with width |
+| `panel.py` | 2 | per-drawing feature vector (the fingerprint) |
+| `experiments/` | 1–2 | round-trip, discrimination, ablation runs |
