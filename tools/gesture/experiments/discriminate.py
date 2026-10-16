@@ -41,7 +41,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # `gesture` importable from anywhere
 
-from gesture import nulls, panel  # noqa: E402
+from gesture import medium, nulls, panel  # noqa: E402
 from gesture.core import Drawing  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -248,6 +248,21 @@ def markdown(rep: dict) -> str:
     if rep["dropped_columns"]:
         L.append(f"Dropped columns (missing in some drawings or all-NaN): {len(rep['dropped_columns'])} — "
                  + ", ".join(rep["dropped_columns"][:12]) + (" …" if len(rep["dropped_columns"]) > 12 else ""))
+    mi = rep.get("medium")
+    if mi:
+        L += ["", f"**Preprocessing: standard** — σ ≥ {c['sigma_min_w']:g} line widths, "
+              f"{mi['directions']} medium direction(s) projected out from "
+              + ", ".join(f"{a_} {ma} ({na}) vs {mb} ({nb})" for a_, ma, mb, na, nb in mi["pairs_fitted"])
+              + (f"; {mi['unknown_medium_rows']} rows with no medium label" if mi["unknown_medium_rows"] else ""),
+              "", "| # | medium control (want ≈ .5) | probe | raw AUC | projected AUC |", "|---|---|---|---|---|"]
+        i = 0
+        for probe, res in mi["heldout"].items():
+            for pair, v in res.items():
+                i += 1
+                L.append(f"| {i} | {pair} | {probe} | {v['raw'][0]:.2f} ± {v['raw'][1]:.2f} | "
+                         f"{v['projected'][0]:.2f} ± {v['projected'][1]:.2f} |")
+    elif c.get("preprocess") == "raw":
+        L += ["", "**Preprocessing: raw** (no medium projection)."]
     chance = 1.0 / len(rep["classes"])
     L += ["", f"## 1. Multi-class balanced accuracy (chance {chance:.3f})", "",
           "| # | model | all features | geometry only (no w_, end_) |", "|---|---|---|---|"]
@@ -317,14 +332,21 @@ def main(argv=None) -> dict:
     ap.add_argument("--nulls", nargs="*", default=None, help=f"subset of {list(nulls.NULLS)}")
     ap.add_argument("--name", default=None, help="run name (output folder)")
     ap.add_argument("--sigma-frac", type=float, default=0.01)
-    ap.add_argument("--sigma-min-w", type=float, default=0.0,
-                    help="floor σ at this many median line widths (σ/w confound control)")
+    ap.add_argument("--sigma-min-w", type=float, default=None,
+                    help="floor σ at this many median line widths (default: medium.SIGMA_MIN_W "
+                         "with --preprocess standard, 0 with raw)")
+    ap.add_argument("--preprocess", choices=["standard", "raw"], default="standard",
+                    help="standard = σ floor + projection of within-hand medium directions "
+                         "(gesture/medium.py, docs/research/gesture-corpus/medium-pairs.csv); "
+                         "raw = the panel as measured")
     ap.add_argument("--no-width", action="store_true", help="compute the panel without w_/end_")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--repeats", type=int, default=3)
     ap.add_argument("--jobs", type=int, default=max(1, min(8, (os.cpu_count() or 2) - 1)))
     ap.add_argument("--out", type=Path, default=OUT)
     a = ap.parse_args(argv)
+    if a.sigma_min_w is None:
+        a.sigma_min_w = medium.SIGMA_MIN_W if a.preprocess == "standard" else 0.0
     t0 = time.perf_counter()
 
     # ---- load
@@ -381,6 +403,29 @@ def main(argv=None) -> dict:
     stem = lambda key: key.split("/", 1)[1]
     G = np.array([f"src:{stem(key)}" if (c == a.null_source or c.startswith("null_")) else key
                   for (c, key, _) in items])[m]
+    # Standard preprocessing: project out within-hand medium directions.
+    # Medium labels only (never the artist target), so fitting on all rows
+    # does not leak the classification target into CV.
+    media_info = None
+    if a.preprocess == "standard":
+        lut = medium.load_media()
+        med_lab = np.array(["null" if c.startswith("null_") else lut.get((c, stem(key)), "unknown")
+                            for (c, key, _) in items])[m]
+        art_lab = np.array([c for (c, _, _) in items])[m]
+        pairs = medium.load_pairs()
+        # Geometry columns only: projecting all columns would mix width
+        # features into the "geometry only" columns. Width columns stay raw.
+        gi = np.array([panel.group_of(n) not in panel.WIDTH_GROUPS for n in keep])
+        Xg = X[:, gi]
+        pj = medium.MediumProjector(pairs).fit(Xg, art_lab, med_lab)
+        held = {"linear": medium.heldout_medium_auc(Xg, art_lab, med_lab, pairs, reps=50, seed=a.seed),
+                "forest": medium.heldout_medium_auc(Xg, art_lab, med_lab, pairs, reps=30, seed=a.seed,
+                                                    probe="forest")}
+        X = X.copy()
+        X[:, gi] = pj.transform(Xg)
+        media_info = {"pairs_fitted": pj.fitted_pairs_, "directions": int(len(pj.basis_)),
+                      "iters": pj.iters, "heldout": held,
+                      "unknown_medium_rows": int((med_lab == "unknown").sum())}
     labels = [c for c in dict.fromkeys(y_all.tolist()) if c not in skipped]
     if len(labels) < 2:
         sys.exit("need at least two classes with >= 3 drawings")
@@ -412,6 +457,7 @@ def main(argv=None) -> dict:
         "name": a.name or "-".join(groups),
         "config": {"groups": {g: str(d) for g, d in (x.partition("=")[::2] for x in a.group)},
                    "null_source": src, "nulls": a.nulls, "sigma_frac": a.sigma_frac, "sigma_min_w": a.sigma_min_w,
+                   "preprocess": a.preprocess,
                    "width": not a.no_width, "seed": a.seed, "repeats": a.repeats, "k": k},
         "classes": {c: counts[c] for c in labels},
         "skipped_classes": skipped,
@@ -423,6 +469,7 @@ def main(argv=None) -> dict:
         "clothoid_status": ", ".join(f"{s} ×{n}" for s, n in Counter(i.get("clothoid", "?") for i in infos).items()),
         "panel_seconds_mean": float(np.mean([i["seconds"] for i in infos])),
         "panel_seconds_max": float(np.max([i["seconds"] for i in infos])),
+        "medium": media_info,
         "multiclass": multiclass(every),
         "confusion": {mn: confusion(mk, X, y, labels, k, a.seed, G) for mn, mk in models.items()},
         "pairwise": pairwise(every),

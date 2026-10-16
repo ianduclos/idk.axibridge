@@ -227,8 +227,13 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   σ ≥ 7 line widths + nullspace projection of the etching/litho directions
   takes that control to chance held-out (0.44 linear, 0.61 forest probe)
   while artists still separate (0.83 / 0.79, chance 0.33; Matisse vs Hokusai
-  0.90–0.93, vs Ingres 0.88–0.89). Brush/graphite invariance is still
-  unshown — needs a within-hand comparison across those media.
+  0.90–0.93, vs Ingres 0.88–0.89). This is now the **standard
+  preprocessing** (`gesture/medium.py`, pairs in
+  `docs/research/gesture-corpus/medium-pairs.csv`); v4 with it: control
+  0.41 (linear) / 0.60 (forest), artists 0.81 / 0.79, nulls vs identity
+  0.82–0.99 (`results/discriminate-real-v4-standard.md`). Brush/graphite
+  invariance is still unshown — needs a within-hand comparison across those
+  media.
 - **Stage 3 — preview only.** `grammar.py` learns, generates, code-switches,
   translates, restyles. At σ = 0.01·ref ~90% of strokes fit as one segment,
   so order is barely modelled; drawings have no composition. Not a result.

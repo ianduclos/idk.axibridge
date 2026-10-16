@@ -10,7 +10,7 @@ next:
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank: make the medium projection standard, then grow within-hand medium pairs for brush/graphite (see HANDOFF "Gesture bank")
+  - Gesture bank: grow within-hand medium pairs for brush/graphite, then refit the grammar at a finer σ (see HANDOFF "Gesture bank")
 handoff_for: Codex
 ---
 
