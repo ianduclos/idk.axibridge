@@ -268,6 +268,10 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   bursty tremor v2, single-line chain fix + three A4 plot candidates,
   Arabic calligraphy and Arabic print research + harvest (policy: Qur'anic
   text measure-only; abstraction by design).
+- **Round 6 — regimes (2026-10-16 night)** — `tools/gesture/results/round6-2026-10-16.md`:
+  one stroke line → nib → mass (metamorphosis operators), sign vocabulary +
+  calligraphy-learned placement (judge: belongs 11/12), structure-derived
+  regime fields (trunk swells into mass). Signs should grow out of lines next.
 - **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
   continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the

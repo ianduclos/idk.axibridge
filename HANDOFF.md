@@ -4,13 +4,12 @@ updated: 2026-10-16
 entries: 31
 ---
 
-### Gesture bank: round 5 and new corpora in flight — opened 2026-10-16, owner: claude
+### Gesture bank: regimes round 7 and a first plot — opened 2026-10-16, owner: ian
 
-- done: Rounds 1–4 on 2026-10-16 (ledger in docs/IDEAS-gesture-bank.md): extraction, panel + medium projection, grammar v6 (corners ~real), tremor v2, topology, restyle, composite + single-line chain fix, three A4 plot candidates (`.local/gesture/out/plot_candidates/`), Arabic calligraphy + Arabic print corpora harvested (policy: Qur'anic text measure-only). 252 tests pass at 8bda366.
-- in flight (subagents of the 2026-10-16 session, uncommitted until reviewed): round 5 — grammar v7 (plan jitter for the memorisation regression, longer segments) in gesture/grammar.py; calligraphy/print extraction + broad-nib width model in gesture/broadnib.py + calligraphy.py; composite on v6 (frozen copy `grammar_v6_frozen.py`) + tremor v2 with plot candidates v2. Corpus research (metadata only): Brice Marden + plotter/continuous-line artists, Amazon rivers + physics/machine lines, contemporary dance → topology.
-- next: Review and commit each round-5 result (results/grammar-v7.md, calligraphy-2026-10-16.md, composite-v6-2026-10-16.md), then ask Ian about the new corpus harvests (docs/research/gesture-corpus/{artists-line,earth-physics-lines,dance-gesture}.md) and the first plot. If this session died before that, the uncommitted files in tools/gesture/ and docs/research/gesture-corpus/ are the agents' outputs: check them with the gesture suite before committing.
-- blockers: plotting needs Ian at the machine; downloads need Ian's go; 5 manual sources need a human browser session.
-- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 4](tools/gesture/results/round4-2026-10-16.md), [review](tools/gesture/results/review-2026-10-16.md), [package README](tools/gesture/README.md). Scans/outputs in gitignored `.local/gesture/`.
+- done: Rounds 1–6 on 2026-10-16 (ledger in docs/IDEAS-gesture-bank.md). Latest: regimes direction (lines, nibs, shapes becoming one another in space): `regime.py` (metamorphosis), `signs.py` (placement grammar, judged as belonging 11/12), `regime_field.py` (structure-derived fields). Corpora harvested: calligraphy, Arabic print, artists (AIC items manual), Amazon/physics, dance. Plot candidates in `.local/gesture/out/plot_candidates_v2/` and `plot_candidates_regimes/`. 320 tests pass.
+- next: Ian looks at the round-6 sheets and decides the nib-rendering question at real pen widths (tools/gesture/results/round6-2026-10-16.md item 3) and whether to plot a candidate. Research round 7 candidates are in the same file (signs as line events, wet mass edges, path ordering).
+- blockers: plotting needs Ian at the machine; 15 AIC images + 5 other manual sources need a browser session.
+- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 6](tools/gesture/results/round6-2026-10-16.md), [round 5 files](tools/gesture/results/), [corpora manifests](docs/research/gesture-corpus/), [package README](tools/gesture/README.md). Scans/outputs in gitignored `.local/gesture/`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 

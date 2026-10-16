@@ -3,14 +3,14 @@ project: idk.axibridge
 state: active
 updated: 2026-10-16
 machine: mac+pi
-summary: The MCP server and live sync are merged and the live app runs them; the gesture-bank research line has grammar v6, tremor, a structure-first composite with single-line plot candidates and new Arabic calligraphy/print corpora, with round 5 in flight; native acceptance of the MCP, live sync and the 8 October integration remains with Ian.
+summary: The MCP server and live sync are merged and the live app runs them; the gesture-bank research line now has a regimes model (lines, nibs and shapes becoming one another), learned sign placement and structure-driven compositions, with several corpora harvested; native acceptance of the MCP, live sync and the 8 October integration remains with Ian.
 next:
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
   - Check recovery close/relaunch, nested groups, Assets and Mosca 2 in the native app
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank: review round 5 + new corpus harvests, then plot a single-line tree candidate (see HANDOFF "Gesture bank")
+  - Gesture bank: review round-6 regime sheets, decide nib rendering at real pen widths, then plot a candidate (see HANDOFF "Gesture bank")
 handoff_for: Codex
 ---
 
