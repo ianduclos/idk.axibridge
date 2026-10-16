@@ -322,3 +322,22 @@ $P -m experiments.composite bench
 $P -m experiments.restyle_study delta   # v4 vs v3 restyle cells
 $P -m pytest -q tests/test_composite.py tests/test_restyle.py
 ```
+
+## Blind judge on the which-hand pairs (run by the lead after this report)
+
+Sonnet judge, images only, real Matisse / Hokusai reference crops in each
+image, key outside the repo; 50 pairs.
+
+| # | condition | judge says "Matisse" correctly | note |
+|---|---|---|---|
+| 1 | calibration: real Matisse vs real Hokusai crops | **5/10 = 0.50** | judge fails the easy case |
+| 2 | test: same structure, Matisse hand vs Hokusai hand | 18/30 = 0.60 (p = .36) | learned-topology 12/15, Oehlen trees 6/15 |
+| 3 | calibration: Matisse twice | — | no correct answer by design |
+
+Confidence: 26 guesses, 23 leans, 1 sure. The judge's stated cues are plausible
+(Hokusai = continuous wobble, bumpy edges, kinks; Matisse = long calm arcs,
+straighter runs), but it **cannot tell real Matisse from real Hokusai at crop
+scale**, so its test numbers mean nothing here. Hand identification at this
+scale is beyond this judge; the panel's pairwise classifier (0.75–0.90 for
+M–H) is the instrument to trust for "which hand". Next time: whole drawings
+instead of crops, and calibration first.
