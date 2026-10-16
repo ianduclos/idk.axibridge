@@ -4,11 +4,11 @@ updated: 2026-10-16
 entries: 31
 ---
 
-### Gesture bank: first regimes plot (c+e) + three decisions — opened 2026-10-16, owner: ian
+### Gesture bank: line styles × gesture/shape corpora + two decisions — opened 2026-10-16, owner: ian
 
-- done: Rounds 1–7 (ledger in docs/IDEAS-gesture-bank.md). Nib styles b/c/e are options with combinations (tools/gesture/results/nib-styles-2026-10-16.md); compose is now reproducible across processes. Ian chose **c+e** for the first plot. It is staged and saved as live project `regimes-ce-A4` (~/AxidrawProjects): one layer, fineliner 0.4, Sort/Merge/Reloop off, 613 lifts, app estimate 9 min 24 s. Source SVG `.local/gesture/out/plot_candidates_r7/regimes-strahler-tree-A4-nib-ce-machine.svg` (A4 landscape at the origin guide). 364 gesture tests pass.
-- next: Ian at the machine: select and connect the AxiDraw backend, tape A4 landscape at the guide, fit the 0.4 fineliner, then plot `regimes-ce-A4`. Afterwards decide items 2–3 in tools/gesture/results/round7-2026-10-16.md and start round 8 from the same file.
-- blockers: the plot needs Ian at the machine (the live backend is still the simulator); 15 AIC + 7 other manual sources need a browser session.
+- done: Rounds 1–7 (ledger in docs/IDEAS-gesture-bank.md). Nib styles b/c/e are options with combinations (tools/gesture/results/nib-styles-2026-10-16.md); compose is now reproducible across processes. c+e looked right to Ian (density control still to do). Research is judged from images; no plotting. 364 gesture tests pass.
+- next: Parallel experiments joining the line-style corpora (hands) with the gesture/shape corpora (dance, earth/physics, artists' shapes); then Ian decides items 2–3 in tools/gesture/results/round7-2026-10-16.md.
+- blockers: 15 AIC + 7 other manual sources need a browser session.
 - context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 7](tools/gesture/results/round7-2026-10-16.md), [nib styles](tools/gesture/results/nib-styles-2026-10-16.md), [package README](tools/gesture/README.md). Scans/outputs in gitignored `.local/gesture/`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
