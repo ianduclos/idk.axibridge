@@ -142,3 +142,124 @@ def test_chain_after_restyle_keeps_welded_tree_one_line(g):
     d = _tree()
     o = cp.composite(d, g, np.random.default_rng(1), amount=0.8, chain=True)
     assert o.meta["composite"]["n_out"] == 1
+
+
+# ---------------------------------------------------------------------------
+# chain fix (restyle_chain), walk / connect, SVG export
+# ---------------------------------------------------------------------------
+
+def _T():
+    """Host 0→300 along x with a 150-long branch up at x = 100: the open
+    postman retraces the 100-long left arm, so the walk reverses at (0, 0)."""
+    host = Stroke(_line((0, 0), (300, 0), 301, bend=6))
+    br = Stroke(_line(host.points[100], (100, 150), 151, bend=8))
+    return Drawing([host, br], size=(400, 400))
+
+
+def _turn_at(p, i, d):
+    s = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(p, axis=0), axis=1))])
+    a = int(np.searchsorted(s, s[i] - d))
+    b = int(min(np.searchsorted(s, s[i] + d), len(p) - 1))
+    u, v = p[i] - p[a], p[b] - p[i]
+    return float(np.degrees(np.arccos(np.clip(u @ v / (np.linalg.norm(u) * np.linalg.norm(v)), -1, 1))))
+
+
+@pytest.mark.parametrize("pin", ["tips", "turns"])
+def test_restyle_chain_pins_reversals(g, pin):
+    d = _T()
+    R = d.ref_length()
+    sk = cp.chain_paths(d)
+    o = cp.restyle_chain(sk, g, amount=0.8, seed=3, ref_length=R, pin=pin, retrace="redraw")
+    assert len(o.strokes) == 1 and o.meta["restyle_chain"]["reversals"] >= 1
+    p = o.strokes[0].points
+    an = o.strokes[0].meta["anchors"]
+    tip = np.array([0.0, 0.0])
+    hit = [i for i in an if np.linalg.norm(p[i] - tip) < 1e-9]
+    assert hit, "the reversal tip is an exact anchor of the output line"
+    assert _turn_at(p, hit[0], 0.01 * R) > 120            # and the line really turns back there
+    # every anchor lands exactly on the chained skeleton (welded runs, no gaps)
+    q = sk.strokes[0].points
+    for i in an:
+        assert np.min(np.linalg.norm(q - p[i], axis=1)) < 1e-9
+    # unpinned, the single run smooths straight through the hairpin: the tip is not hit
+    o0 = cp.restyle_chain(sk, g, amount=0.8, seed=3, ref_length=R, pin="none", retrace="redraw")
+    assert np.min(np.linalg.norm(o0.strokes[0].points - tip, axis=1)) > 1e-6
+
+
+def test_offset_return_distance():
+    t = np.linspace(0, 1, 800)
+    p = np.column_stack([600 * t, 40 * np.sin(5 * t)])
+    q = cp.offset_return(p, 3.0, 20.0)
+    assert np.allclose(q[0], p[0]) and np.allclose(q[-1], p[-1])
+    from scipy.spatial import cKDTree
+    dist, _ = cKDTree(p).query(q[100:-100])
+    assert np.all(np.abs(dist - 3.0) < 0.5)
+
+
+@pytest.mark.parametrize("retrace,lo,hi", [("exact", 0.0, 0.05), ("offset", 0.75, 2.25)])  # in line widths
+def test_restyle_chain_return_pass(g, retrace, lo, hi):
+    d = _T()
+    R = d.ref_length()
+    w = 2.0
+    o = cp.restyle_chain(cp.chain_paths(d), g, amount=0.8, seed=3, ref_length=R, pin="turns",
+                         retrace=retrace, offset_w=1.5, w=w)
+    assert o.meta["restyle_chain"]["return_runs"] >= 1
+    p = o.strokes[0].points
+    an = [0] + o.strokes[0].meta["anchors"] + [len(p) - 1]
+    k = next(j for j, i in enumerate(an) if np.linalg.norm(p[i]) < 1e-9)  # the tip anchor
+    out_run, back_run = p[an[k - 1]:an[k] + 1], p[an[k]:an[k + 1] + 1]
+    from scipy.spatial import cKDTree
+    L = len(back_run)
+    dist, _ = cKDTree(out_run).query(back_run[L // 4: 3 * L // 4])
+    assert np.all(dist >= lo * w) and np.all(dist <= hi * w)       # offset_w = 1.5
+
+
+def test_restyle_chain_deterministic_and_pure(g):
+    sk = cp.chain_paths(_tree(), walk="min_turn")
+    before = [s.points.copy() for s in sk.strokes]
+    kw = dict(amount=0.7, seed=5, pin="turns", retrace="offset")
+    a, b = cp.restyle_chain(sk, g, **kw), cp.restyle_chain(sk, g, **kw)
+    for p, s in zip(before, sk.strokes):
+        assert np.array_equal(p, s.points)
+    for x, y in zip(a.strokes, b.strokes):
+        assert np.array_equal(x.points, y.points) and np.all(np.isfinite(x.points))
+    c = cp.composite(_tree(), g, np.random.default_rng(2), amount=0.7, chain="before", pin="turns",
+                     retrace="offset", walk="min_turn")
+    assert c.meta["composite"]["n_out"] == 1
+
+
+def test_min_turn_walk_and_connect():
+    d = _tree()
+    R = d.ref_length()
+    a, m = cp.chain_paths(d), cp.chain_paths(d, walk="min_turn")
+    for c in (a, m):                                       # a valid single line over the same ink either way
+        assert c.meta["chain"]["n_paths"] == 1
+        assert _covered(d, c, rs.WELD_R * R) <= 1.0
+    assert m.meta["chain"]["retrace_R"] == pytest.approx(a.meta["chain"]["retrace_R"])
+    turns = lambda c: cp.node_turns(c.strokes[0].points, c.strokes[0].meta["chain_pieces"], 0.01 * R).sum()  # noqa: E731
+    assert turns(m) <= turns(a) + 1e-6
+    # two loose lines → one line with one straight connector across the gap
+    two = Drawing([Stroke(_line((0, 0), (100, 0), 101)), Stroke(_line((130, 0), (230, 0), 101))], size=(300, 300))
+    c = cp.chain_paths(two, connect=True)
+    assert c.meta["chain"]["n_paths"] == 1
+    assert c.meta["chain"]["connector_R"] * two.ref_length() == pytest.approx(30.0, rel=1e-6)
+    assert cp.chain_paths(two, connect=True, max_paths=2).meta["chain"]["n_paths"] == 2
+
+
+def test_svg_roundtrip():
+    d = _tree()
+    c = cp.chain_paths(d, max_retrace=0.0)
+    svg, st = cp.to_svg(c, paper="A4", margin_mm=10.0)
+    (W, H), paths = cp.read_svg_paths(svg)
+    assert (W, H) == (297.0, 210.0)
+    assert len(paths) == len(c.strokes) == st["paths"] and st["lifts"] == len(paths) - 1
+    P = np.vstack(paths)
+    assert P[:, 0].min() >= 10 - 1e-3 and P[:, 0].max() <= W - 10 + 1e-3
+    assert P[:, 1].min() >= 10 - 1e-3 and P[:, 1].max() <= H - 10 + 1e-3
+    # the fit touches the margin on the limiting axis (no wasted paper), and pen order is kept
+    assert min(P[:, 1].min() - 10, H - 10 - P[:, 1].max()) < 1e-2 or min(P[:, 0].min() - 10, W - 10 - P[:, 0].max()) < 1e-2
+    mm = cp.to_mm(c, paper="A4", margin_mm=10.0)
+    for p, q in zip(paths, mm):
+        assert np.allclose(p[0], q[0], atol=1e-3) and np.allclose(p[-1], q[-1], atol=1e-3)
+    down = sum(np.sum(np.linalg.norm(np.diff(p, axis=0), axis=1)) for p in paths)
+    assert st["pen_down_mm"] == pytest.approx(down, abs=0.2) and st["est_min"] > 0

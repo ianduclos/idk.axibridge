@@ -116,8 +116,72 @@ def _crossing_splits(S: list[np.ndarray], closed: list[bool]) -> dict[int, list]
     return out
 
 
+TURN_D_R = 0.01        # tangent estimation length at a node (R units), for turn angles
+
+
+def _piece_dirs(pc: np.ndarray, d: float) -> tuple[np.ndarray, np.ndarray]:
+    """(direction leaving the piece's start, direction arriving at its end),
+    each a unit vector estimated over arc length d (at most the piece)."""
+    s = _arclen(pc)
+    dd = min(d, 0.5 * s[-1]) if s[-1] > 0 else 0.0
+    j0 = int(np.clip(np.searchsorted(s, dd), 1, len(pc) - 1))
+    j1 = int(np.clip(np.searchsorted(s, s[-1] - dd), 0, len(pc) - 2))
+    a, b = pc[j0] - pc[0], pc[-1] - pc[j1]
+    return a / max(np.linalg.norm(a), 1e-12), b / max(np.linalg.norm(b), 1e-12)
+
+
+def _walk_min_turn(H, start, pieces: list, node: list, d: float) -> list:
+    """An Euler trail/circuit of multigraph H from `start` (Fleury's rule:
+    never cross a bridge while another edge is left) that, among the allowed
+    edges, always continues with the smallest turning angle — the way a hand
+    would carry on through a junction. Edges with piece −1 (virtual pen-up
+    links) carry no direction. Returns [(u, v, key), ...]."""
+    import networkx as nx
+    H = H.copy()
+    dirs = {k: _piece_dirs(pc, d) for k, pc in enumerate(pieces)}
+    walk, u, arrive = [], start, None
+
+    def leave_arrive(e):
+        uu, vv, kk = e
+        k0 = H.edges[uu, vv, kk]["piece"]
+        if k0 < 0:
+            return None, None
+        a, b = dirs[k0]
+        if node[2 * k0] == uu:
+            return a, b
+        return -b, -a
+
+    def is_bridge(e):
+        uu, vv, kk = e
+        if uu == vv or H.number_of_edges(uu, vv) > 1:
+            return False
+        data = H.edges[uu, vv, kk]
+        H.remove_edge(uu, vv, kk)
+        ok = nx.has_path(H, uu, vv)
+        H.add_edge(uu, vv, key=kk, **data)
+        return not ok
+
+    while H.degree(u) > 0:
+        cands = sorted(H.edges(u, keys=True), key=lambda e: (str(e[1]), str(e[2])))
+        if len(cands) > 1:
+            nb = [e for e in cands if not is_bridge(e)]
+            cands = nb or cands
+        if arrive is not None and len(cands) > 1:
+            def turn(e):
+                lv, _ = leave_arrive(e)
+                return 9.0 if lv is None else float(np.arccos(np.clip(np.dot(arrive, lv), -1, 1)))
+            cands = sorted(cands, key=turn)
+        e = cands[0]
+        _, arrive = leave_arrive(e)
+        walk.append(e)
+        H.remove_edge(*e)
+        u = e[1]
+    return walk
+
+
 def chain_paths(drawing: Drawing, *, tol_r: float = rs.WELD_R, at_crossings: bool = False,
-                max_retrace: float | None = None) -> Drawing:
+                max_retrace: float | None = None, walk: str = "any", connect: bool = False,
+                max_paths: int | None = None) -> Drawing:
     """Join a drawing's lines into as few continuous pen paths as possible.
 
     Graph: nodes are stroke ends, junction points (an end touching another
@@ -133,8 +197,20 @@ def chain_paths(drawing: Drawing, *, tol_r: float = rs.WELD_R, at_crossings: boo
     virtual ends each) until the retrace is below it — the
     trade between one line and doubled twigs. Pure; geometry in, geometry
     out (no smoothing).
-    Returns a Drawing with one stroke per component, meta n_in / n_paths /
-    ink / retrace (R units)."""
+    walk: "any" (networkx's Euler walk) | "min_turn" (`_walk_min_turn`:
+    at every node continue with the smallest turn — fewer reversals and
+    sharp junction turns for a hand to redraw).
+    connect: join separate components with straight connector lines
+    (minimum spanning tree over the closest node pairs) so a drawing of
+    loose lines can still be ONE line; connectors are flagged. With
+    max_paths, only the shortest connectors needed to get down to
+    max_paths components are added.
+    max_paths: at most this many pen paths (more trails for the largest
+    component, zero retrace once every odd node has its own end).
+    Returns a Drawing with one stroke per path, meta n_in / n_paths /
+    ink / retrace (R units); each stroke's meta["chain_pieces"] lists
+    (i0, i1, piece, forward, repeat, connector) for every piece it walks —
+    the node passages that `restyle_chain` pins."""
     import networkx as nx
     from scipy.spatial import cKDTree
     S = [s.points.astype(float) for s in drawing.strokes if len(s.points) >= 2]
@@ -206,10 +282,39 @@ def chain_paths(drawing: Drawing, *, tol_r: float = rs.WELD_R, at_crossings: boo
     G = nx.MultiGraph()
     for k, pc in enumerate(pieces):
         G.add_edge(node[2 * k], node[2 * k + 1], key=k, piece=k, length=float(_arclen(pc)[-1]))
+    connectors: set[int] = set()
+    if connect and nx.number_connected_components(G) > 1:
+        pos = {node[a]: ends[a] for a in range(len(ends))}
+        comps = [sorted(c, key=str) for c in nx.connected_components(G)]
+        CG = nx.Graph()
+        for i in range(len(comps)):
+            Pi = np.array([pos[v] for v in comps[i]])
+            ti = cKDTree(Pi)
+            for j in range(i + 1, len(comps)):
+                Pj = np.array([pos[v] for v in comps[j]])
+                dd, ii = ti.query(Pj)
+                m = int(np.argmin(dd))
+                CG.add_edge(i, j, weight=float(dd[m]), a=comps[i][int(ii[m])], b=comps[j][m])
+        step = 0.002 * R
+        mst = sorted(nx.minimum_spanning_edges(CG, data=True), key=lambda t: (t[2]["weight"], t[0], t[1]))
+        if max_paths is not None:                    # only as many connectors as the path budget needs
+            mst = mst[:max(0, len(comps) - int(max_paths))]
+        for i, j, e in mst:
+            pa, pb = pos[e["a"]], pos[e["b"]]
+            n = max(int(np.ceil(np.linalg.norm(pb - pa) / step)), 1)
+            k = len(pieces)
+            pieces.append(pa + np.linspace(0, 1, n + 1)[:, None] * (pb - pa))
+            node += [e["a"], e["b"]]
+            connectors.add(k)
+            G.add_edge(e["a"], e["b"], key=k, piece=k, length=float(np.linalg.norm(pb - pa)))
     ink = sum(d["length"] for _u, _v, d in G.edges(data=True))
     paths, retrace = [], 0.0
+    path_pieces: list[list] = []
+    seen: set[int] = set()
     nxt = len(pieces)
-    for comp in nx.connected_components(G):
+    comps_all = sorted(nx.connected_components(G), key=lambda c: -sum(
+        d["length"] for _u, _v, d in G.subgraph(c).edges(data=True)))
+    for ci, comp in enumerate(comps_all):
         H = G.subgraph(comp).copy()
         odd = [v for v in H.nodes if H.degree(v) % 2]
         if len(odd) > 2:
@@ -234,6 +339,8 @@ def chain_paths(drawing: Drawing, *, tol_r: float = rs.WELD_R, at_crossings: boo
                 return [(a, b) for a, b in nx.min_weight_matching(K, weight="weight")
                         if not isinstance(a, tuple) and not isinstance(b, tuple)]
             k = 1
+            if max_paths is not None and ci == 0:
+                k = max(1, min(int(max_paths) - (len(comps_all) - 1), len(odd) // 2))
             keep = match(k)
             if max_retrace is not None:
                 while keep and sum(dist[(x, y)] for x, y in keep) > max_retrace * comp_ink:
@@ -248,35 +355,225 @@ def chain_paths(drawing: Drawing, *, tol_r: float = rs.WELD_R, at_crossings: boo
                     retrace += dmin["length"]
                     nxt += 1
         odd = [v for v in H.nodes if H.degree(v) % 2]
-        if len(odd) > 2:                             # several trails: a virtual node makes it Eulerian
+        multi = len(odd) > 2
+        if multi:                                    # several trails: a virtual node makes it Eulerian
             for v in odd:
                 H.add_edge(-1, v, key=nxt, piece=-1, length=0.0)
                 nxt += 1
-            walk = list(nx.eulerian_circuit(H, source=-1, keys=True))
+        start = -1 if multi else (odd[0] if odd else min(H.nodes, key=str))
+        if not H.number_of_edges():
+            walk_ = []
+        elif walk == "min_turn":
+            walk_ = _walk_min_turn(H, start, pieces, node, TURN_D_R * R)
+        elif multi:
+            walk_ = list(nx.eulerian_circuit(H, source=-1, keys=True))
         else:
-            start = odd[0] if odd else next(iter(H.nodes))
-            walk = list(nx.eulerian_path(H, source=start, keys=True)) if H.number_of_edges() else []
-        seq = []
-        for u, v, k in walk:
+            walk_ = list(nx.eulerian_path(H, source=start, keys=True))
+        seq, meta_p, n_pts = [], [], 0
+        for u, v, k in walk_:
             k0 = H.edges[u, v, k]["piece"]
             if k0 < 0:                               # through the virtual node: lift the pen
                 if seq:
                     paths.append(np.vstack(seq))
-                seq = []
+                    path_pieces.append(meta_p)
+                seq, meta_p, n_pts = [], [], 0
                 continue
             pc = pieces[k0]
             fwd = node[2 * k0] == u
             pc = pc if fwd else pc[::-1]
+            i0 = n_pts
             if seq and np.linalg.norm(seq[-1][-1] - pc[0]) < 1e-9:
                 pc = pc[1:]
+                i0 = n_pts - 1
             seq.append(pc)
+            n_pts += len(pc)
+            meta_p.append((i0, n_pts - 1, int(k0), bool(fwd), k0 in seen, k0 in connectors))
+            seen.add(k0)
         if seq:
             paths.append(np.vstack(seq))
-    strokes = [Stroke(p, meta={"chain": True}) for p in paths if len(p) >= 2]
+            path_pieces.append(meta_p)
+    strokes = [Stroke(p, meta={"chain": True, "chain_pieces": mp}) for p, mp in zip(paths, path_pieces)
+               if len(p) >= 2]
+    conn = sum(float(_arclen(pieces[k])[-1]) for k in connectors)
     return Drawing(strokes, source=f"{drawing.source}|chain", size=drawing.size,
                    meta={**drawing.meta, "chain": {"n_in": len(S), "n_paths": len(strokes),
                                                    "ink_R": ink / R, "retrace_R": retrace / R,
-                                                   "at_crossings": at_crossings, "max_retrace": max_retrace}})
+                                                   "connector_R": conn / R, "walk": walk,
+                                                   "at_crossings": at_crossings, "max_retrace": max_retrace,
+                                                   "max_paths": max_paths}})
+
+
+# ---------------------------------------------------------------------------
+# chain fix: restyle a single line through a structure without balloons
+# ---------------------------------------------------------------------------
+
+PIN_REVERSAL = 150.0     # deg: a node turn this sharp is a reversal (always pinned unless pin="none")
+OFFSET_W = 1.5           # retrace="offset": the return runs this many line widths beside the outward pass
+RUN_SIGMAS = 3.0         # σ_s of a run ≤ its length / RUN_SIGMAS (≥ 3 pins; restyle_points max_sigma)
+
+
+def node_turns(path: np.ndarray, pieces: list, d: float) -> np.ndarray:
+    """Turn (deg, 0 = straight on, 180 = reversal) at every internal piece
+    boundary of a chained path: boundary b sits between pieces b−1 and b."""
+    out = []
+    for b in range(1, len(pieces)):
+        _, arr = _piece_dirs(path[pieces[b - 1][0]:pieces[b - 1][1] + 1], d)
+        lv, _ = _piece_dirs(path[pieces[b][0]:pieces[b][1] + 1], d)
+        out.append(float(np.degrees(np.arccos(np.clip(np.dot(arr, lv), -1, 1)))))
+    return np.array(out)
+
+
+def _smoothstep(x):
+    x = np.clip(x, 0.0, 1.0)
+    return x * x * (3 - 2 * x)
+
+
+def offset_return(p: np.ndarray, delta: float, taper: float, side: float = 1.0) -> np.ndarray:
+    """A return pass `delta` px beside polyline p (left of its direction for
+    side = +1), the offset easing in from 0 over `taper` px at both ends —
+    a narrow hairpin at the tip, a clean rejoin at the junction. Normals
+    come from the tangent smoothed over ≈ 2 delta, so the offset follows
+    the line's course, not its pixel noise."""
+    from scipy.ndimage import gaussian_filter1d
+    p = np.asarray(p, float)
+    if len(p) < 3 or delta <= 0:
+        return p.copy()
+    s = _arclen(p)
+    L = s[-1]
+    if L <= 0:
+        return p.copy()
+    step = max(float(np.median(np.diff(s))), 1e-9)
+    t = np.gradient(p, axis=0)
+    t = gaussian_filter1d(t, max(2.0 * delta / step, 1.0), axis=0, mode="nearest")
+    t /= np.maximum(np.linalg.norm(t, axis=1, keepdims=True), 1e-12)
+    n = np.column_stack([-t[:, 1], t[:, 0]])
+    tp = max(min(taper, L / 3), 1e-9)
+    w = _smoothstep(s / tp) * _smoothstep((L - s) / tp)
+    return p + side * delta * w[:, None] * n
+
+
+def _end_fix(out: np.ndarray, a: np.ndarray, b: np.ndarray, fade: float) -> np.ndarray:
+    """Translate the two ends of `out` exactly onto a and b with cosine fades
+    (the weld rule of restyle.weld_junctions, applied at both ends)."""
+    s = _arclen(out)
+    L = s[-1]
+    d0, d1 = a - out[0], b - out[-1]
+    f = max(min(max(fade, 3 * max(np.linalg.norm(d0), np.linalg.norm(d1))), 0.5 * L), 1e-9)
+    w0 = np.where(s < f, 0.5 * (1 + np.cos(np.pi * np.clip(s / f, 0, 1))), 0.0)
+    w1 = np.where(L - s < f, 0.5 * (1 + np.cos(np.pi * np.clip((L - s) / f, 0, 1))), 0.0)
+    o = out + w0[:, None] * d0[None, :] + w1[:, None] * d1[None, :]
+    o[0], o[-1] = a, b
+    return o
+
+
+def restyle_chain(chained: Drawing, g, *, amount: float, seed: int = 0, ref_length: float | None = None,
+                  method: str = "gauss", source: str = "trace", scale: str = "drawing",
+                  pin: str = "turns", pin_angle: float = 60.0, retrace: str = "offset",
+                  offset_w: float = OFFSET_W, w: float | None = None,
+                  run_sigmas: float | None = RUN_SIGMAS) -> Drawing:
+    """Redraw a chained skeleton (`chain_paths` output) in hand g as single
+    lines that keep the structure — the chain fix.
+
+    The one long line is cut at **anchors**, node passages the hand must not
+    smooth through, and each run between anchors is restyled on its own
+    (restyle_points: same decomposition / hand / pin fit as restyle_drawing)
+    with both ends then moved exactly onto its anchors (cosine fade over
+    WELD_FADE·σ_s); the runs are welded end to end, so the output is still
+    one continuous line per path, with a hard corner at every anchor.
+      pin: "none"  — no anchors (the old chain="before": one run per path);
+           "tips"  — reversals only (a piece walked straight back, or a node
+                     turn ≥ PIN_REVERSAL);
+           "turns" — reversals and every node turn ≥ pin_angle (deg);
+           "nodes" — every node passage.
+      retrace: how a piece walked a second time is drawn:
+           "redraw" — restyled again, independently (a second, different
+                      pass of the hand);
+           "exact"  — the first pass's drawn geometry, reversed (a true
+                      retrace in the hand: invisible on paper);
+           "offset" — that geometry `offset_w` line widths beside itself
+                      (`offset_return`: a draughtsman's out-and-back, an
+                      Oehlen-like double line). exact/offset add anchors
+                      where the walk switches between first and repeat pieces.
+    run_sigmas: cap σ_s at run length / run_sigmas, so a short run (a twig
+    between two anchors) still gets interior pins; None = no cap.
+    w: line width in px (default 0.0017 R, the corpus median).
+    Pure and deterministic (run r of path i draws from default_rng([seed, i, r]))."""
+    R = float(ref_length) if ref_length is not None else chained.ref_length()
+    w = float(w) if w is not None else 0.0017 * R
+    sig = rs.sigma_of(amount) * R
+    fade = rs.WELD_FADE * sig
+    d_turn = TURN_D_R * R
+    store: dict[int, np.ndarray] = {}      # piece → its drawn geometry, piece-forward orientation
+    strokes, n_runs, n_anchor, n_ret, n_rev = [], 0, 0, 0, 0
+    for pi, st in enumerate(chained.strokes):
+        P = st.points
+        mp = st.meta.get("chain_pieces")
+        if not mp:
+            o = rs.restyle_points(P, g, np.random.default_rng([int(seed), pi, 0]), amount=amount, ref_length=R,
+                                  method=method, source=source, scale=scale)[0]
+            strokes.append(Stroke(o, meta={"chain": True}))
+            continue
+        turns = node_turns(P, mp, d_turn)
+        cut = []
+        for b in range(1, len(mp)):
+            rev = mp[b][2] == mp[b - 1][2] or turns[b - 1] >= PIN_REVERSAL
+            n_rev += int(rev)
+            a = (pin != "none" and rev) or (pin == "turns" and turns[b - 1] >= pin_angle) or pin == "nodes" \
+                or (retrace != "redraw" and mp[b][4] != mp[b - 1][4])
+            if a:
+                cut.append(b)
+        n_anchor += len(cut)
+        bounds = [0] + cut + [len(mp)]
+        parts, anchors_out = [], []
+        for r, (a, b) in enumerate(zip(bounds[:-1], bounds[1:])):
+            i_s, i_e = mp[a][0], mp[b - 1][1]
+            src = P[i_s:i_e + 1]
+            is_ret = retrace != "redraw" and all(mp[t][4] for t in range(a, b)) and \
+                all(mp[t][2] in store for t in range(a, b))
+            if is_ret:
+                geo = []
+                for t in range(a, b):
+                    q = store[mp[t][2]]
+                    q = q if mp[t][3] else q[::-1]
+                    if geo and np.linalg.norm(geo[-1][-1] - q[0]) < 1e-9:
+                        q = q[1:]
+                    geo.append(q)
+                out = np.vstack(geo)
+                if retrace == "offset":
+                    out = offset_return(out, offset_w * w, max(4 * offset_w * w, 0.004 * R))
+                out = _end_fix(out, src[0], src[-1], fade)
+                n_ret += 1
+            else:
+                s = _arclen(src)
+                cap = s[-1] / run_sigmas if run_sigmas else None
+                o, info = rs.restyle_points(src, g, np.random.default_rng([int(seed), pi, r]), amount=amount,
+                                            ref_length=R, closed=False, method=method, source=source, scale=scale,
+                                            max_sigma=cap)
+                out = _end_fix(o, src[0], src[-1], rs.WELD_FADE * min(sig, cap or sig))
+                M = info.get("M")
+                for t in range(a, b):
+                    if mp[t][2] in store:
+                        continue
+                    if M is not None and len(out) == M + 1:
+                        j0 = int(round(s[mp[t][0] - i_s] / max(s[-1], 1e-12) * M))
+                        j1 = int(round(s[mp[t][1] - i_s] / max(s[-1], 1e-12) * M))
+                    else:
+                        j0, j1 = mp[t][0] - i_s, mp[t][1] - i_s
+                    q = out[j0:max(j1, j0 + 1) + 1]
+                    store[mp[t][2]] = q if mp[t][3] else q[::-1]
+            n_runs += 1
+            if parts:
+                out = out[1:]
+            parts.append(out)
+            anchors_out.append(sum(len(x) for x in parts) - 1)
+        strokes.append(Stroke(np.vstack(parts), meta={"chain": True, "anchors": anchors_out[:-1],
+                                                      "n_runs": len(parts)}))
+    return Drawing(strokes, source=f"{chained.source}|restyle_chain:{getattr(g, 'name', '')}:{amount:g}",
+                   size=chained.size, meta={**chained.meta, "restyle_chain": {
+                       "pin": pin, "pin_angle": pin_angle, "retrace": retrace, "offset_w": offset_w,
+                       "run_sigmas": run_sigmas,
+                       "runs": n_runs, "anchors": n_anchor, "return_runs": n_ret, "reversals": n_rev,
+                       "amount": float(amount), "sigma_s_R": sig / R}})
 
 
 # ---------------------------------------------------------------------------
@@ -292,6 +589,17 @@ def structure_of(kind, hand: str | None, rng, size, params: dict | None = None) 
         return topology.generate_structure(topo_model(hand) if hand else None, rng, size, kind="learned",
                                            **(params or {}))
     raise ValueError(f"unknown structure kind {kind!r}")
+
+
+def hand_w(art: str) -> float:
+    """The hand's median line width w/R over its real drawings (corpus
+    median 0.0017 for an unnamed hand)."""
+    if art in ARTISTS and GRAMMARS.exists():
+        try:
+            return float(np.median([x["w_over_R"] for x in grammar(art).drawings if x["w_over_R"] > 0]))
+        except Exception:  # noqa: BLE001
+            pass
+    return 0.0017
 
 
 def _tremor(d: Drawing, art: str, rng, amount: float):
@@ -318,7 +626,10 @@ def composite(structure, hand, rng: np.random.Generator, *, size=1200, amount: f
               chain: bool | str = False, tremor: float | None = None, model: str = "grammar",
               method: str = "gauss", scale: str = "drawing", weld: bool = True,
               structure_params: dict | None = None, at_crossings: bool = False,
-              structure_hand: str | None = None, max_retrace: float | None = None) -> Drawing:
+              structure_hand: str | None = None, max_retrace: float | None = None,
+              pin: str = "none", pin_angle: float = 60.0, retrace: str = "redraw", offset_w: float = OFFSET_W,
+              walk: str = "any", connect: bool = False, max_paths: int | None = None,
+              run_sigmas: float | None = RUN_SIGMAS) -> Drawing:
     """structure ("oehlen_tree" | "learned" | a Drawing) → restyled into
     `hand` (artist name, or a Grammar / lognormal.Hand object; model
     "grammar" = frozen v4 + trace, "lognormal" =
@@ -326,6 +637,11 @@ def composite(structure, hand, rng: np.random.Generator, *, size=1200, amount: f
     lines; "before": chain the skeleton, restyle the single line) →
     optional tremor amount. "learned" uses structure_hand's TopologyModel
     (default: the hand's own). Deterministic in rng; inputs never mutated.
+    Chain options (`chain_paths`): walk ("any" | "min_turn"), connect,
+    max_paths, max_retrace. chain="before" with pin/retrace other than
+    "none"/"redraw" is the chain fix (`restyle_chain`: anchors at reversals /
+    sharp node turns, offset or exact return passes); line width for the
+    offset = the hand's own median w/R × R.
     meta["composite"] records stages and seconds per stage."""
     t0 = time.perf_counter()
     s_seed, r_seed, t_seed = (int(x) for x in rng.integers(0, 2 ** 31, 3))
@@ -338,18 +654,25 @@ def composite(structure, hand, rng: np.random.Generator, *, size=1200, amount: f
     src = "trace" if model == "grammar" else "trace_ln"
     R = st.ref_length()
     cm = {}
+    ckw = dict(at_crossings=at_crossings, max_retrace=max_retrace, walk=walk, connect=connect, max_paths=max_paths)
     if chain == "before":
-        sk = chain_paths(st, at_crossings=at_crossings, max_retrace=max_retrace)
+        sk = chain_paths(st, **ckw)
         cm = sk.meta.get("chain", {})
-        o = rs.restyle_drawing(sk, g, amount=amount, seed=r_seed, method=method, source=src,
-                               ref_length=R, scale=scale, weld=False)
+        if pin == "none" and retrace == "redraw":
+            o = rs.restyle_drawing(sk, g, amount=amount, seed=r_seed, method=method, source=src,
+                                   ref_length=R, scale=scale, weld=False)
+        else:
+            o = restyle_chain(sk, g, amount=amount, seed=r_seed, ref_length=R, method=method, source=src,
+                              scale=scale, pin=pin, pin_angle=pin_angle, retrace=retrace, offset_w=offset_w,
+                              w=hand_w(hname) * R, run_sigmas=run_sigmas)
+            cm = {**cm, **o.meta.get("restyle_chain", {})}
         t2 = t3 = time.perf_counter()
     else:
         o = rs.restyle_drawing(st, g, amount=amount, seed=r_seed, method=method, source=src,
                                ref_length=R, scale=scale, weld=weld)
         t2 = time.perf_counter()
         if chain:
-            o = chain_paths(o, at_crossings=at_crossings, max_retrace=max_retrace)
+            o = chain_paths(o, **ckw)
             cm = o.meta.get("chain", {})
         t3 = time.perf_counter()
     note = ""
@@ -365,6 +688,99 @@ def composite(structure, hand, rng: np.random.Generator, *, size=1200, amount: f
                                        "sec": {"structure": t1 - t0, "restyle": t2 - t1,
                                                "chain": t3 - t2, "tremor": t4 - t3}},
                          "structure_meta": {k: v for k, v in st.meta.items() if k in ("kind", "params", "coverage")}})
+
+
+# ---------------------------------------------------------------------------
+# plot readiness: SVG in millimetres (no plotting, no app integration)
+# ---------------------------------------------------------------------------
+
+PAPERS = {"A5": (210.0, 148.0), "A4": (297.0, 210.0), "A3": (420.0, 297.0)}   # landscape, mm
+PLOT_SPEED = 25.0        # mm/s, nominal pen-down speed for the time estimate
+PEN_CYCLE_S = 0.5        # s per pen lift + lower (nominal)
+
+
+def to_mm(drawing: Drawing, *, paper: str | tuple = "A4", portrait: bool = False, margin_mm: float = 10.0,
+          simplify_mm: float = 0.02) -> list[np.ndarray]:
+    """The drawing's strokes as polylines in mm on the paper (y down, origin
+    top-left), fitted into the paper minus `margin_mm` with the aspect ratio
+    kept and centred; stroke (= pen path) order preserved; each polyline
+    Douglas–Peucker simplified at `simplify_mm` (far below a pen width).
+    Closed strokes are closed explicitly."""
+    from shapely.geometry import LineString
+    W, H = PAPERS[paper] if isinstance(paper, str) else paper
+    if portrait:
+        W, H = min(W, H), max(W, H)
+    ss = [np.vstack([s.points, s.points[:1]]) if s.closed else s.points for s in drawing.strokes if len(s) >= 2]
+    if not ss:
+        return []
+    P = np.vstack(ss)
+    lo, hi = P.min(0), P.max(0)
+    span = np.maximum(hi - lo, 1e-9)
+    k = min((W - 2 * margin_mm) / span[0], (H - 2 * margin_mm) / span[1])
+    off = np.array([W, H]) / 2 - (lo + hi) / 2 * k
+    out = []
+    for p in ss:
+        q = p * k + off
+        if simplify_mm > 0 and len(q) > 2:
+            q = np.asarray(LineString(q).simplify(simplify_mm, preserve_topology=False).coords)
+        out.append(q)
+    return out
+
+
+def plot_stats(paths_mm: list[np.ndarray], *, speed: float = PLOT_SPEED, pen_cycle_s: float = PEN_CYCLE_S,
+               home=(0.0, 0.0)) -> dict:
+    """Pen-down length, pen-up travel (home → paths in order → home), lifts
+    and a nominal time: (down + up travel) / speed + one pen cycle per path."""
+    down = float(sum(np.sum(np.linalg.norm(np.diff(p, axis=0), axis=1)) for p in paths_mm))
+    pos, up = np.asarray(home, float), 0.0
+    for p in paths_mm:
+        up += float(np.linalg.norm(p[0] - pos))
+        pos = p[-1]
+    up += float(np.linalg.norm(pos - np.asarray(home, float))) if paths_mm else 0.0
+    n = len(paths_mm)
+    t = (down + up) / speed + n * pen_cycle_s
+    return {"paths": n, "lifts": max(n - 1, 0), "pen_down_mm": round(down, 1), "pen_up_mm": round(up, 1),
+            "points": int(sum(len(p) for p in paths_mm)), "est_min": round(t / 60.0, 1),
+            "speed_mm_s": speed, "pen_cycle_s": pen_cycle_s}
+
+
+def to_svg(drawing: Drawing, path: str | Path | None = None, *, paper: str | tuple = "A4", portrait: bool = False,
+           margin_mm: float = 10.0, pen_mm: float = 0.4, simplify_mm: float = 0.02,
+           title: str = "") -> tuple[str, dict]:
+    """A composite Drawing as an SVG in millimetres for the given paper
+    (default A4 landscape, 10 mm margin): one <path> per pen path, in pen
+    order, stroke width `pen_mm`. Returns (svg text, plot_stats + paper);
+    writes it when `path` is given."""
+    W, H = PAPERS[paper] if isinstance(paper, str) else paper
+    if portrait:
+        W, H = min(W, H), max(W, H)
+    paths = to_mm(drawing, paper=(W, H), margin_mm=margin_mm, simplify_mm=simplify_mm)
+    st = {**plot_stats(paths), "paper_mm": [W, H], "margin_mm": margin_mm, "pen_mm": pen_mm}
+    L = ['<?xml version="1.0" encoding="UTF-8"?>',
+         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W:g}mm" height="{H:g}mm" viewBox="0 0 {W:g} {H:g}">',
+         f"<title>{title or drawing.source}</title>",
+         f"<!-- {json.dumps(st)} -->",
+         f'<g fill="none" stroke="black" stroke-width="{pen_mm:g}" stroke-linecap="round" stroke-linejoin="round">']
+    for i, p in enumerate(paths):
+        d = "M" + " L".join(f"{x:.3f},{y:.3f}" for x, y in p)
+        L.append(f'<path id="p{i:03d}" d="{d}"/>')
+    L += ["</g>", "</svg>", ""]
+    svg = "\n".join(L)
+    if path is not None:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text(svg)
+    return svg, st
+
+
+def read_svg_paths(svg: str) -> tuple[tuple[float, float], list[np.ndarray]]:
+    """((width, height) in mm, polylines) of an SVG written by `to_svg`."""
+    import re
+    m = re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', svg)
+    paths = []
+    for d in re.findall(r'<path id="[^"]*" d="([^"]*)"', svg):
+        pts = [tuple(float(v) for v in t.split(",")) for t in re.findall(r"[ML]([-\d.]+,[-\d.]+)", d)]
+        paths.append(np.array(pts))
+    return (float(m.group(1)), float(m.group(2))), paths
 
 
 def real_structure(art: str, stem: str, size: int = 1200) -> Drawing:
@@ -387,11 +803,13 @@ def real_structure(art: str, stem: str, size: int = 1200) -> Drawing:
 TEXTURE_GROUPS = ("k", "ext", "infl", "turn", "cl")
 
 
-def feats(d: Drawing) -> dict:
+def feats(d: Drawing, clothoid: bool = True) -> dict:
+    """Panel features at the standard σ floor. clothoid=False skips the cl
+    group (its fit takes minutes on a 20 000-point single line)."""
     from gesture import medium, panel
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        f, _ = panel.features_with_info(d, sigma_min_w=medium.SIGMA_MIN_W)
+        f, _ = panel.features_with_info(d, sigma_min_w=medium.SIGMA_MIN_W, clothoid=clothoid)
     return f
 
 
@@ -433,13 +851,13 @@ class PairClassifier:
     drawings of two hands, standard preprocessing (σ ≥ 7 w floor in `feats`
     + medium projection)."""
 
-    def __init__(self, real, a: str, b: str, seed: int = 0):
+    def __init__(self, real, a: str, b: str, seed: int = 0, groups: tuple = TEXTURE_GROUPS):
         from sklearn.linear_model import LogisticRegression
 
         from gesture import medium, panel
         real = [r for r in real if r[0] in (a, b)]
         allk = set.intersection(*[set(f) for _a, _s, f in real])
-        self.names = sorted(n for n in allk if panel.group_of(n) in TEXTURE_GROUPS)
+        self.names = sorted(n for n in allk if panel.group_of(n) in groups)
         X = self.matrix([f for _a, _s, f in real])
         ok = ~np.all(np.isnan(X), axis=0)
         self.names = [n for n, o in zip(self.names, ok) if o]

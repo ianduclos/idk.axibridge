@@ -97,3 +97,17 @@ def test_structure_distance_monotone_in_amount(g, source):
     assert ds[0] == 0.0
     assert all(b >= a - 1e-4 for a, b in zip(ds, ds[1:])), ds
     assert ds[-1] > ds[1]
+
+
+def test_max_sigma_caps_structure_scale(g):
+    """A short line at a large amount: without the cap it only gets its two end
+    pins; capped at length/3 it gets interior pins and stays near the source."""
+    st = _wave()
+    R = 4000.0                                   # the line is short relative to R
+    L = st.length()
+    _, info = rs.restyle_points(st.points, g, np.random.default_rng(1), amount=0.9, ref_length=R, source="trace")
+    out, info_c = rs.restyle_points(st.points, g, np.random.default_rng(1), amount=0.9, ref_length=R,
+                                    source="trace", max_sigma=L / 3)
+    assert info["sigma_s"] > L / 3 and info_c["sigma_s"] == pytest.approx(L / 3)
+    assert info_c["n_pins"] > info["n_pins"] >= 2
+    assert np.all(np.isfinite(out))

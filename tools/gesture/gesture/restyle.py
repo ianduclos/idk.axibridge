@@ -702,10 +702,15 @@ def feature_length(src: _Src, R: float) -> float:
 
 def restyle_points(points, g, rng, *, amount: float, ref_length: float, closed: bool = False,
                    method: str = "gauss", source: str = "chain", hand_gain: float = 1.0,
-                   tol: float = TOL, scale: str = "drawing") -> tuple[np.ndarray, dict]:
+                   tol: float = TOL, scale: str = "drawing",
+                   max_sigma: float | None = None) -> tuple[np.ndarray, dict]:
     """One polyline (px) → (new polyline, info). amount = 0 returns a copy.
     info["n_out"]/["M"] let a caller map output samples back to the source
-    (sample i of the output ↔ arc fraction i/M of the source)."""
+    (sample i of the output ↔ arc fraction i/M of the source).
+    max_sigma (px): cap on σ_s. A line shorter than ~2 σ_s gets only its two
+    end pins; the hand then wanders and the pin fit stretches its steps
+    (up to STRETCH_MAX^passes) into a long needle or loop — the chain fix
+    caps σ_s at a fraction of each run's length (composite.restyle_chain)."""
     pts = np.array(points, dtype=np.float64, copy=True)
     R = float(ref_length)
     info = {"amount": float(amount), "method": method, "source": source}
@@ -720,6 +725,8 @@ def restyle_points(points, g, rng, *, amount: float, ref_length: float, closed: 
         sig = sigma_of(amount) * R
     else:
         raise ValueError(f"unknown scale {scale!r}")
+    if max_sigma is not None:
+        sig = min(sig, float(max_sigma))
     sd = max(sig / src.h, 1.0)
     st = decompose(src, sd, method)
     M = len(src.theta)
