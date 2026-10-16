@@ -46,6 +46,19 @@ line of the same ink, chunk by chunk (each chunk conditioned on the previous
 two tokens, κ-continuous across chunks), steering by retrying chunks that
 would run into the line already drawn.
 
+**v4 (results/grammar-v4.md).** The excess corners of generated lines were
+traced to k-NN splicing and to steering, not to how corners are
+represented. Two remedies are now the defaults:
+
+1. **Source-stroke runs.** With probability `P_FOLLOW`, a draw takes the actual
+   next token of the training stroke that the previous token came from. At most
+   `MAX_RUN` follows happen in a row, so runs are ≤ 2 tokens; longer runs quote
+   (memorisation check).
+2. **"typical" steering.** When the chain's first proposal is blocked, the
+   feasible proposal whose turning is closest to it is taken.
+
+`round_corners` and `corner_round_w` exist for the ablation, default off.
+
 Juxtaposition (stage 6): `code_switch` (hand A → hand B along one stroke),
 `generate_drawing(mode="single", hands=(gA, gB))` (alternating hands along
 one long line), `translate`/`translate_tokens` (each token → its nearest of
@@ -96,6 +109,9 @@ JITTER_LEN = 0.08        # log-normal sd of the length jitter
 JITTER_K = 0.05          # κ jitter, fraction of the kind's κ·R spread
 JITTER_ANGLE = 0.05      # corner angle jitter (rad)
 MAX_TOKENS = 200
+P_FOLLOW = 0.9           # v4: chance to continue the source stroke of the last token (runs) ...
+MAX_RUN = 1              # ... at most this many follows in a row (runs of ≤ 2 tokens), then a splice
+CORNER_ROUND_W = 0.0     # v4: corners drawn as two clothoids over this many line widths
 # drawing
 CLEAR_W = 3.0            # lines keep this many widths apart unless they cross/touch
 MIN_FRAC = 0.5           # a walked stroke shorter than this × its target is retried
@@ -187,6 +203,28 @@ def truncate_tokens(toks: list[list], length: float) -> list[list]:
         s += t[1]
     while out and out[-1][0] == "corner":
         out.pop()
+    return out
+
+
+def round_corners(toks: list[list], Lc: float) -> list[list]:
+    """Every corner → two clothoids of total length Lc (dimensionless) with
+    the same turning, κ continuous from the previous segment's end to the
+    next one's start (a leading corner starts from κ = 0)."""
+    if Lc <= 0:
+        return [list(t) for t in toks]
+    out: list[list] = []
+    for i, t in enumerate(toks):
+        if t[0] != "corner":
+            out.append(list(t))
+            continue
+        nxt = toks[i + 1] if i + 1 < len(toks) else None
+        if nxt is None or nxt[0] == "corner":
+            out.append(list(t))
+            continue
+        kp = out[-1][3] if out and out[-1][0] in SEG_KINDS else 0.0
+        kn = nxt[2]
+        k = 0.5 * (4.0 * t[1] / Lc - kp - kn)
+        out += [_tok_seg("clothoid", Lc / 2, kp, k), _tok_seg("clothoid", Lc / 2, k, kn)]
     return out
 
 
@@ -509,7 +547,8 @@ class Grammar:
                 X = np.array([_ctx([T["p2"][i]] + list(T["f2"][i]), [p1kind] + list(T["f1"][i]),
                                    T["rem"][i], T["u"][i], self.scale) for i in idx])
                 self._cache[key] = (X, np.array([T["p2"][i] for i in idx]),
-                                    [T["nx"][i] for i in idx], [T["par"][i] for i in idx])
+                                    [T["nx"][i] for i in idx], [T["par"][i] for i in idx],
+                                    np.array(idx))
         return self._cache[key]
 
     def _kind_pool(self, kind):
@@ -520,20 +559,31 @@ class Grammar:
                 np.array([_feat([kind] + p, self.scale) for p in P]), P)
         return self._cache[key]
 
-    def draw(self, p2, p1, s: float, length: float, rng) -> tuple[str, list[float]]:
-        """Next token (kind, params) given the previous two tokens, arc
-        length so far s and the stroke's target length (both R units)."""
+    def draw(self, p2, p1, s: float, length: float, rng, prev_rec: int | None = None,
+             p_follow: float = 0.0) -> tuple[str, list[float], int]:
+        """Next token (kind, params, record index) given the previous two
+        tokens, arc length so far s and the stroke's target length (both R
+        units). p_follow (v4): with this probability, if the previous token
+        came from training record prev_rec and its source stroke goes on,
+        take that stroke's actual next token (a run of the training stroke,
+        not a k-NN splice)."""
+        T = self.trans
+        if prev_rec is not None and p_follow > 0 and rng.random() < p_follow:
+            sids = T.get("sid")
+            j = prev_rec + 1
+            if sids and j < len(sids) and sids[j] == sids[prev_rec] and T["p1"][j] == p1[0]:
+                return T["nx"][j], _jitter(self, T["nx"][j], list(T["par"][j]), rng), j
         pool = self._pool(p1[0])
         if pool is None:
             pool = self._pool("START")
             p1, p2 = ["START"], ["START"]
-        X, P2, NX, PAR = pool
+        X, P2, NX, PAR, IDX = pool
         q = _ctx(p2, p1, max(length - s, 1e-6), min(s / max(length, 1e-9), 1.0), self.scale)
         d = np.sum((X - q) ** 2, axis=1) + PEN_PREV2 * (P2 != p2[0])
         k = min(KNN, len(d))
         near = np.argpartition(d, k - 1)[:k]
         j = int(near[int(rng.integers(k))])
-        return NX[j], _jitter(self, NX[j], list(PAR[j]), rng)
+        return NX[j], _jitter(self, NX[j], list(PAR[j]), rng), int(IDX[j])
 
 
 def _jitter(g: Grammar, kind: str, p: list, rng) -> list[float]:
@@ -568,7 +618,7 @@ def learn(drawings: list[Drawing] | None = None, *, prepared: list[dict] | None 
         prepared = [prepare_drawing(d, sigma_w=sigma_w, **sel) for d in (drawings or [])]
     fi, ti = {k: i for i, k in enumerate(FROM)}, {k: i for i, k in enumerate(TO)}
     counts = np.zeros((len(FROM), len(TO)), dtype=int)
-    T = {k: [] for k in ("p2", "p1", "nx", "f2", "f1", "rem", "u", "par")}
+    T = {k: [] for k in ("p2", "p1", "nx", "f2", "f1", "rem", "u", "par", "sid")}
     strokes, lengths, spos, per = [], [], [], []
     rel = {"n": 0, "n_attached": 0, "u": [], "angle": [], "cross": [], "selfcross": [],
            "cross_per_ink_drawings": [], "gap_free": [], "n_ends": 0, "n_ends_attached": 0}
@@ -597,7 +647,8 @@ def learn(drawings: list[Drawing] | None = None, *, prepared: list[dict] | None 
             L = stroke_length(toks)
             lengths.append(round(L, 7))
             spos.append(s["start"])
-            for seq in (toks, reverse_tokens(toks)):
+            for di, seq in enumerate((toks, reverse_tokens(toks))):
+                sid = 2 * (len(strokes) - 1) + di
                 p2, p1, pos = ["START"], ["START"], 0.0
                 for t in seq + [["END"]]:
                     counts[fi[p1[0]], ti[t[0]]] += 1
@@ -611,6 +662,7 @@ def learn(drawings: list[Drawing] | None = None, *, prepared: list[dict] | None 
                     T["rem"].append(round(max(L - pos, 1e-7), 7))
                     T["u"].append(round(pos / L if L > 0 else 0.0, 5))
                     T["par"].append([round(v, 7) for v in t[1:]])
+                    T["sid"].append(sid)
                     if t[0] != "corner":
                         pos += t[1]
                     p2, p1 = p1, t
@@ -682,7 +734,8 @@ def _continuity(prev: list | None, tok: list, lock_prev: bool = False) -> tuple[
 
 def generate_tokens(gA: Grammar, rng, *, gB: Grammar | None = None, switch_at: float | None = None,
                     length: float | None = None, context: tuple | None = None,
-                    max_tokens: int = MAX_TOKENS) -> tuple[list, int]:
+                    max_tokens: int = MAX_TOKENS, p_follow: float = 0.0,
+                    max_run: int = MAX_RUN) -> tuple[list, int]:
     """Run the order-2 chain to a target length (dimensionless; default: one
     of A's training lengths). The last segment is cut at the target unless
     that leaves < 30 % of it (then dropped). context = (token before last,
@@ -695,12 +748,15 @@ def generate_tokens(gA: Grammar, rng, *, gB: Grammar | None = None, switch_at: f
         length = float(L[int(rng.integers(len(L)))])
     p2, p1 = (list(context[0]), list(context[1])) if context else (["START"], ["START"])
     toks: list[list] = []
-    s, g, switch_idx, draws = 0.0, gA, None, 0
+    s, g, switch_idx, draws, rec, run = 0.0, gA, None, 0, None, 0
     while len(toks) < max_tokens and draws < 4 * max_tokens:
         draws += 1
         if gB is not None and switch_idx is None and s >= (switch_at or 0.5) * length:
-            g, switch_idx = gB, len(toks)
-        kind, p = g.draw(p2, p1, s, length, rng)
+            g, switch_idx, rec = gB, len(toks), None
+        kind, p, rec_ = g.draw(p2, p1, s, length, rng, prev_rec=rec,
+                               p_follow=p_follow if run < max_run else 0.0)
+        run = run + 1 if (rec is not None and rec_ == rec + 1) else 0
+        rec = rec_
         tok = _tok_corner(p[0]) if kind == "corner" else _tok_seg(kind, *p)
         if kind == "corner" and (not toks and p1[0] in ("START",)):
             continue
@@ -856,26 +912,45 @@ class _Grower:
     itself proposed. The line stops at its planned length, or earlier only
     when every candidate is blocked."""
 
-    def __init__(self, g, rng, sheet: _Sheet, R, step, clr, look, K=8):
+    def __init__(self, g, rng, sheet: _Sheet, R, step, clr, look, K=8, *, p_follow=0.0,
+                 corner_len=0.0, steer="first", max_run=MAX_RUN):
         self.g, self.rng, self.sheet, self.R, self.step = g, rng, sheet, R, step
         self.clr, self.look, self.K = clr, look, K
+        self.p_follow, self.corner_len, self.steer, self.max_run = p_follow, corner_len, steer, max_run
+        self.run = 0
+        self.stats = {"steps": 0, "steered": 0, "corners": 0, "corners_proposed_first": 0,
+                      "followed": 0}
 
-    def _candidate(self, p2, p1, s, length):
+    def _candidate(self, p2, p1, s, length, rec):
+        """(chain tokens, record index of the last one, followed?)."""
         g, rng = self.g, self.rng
+        pf = self.p_follow if self.run < self.max_run else 0.0
         for _ in range(6):
-            kind, p = g.draw(p2, p1, s, length, rng)
+            kind, p, r = g.draw(p2, p1, s, length, rng, prev_rec=rec, p_follow=pf)
+            fol = rec is not None and r == rec + 1
             if kind != "corner":
                 tok = _tok_seg(kind, *p)
                 _pp, tok = _continuity(p1, tok, lock_prev=True)
-                return [tok]
+                return [tok], r, fol
             if p1[0] in ("START", "corner"):
                 continue
             c = _tok_corner(p[0])
-            kind2, p2_ = g.draw(p1, c, s, length, rng)
+            kind2, p2_, r2 = g.draw(p1, c, s, length, rng, prev_rec=r, p_follow=pf)
             if kind2 == "corner":
                 continue
-            return [c, _tok_seg(kind2, *p2_)]
+            return [c, _tok_seg(kind2, *p2_)], r2, fol
         return None
+
+    def _geometry(self, seq, p1):
+        """Tokens actually drawn for a chain proposal: with corner_len > 0 a
+        corner becomes two clothoids of total length corner_len (R units)
+        carrying the same turning, κ continuous from the previous token's
+        end to the next segment's start — a corner as an ink line rounds it
+        and as the clothoid fit then measures it."""
+        if self.corner_len <= 0 or seq[0][0] != "corner":
+            return seq
+        return round_corners([p1] + seq, self.corner_len)[1:] if p1[0] in SEG_KINDS else \
+            round_corners(seq, self.corner_len)
 
     def grow(self, start, heading, length, *, context=None, prior=None, s_skip=0.0, host=None,
              self_ok=False, cross_ok=lambda s: False):
@@ -884,6 +959,8 @@ class _Grower:
         sheet, R, step, clr = self.sheet, self.R, self.step, self.clr
         pos, h = np.asarray(start, float), float(heading)
         p2, p1 = (list(context[0]), list(context[1])) if context else (["START"], ["START"])
+        rec = None
+        self.run = 0
         toks: list = []
         line = [pos[None, :]]
         line_s = [np.zeros(1)]
@@ -896,15 +973,21 @@ class _Grower:
             Ls = np.concatenate(line_s)
             old = np.vstack([prior, L[Ls < s_tot - lag]])
             otree = cKDTree(old) if len(old) else None
-            pref, ok, cross, selfx = [], [], [], []
+            pref, ok, cross, selfx, inside_only = [], [], [], [], []
+            first_corner, first_turn = None, None
             for _k in range(self.K):
-                seq = self._candidate(p2, p1, s, length)
-                if seq is None:
+                cand = self._candidate(p2, p1, s, length, rec)
+                if cand is None:
                     continue
-                seg = seq[-1]
+                cseq, crec, cfol = cand
+                if first_corner is None:
+                    first_corner = cseq[0][0] == "corner"
+                    first_turn = end_heading(cseq, 0.0)
+                seg = cseq[-1]
                 if s + seg[1] > length:                      # end at the planned length
                     f = max(length - s, 1e-9) / seg[1]
-                    seq[-1] = seg = _tok_seg(seg[0], seg[1] * f, seg[2], seg[2] + (seg[3] - seg[2]) * f)
+                    cseq[-1] = seg = _tok_seg(seg[0], seg[1] * f, seg[2], seg[2] + (seg[3] - seg[2]) * f)
+                seq = self._geometry(cseq, p1)
                 P, _, _ = tokens_to_points(seq, R, start=pos, heading=h, step=step)
                 P = P[1:]
                 if len(P) == 0 or not sheet.inside(P).all():
@@ -921,7 +1004,8 @@ class _Grower:
                 ray = P[-1] + np.outer(np.linspace(self.look / 4, self.look, 4), [np.cos(he), np.sin(he)])
                 rd = np.minimum(sheet.dist(ray), otree.query(ray)[0] if otree is not None else np.inf)
                 room = self.look if (sheet.inside(ray).all() and (rd >= clr).all()) else 0.0
-                item = (seq, P, sg, _bands(hit_o))
+                item = (seq, P, sg, _bands(hit_o), cseq, crec, cfol, _k)
+                inside_only.append(item)
                 xok = cross_ok(s)
                 if not hit_o.any() and not hit_s.any():
                     (pref if room >= self.look else ok).append(item)
@@ -931,19 +1015,39 @@ class _Grower:
                     selfx.append(item)
             # first feasible in draw order = rejection sampling: the chain's own
             # proposal is kept unless it is blocked (steering only where needed)
-            pool = (pref or ok or selfx)[:1]
+            if self.steer == "none":                   # ablation: no avoidance at all
+                pool = inside_only[:1]
+            elif self.steer == "typical":              # blocked: the feasible proposal whose
+                cands = pref or ok or selfx            # turning is closest to the chain's own wish
+                if cands and cands[0][7] != 0 and first_turn is not None:
+                    cands = sorted(cands, key=lambda c: abs(end_heading(c[4], 0.0) - first_turn))
+                pool = cands[:1]
+            elif self.steer == "plain":                # blocked chain choice: prefer no corner
+                cands = pref or ok or selfx
+                plain = [c for c in cands if c[4][0][0] != "corner"]
+                pool = cands[:1] if (cands and cands[0][7] == 0) else (plain or cands)[:1]
+            else:
+                pool = (pref or ok or selfx)[:1]
             if not pool:
                 status = "blocked"
                 break
-            seq, P, sg, nb = pool[0]
+            seq, P, sg, nb, cseq, crec, cfol, kidx = pool[0]
+            st = self.stats
+            st["steps"] += 1
+            st["steered"] += int(kidx != 0)
+            st["corners"] += int(cseq[0][0] == "corner")
+            st["corners_proposed_first"] += int(bool(first_corner))
+            st["followed"] += int(cfol)
+            self.run = self.run + 1 if cfol else 0
             crosses += nb
             toks += seq
             line.append(P)
             line_s.append(sg)
             s_tot = float(sg[-1])
             pos, h = P[-1], end_heading(seq, h)
-            s += seq[-1][1]
-            p2, p1 = (seq[-2] if len(seq) > 1 else p1), seq[-1]
+            s += sum(t[1] for t in seq if t[0] != "corner")
+            rec = crec
+            p2, p1 = (cseq[-2] if len(cseq) > 1 else p1), cseq[-1]
         while toks and toks[-1][0] == "corner":
             toks.pop()
         return toks, status, crosses
@@ -960,7 +1064,9 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
                      hands: tuple | None = None, switch_every: float = 1.0,
                      relations: str = "learned", roots: int | None = None,
                      p_branch: float | None = None, p_continue: float | None = None,
-                     cross_gain: float | None = None, K: int = 8) -> Drawing:
+                     cross_gain: float | None = None, K: int = 8, p_follow: float = P_FOLLOW,
+                     corner_round_w: float = CORNER_ROUND_W, steer: str = "typical",
+                     max_run: int = MAX_RUN) -> Drawing:
     """A drawing on a (W, H) px canvas, R = ref_frac × the diagonal inside
     the margin (≈ the ink's own bounding-box diagonal).
 
@@ -1011,7 +1117,8 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
             "ink_budget": float(ink), "clearance_px": clr}
     if mode == "single":
         st = _single_line(grammar, rng, sheet, R, lw, step, clr, look, float(ink), hands,
-                          switch_every, K)
+                          switch_every, K, {"p_follow": p_follow, "corner_len": corner_round_w * lw / R,
+                                            "steer": steer, "max_run": max_run})
         meta["crosses"] = st.meta.get("crosses", 0)
         return Drawing([st] if len(st) >= 2 else [], source=f"grammar:{grammar.name}:single",
                        size=(W, H), meta=meta)
@@ -1030,7 +1137,8 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
     gaps = rel.get("gap_free") or []
     lengths = grammar.stroke_lengths or [0.1]
     min_len = grammar.min_length
-    grower = _Grower(grammar, rng, sheet, R, step, clr, look, K)
+    gkw = {"p_follow": p_follow, "corner_len": corner_round_w * lw / R, "steer": steer, "max_run": max_run}
+    grower = _Grower(grammar, rng, sheet, R, step, clr, look, K, **gkw)
     placed: list[Stroke] = []
     free_ends: list[tuple[int, int]] = []
     state = {"ink": 0.0, "crosses": 0}
@@ -1133,12 +1241,14 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
         free_ends.append((i, 1))
         state["ink"] += st.length() / R
         state["crosses"] += nc
+    meta.update(grow_stats=grower.stats)
     meta.update(crosses=state["crosses"], ink=state["ink"], min_length=min_len,
                 relations=relations, roots=roots, p_branch=pb, p_continue=pc, cross_rate=cross_rate)
     return Drawing(placed, source=f"grammar:{grammar.name}", size=(W, H), meta=meta)
 
 
-def _single_line(g: Grammar, rng, sheet: _Sheet, R, lw, step, clr, look, ink, hands, switch_every, K):
+def _single_line(g: Grammar, rng, sheet: _Sheet, R, lw, step, clr, look, ink, hands, switch_every, K,
+                 gkw=None):
     """One long line in chunks (see generate_drawing). Chunks are grown with
     the same steering as contiguous strokes, against the line drawn so far;
     a chunk that is boxed in is retried, and on the last try may cross the
@@ -1171,12 +1281,13 @@ def _single_line(g: Grammar, rng, sheet: _Sheet, R, lw, step, clr, look, ink, ha
         gh = hands[hand_i % len(hands)]
         if next_switch is None:
             next_switch = s_tot + switch_every * _sample(lengths, rng, 0.1)
-        target = min(_sample(gh.stroke_lengths or lengths, rng, 0.1), ink - s_tot + 1e-6)
+        target = min(_sample(gh.stroke_lengths or lengths, rng, 0.1) * 0.5 ** min(fails, 3),
+                     ink - s_tot + 1e-6)             # shorter chunks after failures
         ctx = ((list(all_toks[-2]) if len(all_toks) >= 2 else ["START"]), list(all_toks[-1])) \
             if all_toks else None
         s_line = _arclen(pts_all)
         prior = pts_all[s_line < s_line[-1] - 4 * clr]
-        grower = _Grower(gh, rng, sheet, R, step, clr, look, K)
+        grower = _Grower(gh, rng, sheet, R, step, clr, look, K, **(gkw or {}))
         best = None
         for t in range(tries):
             toks, how, nc = grower.grow(pos, h, target, context=ctx, prior=prior,
@@ -1189,6 +1300,9 @@ def _single_line(g: Grammar, rng, sheet: _Sheet, R, lw, step, clr, look, ink, ha
         sc, toks, nc = best
         if not toks or sc < 0.25 * target:
             fails += 1
+            if not chunks:                          # boxed in at the start: start elsewhere
+                start = m + rng.uniform(0.2, 0.8, 2) * (np.array([W, H]) - 2 * m)
+                heading0 = rng.uniform(0, 2 * np.pi)
             if chunks and backtracks < 12:          # boxed in: back up one chunk, regrow
                 chunks.pop()
                 backtracks += 1

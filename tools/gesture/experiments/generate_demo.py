@@ -32,7 +32,7 @@ from gesture.core import Drawing, Stroke  # noqa: E402
 
 from experiments.grammar_eval import ARTISTS, OUT, learn_artist, load, prepared  # noqa: E402
 
-DEMO = OUT / "demo_v3"
+DEMO = OUT / "demo_v4"
 CANVAS = (1000, 1200)
 LINE_W = 2.6
 TILE = (400, 480)
@@ -102,9 +102,10 @@ def population_sheet(art, g, drawings, rng):
     tiles = []
     gens = []
     for i in range(8):
-        d = gm.generate_drawing(g, rng, CANVAS)
+        rl = "learned" if i < 4 else "tree"
+        d = gm.generate_drawing(g, rng, CANVAS, relations=rl)
         gens.append(d)
-        tiles.append(label(render(d), f"contiguous {i + 1}: {len(d.strokes)} strokes, ink {d.meta['ink']:.1f} R"))
+        tiles.append(label(render(d), f"contiguous/{rl} {i % 4 + 1}: {len(d.strokes)} strokes, ink {d.meta['ink']:.1f} R"))
     reals = sorted(drawings, key=lambda sd: clean_score(sd[1]), reverse=True)[:2]
     rt = []
     for stem, d in reals:
@@ -115,10 +116,10 @@ def population_sheet(art, g, drawings, rng):
         d = gm.generate_drawing(g, rng, CANVAS, mode="single")
         singles.append(label(render(d), f"single line {i + 1}: ink {d.strokes[0].length() / d.meta['ref_length_gen']:.1f} R"
                              if d.strokes else "single: empty"))
-    # row 1 = 4 contiguous + real 1, row 2 = 4 contiguous + real 2, row 3 = 4 single lines
+    # row 1 = 4 contiguous (learned) + real 1, row 2 = 4 contiguous (tree) + real 2, row 3 = 4 single lines
     layout = tiles[:4] + [rt[0]] + tiles[4:8] + [rt[1]] + singles + [None]
-    return grid(layout, 5, f"{art} - grammar v3 (sigma = {g.meta['sigma_w']:g} w, long strokes only, steered growth): "
-                           "rows 1-2 contiguous (learned relations) + a real long-stroke subset (right); row 3 single line"), gens
+    return grid(layout, 5, f"{art} - grammar v4 (sigma = {g.meta['sigma_w']:g} w; runs of 2 tokens, typical steering): "
+                           "row 1 contiguous/learned, row 2 contiguous/tree + a real long-stroke subset (right); row 3 single line"), gens
 
 
 def _draw_lines(size, polys, scale=1.0):

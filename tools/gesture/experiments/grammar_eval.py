@@ -189,18 +189,20 @@ def cmd_calibrate(a):
         g.save(gpath)
         target = float(np.median([pd["relations"]["cross_per_ink"] for _, pd in P[art]
                                   if pd["relations"]["n"] >= 2]))
-        sizes = [tuple(pd["size"]) for _, pd in P[art]][:12]
-        gain = 1.0
-        for it in range(3):
+        sizes = [tuple(pd["size"]) for _, pd in P[art]]
+        sizes = (sizes * 2)[:24]
+        # v4: 24 drawings per round, damped (square-root) multiplicative
+        # update, and the gain whose measurement came closest is kept
+        gain, tried = 1.0, []
+        for it in range(4):
             with ProcessPoolExecutor(JOBS) as ex:
-                v = list(ex.map(_calib_job, [(str(gpath), sz, 500 + i, gain) for i, sz in enumerate(sizes)]))
+                v = list(ex.map(_calib_job, [(str(gpath), sz, 500 + 37 * it + i, gain)
+                                             for i, sz in enumerate(sizes)]))
             got = float(np.nanmedian(v))
+            tried.append((abs(np.log(max(got, 1e-6) / target)), gain, got))
             print(f"{art} it{it}: gain {gain:.2f} → crossings/len {got:.3f} (real median {target:.3f})")
-            if got <= 0:
-                gain *= 2
-            else:
-                gain *= float(np.clip(target / got, 0.33, 3.0))
-        gains[art] = round(gain, 3)
+            gain *= 2.0 if got <= 0 else float(np.clip(np.sqrt(target / got), 0.5, 2.0))
+        gains[art] = round(min(tried)[1], 3)
     (OUT / "cross_gain.json").write_text(json.dumps(gains, indent=1))
     print(gains)
 
@@ -290,7 +292,7 @@ def cmd_test1(a):
     OUT.mkdir(parents=True, exist_ok=True)
     lut = medium.load_media()
     items = []      # (artist, cls, key, drawing)
-    variants = [(f"v3_{rl}", "", rl) for rl in RELS]
+    variants = [(f"{a.current_name}_{rl}", "", rl) for rl in RELS]
     if a.baseline:
         variants += [(f"{a.baseline_name}_{rl}", str(Path(a.baseline).resolve()), rl) for rl in RELS]
     for art in ARTISTS:
@@ -396,8 +398,8 @@ def cmd_memo(a):
         Lr = [gm.stroke_length(t) for t in real]
         n = a.n
         lens = [float(rng.choice(Lr)) for _ in range(n)]    # same length mix as held-out real
-        gen = [gm.generate_tokens(g, rng, length=L)[0] for L in lens]
-        ctl = [gm.generate_tokens(gc, rng, length=L)[0] for L in lens]
+        gen = [gm.generate_tokens(g, rng, length=L, p_follow=gm.P_FOLLOW)[0] for L in lens]
+        ctl = [gm.generate_tokens(gc, rng, length=L, p_follow=gm.P_FOLLOW)[0] for L in lens]
         tr_idx = rng.choice(len(g.strokes), n)
         quote = [gm.jitter_tokens(g, g.strokes[i], rng) for i in tr_idx]
         sets = {"generated": gen, "heldout_real": real, "shuffled_control": ctl, "jittered_training": quote}
@@ -431,18 +433,158 @@ def cmd_memo(a):
     print("\n".join(L))
 
 
+# ---------------------------------------------------------------------------
+# 5. v4 ablations: where does the along-line texture come from?
+# ---------------------------------------------------------------------------
+
+TEXTURE = ("cl_corner_rate", "cl_segs_per_stroke", "turn_tcorr_05", "turn_tcorr_10", "turn_net_ratio",
+           "ext_turn_q50", "len_q10", "len_q50", "rel_touch_rate", "rel_cross_per_len")
+
+
+def _identity_job(args):
+    """A real long-stroke subset re-drawn from its own σ = 2 w clothoid
+    tokens (each stroke rigidly aligned onto the original), corners sharp
+    or rounded over round_w line widths."""
+    art, stem, round_w = args
+    d = gm.long_drawing(Drawing.load(EXTRACT / art / f"{stem}.json"))
+    R, fitted = gm.fit_drawing(d, select=False)
+    out = []
+    for st, _f, toks in fitted:
+        w = gm.stroke_width(st, d)
+        tk = gm.round_corners(toks, round_w * w / R)
+        p, _, _ = gm.tokens_to_points(tk, R, step=max(0.5, w / 2))
+        ref = gm.resample(st.points, max(0.5, w / 2))
+        n = min(len(p), len(ref))
+        if n < 3:
+            continue
+        ub = np.linspace(0, len(p) - 1, n).astype(int)
+        ui = np.linspace(0, len(ref) - 1, n).astype(int)
+        q = gm._kabsch(p[ub], ref[ui])(p)
+        out.append(gm.Stroke(q, width=np.full(len(q), w)))
+    return Drawing(out, source=d.source, size=d.size)
+
+
+def _abl_gen_job(args):
+    gpath, size, seed, kw = args
+    g = gm.Grammar.load(gpath)
+    return gm.generate_drawing(g, np.random.default_rng(seed), size, **kw)
+
+
+ABLATIONS = {
+    "v3": {},
+    "steer_none": {"steer": "none"},
+    "steer_plain": {"steer": "plain"},
+    "round4": {"corner_round_w": 4.0},
+    "round8": {"corner_round_w": 8.0},
+    "follow50": {"p_follow": 0.5},
+    "follow80": {"p_follow": 0.8},
+    "steer_typical": {"steer": "typical"},
+    "follow80_typical": {"p_follow": 0.8, "steer": "typical"},
+    "follow90_typical": {"p_follow": 0.9, "steer": "typical"},
+    "run2_typical": {"p_follow": 0.9, "max_run": 2, "steer": "typical"},
+    "run1_typical": {"p_follow": 0.9, "max_run": 1, "steer": "typical"},
+}
+
+
+def cmd_ablate(a):
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from discriminate import _models, effect_sizes, pair_auc
+    P = prepared(a.sigma_w)
+    lut = medium.load_media()
+    names_sel = a.only.split(",") if a.only else None
+    abl = {k: v for k, v in ABLATIONS.items() if not names_sel or k in names_sel}
+    if a.extra:
+        abl.update(json.loads(a.extra))
+    ident = [0.0, 4.0, 8.0] if not names_sel else []
+    rep = {"ablations": {k: v for k, v in abl.items()}, "identity_round_w": ident, "artists": {}}
+    for art in ARTISTS:
+        t0 = time.time()
+        g = learn_artist(art, P, a.sigma_w)
+        gpath = OUT / f"grammar_{art}_abl.json"
+        g.save(gpath)
+        stems = [stem for stem, _ in P[art]]
+        reals = [(st, gm.long_drawing(Drawing.load(EXTRACT / art / f"{st}.json"))) for st in stems]
+        reals = [(st, d) for st, d in reals if len(d.strokes) >= 2]
+        items = [("real", f"real/{st}", d, st) for st, d in reals]
+        with ProcessPoolExecutor(JOBS) as ex:
+            for rw in ident:
+                ds = list(ex.map(_identity_job, [(art, st, rw) for st, _ in reals]))
+                items += [(f"identity_r{rw:g}", f"id{rw:g}/{i}", d, None) for i, d in enumerate(ds)]
+            for nm, kw in abl.items():
+                ds = list(ex.map(_abl_gen_job, [(str(gpath), d.size, a.seed * 1000 + i, kw)
+                                               for i, (_s, d) in enumerate(reals)]))
+                items += [(nm, f"{nm}/{i}", d, None) for i, d in enumerate(ds)]
+            feats = dict(ex.map(_feat_job, [(k, d) for _c, k, d, _s in items], chunksize=2))
+        keys = [k for _c, k, _d, _s in items]
+        allk = sorted(set().union(*[feats[k] for k in keys]))
+        names = [n for n in allk if all(n in feats[k] for k in keys) and panel.group_of(n) not in panel.WIDTH_GROUPS]
+        X = np.array([[feats[k][n] for n in names] for k in keys], dtype=float)
+        okc = ~np.all(np.isnan(X), axis=0)
+        X, names = X[:, okc], [n for n, o in zip(names, okc) if o]
+        cls = np.array([c for c, _k, _d, _s in items])
+        med = np.array([lut.get((art, st), "unknown") if c == "real" else "generated" for c, _k, _d, st in items])
+        artl = np.array([art] * len(items))
+        models = _models(a.seed)
+        res = {}
+        stats = {}
+        for c in dict.fromkeys(cls.tolist()):
+            m = cls == c
+            row = {n: float(np.nanmedian(X[m, names.index(n)])) for n in TEXTURE if n in names}
+            if c != "real":
+                mm = np.isin(cls, ["real", c])
+                pj = medium.MediumProjector(medium.load_pairs()).fit(X[mm], artl[mm], med[mm])
+                Xp = pj.transform(X[mm])
+                y = np.where(cls[mm] == "real", "real", "gen")
+                grp = np.arange(mm.sum())
+                norel = [i for i, n in enumerate(names) if panel.group_of(n) != "rel"]
+                row["auc"] = pair_auc(models["logreg"], Xp, y, "real", "gen", a.repeats, a.seed, grp)["auc"]
+                row["auc_forest"] = pair_auc(models["forest"], Xp, y, "real", "gen", a.repeats, a.seed, grp)["auc"]
+                row["auc_norel"] = pair_auc(models["logreg"], Xp[:, norel], y, "real", "gen", a.repeats, a.seed, grp)["auc"]
+                row["top_d"] = effect_sizes(X[mm], y, names, "real", "gen", top=6)
+                gs = [d.meta.get("grow_stats") for cc, _k, d, _s in items if cc == c and d.meta.get("grow_stats")]
+                if gs:
+                    tot = {k: sum(x[k] for x in gs) for k in gs[0]}
+                    stats[c] = {"steered_share": tot["steered"] / max(tot["steps"], 1),
+                                "corner_share_chosen": tot["corners"] / max(tot["steps"], 1),
+                                "corner_share_first_proposal": tot["corners_proposed_first"] / max(tot["steps"], 1),
+                                "followed_share": tot["followed"] / max(tot["steps"], 1)}
+                    row.update(stats[c])
+            res[c] = row
+        rep["artists"][art] = res
+        print(f"[{time.time() - t0:.0f}s] {art}")
+        for c, r in res.items():
+            print(f"  {c:16s} " + " ".join(f"{k}={v:.3g}" for k, v in r.items() if isinstance(v, float)))
+    tag = a.tag or "ablate"
+    (OUT / f"{tag}.json").write_text(json.dumps(rep, indent=1))
+    cols = ["cl_corner_rate", "turn_tcorr_10", "turn_net_ratio", "ext_turn_q50", "len_q10", "auc", "auc_forest",
+            "auc_norel", "steered_share", "corner_share_chosen", "corner_share_first_proposal", "followed_share"]
+    L = ["| # | artist | set | " + " | ".join(cols) + " |", "|---|---|---|" + "---|" * len(cols)]
+    i = 0
+    for art, res in rep["artists"].items():
+        for c, r in res.items():
+            i += 1
+            L.append(f"| B{i} | {art} | {c} | " + " | ".join(
+                ("—" if r.get(k) is None else f"{r[k]:.3g}") for k in cols) + " |")
+    (OUT / f"{tag}.md").write_text("\n".join(L) + "\n")
+    print("\n".join(L))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["scale", "prepare", "calibrate", "test1", "memo"])
+    ap.add_argument("cmd", choices=["scale", "prepare", "calibrate", "test1", "memo", "ablate"])
     ap.add_argument("--sigma-w", type=float, default=gm.SIGMA_W)
     ap.add_argument("--n", type=int, default=150, help="scale: strokes per artist; memo: strokes per set")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--repeats", type=int, default=5)
     ap.add_argument("--baseline", default="", help="test1: also evaluate a grammar module file (older version)")
     ap.add_argument("--baseline-name", default="v2")
+    ap.add_argument("--current-name", default="v4", help="test1: label of this module's variants")
+    ap.add_argument("--only", default="", help="ablate: comma list of ablation names (skips identity)")
+    ap.add_argument("--extra", default="", help='ablate: JSON {name: generate_drawing kwargs}')
+    ap.add_argument("--tag", default="", help="ablate: output name")
     a = ap.parse_args(argv)
     {"scale": cmd_scale, "prepare": cmd_prepare, "calibrate": cmd_calibrate, "test1": cmd_test1,
-     "memo": cmd_memo}[a.cmd](a)
+     "memo": cmd_memo, "ablate": cmd_ablate}[a.cmd](a)
 
 
 if __name__ == "__main__":
