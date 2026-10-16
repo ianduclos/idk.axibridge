@@ -248,3 +248,71 @@ def test_memorisation_distance(g_random):
     assert len(d) == 10 and np.all(np.isfinite(d)) and np.all(d >= 0)
     gc = learn(prepared=None, drawings=[], name="empty")
     assert gc.meta["n_strokes"] == 0
+
+
+# ---------------------------------------------------------------------------
+# v5: topology targets, sharp joins, end plans
+# ---------------------------------------------------------------------------
+
+def _hand_set(g, **end_p):
+    """A copy of g whose topology targets are hand-set (end shares etc.)."""
+    h = Grammar.from_json(g.to_json())
+    topo = dict(h.relations["topo"])
+    topo["end_p"] = {k: float(end_p.get(k, 0.0)) for k in ("T", "L", "near", "free")}
+    topo.setdefault("l_defl", [1.2])
+    h.relations = {**h.relations, "topo": topo, "end_gain": {}, "p_double": 0.0}
+    return h
+
+
+def test_topology_targets_learned(g_fine):
+    topo = g_fine.relations["topo"]
+    assert sum(topo["end_p"].values()) == pytest.approx(1.0)
+    assert topo["n_drawings"] == 3
+    assert g_fine.relations["corner_rate"] >= 0.0
+    assert g_fine.version == 5
+
+
+def test_joins_are_sharp(g_fine):
+    g = _hand_set(g_fine, L=0.45, free=0.55)
+    g.relations["topo"]["l_defl"] = [1.2]
+    d = generate_drawing(g, np.random.default_rng(21), (900, 900))
+    joins = [s for s in d.strokes if s.meta.get("relation") == "join"]
+    assert joins, "no joins generated"
+    for s in joins:
+        assert abs(abs(s.meta["branch_angle"]) - 1.2) < 0.25       # learned deflection, not smooth
+        h = d.strokes[s.meta["host"]].points
+        e = h[0] if s.meta["host_end"] == 0 else h[-1]
+        assert np.linalg.norm(s.points[0] - e) < 1e-6                # starts exactly at the host's end
+    # v4 (smooth continuation) for comparison
+    d4 = generate_drawing(g, np.random.default_rng(21), (900, 900), join="smooth")
+    a4 = [abs(s.meta["branch_angle"]) for s in d4.strokes if s.meta.get("relation") == "join"]
+    assert not a4 or np.median(a4) < 0.6
+
+
+def test_end_plans_reach_ink(g_fine, monkeypatch):
+    import gesture.grammar as gmod
+    monkeypatch.setattr(gmod, "SEEK_FROM", 0.5)          # seek earlier so the toy hand arrives often
+    g = _hand_set(g_fine, T=0.6, near=0.4)
+    d = generate_drawing(g, np.random.default_rng(22), (900, 900))
+    st = d.meta["grow_stats"]
+    assert st["end_T"] + st["end_near"] > 0
+    R = d.meta["ref_length_gen"]
+    for i, s in enumerate(d.strokes):
+        if s.meta["end"] not in ("T", "near"):
+            continue
+        others = np.vstack([o.points for j, o in enumerate(d.strokes) if j != i])
+        gap = np.min(np.linalg.norm(others - s.points[-1], axis=1))
+        if s.meta["end"] == "T":
+            assert gap <= 0.005 * R + 1.0
+        else:
+            assert d.meta["clearance_px"] * 0.9 <= gap <= 0.02 * R * 1.5
+
+
+def test_v4_mode_and_old_grammars(g_matisse):
+    d = generate_drawing(g_matisse, np.random.default_rng(23), (800, 800), ends="v4", kmatch=0.0,
+                         corner_budget=0.0)
+    assert d.meta["ends"] == "v4" and len(d.strokes) >= 1
+    g = Grammar.from_json({k: v for k, v in g_matisse.to_json().items()})
+    g.relations = {k: v for k, v in g.relations.items() if k != "topo"}   # a pre-v5 grammar
+    d2 = generate_drawing(g, np.random.default_rng(23), (800, 800))
+    assert d2.meta["ends"] == "v4"

@@ -41,9 +41,10 @@ from gesture.core import Drawing  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 EXTRACT = ROOT / ".local/gesture/out/extract_hybrid"
-OUT = ROOT / ".local/gesture/out/grammar_v2"
+OUT = ROOT / ".local/gesture/out/grammar_v5"
+PREP = ROOT / ".local/gesture/out/grammar_v2" / "prepared"   # fit cache shared with v2–v4 (unchanged)
 ARTISTS = ("matisse", "hokusai", "ingres")
-JOBS = max(1, min(10, (os.cpu_count() or 2) - 2))
+JOBS = int(os.environ.get("GESTURE_JOBS", "3"))     # shared machine: keep pools small
 RELS = ("learned", "tree")
 
 
@@ -137,7 +138,7 @@ def cmd_scale(a):
 
 def _prep_job(args):
     art, stem, sigma_w = args
-    p = OUT / "prepared" / f"v3-sw{sigma_w:g}" / art / f"{stem}.json"
+    p = PREP / f"v3-sw{sigma_w:g}" / art / f"{stem}.json"
     if p.exists():
         return art, stem, json.loads(p.read_text())
     d = Drawing.load(EXTRACT / art / f"{stem}.json")
@@ -159,52 +160,122 @@ def prepared(sigma_w=gm.SIGMA_W) -> dict[str, list[tuple[str, dict]]]:
     return out
 
 
-def learn_artist(art, P, sigma_w=gm.SIGMA_W, **kw):
-    """Learn an artist's grammar, with the crossing gain from `calibrate` if present."""
-    g = gm.learn(prepared=[pd for _, pd in P[art]], name=art, sigma_w=sigma_w, **kw)
+def _topo_job(args):
+    art, stem = args
+    p = OUT / "topo" / art / f"{stem}.json"
+    if p.exists():
+        return art, stem, json.loads(p.read_text())
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ts = gm.topology_summary(gm.long_drawing(Drawing.load(EXTRACT / art / f"{stem}.json")))
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(ts))
+    return art, stem, ts
+
+
+def topo_summaries() -> dict[str, dict[str, dict]]:
+    """v5: per-drawing `topology_summary` of every real long subset (cached)."""
+    jobs = [(art, p.stem) for art in ARTISTS for p in sorted((EXTRACT / art).glob("*.json"))]
+    with ProcessPoolExecutor(JOBS) as ex:
+        res = list(ex.map(_topo_job, jobs, chunksize=2))
+    out = {a: {} for a in ARTISTS}
+    for art, stem, ts in res:
+        out[art][stem] = ts
+    return out
+
+
+def learn_artist(art, P, sigma_w=gm.SIGMA_W, topo=None, **kw):
+    """Learn an artist's grammar with the v5 topology targets, plus the
+    crossing gain / double-contour rate from `calibrate` if present."""
+    topo = topo_summaries() if topo is None else topo
+    g = gm.learn(prepared=[pd for _, pd in P[art]], name=art, sigma_w=sigma_w,
+                 topo=[topo[art][stem] for stem, _ in P[art] if stem in topo[art]], **kw)
     cg = OUT / "cross_gain.json"
     if cg.exists():
         g.relations["cross_gain"] = float(json.loads(cg.read_text()).get(art, 1.0))
+    pdj = OUT / "p_double.json"
+    if pdj.exists():
+        g.relations["p_double"] = float(json.loads(pdj.read_text()).get(art, 0.0))
+    egj = OUT / "end_gain.json"
+    if egj.exists():
+        g.relations["end_gain"] = json.loads(egj.read_text()).get(art, {})
     return g
 
 
 def _calib_job(args):
-    gpath, size, seed, gain = args
+    gpath, size, seed, gain, kw = args
+    from gesture import topology as tp
     g = gm.Grammar.load(gpath)
-    d = gm.generate_drawing(g, np.random.default_rng(seed), size, cross_gain=gain)
+    d = gm.generate_drawing(g, np.random.default_rng(seed), size, cross_gain=gain, **(kw or {}))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         f, _ = panel.features_with_info(d, sigma_min_w=medium.SIGMA_MIN_W, clothoid=False)
-    return f.get("rel_cross_per_len", np.nan)
+        t = tp.relation_graph(d)
+    kinds = [e["kind"] for e in t.ends if e["kind"] != "self"]
+    return {"cross": f.get("rel_cross_per_len", np.nan), "kinds": kinds, "par_ink": float(t.par_ink)}
 
 
 def cmd_calibrate(a):
-    """Tune each hand's crossing gain so generated drawings cross at the real
-    long-stroke subsets' median rate (panel rel_cross_per_len)."""
+    """v5: per hand, tune (1) the crossing gain so generated drawings cross at
+    the real long subsets' median rate (panel rel_cross_per_len), (2) gains
+    on the planned start/end shares so the realised end-type shares (T / L /
+    near / free, topology.relation_graph, pooled) match the real ones, and
+    (3) the double-contour start rate so the median parallel-ink share
+    matches. Damped (square-root) multiplicative updates; the round with the
+    smallest summed |log ratio| error is kept."""
     P = prepared(a.sigma_w)
-    gains = {}
+    TS = topo_summaries()
+    out = {}
     for art in ARTISTS:
-        g = gm.learn(prepared=[pd for _, pd in P[art]], name=art, sigma_w=a.sigma_w)
-        gpath = OUT / f"grammar_{art}_calib.json"
-        g.save(gpath)
-        target = float(np.median([pd["relations"]["cross_per_ink"] for _, pd in P[art]
-                                  if pd["relations"]["n"] >= 2]))
-        sizes = [tuple(pd["size"]) for _, pd in P[art]]
-        sizes = (sizes * 2)[:24]
-        # v4: 24 drawings per round, damped (square-root) multiplicative
-        # update, and the gain whose measurement came closest is kept
-        gain, tried = 1.0, []
-        for it in range(4):
+        g = learn_artist(art, P, a.sigma_w, topo=TS)
+        for k in ("cross_gain", "p_double", "end_gain"):
+            g.relations.pop(k, None)
+        topo = g.relations["topo"]
+        tgt_x = float(np.median([pd["relations"]["cross_per_ink"] for _, pd in P[art]
+                                 if pd["relations"]["n"] >= 2]))
+        tgt_e = topo["end_p"]
+        tgt_p = topo["par_ink"]
+        sizes = ([tuple(pd["size"]) for _, pd in P[art]] * 2)[:a.calib_n]
+        gain, eg, pdbl = 1.0, {k: 1.0 for k in ("T", "L", "near", "free")}, 0.05
+        tried = []
+        for it in range(a.calib_rounds):
+            g.relations.update(cross_gain=gain, end_gain=dict(eg), p_double=pdbl)
+            gpath = OUT / f"grammar_{art}_calib.json"
+            g.save(gpath)
             with ProcessPoolExecutor(JOBS) as ex:
-                v = list(ex.map(_calib_job, [(str(gpath), sz, 500 + 37 * it + i, gain)
+                v = list(ex.map(_calib_job, [(str(gpath), sz, 500 + 37 * it + i, gain, None)
                                              for i, sz in enumerate(sizes)]))
-            got = float(np.nanmedian(v))
-            tried.append((abs(np.log(max(got, 1e-6) / target)), gain, got))
-            print(f"{art} it{it}: gain {gain:.2f} → crossings/len {got:.3f} (real median {target:.3f})")
-            gain *= 2.0 if got <= 0 else float(np.clip(np.sqrt(target / got), 0.5, 2.0))
-        gains[art] = round(min(tried)[1], 3)
-    (OUT / "cross_gain.json").write_text(json.dumps(gains, indent=1))
-    print(gains)
+            got_x = float(np.nanmedian([x["cross"] for x in v]))
+            kinds = [k for x in v for k in x["kinds"]]
+            got_e = {k: kinds.count(k) / max(len(kinds), 1) for k in tgt_e}
+            got_p = float(np.median([x["par_ink"] for x in v]))
+            lr = lambda t, g_: abs(np.log(max(g_, 1e-3) / max(t, 1e-3)))  # noqa: E731
+            err = lr(tgt_x, got_x) + sum(lr(tgt_e[k], got_e[k]) for k in tgt_e) + lr(tgt_p, got_p)
+            tried.append((err, it, {"cross_gain": gain, "end_gain": dict(eg), "p_double": pdbl,
+                                    "got": {"cross": got_x, "ends": got_e, "par_ink": got_p}}))
+            print(f"{art} it{it}: err {err:.2f} | cross gain {gain:.2f} → {got_x:.3f} (real {tgt_x:.3f}) | "
+                  + " ".join(f"{k} {got_e[k]:.3f}/{tgt_e[k]:.3f}×{eg[k]:.2f}" for k in tgt_e)
+                  + f" | par_ink {got_p:.3f}/{tgt_p:.3f} p_double {pdbl:.3f}", flush=True)
+            gain *= 2.0 if got_x <= 0 else float(np.clip(np.sqrt(tgt_x / got_x), 0.5, 2.0))
+            for k in eg:
+                eg[k] = float(np.clip(eg[k] * np.clip(np.sqrt(max(tgt_e[k], 1e-3) / max(got_e[k], 1e-3)),
+                                                       0.5, 2.0), 0.05, 6.0))
+            pdbl = float(np.clip(pdbl + 0.5 * (tgt_p - got_p), 0.0, 0.4))
+        # the crossing count is far noisier than the end shares: pick each
+        # knob from the round where its own error was smallest
+        def _ex(t):
+            return abs(np.log(max(t[2]["got"]["cross"], 1e-3) / max(tgt_x, 1e-3)))
+        bx = min(tried, key=_ex)
+        be = min(tried, key=lambda t: t[0] - _ex(t))
+        out[art] = {"err_cross": _ex(bx), "round_cross": bx[1], "err_ends_par": be[0] - _ex(be),
+                    "round_ends_par": be[1], "cross_gain": bx[2]["cross_gain"],
+                    "end_gain": be[2]["end_gain"], "p_double": be[2]["p_double"],
+                    "got_cross": bx[2]["got"]["cross"], "got_ends_par": be[2]["got"]}
+    (OUT / "calibration.json").write_text(json.dumps(out, indent=1))
+    (OUT / "cross_gain.json").write_text(json.dumps({k: round(v["cross_gain"], 3) for k, v in out.items()}))
+    (OUT / "p_double.json").write_text(json.dumps({k: round(v["p_double"], 3) for k, v in out.items()}))
+    (OUT / "end_gain.json").write_text(json.dumps({k: v["end_gain"] for k, v in out.items()}))
+    print(json.dumps(out, indent=1))
 
 
 def cmd_prepare(a):
@@ -259,6 +330,39 @@ def _feat_job(args):
     return key, f
 
 
+def _topo_feat_job(args):
+    key, d = args
+    from gesture import topology as tp
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
+            return key, tp.topology_features(d)
+        except Exception:  # noqa: BLE001 — degenerate drawing: all NaN
+            return key, {}
+
+
+TOPO_KEY = ("top_end_T", "top_end_L", "top_end_near", "top_end_free", "top_L_defl", "top_near_aim",
+            "top_kiss_per_ink", "top_par_pairs", "top_par_ink", "top_isolated", "top_x_per_ink", "top_T_angle")
+
+
+def topo_auc(tfeats: dict, real_keys, gen_keys, repeats, seed, models) -> dict:
+    """Real vs generated AUC on topology features only (topology_study's
+    classifier: all non-descriptive FEATURES, no medium projection)."""
+    from gesture import topology as tp
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from discriminate import effect_sizes, pair_auc
+    names = [k for k in tp.FEATURES if k not in tp.DESCRIPTIVE]
+    keys = list(real_keys) + list(gen_keys)
+    X = np.array([[tfeats[k].get(n, np.nan) if tfeats[k].get(n) is not None else np.nan for n in names]
+                  for k in keys], dtype=float)
+    ok = ~np.all(np.isnan(X), axis=0)
+    X, names = X[:, ok], [n for n, o in zip(names, ok) if o]
+    y = np.array(["real"] * len(real_keys) + ["gen"] * len(gen_keys))
+    out = {mn: pair_auc(mk, X, y, "real", "gen", repeats, seed)["auc"] for mn, mk in models.items()}
+    out["top_d"] = effect_sizes(X, y, names, "real", "gen", top=6)
+    return out
+
+
 def _module(path: str):
     """The grammar module: this one, or a baseline loaded from a file (e.g.
     an older version extracted with `git show`, imports made absolute)."""
@@ -295,17 +399,32 @@ def cmd_test1(a):
     variants = [(f"{a.current_name}_{rl}", "", rl) for rl in RELS]
     if a.baseline:
         variants += [(f"{a.baseline_name}_{rl}", str(Path(a.baseline).resolve()), rl) for rl in RELS]
+    TS = topo_summaries()
     for art in ARTISTS:
-        g = learn_artist(art, P, a.sigma_w)
+        g = learn_artist(art, P, a.sigma_w, topo=TS)
         gpath = OUT / f"grammar_{art}.json"
         g.save(gpath)
         reals = [(stem, gm.long_drawing(d)) for stem, d in load(art)]
         reals = [(s, d) for s, d in reals if len(d.strokes) >= 2]
         items += [(art, "real", f"{art}/{s}", d) for s, d in reals]
+        # v5: the identity floor in the same run (real strokes re-drawn from their own tokens)
+        with ProcessPoolExecutor(JOBS) as ex:
+            ids = list(ex.map(_identity_job, [(art, s, 0.0) for s, _ in reals]))
+        items += [(art, "gen_floor", f"{art}/floor{i}", d) for i, d in enumerate(ids)]
+        gpath_b = OUT / f"grammar_{art}_baseline.json"
+        if a.baseline:       # the baseline with its own calibrated crossing gain, no v5 fields
+            gb = gm.Grammar.from_json(g.to_json())
+            gb.relations = {k: v for k, v in g.relations.items()
+                            if k not in ("topo", "end_gain", "p_double", "corner_rate")}
+            cgb = Path(a.baseline_gain) if a.baseline_gain else None
+            if cgb and cgb.exists():
+                gb.relations["cross_gain"] = float(json.loads(cgb.read_text()).get(art, 1.0))
+            gb.save(gpath_b)
         for vname, mpath, rl in variants:
             t0 = time.time()
+            gp_ = gpath_b if mpath else gpath
             with ProcessPoolExecutor(JOBS) as ex:
-                gens = list(ex.map(_gen_job, [(mpath, str(gpath), d.size, a.seed * 1000 + i, rl)
+                gens = list(ex.map(_gen_job, [(mpath, str(gp_), d.size, a.seed * 1000 + i, rl)
                                              for i, (_s, d) in enumerate(reals)]))
             print(f"{art}/{vname}: {len(reals)} real, generated in {time.time() - t0:.0f}s; "
                   f"gen strokes med {np.median([len(d.strokes) for d in gens])}, "
@@ -313,7 +432,9 @@ def cmd_test1(a):
             items += [(art, f"gen_{vname}", f"{art}/gen_{vname}{i}", d) for i, d in enumerate(gens)]
     with ProcessPoolExecutor(JOBS) as ex:
         feats = dict(ex.map(_feat_job, [(k, d) for _a, _c, k, d in items], chunksize=2))
+        tfeats = dict(ex.map(_topo_feat_job, [(k, d) for _a, _c, k, d in items], chunksize=2))
     keys = [k for _a, _c, k, _d in items]
+    variants = [("floor", "", "")] + variants
     allk = sorted(set().union(*[feats[k] for k in keys]))
     names = [n for n in allk if all(n in feats[k] for k in keys)
              and panel.group_of(n) not in panel.WIDTH_GROUPS]
@@ -340,6 +461,9 @@ def cmd_test1(a):
                 res[tag] = {mn: pair_auc(mk, Xp[m][:, cols], y, "real", "gen", a.repeats, a.seed, grp)
                             for mn, mk in models.items()}
             res["top_d"] = effect_sizes(X[m], y, names, "real", "gen", top=12)
+            rk = [k for (aa, cc, k, _d) in items if aa == art and cc == "real"]
+            gk = [k for (aa, cc, k, _d) in items if aa == art and cc == f"gen_{rl}"]
+            res["topology"] = topo_auc(tfeats, rk, gk, a.repeats, a.seed, models)
             res["n_real"], res["n_gen"] = int((y == "real").sum()), int((y == "gen").sum())
             rep["artists"][art][rl] = res
             print(art, rl, {t: {mn: round(v["auc"], 3) for mn, v in r.items()} for t, r in res.items()
@@ -361,8 +485,26 @@ def cmd_test1(a):
             K.append(f"| F{i} | {art} | {c} | " + " | ".join("—" if v[n] is None else f"{v[n]:.3g}" for n in KEY) + " |")
     (OUT / "test1_key.md").write_text("\n".join(K) + "\n")
     print("\n".join(K))
-    L = ["| # | artist | relations | n real/gen | geometry: logreg / forest AUC | no rel_: logreg / forest |",
-         "|---|---|---|---|---|---|"]
+    rep["topo_key"] = {}
+    for art in ARTISTS:
+        rep["topo_key"][art] = {}
+        for c in ["real"] + [f"gen_{v}" for v, _m, _r in variants]:
+            ck = [k for (aa, cc, k, _d) in items if aa == art and cc == c]
+            rep["topo_key"][art][c] = {}
+            for n in TOPO_KEY:
+                v = [tfeats[k].get(n, np.nan) for k in ck]
+                v = [x for x in v if x is not None and np.isfinite(x)]
+                rep["topo_key"][art][c][n] = float(np.median(v)) if v else None
+    (OUT / "test1.json").write_text(json.dumps(rep, indent=1))
+    K = ["| # | artist | set | " + " | ".join(TOPO_KEY) + " |", "|---|---|---|" + "---|" * len(TOPO_KEY)]
+    i = 0
+    for art, rows in rep["topo_key"].items():
+        for c, v in rows.items():
+            i += 1
+            K.append(f"| G{i} | {art} | {c} | " + " | ".join("—" if v[n] is None else f"{v[n]:.3g}" for n in TOPO_KEY) + " |")
+    (OUT / "test1_topo_key.md").write_text("\n".join(K) + "\n")
+    L = ["| # | artist | relations | n real/gen | geometry: logreg / forest AUC | no rel_: logreg / forest | topology: logreg / forest |",
+         "|---|---|---|---|---|---|---|"]
     i = 0
     for art, rr in rep["artists"].items():
         for rl, r in rr.items():
@@ -370,7 +512,8 @@ def cmd_test1(a):
             g1, g2 = r["geometry"], r["geometry_no_rel"]
             L.append(f"| A{i} | {art} | {rl} | {r['n_real']}/{r['n_gen']} | {g1['logreg']['auc']:.3f} ± "
                      f"{g1['logreg']['auc_std']:.3f} / {g1['forest']['auc']:.3f} | "
-                     f"{g2['logreg']['auc']:.3f} / {g2['forest']['auc']:.3f} |")
+                     f"{g2['logreg']['auc']:.3f} / {g2['forest']['auc']:.3f} | "
+                     f"{r['topology']['logreg']:.3f} / {r['topology']['forest']:.3f} |")
     L += ["", "Top separating features (Cohen's d, gen − real; medians real → gen):", ""]
     for art, rr in rep["artists"].items():
         for rl, r in rr.items():
@@ -399,10 +542,25 @@ def cmd_memo(a):
         n = a.n
         lens = [float(rng.choice(Lr)) for _ in range(n)]    # same length mix as held-out real
         gen = [gm.generate_tokens(g, rng, length=L, p_follow=gm.P_FOLLOW)[0] for L in lens]
+        gen_k = [gm.generate_tokens(g, rng, length=L, p_follow=gm.P_FOLLOW, kmatch=1.0)[0] for L in lens]
+        # v5: strokes as drawn (steering, joins, end plans) by full v5 contiguous drawings
+        TS = topo_summaries()
+        g.relations["topo"] = gm.pool_topology([TS[art][st] for i, (st, _) in enumerate(P[art]) if i % 5])
+        for k in ("cross_gain", "p_double", "end_gain"):
+            f_ = OUT / {"cross_gain": "cross_gain.json", "p_double": "p_double.json", "end_gain": "end_gain.json"}[k]
+            if f_.exists():
+                g.relations[k] = json.loads(f_.read_text()).get(art)
+        gpath = OUT / f"grammar_{art}_memo.json"
+        g.save(gpath)
+        with ProcessPoolExecutor(JOBS) as ex:
+            dd = list(ex.map(_abl_gen_job, [(str(gpath), tuple(held[i % len(held)]["size"]), a.seed + 77 * i, {})
+                                            for i in range(a.memo_drawings)]))
+        drawn = [st.meta["tokens"] for d in dd for st in d.strokes]
         ctl = [gm.generate_tokens(gc, rng, length=L, p_follow=gm.P_FOLLOW)[0] for L in lens]
         tr_idx = rng.choice(len(g.strokes), n)
         quote = [gm.jitter_tokens(g, g.strokes[i], rng) for i in tr_idx]
-        sets = {"generated": gen, "heldout_real": real, "shuffled_control": ctl, "jittered_training": quote}
+        sets = {"generated": gen, "generated_kmatch": gen_k, "drawn_v5": drawn, "heldout_real": real,
+                "shuffled_control": ctl, "jittered_training": quote}
         res = {}
         for min_seg in (2, 4):
             row = {}
@@ -470,19 +628,18 @@ def _abl_gen_job(args):
     return gm.generate_drawing(g, np.random.default_rng(seed), size, **kw)
 
 
+V4 = {"ends": "v4", "kmatch": 0.0, "corner_budget": 0.0}
 ABLATIONS = {
-    "v3": {},
-    "steer_none": {"steer": "none"},
-    "steer_plain": {"steer": "plain"},
-    "round4": {"corner_round_w": 4.0},
-    "round8": {"corner_round_w": 8.0},
-    "follow50": {"p_follow": 0.5},
-    "follow80": {"p_follow": 0.8},
-    "steer_typical": {"steer": "typical"},
-    "follow80_typical": {"p_follow": 0.8, "steer": "typical"},
-    "follow90_typical": {"p_follow": 0.9, "steer": "typical"},
-    "run2_typical": {"p_follow": 0.9, "max_run": 2, "steer": "typical"},
-    "run1_typical": {"p_follow": 0.9, "max_run": 1, "steer": "typical"},
+    "v4": dict(V4),                                                  # v4 behaviour inside the v5 module
+    "kmatch": {**V4, "kmatch": 1.0},                                 # corners: κ-matched splices
+    "budget": {**V4, "corner_budget": 1.0},                          # corners: corner-aware steering
+    "budget05": {**V4, "corner_budget": 0.5},
+    "look2": {**V4, "look_mult": 2.0},                               # corners: longer look-ahead
+    "ends": {"kmatch": 0.0, "corner_budget": 0.0},                   # joins: topology relations layer
+    "ends_smooth": {"kmatch": 0.0, "corner_budget": 0.0, "join": "smooth"},
+    "v5": {},                                                        # everything (defaults)
+    "v5_b05": {"corner_budget": 0.5},
+    "v5_look2": {"look_mult": 2.0},
 }
 
 
@@ -503,6 +660,8 @@ def cmd_ablate(a):
         gpath = OUT / f"grammar_{art}_abl.json"
         g.save(gpath)
         stems = [stem for stem, _ in P[art]]
+        if a.max_real:
+            stems = stems[:a.max_real]
         reals = [(st, gm.long_drawing(Drawing.load(EXTRACT / art / f"{st}.json"))) for st in stems]
         reals = [(st, d) for st, d in reals if len(d.strokes) >= 2]
         items = [("real", f"real/{st}", d, st) for st, d in reals]
@@ -515,6 +674,7 @@ def cmd_ablate(a):
                                                for i, (_s, d) in enumerate(reals)]))
                 items += [(nm, f"{nm}/{i}", d, None) for i, d in enumerate(ds)]
             feats = dict(ex.map(_feat_job, [(k, d) for _c, k, d, _s in items], chunksize=2))
+            tfeats = dict(ex.map(_topo_feat_job, [(k, d) for _c, k, d, _s in items], chunksize=2))
         keys = [k for _c, k, _d, _s in items]
         allk = sorted(set().union(*[feats[k] for k in keys]))
         names = [n for n in allk if all(n in feats[k] for k in keys) and panel.group_of(n) not in panel.WIDTH_GROUPS]
@@ -530,7 +690,15 @@ def cmd_ablate(a):
         for c in dict.fromkeys(cls.tolist()):
             m = cls == c
             row = {n: float(np.nanmedian(X[m, names.index(n)])) for n in TEXTURE if n in names}
+            ck = [k for (cc, k, _d, _s) in items if cc == c]
+            for n in TOPO_KEY:
+                v = [tfeats[k].get(n, np.nan) for k in ck]
+                v = [x for x in v if x is not None and np.isfinite(x)]
+                row[n] = float(np.median(v)) if v else None
             if c != "real":
+                rk = [k for (cc, k, _d, _s) in items if cc == "real"]
+                ta = topo_auc(tfeats, rk, ck, a.repeats, a.seed, models)
+                row["auc_topo"], row["auc_topo_forest"], row["top_d_topo"] = ta["logreg"], ta["forest"], ta["top_d"]
                 mm = np.isin(cls, ["real", c])
                 pj = medium.MediumProjector(medium.load_pairs()).fit(X[mm], artl[mm], med[mm])
                 Xp = pj.transform(X[mm])
@@ -547,7 +715,8 @@ def cmd_ablate(a):
                     stats[c] = {"steered_share": tot["steered"] / max(tot["steps"], 1),
                                 "corner_share_chosen": tot["corners"] / max(tot["steps"], 1),
                                 "corner_share_first_proposal": tot["corners_proposed_first"] / max(tot["steps"], 1),
-                                "followed_share": tot["followed"] / max(tot["steps"], 1)}
+                                "followed_share": tot["followed"] / max(tot["steps"], 1),
+                                "past_share": tot.get("past_steps", 0) / max(tot["steps"], 1)}
                     row.update(stats[c])
             res[c] = row
         rep["artists"][art] = res
@@ -556,8 +725,9 @@ def cmd_ablate(a):
             print(f"  {c:16s} " + " ".join(f"{k}={v:.3g}" for k, v in r.items() if isinstance(v, float)))
     tag = a.tag or "ablate"
     (OUT / f"{tag}.json").write_text(json.dumps(rep, indent=1))
-    cols = ["cl_corner_rate", "turn_tcorr_10", "turn_net_ratio", "ext_turn_q50", "len_q10", "auc", "auc_forest",
-            "auc_norel", "steered_share", "corner_share_chosen", "corner_share_first_proposal", "followed_share"]
+    cols = ["cl_corner_rate", "turn_tcorr_10", "turn_net_ratio", "ext_turn_q50", "len_q10", "rel_touch_rate",
+            "rel_cross_per_len", "auc", "auc_forest", "auc_norel", "auc_topo", "auc_topo_forest",
+            "steered_share", "corner_share_chosen", "followed_share"] + [k for k in TOPO_KEY]
     L = ["| # | artist | set | " + " | ".join(cols) + " |", "|---|---|---|" + "---|" * len(cols)]
     i = 0
     for art, res in rep["artists"].items():
@@ -577,11 +747,17 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--repeats", type=int, default=5)
     ap.add_argument("--baseline", default="", help="test1: also evaluate a grammar module file (older version)")
-    ap.add_argument("--baseline-name", default="v2")
-    ap.add_argument("--current-name", default="v4", help="test1: label of this module's variants")
+    ap.add_argument("--baseline-name", default="v4")
+    ap.add_argument("--baseline-gain", default=str(ROOT / ".local/gesture/out/grammar_v2/cross_gain.json"),
+                    help="test1: crossing gains JSON for the baseline")
+    ap.add_argument("--current-name", default="v5", help="test1: label of this module's variants")
     ap.add_argument("--only", default="", help="ablate: comma list of ablation names (skips identity)")
     ap.add_argument("--extra", default="", help='ablate: JSON {name: generate_drawing kwargs}')
     ap.add_argument("--tag", default="", help="ablate: output name")
+    ap.add_argument("--calib-n", type=int, default=15, help="calibrate: drawings per round")
+    ap.add_argument("--max-real", type=int, default=0, help="ablate: at most this many real drawings per artist")
+    ap.add_argument("--memo-drawings", type=int, default=9, help="memo: v5 drawings whose strokes are checked")
+    ap.add_argument("--calib-rounds", type=int, default=4)
     a = ap.parse_args(argv)
     {"scale": cmd_scale, "prepare": cmd_prepare, "calibrate": cmd_calibrate, "test1": cmd_test1,
      "memo": cmd_memo, "ablate": cmd_ablate}[a.cmd](a)
