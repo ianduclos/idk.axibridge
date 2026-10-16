@@ -61,8 +61,47 @@ def fit_canvas(d: Drawing) -> Drawing:
             if len(r) >= 5:
                 q = smooth(r, SMOOTH, 1.0, closed=s.closed)
         st.append(Stroke(q, closed=s.closed))
+    st = _drop_plate_lines(st)
+    st = _snap_ends(st)
     W, H = (np.ceil((hi - lo) * k) + 80).astype(int)
     return Drawing(st, source=d.source, size=(int(W), int(H)))
+
+
+def _drop_plate_lines(st):
+    """Ruler-straight long lines (plate marks, sheet edges) carry no hand and
+    were a judge cue in round 1. Same rule for every drawing."""
+    out = []
+    for s in st:
+        p = s.points
+        L = float(np.sum(np.linalg.norm(np.diff(p, axis=0), axis=1))) if len(p) > 1 else 0.0
+        chord = float(np.linalg.norm(p[-1] - p[0])) if len(p) > 1 else 0.0
+        if L > 0.25 * SIDE and chord > 0.995 * L:
+            continue
+        out.append(s)
+    return out
+
+
+def _snap_ends(st, tol: float = 3 * LW):
+    """Move each open end that lies within tol of another stroke onto it, so
+    'hairline gap at a join' (a round-1 judge cue) is the same everywhere."""
+    from scipy.spatial import cKDTree
+    if len(st) < 2:
+        return st
+    pts = [s.points.copy() for s in st]
+    allp = np.vstack(pts)
+    owner = np.concatenate([np.full(len(p), i) for i, p in enumerate(pts)])
+    tree = cKDTree(allp)
+    for i, p in enumerate(pts):
+        if st[i].closed or len(p) < 2:
+            continue
+        for e in (0, -1):
+            for j in tree.query_ball_point(p[e], tol):
+                if owner[j] != i:
+                    d = allp[j] - p[e]
+                    if np.linalg.norm(d) < tol:
+                        p[e] = allp[j]
+                        break
+    return [Stroke(p, closed=s.closed) for p, s in zip(pts, st)]
 
 
 def render(d: Drawing, seed: int) -> np.ndarray:
@@ -116,21 +155,29 @@ def main(argv=None):
         g = gm.Grammar.load(GRAMMARS / f"grammar_{art}.json")
         rimgs = [render(fit_canvas(d), 1) for d in reals]
         gimgs = []
-        for i in range(max(6, a.per // 2)):
+        for i in range(a.per):
             gd = gm.generate_drawing(g, np.random.default_rng([a.seed, i]), (SIDE, SIDE))
             if gd.strokes:
                 gimgs.append(render(fit_canvas(gd), 1))
+        rq, gq = list(rng.permutation(len(rimgs))), list(rng.permutation(len(gimgs)))
         for i in range(a.per):
-            r = crop(rimgs[int(rng.integers(len(rimgs)))], rng)
-            m = crop(gimgs[int(rng.integers(len(gimgs)))], rng)
+            if not rq:
+                rq = list(rng.permutation(len(rimgs)))   # second pass: a different window
+            if not gq:
+                gq = list(rng.permutation(len(gimgs)))
+            r = crop(rimgs[rq.pop()], rng)
+            m = crop(gimgs[gq.pop()], rng)
             if r is not None and m is not None:
                 jobs.append(("test", art, r, m))
         if art == "matisse":
+            used = set()
             for cond, fn in (("calib_pos", nulls.shuffled_segments), ("calib_neg", nulls.identity)):
                 for i in range(a.calib):
                     k = int(rng.integers(len(reals)))
                     nd = fn(reals[k], np.random.default_rng([a.seed, 99, i]))
-                    r = crop(rimgs[int(rng.integers(len(rimgs)))], rng)
+                    free = [j for j in range(len(rimgs)) if j not in used and j != k] or list(range(len(rimgs)))
+                    jr = int(rng.choice(free)); used.add(jr)
+                    r = crop(rimgs[jr], rng)
                     m = crop(render(fit_canvas(nd), 1), rng)
                     if r is not None and m is not None:
                         jobs.append((cond, art, r, m))
