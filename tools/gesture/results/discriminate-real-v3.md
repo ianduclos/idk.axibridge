@@ -52,3 +52,21 @@ cd tools/gesture && E=../../.local/gesture/out/extract_hybrid
 ../../.local/gesture/.venv/bin/python -m experiments.discriminate --name real-v3-hybrid-sw7-artists \
   --sigma-min-w 7 --group matisse=$E/matisse --group hokusai=$E/hokusai --group ingres=$E/ingres
 ```
+
+## 3. Medium control (run right after the above)
+
+Same artist, different medium: Matisse **etchings (15) vs lithographs (10)**,
+σ ≥ 7w, geometry only. If the panel measured only the hand, these should not
+separate.
+
+| # | pair | all features logreg / forest | geometry only logreg / forest |
+|---|---|---|---|
+| 1 | Matisse etching vs Matisse lithograph | 0.851 / 0.867 | **0.800 / 0.781** |
+
+**They separate almost as well as Matisse vs Ingres (0.86–0.88).** Most of
+what the panel currently separates is *medium* (and how the extractor
+responds to it), not hand. Matisse vs Hokusai (0.90) is only a little above
+this within-artist baseline. Honest status of the stage-2 artist gate:
+**not met** — the panel needs medium-invariant features, or comparisons
+must be medium-matched by design (and the corpus needs a second etcher or
+lithographer for that). Small classes (10–15): treat as indicative.
