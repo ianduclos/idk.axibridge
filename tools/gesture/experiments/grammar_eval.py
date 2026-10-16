@@ -21,7 +21,7 @@ Subcommands (run from tools/gesture):
     ../../.local/gesture/.venv/bin/python -m experiments.grammar_eval test1
     ../../.local/gesture/.venv/bin/python -m experiments.grammar_eval memo
 
-Outputs: .local/gesture/out/grammar_v6/ (fit cache: grammar_v2/prepared, topology cache: grammar_v5/topo)
+Outputs: .local/gesture/out/grammar_v7/ (calibration falls back to grammar_v6/, then v5; fit cache: grammar_v2/prepared, topology cache: grammar_v5/topo)
 """
 from __future__ import annotations
 
@@ -45,7 +45,8 @@ from gesture.core import Drawing  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 EXTRACT = ROOT / ".local/gesture/out/extract_hybrid"
-OUT = ROOT / ".local/gesture/out/grammar_v6"
+OUT = ROOT / ".local/gesture/out/grammar_v7"
+OUT_V6 = ROOT / ".local/gesture/out/grammar_v6"
 OUT_V5 = ROOT / ".local/gesture/out/grammar_v5"
 PREP = ROOT / ".local/gesture/out/grammar_v2" / "prepared"   # fit cache shared with v2–v4 (unchanged)
 ARTISTS = ("matisse", "hokusai", "ingres")
@@ -197,7 +198,7 @@ def learn_artist(art, P, sigma_w=gm.SIGMA_W, topo=None, calib=None, **kw):
     topo = topo_summaries() if topo is None else topo
     g = gm.learn(prepared=[pd for _, pd in P[art]], name=art, sigma_w=sigma_w,
                  topo=[topo[art][stem] for stem, _ in P[art] if stem in topo[art]], **kw)
-    cdir = Path(calib) if calib else (OUT if (OUT / "end_gain.json").exists() else OUT_V5)
+    cdir = Path(calib) if calib else next((d for d in (OUT, OUT_V6, OUT_V5) if (d / "end_gain.json").exists()), OUT_V5)
     cg = cdir / "cross_gain.json"
     if cg.exists():
         g.relations["cross_gain"] = float(json.loads(cg.read_text()).get(art, 1.0))
@@ -405,13 +406,13 @@ def _module(path: str):
 
 
 def _gen_job(args):
-    mpath, gpath, size, seed, relations = args
+    mpath, gpath, size, seed, relations, kw = args
     mod = _module(mpath)
     g = mod.Grammar.load(gpath)
-    return mod.generate_drawing(g, np.random.default_rng(seed), size, relations=relations)
+    return mod.generate_drawing(g, np.random.default_rng(seed), size, relations=relations, **(kw or {}))
 
 
-KEY = ("len_q10", "len_q50", "len_q90", "rel_touch_rate", "rel_near_rate", "rel_gap_log_q50",
+KEY = ("len_q10", "len_q50", "len_q90", "turn_abs", "turn_tcorr_10", "rel_touch_rate", "rel_near_rate", "rel_gap_log_q50",
        "rel_cross_per_len", "rel_selfcross_frac", "cl_segs_per_stroke", "cl_corner_rate")
 
 
@@ -422,9 +423,13 @@ def cmd_test1(a):
     OUT.mkdir(parents=True, exist_ok=True)
     lut = medium.load_media()
     items = []      # (artist, cls, key, drawing)
-    variants = [(f"{a.current_name}_{rl}", "", rl) for rl in RELS]
+    variants = [(f"{a.current_name}_{rl}", "", rl, {}) for rl in RELS]
+    if a.variants:          # v7: in-module flag variants (relations="learned" only), e.g. v6 via V6
+        for vn, kw in json.loads(a.variants).items():
+            variants.append((f"{vn}_learned", "", "learned", _memo_kw(kw) if kw == "V6" or isinstance(kw, list)
+                             else kw))
     if a.baseline:
-        variants += [(f"{a.baseline_name}_{rl}", str(Path(a.baseline).resolve()), rl) for rl in RELS]
+        variants += [(f"{a.baseline_name}_{rl}", str(Path(a.baseline).resolve()), rl, {}) for rl in RELS]
     TS = topo_summaries()
     for art in ARTISTS:
         g = learn_artist(art, P, a.sigma_w, topo=TS)
@@ -448,11 +453,11 @@ def cmd_test1(a):
             if cgb and cgb.exists():
                 gb.relations["cross_gain"] = float(json.loads(cgb.read_text()).get(art, 1.0))
             gb.save(gpath_b)
-        for vname, mpath, rl in variants:
+        for vname, mpath, rl, vkw in variants:
             t0 = time.time()
             gp_ = gpath_b if mpath else gpath
             with ProcessPoolExecutor(JOBS) as ex:
-                gens = list(ex.map(_gen_job, [(mpath, str(gp_), d.size, a.seed * 1000 + i, rl)
+                gens = list(ex.map(_gen_job, [(mpath, str(gp_), d.size, a.seed * 1000 + i, rl, vkw)
                                              for i, (_s, d) in enumerate(reals)]))
             print(f"{art}/{vname}: {len(reals)} real, generated in {time.time() - t0:.0f}s; "
                   f"gen strokes med {np.median([len(d.strokes) for d in gens])}, "
@@ -462,7 +467,7 @@ def cmd_test1(a):
         feats = dict(ex.map(_feat_job, [(k, d) for _a, _c, k, d in items], chunksize=2))
         tfeats = dict(ex.map(_topo_feat_job, [(k, d) for _a, _c, k, d in items], chunksize=2))
     keys = [k for _a, _c, k, _d in items]
-    variants = [("floor", "", "")] + variants
+    variants = [("floor", "", "", {})] + variants
     allk = sorted(set().union(*[feats[k] for k in keys]))
     names = [n for n in allk if all(n in feats[k] for k in keys)
              and panel.group_of(n) not in panel.WIDTH_GROUPS]
@@ -479,7 +484,7 @@ def cmd_test1(a):
     rep = {"sigma_w": a.sigma_w, "n_features": len(names), "artists": {}}
     for art in ARTISTS:
         rep["artists"][art] = {}
-        for rl, _mp, _r in variants:
+        for rl, _mp, _r, _kw in variants:
             m = (art_lab == art) & np.isin(cls, ["real", f"gen_{rl}"])
             y = np.where(cls[m] == "real", "real", "gen")
             grp = np.arange(m.sum())
@@ -500,7 +505,7 @@ def cmd_test1(a):
     rep["key"] = {}
     for art in ARTISTS:
         rep["key"][art] = {}
-        for c in ["real"] + [f"gen_{v}" for v, _m, _r in variants]:
+        for c in ["real"] + [f"gen_{v}" for v, _m, _r, _k in variants]:
             m = (art_lab == art) & (cls == c)
             rep["key"][art][c] = {n: (float(np.nanmedian(X[m, names.index(n)])) if n in names else None)
                                   for n in KEY}
@@ -516,7 +521,7 @@ def cmd_test1(a):
     rep["topo_key"] = {}
     for art in ARTISTS:
         rep["topo_key"][art] = {}
-        for c in ["real"] + [f"gen_{v}" for v, _m, _r in variants]:
+        for c in ["real"] + [f"gen_{v}" for v, _m, _r, _k in variants]:
             ck = [k for (aa, cc, k, _d) in items if aa == art and cc == c]
             rep["topo_key"][art][c] = {}
             for n in TOPO_KEY:
@@ -531,6 +536,41 @@ def cmd_test1(a):
             i += 1
             K.append(f"| G{i} | {art} | {c} | " + " | ".join("—" if v[n] is None else f"{v[n]:.3g}" for n in TOPO_KEY) + " |")
     (OUT / "test1_topo_key.md").write_text("\n".join(K) + "\n")
+    # v7: token-level texture — real = the σ = 2 w fit tokens, generated = the chain tokens drawn
+    ptok = {f"{art}/{stem}": [x["tokens"] for x in pd["strokes"]] for art in ARTISTS for stem, pd in P[art]}
+    rep["tok_key"] = {}
+    for art in ARTISTS:
+        rep["tok_key"][art] = {}
+        for c in ["real"] + [f"gen_{v}" for v, _m, _r, _k in variants if v != "floor"]:
+            per = []
+            for (aa, cc, k, d) in items:
+                if aa != art or cc != c:
+                    continue
+                T = ptok.get(k) if c == "real" else [st.meta.get("tokens") for st in d.strokes]
+                T = [t for t in (T or []) if t]
+                if T:
+                    per.append(T)
+            if not per:
+                continue
+            st_ = [token_stats(T) for T in per]
+            allT = [t for T in per for t in T]
+            pooled = token_stats(allT)
+            rep["tok_key"][art][c] = {
+                "segs_per_R_med": float(np.median([x["segs_per_len"] for x in st_])),
+                "corner_tok_per_R_med": float(np.median([x["corner_tok_per_len"] for x in st_])),
+                **{k: pooled[k] for k in ("seg_len_q10", "seg_len_q50", "seg_len_q90", "seg_len_q50_line",
+                                          "seg_len_q50_arc", "seg_len_q50_clothoid", "last_seg_q50",
+                                          "segs_per_stroke")}}
+    (OUT / "test1.json").write_text(json.dumps(rep, indent=1))
+    tk = ["segs_per_R_med", "corner_tok_per_R_med", "seg_len_q10", "seg_len_q50", "seg_len_q90", "seg_len_q50_line",
+          "seg_len_q50_arc", "seg_len_q50_clothoid", "last_seg_q50", "segs_per_stroke"]
+    K = ["| # | artist | set | " + " | ".join(tk) + " |", "|---|---|---|" + "---|" * len(tk)]
+    i = 0
+    for art, rows in rep["tok_key"].items():
+        for c, v in rows.items():
+            i += 1
+            K.append(f"| S{i} | {art} | {c} | " + " | ".join(f"{v[n]:.3g}" for n in tk) + " |")
+    (OUT / "test1_tok_key.md").write_text("\n".join(K) + "\n")
     L = ["| # | artist | relations | n real/gen | geometry: logreg / forest AUC | no rel_: logreg / forest | topology: logreg / forest |",
          "|---|---|---|---|---|---|---|"]
     i = 0
@@ -555,10 +595,47 @@ def cmd_test1(a):
 # 4. memorisation
 # ---------------------------------------------------------------------------
 
+MEMO_DRAWN = {          # v7: strokes as drawn by full contiguous drawings, per generator variant
+    "drawn_v7": {},
+    "drawn_v6": "V6",
+    "drawn_v6+plan": ("V6", {"plans": "v7"}),          # plan smoothing alone
+    "drawn_v6_nobudget": ("V6", {"chain_budget": 0.0}),  # plan's length copied, chain unbudgeted
+    "drawn_v6_seekv5": ("V6", {"seek": "v5"}),           # v5's end-seeking cuts
+    "drawn_v5_mode": ("V6", {"lengths": "v5", "chain_budget": 0.0}),
+    "drawn_v7+dscale": {"seg_scale": gm.W_DSCALE},
+}
+
+
+def _memo_kw(v):
+    if v == "V6":
+        return dict(V6)
+    if isinstance(v, tuple):
+        return {**V6, **v[1]}
+    return dict(v)
+
+
+def _nn_index(Q: np.ndarray, T: np.ndarray) -> np.ndarray:
+    """Index (into T) of each Q row's nearest training signature, either direction."""
+    Trev = T.copy()
+    Trev[:, :-1] = T[:, -2::-1]
+    TT = np.vstack([T, Trev])
+    tn = np.einsum("ij,ij->i", TT, TT)
+    d2 = np.einsum("ij,ij->i", Q, Q)[:, None] + tn[None, :] - 2 * Q @ TT.T
+    return np.argmin(d2, axis=1) % len(T)
+
+
 def cmd_memo(a):
+    """v4 protocol: held-out drawings (every 5th) vs a grammar learned on the
+    rest; share of strokes (≥ 2 / ≥ 4 segments) whose nearest-training
+    turning-signature distance is below the held-out real strokes' 10th
+    percentile (healthy ≈ 10 %). v7: drawn variants (MEMO_DRAWN, more
+    drawings), the v7 chain, and for drawn strokes the share whose nearest
+    training stroke IS the stroke their plan was taken from (length source /
+    budget source)."""
     P = prepared(a.sigma_w)
     rng = np.random.default_rng(a.seed)
     rep = {}
+    only = a.only.split(",") if a.only else None
     for art in ARTISTS:
         pds = [pd for _, pd in P[art]]
         held = pds[::5]
@@ -570,60 +647,73 @@ def cmd_memo(a):
         n = a.n
         lens = [float(rng.choice(Lr)) for _ in range(n)]    # same length mix as held-out real
         gen = [gm.generate_tokens(g, rng, length=L, p_follow=gm.P_FOLLOW)[0] for L in lens]
-        gen_k = [gm.generate_tokens(g, rng, length=L, p_follow=gm.P_FOLLOW, kmatch=1.0)[0] for L in lens]
         gen_b = [gm.generate_tokens(g, rng, length=L, p_follow=gm.P_FOLLOW, budget=gm.CHAIN_BUDGET)[0]
                  for L in lens]                                    # v6: the budgeted chain
-        # v5: strokes as drawn (steering, joins, end plans) by full v5 contiguous drawings
+        gen_7 = [gm.generate_tokens(g, rng, length=L, p_follow=gm.P_FOLLOW, budget=gm.CHAIN_BUDGET,
+                                    seg_scale=gm.W_DSCALE, plan_mode="v7", end_fit=gm.END_FIT)[0]
+                 for L in lens]                                    # v7 chain
         TS = topo_summaries()
         g.relations["topo"] = gm.pool_topology([TS[art][st] for i, (st, _) in enumerate(P[art]) if i % 5])
+        cdir = next((d for d in (OUT, OUT_V6, OUT_V5) if (d / "end_gain.json").exists()), OUT_V5)
         for k in ("cross_gain", "p_double", "end_gain"):
-            f_ = OUT / {"cross_gain": "cross_gain.json", "p_double": "p_double.json", "end_gain": "end_gain.json"}[k]
+            f_ = cdir / f"{k}.json"
             if f_.exists():
                 g.relations[k] = json.loads(f_.read_text()).get(art)
         gpath = OUT / f"grammar_{art}_memo.json"
         g.save(gpath)
-        with ProcessPoolExecutor(JOBS) as ex:
-            dd = list(ex.map(_abl_gen_job, [(str(gpath), tuple(held[i % len(held)]["size"]), a.seed + 77 * i, {})
-                                            for i in range(a.memo_drawings)]))
-        drawn = [st.meta["tokens"] for d in dd for st in d.strokes]
-        with ProcessPoolExecutor(JOBS) as ex:
-            dd5 = list(ex.map(_abl_gen_job, [(str(gpath), tuple(held[i % len(held)]["size"]), a.seed + 77 * i,
-                                              {"lengths": "v5", "chain_budget": 0.0})
-                                             for i in range(a.memo_drawings)]))
-        drawn5 = [st.meta["tokens"] for d in dd5 for st in d.strokes]
+        drawn_sets, src = {}, {}
+        for nm, v in MEMO_DRAWN.items():
+            if only and nm not in only:
+                continue
+            with ProcessPoolExecutor(JOBS) as ex:
+                dd = list(ex.map(_abl_gen_job, [(str(gpath), tuple(held[i % len(held)]["size"]), a.seed + 77 * i,
+                                                 _memo_kw(v)) for i in range(a.memo_drawings)]))
+            sts = [st for d in dd for st in d.strokes]
+            drawn_sets[nm] = [st.meta["tokens"] for st in sts]
+            src[nm] = [(st.meta.get("plan_src"), st.meta.get("plan_src_len")) for st in sts]
         ctl = [gm.generate_tokens(gc, rng, length=L, p_follow=gm.P_FOLLOW)[0] for L in lens]
         tr_idx = rng.choice(len(g.strokes), n)
         quote = [gm.jitter_tokens(g, g.strokes[i], rng) for i in tr_idx]
-        sets = {"generated": gen, "generated_kmatch": gen_k, "generated_budget": gen_b,
-                "drawn_current": drawn, "drawn_v5_mode": drawn5, "heldout_real": real,
-                "shuffled_control": ctl, "jittered_training": quote}
+        sets = {"generated": gen, "generated_budget": gen_b, "generated_v7": gen_7, **drawn_sets,
+                "heldout_real": real, "shuffled_control": ctl, "jittered_training": quote}
+        Tsig = gm._sig_matrix(g.strokes)
         res = {}
         for min_seg in (2, 4):
             row = {}
-            ref = None
+            ref = gm.nearest_training_distance([t for t in real if gm.n_segments(t) >= min_seg], g)
             for nm, S in sets.items():
-                S2 = [t for t in S if gm.n_segments(t) >= min_seg]
+                keep = [i for i, t in enumerate(S) if gm.n_segments(t) >= min_seg]
+                S2 = [S[i] for i in keep]
                 d = gm.nearest_training_distance(S2, g)
-                if nm == "heldout_real":
-                    ref = d
                 row[nm] = {"n": int(len(d)), "q10": float(np.quantile(d, .1)) if len(d) else None,
-                           "median": float(np.median(d)) if len(d) else None, "_d": d}
-            for nm in row:
-                d = row[nm].pop("_d")
-                row[nm]["share_below_heldout_p10"] = float(np.mean(d < np.quantile(ref, .1))) if len(d) and len(ref) else None
+                           "median": float(np.median(d)) if len(d) else None,
+                           "share_below_heldout_p10": float(np.mean(d < np.quantile(ref, .1)))
+                           if len(d) and len(ref) else None}
+                if nm in src and len(S2):
+                    nn = _nn_index(gm._sig_matrix(S2), Tsig)
+                    sb = np.array([src[nm][i][0] if src[nm][i][0] is not None else -1 for i in keep])
+                    sl = np.array([src[nm][i][1] if src[nm][i][1] is not None else -1 for i in keep])
+                    row[nm]["nn_is_budget_src"] = float(np.mean(nn == sb))
+                    row[nm]["nn_is_length_src"] = float(np.mean(nn == sl))
+                    low = d < np.quantile(ref, .1)
+                    row[nm]["low_nn_is_src"] = float(np.mean((nn == sl)[low] | (nn == sb)[low])) if low.any() else None
             res[f"nseg_ge_{min_seg}"] = row
         rep[art] = res
-        print(art, json.dumps(res))
-    (OUT / "memo.json").write_text(json.dumps(rep, indent=1))
-    L = ["| # | artist | strokes | set | n | NN dist q10 | median | share < held-out q10 |", "|---|---|---|---|---|---|---|---|"]
+        print(art, json.dumps(res), flush=True)
+    tag = a.tag or "memo"
+    (OUT / f"{tag}.json").write_text(json.dumps(rep, indent=1))
+    L = ["| # | artist | strokes | set | n | NN dist q10 | median | share < held-out q10 | NN = length src | NN = budget src | low & NN = src |",
+         "|---|---|---|---|---|---|---|---|---|---|---|"]
     i = 0
+    f = lambda x: "—" if x is None else f"{x:.2f}"  # noqa: E731
     for art, res in rep.items():
         for k, row in res.items():
             for nm, v in row.items():
                 i += 1
                 L.append(f"| M{i} | {art} | {k.replace('nseg_ge_', '≥')} seg | {nm} | {v['n']} | "
-                         f"{v['q10']:.3f} | {v['median']:.3f} | {v['share_below_heldout_p10']:.2f} |")
-    (OUT / "memo.md").write_text("\n".join(L) + "\n")
+                         f"{f(v['q10'])} | {f(v['median'])} | {f(v['share_below_heldout_p10'])} | "
+                         f"{f(v.get('nn_is_length_src'))} | {f(v.get('nn_is_budget_src'))} | {f(v.get('low_nn_is_src'))} |")
+    (OUT / f"{tag}.md").write_text("\n".join(L) + "\n")
     print("\n".join(L))
 
 
@@ -664,24 +754,33 @@ def _abl_gen_job(args):
     return gm.generate_drawing(g, np.random.default_rng(seed), size, **kw)
 
 
-V4 = {"ends": "v4", "kmatch": 0.0, "corner_budget": 0.0, "lengths": "v5", "chain_budget": 0.0}
+V6 = {"plans": "v6", "seg_scale": 0.0, "order": "draw", "end_fit": 0.0}     # v6 inside the v7 module
+V4 = {**V6, "ends": "v4", "kmatch": 0.0, "corner_budget": 0.0, "lengths": "v5", "chain_budget": 0.0}
 ABLATIONS = {
     "v4": dict(V4),                                                  # v4 behaviour inside the v5 module
     "kmatch": {**V4, "kmatch": 1.0},                                 # corners: κ-matched splices
     "budget": {**V4, "corner_budget": 1.0},                          # corners: corner-aware steering
     "budget05": {**V4, "corner_budget": 0.5},
     "look2": {**V4, "look_mult": 2.0},                               # corners: longer look-ahead
-    "ends": {"kmatch": 0.0, "corner_budget": 0.0, "lengths": "v5", "chain_budget": 0.0},
-    "ends_smooth": {"kmatch": 0.0, "corner_budget": 0.0, "join": "smooth", "lengths": "v5", "chain_budget": 0.0},
-    "v5": {"lengths": "v5", "chain_budget": 0.0},                    # v5 behaviour inside the v6 module
-    "v5_b05": {"lengths": "v5", "chain_budget": 0.0, "corner_budget": 0.5},
-    "v5_look2": {"lengths": "v5", "chain_budget": 0.0, "look_mult": 2.0},
+    "ends": {**V6, "kmatch": 0.0, "corner_budget": 0.0, "lengths": "v5", "chain_budget": 0.0},
+    "ends_smooth": {**V6, "kmatch": 0.0, "corner_budget": 0.0, "join": "smooth", "lengths": "v5", "chain_budget": 0.0},
+    "v5": {**V6, "lengths": "v5", "chain_budget": 0.0},              # v5 behaviour inside the v7 module
+    "v5_b05": {**V6, "lengths": "v5", "chain_budget": 0.0, "corner_budget": 0.5},
+    "v5_look2": {**V6, "lengths": "v5", "chain_budget": 0.0, "look_mult": 2.0},
     # v6 (results/grammar-v6.md)
-    "v6_lengths": {"chain_budget": 0.0},                             # lengths fix alone
-    "v6_budget": {"lengths": "v5"},                                  # chain budget alone
-    "v6": {},                                                        # both (defaults)
-    "v6_b2": {"chain_budget": 2.0},
-    "v6_nosteer_budget": {"corner_budget": 0.0},                     # v5's panel-scale steering budget off
+    "v6_lengths": {**V6, "chain_budget": 0.0},                             # lengths fix alone
+    "v6_budget": {**V6, "lengths": "v5"},                                  # chain budget alone
+    "v6": dict(V6),                                                  # both
+    "v6_b2": {**V6, "chain_budget": 2.0},
+    "v6_nosteer_budget": {**V6, "corner_budget": 0.0},               # v5's panel-scale steering budget off
+    # v7 (results/grammar-v7.md): each change alone on top of v6, then all, then all but one
+    "v6+plan": {**V6, "plans": "v7"},                                # smoothed plans
+    "v6+dscale": {**V6, "seg_scale": gm.W_DSCALE},                   # drawing segment-scale context
+    "v6+endfit": {**V6, "end_fit": gm.END_FIT},                      # no end stubs
+    "v6+long": {**V6, "order": "long"},                              # long lines first
+    "v7": {},                                                        # all (defaults)
+    "v7-long": {"order": "draw"},
+    "v7+dscale": {"seg_scale": gm.W_DSCALE},                        # (the default had it during the study)
 }
 
 
@@ -817,7 +916,15 @@ def token_stats(token_lists) -> dict:
                for t in token_lists for x in t)
     ca = [abs(x[1]) for t in token_lists for x in t if x[0] == "corner"]
     sl = [x[1] for t in token_lists for x in t if x[0] != "corner"]
-    return {"seg_len_mean": float(np.mean(sl)) if sl else np.nan,
+    segs = [[x for x in t if x[0] != "corner"] for t in token_lists]
+    last = [q[-1][1] for q in segs if len(q) > 1]
+    inner = [x[1] for q in segs for x in q[1:-1]]
+    q = (lambda v, p: float(np.quantile(v, p)) if len(v) else np.nan)
+    kinds = {f"seg_len_q50_{k}": q([x[1] for t in token_lists for x in t if x[0] == k], .5) for k in gm.SEG_KINDS}
+    return {**kinds, "seg_len_q10": q(sl, .1), "seg_len_q50": q(sl, .5), "seg_len_q90": q(sl, .9),
+            "last_seg_q50": q(last, .5), "inner_seg_q50": q(inner, .5),
+            "segs_per_stroke": float(np.mean([len(x) for x in segs])) if segs else np.nan,
+            "seg_len_mean": float(np.mean(sl)) if sl else np.nan,
             "len_realised_over_target": np.nan,"corner_tok_per_len": nc / L if L else np.nan, "segs_per_len": ns / L if L else np.nan,
             "abs_turn_per_len": turn / L if L else np.nan, "corner_angle_mean": float(np.mean(ca)) if ca else np.nan}
 
@@ -830,6 +937,11 @@ CHAIN_VARIANTS = {
     "v5_knn1": {"p_follow": gm.P_FOLLOW, "knn": 1},             # nearest record only (≈ replay)
     "v6_chain": {"p_follow": gm.P_FOLLOW, "budget": 1.0},       # v6: per-stroke corner/turning budget
     "v6_chain_drawing": {"p_follow": gm.P_FOLLOW, "budget": 1.0, "_drawing": True},
+    # v7: the drawing's segment scale in the k-NN context, no end stubs, smoothed plans
+    "v6+dscale": {"p_follow": gm.P_FOLLOW, "budget": 1.0, "_drawing": True, "seg_scale": gm.W_DSCALE},
+    "v6+endfit": {"p_follow": gm.P_FOLLOW, "budget": 1.0, "_drawing": True, "end_fit": gm.END_FIT},
+    "v7_chain": {"p_follow": gm.P_FOLLOW, "budget": 1.0, "_drawing": True, "seg_scale": gm.W_DSCALE,
+                 "end_fit": gm.END_FIT, "_plan_mode": "v7"},
 }
 
 
@@ -854,8 +966,9 @@ def _chainfree_job(args):
         for v, kw in variants.items():
             kw = dict(kw)
             glob = kw.pop("_globals", {})
+            pmode = kw.pop("_plan_mode", "v6")
             if kw.pop("_drawing", False) and kw.get("budget", 0) > 0:     # the budget from this drawing's strokes
-                kw["plan"] = gm.plan_line(g, rng, length=L, drawing=di)
+                kw["plan"] = gm.plan_line(g, rng, length=L, drawing=di, mode=pmode)
             old = {k: getattr(gm, k) for k in glob}
             for k, x in glob.items():
                 setattr(gm, k, x)
@@ -928,7 +1041,8 @@ def cmd_chainfree(a):
                 "turn_tcorr_10_med": float(np.nanmedian([r["turn_tcorr_10"] for r in rows])),
                 **{k: float(np.nanmedian([r[k] for r in rows])) for k in
                    ("corner_tok_per_len", "segs_per_len", "abs_turn_per_len", "corner_angle_mean", "proxy",
-                    "seg_len_mean")
+                    "seg_len_mean", "seg_len_q10", "seg_len_q50", "seg_len_q90", "last_seg_q50", "inner_seg_q50",
+                    "segs_per_stroke", "seg_len_q50_line", "seg_len_q50_arc", "seg_len_q50_clothoid")
                    if all(k in r for r in rows)},
             }
             print(art, v, json.dumps({k: (round(x, 3) if isinstance(x, float) else x)
@@ -937,7 +1051,9 @@ def cmd_chainfree(a):
     (OUT / f"{tag}.json").write_text(json.dumps(rep, indent=1))
     cols = ["cl_corner_rate_med", "cl_corner_rate_pooled", "proxy", "share_strokes_0_corners",
             "corners_per_stroke_var_over_mean", "panel_corner_angle_med", "turn_tcorr_10_med",
-            "corner_tok_per_len", "segs_per_len", "abs_turn_per_len", "corner_angle_mean", "seg_len_mean"]
+            "corner_tok_per_len", "segs_per_len", "abs_turn_per_len", "corner_angle_mean", "seg_len_mean",
+            "seg_len_q10", "seg_len_q50", "seg_len_q90", "seg_len_q50_line", "seg_len_q50_arc", "seg_len_q50_clothoid",
+            "last_seg_q50", "segs_per_stroke"]
     Lmd = ["| # | artist | set | " + " | ".join(cols) + " |", "|---|---|---|" + "---|" * len(cols)]
     i = 0
     for art, rr in rep.items():
@@ -961,7 +1077,8 @@ def main(argv=None):
     ap.add_argument("--baseline-name", default="v4")
     ap.add_argument("--baseline-gain", default=str(ROOT / ".local/gesture/out/grammar_v2/cross_gain.json"),
                     help="test1: crossing gains JSON for the baseline")
-    ap.add_argument("--current-name", default="v6", help="test1: label of this module's variants")
+    ap.add_argument("--variants", default="", help='test1: JSON {name: generate_drawing kwargs | "V6"}')
+    ap.add_argument("--current-name", default="v7", help="test1: label of this module's variants")
     ap.add_argument("--baseline-calib", default="", help="test1: calibration dir for the baseline's grammar "
                     "(keeps topo/corner fields: a v5 baseline); empty = v4-style stripped grammar")
     ap.add_argument("--only", default="", help="ablate: comma list of ablation names (skips identity)")
@@ -969,7 +1086,7 @@ def main(argv=None):
     ap.add_argument("--tag", default="", help="ablate: output name")
     ap.add_argument("--calib-n", type=int, default=24, help="calibrate: drawings per round")
     ap.add_argument("--max-real", type=int, default=0, help="ablate: at most this many real drawings per artist")
-    ap.add_argument("--memo-drawings", type=int, default=9, help="memo: v5 drawings whose strokes are checked")
+    ap.add_argument("--memo-drawings", type=int, default=24, help="memo: v5 drawings whose strokes are checked")
     ap.add_argument("--calib-rounds", type=int, default=4)
     ap.add_argument("--calib-noise", type=int, default=2, help="calibrate: re-measurement batches of the chosen knobs")
     a = ap.parse_args(argv)

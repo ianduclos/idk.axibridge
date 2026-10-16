@@ -95,6 +95,21 @@ line that finds no ink is cut back to its plan), and lines realised shorter
 than LEN_KEEP × the plan are regrown with re-seeded starts. Flags:
 `lengths="v5"`, `chain_budget=0` restore v5.
 
+**v7 (results/grammar-v7.md): segment scale, smoothed plans, long lines
+first.** Segments were too short because the pooled k-NN regresses every
+sheet to the pool's segment scale, which dense drawings dominate (real
+per-drawing segments/R span 14–46 for Matisse, the chain gave 24–41 around
+the pooled ~32), plus a stub at every line end (last segments 0.6 × real).
+`seg_scale=W_DSCALE` (opt-in): the context gains the source drawing's
+segment scale (log ink/segments) — exact in the free chain, but it raised
+panel corners in drawn sheets; `END_FIT` (default): no end stubs. `plan_line(mode="v7")` draws
+the plan from a kernel density over the drawing's strokes (length jittered
+by a Silverman bandwidth, budget from a length-kernel-weighted stroke)
+instead of copying one stroke. `order="long"` plans the sheet's ink first
+and grows lines roughly longest first. No new grammar fields (v6 grammars
+work). Flags `plans="v6"`, `seg_scale=0`, `order="draw"`, `end_fit=0`
+restore v6.
+
 Juxtaposition (stage 6): `code_switch` (hand A → hand B along one stroke),
 `generate_drawing(mode="single", hands=(gA, gB))` (alternating hands along
 one long line), `translate`/`translate_tokens` (each token → its nearest of
@@ -169,6 +184,15 @@ LEN_TRIES = 10           # ... up to this many tries, else it is not placed
 CHAIN_BUDGET = 1.0       # v6: strength of the chain's corner/turning budget (0 = off; v5 chain)
 BUDGET_GC = 2.0          # ... log-weight per corner token over budget
 BUDGET_GT = 0.3          # ... log-weight per radian of segment turning over budget (1.0 over-smoothed H/I, memo +)
+# v7: smoothed plans, the drawing's segment scale, long lines first
+PLAN_MODE = "v7"         # "v7": plan length from a kernel density over the drawing's strokes, budget
+                         # from a length-kernel-weighted stroke; "v6": copy one stroke's three scalars
+PLAN_BW = (0.12, 0.30)   # v7 plan: log-length bandwidth (Silverman's, clamped to this range)
+W_DSCALE = 4.0           # v7 chain: context weight of the drawing's segment scale when enabled (fixes the
+                         # free chain's segment lengths, but raised panel corners in drawn sheets: off by default)
+LONG_FIRST_SD = 0.5      # v7 order="long": the sheet's plans sorted by length × exp(N(0, this))
+END_FIT = 0.5            # v7: a last token that would be cut to < this fraction is not drawn — the
+                         # previous segment absorbs the rest (chain) or the line ends there (grower)
 
 
 # ---------------------------------------------------------------------------
@@ -696,6 +720,42 @@ class Grammar:
                                     np.array(idx))
         return self._cache[key]
 
+    def drawing_scales(self) -> tuple[np.ndarray, np.ndarray] | None:
+        """v7: (per training stroke: drawing index, per drawing: segment
+        scale = log(ink / segments) in R units). None for pre-v6 grammars
+        (no per-drawing stroke ranges)."""
+        key = ("dscale",)
+        if key not in self._cache:
+            D = self.drawings
+            if not D or any("i1" not in d for d in D) or not self.strokes:
+                self._cache[key] = None
+            else:
+                sd = np.full(len(self.strokes), -1, int)
+                ds = np.full(len(D), np.nan)
+                for k, d in enumerate(D):
+                    sd[d["i0"]:d["i1"]] = k
+                    S = self.strokes[d["i0"]:d["i1"]]
+                    ns = sum(n_segments(t) for t in S)
+                    if ns:
+                        ds[k] = np.log(sum(stroke_length(t) for t in S) / ns)
+                fill = float(np.nanmedian(ds)) if np.isfinite(ds).any() else 0.0
+                self._cache[key] = (sd, np.where(np.isfinite(ds), ds, fill))
+        return self._cache[key]
+
+    def _pool_dscale(self, p1kind):
+        """v7: per pool record, the segment scale of its source drawing (asinh-free, /scale.logl)."""
+        key = ("pds", p1kind)
+        if key not in self._cache:
+            pool, dsc = self._pool(p1kind), self.drawing_scales()
+            sids = self.trans.get("sid")
+            if pool is None or dsc is None or not sids:
+                self._cache[key] = None
+            else:
+                sd, ds = dsc
+                st = np.array([sids[i] // 2 for i in pool[4]])
+                self._cache[key] = ds[sd[np.clip(st, 0, len(sd) - 1)]] / self.scale["logl"]
+        return self._cache[key]
+
     def _kind_pool(self, kind):
         key = ("kind", kind)
         if key not in self._cache:
@@ -718,7 +778,7 @@ class Grammar:
 
     def draw(self, p2, p1, s: float, length: float, rng, prev_rec: int | None = None,
              p_follow: float = 0.0, kmatch: float = 0.0, knn: int = KNN,
-             weights=None) -> tuple[str, list[float], int]:
+             weights=None, dscale: float | None = None, w_ds: float = 0.0) -> tuple[str, list[float], int]:
         """Next token (kind, params, record index) given the previous two
         tokens, arc length so far s and the stroke's target length (both R
         units). p_follow (v4): with this probability, if the previous token
@@ -726,7 +786,11 @@ class Grammar:
         take that stroke's actual next token (a run of the training stroke,
         not a k-NN splice). kmatch (v5): extra squared-distance weight on the
         mismatch between the current joint κ (p1's end) and the next token's
-        starting κ — a κ-matched splice."""
+        starting κ — a κ-matched splice. dscale, w_ds (v7): the target
+        drawing's segment scale (log ink/segments, R units) and its context
+        weight — neighbours from drawings of a similar segment scale are
+        preferred, so a sheet keeps its source drawing's segment lengths
+        instead of the pool's (dominated by dense drawings)."""
         T = self.trans
         if prev_rec is not None and p_follow > 0 and rng.random() < p_follow:
             sids = T.get("sid")
@@ -745,6 +809,10 @@ class Grammar:
             nk0 = self._next_k0(p1[0])
             if nk0 is not None and len(nk0) == len(d):
                 d = d + kmatch * np.nan_to_num((nk0 - q[2]) ** 2, nan=0.0)
+        if w_ds > 0 and dscale is not None and np.isfinite(dscale):
+            pds = self._pool_dscale(p1[0])
+            if pds is not None and len(pds) == len(d):
+                d = d + w_ds * (pds - dscale / self.scale["logl"]) ** 2
         k = min(knn, len(d))
         near = np.argpartition(d, k - 1)[:k]
         if weights is not None:          # v6: per-record re-weighting (corner budget)
@@ -940,12 +1008,21 @@ def _budget_table(g: Grammar):
     return g._cache[key]
 
 
-def plan_line(g: Grammar, rng, *, length: float | None = None, drawing: int | None = None) -> dict:
-    """v6: a line's plan — its length and its corner/turning budget, drawn
-    jointly from ONE training stroke (only these three scalars are taken).
+def plan_line(g: Grammar, rng, *, length: float | None = None, drawing: int | None = None,
+              mode: str = "v6") -> dict:
+    """A line's plan — its length and its corner/turning budget (rates per
+    unit length), plus (v7) the segment scale of the drawing it comes from.
     drawing: index into g.drawings (v6 grammars): sample from that drawing's
-    strokes, so a sheet keeps one drawing's length scale and texture. With
-    `length` given, the budget comes from a stroke of similar length."""
+    strokes, so a sheet keeps one drawing's length scale and texture.
+
+    mode="v6": the three scalars are copied jointly from ONE training
+    stroke; with `length` given, the budget comes from one of the 5 strokes
+    of closest length among 40. mode="v7": a kernel density over the
+    drawing's strokes — length = a random stroke's length × exp(N(0, h))
+    (h = Silverman's bandwidth on log length, clamped to PLAN_BW), budget
+    from a stroke drawn with weight exp(−½(Δlog length / h)²) (often a
+    different stroke), so no line inherits one stroke's exact length and
+    corner plan while the length–texture dependence is kept."""
     tab, segt = _budget_table(g)
     if not len(tab):
         return {"length": float(length or 0.1), "rho_c": np.inf, "rho_t": np.inf, "slack_t": segt}
@@ -954,15 +1031,34 @@ def plan_line(g: Grammar, rng, *, length: float | None = None, drawing: int | No
         d = g.drawings[drawing]
         if d["i1"] > d["i0"]:
             idx = np.arange(d["i0"], d["i1"])
-    if length is None:
+    src_len = None
+    if mode == "v7":
+        if len(idx) > 400:
+            idx = idx[rng.choice(len(idx), 400, replace=False)]
+        ll = np.log(np.maximum(tab[idx, 0], 1e-9))
+        h = float(np.clip(1.06 * np.std(ll) * len(ll) ** -0.2 if len(ll) > 1 else PLAN_BW[1], *PLAN_BW))
+        if length is None:
+            i0 = int(idx[int(rng.integers(len(idx)))])
+            src_len = i0
+            length = float(tab[i0, 0] * np.exp(rng.normal(0.0, h)))
+        w = np.exp(-0.5 * ((ll - np.log(max(length, 1e-9))) / h) ** 2)
+        i = int(idx[int(rng.choice(len(idx), p=w / w.sum()))]) if w.sum() > 0 else int(idx[int(np.argmin(np.abs(ll - np.log(length))))])
+    elif length is None:
         i = int(idx[int(rng.integers(len(idx)))])
         length = float(tab[i, 0])
+        src_len = i
     else:
         sub = idx[rng.choice(len(idx), min(len(idx), 40), replace=False)]
         dl = np.abs(np.log(np.maximum(tab[sub, 0], 1e-9) / max(length, 1e-9)))
         i = int(sub[int(rng.choice(np.argsort(dl)[:5]))])
-    return {"length": float(length), "rho_c": float(tab[i, 1]), "rho_t": float(tab[i, 2]),
-            "slack_t": segt, "src": i}
+    dsc = g.drawing_scales()
+    out = {"length": float(length), "rho_c": float(tab[i, 1]), "rho_t": float(tab[i, 2]),
+           "slack_t": segt, "src": i, "src_len": src_len, "mode": mode}
+    if dsc is not None:
+        sd, ds = dsc
+        k = int(drawing) if (drawing is not None and 0 <= drawing < len(ds)) else int(sd[i])
+        out["dscale"] = float(ds[k]) if k >= 0 else None
+    return out
 
 
 class _Budget:
@@ -1013,7 +1109,9 @@ def generate_tokens(gA: Grammar, rng, *, gB: Grammar | None = None, switch_at: f
                     length: float | None = None, context: tuple | None = None,
                     max_tokens: int = MAX_TOKENS, p_follow: float = 0.0,
                     max_run: int = MAX_RUN, kmatch: float = 0.0, continuity: bool = True,
-                    knn: int = KNN, budget: float = 0.0, plan: dict | None = None) -> tuple[list, int]:
+                    knn: int = KNN, budget: float = 0.0, plan: dict | None = None,
+                    seg_scale: float = 0.0, plan_mode: str = "v6",
+                    end_fit: float = 0.0) -> tuple[list, int]:
     """Run the order-2 chain to a target length (dimensionless; default: one
     of A's training lengths). The last segment is cut at the target unless
     that leaves < 30 % of it (then dropped). context = (token before last,
@@ -1021,11 +1119,19 @@ def generate_tokens(gA: Grammar, rng, *, gB: Grammar | None = None, switch_at: f
     the joint κ-continuous. With gB and switch_at, draws after
     switch_at·length come from gB. budget > 0 (v6): the chain's proposals are
     re-weighted by a per-stroke corner/turning budget (`plan`, default
-    `plan_line(gA, rng, length=length)`) with this gain. Returns (tokens,
+    `plan_line(gA, rng, length=length)`) with this gain. seg_scale > 0 (v7):
+    the k-NN prefers records from drawings of the plan's segment scale
+    (`plan["dscale"]`) with this context weight. end_fit > 0 (v7): a last
+    token that would be cut to < end_fit of its length is dropped and the
+    previous segment stretched by the remainder (v6 appended the stub when
+    ≥ 30 %: last segments were 0.6 × real, +0.3–0.4 segments per stroke).
+    Returns (tokens,
     index of first B token or len(tokens))."""
     bud = None
+    if budget > 0 or (seg_scale > 0 and plan is None):
+        plan = plan or plan_line(gA, rng, length=length, mode=plan_mode)
+    dsc = (plan or {}).get("dscale") if seg_scale > 0 else None
     if budget > 0:
-        plan = plan or plan_line(gA, rng, length=length)
         length = plan["length"] if length is None else length
         bud = _Budget(plan, rng, budget, length=length)
     if length is None:
@@ -1040,7 +1146,8 @@ def generate_tokens(gA: Grammar, rng, *, gB: Grammar | None = None, switch_at: f
             g, switch_idx, rec = gB, len(toks), None
         kind, p, rec_ = g.draw(p2, p1, s, length, rng, prev_rec=rec,
                                p_follow=p_follow if run < max_run else 0.0, kmatch=kmatch, knn=knn,
-                               weights=bud.weights(s) if bud is not None and g is gA else None)
+                               weights=bud.weights(s) if bud is not None and g is gA else None,
+                               dscale=dsc if g is gA else None, w_ds=seg_scale)
         run = run + 1 if (rec is not None and rec_ == rec + 1) else 0
         rec = rec_
         tok = _tok_corner(p[0]) if kind == "corner" else _tok_seg(kind, *p)
@@ -1053,6 +1160,10 @@ def generate_tokens(gA: Grammar, rng, *, gB: Grammar | None = None, switch_at: f
             toks[-1] = newprev
         if tok[0] != "corner" and s + tok[1] >= length:
             frac = max(length - s, 1e-9) / tok[1]
+            if end_fit > 0 and frac < end_fit and toks and toks[-1][0] in SEG_KINDS:
+                pv = toks[-1]                 # v7: the previous segment takes the remainder
+                toks[-1] = _tok_seg(pv[0], pv[1] + max(length - s, 0.0), pv[2], pv[3])
+                break
             if frac >= 0.3 or not toks:
                 toks.append(_tok_seg(tok[0], tok[1] * frac, tok[2], tok[2] + (tok[3] - tok[2]) * frac))
             break
@@ -1231,12 +1342,15 @@ class _Grower:
 
     def __init__(self, g, rng, sheet: _Sheet, R, step, clr, look, K=8, *, p_follow=0.0,
                  corner_len=0.0, steer="first", max_run=MAX_RUN, kmatch=0.0, corner_budget=0.0,
-                 lw=1.0, touch=None, near=None, chain_budget=0.0, seek="v6"):
+                 lw=1.0, touch=None, near=None, chain_budget=0.0, seek="v6", seg_scale=0.0,
+                 end_fit=0.0):
         self.g, self.rng, self.sheet, self.R, self.step = g, rng, sheet, R, step
         self.clr, self.look, self.K = clr, look, K
         self.p_follow, self.corner_len, self.steer, self.max_run = p_follow, corner_len, steer, max_run
         self.kmatch, self.corner_budget = kmatch, corner_budget
         self.chain_budget, self.seek = chain_budget, seek
+        self.seg_scale, self.dscale = seg_scale, None
+        self.end_fit = end_fit
         self.bud = None
         self.seek_approach = SEEK_APPROACH
         self.corner_rate = float((g.relations or {}).get("corner_rate", 0.0))
@@ -1250,7 +1364,7 @@ class _Grower:
                       "plan_T": 0, "plan_near": 0, "plan_free": 0, "end_T": 0, "end_near": 0,
                       "end_free_ok": 0, "end_blocked": 0, "end_full": 0,
                       "past_steps": 0, "past_corners": 0, "start_steps": 0, "start_corners": 0,
-                      "seek_failed": 0, "budget_lines": 0}
+                      "seek_failed": 0, "budget_lines": 0, "end_fit_stops": 0}
 
     def _candidate(self, p2, p1, s, length, rec):
         """(chain tokens, record index of the last one, followed?)."""
@@ -1259,7 +1373,7 @@ class _Grower:
         wf = self.bud.weights(s) if self.bud is not None else None
         for _ in range(6):
             kind, p, r = g.draw(p2, p1, s, length, rng, prev_rec=rec, p_follow=pf, kmatch=self.kmatch,
-                                weights=wf)
+                                weights=wf, dscale=self.dscale, w_ds=self.seg_scale)
             fol = rec is not None and r == rec + 1
             if kind != "corner":
                 tok = _tok_seg(kind, *p)
@@ -1269,7 +1383,7 @@ class _Grower:
                 continue
             c = _tok_corner(p[0])
             kind2, p2_, r2 = g.draw(p1, c, s, length, rng, prev_rec=r, p_follow=pf, kmatch=self.kmatch,
-                                    weights=wf)
+                                    weights=wf, dscale=self.dscale, w_ds=self.seg_scale)
             if kind2 == "corner":
                 continue
             return [c, _tok_seg(kind2, *p2_)], r2, fol
@@ -1315,8 +1429,9 @@ class _Grower:
         only within (1 ± SEEK_WIN) × length; a line that reaches no ink there
         is cut back to its planned length (the plan fails over to free)."""
         self.bud = _Budget(plan, self.rng, self.chain_budget, length=length) \
-            if (plan is not None and self.chain_budget > 0) else None
+            if (plan is not None and "rho_c" in plan and self.chain_budget > 0) else None
         self.stats["budget_lines"] += int(self.bud is not None)
+        self.dscale = (plan or {}).get("dscale") if self.seg_scale > 0 else None
         sheet, R, step, clr = self.sheet, self.R, self.step, self.clr
         pos, h = np.asarray(start, float), float(heading)
         p2, p1 = (list(context[0]), list(context[1])) if context else (["START"], ["START"])
@@ -1357,6 +1472,7 @@ class _Grower:
             # past the planned length the chain is asked for a line that goes on
             # (a context of "nothing left" makes it propose corners)
             ctx_len = length if s < length - 1e-9 else s + 0.3 * length
+            stop_short = False
             for _k in range(self.K):
                 cand = self._candidate(p2, p1, s, ctx_len, rec)
                 if cand is None:
@@ -1369,9 +1485,16 @@ class _Grower:
                 last = s + seg[1] >= length - 1e-9
                 if s + seg[1] > L_max:                       # end at the (extended) planned length
                     f = max(L_max - s, 1e-9) / seg[1]
+                    if (self.end_fit > 0 and not seeking and f < self.end_fit and toks
+                            and len(cseq) == 1):
+                        stop_short = True     # v7: no stub — the line ends here, < ½ token short
+                        break
                     cseq[-1] = seg = _tok_seg(seg[0], seg[1] * f, seg[2], seg[2] + (seg[3] - seg[2]) * f)
                 elif not seeking and s + seg[1] > length:
                     f = max(length - s, 1e-9) / seg[1]
+                    if self.end_fit > 0 and f < self.end_fit and toks and len(cseq) == 1:
+                        stop_short = True     # v7: no stub — the line ends here, < ½ token short
+                        break
                     cseq[-1] = seg = _tok_seg(seg[0], seg[1] * f, seg[2], seg[2] + (seg[3] - seg[2]) * f)
                 seq = self._geometry(cseq, p1)
                 P, _, _ = tokens_to_points(seq, R, start=pos, heading=h, step=step)
@@ -1439,6 +1562,9 @@ class _Grower:
                     (pref if room >= self.look else ok).append(item)
                 elif hit_s.any() and end_clear and self_ok:
                     selfx.append(item)
+            if stop_short:
+                st["end_fit_stops"] += 1
+                break
             if arrive:
                 seq, P, sg, nb, cseq, crec, cfol, kidx, _o = arrive[0]
                 st["steps"] += 1
@@ -1537,7 +1663,9 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
                      kmatch: float = KMATCH, corner_budget: float = CORNER_BUDGET,
                      look_mult: float = LOOK_MULT, p_double: float | None = None,
                      kiss_clear: bool = True, lengths: str = "v6",
-                     chain_budget: float = CHAIN_BUDGET) -> Drawing:
+                     chain_budget: float = CHAIN_BUDGET, plans: str = PLAN_MODE,
+                     seg_scale: float = 0.0, order: str = "long",
+                     seek: str | None = None, end_fit: float = END_FIT) -> Drawing:
     """A drawing on a (W, H) px canvas, R = ref_frac × the diagonal inside
     the margin (≈ the ink's own bounding-box diagonal).
 
@@ -1574,6 +1702,19 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
     (up to LEN_TRIES re-seeded tries, else the line is not placed);
     lengths="v5" restores v5's pooled lengths, seeking and acceptance.
     chain_budget (gain, 0 = off): the plan's budget re-weights the chain.
+    v7 (results/grammar-v7.md): plans="v7" (default) draws each plan from a
+    kernel density over the source drawing's strokes instead of copying one
+    stroke (`plan_line`); seg_scale (context weight, default 0 = off; W_DSCALE
+    = 4 is the studied value) makes the chain prefer records from drawings of
+    the source drawing's segment scale — right in the free chain, but it
+    raised panel-scale corners in drawn sheets, so it is an opt-in;
+    order="long" plans the whole sheet's ink first and grows the lines
+    roughly longest first (length × exp(N(0, LONG_FIRST_SD))), so long plans
+    meet an emptier sheet; a plan that fails is dropped and the sheet is
+    topped up with fresh plans. end_fit: a line whose chain proposes a last
+    token > 1/end_fit × the remaining length ends there instead of drawing a
+    stub. plans="v6", seg_scale=0, order="draw", end_fit=0 give v6.
+    seek: "v6" | "v5" end seeking (default: follows `lengths`; ablation).
     mode="single": one line of that ink, grown chunk by chunk (each chunk a
     training-length "virtual stroke" conditioned on the previous two tokens,
     κ-continuous across chunks); `hands` = (gA, gB, ...) alternates hands
@@ -1620,10 +1761,14 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
             "chain_budget": chain_budget, "source_drawing": src_d}
     gkw = {"p_follow": p_follow, "corner_len": corner_round_w * lw / R, "steer": steer, "max_run": max_run,
            "kmatch": kmatch, "corner_budget": corner_budget, "lw": lw, "touch": touch, "near": near,
-           "chain_budget": chain_budget, "seek": "v6" if lengths == "v6" else "v5"}
-    if mode == "single":
+           "chain_budget": chain_budget, "seek": seek or ("v6" if lengths == "v6" else "v5"),
+           "seg_scale": seg_scale, "end_fit": end_fit}
+    meta.update(plans=plans, seg_scale=seg_scale, order=order)
+    if mode == "single":             # (v7: no source drawing in single mode, so no segment-scale context;
+        gkw["seg_scale"] = 0.0       # chunk ends are not line ends, so no end fit)
+        gkw["end_fit"] = 0.0
         st = _single_line(grammar, rng, sheet, R, lw, step, clr, look, float(ink), hands,
-                          switch_every, K, gkw)
+                          switch_every, K, gkw, plans=plans)
         meta["crosses"] = st.meta.get("crosses", 0)
         return Drawing([st] if len(st) >= 2 else [], source=f"grammar:{grammar.name}:single",
                        size=(W, H), meta=meta)
@@ -1834,15 +1979,24 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
         return {"kind": k, "gap": _sample(topo.get("near_gap"), rng, 0.012) * R}
 
     n_tries = max(tries, LEN_TRIES) if v6len else tries
+    queue: list = []
+    if v6len and order == "long":     # v7: the sheet's plans first, grown roughly longest first
+        tot = 0.0
+        while len(queue) < limit and (tot < ink if n_strokes is None else len(queue) < n_strokes):
+            queue.append(plan_line(grammar, rng, drawing=src_d, mode=plans))
+            tot += queue[-1]["length"]
+        key = np.array([q["length"] for q in queue]) * np.exp(rng.normal(0, LONG_FIRST_SD, len(queue)))
+        queue = [queue[i] for i in np.argsort(-key)]
     while len(placed) < limit and fails < 4 * tries:
         if n_strokes is None and state["ink"] >= ink:
             break
         if v6len:
-            lplan = plan_line(grammar, rng, drawing=src_d)
+            lplan = queue.pop(0) if queue else plan_line(grammar, rng, drawing=src_d, mode=plans)
             target = lplan["length"]
         else:
             target = _sample(lengths_, rng, 0.1)
-            lplan = plan_line(grammar, rng, length=target) if chain_budget > 0 else None
+            lplan = plan_line(grammar, rng, length=target, mode=plans) \
+                if (chain_budget > 0 or seg_scale > 0) else None
         self_ok = bool(rng.random() < self_frac)
         best = None
         for t in range(n_tries):
@@ -1869,7 +2023,8 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
         _good, sc, toks, start, heading, nc, how, rel_meta, plan = best
         st = _stroke(toks, R, start, heading, step,
                      {"hand": grammar.name, "end": how, "crosses": nc, "target": target,
-                      "end_plan": (plan or {}).get("kind"), **rel_meta},
+                      "end_plan": (plan or {}).get("kind"), **rel_meta,
+                      "plan_src": (lplan or {}).get("src"), "plan_src_len": (lplan or {}).get("src_len")},
                      width=lw)
         d_ends = sheet.dist(st.points[[0, -1]])
         placed.append(st)
@@ -1898,7 +2053,7 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
 
 
 def _single_line(g: Grammar, rng, sheet: _Sheet, R, lw, step, clr, look, ink, hands, switch_every, K,
-                 gkw=None):
+                 gkw=None, plans: str = "v6"):
     """One long line in chunks (see generate_drawing). Chunks are grown with
     the same steering as contiguous strokes, against the line drawn so far;
     a chunk that is boxed in is retried, and on the last try may cross the
@@ -1939,10 +2094,12 @@ def _single_line(g: Grammar, rng, sheet: _Sheet, R, lw, step, clr, look, ink, ha
         prior = pts_all[s_line < s_line[-1] - 4 * clr]
         grower = _Grower(gh, rng, sheet, R, step, clr, look, K, **(gkw or {}))
         best = None
-        cplan = plan_line(gh, rng, length=target) if (gkw or {}).get("chain_budget", 0) > 0 else None
+        cplan = plan_line(gh, rng, length=target, mode=plans) \
+            if ((gkw or {}).get("chain_budget", 0) > 0 or (gkw or {}).get("seg_scale", 0) > 0) else None
         for t in range(tries):
             toks, how, nc = grower.grow(pos, h, target, context=ctx, prior=prior,
-                                        self_ok=t == tries - 1, plan=cplan if t < 2 else None)
+                                        self_ok=t == tries - 1, plan=cplan if t < 2 else
+                                        ({"dscale": cplan.get("dscale")} if cplan else None))
             # (v6: the budget is a prior, not a wall — a boxed-in chunk retries without it)
             sc = stroke_length(toks)
             if best is None or sc > best[0]:

@@ -192,13 +192,14 @@ def test_single_mode_one_stroke(g_matisse, g_random, g_fine):
     assert len(d.strokes) == 1
     st = d.strokes[0]
     assert st.length() / d.meta["ref_length_gen"] > 0.8
-    # v6 budget on: toy-hand single lines stall as often as without it (median over seeds)
+    # v6 budget on: toy-hand single lines stall as often as without it (median over seeds;
+    # v7: 30 seeds — the 8-seed median swung .43–.52 with the rng stream alone)
     ls = []
-    for sd in range(10, 18):
+    for sd in range(10, 40):
         db = generate_drawing(g_fine, np.random.default_rng(sd), (800, 800), mode="single", ink=3.0)
         assert len(db.strokes) == 1
         ls.append(db.strokes[0].length() / db.meta["ref_length_gen"])
-    assert np.median(ls) > 0.5
+    assert np.median(ls) > 0.45
     # two hands along one line
     rng = np.random.default_rng(8)
     g_fine2 = learn([synth.scene_random(rng, 1500, n_strokes=10, length_frac=(0.08, 0.25),
@@ -326,3 +327,34 @@ def test_v4_mode_and_old_grammars(g_matisse):
     g.relations = {k: v for k, v in g.relations.items() if k != "topo"}   # a pre-v5 grammar
     d2 = generate_drawing(g, np.random.default_rng(23), (800, 800))
     assert d2.meta["ends"] == "v4"
+
+
+# v7: smoothed plans, the drawing's segment scale, no end stubs, long lines first
+
+def test_v7_plans_and_segment_scale(g_fine):
+    from gesture.grammar import plan_line
+    rng = np.random.default_rng(3)
+    lens = {round(x, 9) for x in g_fine.stroke_lengths}
+    p6 = [plan_line(g_fine, rng, drawing=0) for _ in range(20)]
+    p7 = [plan_line(g_fine, rng, drawing=0, mode="v7") for _ in range(20)]
+    assert all(round(p["length"], 9) in lens for p in p6)          # v6 copies a training length
+    assert sum(round(p["length"], 9) in lens for p in p7) <= 2     # v7 smooths it
+    assert all(np.isfinite(p["dscale"]) and np.isfinite(p["rho_c"]) for p in p7)
+    sd, ds = g_fine.drawing_scales()
+    assert len(sd) == len(g_fine.strokes) and (sd >= 0).all() and np.isfinite(ds).all()
+    # the segment-scale context and end fit keep tokens valid and lengths on target
+    for sd_ in range(5):
+        toks, _ = generate_tokens(g_fine, np.random.default_rng(sd_), length=0.15, budget=1.0,
+                                  seg_scale=4.0, plan_mode="v7", end_fit=0.5)
+        assert toks and toks[-1][0] != "corner"
+        assert abs(sum(t[1] for t in toks if t[0] != "corner") - 0.15) < 1e-6
+
+
+def test_v7_drawing_flags(g_fine):
+    kw6 = dict(plans="v6", seg_scale=0.0, order="draw", end_fit=0.0)
+    for kw in ({}, kw6):
+        d = generate_drawing(g_fine, np.random.default_rng(21), (900, 900), **kw)
+        assert d.strokes and all(np.isfinite(s.points).all() for s in d.strokes)
+        assert d.meta["order"] == kw.get("order", "long")
+    d = generate_drawing(g_fine, np.random.default_rng(22), (900, 900), mode="single", ink=2.0)
+    assert len(d.strokes) == 1

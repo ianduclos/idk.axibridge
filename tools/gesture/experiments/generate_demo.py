@@ -1,4 +1,4 @@
-"""Grammar demo (v6; written for v2): population sheets and a juxtaposition sheet (LOOK at them).
+"""Grammar demo (v7; written for v2): population sheets and a juxtaposition sheet (LOOK at them).
 
 Per artist: 8 generated drawings in contiguous mode (tree relations), 4 in
 single-line mode, 2 real drawings reduced to the long-stroke subset the
@@ -32,7 +32,7 @@ from gesture.core import Drawing, Stroke  # noqa: E402
 
 from experiments.grammar_eval import ARTISTS, OUT, learn_artist, load, prepared  # noqa: E402
 
-DEMO = OUT / "demo_v6"
+DEMO = OUT / "demo_v7"
 CANVAS = (1000, 1200)
 LINE_W = 2.6
 TILE = (400, 480)
@@ -118,7 +118,7 @@ def population_sheet(art, g, drawings, rng):
                              if d.strokes else "single: empty"))
     # row 1 = 4 contiguous (learned) + real 1, row 2 = 4 contiguous (tree) + real 2, row 3 = 4 single lines
     layout = tiles[:4] + [rt[0]] + tiles[4:8] + [rt[1]] + singles + [None]
-    return grid(layout, 5, f"{art} - grammar v6 (sigma = {g.meta['sigma_w']:g} w; planned lengths + chain corner budget): "
+    return grid(layout, 5, f"{art} - grammar v7 (sigma = {g.meta['sigma_w']:g} w; smoothed plans, end fit, long lines first): "
                            "row 1 contiguous/learned, row 2 contiguous/tree + a real long-stroke subset (right); row 3 single line"), gens
 
 
