@@ -222,7 +222,20 @@ def kappa_permuted(drawing: Drawing, rng: np.random.Generator, smooth_samples: f
                      {"kappa_sigma": sigma, "smooth_samples": smooth_samples})
 
 
+def identity(drawing: Drawing, rng: np.random.Generator) -> Drawing:
+    """Pipeline control, not a null: the source's own κ(s), measured and
+    re-integrated exactly as the other nulls are, with nothing shuffled.
+    Every null differs from the real drawing partly through this band-limiting
+    pipeline; comparing nulls against `identity` isolates what the shuffle or
+    noise itself destroyed (review finding 2026-10-16)."""
+    sigma, step, ks = _measure(drawing)
+    out = [_integrate_samples(k, st.length(), st.points[0], _start_heading(st))
+           for st, k in zip(drawing.strokes, ks)]
+    return _assemble(drawing, "identity", out, {"kappa_sigma": sigma})
+
+
 NULLS = {
+    "identity": identity,
     "random_walk": random_walk,
     "smooth_noise": smooth_noise,
     "shuffled_segments": shuffled_segments,

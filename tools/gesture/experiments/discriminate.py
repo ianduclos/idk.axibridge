@@ -73,11 +73,12 @@ def load_dir(path: Path) -> list[tuple[str, Drawing]]:
 
 
 def _feat_job(args):
-    key, d, sigma_frac, width = args
+    key, d, sigma_frac, width, sigma_min_w = args
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", RuntimeWarning)
         t = time.perf_counter()
-        f, info = panel.features_with_info(d, sigma_frac=sigma_frac, width_available=width)
+        f, info = panel.features_with_info(d, sigma_frac=sigma_frac, width_available=width,
+                                           sigma_min_w=sigma_min_w)
         info["seconds"] = time.perf_counter() - t
     return key, f, info
 
@@ -101,37 +102,46 @@ def _models(seed: int):
     }
 
 
-def cv_score(make, X, y, k, repeats, seed, jobs) -> dict:
-    from sklearn.model_selection import RepeatedStratifiedKFold, cross_validate
-    cv = RepeatedStratifiedKFold(n_splits=k, n_repeats=repeats, random_state=seed)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        r = cross_validate(make(), X, y, cv=cv, scoring="balanced_accuracy", n_jobs=jobs)
-    s = r["test_score"]
+def cv_score(make, X, y, k, repeats, seed, jobs, groups=None) -> dict:
+    """Grouped CV: a source drawing and the nulls built from it share a group,
+    so they never straddle train and test."""
+    from sklearn.model_selection import StratifiedGroupKFold, cross_validate
+    g = groups if groups is not None else np.arange(len(y))
+    s = []
+    for r in range(repeats):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = cross_validate(make(), X, y, groups=g, scoring="balanced_accuracy", n_jobs=jobs,
+                                 cv=StratifiedGroupKFold(k, shuffle=True, random_state=seed + r))
+        s.extend(res["test_score"])
+    s = np.asarray(s)
     return {"bacc": float(s.mean()), "std": float(s.std())}
 
 
-def confusion(make, X, y, labels, k, seed) -> list[list[int]]:
+def confusion(make, X, y, labels, k, seed, groups=None) -> list[list[int]]:
     from sklearn.metrics import confusion_matrix
-    from sklearn.model_selection import StratifiedKFold, cross_val_predict
+    from sklearn.model_selection import StratifiedGroupKFold, cross_val_predict
+    g = groups if groups is not None else np.arange(len(y))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        p = cross_val_predict(make(), X, y, cv=StratifiedKFold(k, shuffle=True, random_state=seed))
+        p = cross_val_predict(make(), X, y, groups=g,
+                              cv=StratifiedGroupKFold(k, shuffle=True, random_state=seed))
     return confusion_matrix(y, p, labels=labels).tolist()
 
 
-def pair_auc(make, X, y, a, b, repeats, seed) -> dict:
+def pair_auc(make, X, y, a, b, repeats, seed, groups=None) -> dict:
     from sklearn.metrics import balanced_accuracy_score, roc_auc_score
-    from sklearn.model_selection import StratifiedKFold, cross_val_predict
+    from sklearn.model_selection import StratifiedGroupKFold, cross_val_predict
     m = (y == a) | (y == b)
     Xp, yp = X[m], (y[m] == b).astype(int)
+    gp = (groups if groups is not None else np.arange(len(y)))[m]
     k = int(min(5, np.bincount(yp).min()))
     aucs, baccs = [], []
     for r in range(repeats):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            pr = cross_val_predict(make(), Xp, yp, method="predict_proba",
-                                   cv=StratifiedKFold(k, shuffle=True, random_state=seed + r))[:, 1]
+            pr = cross_val_predict(make(), Xp, yp, method="predict_proba", groups=gp,
+                                   cv=StratifiedGroupKFold(k, shuffle=True, random_state=seed + r))[:, 1]
         aucs.append(roc_auc_score(yp, pr))
         baccs.append(balanced_accuracy_score(yp, pr > 0.5))
     return {"auc": float(np.mean(aucs)), "auc_std": float(np.std(aucs)), "bacc": float(np.mean(baccs))}
@@ -154,11 +164,12 @@ def effect_sizes(X, y, names, a, b, top=5) -> list[dict]:
     return out[:top]
 
 
-def perm_importance(make, X, y, names, k, seed, top=15) -> list[dict]:
+def perm_importance(make, X, y, names, k, seed, top=15, groups=None) -> list[dict]:
     from sklearn.inspection import permutation_importance
-    from sklearn.model_selection import StratifiedKFold
+    from sklearn.model_selection import StratifiedGroupKFold
     imps = []
-    for tr, te in StratifiedKFold(k, shuffle=True, random_state=seed).split(X, y):
+    g = groups if groups is not None else np.arange(len(y))
+    for tr, te in StratifiedGroupKFold(k, shuffle=True, random_state=seed).split(X, y, g):
         mdl = make().fit(X[tr], y[tr])
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -265,6 +276,16 @@ def markdown(rep: dict) -> str:
               "| # | pair | logreg AUC | forest AUC |", "|---|---|---|---|"]
         for i, (pair, r) in enumerate(sorted(fair.items()), 1):
             L.append(f"| {i} | {pair} | {r['logreg']['auc']:.3f} | {r['forest']['auc']:.3f} |")
+    pm = rep.get("pollock_matched", {})
+    if pm:
+        L += ["", "**Pipeline-matched Pollock test** (each null vs the identity control, fair feature set) — "
+              "the gate number:", "", "| # | pair | logreg AUC | forest AUC |", "|---|---|---|---|"]
+        for i, (pair, r) in enumerate(sorted(pm.items()), 1):
+            L.append(f"| {i} | {pair} | {r['logreg']['auc']:.3f} | {r['forest']['auc']:.3f} |")
+    ao = rep.get("artists_only")
+    if ao:
+        L += ["", f"**Artists only, geometry only** ({', '.join(ao['classes'])}; chance {ao['chance']:.3f}): "
+              + "; ".join(f"{m} {_fmt(r)}" for m, r in ao["geometry_only"].items())]
     if rep.get("effects"):
         L += ["", "Top separating features per pair with the source (Cohen's d, b − a; medians a → b):", ""]
         for pair, rows in rep["effects"].items():
@@ -296,6 +317,8 @@ def main(argv=None) -> dict:
     ap.add_argument("--nulls", nargs="*", default=None, help=f"subset of {list(nulls.NULLS)}")
     ap.add_argument("--name", default=None, help="run name (output folder)")
     ap.add_argument("--sigma-frac", type=float, default=0.01)
+    ap.add_argument("--sigma-min-w", type=float, default=0.0,
+                    help="floor σ at this many median line widths (σ/w confound control)")
     ap.add_argument("--no-width", action="store_true", help="compute the panel without w_/end_")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--repeats", type=int, default=3)
@@ -325,7 +348,7 @@ def main(argv=None) -> dict:
                 items.append((f"null_{kind}", f"null_{kind}/{k}", nd))
 
     # ---- features
-    jobs = [(key, dr, a.sigma_frac, not a.no_width) for _, key, dr in items]
+    jobs = [(key, dr, a.sigma_frac, not a.no_width, a.sigma_min_w) for _, key, dr in items]
     t1 = time.perf_counter()
     if a.jobs > 1 and len(jobs) > 4:
         with ProcessPoolExecutor(a.jobs) as ex:
@@ -354,6 +377,10 @@ def main(argv=None) -> dict:
         warnings.warn(f"class {c!r} has {n} < {MIN_CLASS} drawings: left out of CV")
     m = np.array([c not in skipped for c in y_all])
     X, y = X_all[m], y_all[m]
+    # CV groups: a source drawing and its nulls share one group.
+    stem = lambda key: key.split("/", 1)[1]
+    G = np.array([f"src:{stem(key)}" if (c == a.null_source or c.startswith("null_")) else key
+                  for (c, key, _) in items])[m]
     labels = [c for c in dict.fromkeys(y_all.tolist()) if c not in skipped]
     if len(labels) < 2:
         sys.exit("need at least two classes with >= 3 drawings")
@@ -366,7 +393,7 @@ def main(argv=None) -> dict:
         return [i for i, g in enumerate(gnames) if (g == only if only else g not in excl)]
 
     def multiclass(ix):
-        return {mn: cv_score(mk, X[:, ix], y, k, a.repeats, a.seed, a.jobs) for mn, mk in models.items()}
+        return {mn: cv_score(mk, X[:, ix], y, k, a.repeats, a.seed, a.jobs, G) for mn, mk in models.items()}
 
     def pairwise(ix, which=None):
         out = {}
@@ -374,7 +401,7 @@ def main(argv=None) -> dict:
             key = f"{la} vs {lb}"
             if which and not which(la, lb):
                 continue
-            out[key] = {mn: pair_auc(mk, X[:, ix], y, la, lb, a.repeats, a.seed) for mn, mk in models.items()}
+            out[key] = {mn: pair_auc(mk, X[:, ix], y, la, lb, a.repeats, a.seed, G) for mn, mk in models.items()}
         return out
 
     t2 = time.perf_counter()
@@ -384,7 +411,7 @@ def main(argv=None) -> dict:
     rep = {
         "name": a.name or "-".join(groups),
         "config": {"groups": {g: str(d) for g, d in (x.partition("=")[::2] for x in a.group)},
-                   "null_source": src, "nulls": a.nulls, "sigma_frac": a.sigma_frac,
+                   "null_source": src, "nulls": a.nulls, "sigma_frac": a.sigma_frac, "sigma_min_w": a.sigma_min_w,
                    "width": not a.no_width, "seed": a.seed, "repeats": a.repeats, "k": k},
         "classes": {c: counts[c] for c in labels},
         "skipped_classes": skipped,
@@ -397,7 +424,7 @@ def main(argv=None) -> dict:
         "panel_seconds_mean": float(np.mean([i["seconds"] for i in infos])),
         "panel_seconds_max": float(np.max([i["seconds"] for i in infos])),
         "multiclass": multiclass(every),
-        "confusion": {mn: confusion(mk, X, y, labels, k, a.seed) for mn, mk in models.items()},
+        "confusion": {mn: confusion(mk, X, y, labels, k, a.seed, G) for mn, mk in models.items()},
         "pairwise": pairwise(every),
     }
     rep["geometry_only"] = {
@@ -408,11 +435,27 @@ def main(argv=None) -> dict:
     # Nulls are always open and placed independently of each other, so closure
     # and inter-stroke relations separate them from real drawings for free.
     # The fair Pollock test therefore drops those along with width.
-    fair = [i for i in geo if gnames[i] != "rel_" and keep[i] != "len_closure"]
+    fair = [i for i in geo if gnames[i] != "rel" and keep[i] != "len_closure"]
     rep["pollock_fair"] = {
         "excluded": list(panel.WIDTH_GROUPS) + ["rel_", "len_closure"],
         "pairwise": pairwise(fair, lambda la, lb: src in (la, lb) and "null_" in la + lb) if src and fair else {},
     }
+    # Pipeline-matched Pollock test: each null vs the identity control (same
+    # measure-and-re-integrate pipeline, nothing shuffled).
+    if "null_identity" in labels:
+        rep["pollock_matched"] = pairwise(
+            fair, lambda la, lb: "null_identity" in (la, lb) and la.startswith("null_") and lb.startswith("null_"))
+    # Artists-only, geometry-only: the honest artist number (the multi-class
+    # figure is padded by easy null classes).
+    arts = [c for c in labels if not c.startswith("null_")]
+    if len(arts) >= 2:
+        am = np.isin(y, arts)
+        ka = int(min(5, min(counts[c] for c in arts)))
+        rep["artists_only"] = {
+            "classes": arts, "chance": 1.0 / len(arts),
+            "geometry_only": {mn: cv_score(mk, X[am][:, geo], y[am], ka, a.repeats, a.seed, a.jobs, G[am])
+                              for mn, mk in models.items()},
+        }
     rep["effects"] = {f"{la} vs {lb}": effect_sizes(X, y, keep, la, lb)
                       for la, lb in combinations(labels, 2) if src in (la, lb)} if src else {}
     rep["ablation"] = {}
@@ -424,7 +467,7 @@ def main(argv=None) -> dict:
             "drop": multiclass(drop) if drop else {mn: {"bacc": float("nan"), "std": 0.0} for mn in models},
             "alone": multiclass(alone),
         }
-    rep["importance"] = perm_importance(models["forest"], X, y, keep, k, a.seed)
+    rep["importance"] = perm_importance(models["forest"], X, y, keep, k, a.seed, groups=G)
 
     out = a.out / rep["name"]
     out.mkdir(parents=True, exist_ok=True)

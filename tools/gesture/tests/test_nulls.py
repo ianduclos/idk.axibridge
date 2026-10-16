@@ -54,7 +54,8 @@ def test_null_deterministic_seeded_pure(name, drawings):
     b = nulls.NULLS[name](d, np.random.default_rng(5))
     c = nulls.NULLS[name](d, np.random.default_rng(6))
     assert all(np.array_equal(x.points, y.points) for x, y in zip(a.strokes, b.strokes))
-    assert not all(np.allclose(x.points, y.points) for x, y in zip(a.strokes, c.strokes))
+    if name != "identity":  # the pipeline control is seed-independent by design
+        assert not all(np.allclose(x.points, y.points) for x, y in zip(a.strokes, c.strokes))
     for s, (p, w, m) in zip(d.strokes, before):
         assert np.array_equal(s.points, p) and s.meta == m
         assert (w is None and s.width is None) or np.array_equal(s.width, w)
@@ -182,3 +183,12 @@ def test_overflow_rates():
     assert all(c / total <= 0.1 for c in counts.values()), (counts, total)
     loop = synth.scene_closed_loop((500, 500))
     assert nulls.random_walk(loop, np.random.default_rng(0)).meta["overflow"] == 1
+
+
+def test_identity_null_follows_source(drawings):
+    d = drawings["matisse"]
+    n = nulls.identity(d, np.random.default_rng(0))
+    for src, out in zip(d.strokes, n.strokes):
+        assert abs(out.length() - src.length()) / src.length() < 0.02
+        # same shape up to smoothing: endpoints close in ref units
+        assert np.linalg.norm(out.points[-1] - src.points[-1]) < 0.05 * d.ref_length()

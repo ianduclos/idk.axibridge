@@ -589,13 +589,21 @@ def _rel_group(strokes: list[Stroke], R: float) -> dict:
 
 def features_with_info(drawing: Drawing, *, sigma_frac: float = 0.01,
                        width_available: bool = True,
-                       clothoid: bool = True) -> tuple[dict[str, float], dict]:
+                       clothoid: bool = True,
+                       sigma_min_w: float = 0.0) -> tuple[dict[str, float], dict]:
     """Like `features`, plus an info dict: {"sigma", "ref", "n_eligible",
     "groups": [...present...], "clothoid": "ok" | reason it was skipped,
     "width": bool}."""
     strokes = [st for st in drawing.strokes if len(st) >= 2 and st.length() > 0]
     R = drawing.ref_length()
     sigma = sigma_frac * R
+    if sigma_min_w > 0:
+        # Floor σ at a multiple of the drawing's median line width so that a
+        # collection scanned at fewer px per line is not measured at a finer
+        # scale relative to its own line (σ/w was a per-artist confound).
+        ws = [float(np.median(st.width)) for st in strokes if st.width is not None and len(st.width)]
+        if ws:
+            sigma = max(sigma, sigma_min_w * float(np.median(ws)))
     info: dict = {"sigma": sigma, "ref": R, "n_strokes": len(strokes)}
     feats: dict[str, float] = {}
     if not strokes:
@@ -635,9 +643,10 @@ def features_with_info(drawing: Drawing, *, sigma_frac: float = 0.01,
 
 
 def features(drawing: Drawing, *, sigma_frac: float = 0.01,
-             width_available: bool = True) -> dict[str, float]:
+             width_available: bool = True, sigma_min_w: float = 0.0) -> dict[str, float]:
     """The panel: dimensionless, named features of one drawing (see module
     docstring and FEATURE_DOCS). w_ and end_ are present only when every
     stroke carries a width and `width_available` is True; cl_ is present only
     when gesture/clothoid.py imports and fits (a RuntimeWarning says why not)."""
-    return features_with_info(drawing, sigma_frac=sigma_frac, width_available=width_available)[0]
+    return features_with_info(drawing, sigma_frac=sigma_frac, width_available=width_available,
+                              sigma_min_w=sigma_min_w)[0]
