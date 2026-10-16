@@ -13,3 +13,6 @@ axibridge/static_dist/
 
 # Private linedraw handoff, source locations and experiment pointers (never publish).
 /.local/linedraw/
+
+# Gesture-bank research corpus (scans, never committed; manifest in docs/research/gesture-corpus/).
+/.local/gesture/
