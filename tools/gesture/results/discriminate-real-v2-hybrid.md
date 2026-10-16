@@ -1,3 +1,5 @@
+> **Superseded (2026-10-16 review):** the "fair Pollock" table here did not actually exclude `rel_`, nulls were not compared to a pipeline-matched control, and the multi-class figure is padded by null classes. See `review-2026-10-16.md` and the v3 report.
+
 # Stage-2 run v2 — hybrid extractor (2026-10-16)
 
 Same setup as discriminate-real-v1.md, strokes from `extract_hybrid` (sub-pixel centrelines).

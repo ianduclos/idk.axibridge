@@ -1,3 +1,5 @@
+> **Superseded (2026-10-16 review):** the "fair Pollock" table here did not actually exclude `rel_`, nulls were not compared to a pipeline-matched control, and the multi-class figure is padded by null classes. See `review-2026-10-16.md` and the v3 report.
+
 # Stage-2 gate, first real run — 2026-10-16 (read this first)
 
 Extractor `extract` (bake-off winner on real-scan topology; κ accuracy not yet
