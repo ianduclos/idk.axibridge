@@ -1,42 +1,56 @@
-"""Clothoid-alphabet grammar: learn a hand, generate with it, juxtapose hands.
+"""Clothoid-alphabet grammar v2: learn a hand from long lines, draw long lines.
 
-Stage 3 + stage 6 of docs/IDEAS-gesture-bank.md (representation A). A hand is
-modelled as
+Stage 3 + stage 6 of docs/IDEAS-gesture-bank.md (representation A). v1 (the
+2026-10-16 preview) fitted at σ = 0.01·ref, where 90–96 % of strokes are one
+segment, learned from every fragment (hatching included) and scattered
+strokes on the sheet. v2 changes all three (results/grammar-v2.md):
 
-1. a first-order **Markov chain over tokens** — segment kinds ``line``,
-   ``arc``, ``clothoid`` plus ``corner``, framed by ``START`` / ``END`` —
-   counted from `clothoid.fit_stroke` decompositions of real strokes, with
-   additive smoothing over the structurally allowed transitions
-   (START→corner, START→END, corner→corner and corner→END are impossible);
-2. per transition ``prev>next``, the **empirical pool of observed
-   (prev params, next params) pairs**. The next token's parameters are drawn
-   by nearest-neighbour resampling: the k pairs whose *prev* params are
-   closest to the current token's, one picked at random, its *next* params
-   copied with a small jitter. κ continuity is then enforced: inside a
-   corner-free run the next segment starts at the previous one's end κ
-   (arcs take that κ, a line after a clothoid pulls the clothoid's end to 0).
+**Training set — long contiguous strokes only** (`select_long`). A stroke is
+kept if its length ≥ max(`MIN_LEN_W` line widths, the drawing's
+`LEN_QUANTILE` stroke-length quantile) and it is not hatching
+(`hatch_mask`: a near-straight stroke with ≥ `HATCH_MIN_NEIGH` near-parallel,
+similar-length, near-straight neighbours within about its own length). The
+grammar's "drawing" is that subset; R = its `ref_length()`.
 
-Everything is **dimensionless** (README "Units"): a segment is
-``[length/R, k0·R, k1·R]`` and a corner is ``[angle]`` (rad), R the source
-drawing's `ref_length()`. Stroke direction is unknowable from a scan, so every
-training stroke is also added **reversed** (order flipped, κ negated): the
-chain is direction-free and κ-sign symmetric by construction.
+**Scale — σ in line widths.** Each stroke is fitted at σ = `SIGMA_W` × its
+own median width (the extractor's residual wander is ~0.03–0.2 w, so 2 w
+sits safely above it while long strokes carry several segments; the scale
+study in experiments/grammar_eval.py picks the value).
 
-Smoothing scale: σ = sigma_frac·R as everywhere else, except that a stroke
-shorter than 10σ is fitted at σ = max(length/10, width/2, 0.002·R) — at the
-drawing-level σ such a stroke is smoothed flat and `fit_stroke` returns its
-one-segment fallback with a κ biased toward 0. This mixes scales for short
-strokes; it is recorded in the grammar (``meta["short_sigma"]``).
+**Alphabet and order.** Tokens as v1: segments ``[kind, l, k0, k1]``
+(l = length/R, k = κ·R; kind line/arc/clothoid) and ``["corner", angle]``.
+The chain is a **non-parametric order-2 model**: the next token (kind AND
+params jointly) is drawn from the k nearest training transitions whose
+previous token has the same kind, in a context space of
+(previous token's params, the token before it — with a kind-mismatch
+penalty —, log remaining length, position u = s/length in the stroke).
+Every training stroke is also added reversed (direction is unknowable from
+a scan). κ continuity is enforced inside corner-free runs; corners stay
+tokens. Stroke lengths come from the long strokes' empirical distribution.
 
-Generation integrates κ(s) with `curvature.integrate_kappa` and applies
-corners as instantaneous turns. Composition (where strokes go) is modelled
-only loosely: empirical start positions/headings and stroke counts.
+**Relations layer** (`generate_drawing(mode="contiguous")`, the default).
+Learned per drawing from the long strokes: share of strokes with an end
+attached to another stroke (endpoint within `ATTACH_W` widths), where on the
+host they attach (u = s/L) and at what angle (folded to [0, π/2]); X
+crossings per unit ink; share of self-crossing strokes; long-stroke ink and
+count per drawing; line width / R. Generation places strokes until the ink
+budget is spent: each stroke either **branches** from an existing stroke
+(start on it at a learned u, heading = local tangent ± a learned angle) or
+starts free at the emptiest of several candidate points. It is then walked
+against the ink already down: leaving the sheet ends it; meeting another
+line either **crosses** (only while the drawing's crossings stay under the
+learned rate × ink) or **ends on that line** (a T-junction); meeting itself
+ends it unless this stroke was drawn as a self-crossing one. Strokes shorter
+than the shortest training stroke are discarded. `mode="single"` draws ONE
+line of the same ink, chunk by chunk (each chunk conditioned on the previous
+two tokens, κ-continuous across chunks), steering by retrying chunks that
+would run into the line already drawn.
 
-Juxtaposition (stage 6): `code_switch` (hand A → hand B along one stroke,
-κ-continuous at the switch), `translate` (each segment of a fit replaced by
-its nearest neighbour of the same kind in B's pool), `restyle` (a path's
-coarse shape kept, its fine turning replaced by B's — Kalnins' base path +
-learned residual). `nearest_training_distance` is the memorisation check.
+Juxtaposition (stage 6): `code_switch` (hand A → hand B along one stroke),
+`generate_drawing(mode="single", hands=(gA, gB))` (alternating hands along
+one long line), `translate`/`translate_tokens` (each token → its nearest of
+the same kind in B), `restyle` (coarse path kept, fine turning from B).
+`nearest_training_distance` is the memorisation measure.
 
 Pure and deterministic: inputs never mutated; randomness via np.random.Generator.
 """
@@ -48,26 +62,43 @@ from pathlib import Path
 
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
+from scipy.spatial import cKDTree
 
-from .clothoid import fit_stroke, _runs
+from .clothoid import _runs, fit_stroke
 from .core import Drawing, Stroke
 from .curvature import integrate_kappa, resample, smooth
 
 SEG_KINDS = ("line", "arc", "clothoid")
+KINDS = ("START", "line", "arc", "clothoid", "corner")
 FROM = ("START", "line", "arc", "clothoid", "corner")
 TO = ("line", "arc", "clothoid", "corner", "END")
-_FORBIDDEN = {("START", "corner"), ("START", "END"), ("corner", "corner"), ("corner", "END")}
 
-KAPPA_SCALE = 5.0        # κ·R features go through asinh(κR / this) before scaling
-MAX_KAPPA_R = 2000.0     # |κ|·R beyond this (radius < R/2000) = a degenerate fit
-MAX_POS_ERR = 1.0        # fit quality: rms_position_error ≤ this · σ
-SHORT_SIGMAS = 10.0      # strokes shorter than this many σ get a stroke-level σ
-CTX_W = 0.5              # weight of the stroke-length context in k-NN (logl-std units)
-KNN = 16                 # neighbours considered when resampling a transition
+# training set
+SIGMA_W = 2.0            # fit σ in line widths (scale study: results/grammar-v2.md)
+MIN_LEN_W = 40.0         # long stroke: ≥ this many line widths ...
+LEN_QUANTILE = 0.5       # ... and ≥ this quantile of the drawing's stroke lengths
+HATCH_ANGLE = np.deg2rad(20.0)   # hatching: orientation within this of a neighbour
+HATCH_LEN_RATIO = 2.5    # ... length ratio within this
+HATCH_STRAIGHT = 0.8     # ... chord / length ≥ this (both strokes)
+HATCH_MIN_NEIGH = 3      # ... at least this many such neighbours
+HATCH_RADIUS = 1.0       # ... centroids within this × own length (≥ 15 w)
+HATCH_MAX_LEN_W = 150.0  # strokes longer than this are never hatching
+ATTACH_W = 2.0           # an end within this many widths of another stroke is attached
+# chain
+KAPPA_SCALE = 5.0        # κ·R features go through asinh(κR / this)
+KNN = 12                 # neighbours considered per draw
+W_PREV2 = 0.5            # context weights (squared-distance multipliers)
+W_REM = 0.5
+W_U = 0.5
+U_SCALE = 0.25
+PEN_PREV2 = 2.0          # added squared distance when the token-before-previous kind differs
 JITTER_LEN = 0.08        # log-normal sd of the length jitter
-JITTER_K = 0.05          # κ jitter, as a fraction of the pool's κ·R spread
+JITTER_K = 0.05          # κ jitter, fraction of the kind's κ·R spread
 JITTER_ANGLE = 0.05      # corner angle jitter (rad)
-MAX_TOKENS = 80
+MAX_TOKENS = 200
+# drawing
+CLEAR_W = 3.0            # lines keep this many widths apart unless they cross/touch
+MIN_FRAC = 0.5           # a walked stroke shorter than this × its target is retried
 
 
 # ---------------------------------------------------------------------------
@@ -84,8 +115,7 @@ def _tok_corner(a):
 
 def fit_tokens(fit, R: float) -> list[list]:
     """A Fit (px) as a dimensionless token list: segments [kind, l, k0, k1]
-    and corners ["corner", angle]. Closed fits are read as open from their
-    first segment (closure is not modelled)."""
+    and corners ["corner", angle]. Closed fits are read as open."""
     out: list[list] = []
     for i, (run, turn) in enumerate(_runs(fit)):
         if i > 0:
@@ -94,6 +124,10 @@ def fit_tokens(fit, R: float) -> list[list]:
             if g.length <= 0:
                 continue
             out.append(_tok_seg(g.kind, g.length / R, g.k0 * R, g.k1 * R))
+    while out and out[0][0] == "corner":
+        out.pop(0)
+    while out and out[-1][0] == "corner":
+        out.pop()
     return out
 
 
@@ -109,19 +143,277 @@ def reverse_tokens(toks: list[list]) -> list[list]:
     return out
 
 
+def shuffle_tokens(toks: list[list], rng) -> list[list]:
+    """Control: the same segments and corners in a random order (corners
+    only between segments, never adjacent). Destroys order, keeps the bag."""
+    segs = [t for t in toks if t[0] != "corner"]
+    cors = [t for t in toks if t[0] == "corner"]
+    segs = [segs[i] for i in rng.permutation(len(segs))]
+    gaps = sorted(rng.choice(max(len(segs) - 1, 0), min(len(cors), max(len(segs) - 1, 0)),
+                         replace=False).tolist()) if len(segs) > 1 else []
+    out = []
+    for i, s in enumerate(segs):
+        out.append(list(s))
+        if i in gaps:
+            out.append(list(cors[gaps.index(i)]))
+    return out
+
+
+def stroke_length(toks) -> float:
+    return float(sum(t[1] for t in toks if t[0] != "corner"))
+
+
+_stroke_len = stroke_length
+
+
+def n_segments(toks) -> int:
+    return sum(1 for t in toks if t[0] != "corner")
+
+
+def truncate_tokens(toks: list[list], length: float) -> list[list]:
+    """Tokens cut at arc length `length` (dimensionless): the last segment
+    shortened with κ interpolated; trailing corners dropped."""
+    out, s = [], 0.0
+    for t in toks:
+        if t[0] == "corner":
+            out.append(list(t))
+            continue
+        if s + t[1] >= length:
+            f = max(length - s, 0.0) / t[1] if t[1] > 0 else 0.0
+            if f > 1e-9:
+                out.append(_tok_seg(t[0], t[1] * f, t[2], t[2] + (t[3] - t[2]) * f))
+            break
+        out.append(list(t))
+        s += t[1]
+    while out and out[-1][0] == "corner":
+        out.pop()
+    return out
+
+
+def end_heading(toks: list[list], heading: float = 0.0) -> float:
+    """Tangent angle at the end of a token stroke started at `heading`."""
+    h = float(heading)
+    for t in toks:
+        h += t[1] if t[0] == "corner" else 0.5 * (t[2] + t[3]) * t[1]
+    return h
+
+
 def _feat(tok, scale) -> np.ndarray:
-    """Conditioning feature of a token, scaled (segment: log l, asinh κ0,
-    asinh κ1; corner: angle)."""
+    """Context feature of a token (3 dims; START = zeros; corner = angle, 0, 0)."""
+    if tok[0] == "START":
+        return np.zeros(3)
     if tok[0] == "corner":
-        return np.array([tok[1] / scale["angle"]])
+        return np.array([tok[1] / scale["angle"], 0.0, 0.0])
     l, k0, k1 = tok[1], tok[2], tok[3]
     return np.array([np.log(max(l, 1e-9)) / scale["logl"],
                      np.arcsinh(k0 / KAPPA_SCALE) / scale["ak"],
                      np.arcsinh(k1 / KAPPA_SCALE) / scale["ak"]])
 
 
-def _stroke_len(toks) -> float:
-    return float(sum(t[1] for t in toks if t[0] != "corner"))
+def _ctx(p2, p1, rem, u, scale) -> np.ndarray:
+    return np.concatenate([_feat(p1, scale), np.sqrt(W_PREV2) * _feat(p2, scale),
+                           [np.sqrt(W_REM) * np.log(max(rem, 1e-6)) / scale["logl"],
+                            np.sqrt(W_U) * u / U_SCALE]])
+
+
+# ---------------------------------------------------------------------------
+# training set: long strokes, no hatching
+# ---------------------------------------------------------------------------
+
+def stroke_width(st: Stroke, drawing: Drawing) -> float:
+    if st.width is not None and len(st.width):
+        return float(np.median(st.width))
+    w = drawing.meta.get("line_width_px")
+    return float(w) if w else 0.0025 * drawing.ref_length()
+
+
+def drawing_width(drawing: Drawing) -> float:
+    ws = [stroke_width(s, drawing) for s in drawing.strokes if len(s) >= 2]
+    return float(np.median(ws)) if ws else 1.0
+
+
+def _orient(p: np.ndarray) -> tuple[float, float]:
+    """(principal-axis angle mod π, chord/length)."""
+    c = p - p.mean(axis=0)
+    _u, _s, vt = np.linalg.svd(c, full_matrices=False)
+    a = float(np.arctan2(vt[0, 1], vt[0, 0]) % np.pi)
+    L = float(np.sum(np.linalg.norm(np.diff(p, axis=0), axis=1)))
+    return a, float(np.linalg.norm(p[-1] - p[0]) / L) if L > 0 else 0.0
+
+
+def hatch_mask(drawing: Drawing) -> np.ndarray:
+    """Per stroke: True if it reads as hatching — near-straight, ≤
+    HATCH_MAX_LEN_W widths, with ≥ HATCH_MIN_NEIGH near-straight neighbours
+    of similar length and orientation whose centroids lie within
+    HATCH_RADIUS × its length (at least 15 widths)."""
+    S = drawing.strokes
+    n = len(S)
+    out = np.zeros(n, bool)
+    if n < HATCH_MIN_NEIGH + 1:
+        return out
+    L = np.array([s.length() for s in S])
+    W = np.array([stroke_width(s, drawing) for s in S])
+    C = np.array([s.points.mean(axis=0) if len(s) else [0.0, 0.0] for s in S])
+    ori = [(_orient(s.points) if len(s) >= 3 and L[i] > 0 else (0.0, 0.0)) for i, s in enumerate(S)]
+    A = np.array([o[0] for o in ori])
+    Q = np.array([o[1] for o in ori])
+    cand = (Q >= HATCH_STRAIGHT) & (L <= HATCH_MAX_LEN_W * W) & (L > 0)
+    tree = cKDTree(C)
+    for i in np.flatnonzero(cand):
+        r = max(HATCH_RADIUS * L[i], 15 * W[i])
+        nb = np.array([j for j in tree.query_ball_point(C[i], r) if j != i and cand[j]], dtype=int)
+        if len(nb) < HATCH_MIN_NEIGH:
+            continue
+        da = np.abs(A[nb] - A[i]) % np.pi
+        da = np.minimum(da, np.pi - da)
+        ratio = L[nb] / L[i]
+        ok = (da <= HATCH_ANGLE) & (ratio <= HATCH_LEN_RATIO) & (ratio >= 1 / HATCH_LEN_RATIO)
+        out[i] = int(ok.sum()) >= HATCH_MIN_NEIGH
+    return out
+
+
+def select_long(drawing: Drawing, *, min_len_w: float = MIN_LEN_W,
+                len_quantile: float = LEN_QUANTILE, exclude_hatching: bool = True) -> tuple[list[int], dict]:
+    """Indices of the long, non-hatching strokes, plus counts/ink of all,
+    hatching and kept (ink in px)."""
+    S = drawing.strokes
+    L = np.array([s.length() for s in S]) if S else np.zeros(0)
+    W = np.array([stroke_width(s, drawing) for s in S]) if S else np.zeros(0)
+    hm = hatch_mask(drawing) if exclude_hatching else np.zeros(len(S), bool)
+    q = float(np.quantile(L, len_quantile)) if len(L) else 0.0
+    keep = [i for i in range(len(S)) if len(S[i]) >= 3 and L[i] >= max(min_len_w * W[i], q) and not hm[i]]
+    info = {"n_all": len(S), "ink_all": float(L.sum()), "n_hatch": int(hm.sum()),
+            "ink_hatch": float(L[hm].sum()) if len(L) else 0.0,
+            "n_long": len(keep), "ink_long": float(L[keep].sum()) if keep else 0.0,
+            "width": float(np.median(W)) if len(W) else 0.0}
+    return keep, info
+
+
+def long_drawing(drawing: Drawing, **kw) -> Drawing:
+    """The subset the grammar learns from, as a Drawing (strokes untouched)."""
+    keep, info = select_long(drawing, **kw)
+    return Drawing([drawing.strokes[i] for i in keep], source=drawing.source, size=drawing.size,
+                   meta={**drawing.meta, "long_subset": info})
+
+
+def fit_drawing(drawing: Drawing, *, sigma_w: float = SIGMA_W, sigma_frac: float | None = None,
+                select: bool = True, **sel):
+    """Fit the long strokes of a drawing (all strokes if select=False).
+    σ = sigma_w × the stroke's median width, or sigma_frac × R if given.
+    R = ref_length of the selected subset. Returns (R, [(stroke, fit, tokens)]).
+    Guards (relaxed since the clothoid scan-stroke fix): finite values only."""
+    d = long_drawing(drawing, **sel) if select else drawing
+    R = d.ref_length()
+    out = []
+    for st in d.strokes:
+        if len(st) < 3:
+            continue
+        w = stroke_width(st, d)
+        sg = sigma_frac * R if sigma_frac is not None else sigma_w * w
+        if st.length() < 2 * sg:
+            continue
+        try:
+            f = fit_stroke(st.points, sigma=sg, closed=st.closed)
+        except Exception:  # noqa: BLE001 — a fit failure just drops the stroke
+            continue
+        toks = fit_tokens(f, R)
+        if not toks or not np.isfinite(f.rms_position_error):
+            continue
+        if not np.all(np.isfinite([v for t in toks for v in t[1:]])):
+            continue
+        out.append((st, f, toks))
+    return R, out
+
+
+def _tangent(p: np.ndarray, s: np.ndarray, i: int, half: float) -> np.ndarray:
+    a = int(np.searchsorted(s, s[i] - half))
+    b = min(int(np.searchsorted(s, s[i] + half)), len(p) - 1)
+    a = min(a, i)
+    v = p[b] - p[a]
+    n = np.linalg.norm(v)
+    return v / n if n > 0 else np.array([1.0, 0.0])
+
+
+def relations(strokes: list[Stroke], R: float, w: float) -> dict:
+    """Inter-stroke relations of a set of (long) strokes: attached ends
+    (endpoint within ATTACH_W·w of another stroke): host position u and
+    branch angle (folded to [0, π/2]); X crossings per unit ink (ink in R)
+    and share of self-crossing strokes (as panel's rel_ group measures them)."""
+    from .panel import _rel_group
+    n = len(strokes)
+    res = {"n": n, "attached": [], "u": [], "angle": [], "cross_per_ink": 0.0,
+           "selfcross_frac": 0.0, "ink": float(sum(s.length() for s in strokes) / R)}
+    if n == 0:
+        return res
+    step = max(w / 2, 0.5)
+    P, O, Sx = [], [], []
+    for i, st in enumerate(strokes):
+        p = resample(st.points, step)
+        s = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(p, axis=0), axis=1))])
+        P.append(p)
+        O.append(np.full(len(p), i))
+        Sx.append(s)
+    allp, own = np.vstack(P), np.concatenate(O)
+    tree = cKDTree(allp)
+    off = np.concatenate([[0], np.cumsum([len(p) for p in P])])
+    for i, st in enumerate(strokes):
+        att = 0
+        p, s = P[i], Sx[i]
+        if st.closed or len(p) < 3:
+            res["attached"].append(0)
+            continue
+        for end in (0, len(p) - 1):
+            idx = tree.query_ball_point(p[end], ATTACH_W * w)
+            other = [j for j in idx if own[j] != i]
+            if not other:
+                continue
+            j = min(other, key=lambda j: np.linalg.norm(allp[j] - p[end]))
+            h = int(own[j])
+            jj = j - off[h]
+            hs = Sx[h]
+            att += 1
+            res["u"].append(float(hs[jj] / hs[-1]) if hs[-1] > 0 else 0.5)
+            t_out = _tangent(p, s, end, 5 * w) * (1 if end == 0 else -1)
+            t_h = _tangent(P[h], hs, jj, 3 * w)
+            c = abs(float(np.dot(t_out, t_h)))
+            res["angle"].append(float(np.arccos(min(c, 1.0))))
+        res["attached"].append(att)
+    if n >= 2:
+        rg = _rel_group(strokes, R)
+        cpl = rg.get("rel_cross_per_len", 0.0)
+        res["cross_per_ink"] = float(cpl) if np.isfinite(cpl) else 0.0
+        sc = rg.get("rel_selfcross_frac", 0.0)
+        res["selfcross_frac"] = float(sc) if np.isfinite(sc) else 0.0
+    return res
+
+
+def prepare_drawing(drawing: Drawing, *, sigma_w: float = SIGMA_W, **sel) -> dict:
+    """Everything `learn` needs from one drawing, JSON-native (cacheable):
+    selection counts, long-stroke tokens with start pos/heading, relations."""
+    keep, info = select_long(drawing, **sel)
+    d = Drawing([drawing.strokes[i] for i in keep], source=drawing.source, size=drawing.size,
+                meta=drawing.meta)
+    R, fitted = fit_drawing(d, sigma_w=sigma_w, select=False)
+    w = drawing_width(d) if d.strokes else info["width"]
+    out = {"source": drawing.source, "size": list(drawing.size), "R": float(R), "w": float(w),
+           "sigma_w": sigma_w, "select": info, "strokes": []}
+    if not d.strokes:
+        out["relations"] = relations([], R, w)
+        return out
+    allp = np.vstack([s.points for s in d.strokes])
+    lo, span = allp.min(axis=0), np.maximum(np.ptp(allp, axis=0), 1e-9)
+    for st, f, toks in fitted:
+        p = st.points
+        k = min(len(p) - 1, max(2, len(p) // 20))
+        dv = p[k] - p[0]
+        out["strokes"].append({
+            "tokens": [[t[0]] + [round(v, 7) for v in t[1:]] for t in toks],
+            "length": round(stroke_length(toks), 7),
+            "start": [round(float(v), 4) for v in (p[0] - lo) / span],
+            "heading": round(float(np.arctan2(dv[1], dv[0])), 4),
+            "fit_err_w": round(float(f.rms_position_error / max(stroke_width(st, d), 1e-9)), 4)})
+    out["relations"] = relations(d.strokes, R, w)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -130,95 +422,37 @@ def _stroke_len(toks) -> float:
 
 @dataclass
 class Grammar:
-    """A learned hand. All fields JSON-native (lists, dicts, floats).
+    """A learned hand. All fields JSON-native.
 
-    counts: raw transition counts, rows FROM, columns TO (reversal-augmented).
-    pairs: "prev>next" → {"prev": [params...], "next": [params...]};
-        segment params [l, k0, k1] (dimensionless), corner params [angle],
-        START prev params [stroke length] (so a first segment can be drawn
-        conditioned on how long the stroke will be).
+    trans: training transitions (reversal-augmented), column lists:
+        p2/p1/nx kind names, f2/f1 context params (token params, START = []),
+        rem (remaining length before the next token, R units), u (position
+        s/length), par (next token params).
     strokes: training strokes as token lists (originals, not reversed).
-    stroke_lengths: Σ segment length / R per training stroke.
-    strokes_per_drawing: usable strokes per training drawing;
-        ink_per_drawing: their summed length / R per drawing.
-    start_pos: stroke start points normalised to the drawing's stroke bbox
-        ([0,1]²); start_heading: initial tangent angles (rad).
-    scale: feature scaling (see `_feat`), spread: per-kind κ·R spread used
-        for jitter.
+    stroke_lengths: their lengths (R). counts: first-order kind counts
+        (FROM × TO) for summaries.
+    drawings: per training drawing {ink, n, w_over_R}.
+    relations: pooled relation statistics (see `relations`).
+    start_pos: stroke starts normalised to the subset's bbox.
     """
     name: str = ""
-    alpha: float = 0.5
-    counts: list = field(default_factory=list)
-    pairs: dict = field(default_factory=dict)
+    version: int = 2
+    trans: dict = field(default_factory=dict)
     strokes: list = field(default_factory=list)
     stroke_lengths: list = field(default_factory=list)
-    strokes_per_drawing: list = field(default_factory=list)
-    ink_per_drawing: list = field(default_factory=list)
+    counts: list = field(default_factory=list)
+    drawings: list = field(default_factory=list)
+    relations: dict = field(default_factory=dict)
     start_pos: list = field(default_factory=list)
-    start_heading: list = field(default_factory=list)
     scale: dict = field(default_factory=dict)
     spread: dict = field(default_factory=dict)
     meta: dict = field(default_factory=dict)
 
-    # -- derived (cached, not serialised) --
     def __post_init__(self):
         self._cache: dict = {}
 
-    def transition(self) -> np.ndarray:
-        """Row-stochastic matrix (FROM × TO) with additive smoothing `alpha`
-        on allowed transitions; forbidden ones stay exactly 0."""
-        C = np.asarray(self.counts, dtype=float)
-        if C.size == 0:
-            C = np.zeros((len(FROM), len(TO)))
-        A = np.array([[0.0 if (f, t) in _FORBIDDEN else 1.0 for t in TO] for f in FROM])
-        P = (C + self.alpha) * A
-        return P / P.sum(axis=1, keepdims=True)
-
-    def _pool(self, key):
-        """(prev_feats (n,d) or None, next params list, stroke-length context
-        feature (n,) or None) for a transition."""
-        if key not in self._cache:
-            d = self.pairs.get(key)
-            if not d or not d["next"]:
-                self._cache[key] = None
-            else:
-                pk = key.split(">")[0]
-                if pk == "START":          # conditioned on the stroke's total length
-                    F = (np.array([[np.log(max(p[0], 1e-9)) / self.scale["logl"]]
-                                   for p in d["prev"]]) if d["prev"] and d["prev"][0] else None)
-                else:
-                    F = np.array([_feat([pk] + list(p), self.scale) for p in d["prev"]])
-                C = (np.log(np.maximum(np.asarray(d["ctx"], dtype=float), 1e-9)) / self.scale["logl"]
-                     if d.get("ctx") else None)
-                self._cache[key] = (F, d["next"], C)
-        return self._cache[key]
-
-    def _kind_pool(self, kind):
-        """All segments (or corners) of one kind: (feats, params)."""
-        key = ("kind", kind)
-        if key not in self._cache:
-            P = []
-            for toks in self.strokes:
-                for t in toks:
-                    if t[0] == kind:
-                        P.append(list(t[1:]))
-            if not P:
-                self._cache[key] = None
-            else:
-                F = np.array([_feat([kind] + p, self.scale) for p in P])
-                self._cache[key] = (F, P)
-        return self._cache[key]
-
-    def segment_counts(self) -> dict:
-        c = {k: 0 for k in SEG_KINDS + ("corner",)}
-        for toks in self.strokes:
-            for t in toks:
-                c[t[0]] += 1
-        return c
-
-    _FIELDS = ("name", "alpha", "counts", "pairs", "strokes", "stroke_lengths",
-               "strokes_per_drawing", "ink_per_drawing", "start_pos", "start_heading",
-               "scale", "spread", "meta")
+    _FIELDS = ("name", "version", "trans", "strokes", "stroke_lengths", "counts", "drawings",
+               "relations", "start_pos", "scale", "spread", "meta")
 
     def to_json(self) -> dict:
         return {k: getattr(self, k) for k in self._FIELDS}
@@ -235,197 +469,61 @@ class Grammar:
     def load(path) -> "Grammar":
         return Grammar.from_json(json.loads(Path(path).read_text()))
 
+    # -- derived --
+    def transition(self) -> np.ndarray:
+        """First-order row-stochastic kind matrix (FROM × TO), for summaries."""
+        C = np.asarray(self.counts, dtype=float) if self.counts else np.zeros((len(FROM), len(TO)))
+        s = C.sum(axis=1, keepdims=True)
+        return np.divide(C, s, out=np.zeros_like(C), where=s > 0)
 
-def _stroke_width(st: Stroke, drawing: Drawing) -> float:
-    if st.width is not None and len(st.width):
-        return float(np.median(st.width))
-    return float(drawing.meta.get("line_width_px", 0.0) or 0.0)
+    def segment_counts(self) -> dict:
+        c = {k: 0 for k in SEG_KINDS + ("corner",)}
+        for toks in self.strokes:
+            for t in toks:
+                c[t[0]] += 1
+        return c
 
+    @property
+    def min_length(self) -> float:
+        return float(min(self.stroke_lengths)) if self.stroke_lengths else 0.0
 
-def fit_drawing(drawing: Drawing, *, sigma_frac: float = 0.01, min_len_w: float = 8.0):
-    """Fit every usable stroke of a drawing. Returns (R, [(stroke, fit, tokens)]).
+    def _pool(self, p1kind: str):
+        """(X context matrix, p2 kinds, next kinds, next params) for one previous kind."""
+        key = ("pool", p1kind)
+        if key not in self._cache:
+            T = self.trans
+            idx = [i for i, k in enumerate(T.get("p1", [])) if k == p1kind]
+            if not idx:
+                self._cache[key] = None
+            else:
+                X = np.array([_ctx([T["p2"][i]] + list(T["f2"][i]), [p1kind] + list(T["f1"][i]),
+                                   T["rem"][i], T["u"][i], self.scale) for i in idx])
+                self._cache[key] = (X, np.array([T["p2"][i] for i in idx]),
+                                    [T["nx"][i] for i in idx], [T["par"][i] for i in idx])
+        return self._cache[key]
 
-    Usable: length ≥ min_len_w · line width (stroke.width median, else the
-    drawing's meta line_width_px, else no width floor) and ≥ 2·σ_eff; fit
-    finite, rms_position_error ≤ MAX_POS_ERR·σ_eff, |κ| ≤ 1/width (and
-    |κ|·R ≤ MAX_KAPPA_R), every segment turning ≤ 2π, every corner ≤ π.
-    """
-    R = drawing.ref_length()
-    sigma = sigma_frac * R
-    out = []
-    for st in drawing.strokes:
-        if len(st) < 3:
-            continue
-        L = st.length()
-        w = _stroke_width(st, drawing)
-        if L < min_len_w * w:
-            continue
-        sg = sigma if L >= SHORT_SIGMAS * sigma else max(L / SHORT_SIGMAS, 0.5 * w, 0.002 * R)
-        if L < 2 * sg:
-            continue
-        try:
-            f = fit_stroke(st.points, sigma=sg, closed=st.closed)
-        except Exception:  # noqa: BLE001 — a fit failure just drops the stroke
-            continue
-        if not np.isfinite(f.rms_position_error) or f.rms_position_error > MAX_POS_ERR * sg:
-            continue
-        toks = fit_tokens(f, R)
-        segs = [t for t in toks if t[0] != "corner"]
-        if not segs:
-            continue
-        vals = np.array([v for t in toks for v in t[1:]])
-        if not np.all(np.isfinite(vals)):
-            continue
-        # physical plausibility: radius ≥ one line width, no segment turning
-        # more than a full circle, no corner beyond a hairpin (scan blobs and
-        # wash outlines produce tight fitted spirals otherwise)
-        kmax = MAX_KAPPA_R if w <= 0 else min(MAX_KAPPA_R, R / w)
-        if max(max(abs(t[2]), abs(t[3])) for t in segs) > kmax:
-            continue
-        if any(abs(0.5 * (t[2] + t[3]) * t[1]) > 2 * np.pi for t in segs):
-            continue
-        if any(t[0] == "corner" and abs(t[1]) > np.pi for t in toks):
-            continue
-        out.append((st, f, toks))
-    return R, out
+    def _kind_pool(self, kind):
+        key = ("kind", kind)
+        if key not in self._cache:
+            P = [list(t[1:]) for toks in self.strokes for t in toks if t[0] == kind]
+            self._cache[key] = None if not P else (
+                np.array([_feat([kind] + p, self.scale) for p in P]), P)
+        return self._cache[key]
 
-
-def learn(drawings: list[Drawing], *, sigma_frac: float = 0.01, min_len_w: float = 8.0,
-          alpha: float = 0.5, name: str = "", max_keep: int = 4000,
-          seed: int = 0) -> Grammar:
-    """Learn a Grammar from drawings (module docstring). `max_keep` caps the
-    stroke-level lists stored for composition (subsampled with `seed`);
-    pools and training strokes are kept whole."""
-    rng = np.random.default_rng(seed)
-    fi, ti = {k: i for i, k in enumerate(FROM)}, {k: i for i, k in enumerate(TO)}
-    counts = np.zeros((len(FROM), len(TO)), dtype=int)
-    pairs: dict[str, dict] = {}
-    strokes, lengths, per_drawing, ink, spos, shead = [], [], [], [], [], []
-    n_fit = n_short = 0
-    for d in drawings:
-        R, fitted = fit_drawing(d, sigma_frac=sigma_frac, min_len_w=min_len_w)
-        per_drawing.append(len(fitted))
-        ink.append(round(float(sum(_stroke_len(t) for _s, _f, t in fitted)), 6))
-        if not fitted:
-            continue
-        allp = np.vstack([s.points for s in d.strokes if len(s)])
-        lo, span = allp.min(axis=0), np.maximum(np.ptp(allp, axis=0), 1e-9)
-        for st, f, toks in fitted:
-            n_fit += 1
-            n_short += int(f.sigma < sigma_frac * R * 0.999)
-            strokes.append(toks)
-            lengths.append(_stroke_len(toks))
-            p = st.points
-            spos.append([float(v) for v in ((p[0] - lo) / span).round(4)])
-            k = min(len(p) - 1, max(2, len(p) // 20))
-            dv = p[k] - p[0]
-            shead.append(float(np.arctan2(dv[1], dv[0])))
-            for seq in (toks, reverse_tokens(toks)):
-                prev = ["START", lengths[-1]]
-                for t in seq + [["END"]]:
-                    counts[fi[prev[0]], ti[t[0]]] += 1
-                    key = f"{prev[0]}>{t[0]}"
-                    if t[0] != "END":
-                        dd = pairs.setdefault(key, {"prev": [], "next": [], "ctx": []})
-                        dd["ctx"].append(round(lengths[-1], 7))
-                        dd["prev"].append([round(v, 7) for v in prev[1:]])
-                        dd["next"].append([round(v, 7) for v in t[1:]])
-                    prev = t
-    # feature scaling and jitter spreads
-    segs = [t for toks in strokes for t in toks if t[0] != "corner"]
-    corners = [t[1] for toks in strokes for t in toks if t[0] == "corner"]
-    if segs:
-        ll = np.log(np.maximum([t[1] for t in segs], 1e-9))
-        ak = np.arcsinh(np.array([[t[2], t[3]] for t in segs]).ravel() / KAPPA_SCALE)
-        scale = {"logl": float(max(np.std(ll), 1e-3)), "ak": float(max(np.std(ak), 1e-3))}
-    else:
-        scale = {"logl": 1.0, "ak": 1.0}
-    scale["angle"] = float(max(np.std(corners), 0.1)) if corners else 0.5
-    spread = {}
-    for k in SEG_KINDS:
-        v = np.array([[t[2], t[3]] for t in segs if t[0] == k]).ravel()
-        spread[k] = float(1.4826 * np.median(np.abs(v - np.median(v)))) if len(v) > 1 else 0.0
-
-    def cap(xs):
-        if len(xs) <= max_keep:
-            return xs
-        idx = np.sort(rng.choice(len(xs), max_keep, replace=False))
-        return [xs[i] for i in idx]
-
-    return Grammar(
-        name=name, alpha=float(alpha), counts=counts.tolist(), pairs=pairs,
-        strokes=strokes, stroke_lengths=[round(x, 6) for x in lengths],
-        strokes_per_drawing=per_drawing, ink_per_drawing=ink, start_pos=cap(spos),
-        start_heading=[round(x, 4) for x in cap(shead)], scale=scale, spread=spread,
-        meta={"sigma_frac": sigma_frac, "min_len_w": min_len_w, "n_drawings": len(drawings),
-              "n_strokes": n_fit, "short_sigma": n_short,
-              "sources": [d.source for d in drawings][:200]})
-
-
-# ---------------------------------------------------------------------------
-# sampling
-# ---------------------------------------------------------------------------
-
-def _sample_kind(g: Grammar, prev_kind: str, rng, forbid_end=False, force_end=False) -> str:
-    if force_end and prev_kind != "corner":
-        return "END"
-    if "P" not in g._cache:
-        P = g.transition()
-        for i, k in enumerate(TO[:-1]):    # a hand never produces a token it never used
-            if g._kind_pool(k) is None:
-                P[:, i] = 0.0
-        g._cache["P"] = P
-    p = g._cache["P"][FROM.index(prev_kind)].copy()
-    if forbid_end:
-        p[TO.index("END")] = 0.0
-    if force_end:                      # after a corner: a segment must follow
-        p[TO.index("corner")] = 0.0
-    if p.sum() <= 0:
-        return "END"
-    return TO[int(rng.choice(len(TO), p=p / p.sum()))]
-
-
-def _sample_start(g: Grammar, length: float, rng) -> tuple[str, list[float]]:
-    """First segment of a stroke that will be `length` long: k-NN over the
-    START pairs of every kind by log stroke length (kind and params jointly)."""
-    cand = []
-    for kind in SEG_KINDS:
-        pool = g._pool(f"START>{kind}")
-        if pool is None or pool[0] is None:
-            continue
-        d = (pool[0][:, 0] - np.log(max(length, 1e-9)) / g.scale["logl"]) ** 2
-        cand += [(float(v), kind, i) for i, v in enumerate(d)]
-    if not cand:
-        kind = _sample_kind(g, "START", rng)
-        return kind, _sample_params(g, ["START"], kind, rng)
-    dist = np.array([c[0] for c in cand])
-    k = min(KNN, len(dist))
-    near = np.argpartition(dist, k - 1)[:k]
-    _d, kind, i = cand[int(near[int(rng.integers(k))])]
-    return kind, _jitter(g, kind, list(g._pool(f"START>{kind}")[1][i]), rng)
-
-
-def _sample_params(g: Grammar, prev: list, kind: str, rng, ctx: float | None = None) -> list[float]:
-    """Next token params given the previous token (k-NN resampling; the
-    START row is drawn unconditionally here — see `_sample_start`)."""
-    pool = g._pool(f"{prev[0]}>{kind}")
-    if pool is None:                   # unseen transition: unconditional draw
-        kp = g._kind_pool(kind)
-        if kp is None:
-            return [0.0] if kind == "corner" else [0.01, 0.0, 0.0]
-        return list(kp[1][int(rng.integers(len(kp[1])))])
-    F, nxt, C = pool
-    if F is None or prev[0] == "START":
-        j = int(rng.integers(len(nxt)))
-    else:
-        f = _feat(prev, g.scale)
-        d = np.sum((F - f) ** 2, axis=1)
-        if C is not None and ctx is not None:   # stroke-length context
-            d = d + (CTX_W * (C - np.log(max(ctx, 1e-9)) / g.scale["logl"])) ** 2
+    def draw(self, p2, p1, s: float, length: float, rng) -> tuple[str, list[float]]:
+        """Next token (kind, params) given the previous two tokens, arc
+        length so far s and the stroke's target length (both R units)."""
+        pool = self._pool(p1[0])
+        if pool is None:
+            pool = self._pool("START")
+            p1, p2 = ["START"], ["START"]
+        X, P2, NX, PAR = pool
+        q = _ctx(p2, p1, max(length - s, 1e-6), min(s / max(length, 1e-9), 1.0), self.scale)
+        d = np.sum((X - q) ** 2, axis=1) + PEN_PREV2 * (P2 != p2[0])
         k = min(KNN, len(d))
         near = np.argpartition(d, k - 1)[:k]
         j = int(near[int(rng.integers(k))])
-    return _jitter(g, kind, list(nxt[j]), rng)
+        return NX[j], _jitter(self, NX[j], list(PAR[j]), rng)
 
 
 def _jitter(g: Grammar, kind: str, p: list, rng) -> list[float]:
@@ -443,82 +541,167 @@ def _jitter(g: Grammar, kind: str, p: list, rng) -> list[float]:
     return [l, k0, k1]
 
 
-def _continuity(prev: list | None, tok: list) -> tuple[list | None, list]:
+def jitter_tokens(g: Grammar, toks: list, rng) -> list:
+    """A token list with generation's jitter applied (the quoting floor of
+    the memorisation check: what copying a training stroke looks like)."""
+    return [_tok_corner(*_jitter(g, "corner", [t[1]], rng)) if t[0] == "corner"
+            else _tok_seg(t[0], *_jitter(g, t[0], list(t[1:]), rng)) for t in toks]
+
+
+def learn(drawings: list[Drawing] | None = None, *, prepared: list[dict] | None = None,
+          name: str = "", sigma_w: float = SIGMA_W, shuffle: bool = False, seed: int = 0,
+          max_keep: int = 4000, **sel) -> Grammar:
+    """Learn a Grammar from drawings (or from `prepare_drawing` outputs).
+    shuffle=True: control grammar trained on segment-shuffled strokes."""
+    rng = np.random.default_rng(seed)
+    if prepared is None:
+        prepared = [prepare_drawing(d, sigma_w=sigma_w, **sel) for d in (drawings or [])]
+    fi, ti = {k: i for i, k in enumerate(FROM)}, {k: i for i, k in enumerate(TO)}
+    counts = np.zeros((len(FROM), len(TO)), dtype=int)
+    T = {k: [] for k in ("p2", "p1", "nx", "f2", "f1", "rem", "u", "par")}
+    strokes, lengths, spos, per = [], [], [], []
+    rel = {"n": 0, "n_attached": 0, "u": [], "angle": [], "cross": [], "selfcross": [],
+           "cross_per_ink_drawings": []}
+    for pd in prepared:
+        sts = [s["tokens"] for s in pd["strokes"]]
+        if shuffle:
+            sts = [shuffle_tokens(t, rng) for t in sts]
+        per.append({"ink": round(float(sum(stroke_length(t) for t in sts)), 6), "n": len(sts),
+                    "w_over_R": pd["w"] / pd["R"] if pd["R"] > 0 else 0.0})
+        r = pd["relations"]
+        rel["n"] += r["n"]
+        rel["n_attached"] += int(sum(1 for a in r["attached"] if a > 0))
+        rel["u"] += r["u"]
+        rel["angle"] += r["angle"]
+        rel["cross_per_ink_drawings"].append(r["cross_per_ink"])
+        rel["selfcross"].append(r["selfcross_frac"])
+        for s, toks in zip(pd["strokes"], sts):
+            if not toks:
+                continue
+            strokes.append(toks)
+            L = stroke_length(toks)
+            lengths.append(round(L, 7))
+            spos.append(s["start"])
+            for seq in (toks, reverse_tokens(toks)):
+                p2, p1, pos = ["START"], ["START"], 0.0
+                for t in seq + [["END"]]:
+                    counts[fi[p1[0]], ti[t[0]]] += 1
+                    if t[0] == "END":
+                        break
+                    T["p2"].append(p2[0])
+                    T["p1"].append(p1[0])
+                    T["nx"].append(t[0])
+                    T["f2"].append([round(v, 7) for v in p2[1:]])
+                    T["f1"].append([round(v, 7) for v in p1[1:]])
+                    T["rem"].append(round(max(L - pos, 1e-7), 7))
+                    T["u"].append(round(pos / L if L > 0 else 0.0, 5))
+                    T["par"].append([round(v, 7) for v in t[1:]])
+                    if t[0] != "corner":
+                        pos += t[1]
+                    p2, p1 = p1, t
+    segs = [t for toks in strokes for t in toks if t[0] != "corner"]
+    corners = [t[1] for toks in strokes for t in toks if t[0] == "corner"]
+    if segs:
+        ll = np.log(np.maximum([t[1] for t in segs], 1e-9))
+        ak = np.arcsinh(np.array([[t[2], t[3]] for t in segs]).ravel() / KAPPA_SCALE)
+        scale = {"logl": float(max(np.std(ll), 1e-3)), "ak": float(max(np.std(ak), 1e-3))}
+    else:
+        scale = {"logl": 1.0, "ak": 1.0}
+    scale["angle"] = float(max(np.std(corners), 0.1)) if corners else 0.5
+    spread = {}
+    for k in SEG_KINDS:
+        v = np.array([[t[2], t[3]] for t in segs if t[0] == k]).ravel()
+        spread[k] = float(1.4826 * np.median(np.abs(v - np.median(v)))) if len(v) > 1 else 0.0
+    ink_tot = sum(p["ink"] for p in per)
+    cross_tot = sum(c * p["ink"] for c, p in zip(rel["cross_per_ink_drawings"], per))
+    relations_ = {
+        "p_attached": rel["n_attached"] / rel["n"] if rel["n"] else 0.0,
+        "u": [round(x, 4) for x in rel["u"]], "angle": [round(x, 4) for x in rel["angle"]],
+        "cross_per_ink": cross_tot / ink_tot if ink_tot > 0 else 0.0,
+        "selfcross_frac": float(np.mean(rel["selfcross"])) if rel["selfcross"] else 0.0,
+    }
+    if len(spos) > max_keep:
+        spos = [spos[i] for i in np.sort(rng.choice(len(spos), max_keep, replace=False))]
+    return Grammar(
+        name=name, trans=T, strokes=strokes, stroke_lengths=lengths, counts=counts.tolist(),
+        drawings=per, relations=relations_, start_pos=spos, scale=scale, spread=spread,
+        meta={"sigma_w": sigma_w, "shuffle": shuffle, "n_drawings": len(prepared),
+              "n_strokes": len(strokes), "selection": {k: v for k, v in sel.items()},
+              "sources": [p["source"] for p in prepared][:200]})
+
+
+# ---------------------------------------------------------------------------
+# sampling
+# ---------------------------------------------------------------------------
+
+def _continuity(prev: list | None, tok: list, lock_prev: bool = False) -> tuple[list | None, list]:
     """Enforce κ continuity at a non-corner joint. Returns (prev, tok), both
-    possibly modified copies (relabelled if their kind can no longer hold)."""
+    possibly modified copies. lock_prev: prev may not change (it belongs to
+    an earlier chunk), so the new token absorbs the whole adjustment."""
     if prev is None or prev[0] in ("corner", "START") or tok[0] == "corner":
         return prev, tok
     kj = prev[3]
     kind, l, k0, k1 = tok
     if kind == "arc":
-        if abs(kj) < 1e-9:             # an arc cannot touch a line: ease in
+        if abs(kj) < 1e-9:
             return prev, _tok_seg("clothoid", l, 0.0, k1)
-        # the arc takes the joint κ but keeps its sampled turning (no curls)
         r = float(np.clip(abs(k0) / abs(kj), 0.25, 4.0)) if abs(k0) > 1e-12 else 1.0
         return prev, _tok_seg("arc", l * r, kj, kj)
     if kind == "line":
         if abs(kj) < 1e-9:
             return prev, tok
-        if prev[0] == "clothoid":      # pull the clothoid's end to zero
+        if prev[0] == "clothoid" and not lock_prev:
             pk = "line" if abs(prev[2]) < 1e-9 else "clothoid"
             return _tok_seg(pk, prev[1], prev[2], 0.0), tok
         return prev, _tok_seg("clothoid", l, kj, 0.0)
-    # clothoid
     return prev, _tok_seg("clothoid", l, kj, k1)
 
 
 def generate_tokens(gA: Grammar, rng, *, gB: Grammar | None = None, switch_at: float | None = None,
-                    length: float | None = None, max_len: float | None = None) -> tuple[list, int]:
-    """Run the chain. Every draw is conditioned on a stroke-length context:
-    `length` if given (END suppressed before it, the last segment cut at it
-    unless that leaves < 30 % of it — then it is dropped),
-    else a length drawn from the training strokes (END free). With gB and switch_at, tokens after
-    switch_at·length come from gB's chain (conditioned on A's last token).
-    Returns (tokens, index of the first B token or len(tokens))."""
-    if max_len is None:
-        ml = max(gA.stroke_lengths or [1.0])
-        if gB is not None:
-            ml = max(ml, max(gB.stroke_lengths or [1.0]))
-        max_len = 1.2 * ml if length is None else 1.5 * length
-    ctx = length if length is not None else float(
-        gA.stroke_lengths[int(rng.integers(len(gA.stroke_lengths)))]) if gA.stroke_lengths else 0.05
+                    length: float | None = None, context: tuple | None = None,
+                    max_tokens: int = MAX_TOKENS) -> tuple[list, int]:
+    """Run the order-2 chain to a target length (dimensionless; default: one
+    of A's training lengths). The last segment is cut at the target unless
+    that leaves < 30 % of it (then dropped). context = (token before last,
+    last token) of a preceding chunk: conditions the first draws and makes
+    the joint κ-continuous. With gB and switch_at, draws after
+    switch_at·length come from gB. Returns (tokens, index of first B token
+    or len(tokens))."""
+    if length is None:
+        L = gA.stroke_lengths or [0.1]
+        length = float(L[int(rng.integers(len(L)))])
+    p2, p1 = (list(context[0]), list(context[1])) if context else (["START"], ["START"])
     toks: list[list] = []
-    prev: list = ["START"]
-    s = 0.0
-    switch_idx = None
-    g = gA
-    while len(toks) < MAX_TOKENS:
-        if gB is not None and switch_idx is None and s >= switch_at * length:
+    s, g, switch_idx, draws = 0.0, gA, None, 0
+    while len(toks) < max_tokens and draws < 4 * max_tokens:
+        draws += 1
+        if gB is not None and switch_idx is None and s >= (switch_at or 0.5) * length:
             g, switch_idx = gB, len(toks)
-        forbid = length is not None and s < length
-        if prev[0] == "START":
-            kind, p = _sample_start(g, ctx, rng)
-        else:
-            kind = _sample_kind(g, prev[0], rng, forbid_end=forbid, force_end=s >= max_len)
-            if kind == "END":
-                break
-            p = _sample_params(g, prev, kind, rng, ctx)
+        kind, p = g.draw(p2, p1, s, length, rng)
         tok = _tok_corner(p[0]) if kind == "corner" else _tok_seg(kind, *p)
-        newprev, tok = _continuity(prev, tok)
-        if toks and newprev is not prev:
+        if kind == "corner" and (not toks and p1[0] in ("START",)):
+            continue
+        if kind == "corner" and toks and toks[-1][0] == "corner":
+            continue
+        newprev, tok = _continuity(p1, tok, lock_prev=not toks)
+        if toks and newprev is not p1:
             toks[-1] = newprev
-        if length is not None and tok[0] != "corner" and s + tok[1] >= length:
-            frac = max(length - s, 1e-9) / tok[1]      # end at the target ...
-            if frac >= 0.3 or not toks:                 # ... but never on a sliver
-                k1 = tok[2] + (tok[3] - tok[2]) * frac
-                toks.append(_tok_seg(tok[0], tok[1] * frac, tok[2], k1))
+        if tok[0] != "corner" and s + tok[1] >= length:
+            frac = max(length - s, 1e-9) / tok[1]
+            if frac >= 0.3 or not toks:
+                toks.append(_tok_seg(tok[0], tok[1] * frac, tok[2], tok[2] + (tok[3] - tok[2]) * frac))
             break
         toks.append(tok)
         if tok[0] != "corner":
             s += tok[1]
-        prev = tok
+        p2, p1 = (toks[-2] if len(toks) >= 2 else p1), toks[-1]
     while toks and toks[-1][0] == "corner":
         toks.pop()
     return toks, (switch_idx if switch_idx is not None else len(toks))
 
 
 def tokens_to_points(toks: list, R: float, *, start=(0.0, 0.0), heading: float = 0.0,
-                     step: float = 0.5) -> tuple[np.ndarray, list, list]:
+                     step: float = 0.5, k_start: float | None = None) -> tuple[np.ndarray, list, list]:
     """Integrate a token list (dimensionless) at scale R (px). Returns
     (points (N,2), segments [dict kind/s0/s1/k0/k1 in px], corners
     [dict s/angle]). Corners turn instantaneously."""
@@ -538,7 +721,6 @@ def tokens_to_points(toks: list, R: float, *, start=(0.0, 0.0), heading: float =
         for t in run:
             b.append(b[-1] + t[1] * R)
             k.append(t[3] / R)
-        # κ is continuous inside a run: knot i = k1 of segment i-1 = k0 of segment i
         pts = integrate_kappa(np.array(b), np.array(k), step, start=pos, heading=h)
         out.append(pts[1:])
         pos = pts[-1]
@@ -560,103 +742,363 @@ def tokens_to_points(toks: list, R: float, *, start=(0.0, 0.0), heading: float =
     return np.vstack(out), segs, corners
 
 
-def _stroke(toks, R, start, heading, step, extra=None) -> Stroke:
+def _stroke(toks, R, start, heading, step, extra=None, width=None) -> Stroke:
     pts, segs, corners = tokens_to_points(toks, R, start=start, heading=heading, step=step)
-    meta = {"segments": segs, "corners": corners, "tokens": toks, "ref_length": float(R)}
+    meta = {"segments": segs, "corners": corners, "tokens": toks, "ref_length": float(R),
+            "start": [float(start[0]), float(start[1])], "heading": float(heading)}
     if extra:
         meta.update(extra)
-    return Stroke(pts, meta=meta)
+    return Stroke(pts, width=None if width is None else np.full(len(pts), float(width)), meta=meta)
 
 
 def generate_stroke(grammar: Grammar, rng, *, ref_length: float, start=(0.0, 0.0),
                     heading: float = 0.0, step: float = 0.5,
                     length: float | None = None) -> Stroke:
-    """One stroke from the grammar's chain, at drawing scale `ref_length`
-    (px). `length` (dimensionless, optional) suppresses END until reached.
-    meta: segments (px), corners, tokens (dimensionless), ref_length."""
+    """One stroke from the chain at drawing scale `ref_length` (px)."""
     toks, _ = generate_tokens(grammar, rng, length=length)
     return _stroke(toks, ref_length, start, heading, step, {"hand": grammar.name})
 
 
-def _fits_canvas(pts, W, H, margin):
-    lo, hi = pts.min(axis=0), pts.max(axis=0)
-    return (hi[0] - lo[0] <= W - 2 * margin) and (hi[1] - lo[1] <= H - 2 * margin)
+# ---------------------------------------------------------------------------
+# drawings: the relations layer
+# ---------------------------------------------------------------------------
+
+def _arclen(p):
+    return np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(p, axis=0), axis=1))])
 
 
-def generate_drawing(grammar: Grammar, rng, size, *, n_strokes: int | None = None,
-                     budget: str = "ink", max_strokes: int = 400, ref_frac: float = 0.85, margin: float = 20.0,
-                     clearance: float = 6.0, step: float = 0.75, tries: int = 25) -> Drawing:
-    """Strokes on a (W, H) px canvas. R = ref_frac·diagonal.
+class _Sheet:
+    """Ink already on the sheet: points, owner stroke, KD-tree."""
 
-    budget="ink" (default): stroke target lengths are drawn from the
-    training strokes with probability ∝ length (what the eye sees is ink,
-    not fragment counts) and each stroke is generated length-conditioned;
-    strokes are added until the summed length reaches an empirical
-    per-drawing ink total. budget="count": n_strokes (or an empirical
-    per-drawing count) unconditioned strokes — on fragment-heavy scans this
-    is mostly short bits. At most max_strokes either way. Start position/heading from the empirical ones (jittered);
-    each stroke is shifted to fit inside the margin and redrawn (up to
-    `tries`) if it comes within ~`clearance` px of an earlier one (occupancy
-    grid; the last try is kept regardless). Naive
-    layout — composition is not modelled."""
+    def __init__(self, W, H, margin, clearance):
+        self.W, self.H, self.m, self.clr = W, H, margin, clearance
+        self.P: list[np.ndarray] = []
+        self.tree = None
+        self.allp = np.zeros((0, 2))
+        self.own = np.zeros(0, int)
+
+    def add(self, pts, sid):
+        self.P.append((pts, sid))
+        self.allp = np.vstack([p for p, _ in self.P])
+        self.own = np.concatenate([np.full(len(p), i) for p, i in self.P])
+        self.tree = cKDTree(self.allp)
+
+    def inside(self, pts):
+        return ((pts[:, 0] >= self.m) & (pts[:, 0] <= self.W - self.m)
+                & (pts[:, 1] >= self.m) & (pts[:, 1] <= self.H - self.m))
+
+    def walk(self, pts, *, s_skip=0.0, self_ok=False, cross_ok=lambda s: False,
+             stop_short: bool = False):
+        """How far a candidate line can go. Returns (cut index, n crosses,
+        how it ended: "full" | "edge" | "touch" | "self").
+        stop_short: end clear of the line met (1.5 × clearance away, or
+        2 × clearance back along s for a self approach) instead of on it —
+        single mode continues from that end, so it must not start inside
+        another line's band."""
+        n = len(pts)
+        s = _arclen(pts)
+        live = s >= s_skip
+        ins = self.inside(pts)
+        if self.tree is not None:
+            d, _j = self.tree.query(pts)
+        else:
+            d = np.full(n, np.inf)
+        hit = (d < self.clr) & live
+        # self approach: points closer than clearance but far apart along s
+        lag = 4 * self.clr
+        self_hit = np.zeros(n, bool)
+        if n > 3:
+            tr = cKDTree(pts)
+            pr = tr.query_pairs(self.clr, output_type="ndarray")
+            if len(pr):
+                a, b = pr[:, 0], pr[:, 1]
+                far = np.abs(s[b] - s[a]) > lag
+                self_hit[np.maximum(a, b)[far]] = True
+        self_hit &= live
+        crosses, i, used_self = 0, 0, False
+        while i < n:
+            if not ins[i]:
+                return max(i - 1, 0), crosses, "edge"
+            if hit[i]:
+                j = i
+                while j < n and hit[j]:
+                    j += 1
+                if j < n and cross_ok(s[i]):
+                    crosses += 1
+                    i = j
+                    continue
+                if stop_short:
+                    k = np.flatnonzero(d[:i] >= 1.5 * self.clr)
+                    return (int(k[-1]) if len(k) else 0), crosses, "touch"
+                # end ON the line: closest approach within the band
+                k = i + int(np.argmin(d[i:j]))
+                return k, crosses, "touch"
+            if self_hit[i]:
+                if self_ok and not used_self:
+                    used_self = True
+                    j = i
+                    while j < n and self_hit[j]:
+                        j += 1
+                    i = j
+                    continue
+                if stop_short:
+                    return max(int(np.searchsorted(s, s[i] - 2 * self.clr)) - 1, 0), crosses, "self"
+                return max(i - 1, 0), crosses, "self"
+            i += 1
+        return n - 1, crosses, "full"
+
+    def free_point(self, rng, cand):
+        """The candidate farthest from existing ink."""
+        if self.tree is None or len(cand) == 1:
+            return cand[0]
+        d, _ = self.tree.query(cand)
+        return cand[int(np.argmax(d))]
+
+
+def _sample(xs, rng, default):
+    return float(xs[int(rng.integers(len(xs)))]) if xs else default
+
+
+def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
+                     ink: float | None = None, n_strokes: int | None = None, max_strokes: int = 400,
+                     ref_frac: float = 0.85, margin: float = 20.0, step: float | None = None,
+                     tries: int = 12, clearance_w: float = CLEAR_W, line_width: float | None = None,
+                     hands: tuple | None = None, switch_every: float = 1.0,
+                     relations: str = "tree", roots: int | None = None,
+                     p_branch: float | None = None, p_continue: float | None = None) -> Drawing:
+    """A drawing on a (W, H) px canvas, R = ref_frac·diagonal.
+
+    mode="contiguous" (default): long strokes until the ink budget (R units;
+    default: one of the training drawings' long-stroke ink) or n_strokes is
+    reached, walked against the ink already down (module docstring). Each
+    stroke starts free (at the emptiest of 8 candidate points) or attaches
+    to an existing one: **continues** from a free end (tangent ± N(0, 0.25)
+    rad; probability p_continue, default the learned share of attachments
+    at a host's end) or **branches** from its interior (learned u, angle).
+    relations="tree" (default, Ian's brief: contiguous, Oehlen-tree-like):
+    `roots` free strokes (default 1–3), every later one attaches
+    (p_branch = 1). relations="learned": p_branch = the learned share of
+    strokes with an attached end — fidelity to the extracted drawings,
+    whose lines the extractor splits at junctions.
+    mode="single": one line of that ink, built from chained chunks; `hands`
+    = (gA, gB, ...) alternates hands every `switch_every` × a training
+    stroke length of ink (meta["spans"] records which hand drew what).
+    Line width (px, written into every stroke's width and meta) defaults to
+    the training drawings' width/R × R."""
     W, H = (int(size), int(size)) if np.isscalar(size) else (int(size[0]), int(size[1]))
     R = ref_frac * float(np.hypot(W, H))
-    ink_budget = np.inf
-    lengths = np.array(grammar.stroke_lengths or [0.1])
-    if budget == "ink" and n_strokes is None:
-        c = [x for x in grammar.ink_per_drawing if x > 0] or [float(lengths.sum())]
-        ink_budget = float(c[int(rng.integers(len(c)))])
-        n_strokes = max_strokes
-    elif n_strokes is None:
-        c = [x for x in grammar.strokes_per_drawing if x > 0] or [8]
-        n_strokes = int(c[int(rng.integers(len(c)))])
-    n_strokes = max(1, min(n_strokes, max_strokes))
-    wlen = lengths / lengths.sum()
-    ink = 0.0
-    cell = max(clearance / 2.0, 1.0)            # occupancy grid: cells within clearance
-    occ = np.zeros((int(H / cell) + 2, int(W / cell) + 2), dtype=bool)
-    rad = int(np.ceil(clearance / cell))
+    if line_width is None:
+        wr = [d["w_over_R"] for d in grammar.drawings if d.get("w_over_R")]
+        line_width = (float(np.median(wr)) if wr else 0.002) * R
+    lw = float(line_width)
+    step = float(step) if step is not None else max(0.5, 0.5 * lw)
+    clr = max(clearance_w * lw, 2 * step)
+    sheet = _Sheet(W, H, margin, clr)
+    if ink is None:
+        inks = [d["ink"] for d in grammar.drawings if d["ink"] > 0]
+        ink = _sample(inks, rng, 2.0)
+    meta = {"ref_length_gen": R, "hand": grammar.name, "mode": mode, "line_width_px": lw,
+            "ink_budget": float(ink), "clearance_px": clr}
+    if mode == "single":
+        st = _single_line(grammar, rng, sheet, R, lw, step, float(ink), tries, hands, switch_every)
+        meta["crosses"] = st.meta.get("crosses", 0)
+        return Drawing([st] if len(st) >= 2 else [], source=f"grammar:{grammar.name}:single",
+                       size=(W, H), meta=meta)
+    if mode != "contiguous":
+        raise ValueError(f"unknown mode {mode!r}")
+    rel = grammar.relations or {}
+    tree = relations == "tree"
+    if relations not in ("tree", "learned"):
+        raise ValueError(f"unknown relations {relations!r}")
+    pb = (1.0 if tree else rel.get("p_attached", 0.3)) if p_branch is None else p_branch
+    if roots is None:
+        roots = int(rng.integers(1, 4)) if tree else 0
+    uu = np.asarray(rel.get("u") or [], float)
+    pc = (float(np.mean((uu < 0.08) | (uu > 0.92))) if len(uu) else 0.3) if p_continue is None else p_continue
+    cross_rate = rel.get("cross_per_ink", 0.0)
+    self_frac = rel.get("selfcross_frac", 0.0)
+    lengths = grammar.stroke_lengths or [0.1]
+    min_len = grammar.min_length
     placed: list[Stroke] = []
-    for _ in range(n_strokes):
-        if ink >= ink_budget:
+    free_ends: list[tuple[int, int]] = []     # (stroke, 0 = start / 1 = end) not touching anything
+    state = {"ink": 0.0, "crosses": 0}
+    limit = max_strokes if n_strokes is None else min(n_strokes, max_strokes)
+    fails = 0
+
+    def free_start():
+        if grammar.start_pos:
+            sp = np.array([grammar.start_pos[int(rng.integers(len(grammar.start_pos)))]
+                           for _ in range(8)])
+            sp = np.clip(sp + rng.normal(0, 0.08, sp.shape), 0, 1)
+        else:
+            sp = rng.random((8, 2))
+        cand = margin + sp * (np.array([W, H]) - 2 * margin)
+        return sheet.free_point(rng, cand), rng.uniform(0, 2 * np.pi), 0.0, {"relation": "free"}
+
+    def crowd(pt):
+        """Ink points within 0.08·R: attachments go where the sheet is emptier."""
+        return int(sheet.tree.query_ball_point(pt, 0.08 * R, return_length=True)) if sheet.tree else 0
+
+    def attach():
+        """Branch from a host's interior, or continue from a free end (the
+        least crowded of a few candidates, so trees spread over the sheet)."""
+        if free_ends and rng.random() < pc:
+            cands = [free_ends[int(rng.integers(len(free_ends)))] for _ in range(4)]
+            cands = [(crowd(placed[f[0]].points[0 if f[1] == 0 else -1]), k, f) for k, f in enumerate(cands)]
+            fe = min(cands)[2]
+            hp = placed[fe[0]].points
+            hs = _arclen(hp)
+            j = 0 if fe[1] == 0 else len(hp) - 1
+            tan = _tangent(hp, hs, j, 5 * lw) * (-1 if fe[1] == 0 else 1)
+            a = rng.normal(0, 0.25)
+            heading = float(np.arctan2(tan[1], tan[0]) + a)
+            return hp[j], heading, 2 * clr, {"relation": "continue", "host": fe[0], "host_end": fe[1],
+                                              "host_s": float(hs[j]), "branch_angle": float(a)}
+        Ls = np.array([p.length() for p in placed])
+        best_c = None
+        for _k in range(6):
+            hi = int(rng.choice(len(placed), p=Ls / Ls.sum()))
+            hp = placed[hi].points
+            hs = _arclen(hp)
+            u = _sample(rel.get("u"), rng, float(rng.random()))
+            if tree:               # interior branch: ends are the continue relation's job
+                u = float(np.clip(u, 0.08, 0.92))
+            j = int(np.clip(np.searchsorted(hs, u * hs[-1]), 0, len(hp) - 1))
+            c = crowd(hp[j])
+            if best_c is None or c < best_c[0]:
+                best_c = (c, hi, j)
+        _c, hi, j = best_c
+        hp = placed[hi].points
+        hs = _arclen(hp)
+        tan = _tangent(hp, hs, j, 3 * lw)
+        a = abs(_sample(rel.get("angle"), rng, 0.6) + rng.normal(0, 0.05))
+        base = np.arctan2(tan[1], tan[0]) + (np.pi if rng.random() < 0.5 else 0.0)
+        heading = float(base + (a if rng.random() < 0.5 else -a))
+        s_skip = clr * (2.0 + 1.0 / max(np.sin(a), 0.2))
+        return hp[j], heading, s_skip, {"relation": "branch", "host": hi, "host_s": float(hs[j]),
+                                        "branch_angle": float(a)}
+
+    while len(placed) < limit and fails < 3 * tries:
+        if n_strokes is None and state["ink"] >= ink:
             break
-        target = float(rng.choice(lengths, p=wlen)) if budget == "ink" else None
+        target = _sample(lengths, rng, 0.1)
+        self_ok = bool(rng.random() < self_frac)
         best = None
         for t in range(tries):
-            if grammar.start_pos:
-                sp = np.array(grammar.start_pos[int(rng.integers(len(grammar.start_pos)))])
-                sp = np.clip(sp + rng.normal(0, 0.05, 2), 0, 1)
+            if placed and len(placed) >= roots and rng.random() < pb and not (tree and t == tries - 1
+                                                                              and fails >= tries):
+                start, heading, s_skip, rel_meta = attach()
             else:
-                sp = rng.random(2)
-            hd = (grammar.start_heading[int(rng.integers(len(grammar.start_heading)))]
-                  if grammar.start_heading else rng.uniform(0, 2 * np.pi)) + rng.normal(0, 0.3)
-            start = (margin + sp[0] * (W - 2 * margin), margin + sp[1] * (H - 2 * margin))
-            st = generate_stroke(grammar, rng, ref_length=R, start=start, heading=hd, step=step,
-                                 length=target)
-            p = st.points
-            if len(p) < 2 or not _fits_canvas(p, W, H, margin):
+                start, heading, s_skip, rel_meta = free_start()
+            toks, _ = generate_tokens(grammar, rng, length=target)
+            if not toks:
                 continue
-            lo, hi = p.min(axis=0), p.max(axis=0)
-            shift = np.zeros(2)
-            shift -= np.minimum(lo - margin, 0)
-            shift -= np.maximum(hi - (np.array([W, H]) - margin), 0)
-            if np.any(shift):
-                st = Stroke(p + shift, meta=st.meta)
-            ij = np.unique(np.floor(st.points[:, ::-1] / cell).astype(int), axis=0)
-            if not occ[ij[:, 0], ij[:, 1]].any() or t == tries - 1:
-                best = (st, ij)
+            pts, _, _ = tokens_to_points(toks, R, start=start, heading=heading, step=step)
+            c0, ink0 = state["crosses"], state["ink"]
+            cut, nc, how = sheet.walk(
+                pts, s_skip=s_skip, self_ok=self_ok,
+                cross_ok=lambda s, c0=c0, ink0=ink0: c0 < cross_rate * (ink0 + s / R))
+            sc = float(_arclen(pts[:cut + 1])[-1]) / R
+            if best is None or sc > best[0]:
+                best = (sc, toks, start, heading, nc, how, rel_meta)
+            if sc >= max(MIN_FRAC * target, min_len):
                 break
-        if best is not None:
-            placed.append(best[0])
-            ink += best[0].length() / R
-            ij = best[1]
-            for di in range(-rad, rad + 1):
-                for dj in range(-rad, rad + 1):
-                    if di * di + dj * dj <= rad * rad:
-                        occ[np.clip(ij[:, 0] + di, 0, occ.shape[0] - 1),
-                            np.clip(ij[:, 1] + dj, 0, occ.shape[1] - 1)] = True
-    return Drawing(placed, source=f"grammar:{grammar.name}", size=(W, H),
-                   meta={"ref_length_gen": R, "hand": grammar.name})
+        if best is None or best[0] < min_len * 0.999:
+            fails += 1
+            continue
+        sc, toks, start, heading, nc, how, rel_meta = best
+        toks = truncate_tokens(toks, sc) if sc < stroke_length(toks) - 1e-12 else toks
+        st = _stroke(toks, R, start, heading, step,
+                     {"hand": grammar.name, "end": how, "crosses": nc, **rel_meta}, width=lw)
+        placed.append(st)
+        sheet.add(st.points, len(placed) - 1)
+        i = len(placed) - 1
+        if rel_meta["relation"] == "continue":
+            free_ends.remove((rel_meta["host"], rel_meta["host_end"]))
+        if rel_meta["relation"] == "free":
+            free_ends.append((i, 0))
+        if how in ("full", "self"):
+            free_ends.append((i, 1))
+        state["ink"] += st.length() / R
+        state["crosses"] += nc
+    meta.update(crosses=state["crosses"], ink=state["ink"], min_length=min_len,
+                relations=relations, roots=roots, p_branch=pb, p_continue=pc)
+    return Drawing(placed, source=f"grammar:{grammar.name}", size=(W, H), meta=meta)
+
+
+def _single_line(g: Grammar, rng, sheet: _Sheet, R, lw, step, ink, tries, hands, switch_every):
+    """One long line in chunks (see generate_drawing)."""
+    hands = tuple(hands) if hands else (g,)
+    W, H, m = sheet.W, sheet.H, sheet.m
+    if g.start_pos:
+        sp = np.clip(np.array(g.start_pos[int(rng.integers(len(g.start_pos)))]), 0.15, 0.85)
+    else:
+        sp = rng.uniform(0.3, 0.7, 2)
+    start = m + sp * (np.array([W, H]) - 2 * m)
+    heading0 = rng.uniform(0, 2 * np.pi)
+    pos, h = np.asarray(start, float), heading0
+    all_toks: list = []
+    pts_all = pos[None, :]
+    spans, s_tot, crosses, fails = [], 0.0, 0, 0
+    lengths = g.stroke_lengths or [0.1]
+    hand_i, next_switch = 0, None
+    while s_tot < ink and fails < 6:
+        gh = hands[hand_i % len(hands)]
+        if next_switch is None:
+            next_switch = s_tot + switch_every * _sample(lengths, rng, 0.1)
+        target = min(_sample(gh.stroke_lengths or lengths, rng, 0.1), ink - s_tot + 1e-6)
+        ctx = (tuple(all_toks[-2]) if len(all_toks) >= 2 else ("START",),
+               tuple(all_toks[-1])) if all_toks else None
+        best = None
+        # the line so far is "other ink", except its last stretch near the joint
+        sheet_line = _Sheet(W, H, m, sheet.clr)
+        s_line = _arclen(pts_all)
+        old = pts_all[s_line < s_line[-1] - 4 * sheet.clr]
+        if len(old):
+            sheet_line.add(old, 0)
+        for t in range(tries):
+            pre = []
+            if ctx and t >= tries // 3:
+                # stuck (edge or own line ahead): turn toward the open sheet with a corner
+                c = np.array([W / 2, H / 2]) + rng.normal(0, 0.15, 2) * [W, H]
+                if sheet_line.tree is not None:
+                    cand = m + rng.random((12, 2)) * (np.array([W, H]) - 2 * m)
+                    c = sheet_line.free_point(rng, cand)
+                ang = float(np.angle(np.exp(1j * (np.arctan2(c[1] - pos[1], c[0] - pos[0]) - h))))
+                pre = [_tok_corner(ang + rng.normal(0, 0.2))]
+            cx = (list(ctx[1]), pre[0]) if pre else ((list(ctx[0]), list(ctx[1])) if ctx else None)
+            toks, _ = generate_tokens(gh, rng, length=target, context=cx)
+            if not toks:
+                continue
+            toks = pre + toks
+            pts, _, _ = tokens_to_points(toks, R, start=pos, heading=h, step=step)
+            cut, nc, how = sheet_line.walk(pts, s_skip=0.0, stop_short=True,
+                                           cross_ok=lambda s: t == tries - 1 and crosses < 1 + ink)
+            sc = float(_arclen(pts[:cut + 1])[-1]) / R
+            if best is None or sc > best[0]:
+                best = (sc, toks, nc)
+            if sc >= MIN_FRAC * target:
+                break
+        if best is None or best[0] < 2 * sheet.clr / R:
+            fails += 1
+            continue
+        sc, toks, nc = best
+        toks = truncate_tokens(toks, sc) if sc < stroke_length(toks) - 1e-12 else toks
+        if not toks:
+            fails += 1
+            continue
+        pts, _, _ = tokens_to_points(toks, R, start=pos, heading=h, step=step)
+        spans.append([s_tot * R, (s_tot + stroke_length(toks)) * R, gh.name])
+        all_toks += toks
+        pts_all = np.vstack([pts_all, pts[1:]])
+        pos, h = pts[-1], end_heading(toks, h)
+        s_tot += stroke_length(toks)
+        crosses += nc
+        if len(hands) > 1 and s_tot >= next_switch:
+            hand_i, next_switch = hand_i + 1, None
+    return _stroke(all_toks, R, start, heading0, step,
+                   {"hand": "+".join(x.name for x in hands), "mode": "single", "spans": spans,
+                    "crosses": crosses}, width=lw)
 
 
 # ---------------------------------------------------------------------------
@@ -672,10 +1114,9 @@ def _long_length(g: Grammar, rng, q: float = 0.75) -> float:
 def code_switch(gA: Grammar, gB: Grammar, rng, switch_at: float = 0.5, *,
                 ref_length: float, start=(0.0, 0.0), heading: float = 0.0,
                 step: float = 0.5, length: float | None = None) -> Stroke:
-    """One stroke: A's chain up to switch_at·length, then B's chain, κ
-    continuous across the switch (B's first transition is conditioned on
-    A's last token). length (dimensionless) defaults to one of A's longer
-    strokes (top quartile). meta["switch_s"] = arc length (px) of the switch."""
+    """One stroke: A's chain up to switch_at·length, then B's, κ continuous
+    across the switch (B's first draw is conditioned on A's last tokens).
+    meta["switch_s"] = arc length (px) of the switch."""
     length = _long_length(gA, rng) if length is None else float(length)
     toks, si = generate_tokens(gA, rng, gB=gB, switch_at=switch_at, length=length)
     s_sw = sum(t[1] for t in toks[:si] if t[0] != "corner") * ref_length
@@ -693,15 +1134,10 @@ def _nearest(g: Grammar, kind: str, tok: list, scale: dict):
     return list(P[int(np.argmin(d))])
 
 
-def translate(fit, gA: Grammar, gB: Grammar, *, ref_length: float, start=(0.0, 0.0),
-              heading: float = 0.0, step: float = 0.5) -> Stroke:
-    """Re-express a stroke fitted in hand A (a clothoid.Fit, px, at drawing
-    scale ref_length) in hand B: every segment → its nearest neighbour of
-    the same kind in B's pool, every corner → B's nearest corner angle, in
-    a feature space scaled by the mean of A's and B's scales; then κ
-    continuity re-imposed. Deterministic."""
+def translate_tokens(src: list, gA: Grammar, gB: Grammar) -> list:
+    """Every token → its nearest neighbour of the same kind in B's pool
+    (features scaled by the mean of A's and B's scales), κ continuity re-imposed."""
     scale = {k: 0.5 * (gA.scale[k] + gB.scale[k]) for k in gA.scale}
-    src = fit_tokens(fit, ref_length)
     out: list = []
     for t in src:
         nb = _nearest(gB, t[0], t, scale)
@@ -711,6 +1147,14 @@ def translate(fit, gA: Grammar, gB: Grammar, *, ref_length: float, start=(0.0, 0
         if out and newprev is not prev:
             out[-1] = newprev
         out.append(tok)
+    return out
+
+
+def translate(fit, gA: Grammar, gB: Grammar, *, ref_length: float, start=(0.0, 0.0),
+              heading: float = 0.0, step: float = 0.5) -> Stroke:
+    """Re-express a clothoid.Fit (px, drawing scale ref_length) in hand B."""
+    src = fit_tokens(fit, ref_length)
+    out = translate_tokens(src, gA, gB)
     return _stroke(out, ref_length, start, heading, step,
                    {"hand": f"{gA.name}=>{gB.name}", "source_tokens": src})
 
@@ -727,17 +1171,12 @@ def _kabsch(src: np.ndarray, dst: np.ndarray):
 def restyle(points, g: Grammar, rng, *, ref_length: float | None = None,
             coarse_frac: float = 0.04, detail_frac: float = 0.015, amount: float = 1.0,
             step: float = 0.5) -> Stroke:
-    """Keep a path's coarse shape, replace its fine turning with hand g.
-
-    Base: `fit_stroke` at σ_c = coarse_frac·length, re-integrated and
-    rigidly aligned onto the input (if that fit is implausible — a corner
-    beyond π or position error > σ_c — the input smoothed at σ_c). Residual: a stroke of the same
-    dimensionless length from g's chain; its tangent angle θ(s) high-passed
-    at σ_d = detail_frac·R (θ − G_σd*θ, corners included as steps) and
-    added (× amount) to the base's θ(s). The hand thus contributes only its
-    turning below ~σ_d; at larger scales the base path rules. Positions integrate the new θ; a linear rubber-band
-    correction pins both end points to the input's. ref_length (px) sets the
-    hand's scale; default: the path's bounding-box diagonal / 0.4."""
+    """Keep a path's coarse shape, replace its fine turning with hand g
+    (Kalnins' base path + learned residual). Base: `fit_stroke` at
+    σ_c = coarse_frac·length re-integrated and aligned (or the smoothed input
+    if that fit is implausible); residual: a same-length stroke from g's
+    chain, its θ(s) high-passed at σ_d = detail_frac·R and added × amount.
+    End points pinned to the input's."""
     from .clothoid import reconstruct
     pts = np.array(points, dtype=np.float64, copy=True)
     L = float(np.sum(np.linalg.norm(np.diff(pts, axis=0), axis=1)))
@@ -751,18 +1190,16 @@ def restyle(points, g: Grammar, rng, *, ref_length: float | None = None,
           and np.isfinite(base_fit.rms_position_error) and base_fit.rms_position_error <= sc)
     if ok:
         base = reconstruct(base_fit, step=step)
-        # align the base onto the input by arc-length correspondence
         n = min(len(base), len(rin))
         u_b = np.linspace(0, len(base) - 1, n).astype(int)
         u_i = np.linspace(0, len(rin) - 1, n).astype(int)
         base = _kabsch(base[u_b], rin[u_i])(base)
-    else:   # implausible fit (e.g. runaway corner angles): the smoothed path
+    else:
         base = smooth(rin, sc, step)
     base = resample(base, step)
     T = float(np.sum(np.linalg.norm(np.diff(base, axis=0), axis=1)))
     db = np.diff(base, axis=0)
     th_b = np.unwrap(np.arctan2(db[:, 1], db[:, 0]))
-    # residual from the hand
     toks, _ = generate_tokens(g, rng, length=T / R)
     rp, _, _ = tokens_to_points(toks, R, step=step)
     rp = resample(rp, step)
@@ -781,8 +1218,7 @@ def restyle(points, g: Grammar, rng, *, ref_length: float | None = None,
     w = np.linspace(0, 1, len(new))[:, None]
     new = new + (1 - w) * (pts[0] - new[0]) + w * (pts[-1] - new[-1])
     return Stroke(new, meta={"hand": g.name, "restyle": True, "coarse_sigma": sc,
-                             "base": "fit" if ok else "smoothed",
-                             "detail_sigma": sd * step,
+                             "base": "fit" if ok else "smoothed", "detail_sigma": sd * step,
                              "tokens": toks, "ref_length": R})
 
 
@@ -801,7 +1237,7 @@ def turning_signature(toks: list) -> np.ndarray | None:
     segs = [t for t in toks if t[0] != "corner"]
     if not segs:
         return None
-    L = _stroke_len(toks)
+    L = stroke_length(toks)
     if L <= 0:
         return None
     u = (np.arange(SIG_N) + 0.5) / SIG_N * L
@@ -829,11 +1265,8 @@ def _sig_matrix(token_lists) -> np.ndarray:
 
 
 def _min_dist(Q: np.ndarray, T: np.ndarray, chunk: int = 256) -> np.ndarray:
-    """Min Euclidean distance from each row of Q to rows of T, also against
-    T's reversed strokes (θ(1-u), mean removed; same length)."""
+    """Min distance from each row of Q to rows of T and T's reversals."""
     Trev = T.copy()
-    # reversing traversal maps θ(u) → θ(1-u) + π; after mean removal that is
-    # the same values in reverse order
     Trev[:, :-1] = T[:, -2::-1]
     TT = np.vstack([T, Trev])
     out = np.empty(len(Q))
@@ -845,13 +1278,14 @@ def _min_dist(Q: np.ndarray, T: np.ndarray, chunk: int = 256) -> np.ndarray:
     return out
 
 
-def nearest_training_distance(generated_strokes, grammar: Grammar) -> np.ndarray:
-    """For each stroke (a Stroke with meta["tokens"], or a token list),
-    the minimum turning-signature distance (`turning_signature`, either
-    direction) to the grammar's training strokes. Small = near-copy."""
+def nearest_training_distance(generated_strokes, grammar_or_tokens) -> np.ndarray:
+    """For each stroke (a Stroke with meta["tokens"], or a token list), the
+    minimum turning-signature distance (either direction) to the training
+    strokes (a Grammar, or a list of token lists). Small = near-copy."""
     toks = [s.meta["tokens"] if isinstance(s, Stroke) else s for s in generated_strokes]
+    train = grammar_or_tokens.strokes if isinstance(grammar_or_tokens, Grammar) else grammar_or_tokens
     Q = _sig_matrix(toks)
-    T = _sig_matrix(grammar.strokes)
+    T = _sig_matrix(train)
     if len(Q) == 0 or len(T) == 0:
         return np.zeros(0)
     return _min_dist(Q, T)

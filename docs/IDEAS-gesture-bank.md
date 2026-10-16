@@ -234,9 +234,17 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   0.82–0.99 (`results/discriminate-real-v4-standard.md`). Brush/graphite
   invariance is still unshown — needs a within-hand comparison across those
   media.
-- **Stage 3 — preview only.** `grammar.py` learns, generates, code-switches,
-  translates, restyles. At σ = 0.01·ref ~90% of strokes fit as one segment,
-  so order is barely modelled; drawings have no composition. Not a result.
+- **Stage 3 — grammar v2 (contiguous lines).** Following Ian's direction
+  (contiguous lines, never hatching; Oehlen trees / computer paintings):
+  trained on long non-hatching strokes only, κ fitted at σ = 2 line widths
+  (3/3/2 segments per long stroke instead of 1), order-2 chain, learned
+  relations, `mode="contiguous"` (branching trees) and `mode="single"` (one
+  line). Sheets read as long winding/branching lines in visibly different
+  hands; memorisation check clean (generated ≈ held-out, far from copying;
+  shuffled-order control farther — order now carries information). **Stage-3
+  test 1 still fails** (real vs generated AUC 0.92–1.00): strokes too short,
+  too much touching in tree mode, Hokusai over-crossing.
+  `tools/gesture/results/grammar-v2.md`.
 - **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
   continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the
