@@ -187,10 +187,18 @@ def test_branching_starts_on_existing_strokes(g_matisse):
 
 
 def test_single_mode_one_stroke(g_matisse, g_random, g_fine):
-    d = generate_drawing(g_fine, np.random.default_rng(13), (800, 800), mode="single", ink=3.0)
+    d = generate_drawing(g_fine, np.random.default_rng(13), (800, 800), mode="single", ink=3.0,
+                         chain_budget=0.0)
     assert len(d.strokes) == 1
     st = d.strokes[0]
     assert st.length() / d.meta["ref_length_gen"] > 0.8
+    # v6 budget on: toy-hand single lines stall as often as without it (median over seeds)
+    ls = []
+    for sd in range(10, 18):
+        db = generate_drawing(g_fine, np.random.default_rng(sd), (800, 800), mode="single", ink=3.0)
+        assert len(db.strokes) == 1
+        ls.append(db.strokes[0].length() / db.meta["ref_length_gen"])
+    assert np.median(ls) > 0.5
     # two hands along one line
     rng = np.random.default_rng(8)
     g_fine2 = learn([synth.scene_random(rng, 1500, n_strokes=10, length_frac=(0.08, 0.25),
@@ -269,7 +277,7 @@ def test_topology_targets_learned(g_fine):
     assert sum(topo["end_p"].values()) == pytest.approx(1.0)
     assert topo["n_drawings"] == 3
     assert g_fine.relations["corner_rate"] >= 0.0
-    assert g_fine.version == 5
+    assert g_fine.version == 6
 
 
 def test_joins_are_sharp(g_fine):
@@ -292,8 +300,10 @@ def test_joins_are_sharp(g_fine):
 def test_end_plans_reach_ink(g_fine, monkeypatch):
     import gesture.grammar as gmod
     monkeypatch.setattr(gmod, "SEEK_FROM", 0.5)          # seek earlier so the toy hand arrives often
+    monkeypatch.setattr(gmod, "SEEK_WIN", 0.5)           # (v6: the seek window around the plan)
     g = _hand_set(g_fine, T=0.6, near=0.4)
-    d = generate_drawing(g, np.random.default_rng(22), (900, 900))
+    # (v6: a sheet takes ONE training drawing's ink — 5 toy strokes — so ask for more)
+    d = generate_drawing(g, np.random.default_rng(22), (900, 900), ink=3.0)
     st = d.meta["grow_stats"]
     assert st["end_T"] + st["end_near"] > 0
     R = d.meta["ref_length_gen"]
