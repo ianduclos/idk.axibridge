@@ -251,6 +251,12 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   0.81 / 0.93 (M/H/I, was 0.97 / 0.96 / 0.99). New tell: along-line
   texture — corner rate up to 2× real (Matisse 3.2 vs 1.5), visibly jagged in
   contiguous sheets; single-line mode is the clearest win.
+- **Parallel round (2026-10-16 pm)** — grammar v4, restyle, lognormal
+  kinematics, topology, blind judge: `tools/gesture/results/parallel-round-2026-10-16.md`.
+  Test-1 floor ≈ 0.64–0.73 (re-drawing real drawings through their own
+  tokens). Two shared gaps: along-line corners (~2× real in every
+  generator) and composition (the judge's top cue). Best outputs: single
+  continuous lines; topology trees restyled into a hand.
 - **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
   continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the
