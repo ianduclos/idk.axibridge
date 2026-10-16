@@ -273,6 +273,35 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the
   run: 5,758 → 0 over 48k fits. The grammar's guard filters can be relaxed.
 
+## Direction: three regimes that become one another in space (Ian, 2026-10-16)
+
+Ian named three regimes emerging from the research: **lines** (monoline
+hands: wiry, looping, knotted), **nibs** (broad-nib thick/thin, script-like
+but asemic), **shapes** (solid ovals, blocks, masses) — and "the most
+interesting thing would be for them to be able to become one or the other in
+space". Reference: a Stable Diffusion image he made ~2024
+(`.local/gesture/ref/ian-regimes-sd-2024.png`, not committed) — a sense, not a
+template: "don't take it too literally".
+
+Reading of the principle:
+
+1. Regime is a property of **where** a line is (a field over the sheet, or a
+   position in structure such as trunk depth), not of what kind of mark it
+   is.
+2. Transitions are **continuous metamorphoses**: a line thickens into a nib
+   ribbon (width = W·|sin(θ − φ)| with a growing W), a ribbon swells, closes
+   and becomes a shape; shapes shed lines (and drips) back out.
+3. One stroke representation carries it all: centreline + width profile +
+   nib angle + fill/closure + a regime value r(s) ∈ [line → nib → shape].
+4. Plotter-honest: nibs and shapes render as outlines / concentric contours,
+   never hatching; colour (if any) is pen changes, not fills.
+
+Building blocks already here: grammar v6 + tremor (lines), `broadnib.py`
+(nibs; nib-outline rendering), topology/restyle/composite (structure,
+where a regime field can live), nuqta/dot geometry from the calligraphy
+research (a natural shape vocabulary). Policy unchanged: script-like zones
+come from calligraphy-hand statistics, never letterforms.
+
 ## Open decisions (flagged, not settled)
 
 - **Where a profile lives.** Repo survey: corpus fits the gallery, a learned
