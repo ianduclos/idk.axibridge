@@ -23,7 +23,9 @@ HERE = Path(__file__).resolve()
 sys.path.insert(0, str(HERE.parents[1]))          # tools/gesture → `import gesture`
 REPO = HERE.parents[3]
 
-from gesture.extract import debug_overlay, extract, load_image  # noqa: E402
+import importlib  # noqa: E402
+
+from gesture.extract import debug_overlay, load_image  # noqa: E402
 
 CORPUS = REPO / ".local/gesture/corpus"
 OUT = REPO / ".local/gesture/out/extract"
@@ -65,7 +67,9 @@ def select(artist: str, tier: str | None, files: list[str] | None,
     return out[:limit] if limit else out
 
 
-def run_one(path: Path, row: dict, artist: str, max_side: int, kw: dict) -> dict:
+def run_one(path: Path, row: dict, artist: str, max_side: int, kw: dict,
+            method: str = "extract") -> dict:
+    extract = importlib.import_module(f"gesture.{method}").extract
     invert = (row.get("inverted") or "").strip().lower() in {"yes", "true", "1", "y"}
     t0 = time.perf_counter()
     with Image.open(path) as im:
@@ -73,7 +77,7 @@ def run_one(path: Path, row: dict, artist: str, max_side: int, kw: dict) -> dict
     gray, scale = load_image(path, invert=invert, max_side=max_side)
     d = extract(gray, scale=scale, source=str(path.relative_to(REPO)), original_size=size, **kw)
     dt = time.perf_counter() - t0
-    od = OUT / artist
+    od = (OUT if method == "extract" else OUT.parent / method) / artist
     od.mkdir(parents=True, exist_ok=True)
     d.meta["run"] = {"invert": invert, "max_side": max_side, "seconds": round(dt, 2),
                      "tier": row.get("tier")}
@@ -100,6 +104,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--files", nargs="*", help="stems or filenames to run")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--max-side", type=int, default=3000)
+    ap.add_argument("--method", default="extract",
+                    help="extractor module; output goes to out/<method>/ (out/extract/ for the default)")
     ap.add_argument("--set", nargs="*", default=[], metavar="KEY=VALUE",
                     help="ExtractParams overrides, e.g. --set spur_factor=2.5")
     a = ap.parse_args(argv)
@@ -117,7 +123,7 @@ def main(argv: list[str] | None = None) -> int:
     res, skipped = [], []
     for p, r in todo:
         try:
-            res.append(run_one(p, r, a.artist, a.max_side, kw))
+            res.append(run_one(p, r, a.artist, a.max_side, kw, a.method))
             print(f"  done {p.name} ({res[-1]['secs']} s)", file=sys.stderr)
         except (OSError, SyntaxError, ValueError) as e:   # unreadable / partial file
             skipped.append((p.name, str(e)[:80]))

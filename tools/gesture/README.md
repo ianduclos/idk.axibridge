@@ -62,6 +62,12 @@ Run from the repo root:
 | `synth.py` | 0 | known strokes → rendered ink raster (ground truth) |
 | `nulls.py` | 0 | null drawings (random walks, shuffled segments, …) |
 | `clothoid.py` | 2 | piecewise-linear κ(s) fit → line/arc/clothoid segments |
-| `extract.py` | 1 | scan → binary → skeleton graph → strokes with width |
+| `extract.py` | 1 | scan → hysteresis ink → skeleton graph → strokes with width |
+| `subpixel.py` | 1 | sub-pixel centreline post-pass for any extractor's output |
+| `extract_hybrid.py` | 1 | **default extractor**: `extract` topology + `subpixel` (bake-off result) |
+| `extract_{naive,voronoi,flow,refine,ridge}.py` | 1 | bake-off entrants, kept for comparison |
+| `extract_eval.py` | 1 | bake-off scoring (GT + real-scan proxies) |
 | `panel.py` | 2 | per-drawing feature vector (the fingerprint) |
-| `experiments/` | 1–2 | round-trip, discrimination, ablation runs |
+| `grammar.py` | 3 (preview) | clothoid-segment Markov grammar: learn, generate, juxtapose |
+| `experiments/` | 1–3 | bench, corpus extraction, discrimination, demos |
+| `results/` | — | committed write-ups of each experiment |
