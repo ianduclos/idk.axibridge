@@ -220,12 +220,15 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   `extract_hybrid` (hysteresis-ink skeleton topology + sub-pixel
   core-of-profile refinement). GT κ error 0.72 → 0.09 (0.034 at the panel's
   own σ). Faint pencil (KKS18238) and dense small motifs remain weak.
-- **Stage 2 — null half met, artist half NOT met.** Against a
-  pipeline-matched control the four nulls separate at AUC 0.92–0.999.
-  Artists separate (artists-only geometry bacc 0.78–0.82, chance 0.33), but
-  Matisse's own etchings vs lithographs separate at 0.78–0.80 — most of the
-  signal is medium. Next: medium-invariant features or a medium-matched
-  corpus (a second etcher/lithographer).
+- **Stage 2 — null half met; artist half met for printmaking medium.**
+  Against a pipeline-matched control the four nulls separate at AUC
+  0.92–0.999. Matisse's own etchings vs lithographs first separated at
+  0.78–0.80 (medium, not hand). Remedy (`results/medium-invariance-2026-10-16.md`):
+  σ ≥ 7 line widths + nullspace projection of the etching/litho directions
+  takes that control to chance held-out (0.44 linear, 0.61 forest probe)
+  while artists still separate (0.83 / 0.79, chance 0.33; Matisse vs Hokusai
+  0.90–0.93, vs Ingres 0.88–0.89). Brush/graphite invariance is still
+  unshown — needs a within-hand comparison across those media.
 - **Stage 3 — preview only.** `grammar.py` learns, generates, code-switches,
   translates, restyles. At σ = 0.01·ref ~90% of strokes fit as one segment,
   so order is barely modelled; drawings have no composition. Not a result.

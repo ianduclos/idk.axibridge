@@ -3,14 +3,14 @@ project: idk.axibridge
 state: active
 updated: 2026-10-16
 machine: mac+pi
-summary: The MCP server and live sync are merged and the live app runs them; the gesture-bank research line has a working extractor, measurement panel and grammar preview, with its artist test confounded by medium; native acceptance of the MCP, live sync and the 8 October integration remains with Ian.
+summary: The MCP server and live sync are merged and the live app runs them; the gesture-bank research line has a working extractor, measurement panel and grammar preview, and its artist test survives removing printmaking medium; native acceptance of the MCP, live sync and the 8 October integration remains with Ian.
 next:
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
   - Check recovery close/relaunch, nested groups, Assets and Mosca 2 in the native app
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank: decide how to remove the medium confound (medium-invariant features vs a medium-matched corpus) — see HANDOFF "Gesture bank"
+  - Gesture bank: make the medium projection standard, then grow within-hand medium pairs for brush/graphite (see HANDOFF "Gesture bank")
 handoff_for: Codex
 ---
 
@@ -23,8 +23,9 @@ domain, scans gitignored, manifests in `docs/research/gesture-corpus/`.
 A six-way extraction bake-off picked `extract_hybrid` (curvature error on
 synthetic ground truth 0.72 → 0.09). Stage-2: nulls separate from a
 pipeline-matched control (AUC 0.92–0.999), but Matisse's own etchings vs
-lithographs separate at 0.78–0.80, so the artist signal is mostly medium —
-gate not met. A grammar preview generates and juxtaposes strokes but has no
+lithographs separate at 0.78–0.80; σ ≥ 7w plus nullspace projection takes
+that control to chance while artists still separate (0.83/0.79) — gate met
+for printmaking medium, open for brush/graphite. A grammar preview generates and juxtaposes strokes but has no
 composition. An independent review caught a fair-test bug and the confounds;
 read `tools/gesture/results/review-2026-10-16.md` before the other results.
 Suite: 160 passed (`.local/gesture/.venv/bin/python -m pytest -q tools/gesture/tests`).

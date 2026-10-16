@@ -4,12 +4,12 @@ updated: 2026-10-16
 entries: 31
 ---
 
-### Gesture bank: stage-2 artist test is confounded by medium — opened 2026-10-16, owner: ian
+### Gesture bank: brush/graphite invariance and the grammar — opened 2026-10-16, owner: claude
 
-- done: Overnight run (2026-10-16): corpus (Matisse 31 SMK, Hokusai 27 + Ingres 34 Met, all PD); `tools/gesture/` research package with synthetic ground truth, nulls + identity control, six-way extraction bake-off (default `extract_hybrid`), clothoid κ(s) fitter, 74-feature panel, discrimination experiment, grammar preview (generate / code-switch / translate / restyle). Independent Fable review; its fixes are in. 160 tests pass.
-- next: Ian decides how to remove the medium confound: (a) medium-invariant features (drop/normalise what the etching-vs-litho control separates on), or (b) a medium-matched corpus (a second etcher/lithographer; downloads need Ian's go). Then rerun `experiments/discriminate.py` (commands in results/discriminate-real-v3.md). Grammar: refit at a finer σ so strokes carry more than one segment, then run stage-3 test 1 (classifier can't tell generated from real).
-- blockers: decision above. Gallica needs a human Cloudflare check in the browser pane. Physical plotter round-trip (stage 0 ground truth) needs Ian at the machine.
-- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [read first: review](tools/gesture/results/review-2026-10-16.md), [v3 results + medium control](tools/gesture/results/discriminate-real-v3.md), [bake-off](tools/gesture/results/extraction-bakeoff-2026-10-16.md), [non-artist sources](docs/research/gesture-corpus/hands-to-collect.md), [package README](tools/gesture/README.md). Scans and outputs live in gitignored `.local/gesture/`; refetch scans from the manifests' `download_url`.
+- done: Overnight run 2026-10-16 (corpus, extraction bake-off → `extract_hybrid`, clothoid fitter, 74-feature panel, discrimination, grammar preview, independent review + fixes). Then the medium-confound remedy Ian chose: σ ≥ 7 line widths + nullspace projection (INLP ×4) of Matisse etching-vs-litho directions puts that within-hand control at chance held-out while artists still separate (0.83/0.79, chance 0.33). Dropping features was tested and does not work.
+- next: (1) Make the remedy the panel's standard preprocessing for artist comparisons (a function in `panel.py` or `discriminate.py --medium-project`), with the medium pairs listed in a manifest. (2) Grow within-hand medium pairs so brush and graphite directions can be estimated too (an artist with pen + brush or pen + pencil sheets — downloads need Ian's go). (3) Grammar: refit at a finer σ so strokes carry more than one segment, then stage-3 test 1.
+- blockers: none for (1) and (3); (2) needs a corpus decision. Gallica needs a human Cloudflare check; the plotter round-trip needs Ian at the machine.
+- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [medium invariance](tools/gesture/results/medium-invariance-2026-10-16.md), [review](tools/gesture/results/review-2026-10-16.md), [v3 results](tools/gesture/results/discriminate-real-v3.md), [package README](tools/gesture/README.md). Scans and outputs in gitignored `.local/gesture/`; refetch scans from the manifests' `download_url`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 
