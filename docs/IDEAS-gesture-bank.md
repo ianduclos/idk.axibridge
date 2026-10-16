@@ -296,6 +296,15 @@ Reading of the principle:
 4. Plotter-honest: nibs and shapes render as outlines / concentric contours,
    never hatching; colour (if any) is pen changes, not fills.
 
+Ian's clarification: what matters most is **the transitions** and **the
+less obvious shapes — "how they seem to communicate something"**: beads on a
+line, an eye-like loop holding a dot, a nib stroke ending in a filled
+lozenge, a line swelling into a vessel, hooks and commas, a knot that fills
+in. They behave like diacritics, punctuation or near-glyphs placed *in
+relation to* the lines — meaning felt but not nameable. Not obvious
+primitives. Calligraphy's dot/diacritic placement is a ready-made grammar
+for that relation.
+
 Building blocks already here: grammar v6 + tremor (lines), `broadnib.py`
 (nibs; nib-outline rendering), topology/restyle/composite (structure,
 where a regime field can live), nuqta/dot geometry from the calligraphy
