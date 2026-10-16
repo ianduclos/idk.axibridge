@@ -114,12 +114,25 @@ def score_gt(truth: Drawing, found: Drawing, line_width: float) -> dict:
     return out
 
 
-def reference_ink(gray: np.ndarray, window: int | None = None, min_area: int = 30):
+def reference_ink(gray: np.ndarray, window: int | None = None, min_area: int = 30,
+                  coarse_sigma: float = 2.0):
     """A deliberately plain reference: Sauvola ink mask, its skeleton and the
-    median line width w (px). Used only to SCORE real scans, never to extract."""
+    median line width w (px). Used only to SCORE real scans, never to extract.
+
+    v2 (after the first bake-off round): the scan is contrast-stretched
+    (0.5–99.5 percentiles) so faint pencil is not empty, and the mask is the
+    union of a fine Sauvola mask and one on a Gaussian(coarse_sigma)-blurred
+    image, so a crayon stroke reads as one solid line rather than grain.
+    """
+    from scipy.ndimage import gaussian_filter
     H, W = gray.shape
+    lo, hi = np.percentile(gray, [0.5, 99.5])
+    g = np.clip((gray - lo) / max(hi - lo, 1e-6), 0.0, 1.0)
     win = window or max(15, (min(H, W) // 60) | 1)
-    mask = gray < threshold_sauvola(gray, window_size=win, k=0.2)
+    mask = g < threshold_sauvola(g, window_size=win, k=0.2)
+    if coarse_sigma > 0:
+        gb = gaussian_filter(g, coarse_sigma)
+        mask |= gb < threshold_sauvola(gb, window_size=win, k=0.2)
     mask = remove_small_objects(mask, max_size=min_area)
     skel = skeletonize(mask)
     dt = distance_transform_edt(mask)
