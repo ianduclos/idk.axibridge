@@ -4,12 +4,12 @@ updated: 2026-10-16
 entries: 31
 ---
 
-### Gesture bank: first plot and round 4 — opened 2026-10-16, owner: ian
+### Gesture bank: first plot, then round 5 — opened 2026-10-16, owner: ian
 
-- done: Rounds 1–3 on 2026-10-16 (see ledger in docs/IDEAS-gesture-bank.md). Latest: grammar v5, perceived lines, tremor layer (the biggest perceptual lever), composite pipeline (topology → restyle → chain → tremor) with a pairwise hand test. 238 tests pass. Three blind-judge runs, two valid, one failed its own calibration (recorded).
-- next: Ian decides the first plot: a medium Oehlen tree in Matisse's and Hokusai's hands with tremor, side by side (needs a small SVG export from tools/gesture, no app integration, and Ian's approval for motion). Research candidates for round 4 are listed in tools/gesture/results/round3-2026-10-16.md (bursty tremor, grammar v6, chain fix, brush/graphite corpus).
-- blockers: plotting needs Ian at the machine; corpus downloads need Ian's go; Gallica needs a human Cloudflare check.
-- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 3](tools/gesture/results/round3-2026-10-16.md), [round 2](tools/gesture/results/parallel-round-2026-10-16.md), [review](tools/gesture/results/review-2026-10-16.md), [package README](tools/gesture/README.md). Scans and outputs live in gitignored `.local/gesture/`.
+- done: Rounds 1–4 on 2026-10-16 (ledger in docs/IDEAS-gesture-bank.md). Latest: grammar v6 (corners ~real), tremor v2, single-line chain fix with three A4 plot candidates (`.local/gesture/out/plot_candidates/*.svg`, previews `.jpg`, stats in tools/gesture/results/composite-chain-2026-10-16.md), Arabic calligraphy + Arabic print corpora harvested (manifests in docs/research/gesture-corpus/*-harvest.csv; policy in calligraphy-arabic.md "Adopted policy"). 252 tests pass.
+- next: Ian plots a medium-tree single line in Matisse's and Hokusai's hands (approve motion; use the app's normal import/plot path). Then round 5 from tools/gesture/results/round4-2026-10-16.md (grammar v7 length jitter, extract/analyse the new hands incl. broad-nib width model, composite on v6 + tremor v2).
+- blockers: plotting needs Ian at the machine; 5 manual sources (AIC images, Princeton posters, Instagram archives) need a human browser session.
+- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 4](tools/gesture/results/round4-2026-10-16.md), [round 3](tools/gesture/results/round3-2026-10-16.md), [review](tools/gesture/results/review-2026-10-16.md), [package README](tools/gesture/README.md). Scans/outputs in gitignored `.local/gesture/`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 

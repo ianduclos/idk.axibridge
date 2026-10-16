@@ -10,7 +10,7 @@ next:
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank: first plot of a two-hand Oehlen tree, then research round 4 (see HANDOFF "Gesture bank")
+  - Gesture bank: plot a single-line tree candidate in two hands, then research round 5 (see HANDOFF "Gesture bank")
 handoff_for: Codex
 ---
 

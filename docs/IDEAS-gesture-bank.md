@@ -263,6 +263,11 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   20/30 with), composite topology→restyle→chain (pairwise hand ID on
   matched structure M–H 0.75–0.90). Next: first plot (Ian at the machine),
   bursty tremor, grammar v6, chain fix.
+- **Round 4 (2026-10-16 late)** — `tools/gesture/results/round4-2026-10-16.md`:
+  grammar v6 (corner excess traced to the chain and fixed: ~real),
+  bursty tremor v2, single-line chain fix + three A4 plot candidates,
+  Arabic calligraphy and Arabic print research + harvest (policy: Qur'anic
+  text measure-only; abstraction by design).
 - **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
   continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the
