@@ -4,12 +4,13 @@ updated: 2026-10-16
 entries: 31
 ---
 
-### Gesture bank: first plot, then round 5 — opened 2026-10-16, owner: ian
+### Gesture bank: round 5 and new corpora in flight — opened 2026-10-16, owner: claude
 
-- done: Rounds 1–4 on 2026-10-16 (ledger in docs/IDEAS-gesture-bank.md). Latest: grammar v6 (corners ~real), tremor v2, single-line chain fix with three A4 plot candidates (`.local/gesture/out/plot_candidates/*.svg`, previews `.jpg`, stats in tools/gesture/results/composite-chain-2026-10-16.md), Arabic calligraphy + Arabic print corpora harvested (manifests in docs/research/gesture-corpus/*-harvest.csv; policy in calligraphy-arabic.md "Adopted policy"). 252 tests pass.
-- next: Ian plots a medium-tree single line in Matisse's and Hokusai's hands (approve motion; use the app's normal import/plot path). Then round 5 from tools/gesture/results/round4-2026-10-16.md (grammar v7 length jitter, extract/analyse the new hands incl. broad-nib width model, composite on v6 + tremor v2).
-- blockers: plotting needs Ian at the machine; 5 manual sources (AIC images, Princeton posters, Instagram archives) need a human browser session.
-- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 4](tools/gesture/results/round4-2026-10-16.md), [round 3](tools/gesture/results/round3-2026-10-16.md), [review](tools/gesture/results/review-2026-10-16.md), [package README](tools/gesture/README.md). Scans/outputs in gitignored `.local/gesture/`.
+- done: Rounds 1–4 on 2026-10-16 (ledger in docs/IDEAS-gesture-bank.md): extraction, panel + medium projection, grammar v6 (corners ~real), tremor v2, topology, restyle, composite + single-line chain fix, three A4 plot candidates (`.local/gesture/out/plot_candidates/`), Arabic calligraphy + Arabic print corpora harvested (policy: Qur'anic text measure-only). 252 tests pass at 8bda366.
+- in flight (subagents of the 2026-10-16 session, uncommitted until reviewed): round 5 — grammar v7 (plan jitter for the memorisation regression, longer segments) in gesture/grammar.py; calligraphy/print extraction + broad-nib width model in gesture/broadnib.py + calligraphy.py; composite on v6 (frozen copy `grammar_v6_frozen.py`) + tremor v2 with plot candidates v2. Corpus research (metadata only): Brice Marden + plotter/continuous-line artists, Amazon rivers + physics/machine lines, contemporary dance → topology.
+- next: Review and commit each round-5 result (results/grammar-v7.md, calligraphy-2026-10-16.md, composite-v6-2026-10-16.md), then ask Ian about the new corpus harvests (docs/research/gesture-corpus/{artists-line,earth-physics-lines,dance-gesture}.md) and the first plot. If this session died before that, the uncommitted files in tools/gesture/ and docs/research/gesture-corpus/ are the agents' outputs: check them with the gesture suite before committing.
+- blockers: plotting needs Ian at the machine; downloads need Ian's go; 5 manual sources need a human browser session.
+- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 4](tools/gesture/results/round4-2026-10-16.md), [review](tools/gesture/results/review-2026-10-16.md), [package README](tools/gesture/README.md). Scans/outputs in gitignored `.local/gesture/`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 
