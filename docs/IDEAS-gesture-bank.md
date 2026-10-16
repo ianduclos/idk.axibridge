@@ -276,6 +276,13 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   signs as line events (beat stamps 12/12), wet mass edges, nib rendering
   that reads as solid ink at real pen widths (c/e), path ordering + a
   polished A4 regimes candidate.
+- **Round 8 — line styles × gesture/shape corpora (2026-10-16)** —
+  `tools/gesture/results/round8-2026-10-16.md`: seven parallel threads
+  (learned shape vocabulary, dance structures, earth/physics fields, gesture
+  timing, Arabic script as syntax, sheet composition, hybrid hands). Masses
+  that come from the source (discharge width, stillness, rewrite coincidence,
+  void rims) beat placed ones; learned shapes read as notation; our sheets are
+  one welded net. Nib styles b/c/e became options the same day.
 - **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
   continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the
