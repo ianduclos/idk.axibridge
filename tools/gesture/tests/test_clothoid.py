@@ -323,3 +323,95 @@ def test_segment_stats_shape_and_invariance():
         assert st2[key] == pytest.approx(st[key], rel=0.02)
     for kd in ("arc", "clothoid"):
         assert np.allclose(sorted(st2["kappa"][kd]), sorted(st["kappa"][kd]), rtol=0.05)
+
+
+# ---------------------------------------------------------------------------
+# ill-posed pieces (regression: corpus fits returned corner angles of 3e4°
+# and −2e9°, κ·ref ≈ 1e9). A piece lying wholly inside end/corner zones has
+# no trusted samples, and the near-singular stage-2 solve handed back
+# ±1e5/px for its knots; corner-angle windows also reached past neighbouring
+# corners, and heavily smoothed small loops collapsed toward their centroid.
+# ---------------------------------------------------------------------------
+
+def _sane(f: Fit, sigma: float) -> float:
+    """Assert the invariants every fit must keep; return max |κ|."""
+    vals = [f.length, f.rms_position_error, f.rms_kappa_error, *f.corner_angles]
+    vals += [v for g in f.segments for v in (g.s0, g.s1, g.k0, g.k1)]
+    assert np.all(np.isfinite(vals))
+    assert all(-np.pi < a <= np.pi for a in f.corner_angles)
+    kmax = max(max(abs(g.k0), abs(g.k1)) for g in f.segments)
+    assert kmax <= 2.0 / sigma                 # κ beyond ~1/σ is not measurable at σ
+    return kmax
+
+
+@pytest.mark.parametrize("stub", [2.0, 3.0, 4.0, 5.0])
+@pytest.mark.parametrize("deg", [100.0, 150.0])
+def test_corner_near_open_end_is_finite(stub, deg):
+    """Corner < 6σ from an open end: the stub after it is all end/corner
+    zone. Used to give |angle| ~ 1e6 rad and κ ~ 1e6/px."""
+    sigma, a = 6.0, np.deg2rad(deg)
+    L2 = stub * sigma
+    pts = resample(np.array([[0, 0], [300, 0], [300 + L2 * np.cos(a), L2 * np.sin(a)]]), 1.0)
+    pts = pts + np.random.default_rng(1).normal(0.0, 0.3, pts.shape)
+    f = fit_stroke(pts, sigma=sigma)
+    _sane(f, sigma)
+    assert len(f.corner_angles) == 1
+    assert abs(f.corner_angles[0] - a) < 0.15
+    assert all(abs(g.turning) < 0.2 for g in f.segments)
+
+
+@pytest.mark.parametrize("gap", [3.5, 4.5])
+def test_close_corners_measure_their_own_turn(gap):
+    """Two ±90° corners a few σ apart (an untrusted middle piece): each angle
+    is its own turn, not the sum of both (≈ 0) nor a blown-up solve."""
+    sigma = 6.0
+    g = gap * sigma
+    pts = resample(np.array([[0, 0], [200, 0], [200, g], [400, g]], float), 1.0)
+    pts = pts + np.random.default_rng(2).normal(0.0, 0.3, pts.shape)
+    f = fit_stroke(pts, sigma=sigma)
+    _sane(f, sigma)
+    assert len(f.corner_angles) == 2
+    assert abs(f.corner_angles[0] - np.pi / 2) < 0.1
+    assert abs(f.corner_angles[1] + np.pi / 2) < 0.1
+
+
+@pytest.mark.parametrize("frac", [0.15, 0.3, 0.6, 2.0])
+def test_small_loop_heavy_smoothing_is_one_circle(frac):
+    """σ comparable to a closed loop's length shrinks the smoothed loop to
+    its centroid; the fit must still say 'one circle of this length'
+    (was κ ≈ 3.7e4/px at σ = 2L)."""
+    r = 20.0
+    n = int(2 * np.pi * r)
+    t = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    pts = np.column_stack([r * np.cos(t), r * np.sin(t)])
+    f = fit_stroke(pts, sigma=frac * 2 * np.pi * r, closed=True)
+    vals = [v for g in f.segments for v in (g.k0, g.k1)]
+    assert np.all(np.isfinite(vals))
+    assert f.kinds() == ["arc"]
+    assert abs(f.segments[0].k0 - 1 / r) < 0.02 / r
+    assert abs(f.length - 2 * np.pi * r) < 0.02 * 2 * np.pi * r
+
+
+def test_short_open_stroke_turning_is_bounded():
+    """Below ~9σ an open stroke gets one line/arc; its turning must not exceed
+    the stroke's own (mean κ of the shrunken smoothed curve times the raw
+    length over-counted it)."""
+    for sigma in (8.0, 15.0, 40.0):
+        f = fit_stroke(stroke([0, 60], [np.pi / 2 / 60, np.pi / 2 / 60]), sigma=sigma)
+        assert len(f.segments) == 1
+        assert 0.0 <= f.segments[0].turning <= np.pi / 2 + 0.05
+
+
+def test_random_corners_near_ends_keep_invariants():
+    """Property sweep: polylines with corners anywhere (including within a
+    few σ of the ends and of each other), jittered."""
+    rng = np.random.default_rng(7)
+    for _ in range(25):
+        sigma = float(rng.uniform(2.0, 6.0))
+        m = int(rng.integers(2, 6))
+        lens = rng.uniform(1.5, 12.0, m) * sigma
+        heads = np.cumsum(rng.uniform(-2.8, 2.8, m))
+        steps = np.column_stack([lens * np.cos(heads), lens * np.sin(heads)])
+        pts = np.vstack([[0.0, 0.0], np.cumsum(steps, axis=0)])
+        pts = resample(pts, 1.0) + rng.normal(0.0, 0.3, (len(resample(pts, 1.0)), 2))
+        _sane(fit_stroke(pts, sigma=sigma), sigma)

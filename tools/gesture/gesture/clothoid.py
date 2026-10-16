@@ -56,7 +56,22 @@ smoothing-aware, whitened refinement):
    helps most becomes "clothoid" (repeat). Neighbours that the constraints
    made identical are merged.
 6. Corner angle = jump of (measured θ − ∫ fitted κ) across the corner, each
-   side averaged over ≤ 10σ of trusted samples.
+   side averaged over ≤ 10σ of trusted samples and never past halfway to
+   the neighbouring corner (else measured θ at the window ends); reported
+   in (−π, π] — a corner is an instantaneous turn, only its angle mod 2π
+   acts.
+
+Ill-posed pieces. A piece lying wholly inside end/corner zones (a corner
+within ~6σ of an open end, two corners within ~5σ) has no trusted samples:
+its knot values are seen only through Gaussian tails. Stage 2 therefore
+carries a weak κ prior (ridge, _KAPPA_PRIOR: a knot at κ = 1/σ costs one
+σ_y² of SSE), negligible wherever data determine a knot, which keeps such a
+piece at κ ≈ 0 (a line; its turning goes to the corner angles) instead of
+the ±1e5/px a near-singular solve returns. Strokes too short to analyse
+(open: < ~9σ; closed: < _CLOSED_MIN_LEN·σ, where smoothing shrinks the loop
+toward its centroid) get one line/arc carrying the stroke's own turning
+(open: end-to-end tangent change of the smoothed curve; closed: turning
+number of the raw polygon) over its raw length.
 
 Residual tangent wiggle after smoothing lengthens the curve by ≈ 1 + σ_θ²/2;
 lengths are divided by that factor (and κ multiplied) before fitting.
@@ -134,6 +149,11 @@ _FLOOR_Y_VERIFY = 0.05     # λ_v uses this lateral floor (σ units): constraint
                            # the stroke < 1/20 σ RMS are always acceptable
 _TURN_MIN_LEN = 10.0       # turning rules judge segments over ≥ this many σ
 _CORNER_AVG = 10.0         # corner angle: averaging window per side, in σ
+_CLOSED_MIN_LEN = 8.0      # closed strokes shorter than this many σ get the tiny fit
+                           # (smoothing shrinks the loop by ≤ 26 % at 8σ)
+_KAPPA_PRIOR = 1.0         # stage-2 κ prior scale, in units of 1/σ: a knot at
+                           # κ = this/σ costs one σ_y² of SSE (vanishing next to
+                           # the data for any knot the trusted samples determine)
 
 
 @dataclass(frozen=True)
@@ -430,9 +450,10 @@ class _Model:
 
     def __init__(self, kappa: np.ndarray, w: np.ndarray,
                  pieces: list[tuple[int, int, bool]], corner_idx: list[int],
-                 sd: float, step: float):
+                 sd: float, step: float, prior: float = 0.0):
         n = len(kappa)
         self.n, self.step, self.pieces = n, step, pieces
+        self.prior = float(prior)
         D = 5 * n + 2
         self.D = D
         x = np.arange(-D, D + 1) / sd
@@ -543,19 +564,31 @@ class _Model:
             scale[:m] = hs
         A[:, m:] = self.fixed_n
         scale[m:] = self.fixed_s
+        # κ prior (ridge) in physical units: prior·Σ κ_knot². Columns are
+        # unit-normalised, so it enters as prior·(knots in group)/scale².
+        # Negligible for any knot the trusted samples determine; it keeps a
+        # knot they do not determine (a piece lying wholly inside end/corner
+        # zones, seen only through Gaussian tails) at ~0 instead of the
+        # ±1e5/px a near-singular solve hands back.
+        mult = np.ones(m) if P is None else (P * P).sum(axis=0)
+        pd = np.zeros(m + nf)
+        pd[:m] = self.prior * mult / scale[:m] ** 2
         G = A.T @ A
         rhs = A.T @ self.yw
         try:
-            c = np.linalg.solve(G + 1e-13 * np.eye(len(G)), rhs)
+            c = np.linalg.solve(G + np.diag(pd + 1e-13), rhs)
             if not np.all(np.isfinite(c)):
                 raise np.linalg.LinAlgError
         except np.linalg.LinAlgError:
-            c = np.linalg.lstsq(A, self.yw, rcond=1e-12)[0]
+            Aa = np.vstack([A, np.diag(np.sqrt(pd))])
+            c = np.linalg.lstsq(Aa, np.concatenate([self.yw, np.zeros(m + nf)]),
+                                rcond=1e-12)[0]
         r = self.yw - A @ c
+        e = float(r @ r + np.sum(pd * c * c))
         c = c / scale
         h = c[:m]
         vals = h if P is None else P @ h
-        return float(r @ r), vals, c[m:]
+        return e, vals, c[m:]
 
     def sse(self, knots: list[np.ndarray]) -> float:
         return self.solve(knots)[0]
@@ -712,9 +745,14 @@ def fit_stroke(points, *, sigma: float, step: float | None = None, closed: bool 
     _s, kappa0, sm0 = kappa_s(pts, sigma, step=step, closed=closed)
     n0 = len(kappa0)
     sd0 = sigma / step
-    if n0 < 8 or (not closed and n0 < 2 * _ZONE_END * sd0 + 8):
+    # too short to analyse: open strokes need trusted samples between the end
+    # zones; a closed loop shorter than _CLOSED_MIN_LEN·σ is shrunk by the
+    # smoothing toward its centroid (fundamental attenuated by
+    # exp(−½(2πσ/L)²)), so its measured κ and length are meaningless
+    if n0 < 8 or (not closed and n0 < 2 * _ZONE_END * sd0 + 8) \
+            or (closed and n0 < _CLOSED_MIN_LEN * sd0):
         T0 = n0 * step if closed else max(n0 - 1, 0) * step
-        return _tiny_fit(kappa0, sm0, sigma, step, T0, closed)
+        return _tiny_fit(pts, sm0, sigma, step, T0, closed)
 
     theta0 = _theta(sm0, closed)
     total_turn = float(theta0[-1] - theta0[0] + _wrap(theta0[0] - theta0[-1])) if closed else 0.0
@@ -754,7 +792,7 @@ def fit_stroke(points, *, sigma: float, step: float | None = None, closed: bool 
 
     w = _zone_weights(n, cu, closed, sd)
     if w.sum() < 8:
-        return _tiny_fit(kappa0, sm0, sigma, step, T, closed)
+        return _tiny_fit(pts, sm0, sigma, step, T, closed)
     valid = w > 0
     n_eff = max(w.sum() / sd, np.e)
 
@@ -805,7 +843,8 @@ def fit_stroke(points, *, sigma: float, step: float | None = None, closed: bool 
         knots.append(K)
 
     # --- stage 2: greedy refinement on the whitened, smoothing-aware model -
-    model = _Model(kap_u, w, pieces, interior_corners, sd, step)
+    model = _Model(kap_u, w, pieces, interior_corners, sd, step,
+                   prior=s_y ** 2 * (sig / _KAPPA_PRIOR) ** 2)
     knots, cur = _greedy(model, knots, pieces, margins, n, min_k, lam,
                          max(ns(1.0), int(np.ceil(n / _MAX_GRID))), valid)
 
@@ -874,9 +913,19 @@ def fit_stroke(points, *, sigma: float, step: float | None = None, closed: bool 
     W = ns(_CORNER_AVG)
     hw = ns(4.0)
     angles = []
-    for c in cu:
-        bi = np.arange(c - W, c)
-        ai = np.arange(c + 1, c + W + 1)
+    for j, c in enumerate(cu):
+        # each side stops halfway to the neighbouring corner: resid jumps at
+        # every corner, so a window reaching past the next one measures the
+        # sum of both turns (a zig-zag's two ±90° corners came out ≈ 0)
+        if closed:
+            pc = cu[j - 1] - (n if j == 0 else 0)
+            nc = cu[j + 1] if j + 1 < len(cu) else cu[0] + n
+        else:
+            pc = cu[j - 1] if j > 0 else c - 2 * W - 2
+            nc = cu[j + 1] if j + 1 < len(cu) else c + 2 * W + 2
+        lo_lim, hi_lim = (pc + c) // 2, (c + nc + 1) // 2
+        bi = np.arange(max(c - W, lo_lim + 1), c)
+        ai = np.arange(c + 1, min(c + W, hi_lim - 1) + 1)
         if closed:
             bv, av = bi % n, ai % n
             b_off = np.where(bi < 0, -(total_turn - fit_total), 0.0)
@@ -888,14 +937,16 @@ def fit_stroke(points, *, sigma: float, step: float | None = None, closed: bool 
         if mb.sum() >= 2 and ma.sum() >= 2:
             ang = np.mean(resid[av][ma]) - np.mean((resid[bv] + b_off)[mb])
         else:                                # fall back to the window ends
-            lo, hi = c - hw, c + hw
+            lo, hi = max(c - hw, lo_lim), min(c + hw, hi_lim)
             if not closed:
                 lo, hi = max(lo, 0), min(hi, n - 1)
             ft = _integrate_segments(segments, (lo + roll) * step, (hi + roll) * step,
                                      T if closed else None)
             ang = (_theta_at(theta, hi + roll, n, closed, total_turn)
                    - _theta_at(theta, lo + roll, n, closed, total_turn) - ft)
-        angles.append(float(ang))
+        # a corner is an instantaneous turn: only its angle mod 2π acts on
+        # the geometry, so report it in (−π, π]
+        angles.append(float(-_wrap(-ang)))
 
     pred = model.kappa_pred(knots, vals_c)
     rms_k = float(np.sqrt(np.mean((kap_u[valid] - pred[valid]) ** 2)))
@@ -1215,13 +1266,39 @@ def _constraint_map(knots: list[np.ndarray], pieces: list[tuple[int, int, bool]]
     return P
 
 
-def _tiny_fit(kappa, sm, sigma, step, T, closed) -> Fit:
-    """Strokes too short to analyse: one arc or line from the mean κ."""
-    k = float(np.mean(kappa)) if len(kappa) else 0.0
-    kd = "line" if abs(k) * T <= _TURN_FLOOR else "arc"
+def _tiny_fit(pts, sm, sigma, step, T, closed) -> Fit:
+    """Strokes too short to analyse at this σ: one arc or line with the
+    stroke's own turning spread over its length T.
+
+    The turning is taken from geometry that heavy smoothing cannot inflate:
+    open strokes use the end-to-end tangent change of the smoothed curve;
+    closed strokes use the turning number of the raw polygon (sum of its
+    wrapped exterior angles, an integer number of turns whatever the
+    jitter), since smoothing a loop with σ comparable to its length shrinks
+    it toward its centroid and blows its measured κ up without bound. (The
+    mean measured κ, which this used to return, is per unit of RAW length
+    on a shrunken curve: κ·T then over-counts the turning arbitrarily.)
+    """
+    p = np.asarray(pts, dtype=np.float64)
+    e = np.diff(np.vstack([p, p[:1]]) if closed else p, axis=0)
+    el = np.hypot(e[:, 0], e[:, 1])
+    if el.sum() > 0:                  # the stroke's own length (the analysis
+        T = float(el.sum())           # grid rounds it to whole steps of σ/4)
+    T = max(float(T), 0.0)
+    turn = 0.0
+    if closed:
+        e = e[el > 1e-12]
+        if len(e) >= 3:
+            h = np.arctan2(e[:, 1], e[:, 0])
+            turn = 2 * np.pi * round(float(np.sum(_wrap(np.roll(h, -1) - h))) / (2 * np.pi))
+    elif len(sm) >= 3:
+        th = _theta(sm, False)
+        turn = float(th[-1] - th[0])
+    k = turn / T if T > 0 else 0.0
+    kd = "line" if abs(turn) <= _TURN_FLOOR else "arc"
     kv = k if kd == "arc" else 0.0
-    seg = Segment(kd, 0.0, max(T, 0.0), kv, kv)
-    fit = Fit([seg], [], float(sigma), 0.0, 0.0, [], float(max(T, 0.0)), bool(closed),
+    seg = Segment(kd, 0.0, T, kv, kv)
+    fit = Fit([seg], [], float(sigma), 0.0, 0.0, [], T, bool(closed),
               float(step), turn_tol=float(_TURN_FLOOR))
     if len(sm) >= 2 and T > 0:
         fit = replace(fit, rms_position_error=_position_error(fit, sm, step))
