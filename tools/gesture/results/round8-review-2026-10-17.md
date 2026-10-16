@@ -43,6 +43,15 @@ the shapes sheets (first and last rows), the chimera as a direction.
 6. **Annotation.** Some elements cross or comment on others, so the parts are
    in conversation.
 
+## Ian's clarification (read the fragments together)
+
+"How different the grammars are, but how they are interesting and coherent yet
+strange in themselves." The unit of interest is the **set of distinct
+grammars**: each fragment obeys its own rules consistently (coherent), the
+rules are unfamiliar (strange), and the fragments differ from one another
+without merging. Principle 1 (polyphony) is the frame; the others describe
+what makes a single grammar strange yet coherent.
+
 ## What it changes
 
 - A. The bench is a **conversation between distinct voices** (hands, regimes,
