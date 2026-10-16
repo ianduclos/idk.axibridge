@@ -1,7 +1,7 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-10-13
+updated: 2026-10-16
 machine: mac+pi
 summary: The MCP server and live sync are merged and the live app runs them; native acceptance of the MCP, live sync and the 8 October integration remains with Ian.
 next:
@@ -25,6 +25,8 @@ fix wave), merged as 069e11b: 1,954 passed on the merged result. The live app
 was relaunched on it 2026-10-13. Freshness tests fail the normal suite when the
 app drifts from what the MCP calls. Usage: `docs/MCP.md`; decisions and
 deferred findings: `docs/reviews/mcp-server-2026-10-12.md`.
+
+**Housekeeping, 13–16 October:** local MCP allow-list written (19 tools; `project`, `save_project`, `call_api` and motion stay prompted — `docs/MCP.md` Safety); 20 merged local branches deleted, old graphify snapshots pruned; `main` pushed to origin 2026-10-16. The idkpi clone has not been synced yet.
 
 **Cleanup integration, 8 October:** locally integrated `codex/mosca2-bench`,
 `codex/recovery-groups-usability` and all eleven `codex/territory02` commits.
