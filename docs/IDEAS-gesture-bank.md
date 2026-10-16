@@ -205,6 +205,34 @@ before generating anything.
   type skeletons, Ian's own hand via the draw tool (which also records
   timing — the one source with real speed).
 
+## Ledger — overnight run 2026-10-16
+
+Code in `tools/gesture/` (research only, own venv; see its README). Results
+in `tools/gesture/results/` — read `review-2026-10-16.md` first.
+
+- **Stage 0 — done.** Corpus: 31 Matisse (SMK), 27 Hokusai + 34 Ingres
+  (Met), all PD; manifests in `docs/research/gesture-corpus/`. Synthetic
+  ground truth (`synth.py`), four nulls + an identity control (`nulls.py`).
+  Non-artist hands researched (`hands-to-collect.md`), nothing downloaded.
+  Gallica blocked by a Cloudflare human check; physical plotter round-trip
+  not done (needs Ian at the machine).
+- **Stage 1 — gate met.** Six-way extraction bake-off; default is
+  `extract_hybrid` (hysteresis-ink skeleton topology + sub-pixel
+  core-of-profile refinement). GT κ error 0.72 → 0.09 (0.034 at the panel's
+  own σ). Faint pencil (KKS18238) and dense small motifs remain weak.
+- **Stage 2 — null half met, artist half NOT met.** Against a
+  pipeline-matched control the four nulls separate at AUC 0.92–0.999.
+  Artists separate (artists-only geometry bacc 0.78–0.82, chance 0.33), but
+  Matisse's own etchings vs lithographs separate at 0.78–0.80 — most of the
+  signal is medium. Next: medium-invariant features or a medium-matched
+  corpus (a second etcher/lithographer).
+- **Stage 3 — preview only.** `grammar.py` learns, generates, code-switches,
+  translates, restyles. At σ = 0.01·ref ~90% of strokes fit as one segment,
+  so order is barely modelled; drawings have no composition. Not a result.
+- **Representation note:** clothoid DP fitter (`clothoid.py`) works on
+  synthetic data; a corner-angle overflow on scan strokes was being fixed at
+  the end of the run.
+
 ## Open decisions (flagged, not settled)
 
 - **Where a profile lives.** Repo survey: corpus fits the gallery, a learned
