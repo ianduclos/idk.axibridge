@@ -10,7 +10,7 @@ next:
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank: review round-6 regime sheets, decide nib rendering at real pen widths, then plot a candidate (see HANDOFF "Gesture bank")
+  - Gesture bank: decide nib rendering / wet defaults / striations, then plot the A4 regimes candidate (see HANDOFF "Gesture bank")
 handoff_for: Codex
 ---
 

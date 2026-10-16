@@ -4,12 +4,12 @@ updated: 2026-10-16
 entries: 31
 ---
 
-### Gesture bank: regimes round 7 and a first plot — opened 2026-10-16, owner: ian
+### Gesture bank: four decisions + first regimes plot — opened 2026-10-16, owner: ian
 
-- done: Rounds 1–6 on 2026-10-16 (ledger in docs/IDEAS-gesture-bank.md). Latest: regimes direction (lines, nibs, shapes becoming one another in space): `regime.py` (metamorphosis), `signs.py` (placement grammar, judged as belonging 11/12), `regime_field.py` (structure-derived fields). Corpora harvested: calligraphy, Arabic print, artists (AIC items manual), Amazon/physics, dance. Plot candidates in `.local/gesture/out/plot_candidates_v2/` and `plot_candidates_regimes/`. 320 tests pass.
-- next: Ian looks at the round-6 sheets and decides the nib-rendering question at real pen widths (tools/gesture/results/round6-2026-10-16.md item 3) and whether to plot a candidate. Research round 7 candidates are in the same file (signs as line events, wet mass edges, path ordering).
-- blockers: plotting needs Ian at the machine; 15 AIC images + 5 other manual sources need a browser session.
-- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 6](tools/gesture/results/round6-2026-10-16.md), [round 5 files](tools/gesture/results/), [corpora manifests](docs/research/gesture-corpus/), [package README](tools/gesture/README.md). Scans/outputs in gitignored `.local/gesture/`.
+- done: Rounds 1–7 on 2026-10-16 (ledger in docs/IDEAS-gesture-bank.md). Latest: signs grown as line events, wet mass edges, nib rendering that reads as solid at real pen widths, path ordering; polished A4 candidate `.local/gesture/out/plot_candidates_r7/regimes-strahler-tree-A4.svg`. 361 tests pass.
+- next: Ian decides the four items in tools/gesture/results/round7-2026-10-16.md ("Decisions waiting on Ian": nib rendering c/e, wet + spiral defaults, bristle striations vs never-hatching, first plot) and, at the machine, plots a 2-minute nib test strip and/or the A4 candidate (Assets → Import SVG; turn off Sort/Merge). Then round 8 from the same file.
+- blockers: plotting needs Ian at the machine; 15 AIC + 7 other manual sources need a browser session.
+- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 7](tools/gesture/results/round7-2026-10-16.md), [round 6](tools/gesture/results/round6-2026-10-16.md), [package README](tools/gesture/README.md). Scans/outputs in gitignored `.local/gesture/`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 

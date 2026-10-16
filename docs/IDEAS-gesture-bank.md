@@ -272,6 +272,10 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   one stroke line → nib → mass (metamorphosis operators), sign vocabulary +
   calligraphy-learned placement (judge: belongs 11/12), structure-derived
   regime fields (trunk swells into mass). Signs should grow out of lines next.
+- **Round 7 (2026-10-16 late night)** — `tools/gesture/results/round7-2026-10-16.md`:
+  signs as line events (beat stamps 12/12), wet mass edges, nib rendering
+  that reads as solid ink at real pen widths (c/e), path ordering + a
+  polished A4 regimes candidate.
 - **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
   continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the
