@@ -154,3 +154,108 @@ def test_model_json_roundtrip(model, tmp_path):
     y1 = tr.synth_residual(model, 500, np.random.default_rng(2))
     y2 = tr.synth_residual(m2, 500, np.random.default_rng(2))
     np.testing.assert_allclose(y1, y2)
+
+
+# ---------------------------------------------------------------------------
+# v2: bursty tremor (regime + kinks)
+# ---------------------------------------------------------------------------
+
+def _v2(model, regime=None, kinks=None):
+    return tr.TremorModel(**{**model.__dict__, "version": 2,
+                             "regime": regime or {"kind": "lognormal", "sigma": 0.6, "corr_w": 6.0},
+                             "kinks": kinks or {"rate_per_100w": 3.0, "amp_w": 0.3, "amp_log_sd": 0.3, "tau_w": 0.75}})
+
+
+def test_v1_still_available(model, tmp_path):
+    d = _scene()
+    m2 = _v2(model)
+    a = tr.apply_tremor(d, m2, np.random.default_rng(3), mode="v1")
+    b = tr.apply_tremor(d, model, np.random.default_rng(3))
+    for sa, sb in zip(a.strokes, b.strokes):
+        np.testing.assert_array_equal(sa.points, sb.points)
+    c = tr.apply_tremor(d, m2, np.random.default_rng(3))
+    assert not np.allclose(a.strokes[0].points, c.strokes[0].points)
+    # a v1 JSON (no v2 fields) loads as v1; a v2 model round-trips
+    p = tmp_path / "v1.json"
+    js = model.to_json()
+    for k in ("version", "regime", "kinks"):
+        js.pop(k)
+    p.write_text(__import__("json").dumps(js))
+    assert tr.TremorModel.load(p).version == 1
+    m2.save(tmp_path / "v2.json")
+    assert tr.TremorModel.load(tmp_path / "v2.json").regime == m2.regime
+
+
+def test_v2_determinism_purity_identity(model):
+    d = _scene()
+    m2 = _v2(model)
+    before = [s.points.copy() for s in d.strokes]
+    a = tr.apply_tremor(d, m2, np.random.default_rng(7))
+    b = tr.apply_tremor(d, m2, np.random.default_rng(7))
+    for sa, sb in zip(a.strokes, b.strokes):
+        np.testing.assert_array_equal(sa.points, sb.points)
+    for s, p in zip(d.strokes, before):
+        np.testing.assert_array_equal(s.points, p)
+    z = tr.apply_tremor(d, m2, np.random.default_rng(0), amount=0.0)
+    for s, t in zip(d.strokes, z.strokes):
+        np.testing.assert_array_equal(s.points, t.points)
+
+
+def test_v2_ends_pinned_and_contacts_kept(model):
+    from shapely.geometry import LineString, Point
+    d = _scene()
+    big = _v2(tr.TremorModel(**{**model.__dict__, "rms": model.rms * 3, "psd": list(np.asarray(model.psd) * 9)}))
+    for seed in range(5):
+        out = tr.apply_tremor(d, big, np.random.default_rng(seed))
+        host, stem = out.strokes[0], out.strokes[1]
+        np.testing.assert_allclose(host.points[0], d.strokes[0].points[0], atol=1e-9)
+        np.testing.assert_allclose(host.points[-1], d.strokes[0].points[-1], atol=1e-9)
+        np.testing.assert_allclose(stem.points[0], d.strokes[1].points[0], atol=1e-9)
+        d0 = LineString(d.strokes[0].points).distance(Point(d.strokes[1].points[-1]))
+        assert LineString(host.points).distance(Point(stem.points[-1])) <= d0 + 0.1 * W
+        assert out.strokes[2].closed
+
+
+def _regime_drawing(regime, seed=0, n_strokes=16, length_w=400.0, amp_w=0.1):
+    rng = np.random.default_rng(seed)
+    st = []
+    n = int(length_w / tr.STEP_W)
+    for k in range(n_strokes):
+        off = _ar2_offsets(rng, n)
+        off = off / off.std() * amp_w * W
+        if regime:
+            off = off * tr.synth_regime(regime, n, rng)
+        pts = np.column_stack([50 + np.arange(n) * tr.STEP_W * W, 50 + 40 * k + off])
+        st.append(Stroke(pts, width=np.full(n, W)))
+    return Drawing(st, source="regime", size=(int(100 + length_w * W), 100 + 40 * n_strokes))
+
+
+def test_regime_fit_recovers_switching_statistics():
+    true = tr.markov2_normalised(3.0, 24.0, 8.0)
+    res = tr.drawing_residuals(_regime_drawing(true))
+    grid = {"ratio": [1.5, 3.0, 5.0], "dwell_lo_w": [8.0, 24.0, 64.0], "dwell_hi_w": [3.0, 8.0, 24.0]}
+    f = tr.fit_regime(res, 0, kind="markov2", kappa_norm=False, grid=grid, fit_kinks=False)
+    r = f["regime"]
+    assert r["gain_hi"] / r["gain_lo"] == pytest.approx(3.0)
+    assert r["dwell_lo_w"] == 24.0 and r["dwell_hi_w"] == 8.0
+    # the measured switching statistics are reproduced
+    for k in ("dwell_shaky_w", "dwell_calm_w", "shaky_frac"):
+        assert f["fit"][k] == pytest.approx(f["target"][k], rel=0.25)
+    # a stationary process is not called bursty
+    res0 = tr.drawing_residuals(_regime_drawing(None, seed=1))
+    f0 = tr.fit_regime(res0, 0, kind="lognormal", kappa_norm=False,
+                       grid={"sigma": [0.0, 0.3, 0.6], "corr_w": [8.0]}, fit_kinks=False)
+    assert f0["regime"]["sigma"] == 0.0
+    b0 = tr.burst_stats(res0, np.random.default_rng(0), bimodal=False)
+    b1 = tr.burst_stats(res, np.random.default_rng(0), bimodal=False)
+    assert b1["env_lsd_within_excess"] > 2 * b0["env_lsd_within_excess"]
+
+
+def test_regime_and_kink_synthesis_normalised():
+    g = tr.synth_regime({"kind": "lognormal", "sigma": 0.5, "corr_w": 6.0}, 100000, np.random.default_rng(0))
+    assert np.mean(g ** 2) == pytest.approx(1.0, rel=0.05)
+    g = tr.synth_regime(tr.markov2_normalised(3.0, 20.0, 10.0), 100000, np.random.default_rng(0))
+    assert np.mean(g ** 2) == pytest.approx(1.0, rel=0.08)
+    k = tr.synth_kinks({"rate_per_100w": 2.0, "amp_w": 0.5, "tau_w": 0.75}, 40000, np.random.default_rng(0))
+    n_events = len(tr._runs(np.abs(k) > 0.2))
+    assert 100 < n_events < 300           # 40000 · 0.25 w = 10000 w → ≈ 200 kinks
