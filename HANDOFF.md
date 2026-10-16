@@ -4,12 +4,12 @@ updated: 2026-10-16
 entries: 31
 ---
 
-### Gesture bank: next research round — opened 2026-10-16, owner: claude
+### Gesture bank: first plot and round 4 — opened 2026-10-16, owner: ian
 
-- done: Overnight run + medium-invariance standard preprocessing (see ledger). Afternoon parallel round: grammar v4, restyle-as-translation, lognormal kinematic model, composition/topology layer with an `oehlen_tree` generator, blinded visual judge (two rounds). 209 tests pass. Ian's direction: contiguous lines, never hatching; continue research, no axibridge integration yet.
-- next: Pick from the candidate list in `tools/gesture/results/parallel-round-2026-10-16.md` (joins/corners from topology stats; perceived-line merging; tremor layer; composite topology→restyle sheets; pairwise hand test). Re-point `restyle.py` from `grammar_v3_frozen` to `grammar` (v4) and re-run its grid.
-- blockers: none. Brush/graphite medium pairs need a within-hand corpus (downloads need Ian's go). Gallica needs a human Cloudflare check. Plotter round-trip needs Ian at the machine.
-- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round summary](tools/gesture/results/parallel-round-2026-10-16.md), [review](tools/gesture/results/review-2026-10-16.md), [package README](tools/gesture/README.md). Scans and outputs in gitignored `.local/gesture/`.
+- done: Rounds 1–3 on 2026-10-16 (see ledger in docs/IDEAS-gesture-bank.md). Latest: grammar v5, perceived lines, tremor layer (the biggest perceptual lever), composite pipeline (topology → restyle → chain → tremor) with a pairwise hand test. 238 tests pass. Three blind-judge runs, two valid, one failed its own calibration (recorded).
+- next: Ian decides the first plot: a medium Oehlen tree in Matisse's and Hokusai's hands with tremor, side by side (needs a small SVG export from tools/gesture, no app integration, and Ian's approval for motion). Research candidates for round 4 are listed in tools/gesture/results/round3-2026-10-16.md (bursty tremor, grammar v6, chain fix, brush/graphite corpus).
+- blockers: plotting needs Ian at the machine; corpus downloads need Ian's go; Gallica needs a human Cloudflare check.
+- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 3](tools/gesture/results/round3-2026-10-16.md), [round 2](tools/gesture/results/parallel-round-2026-10-16.md), [review](tools/gesture/results/review-2026-10-16.md), [package README](tools/gesture/README.md). Scans and outputs live in gitignored `.local/gesture/`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 

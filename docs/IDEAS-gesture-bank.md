@@ -257,6 +257,12 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   tokens). Two shared gaps: along-line corners (~2× real in every
   generator) and composition (the judge's top cue). Best outputs: single
   continuous lines; topology trees restyled into a hand.
+- **Round 3 (2026-10-16 evening)** — `tools/gesture/results/round3-2026-10-16.md`:
+  grammar v5 (real join angles; topology AUC down), perceived lines
+  (measurement view only), tremor (blind judge: v4 spotted 29/30 without,
+  20/30 with), composite topology→restyle→chain (pairwise hand ID on
+  matched structure M–H 0.75–0.90). Next: first plot (Ian at the machine),
+  bursty tremor, grammar v6, chain fix.
 - **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
   continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the
