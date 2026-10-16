@@ -1,8 +1,15 @@
 ---
 project: idk.axibridge
-updated: 2026-10-13
-entries: 30
+updated: 2026-10-16
+entries: 31
 ---
+
+### Gesture bank: finish the stage-0 corpus — opened 2026-10-16, owner: claude
+
+- done: Research plan written ([docs/IDEAS-gesture-bank.md](docs/IDEAS-gesture-bank.md), stages 0–6 with gates). 31 public-domain SMK Matisse scans downloaded to the gitignored `.local/gesture/corpus/matisse/` (tier A pure line 19, tier B line+tone 12; 4 tier-A images are low-res ~1,600 px; KKS21180 is a white-on-black linocut needing inversion). Manifest with rights, SMK page and download URL per file: [matisse-smk.csv](docs/research/gesture-corpus/matisse-smk.csv). Tonal 1920s lithographs were excluded on sight.
+- next: Add Gallica line works (Mallarmé etchings, Ronsard lithographs, *Thèmes et Variations* plates; free non-commercial reuse with credit; Gallica blocks automated fetches, so use the browser pane or ask Ian). Then the comparison set (Ingres, Hokusai: public domain) and the generated null drawings plus synthetic/plotter ground truth described in stage 0. Ask Ian before each download (name, source, size).
+- blockers: none. Open decisions (where research code lives; whether scikit-image/sknw become an optional extra) are flagged in the plan; settle them before stage 1 code, not implicitly.
+- context: [plan](docs/IDEAS-gesture-bank.md), [manifest](docs/research/gesture-corpus/matisse-smk.csv). Scans are not in git — on another machine, refetch from the manifest's `download_url` column.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 
