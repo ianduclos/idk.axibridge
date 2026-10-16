@@ -55,3 +55,13 @@ def test_integrate_kappa_round_trips_through_kappa_s():
     truth = np.interp(s, breaks, kap)
     inner = slice(20, -20)  # ends are biased by smoothing
     assert np.max(np.abs(k[inner] - truth[inner])) < 1e-3
+
+
+def test_kappa_s_arclength_is_along_smoothed_curve():
+    rng = np.random.default_rng(3)
+    r = 200.0
+    pts = circle(r, n=4000) + rng.normal(0, 0.5, (4000, 2))
+    s, k, sm = kappa_s(pts, sigma=8.0, step=0.5, closed=True, renormalise=True)
+    length = len(s) * (s[1] - s[0])
+    assert abs(length - 2 * np.pi * r) / (2 * np.pi * r) < 0.02
+    assert abs(np.sum(k) * (s[1] - s[0]) - 2 * np.pi) < 0.1

@@ -77,14 +77,25 @@ def curvature(points: np.ndarray, step: float, closed: bool = False) -> np.ndarr
 
 
 def kappa_s(points: np.ndarray, sigma: float, step: float | None = None,
-            closed: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+            closed: bool = False, renormalise: bool = False) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Convenience: resample → smooth → κ. Returns (s, κ, smoothed_points).
 
     step defaults to sigma/4 (enough samples per smoothing kernel).
+
+    By default s is arc length along the RAW polyline. On noisy input that
+    stretches s by the noise's zig-zag (≈28% at 0.5 px jitter) and
+    over-counts turning; `renormalise=True` re-parameterises by arc length
+    along the SMOOTHED curve (renormalised curvature scale space). clothoid.py
+    does its own equivalent correction; extracted strokes are already
+    smoothed at ~1 px, where the difference is small.
     """
     step = step if step is not None else max(sigma / 4.0, 1e-6)
     r = resample(points, step, closed=closed)
     sm = smooth(r, sigma, step, closed=closed)
+    if renormalise and len(sm) >= 3:
+        sm = resample(sm, step, closed=closed)
+        step = float(arclength(np.vstack([sm, sm[:1]]) if closed else sm)[-1]
+                     / max(len(sm) - (0 if closed else 1), 1))
     k = curvature(sm, step, closed=closed)
     s = np.arange(len(sm)) * step
     return s, k, sm
