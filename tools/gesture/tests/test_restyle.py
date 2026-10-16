@@ -9,7 +9,7 @@ import pytest
 from gesture import restyle as rs
 from gesture import synth
 from gesture.core import Drawing, Stroke
-from gesture.grammar_v3_frozen import learn
+from gesture.grammar_v4_frozen import learn
 
 
 @pytest.fixture(scope="module")

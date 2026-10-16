@@ -14,8 +14,13 @@ Subcommands (run from tools/gesture):
     ../../.local/gesture/.venv/bin/python -m experiments.restyle_study grid
     ../../.local/gesture/.venv/bin/python -m experiments.restyle_study sheets
 
-Outputs: .local/gesture/out/restyle/. Grammars: the frozen v3 JSONs in
-.local/gesture/out/grammar_v2/grammar_{artist}.json.
+  delta    v4 vs v3: re-run a few cells with the FROZEN v4 grammar and compare
+           to the v3 rows of the grid cache (key texture features, structure
+           distance, junction gaps). Writes delta_v4.md / delta_v4.json.
+
+Outputs: .local/gesture/out/restyle/. Grammars: since the composite round the
+frozen v4 JSONs in .local/gesture/out/grammar_v4_frozen/ (the v3 grid in
+grid_rows.jsonl was made with grammar_v3_frozen + grammar_v2/).
 """
 from __future__ import annotations
 
@@ -32,18 +37,18 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from gesture import grammar_v3_frozen as gm  # noqa: E402
+from gesture import grammar_v4_frozen as gm  # noqa: E402
 from gesture import medium, panel, synth  # noqa: E402
 from gesture import restyle as rs  # noqa: E402
 from gesture.core import Drawing, Stroke  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 EXTRACT = ROOT / ".local/gesture/out/extract_hybrid"
-GRAMMARS = ROOT / ".local/gesture/out/grammar_v2"
+GRAMMARS = ROOT / ".local/gesture/out/grammar_v4_frozen"
 OUT = ROOT / ".local/gesture/out/restyle"
 ARTISTS = ("matisse", "hokusai", "ingres")
 AMOUNTS = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
-JOBS = max(1, min(10, (os.cpu_count() or 2) - 2))
+JOBS = max(1, min(3, (os.cpu_count() or 2) - 2))   # shared machine
 TEXTURE_GROUPS = ("k", "ext", "infl", "turn", "cl")   # len_/rel_ belong to the structure
 KEY = ("cl_corner_rate", "cl_segs_per_stroke", "k_q50", "k_q90", "ext_rate", "infl_rate",
        "turn_tcorr_10", "turn_net_ratio")
@@ -174,6 +179,21 @@ def feats(d: Drawing) -> dict:
     return f
 
 
+def _junction_gap(src: Drawing, out: Drawing) -> float:
+    """Max distance (/R) from a source junction end's restyled position to its
+    restyled host (0 = every junction welded)."""
+    R = src.ref_length()
+    J = rs.find_junctions(src, R)
+    if not J:
+        return 0.0
+    g = []
+    for i, e, j, _u in J:
+        p = out.strokes[i].points[e]
+        q = out.strokes[j].points
+        g.append(float(np.min(np.linalg.norm(q - p, axis=1))))
+    return max(g) / R
+
+
 def _real_job(args):
     art, path = args
     d = gm.long_drawing(Drawing.load(path))
@@ -191,6 +211,7 @@ def _grid_job(args):
     pe = [s.meta.get("restyle", {}).get("pin_err", 0.0) for s in o.strokes]
     return {"src": name, "method": method, "source": source, "amount": amount, "hand": hand,
             "seed": seed, "d_mean": sd["mean"], "d_frechet": sd["frechet"], "time": dt,
+            "junction_gap_R": _junction_gap(d, o),
             "pin_err_max_R": float(max(pe) / d.ref_length()) if pe else 0.0,
             "feats": feats(with_width(o, wr))}
 
@@ -511,6 +532,52 @@ def cmd_topo(a):
     _grid_sheet(rows, OUT / f"sheet-topology-{a.method}-{a.source}.jpg", a.size)
 
 
+def cmd_delta(a):
+    """v4 re-run of a few grid cells, compared with the cached v3 rows."""
+    OUT.mkdir(parents=True, exist_ok=True)
+    wr = w_common()
+    S = sources()
+    names = [n for n in S if n in a.srcs.split(",")]
+    amts = [float(x) for x in a.amounts.split(",")]
+    jobs = [(n, S[n], "gauss", so, amt, h, a.seed, wr) for n in names for so in a.sources.split(",")
+            for amt in amts for h in ARTISTS]
+    rows4 = run_cached(jobs, OUT / "grid_rows_v4.jsonl")
+    rows3 = [json.loads(x) for x in (OUT / "grid_rows.jsonl").read_text().splitlines() if x.strip()]
+    rows3 = [r for r in rows3 if r["src"] in names and r["method"] == "gauss"]
+    keys = ("cl_corner_rate", "k_q50", "turn_tcorr_10", "ext_rate")
+    out = {"cells": []}
+    L = ["| # | resynth | amount | grammar | d_mean/R | junction gap max /R | " + " | ".join(keys) + " | s/drawing |",
+         "|---|---|---|---|---|---|" + "---|" * len(keys) + "---|"]
+    k = 0
+    for so in a.sources.split(","):
+        for amt in amts:
+            for tag, rr in (("v3", rows3), ("v4", rows4)):
+                sel = [r for r in rr if r["source"] == so and abs(r["amount"] - amt) < 1e-9]
+                if not sel:
+                    continue
+                k += 1
+                med = {kk: float(np.nanmedian([r["feats"].get(kk, np.nan) for r in sel])) for kk in keys}
+                cell = {"source": so, "amount": amt, "grammar": tag, "n": len(sel),
+                        "d_mean": float(np.median([r["d_mean"] for r in sel])),
+                        "gap": float(np.max([r.get("junction_gap_R", np.nan) for r in sel])),
+                        "time": float(np.median([r["time"] for r in sel])), **med}
+                out["cells"].append(cell)
+                L.append(f"| D{k} | {so} | {amt:g} | {tag} | {cell['d_mean']:.4f} | {cell['gap']:.4f} | "
+                         + " | ".join(f"{med[kk]:.2f}" for kk in keys) + f" | {cell['time']:.2f} |")
+    real = json.loads((ROOT / ".local/gesture/out/composite/real_feats.json").read_text()) \
+        if (ROOT / ".local/gesture/out/composite/real_feats.json").exists() else []
+    if real:
+        L.append("")
+        for art in ARTISTS:
+            L.append(f"real {art}: " + ", ".join(
+                f"{kk} {np.nanmedian([f.get(kk, np.nan) for a_, _s, f in real if a_ == art]):.2f}" for kk in keys))
+    md = f"Sources: {', '.join(names)}; gauss decomposition; medians over sources × hands; v4 rows weld junctions.\n\n" \
+        + "\n".join(L) + "\n"
+    (OUT / "delta_v4.md").write_text(md)
+    (OUT / "delta_v4.json").write_text(json.dumps(out, indent=1))
+    print(md)
+
+
 def main(argv=None):
     p = argparse.ArgumentParser()
     sp = p.add_subparsers(dest="cmd", required=True)
@@ -531,8 +598,13 @@ def main(argv=None):
     t.add_argument("--source", default="trace")
     t.add_argument("--seed", type=int, default=1)
     t.add_argument("--size", type=int, default=260)
+    dl = sp.add_parser("delta")
+    dl.add_argument("--srcs", default="tree,dense,primitives,matisse:KKS1971-302,hokusai:57262")
+    dl.add_argument("--sources", default="trace,chain")
+    dl.add_argument("--amounts", default="0.4,0.6,0.8")
+    dl.add_argument("--seed", type=int, default=1)
     a = p.parse_args(argv)
-    {"grid": cmd_grid, "sheets": cmd_sheets, "topo": cmd_topo}[a.cmd](a)
+    {"grid": cmd_grid, "sheets": cmd_sheets, "topo": cmd_topo, "delta": cmd_delta}[a.cmd](a)
 
 
 if __name__ == "__main__":

@@ -49,8 +49,24 @@ ref_length (bbox diagonal), grammar tokens dimensionless in R. Pure and
 deterministic: inputs are never mutated; randomness via np.random.Generator
 or a seed (one child stream per stroke, independent of `amount`).
 
-Uses the FROZEN grammar v3 (`grammar_v3_frozen`); any object with the same
-`strokes`, `name` and chain interface works.
+Uses the FROZEN grammar v4 (`grammar_v4_frozen`, since the composite round
+of 2026-10-16; v3 before). `source="chain"` uses v4's source-stroke runs
+(`P_FOLLOW`, `MAX_RUN`), and so does `trace` (`TRACE_FOLLOW`): the runs carry
+more of the hand (pairwise hand test 0.75–0.90 vs 0.45–0.80 without) at the
+price of more corners (rate ≈ 3.9 vs 3.2; real 1.3–1.6). Any object with
+the same `strokes`, `name` and v4 chain interface (`draw` returning
+(kind, params, record)) works. `source="trace_ln"` takes a
+`lognormal.Hand` instead and redraws the structure pulse by pulse.
+
+**Junction welding** (`restyle_drawing(weld=True)`, default): an open end that
+touched another stroke in the source (T-junction, branch start, end-to-end
+join) is moved onto the *restyled* host at the same structural position,
+with a cosine fade over ≈ 2 σ_s, so trees stay welded.
+
+**Structure scale** (`scale`): ``"drawing"`` (default) σ_s in R of the
+drawing; ``"stroke"`` σ_s in a per-stroke feature length ℓ = length per
+quarter-turn of the stroke (smoothed at 0.01 R), capped at R — the slider
+then means the same on a spiral as on a tree limb.
 """
 from __future__ import annotations
 
@@ -61,12 +77,13 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.signal import find_peaks
 from scipy.spatial import cKDTree
 
-from . import grammar_v3_frozen as gm
+from . import grammar_v4_frozen as gm
 from .core import Drawing, Stroke
 from .curvature import resample, smooth
 
 METHODS = ("gauss", "clothoid", "anchors")
 SOURCES = ("chain", "transplant", "trace")
+SOURCES_ALL = SOURCES + ("trace_ln",)   # trace_ln: g is a lognormal.Hand
 
 STEP = 1.0 / 2000.0      # sample spacing, R units
 SIGMA0 = 0.0015          # light pre-smoothing of the source (≈ a line width), R units
@@ -89,6 +106,10 @@ CTX_N = 6                # transplant: coarse-κ context sampled at this many po
 TRACE_KMAX = 16          # trace: proposals per token at amount → 0 ...
 TRACE_KMIN = 2           # ... and at amount = 1 (k = KMIN + (KMAX−KMIN)(1−amount))
 TRACE_LOOK = 0.03        # trace: look-ahead ray, R units
+TRACE_FOLLOW = True      # trace: v4 source-stroke runs (P_FOLLOW, MAX_RUN); off = fewer corners, weaker hand identity (composite-2026-10-16.md)
+WELD_R = 0.006           # weld: a source end this close (R units) to another stroke is a junction
+WELD_FADE = 2.0          # weld: the end correction fades out over this many σ_s (≤ half the stroke)
+STROKE_K = 2.0           # scale="stroke": σ_s = sigma_of(amount) · min(R, STROKE_K · ℓ)
 
 
 def sigma_of(amount: float) -> float:
@@ -184,7 +205,7 @@ def _hand_theta_chain(g, rng, M: int, R: float, h: float) -> np.ndarray:
     while got < M and tries < 50:
         tries += 1
         need = (M - got + 4) * h / R
-        toks, _ = gm.generate_tokens(g, rng, length=need)
+        toks, _ = gm.generate_tokens(g, rng, length=need, p_follow=gm.P_FOLLOW)
         if not toks:
             continue
         pts, _, _ = gm.tokens_to_points(toks, R, step=h)
@@ -345,12 +366,14 @@ def trace_theta(g, rng, path: np.ndarray, theta_path: np.ndarray, h: float, R: f
     pts_all = [pos[None, :]]
     s = 0.0
     nlook = max(int(look * R / h), 2)
+    rec, run = None, 0
     for _ in range(4 * gm.MAX_TOKENS):
         if s >= L - h:
             break
         best, best_sc = None, np.inf
+        pf = gm.P_FOLLOW if (TRACE_FOLLOW and run < gm.MAX_RUN) else 0.0
         for _k in range(max(k, 1)):
-            kind, par = g.draw(p2, p1, s / R, Lr, rng)
+            kind, par, rec_k = g.draw(p2, p1, s / R, Lr, rng, prev_rec=rec, p_follow=pf)
             tok = gm._tok_corner(par[0]) if kind == "corner" else gm._tok_seg(kind, *par)
             if kind == "corner" and (not toks or toks[-1][0] == "corner"):
                 continue
@@ -366,12 +389,14 @@ def trace_theta(g, rng, path: np.ndarray, theta_path: np.ndarray, h: float, R: f
             idx = np.clip(np.arange(i0, i0 + len(Q)), 0, M)
             sc = float(np.mean(np.linalg.norm(Q - path[idx], axis=1)))
             if sc < best_sc:
-                best, best_sc = (tok, newprev, P, eh), sc
+                best, best_sc = (tok, newprev, P, eh, rec_k), sc
             if k <= 1:
                 break
         if best is None:
             continue
-        tok, newprev, P, eh = best
+        tok, newprev, P, eh, rec_k = best
+        run = run + 1 if (rec is not None and rec_k == rec + 1) else 0
+        rec = rec_k
         if toks and newprev is not None and newprev is not p1 and toks[-1] is p1:
             toks[-1] = newprev
         toks.append(tok)
@@ -384,6 +409,70 @@ def trace_theta(g, rng, path: np.ndarray, theta_path: np.ndarray, h: float, R: f
     pts = np.vstack(pts_all)
     if len(pts) < 3:
         return theta_path.copy()
+    th = _headings(_resample_n(pts, M, False), False)
+    return th + 2 * np.pi * np.round((theta_path[0] - th[0]) / (2 * np.pi))
+
+
+def trace_theta_ln(hand, rng, path: np.ndarray, theta_path: np.ndarray, h: float, R: float,
+                   k: int, look: float = TRACE_LOOK) -> np.ndarray:
+    """`trace_theta` with a kinematic hand (`lognormal.Hand`): the line grows
+    pulse by pulse from the hand's own order-2 chain; of k proposed next
+    pulses the one whose re-integrated window (plus a look-ahead ray) stays
+    closest to the path at matching arc length is committed. Pulses overlap,
+    so a commit also re-shapes the tail of the line drawn so far — the
+    kinematic hand's characteristic smoothness."""
+    from . import lognormal as ln
+    M = len(path) - 1
+    L = M * h
+    line = ln._Line(path[0], h)
+    nlook = max(int(look * R / h), 2)
+    stride = 4
+
+    def score(t_a, tg, Xw):
+        _Tk, _Xk, sk = line.old_part(t_a)
+        s0 = sk[-1] if len(sk) else 0.0
+        ss = s0 + ln.arclength(Xw)
+        if len(Xw) >= 2:
+            d = Xw[-1] - Xw[-2]
+            eh = float(np.arctan2(d[1], d[0]))
+        else:
+            eh = float(theta_path[0])
+        ray = Xw[-1] + np.outer(np.arange(1, nlook + 1) * h, [np.cos(eh), np.sin(eh)])
+        Q = np.vstack([Xw[::stride], ray])
+        sq = np.concatenate([ss[::stride], ss[-1] + np.arange(1, nlook + 1) * h])
+        idx = np.clip(np.round(sq / h).astype(int), 0, M)
+        return float(np.mean(np.linalg.norm(Q - path[idx], axis=1)))
+
+    for _ in range(ln.MAX_PULSES_LINE):
+        if line.length() >= L - h:
+            break
+        u = min(line.length() / max(L, 1e-9), 1.0)
+        best, best_sc = None, np.inf
+        for _k in range(max(k, 1)):
+            if not line.rows:
+                row = hand.first(rng)
+                newP = ln.first_pulse(row, R, float(theta_path[0]))
+            else:
+                row = hand.draw(np.asarray(line.rows[-1]), np.asarray(line.rows[-2]) if len(line.rows) >= 2 else None,
+                                u, rng)
+                newP = ln.next_pulse(line.P[-1], row, R)
+            t_a, tg, Xw = line.propose(newP)
+            if len(Xw) < 2 or not np.all(np.isfinite(Xw)):
+                continue
+            sc = score(t_a, tg, Xw)
+            if sc < best_sc:
+                best, best_sc = (newP, row, t_a, tg, Xw), sc
+        if best is None:
+            break
+        newP, row, t_a, tg, Xw = best
+        line.commit(newP, [row], t_a, tg, Xw)
+    pts = line.X
+    s = ln.arclength(pts)
+    if len(pts) < 3 or s[-1] <= 0:
+        return theta_path.copy()
+    if s[-1] > L:                                   # cut at the structure's length
+        j = int(np.searchsorted(s, L)) + 1
+        pts = pts[:max(j, 3)]
     th = _headings(_resample_n(pts, M, False), False)
     return th + 2 * np.pi * np.round((theta_path[0] - th[0]) / (2 * np.pi))
 
@@ -601,10 +690,22 @@ def _align_intervals(p0, th, hv, pin_idx, pin_tgt, closed, passes: int = 4):
 # public API
 # ---------------------------------------------------------------------------
 
+def feature_length(src: _Src, R: float) -> float:
+    """ℓ = the stroke's length per quarter-turn of its θ smoothed at 0.01 R
+    (px): a circle of radius r → 1.57 r, a spiral turn → a quarter of its
+    circumference, a near-straight limb → its length."""
+    L = src.h * len(src.theta)
+    th = _lowpass(src.theta, 0.01 * R / src.h, src.closed, src.turn)
+    tv = float(np.sum(np.abs(np.diff(th))))
+    return L / max(1.0, tv / (np.pi / 2))
+
+
 def restyle_points(points, g, rng, *, amount: float, ref_length: float, closed: bool = False,
                    method: str = "gauss", source: str = "chain", hand_gain: float = 1.0,
-                   tol: float = TOL) -> tuple[np.ndarray, dict]:
-    """One polyline (px) → (new polyline, info). amount = 0 returns a copy."""
+                   tol: float = TOL, scale: str = "drawing") -> tuple[np.ndarray, dict]:
+    """One polyline (px) → (new polyline, info). amount = 0 returns a copy.
+    info["n_out"]/["M"] let a caller map output samples back to the source
+    (sample i of the output ↔ arc fraction i/M of the source)."""
     pts = np.array(points, dtype=np.float64, copy=True)
     R = float(ref_length)
     info = {"amount": float(amount), "method": method, "source": source}
@@ -613,19 +714,24 @@ def restyle_points(points, g, rng, *, amount: float, ref_length: float, closed: 
     src = _source(pts, closed, R)
     if src is None:
         return pts, {**info, "kind": "too_short"}
-    sig = sigma_of(amount) * R
+    if scale == "stroke":
+        sig = sigma_of(amount) * min(R, STROKE_K * feature_length(src, R))
+    elif scale == "drawing":
+        sig = sigma_of(amount) * R
+    else:
+        raise ValueError(f"unknown scale {scale!r}")
     sd = max(sig / src.h, 1.0)
     st = decompose(src, sd, method)
     M = len(src.theta)
     pin_idx = st.pins[st.pins <= M] if not closed else np.unique(np.append(st.pins % M, M))
     tgt_pts = np.vstack([src.p, src.p[:1]]) if closed else src.p
     pin_tgt = tgt_pts[pin_idx]
-    if source == "trace":
+    if source in ("trace", "trace_ln"):
         base, hb = fit_pins(src.p[0], st.theta, src.h, pin_idx, pin_tgt, st.heads, st.head_tgt,
                             BASIS * sd, closed, tol * sig)
         path = _integrate(src.p[0], base, hb)
         k = int(round(TRACE_KMIN + (TRACE_KMAX - TRACE_KMIN) * (1 - float(np.clip(amount, 0, 1)))))
-        th_t = trace_theta(g, rng, path, base, src.h, R, k)
+        th_t = (trace_theta if source == "trace" else trace_theta_ln)(g, rng, path, base, src.h, R, k)
         r = hand_gain * (th_t - base)
         h_out = src.h
     else:
@@ -637,17 +743,18 @@ def restyle_points(points, g, rng, *, amount: float, ref_length: float, closed: 
             raise ValueError(f"unknown source {source!r}")
         r = hand_gain * r
         h_out = src.h / max(float(np.mean(np.cos(r))), 0.5)
-    th0 = st.theta + r if source != "trace" else base + r
+    traced = source in ("trace", "trace_ln")
+    th0 = st.theta + r if not traced else base + r
     # the trace already followed the structure's tangents; pinning them again
     # fights the hand's own tangent at the anchors, so trace pins positions only
-    heads, head_tgt = (st.heads, st.head_tgt) if source != "trace" else (np.zeros(0, int), np.zeros(0))
+    heads, head_tgt = (st.heads, st.head_tgt) if not traced else (np.zeros(0, int), np.zeros(0))
     th, h_out = fit_pins(src.p[0], th0, h_out, pin_idx, pin_tgt, heads, head_tgt,
                          BASIS * sd, closed, tol * sig)
     out = _integrate(src.p[0], th, h_out)
     pin_err = float(np.max(np.linalg.norm(out[pin_idx] - pin_tgt, axis=1))) if len(pin_idx) else 0.0
     if closed:
         out = out[:-1]
-    info.update(kind=st.kind, sigma_s=sig, n_pins=int(len(pin_idx)), pin_err=pin_err,
+    info.update(kind=st.kind, sigma_s=sig, M=int(M), n_pins=int(len(pin_idx)), pin_err=pin_err,
                 stretch=float(np.mean(h_out) / src.h), r_rms=float(np.sqrt(np.mean(r ** 2))))
     return out, info
 
@@ -668,19 +775,156 @@ def restyle_stroke(stroke: Stroke, g, rng, *, amount: float, ref_length: float |
 
 
 def restyle_drawing(drawing: Drawing, g, *, amount: float, seed: int = 0, method: str = "gauss",
-                    source: str = "chain", ref_length: float | None = None, **kw) -> Drawing:
+                    source: str = "chain", ref_length: float | None = None, weld: bool = True,
+                    **kw) -> Drawing:
     """Every stroke of a drawing restyled into hand g at one shared R (the
     drawing's ref_length), so the hand's scale is coherent across strokes.
     Stroke i draws from its own stream default_rng([seed, i]): the hand
-    detail of a stroke does not depend on `amount` (chain source)."""
+    detail of a stroke does not depend on `amount` (chain source).
+    weld: re-attach junction ends to their restyled hosts (`weld_junctions`)."""
     R = float(ref_length) if ref_length is not None else drawing.ref_length()
     out = [restyle_stroke(st, g, np.random.default_rng([int(seed), i]), amount=amount,
                           ref_length=R, method=method, source=source, **kw)
            for i, st in enumerate(drawing.strokes)]
+    wmeta = {}
+    if weld and amount > 0:
+        out, wmeta = weld_junctions(drawing, out, R)
     return Drawing(out, source=f"{drawing.source}|restyle:{getattr(g, 'name', '')}:{method}:{source}:{amount:g}",
                    size=drawing.size, meta={**drawing.meta, "restyle": {
                        "hand": getattr(g, "name", ""), "amount": float(amount), "method": method,
-                       "source": source, "seed": int(seed), "ref_length": R}})
+                       "source": source, "seed": int(seed), "ref_length": R, **wmeta}})
+
+
+# ---------------------------------------------------------------------------
+# junction welding
+# ---------------------------------------------------------------------------
+
+def _arcfrac(p: np.ndarray, closed: bool) -> np.ndarray:
+    q = np.vstack([p, p[:1]]) if closed else p
+    s = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(q, axis=0), axis=1))])
+    return (s / max(s[-1], 1e-12))[:len(p)]
+
+
+def find_junctions(drawing: Drawing, R: float, tol_r: float = WELD_R) -> list[tuple[int, int, int, float]]:
+    """Open ends that touch another stroke in the source: (stroke, end 0|-1,
+    host, u = arc fraction of the touching point along the host)."""
+    from scipy.spatial import cKDTree
+    S = drawing.strokes
+    if len(S) < 2:
+        return []
+    P = np.vstack([s.points for s in S])
+    own = np.concatenate([np.full(len(s.points), i) for i, s in enumerate(S)])
+    loc = np.concatenate([np.arange(len(s.points)) for s in S])
+    tree = cKDTree(P)
+    fr = [_arcfrac(s.points, s.closed) for s in S]
+    out = []
+    for i, st in enumerate(S):
+        if st.closed or len(st.points) < 2:
+            continue
+        for e in (0, -1):
+            cand = [j for j in tree.query_ball_point(st.points[e], tol_r * R) if own[j] != i]
+            if not cand:
+                continue
+            j = min(cand, key=lambda c: float(np.sum((P[c] - st.points[e]) ** 2)))
+            out.append((i, e, int(own[j]), float(fr[own[j]][loc[j]])))
+    return out
+
+
+def _point_at(st: Stroke, u: float, near: np.ndarray | None = None) -> np.ndarray:
+    """The point of a (restyled) stroke at structural position u: by sample
+    index when restyled (sample i ↔ source arc fraction i/M), else by arc.
+    With `near`, the point of the host closest to `near` within ±σ_s of that
+    position (the restyled host may slip along itself; the weld should not
+    drag the branch along with it)."""
+    p = st.points
+    info = st.meta.get("restyle", {})
+    if info.get("kind") not in (None, "identity", "too_short") and "M" in info:
+        M = info["M"]
+        x = u * M
+        if near is not None:
+            Lh = float(np.sum(np.linalg.norm(np.diff(p, axis=0), axis=1)))
+            w = max(int(np.ceil(info.get("sigma_s", 0.0) / max(Lh / max(M, 1), 1e-9))), 2)
+            idx = np.arange(int(np.floor(x)) - w, int(np.ceil(x)) + w + 1)
+            idx = idx % len(p) if st.closed else np.clip(idx, 0, len(p) - 1)
+            return _nearest_on_polyline(p[np.unique(idx)] if not st.closed else p[idx], near)
+        if st.closed:
+            i0 = int(np.floor(x)) % len(p)
+            i1, f = (i0 + 1) % len(p), x - np.floor(x)
+        else:
+            x = float(np.clip(x, 0, len(p) - 1))
+            i0 = int(np.floor(x))
+            i1, f = min(i0 + 1, len(p) - 1), x - i0
+        return (1 - f) * p[i0] + f * p[i1]
+    fr = _arcfrac(p, st.closed)
+    if near is not None:                 # an unrestyled host: the junction already touches it
+        return _nearest_on_polyline(np.vstack([p, p[:1]]) if st.closed else p, near)
+    return np.array([np.interp(u, fr, p[:, 0]), np.interp(u, fr, p[:, 1])])
+
+
+def _nearest_on_polyline(p: np.ndarray, x: np.ndarray) -> np.ndarray:
+    if len(p) == 1:
+        return p[0].copy()
+    a, b = p[:-1], p[1:]
+    ab = b - a
+    t = np.clip(np.sum((x - a) * ab, axis=1) / np.maximum(np.sum(ab * ab, axis=1), 1e-12), 0, 1)
+    q = a + t[:, None] * ab
+    return q[int(np.argmin(np.sum((q - x) ** 2, axis=1)))]
+
+
+def weld_junctions(src: Drawing, out: list[Stroke], R: float,
+                   tol_r: float = WELD_R) -> tuple[list[Stroke], dict]:
+    """Move every junction end of the restyled strokes onto its restyled host
+    (cosine fade over WELD_FADE·σ_s, at most half the stroke). Hosts are
+    welded before their dependents; the closing weld of a cycle (two ends
+    joined to each other) is applied last. Returns (new strokes, {"welds", "weld_max_R"})."""
+    J = find_junctions(src, R, tol_r)
+    if not J:
+        return out, {"welds": 0, "weld_max_R": 0.0}
+    deps: dict[int, list] = {}
+    for i, e, j, u in J:
+        deps.setdefault(i, []).append((e, j, u))
+    pts = [s.points.copy() for s in out]
+    state: dict[int, int] = {}          # 1 = in progress, 2 = done
+    moved, late = [], []
+
+    def apply(i, e, j, u):
+        host = Stroke(pts[j], closed=out[j].closed, meta=out[j].meta)
+        tgt = _point_at(host, u, near=pts[i][e])
+        p = pts[i]
+        d = tgt - p[e]
+        nd = float(np.linalg.norm(d))
+        if nd < 1e-9:
+            return
+        seg = np.linalg.norm(np.diff(p, axis=0), axis=1)
+        s = np.concatenate([[0.0], np.cumsum(seg)])
+        if e == -1:
+            s = s[-1] - s
+        sig = float(out[i].meta.get("restyle", {}).get("sigma_s", 0.0))
+        Lf = min(max(WELD_FADE * sig, 3 * nd), 0.5 * float(s.max()))
+        w = np.where(s < Lf, 0.5 * (1 + np.cos(np.pi * np.clip(s / max(Lf, 1e-9), 0, 1))), 0.0)
+        pts[i] = p + w[:, None] * d[None, :]
+        moved.append(nd)
+
+    def visit(i):
+        if state.get(i) == 2:
+            return
+        state[i] = 1
+        for e, j, u in deps.get(i, []):
+            if state.get(j) == 1:          # cycle: weld after everything else
+                late.append((i, e, j, u))
+                continue
+            visit(j)
+            apply(i, e, j, u)
+        state[i] = 2
+
+    for i in range(len(out)):
+        visit(i)
+    for jn in late:
+        apply(*jn)
+    new = [Stroke(p, width=None if s.width is None else s.width.copy(), closed=s.closed,
+                  meta={**s.meta, "welded": True} if i in deps else s.meta)
+           for i, (p, s) in enumerate(zip(pts, out))]
+    return new, {"welds": len(moved), "weld_max_R": float(max(moved) / R) if moved else 0.0}
 
 
 # ---------------------------------------------------------------------------
