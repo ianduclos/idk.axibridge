@@ -30,9 +30,9 @@ from gesture import grammar as gm  # noqa: E402
 from gesture import synth  # noqa: E402
 from gesture.core import Drawing, Stroke  # noqa: E402
 
-from experiments.grammar_eval import ARTISTS, OUT, load, prepared  # noqa: E402
+from experiments.grammar_eval import ARTISTS, OUT, learn_artist, load, prepared  # noqa: E402
 
-DEMO = OUT / "demo"
+DEMO = OUT / "demo_v3"
 CANVAS = (1000, 1200)
 LINE_W = 2.6
 TILE = (400, 480)
@@ -117,8 +117,8 @@ def population_sheet(art, g, drawings, rng):
                              if d.strokes else "single: empty"))
     # row 1 = 4 contiguous + real 1, row 2 = 4 contiguous + real 2, row 3 = 4 single lines
     layout = tiles[:4] + [rt[0]] + tiles[4:8] + [rt[1]] + singles + [None]
-    return grid(layout, 5, f"{art} - grammar v2 (sigma = {g.meta['sigma_w']:g} w, long strokes only): "
-                           "rows 1-2 contiguous/tree mode + a real long-stroke subset (right); row 3 single line"), gens
+    return grid(layout, 5, f"{art} - grammar v3 (sigma = {g.meta['sigma_w']:g} w, long strokes only, steered growth): "
+                           "rows 1-2 contiguous (learned relations) + a real long-stroke subset (right); row 3 single line"), gens
 
 
 def _draw_lines(size, polys, scale=1.0):
@@ -186,7 +186,7 @@ def main():
     DEMO.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     P = prepared()
-    G = {a: gm.learn(prepared=[pd for _, pd in P[a]], name=a) for a in ARTISTS}
+    G = {a: learn_artist(a, P) for a in ARTISTS}
     print(f"[{time.time() - t0:5.1f}s] learned")
     rng = np.random.default_rng(20261016)
     summary = {}

@@ -137,7 +137,7 @@ def cmd_scale(a):
 
 def _prep_job(args):
     art, stem, sigma_w = args
-    p = OUT / "prepared" / f"sw{sigma_w:g}" / art / f"{stem}.json"
+    p = OUT / "prepared" / f"v3-sw{sigma_w:g}" / art / f"{stem}.json"
     if p.exists():
         return art, stem, json.loads(p.read_text())
     d = Drawing.load(EXTRACT / art / f"{stem}.json")
@@ -157,6 +157,52 @@ def prepared(sigma_w=gm.SIGMA_W) -> dict[str, list[tuple[str, dict]]]:
     for art, stem, pd in res:
         out[art].append((stem, pd))
     return out
+
+
+def learn_artist(art, P, sigma_w=gm.SIGMA_W, **kw):
+    """Learn an artist's grammar, with the crossing gain from `calibrate` if present."""
+    g = gm.learn(prepared=[pd for _, pd in P[art]], name=art, sigma_w=sigma_w, **kw)
+    cg = OUT / "cross_gain.json"
+    if cg.exists():
+        g.relations["cross_gain"] = float(json.loads(cg.read_text()).get(art, 1.0))
+    return g
+
+
+def _calib_job(args):
+    gpath, size, seed, gain = args
+    g = gm.Grammar.load(gpath)
+    d = gm.generate_drawing(g, np.random.default_rng(seed), size, cross_gain=gain)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        f, _ = panel.features_with_info(d, sigma_min_w=medium.SIGMA_MIN_W, clothoid=False)
+    return f.get("rel_cross_per_len", np.nan)
+
+
+def cmd_calibrate(a):
+    """Tune each hand's crossing gain so generated drawings cross at the real
+    long-stroke subsets' median rate (panel rel_cross_per_len)."""
+    P = prepared(a.sigma_w)
+    gains = {}
+    for art in ARTISTS:
+        g = gm.learn(prepared=[pd for _, pd in P[art]], name=art, sigma_w=a.sigma_w)
+        gpath = OUT / f"grammar_{art}_calib.json"
+        g.save(gpath)
+        target = float(np.median([pd["relations"]["cross_per_ink"] for _, pd in P[art]
+                                  if pd["relations"]["n"] >= 2]))
+        sizes = [tuple(pd["size"]) for _, pd in P[art]][:12]
+        gain = 1.0
+        for it in range(3):
+            with ProcessPoolExecutor(JOBS) as ex:
+                v = list(ex.map(_calib_job, [(str(gpath), sz, 500 + i, gain) for i, sz in enumerate(sizes)]))
+            got = float(np.nanmedian(v))
+            print(f"{art} it{it}: gain {gain:.2f} → crossings/len {got:.3f} (real median {target:.3f})")
+            if got <= 0:
+                gain *= 2
+            else:
+                gain *= float(np.clip(target / got, 0.33, 3.0))
+        gains[art] = round(gain, 3)
+    (OUT / "cross_gain.json").write_text(json.dumps(gains, indent=1))
+    print(gains)
 
 
 def cmd_prepare(a):
@@ -211,10 +257,30 @@ def _feat_job(args):
     return key, f
 
 
+def _module(path: str):
+    """The grammar module: this one, or a baseline loaded from a file (e.g.
+    an older version extracted with `git show`, imports made absolute)."""
+    if not path:
+        return gm
+    import importlib.util
+    if "grammar_baseline" in sys.modules:
+        return sys.modules["grammar_baseline"]
+    spec = importlib.util.spec_from_file_location("grammar_baseline", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["grammar_baseline"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def _gen_job(args):
-    gpath, size, seed, relations = args
-    g = gm.Grammar.load(gpath)
-    return gm.generate_drawing(g, np.random.default_rng(seed), size, relations=relations)
+    mpath, gpath, size, seed, relations = args
+    mod = _module(mpath)
+    g = mod.Grammar.load(gpath)
+    return mod.generate_drawing(g, np.random.default_rng(seed), size, relations=relations)
+
+
+KEY = ("len_q10", "len_q50", "len_q90", "rel_touch_rate", "rel_near_rate", "rel_gap_log_q50",
+       "rel_cross_per_len", "rel_selfcross_frac", "cl_segs_per_stroke", "cl_corner_rate")
 
 
 def cmd_test1(a):
@@ -224,22 +290,25 @@ def cmd_test1(a):
     OUT.mkdir(parents=True, exist_ok=True)
     lut = medium.load_media()
     items = []      # (artist, cls, key, drawing)
+    variants = [(f"v3_{rl}", "", rl) for rl in RELS]
+    if a.baseline:
+        variants += [(f"{a.baseline_name}_{rl}", str(Path(a.baseline).resolve()), rl) for rl in RELS]
     for art in ARTISTS:
-        g = gm.learn(prepared=[pd for _, pd in P[art]], name=art, sigma_w=a.sigma_w)
+        g = learn_artist(art, P, a.sigma_w)
         gpath = OUT / f"grammar_{art}.json"
         g.save(gpath)
         reals = [(stem, gm.long_drawing(d)) for stem, d in load(art)]
         reals = [(s, d) for s, d in reals if len(d.strokes) >= 2]
         items += [(art, "real", f"{art}/{s}", d) for s, d in reals]
-        for rl in RELS:
+        for vname, mpath, rl in variants:
             t0 = time.time()
             with ProcessPoolExecutor(JOBS) as ex:
-                gens = list(ex.map(_gen_job, [(str(gpath), d.size, a.seed * 1000 + i, rl)
+                gens = list(ex.map(_gen_job, [(mpath, str(gpath), d.size, a.seed * 1000 + i, rl)
                                              for i, (_s, d) in enumerate(reals)]))
-            print(f"{art}/{rl}: {len(reals)} real, generated in {time.time() - t0:.0f}s; "
+            print(f"{art}/{vname}: {len(reals)} real, generated in {time.time() - t0:.0f}s; "
                   f"gen strokes med {np.median([len(d.strokes) for d in gens])}, "
                   f"real strokes med {np.median([len(d.strokes) for _, d in reals])}")
-            items += [(art, f"gen_{rl}", f"{art}/gen_{rl}{i}", d) for i, d in enumerate(gens)]
+            items += [(art, f"gen_{vname}", f"{art}/gen_{vname}{i}", d) for i, d in enumerate(gens)]
     with ProcessPoolExecutor(JOBS) as ex:
         feats = dict(ex.map(_feat_job, [(k, d) for _a, _c, k, d in items], chunksize=2))
     keys = [k for _a, _c, k, _d in items]
@@ -259,7 +328,7 @@ def cmd_test1(a):
     rep = {"sigma_w": a.sigma_w, "n_features": len(names), "artists": {}}
     for art in ARTISTS:
         rep["artists"][art] = {}
-        for rl in RELS:
+        for rl, _mp, _r in variants:
             m = (art_lab == art) & np.isin(cls, ["real", f"gen_{rl}"])
             y = np.where(cls[m] == "real", "real", "gen")
             grp = np.arange(m.sum())
@@ -273,7 +342,23 @@ def cmd_test1(a):
             rep["artists"][art][rl] = res
             print(art, rl, {t: {mn: round(v["auc"], 3) for mn, v in r.items()} for t, r in res.items()
                             if t.startswith("geometry")})
+    # key features: medians, real vs each variant
+    rep["key"] = {}
+    for art in ARTISTS:
+        rep["key"][art] = {}
+        for c in ["real"] + [f"gen_{v}" for v, _m, _r in variants]:
+            m = (art_lab == art) & (cls == c)
+            rep["key"][art][c] = {n: (float(np.nanmedian(X[m, names.index(n)])) if n in names else None)
+                                  for n in KEY}
     (OUT / "test1.json").write_text(json.dumps(rep, indent=1))
+    K = ["| # | artist | set | " + " | ".join(KEY) + " |", "|---|---|---|" + "---|" * len(KEY)]
+    i = 0
+    for art, rows in rep["key"].items():
+        for c, v in rows.items():
+            i += 1
+            K.append(f"| F{i} | {art} | {c} | " + " | ".join("—" if v[n] is None else f"{v[n]:.3g}" for n in KEY) + " |")
+    (OUT / "test1_key.md").write_text("\n".join(K) + "\n")
+    print("\n".join(K))
     L = ["| # | artist | relations | n real/gen | geometry: logreg / forest AUC | no rel_: logreg / forest |",
          "|---|---|---|---|---|---|"]
     i = 0
@@ -348,13 +433,16 @@ def cmd_memo(a):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["scale", "prepare", "test1", "memo"])
+    ap.add_argument("cmd", choices=["scale", "prepare", "calibrate", "test1", "memo"])
     ap.add_argument("--sigma-w", type=float, default=gm.SIGMA_W)
     ap.add_argument("--n", type=int, default=150, help="scale: strokes per artist; memo: strokes per set")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--repeats", type=int, default=5)
+    ap.add_argument("--baseline", default="", help="test1: also evaluate a grammar module file (older version)")
+    ap.add_argument("--baseline-name", default="v2")
     a = ap.parse_args(argv)
-    {"scale": cmd_scale, "prepare": cmd_prepare, "test1": cmd_test1, "memo": cmd_memo}[a.cmd](a)
+    {"scale": cmd_scale, "prepare": cmd_prepare, "calibrate": cmd_calibrate, "test1": cmd_test1,
+     "memo": cmd_memo}[a.cmd](a)
 
 
 if __name__ == "__main__":

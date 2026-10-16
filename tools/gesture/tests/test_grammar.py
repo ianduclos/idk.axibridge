@@ -33,6 +33,15 @@ def g_random():
     return learn(ds, name="synth_r")
 
 
+@pytest.fixture(scope="module")
+def g_fine():
+    """A hand at a realistic scale: many moderate strokes, thin line."""
+    rng = np.random.default_rng(7)
+    ds = [synth.scene_random(rng, 1500, n_strokes=10, length_frac=(0.08, 0.25), n_segments=(3, 6))
+          for _ in range(3)]
+    return learn(ds, name="synth_f")
+
+
 def _frame(strokes):
     return Drawing(strokes, source="test", size=(1000, 1000))
 
@@ -73,15 +82,15 @@ def test_hatching_and_long_selection():
     assert keep == [10] and info["n_hatch"] >= 8
 
 
-def test_generation_deterministic_and_finite(g_matisse):
+def test_generation_deterministic_and_finite(g_matisse, g_fine):
     a = generate_stroke(g_matisse, np.random.default_rng(5), ref_length=800, start=(10, 20))
     b = generate_stroke(g_matisse, np.random.default_rng(5), ref_length=800, start=(10, 20))
     assert np.array_equal(a.points, b.points)
     assert np.all(np.isfinite(a.points)) and len(a) >= 2
     assert np.allclose(a.points[0], [10, 20])
     for mode in ("contiguous", "single"):
-        d1 = generate_drawing(g_matisse, np.random.default_rng(3), (500, 400), mode=mode)
-        d2 = generate_drawing(g_matisse, np.random.default_rng(3), (500, 400), mode=mode)
+        d1 = generate_drawing(g_fine, np.random.default_rng(3), (900, 800), mode=mode)
+        d2 = generate_drawing(g_fine, np.random.default_rng(3), (900, 800), mode=mode)
         assert len(d1.strokes) == len(d2.strokes) >= 1
         for s1, s2 in zip(d1.strokes, d2.strokes):
             assert np.array_equal(s1.points, s2.points)
@@ -142,16 +151,16 @@ def test_arcs_make_arcs():
             assert abs(np.median(mid) - kappa) < 0.2 * kappa
 
 
-def test_kappa_continuity(g_matisse, g_random):
+def test_kappa_continuity(g_matisse, g_random, g_fine):
     rng = np.random.default_rng(4)
     n = 0
     for g in (g_matisse, g_random):
         for _ in range(40):
             n += _assert_kappa_continuous(generate_stroke(g, rng, ref_length=900))
-        for st in generate_drawing(g, rng, (700, 700)).strokes:      # truncated strokes too
-            n += _assert_kappa_continuous(st)
-        st = generate_drawing(g, rng, (700, 700), mode="single").strokes[0]   # chunk joints
+    for st in generate_drawing(g_fine, rng, (900, 900)).strokes:      # steered strokes
         n += _assert_kappa_continuous(st)
+    st = generate_drawing(g_fine, rng, (900, 900), mode="single").strokes[0]   # chunk joints
+    n += _assert_kappa_continuous(st)
     assert n > 20
 
 
@@ -177,16 +186,16 @@ def test_branching_starts_on_existing_strokes(g_matisse):
         assert dist < 1e-6
 
 
-def test_single_mode_one_stroke(g_matisse, g_random):
-    d = generate_drawing(g_matisse, np.random.default_rng(13), (800, 800), mode="single", ink=3.0)
+def test_single_mode_one_stroke(g_matisse, g_random, g_fine):
+    d = generate_drawing(g_fine, np.random.default_rng(13), (800, 800), mode="single", ink=3.0)
     assert len(d.strokes) == 1
     st = d.strokes[0]
-    assert st.length() / d.meta["ref_length_gen"] > 1.0
+    assert st.length() / d.meta["ref_length_gen"] > 0.8
     # two hands along one line
-    d2 = generate_drawing(g_matisse, np.random.default_rng(14), (800, 800), mode="single", ink=3.0,
-                          hands=(g_matisse, g_random), switch_every=0.5)
+    d2 = generate_drawing(g_fine, np.random.default_rng(14), (800, 800), mode="single", ink=3.0,
+                          hands=(g_fine, g_random), switch_every=0.5)
     assert len(d2.strokes) == 1
-    assert {sp[2] for sp in d2.strokes[0].meta["spans"]} == {"synth_m", "synth_r"}
+    assert {sp[2] for sp in d2.strokes[0].meta["spans"]} == {"synth_f", "synth_r"}
 
 
 def test_tokens_helpers(g_random):

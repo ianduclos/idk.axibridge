@@ -245,6 +245,12 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   test 1 still fails** (real vs generated AUC 0.92–1.00): strokes too short,
   too much touching in tree mode, Hokusai over-crossing.
   `tools/gesture/results/grammar-v2.md`.
+  **v3** (`results/grammar-v3.md`): lines grown to a planned length with
+  look-ahead steering, relations at learned rates, per-hand crossing gain.
+  Length, touching, gaps and crossings now near real; test 1 AUC 0.92 /
+  0.81 / 0.93 (M/H/I, was 0.97 / 0.96 / 0.99). New tell: along-line
+  texture — corner rate up to 2× real (Matisse 3.2 vs 1.5), visibly jagged in
+  contiguous sheets; single-line mode is the clearest win.
 - **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
   continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the

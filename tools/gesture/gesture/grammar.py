@@ -341,8 +341,9 @@ def relations(strokes: list[Stroke], R: float, w: float) -> dict:
     and share of self-crossing strokes (as panel's rel_ group measures them)."""
     from .panel import _rel_group
     n = len(strokes)
-    res = {"n": n, "attached": [], "u": [], "angle": [], "cross_per_ink": 0.0,
-           "selfcross_frac": 0.0, "ink": float(sum(s.length() for s in strokes) / R)}
+    res = {"n": n, "attached": [], "u": [], "angle": [], "gap": [], "cross_per_ink": 0.0,
+           "selfcross_frac": 0.0, "attach_w_over_R": ATTACH_W * w / R, "panel_rel": {},
+           "ink": float(sum(s.length() for s in strokes) / R)}
     if n == 0:
         return res
     step = max(w / 2, 0.5)
@@ -363,6 +364,14 @@ def relations(strokes: list[Stroke], R: float, w: float) -> dict:
             res["attached"].append(0)
             continue
         for end in (0, len(p) - 1):
+            k = min(len(allp), 64)
+            dd, jj_ = tree.query(p[end], k=k)
+            dd, jj_ = np.atleast_1d(dd), np.atleast_1d(jj_)
+            oth = own[jj_] != i
+            g = float(dd[oth][0]) if oth.any() else (
+                float(np.min(np.linalg.norm(allp[own != i] - p[end], axis=1))) if (own != i).any() else np.inf)
+            if np.isfinite(g):
+                res["gap"].append(g / R)
             idx = tree.query_ball_point(p[end], ATTACH_W * w)
             other = [j for j in idx if own[j] != i]
             if not other:
@@ -384,6 +393,7 @@ def relations(strokes: list[Stroke], R: float, w: float) -> dict:
         res["cross_per_ink"] = float(cpl) if np.isfinite(cpl) else 0.0
         sc = rg.get("rel_selfcross_frac", 0.0)
         res["selfcross_frac"] = float(sc) if np.isfinite(sc) else 0.0
+        res["panel_rel"] = {k: (float(v) if np.isfinite(v) else None) for k, v in rg.items()}
     return res
 
 
@@ -561,7 +571,7 @@ def learn(drawings: list[Drawing] | None = None, *, prepared: list[dict] | None 
     T = {k: [] for k in ("p2", "p1", "nx", "f2", "f1", "rem", "u", "par")}
     strokes, lengths, spos, per = [], [], [], []
     rel = {"n": 0, "n_attached": 0, "u": [], "angle": [], "cross": [], "selfcross": [],
-           "cross_per_ink_drawings": []}
+           "cross_per_ink_drawings": [], "gap_free": [], "n_ends": 0, "n_ends_attached": 0}
     for pd in prepared:
         sts = [s["tokens"] for s in pd["strokes"]]
         if shuffle:
@@ -575,6 +585,11 @@ def learn(drawings: list[Drawing] | None = None, *, prepared: list[dict] | None 
         rel["angle"] += r["angle"]
         rel["cross_per_ink_drawings"].append(r["cross_per_ink"])
         rel["selfcross"].append(r["selfcross_frac"])
+        thr = r.get("attach_w_over_R", 0.0)
+        gaps = r.get("gap", [])
+        rel["n_ends"] += len(gaps)
+        rel["n_ends_attached"] += int(sum(1 for x in gaps if x <= thr))
+        rel["gap_free"] += [x for x in gaps if x > thr]
         for s, toks in zip(pd["strokes"], sts):
             if not toks:
                 continue
@@ -619,6 +634,14 @@ def learn(drawings: list[Drawing] | None = None, *, prepared: list[dict] | None 
         "u": [round(x, 4) for x in rel["u"]], "angle": [round(x, 4) for x in rel["angle"]],
         "cross_per_ink": cross_tot / ink_tot if ink_tot > 0 else 0.0,
         "selfcross_frac": float(np.mean(rel["selfcross"])) if rel["selfcross"] else 0.0,
+        # per-endpoint view (v3): share of ends attached to another stroke, and
+        # the gap (R units) of the unattached ones — free starts sample it
+        "p_end_attached": rel["n_ends_attached"] / rel["n_ends"] if rel["n_ends"] else 0.0,
+        "gap_free": [round(x, 5) for x in (rel["gap_free"] if len(rel["gap_free"]) <= max_keep else
+                                           list(rng.choice(rel["gap_free"], max_keep, replace=False)))],
+        "cross_per_ink_median": float(np.median(rel["cross_per_ink_drawings"]))
+        if rel["cross_per_ink_drawings"] else 0.0,
+        "cross_gain": 1.0,
     }
     if len(spos) > max_keep:
         spos = [spos[i] for i in np.sort(rng.choice(len(spos), max_keep, replace=False))]
@@ -776,76 +799,33 @@ class _Sheet:
         self.tree = None
         self.allp = np.zeros((0, 2))
         self.own = np.zeros(0, int)
+        self._ids: list[int] = []
 
-    def add(self, pts, sid):
-        self.P.append((pts, sid))
-        self.allp = np.vstack([p for p, _ in self.P])
-        self.own = np.concatenate([np.full(len(p), i) for p, i in self.P])
+    def add(self, pts, sid=0):
+        self.P.append(np.asarray(pts, float))
+        self._ids.append(sid)
+        self.allp = np.vstack(self.P)
+        self.own = np.concatenate([np.full(len(p), i) for p, i in zip(self.P, self._ids)])
         self.tree = cKDTree(self.allp)
 
     def inside(self, pts):
         return ((pts[:, 0] >= self.m) & (pts[:, 0] <= self.W - self.m)
                 & (pts[:, 1] >= self.m) & (pts[:, 1] <= self.H - self.m))
 
-    def walk(self, pts, *, s_skip=0.0, self_ok=False, cross_ok=lambda s: False,
-             stop_short: bool = False):
-        """How far a candidate line can go. Returns (cut index, n crosses,
-        how it ended: "full" | "edge" | "touch" | "self").
-        stop_short: end clear of the line met (1.5 × clearance away, or
-        2 × clearance back along s for a self approach) instead of on it —
-        single mode continues from that end, so it must not start inside
-        another line's band."""
-        n = len(pts)
-        s = _arclen(pts)
-        live = s >= s_skip
-        ins = self.inside(pts)
-        if self.tree is not None:
-            d, _j = self.tree.query(pts)
-        else:
-            d = np.full(n, np.inf)
-        hit = (d < self.clr) & live
-        # self approach: points closer than clearance but far apart along s
-        lag = 4 * self.clr
-        self_hit = np.zeros(n, bool)
-        if n > 3:
-            tr = cKDTree(pts)
-            pr = tr.query_pairs(self.clr, output_type="ndarray")
-            if len(pr):
-                a, b = pr[:, 0], pr[:, 1]
-                far = np.abs(s[b] - s[a]) > lag
-                self_hit[np.maximum(a, b)[far]] = True
-        self_hit &= live
-        crosses, i, used_self = 0, 0, False
-        while i < n:
-            if not ins[i]:
-                return max(i - 1, 0), crosses, "edge"
-            if hit[i]:
-                j = i
-                while j < n and hit[j]:
-                    j += 1
-                if j < n and cross_ok(s[i]):
-                    crosses += 1
-                    i = j
-                    continue
-                if stop_short:
-                    k = np.flatnonzero(d[:i] >= 1.5 * self.clr)
-                    return (int(k[-1]) if len(k) else 0), crosses, "touch"
-                # end ON the line: closest approach within the band
-                k = i + int(np.argmin(d[i:j]))
-                return k, crosses, "touch"
-            if self_hit[i]:
-                if self_ok and not used_self:
-                    used_self = True
-                    j = i
-                    while j < n and self_hit[j]:
-                        j += 1
-                    i = j
-                    continue
-                if stop_short:
-                    return max(int(np.searchsorted(s, s[i] - 2 * self.clr)) - 1, 0), crosses, "self"
-                return max(i - 1, 0), crosses, "self"
-            i += 1
-        return n - 1, crosses, "full"
+    def edge_dist(self, p):
+        return float(min(p[0] - self.m, self.W - self.m - p[0], p[1] - self.m, self.H - self.m - p[1]))
+
+    def dist(self, pts):
+        if self.tree is None:
+            return np.full(len(pts), np.inf)
+        return self.tree.query(pts)[0]
+
+    def dist_own(self, pts):
+        """(distance to nearest ink, owner stroke id of that ink)."""
+        if self.tree is None:
+            return np.full(len(pts), np.inf), np.full(len(pts), -1)
+        d, j = self.tree.query(pts)
+        return d, self.own[j]
 
     def free_point(self, rng, cand):
         """The candidate farthest from existing ink."""
@@ -855,77 +835,223 @@ class _Sheet:
         return cand[int(np.argmax(d))]
 
 
+def _bands(mask: np.ndarray) -> int:
+    """Number of runs of True in a boolean array."""
+    if not mask.any():
+        return 0
+    m = mask.astype(np.int8)
+    return int(m[0] + np.sum(np.diff(m) == 1))
+
+
+class _Grower:
+    """Grows one line token by token with look-ahead steering in the hand's
+    own vocabulary: at every step `K` candidate continuations are drawn from
+    the chain (same context, so the same conditional distribution), each is
+    integrated from the current pen position, and one is chosen at random
+    among those that stay on the sheet and clear of other ink and of the
+    line's own earlier part — preferring those that leave room ahead (end
+    point ≥ `look` from any obstacle). Crossing candidates join the pool
+    while the drawing is under its crossing budget. Nothing is inserted: a
+    needed turn can only come from a turning segment (or a corner) the chain
+    itself proposed. The line stops at its planned length, or earlier only
+    when every candidate is blocked."""
+
+    def __init__(self, g, rng, sheet: _Sheet, R, step, clr, look, K=8):
+        self.g, self.rng, self.sheet, self.R, self.step = g, rng, sheet, R, step
+        self.clr, self.look, self.K = clr, look, K
+
+    def _candidate(self, p2, p1, s, length):
+        g, rng = self.g, self.rng
+        for _ in range(6):
+            kind, p = g.draw(p2, p1, s, length, rng)
+            if kind != "corner":
+                tok = _tok_seg(kind, *p)
+                _pp, tok = _continuity(p1, tok, lock_prev=True)
+                return [tok]
+            if p1[0] in ("START", "corner"):
+                continue
+            c = _tok_corner(p[0])
+            kind2, p2_ = g.draw(p1, c, s, length, rng)
+            if kind2 == "corner":
+                continue
+            return [c, _tok_seg(kind2, *p2_)]
+        return None
+
+    def grow(self, start, heading, length, *, context=None, prior=None, s_skip=0.0, host=None,
+             self_ok=False, cross_ok=lambda s: False):
+        """Returns (tokens, status, crosses). prior: points of an earlier part
+        of the same line (single mode) — avoided like the line itself."""
+        sheet, R, step, clr = self.sheet, self.R, self.step, self.clr
+        pos, h = np.asarray(start, float), float(heading)
+        p2, p1 = (list(context[0]), list(context[1])) if context else (["START"], ["START"])
+        toks: list = []
+        line = [pos[None, :]]
+        line_s = [np.zeros(1)]
+        s_tot = 0.0           # px along this line
+        s, crosses, status = 0.0, 0, "full"
+        lag = 2 * clr
+        prior = np.zeros((0, 2)) if prior is None else np.asarray(prior, float)
+        while s < length - 1e-9 and len(toks) < MAX_TOKENS:
+            L = np.vstack(line)
+            Ls = np.concatenate(line_s)
+            old = np.vstack([prior, L[Ls < s_tot - lag]])
+            otree = cKDTree(old) if len(old) else None
+            pref, ok, cross, selfx = [], [], [], []
+            for _k in range(self.K):
+                seq = self._candidate(p2, p1, s, length)
+                if seq is None:
+                    continue
+                seg = seq[-1]
+                if s + seg[1] > length:                      # end at the planned length
+                    f = max(length - s, 1e-9) / seg[1]
+                    seq[-1] = seg = _tok_seg(seg[0], seg[1] * f, seg[2], seg[2] + (seg[3] - seg[2]) * f)
+                P, _, _ = tokens_to_points(seq, R, start=pos, heading=h, step=step)
+                P = P[1:]
+                if len(P) == 0 or not sheet.inside(P).all():
+                    continue
+                sg = s_tot + _arclen(np.vstack([pos, P]))[1:]
+                d_o, own = sheet.dist_own(P)
+                hit_o = (d_o < clr) & ~((sg < s_skip) & (own == (-2 if host is None else host)))
+                d_s = otree.query(P)[0] if otree is not None else np.full(len(P), np.inf)
+                hit_s = d_s < clr
+                end_clear = d_o[-1] >= clr and d_s[-1] >= clr
+                # look-ahead: a ray of length `look` along the end tangent must
+                # stay on the sheet and clear, so the line keeps room to go on
+                he = end_heading(seq, h)
+                ray = P[-1] + np.outer(np.linspace(self.look / 4, self.look, 4), [np.cos(he), np.sin(he)])
+                rd = np.minimum(sheet.dist(ray), otree.query(ray)[0] if otree is not None else np.inf)
+                room = self.look if (sheet.inside(ray).all() and (rd >= clr).all()) else 0.0
+                item = (seq, P, sg, _bands(hit_o))
+                xok = cross_ok(s)
+                if not hit_o.any() and not hit_s.any():
+                    (pref if room >= self.look else ok).append(item)
+                elif not hit_s.any() and end_clear and xok:
+                    (pref if room >= self.look else ok).append(item)
+                elif hit_s.any() and end_clear and self_ok:
+                    selfx.append(item)
+            # first feasible in draw order = rejection sampling: the chain's own
+            # proposal is kept unless it is blocked (steering only where needed)
+            pool = (pref or ok or selfx)[:1]
+            if not pool:
+                status = "blocked"
+                break
+            seq, P, sg, nb = pool[0]
+            crosses += nb
+            toks += seq
+            line.append(P)
+            line_s.append(sg)
+            s_tot = float(sg[-1])
+            pos, h = P[-1], end_heading(seq, h)
+            s += seq[-1][1]
+            p2, p1 = (seq[-2] if len(seq) > 1 else p1), seq[-1]
+        while toks and toks[-1][0] == "corner":
+            toks.pop()
+        return toks, status, crosses
+
+
 def _sample(xs, rng, default):
     return float(xs[int(rng.integers(len(xs)))]) if xs else default
 
 
 def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
                      ink: float | None = None, n_strokes: int | None = None, max_strokes: int = 400,
-                     ref_frac: float = 0.85, margin: float = 20.0, step: float | None = None,
-                     tries: int = 12, clearance_w: float = CLEAR_W, line_width: float | None = None,
+                     ref_frac: float = 0.95, margin: float = 20.0, step: float | None = None,
+                     tries: int = 6, clearance_w: float = CLEAR_W, line_width: float | None = None,
                      hands: tuple | None = None, switch_every: float = 1.0,
-                     relations: str = "tree", roots: int | None = None,
-                     p_branch: float | None = None, p_continue: float | None = None) -> Drawing:
-    """A drawing on a (W, H) px canvas, R = ref_frac·diagonal.
+                     relations: str = "learned", roots: int | None = None,
+                     p_branch: float | None = None, p_continue: float | None = None,
+                     cross_gain: float | None = None, K: int = 8) -> Drawing:
+    """A drawing on a (W, H) px canvas, R = ref_frac × the diagonal inside
+    the margin (≈ the ink's own bounding-box diagonal).
 
-    mode="contiguous" (default): long strokes until the ink budget (R units;
-    default: one of the training drawings' long-stroke ink) or n_strokes is
-    reached, walked against the ink already down (module docstring). Each
-    stroke starts free (at the emptiest of 8 candidate points) or attaches
-    to an existing one: **continues** from a free end (tangent ± N(0, 0.25)
-    rad; probability p_continue, default the learned share of attachments
-    at a host's end) or **branches** from its interior (learned u, angle).
-    relations="tree" (default, Ian's brief: contiguous, Oehlen-tree-like):
-    `roots` free strokes (default 1–3), every later one attaches
-    (p_branch = 1). relations="learned": p_branch = the learned share of
-    strokes with an attached end — fidelity to the extracted drawings,
-    whose lines the extractor splits at junctions.
-    mode="single": one line of that ink, built from chained chunks; `hands`
-    = (gA, gB, ...) alternates hands every `switch_every` × a training
-    stroke length of ink (meta["spans"] records which hand drew what).
-    Line width (px, written into every stroke's width and meta) defaults to
-    the training drawings' width/R × R."""
+    mode="contiguous" (default): long lines until the ink budget (R units;
+    default: one of the training drawings' long-stroke ink) or n_strokes.
+    Every line has a planned length drawn from the long-stroke distribution
+    and is grown with `_Grower` (look-ahead steering by choosing among the
+    chain's own proposals; it stops early only when boxed in; lines shorter
+    than the shortest training stroke are retried, then dropped).
+    Starts — relations="learned" (default): a line attaches at its start to
+    an existing one with probability 2 × the learned share of attached ends
+    (`p_branch` overrides): it **continues** from a free end (tangent ±
+    N(0, 0.25) rad; share `p_continue`, default the learned share of
+    attachments at a host's end) or **branches** from its interior (learned
+    u, angle); otherwise it starts free, at a gap from existing ink drawn
+    from the learned gaps of unattached ends (wide gaps: the emptiest of 8
+    candidates). relations="tree": `roots` free lines (default 1–3), every
+    later one attaches. Crossings: candidates that cross other ink are
+    allowed while the drawing's crossings stay under cross_gain × the
+    learned median crossings per unit ink; self-crossing lines are drawn
+    with the learned share.
+    mode="single": one line of that ink, grown chunk by chunk (each chunk a
+    training-length "virtual stroke" conditioned on the previous two tokens,
+    κ-continuous across chunks); `hands` = (gA, gB, ...) alternates hands
+    every `switch_every` × a training stroke length of ink (meta["spans"]).
+    Line width (px, in every stroke's width and meta) defaults to the
+    training drawings' width/R × R."""
     W, H = (int(size), int(size)) if np.isscalar(size) else (int(size[0]), int(size[1]))
-    R = ref_frac * float(np.hypot(W, H))
+    # R ≈ the bounding-box diagonal the ink will have (it fills the margin box),
+    # so that lengths/R measured on the result match the learned ones
+    R = ref_frac * float(np.hypot(W - 2 * margin, H - 2 * margin))
     if line_width is None:
         wr = [d["w_over_R"] for d in grammar.drawings if d.get("w_over_R")]
         line_width = (float(np.median(wr)) if wr else 0.002) * R
     lw = float(line_width)
     step = float(step) if step is not None else max(0.5, 0.5 * lw)
     clr = max(clearance_w * lw, 2 * step)
+    segl = [t[1] for toks in grammar.strokes[:2000] for t in toks if t[0] != "corner"]
+    look = max(4 * clr, (float(np.median(segl)) if segl else 0.03) * R)
     sheet = _Sheet(W, H, margin, clr)
     if ink is None:
         inks = [d["ink"] for d in grammar.drawings if d["ink"] > 0]
         ink = _sample(inks, rng, 2.0)
+    rel = grammar.relations or {}
+    gain = rel.get("cross_gain", 1.0) if cross_gain is None else cross_gain
+    cross_rate = gain * rel.get("cross_per_ink_median", rel.get("cross_per_ink", 0.0))
     meta = {"ref_length_gen": R, "hand": grammar.name, "mode": mode, "line_width_px": lw,
             "ink_budget": float(ink), "clearance_px": clr}
     if mode == "single":
-        st = _single_line(grammar, rng, sheet, R, lw, step, float(ink), tries, hands, switch_every)
+        st = _single_line(grammar, rng, sheet, R, lw, step, clr, look, float(ink), hands,
+                          switch_every, K)
         meta["crosses"] = st.meta.get("crosses", 0)
         return Drawing([st] if len(st) >= 2 else [], source=f"grammar:{grammar.name}:single",
                        size=(W, H), meta=meta)
     if mode != "contiguous":
         raise ValueError(f"unknown mode {mode!r}")
-    rel = grammar.relations or {}
-    tree = relations == "tree"
     if relations not in ("tree", "learned"):
         raise ValueError(f"unknown relations {relations!r}")
-    pb = (1.0 if tree else rel.get("p_attached", 0.3)) if p_branch is None else p_branch
+    tree = relations == "tree"
+    pea = rel.get("p_end_attached", rel.get("p_attached", 0.3) / 2)
+    pb = (1.0 if tree else min(1.0, 2.0 * pea)) if p_branch is None else p_branch
     if roots is None:
         roots = int(rng.integers(1, 4)) if tree else 0
     uu = np.asarray(rel.get("u") or [], float)
     pc = (float(np.mean((uu < 0.08) | (uu > 0.92))) if len(uu) else 0.3) if p_continue is None else p_continue
-    cross_rate = rel.get("cross_per_ink", 0.0)
     self_frac = rel.get("selfcross_frac", 0.0)
+    gaps = rel.get("gap_free") or []
     lengths = grammar.stroke_lengths or [0.1]
     min_len = grammar.min_length
+    grower = _Grower(grammar, rng, sheet, R, step, clr, look, K)
     placed: list[Stroke] = []
-    free_ends: list[tuple[int, int]] = []     # (stroke, 0 = start / 1 = end) not touching anything
+    free_ends: list[tuple[int, int]] = []
     state = {"ink": 0.0, "crosses": 0}
     limit = max_strokes if n_strokes is None else min(n_strokes, max_strokes)
     fails = 0
 
+    def crowd(pt):
+        return int(sheet.tree.query_ball_point(pt, 0.08 * R, return_length=True)) if sheet.tree else 0
+
     def free_start():
+        g = _sample(gaps, rng, 1.0) * R
+        if sheet.tree is not None and g < 0.1 * R:
+            for _ in range(30):                       # a point at gap ≈ g from existing ink
+                q = sheet.allp[int(rng.integers(len(sheet.allp)))]
+                a = rng.uniform(0, 2 * np.pi)
+                c = q + max(g, 1.2 * clr) * np.array([np.cos(a), np.sin(a)])
+                if not sheet.inside(c[None])[0]:
+                    continue
+                d = float(sheet.dist(c[None])[0])
+                if 0.7 * g <= d <= 1.4 * max(g, 1.2 * clr) and d >= clr:
+                    return c, rng.uniform(0, 2 * np.pi), 0.0, {"relation": "free", "gap": d / R}
         if grammar.start_pos:
             sp = np.array([grammar.start_pos[int(rng.integers(len(grammar.start_pos)))]
                            for _ in range(8)])
@@ -935,13 +1061,7 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
         cand = margin + sp * (np.array([W, H]) - 2 * margin)
         return sheet.free_point(rng, cand), rng.uniform(0, 2 * np.pi), 0.0, {"relation": "free"}
 
-    def crowd(pt):
-        """Ink points within 0.08·R: attachments go where the sheet is emptier."""
-        return int(sheet.tree.query_ball_point(pt, 0.08 * R, return_length=True)) if sheet.tree else 0
-
     def attach():
-        """Branch from a host's interior, or continue from a free end (the
-        least crowded of a few candidates, so trees spread over the sheet)."""
         if free_ends and rng.random() < pc:
             cands = [free_ends[int(rng.integers(len(free_ends)))] for _ in range(4)]
             cands = [(crowd(placed[f[0]].points[0 if f[1] == 0 else -1]), k, f) for k, f in enumerate(cands)]
@@ -951,18 +1071,16 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
             j = 0 if fe[1] == 0 else len(hp) - 1
             tan = _tangent(hp, hs, j, 5 * lw) * (-1 if fe[1] == 0 else 1)
             a = rng.normal(0, 0.25)
-            heading = float(np.arctan2(tan[1], tan[0]) + a)
-            return hp[j], heading, 2 * clr, {"relation": "continue", "host": fe[0], "host_end": fe[1],
-                                              "host_s": float(hs[j]), "branch_angle": float(a)}
+            return hp[j], float(np.arctan2(tan[1], tan[0]) + a), 2 * clr, {
+                "relation": "continue", "host": fe[0], "host_end": fe[1], "host_s": float(hs[j]),
+                "branch_angle": float(a)}
         Ls = np.array([p.length() for p in placed])
         best_c = None
         for _k in range(6):
             hi = int(rng.choice(len(placed), p=Ls / Ls.sum()))
             hp = placed[hi].points
             hs = _arclen(hp)
-            u = _sample(rel.get("u"), rng, float(rng.random()))
-            if tree:               # interior branch: ends are the continue relation's job
-                u = float(np.clip(u, 0.08, 0.92))
+            u = float(np.clip(_sample(rel.get("u"), rng, float(rng.random())), 0.08, 0.92))
             j = int(np.clip(np.searchsorted(hs, u * hs[-1]), 0, len(hp) - 1))
             c = crowd(hp[j])
             if best_c is None or c < best_c[0]:
@@ -978,38 +1096,33 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
         return hp[j], heading, s_skip, {"relation": "branch", "host": hi, "host_s": float(hs[j]),
                                         "branch_angle": float(a)}
 
-    while len(placed) < limit and fails < 3 * tries:
+    while len(placed) < limit and fails < 4 * tries:
         if n_strokes is None and state["ink"] >= ink:
             break
         target = _sample(lengths, rng, 0.1)
         self_ok = bool(rng.random() < self_frac)
         best = None
         for t in range(tries):
-            if placed and len(placed) >= roots and rng.random() < pb and not (tree and t == tries - 1
-                                                                              and fails >= tries):
+            if placed and len(placed) >= roots and rng.random() < pb:
                 start, heading, s_skip, rel_meta = attach()
             else:
                 start, heading, s_skip, rel_meta = free_start()
-            toks, _ = generate_tokens(grammar, rng, length=target)
-            if not toks:
-                continue
-            pts, _, _ = tokens_to_points(toks, R, start=start, heading=heading, step=step)
             c0, ink0 = state["crosses"], state["ink"]
-            cut, nc, how = sheet.walk(
-                pts, s_skip=s_skip, self_ok=self_ok,
-                cross_ok=lambda s, c0=c0, ink0=ink0: c0 < cross_rate * (ink0 + s / R))
-            sc = float(_arclen(pts[:cut + 1])[-1]) / R
+            toks, how, nc = grower.grow(
+                start, heading, target, s_skip=s_skip, host=rel_meta.get("host"), self_ok=self_ok,
+                cross_ok=lambda s, c0=c0, ink0=ink0: c0 < cross_rate * (ink0 + s))
+            sc = stroke_length(toks)
             if best is None or sc > best[0]:
                 best = (sc, toks, start, heading, nc, how, rel_meta)
-            if sc >= max(MIN_FRAC * target, min_len):
+            if sc >= max(0.9 * target, min_len):
                 break
         if best is None or best[0] < min_len * 0.999:
             fails += 1
             continue
         sc, toks, start, heading, nc, how, rel_meta = best
-        toks = truncate_tokens(toks, sc) if sc < stroke_length(toks) - 1e-12 else toks
         st = _stroke(toks, R, start, heading, step,
-                     {"hand": grammar.name, "end": how, "crosses": nc, **rel_meta}, width=lw)
+                     {"hand": grammar.name, "end": how, "crosses": nc, "target": target, **rel_meta},
+                     width=lw)
         placed.append(st)
         sheet.add(st.points, len(placed) - 1)
         i = len(placed) - 1
@@ -1017,17 +1130,19 @@ def generate_drawing(grammar: Grammar, rng, size, *, mode: str = "contiguous",
             free_ends.remove((rel_meta["host"], rel_meta["host_end"]))
         if rel_meta["relation"] == "free":
             free_ends.append((i, 0))
-        if how in ("full", "self"):
-            free_ends.append((i, 1))
+        free_ends.append((i, 1))
         state["ink"] += st.length() / R
         state["crosses"] += nc
     meta.update(crosses=state["crosses"], ink=state["ink"], min_length=min_len,
-                relations=relations, roots=roots, p_branch=pb, p_continue=pc)
+                relations=relations, roots=roots, p_branch=pb, p_continue=pc, cross_rate=cross_rate)
     return Drawing(placed, source=f"grammar:{grammar.name}", size=(W, H), meta=meta)
 
 
-def _single_line(g: Grammar, rng, sheet: _Sheet, R, lw, step, ink, tries, hands, switch_every):
-    """One long line in chunks (see generate_drawing)."""
+def _single_line(g: Grammar, rng, sheet: _Sheet, R, lw, step, clr, look, ink, hands, switch_every, K):
+    """One long line in chunks (see generate_drawing). Chunks are grown with
+    the same steering as contiguous strokes, against the line drawn so far;
+    a chunk that is boxed in is retried, and on the last try may cross the
+    line (an occasional self-approach) — no inserted turns."""
     hands = tuple(hands) if hands else (g,)
     W, H, m = sheet.W, sheet.H, sheet.m
     if g.start_pos:
@@ -1036,66 +1151,59 @@ def _single_line(g: Grammar, rng, sheet: _Sheet, R, lw, step, ink, tries, hands,
         sp = rng.uniform(0.3, 0.7, 2)
     start = m + sp * (np.array([W, H]) - 2 * m)
     heading0 = rng.uniform(0, 2 * np.pi)
-    pos, h = np.asarray(start, float), heading0
-    all_toks: list = []
-    pts_all = pos[None, :]
-    spans, s_tot, crosses, fails = [], 0.0, 0, 0
     lengths = g.stroke_lengths or [0.1]
-    hand_i, next_switch = 0, None
-    while s_tot < ink and fails < 6:
+    tries, backtracks = 6, 0
+    # chunk stack: (tokens, points incl. start, end heading, hand name, crosses)
+    chunks: list = []
+    hand_i, next_switch, fails = 0, None, 0
+
+    def state():
+        toks = [t for c in chunks for t in c[0]]
+        pts = np.vstack([np.asarray(start, float)[None, :]] + [c[1][1:] for c in chunks])
+        pos = pts[-1]
+        h = chunks[-1][2] if chunks else heading0
+        return toks, pts, pos, h, sum(stroke_length(c[0]) for c in chunks)
+
+    while fails < 8:
+        all_toks, pts_all, pos, h, s_tot = state()
+        if s_tot >= ink:
+            break
         gh = hands[hand_i % len(hands)]
         if next_switch is None:
             next_switch = s_tot + switch_every * _sample(lengths, rng, 0.1)
         target = min(_sample(gh.stroke_lengths or lengths, rng, 0.1), ink - s_tot + 1e-6)
-        ctx = (tuple(all_toks[-2]) if len(all_toks) >= 2 else ("START",),
-               tuple(all_toks[-1])) if all_toks else None
-        best = None
-        # the line so far is "other ink", except its last stretch near the joint
-        sheet_line = _Sheet(W, H, m, sheet.clr)
+        ctx = ((list(all_toks[-2]) if len(all_toks) >= 2 else ["START"]), list(all_toks[-1])) \
+            if all_toks else None
         s_line = _arclen(pts_all)
-        old = pts_all[s_line < s_line[-1] - 4 * sheet.clr]
-        if len(old):
-            sheet_line.add(old, 0)
+        prior = pts_all[s_line < s_line[-1] - 4 * clr]
+        grower = _Grower(gh, rng, sheet, R, step, clr, look, K)
+        best = None
         for t in range(tries):
-            pre = []
-            if ctx and t >= tries // 3:
-                # stuck (edge or own line ahead): turn toward the open sheet with a corner
-                c = np.array([W / 2, H / 2]) + rng.normal(0, 0.15, 2) * [W, H]
-                if sheet_line.tree is not None:
-                    cand = m + rng.random((12, 2)) * (np.array([W, H]) - 2 * m)
-                    c = sheet_line.free_point(rng, cand)
-                ang = float(np.angle(np.exp(1j * (np.arctan2(c[1] - pos[1], c[0] - pos[0]) - h))))
-                pre = [_tok_corner(ang + rng.normal(0, 0.2))]
-            cx = (list(ctx[1]), pre[0]) if pre else ((list(ctx[0]), list(ctx[1])) if ctx else None)
-            toks, _ = generate_tokens(gh, rng, length=target, context=cx)
-            if not toks:
-                continue
-            toks = pre + toks
-            pts, _, _ = tokens_to_points(toks, R, start=pos, heading=h, step=step)
-            cut, nc, how = sheet_line.walk(pts, s_skip=0.0, stop_short=True,
-                                           cross_ok=lambda s: t == tries - 1 and crosses < 1 + ink)
-            sc = float(_arclen(pts[:cut + 1])[-1]) / R
+            toks, how, nc = grower.grow(pos, h, target, context=ctx, prior=prior,
+                                        self_ok=t == tries - 1)
+            sc = stroke_length(toks)
             if best is None or sc > best[0]:
                 best = (sc, toks, nc)
-            if sc >= MIN_FRAC * target:
+            if sc >= 0.9 * target:
                 break
-        if best is None or best[0] < 2 * sheet.clr / R:
-            fails += 1
-            continue
         sc, toks, nc = best
-        toks = truncate_tokens(toks, sc) if sc < stroke_length(toks) - 1e-12 else toks
-        if not toks:
+        if not toks or sc < 0.25 * target:
             fails += 1
+            if chunks and backtracks < 12:          # boxed in: back up one chunk, regrow
+                chunks.pop()
+                backtracks += 1
             continue
         pts, _, _ = tokens_to_points(toks, R, start=pos, heading=h, step=step)
-        spans.append([s_tot * R, (s_tot + stroke_length(toks)) * R, gh.name])
-        all_toks += toks
-        pts_all = np.vstack([pts_all, pts[1:]])
-        pos, h = pts[-1], end_heading(toks, h)
-        s_tot += stroke_length(toks)
-        crosses += nc
-        if len(hands) > 1 and s_tot >= next_switch:
+        chunks.append((toks, pts, end_heading(toks, h), gh.name, nc))
+        if len(hands) > 1 and s_tot + sc >= next_switch:
             hand_i, next_switch = hand_i + 1, None
+    all_toks, _pts, _pos, _h, _s = state()
+    spans, s0 = [], 0.0
+    for c in chunks:
+        L = stroke_length(c[0])
+        spans.append([s0 * R, (s0 + L) * R, c[3]])
+        s0 += L
+    crosses = sum(c[4] for c in chunks)
     return _stroke(all_toks, R, start, heading0, step,
                    {"hand": "+".join(x.name for x in hands), "mode": "single", "spans": spans,
                     "crosses": crosses}, width=lw)
