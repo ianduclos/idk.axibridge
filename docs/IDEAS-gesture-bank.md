@@ -315,6 +315,58 @@ where a regime field can live), nuqta/dot geometry from the calligraphy
 research (a natural shape vocabulary). Policy unchanged: script-like zones
 come from calligraphy-hand statistics, never letterforms.
 
+## What Oehlen's trees teach the regimes work (read 2026-10-16; not a brief to make trees)
+
+Sources: Cleveland Museum of Art press text for *Woods near Oehle*
+(2016–17); Guggenheim Bilbao *Trees (2013–2016)*; Tatintsian viewing
+room (*Untitled (Baum 44)*); Jahn und Jahn; Hyperallergic "Beer with a
+Painter"; 3A Composites relaying Sean O'Hagan's Guardian interview.
+Paintings looked at: Baum 44, 69, 88, 92 and a 2016 London work.
+
+1. **A minimal body rule makes things read.** His definition: something
+   thicker in the middle that gets thinner on the outside, with strokes
+   moving away from it — then "there really are trees". Baum 88 reads as an
+   insect or a figure ("psychopathic human trees"). For us this is the rule
+   behind shapes that communicate: a thick core thinning outward with exits
+   reads as an organism or sign at any scale. It suits sign clusters and
+   masses, not only trunks.
+2. **Growth is responsive, not planned.** He starts at the centre and each
+   branch answers the one before. Nothing is planned except the colours;
+   accidents are kept, steered by instinct and calculation. So our
+   composition should be sequential, with each mark conditioned on what is
+   already there, rather than a global layout.
+3. **The winter tree is a licence for free line decisions** ("the freedom to
+   make any move… a kind of model of abstraction"). Structure gives
+   permission for arbitrary line events; it doesn't dictate them.
+4. **Several regimes live inside one figure.** In the Baumbilder:
+   1. a brushed mass with visible bristle striations;
+   2. a scalloped or notched mass edge, a rhythmic event on a mass edge;
+   3. constant-width bars with right-angle elbows and dead-straight runs,
+      the "computer drawing" heritage, which he hand-paints;
+   4. spray lines with soft, diffuse edges;
+   5. hairlines and a regular sine-wave line;
+   6. transparent geometric cut-outs (an ellipse, a square with a
+      diagonal) laid over the trunk;
+   7. colour-field gradient blocks.
+
+   The mass tapers into bars, bars kink orthogonally, spray crosses mass.
+5. **Hand vs machine in one mark:** from afar the lines look digitally made,
+   up close they are painted. He wants "delicacy and coarseness" and "a base
+   note of hysteria".
+6. **Constraints as method:** fixed colours (red and black on white), a
+   fixed support, Trees = form while Elevator = colour, "a couple of rules"
+   that make concerns obvious.
+
+Implications to try:
+
+1. Add a **geometric regime** (constant-width bars, orthogonal elbows,
+   straight runs) as a sibling of the nib. It's plotter-natural.
+2. Add **rhythmic mass-edge events** (scallops, notches) alongside wet
+   irregular edges.
+3. **Grow compositions sequentially and responsively.**
+4. **Use the body rule to make sign clusters read as organisms**, without
+   drawing trees.
+
 ## Open decisions (flagged, not settled)
 
 - **Where a profile lives.** Repo survey: corpus fits the gallery, a learned
