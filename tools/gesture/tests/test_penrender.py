@@ -143,3 +143,32 @@ def test_plot_time_counts_lifts_and_swaps():
     assert two["total_s"] > one["total_s"]
     swap = pr.plot_time(pr.PenPaths(p, pens=[0.4, 1.0]))
     assert swap["swap_s"] == pr.MOTION["pen_swap_s"]
+
+
+def test_nib_style_specs_and_combination():
+    import numpy as np
+    from gesture import penrender as pr, regime as rg
+    x = np.linspace(0, 40, 300)
+    st = rg.make(np.column_stack([x, 4 * np.sin(x / 7)]), 1.0, phi=np.deg2rad(45), W=2.5)
+    assert pr.nib_style(None) is None and pr.nib_style("a") is None
+    single = {k: pr.nib_style(k)(st, 0.4) for k in ("b+", "c", "e")}
+    both = pr.nib_style(["c", "e"])(st, 0.4)
+    assert len(both) >= 1
+    # combining adds passes but draws the outline once: shorter than c + e summed
+    plen = lambda ps: sum(float(np.sum(np.linalg.norm(np.diff(np.asarray(p), axis=0), axis=1))) for p in ps)  # noqa: E731
+    assert plen(both) < plen(single["c"]) + plen(single["e"])
+    assert plen(both) >= 0.95 * max(plen(single["c"]), plen(single["e"]))
+    assert pr.nib_style("c+e").__name__ == pr.nib_style(["c", "e"]).__name__
+    assert pr.nib_style("b++c").__name__ == "nib_b++c"
+
+
+def test_nib_style_mix_is_deterministic_per_mark():
+    import numpy as np
+    from gesture import penrender as pr, regime as rg
+    x = np.linspace(0, 30, 200)
+    st = rg.make(np.column_stack([x, 3 * np.sin(x / 5)]), 1.0, phi=np.deg2rad(30), W=2.0)
+    mix = pr.nib_style({"c": 0.5, "e": 0.5}, seed=3)
+    a, b = mix(st, 0.4), mix(st, 0.4)
+    assert len(a) == len(b) and all(np.array_equal(p, q) for p, q in zip(a, b))
+    hooked = rg.render(st, 0.4, nib_renderer=mix)
+    assert len(hooked) >= 1

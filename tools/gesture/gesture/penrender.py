@@ -595,6 +595,119 @@ def strategy(name: str, **params):
 
 
 # ---------------------------------------------------------------------------
+# nib styles: Ian's options (2026-10-16) — b, c and e, alone or combined
+# ---------------------------------------------------------------------------
+
+STYLE_PARTS = ("b", "b+", "c", "e")
+
+
+def combined(names, patch: bool = True):
+    """One renderer from several parts: at most one inset fill (b or b+)
+    plus any of the pass families (c: along the stroke, e: nib-point
+    traces). The outline and the mass fill are drawn once; the passes of
+    every family are added on top, then one touch-up and one chaining —
+    so 'c+e' does not double the outline."""
+    names = [n for n in names]
+    bad = [n for n in names if n not in STYLE_PARTS]
+    if bad or not names:
+        raise ValueError(f"nib style parts must be from {STYLE_PARTS}, got {names}")
+    fills = [n for n in names if n in ("b", "b+")]
+    if len(fills) > 1:
+        raise ValueError("combine at most one of b / b+")
+    kinds = [n for n in dict.fromkeys(names) if n in ("c", "e")]
+    fill_r = inset(None if fills and fills[0] == "b+" else 6.0) if fills else None
+
+    def render(strokes, pen: float = 0.35, *, max_jump: float | None = None, paths=None, parts=None, **_):
+        sts = _as_list(strokes)
+        if not sts:
+            return PenPaths([], pen=pen)
+        if fill_r is not None:
+            base = list(fill_r(sts, pen, max_jump=max_jump))
+        else:
+            base = list(paths) if paths is not None else _base(sts, pen)
+        if not kinds:
+            return PenPaths(chain(base, pen, max_jump=max_jump), pen=pen)
+        G = parts["G"] if parts is not None else rg._geom_parts(sts, pen, None)[0]
+        lanes = []
+        for st in sts:
+            fr = _centre_frame(st, pen)
+            if fr is None:
+                continue
+            for kind in kinds:
+                lanes += _lanes_c(fr, pen) if kind == "c" else _lanes_e(fr, pen)
+        if G is not None and lanes:
+            lanes = _clip(lanes, G.buffer(0.05 * pen), inside=True, min_len=pen)
+        drawn = base + lanes
+        if patch:
+            drawn += touch_up(drawn, ideal_ink(sts, pen, parts), pen)
+        return PenPaths(chain(drawn, pen, max_jump=max_jump), pen=pen)
+    render.__name__ = "nib_" + "+".join(names)
+    return render
+
+
+def _mark_key(strokes) -> int:
+    """A stable integer per mark (rounded geometry), for per-mark mixing."""
+    pts = np.vstack([np.asarray(s.points, float)[[0, -1]] for s in _as_list(strokes)])
+    return int(abs(hash(tuple(np.round(pts, 2).ravel().tolist()))) % (2 ** 31))
+
+
+def nib_style(spec, *, seed: int = 0):
+    """The nib-ribbon renderer for a style spec, or None for the default
+    outline (regime.render unchanged). Accepted specs:
+
+      None / "a"            outline (current behaviour)
+      "b", "b+", "c", "e"   one strategy (see the letters above)
+      ["b+", "c"], ["c", "e"], ["b", "c", "e"]   a COMBINATION
+                            (`combined`): one inset fill and/or several pass
+                            families — the list form is unambiguous
+      "c+e", "b++c+e"       the same as a string ('+' separates parts, so
+                            "b+c" = narrow inset b + c; write "b++c" or use
+                            the list form for full inset b+ with c)
+      {"c": .5, "e": .5}    a per-mark MIX: each mark draws one style (any
+                            of the above, combinations allowed) with these
+                            weights, deterministically from (seed, mark)
+
+    Usable standalone or as regime.render's `nib_renderer` hook."""
+    if spec is None or spec == "a":
+        return None
+    if isinstance(spec, (list, tuple)):          # the unambiguous combination form
+        return combined(list(spec))
+    if isinstance(spec, dict):
+        names = list(spec)
+        w = np.array([float(spec[n]) for n in names], float)
+        if (w < 0).any() or w.sum() <= 0:
+            raise ValueError("mix weights must be ≥ 0 with a positive sum")
+        w = w / w.sum()
+        rends = {n: nib_style(n, seed=seed) for n in names}
+
+        def render(strokes, pen: float = 0.35, **kw):
+            rng = np.random.default_rng([seed, _mark_key(strokes)])
+            pick = names[int(rng.choice(len(names), p=w))]
+            r = rends[pick]
+            if r is None:
+                given = kw.get("paths")
+                return PenPaths(list(given) if given is not None else rg.render(strokes, pen), pen=pen)
+            return r(strokes, pen, **kw)
+        render.__name__ = "nib_mix"
+        return render
+    s = str(spec)
+    if s in STYLE_PARTS:
+        return strategy(s)
+    # "b++c" means b+ and c: split on '+' but keep the 'b+' token whole
+    toks, i = [], 0
+    while i < len(s):
+        if s.startswith("b+", i) and (i + 2 == len(s) or s[i + 2] == "+"):
+            toks.append("b+")
+            i += 3
+        else:
+            j = s.find("+", i)
+            j = len(s) if j < 0 else j
+            toks.append(s[i:j])
+            i = j + 1
+    return combined([t for t in toks if t])
+
+
+# ---------------------------------------------------------------------------
 # physical preview
 # ---------------------------------------------------------------------------
 

@@ -155,3 +155,18 @@ def test_clip_cuts_and_mark_tags():
     assert rf.fill_components(fills, 1.0) == [0, 1, 0, 1]
     tags, nxt = rf.nest_tags([ring((50, 50), 6), ring((50, 50), 5), np.array([[0.0, 0], [5, 5]])], 10, 1.0, "sign")
     assert tags == [(10, "sign"), (10, "fill"), (11, "sign")] and nxt == 12
+
+
+def test_nib_style_changes_ink_not_composition():
+    import warnings
+    from gesture import regime_field as rf
+    kw = dict(structure="tree", field="sense", signs=4, echo=2, drip=3, pen_px=2.0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        a = rf.compose(5, (300, 420), **kw)
+        b = rf.compose(5, (300, 420), nib_style=["c", "e"], **kw)
+    assert b.meta["n_signs"] == a.meta["n_signs"]
+    assert b.meta["n_echo"] == a.meta["n_echo"] and b.meta.get("n_drip") == a.meta.get("n_drip")
+    sig = lambda c, k: [q.tolist() for q, kk in zip(c.polylines, c.kinds) if kk == k]  # noqa: E731
+    for k in ("sign", "echo", "drip"):
+        assert sig(a, k) == sig(b, k)

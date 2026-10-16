@@ -529,9 +529,11 @@ def cmd_order(a):
 POLISH = dict(CANDIDATES["regimes-strahler-tree"])
 
 
-def polish_one(paper_name: str, pen_mm: float = 0.35):
+def polish_one(paper_name: str, pen_mm: float = 0.35, nib: str | None = None):
     """Regenerate the Strahler sheet with fill spacing = pen_mm on this paper,
-    order it with the mark constraints and joins, write SVG + stats."""
+    order it with the mark constraints and joins, write SVG + stats.
+    nib: a penrender.nib_style spec ("b+", "c", "e", "c+e", "b++c", …); None
+    keeps the outline ribbon. Styled sheets get a "-nib-<style>" suffix."""
     from gesture import pathorder as po
     paper = PAPER_MM[paper_name]
     pen_px = rf.pen_px_for(SIZE, paper_mm=paper, pen_mm=pen_mm)
@@ -541,7 +543,7 @@ def polish_one(paper_name: str, pen_mm: float = 0.35):
         c = rf.compose(spec["seed"], SIZE, structure=spec["structure"], field=spec["field"],
                        hands=HANDS[spec["hands"]], signs=spec["signs"], tremor=spec["tremor"], echo=spec["echo"],
                        drip=spec["drip"], script=spec["script"], pen_px=pen_px, label=f"strahler-{paper_name}",
-                       clip=False)
+                       clip=False, nib_style=nib)
     hat = rf.hatching_families(c.polylines, max_len=0.06 * SIZE[1], solid_gap=1.25 * pen_px)
     var, pl = order_variants(c.polylines, c.groups, c.kinds, pen_px)
     mm = {k: sheet_to_mm(v, SIZE, paper, fit_ink=True)[0] for k, v in var.items()}
@@ -553,7 +555,7 @@ def polish_one(paper_name: str, pen_mm: float = 0.35):
     open_after = sum(1 for q, src in zip(pl.paths, pl.source)
                      if all(kinds_of[i] == "fill" for i, _ in src) and not po.is_closed(q) and len(src) == 1)
     hat_after = rf.hatching_families(pl.paths, max_len=0.06 * SIZE[1], solid_gap=1.25 * pen_px)
-    name = f"regimes-strahler-tree-{paper_name}"
+    name = f"regimes-strahler-tree-{paper_name}" + (f"-nib-{nib}" if nib else "")
     rows = [_row(name, vn, ps, est_app=vn in ("input", "marks+join")) for vn, ps in mm.items()]
     P = np.vstack(c.polylines)
     st = {"paper_mm": paper, "pen_mm": pen_mm, "fill_spacing_mm": round(pen_px * k_mm, 4), "pen_px": pen_px,
@@ -561,7 +563,7 @@ def polish_one(paper_name: str, pen_mm: float = 0.35):
           "engine": [c.meta["engine"], c.meta["signs_engine"]], "regime_share": c.meta["regime_share"],
           "kinds": {k: c.kinds.count(k) for k in sorted(set(c.kinds))}, "hatching_before_join": hat,
           "hatching_after_join": hat_after, "open_fill_arcs": open_fill, "open_fill_arcs_unjoined": open_after,
-          "spec": spec, "rows": rows, "order_meta": pl.meta}
+          "spec": spec, "nib_style": nib, "rows": rows, "order_meta": pl.meta}
     final = mm["marks+join"]
     st["svg_rows"] = [r for r in rows if r["variant"] == "marks+join"]
     R7.mkdir(parents=True, exist_ok=True)
@@ -575,6 +577,8 @@ def polish_one(paper_name: str, pen_mm: float = 0.35):
 def cmd_polish(a):
     from PIL import Image
     papers = a.papers.split(",")
+    if a.nibs:
+        return _polish_nibs(papers, a.nibs.split(","), a.pen)
     with ProcessPoolExecutor(min(JOBS, len(papers))) as ex:
         res = list(ex.map(polish_one, papers))
     maps, prev = [], []
@@ -605,6 +609,42 @@ def cmd_polish(a):
     for name, img in prev:
         crops += _crops(img, name)
     grid(crops, 3, RESULTS / "pathorder-preview-detail.jpg", quality=88)
+
+
+def _polish_nibs(papers, nibs, pen_mm):
+    """One polished sheet per (paper, nib style); whole-sheet previews and
+    matched 50 mm detail crops side by side (same windows for every style)."""
+    from PIL import Image
+    jobs = [(p, n) for p in papers for n in nibs]
+    with ProcessPoolExecutor(min(JOBS, len(jobs))) as ex:
+        res = list(ex.map(polish_one, [p for p, _ in jobs], [pen_mm] * len(jobs),
+                          [None if n == "a" else n for _, n in jobs]))
+    prev = []
+    for name, paper, final, mm, st in res:
+        r = st["svg_rows"][0]
+        print(name, json.dumps({k: r[k] for k in r if k != "variant"}), flush=True)
+        img = physical(final, paper, pen_mm=st["pen_mm"], ppm=10)
+        Image.fromarray(img).save(R7 / f"{name}-preview-10ppm.jpg", quality=90)
+        prev.append((name, img, r))
+    cells, crops = [], []
+    win = _crop_windows(prev[0][1])
+    for name, img, r in prev:
+        h = 1000
+        w = int(img.shape[1] * h / img.shape[0])
+        t = f"{name.split('tree-')[-1]}  ~{r.get('app_total_min') or 0:.1f} min, {r.get('lifts')} lifts"
+        cells.append(label(np.asarray(Image.fromarray(img).resize((w, h), Image.Resampling.LANCZOS)), t))
+        crops += [label(img[y:y + 500, x:x + 500].copy(), f"{name.split('tree-')[-1]} {tag}") for tag, y, x in win]
+    grid(cells, len(cells), RESULTS / "nib-variants-sheets.jpg", quality=88)
+    grid(crops, len(win), RESULTS / "nib-variants-detail.jpg", quality=88)
+
+
+def _crop_windows(img, side=500):
+    g = 255 - img[..., 0].astype(float)
+    H, W = g.shape
+    cands = sorted((float(g[y:y + side, x:x + side].mean()), y, x)
+                   for y in range(0, H - side, side // 2) for x in range(0, W - side, side // 2))
+    cands = [c for c in cands if c[0] > 2.0]
+    return [(t, y, x) for (m, y, x), t in zip([cands[-1], cands[len(cands) // 2]], ("densest", "middle"))]
 
 
 def _crops(img, name, side=500):
@@ -652,6 +692,8 @@ def main(argv=None):
     sub.add_parser("order").set_defaults(fn=cmd_order)
     q = sub.add_parser("polish")
     q.add_argument("--papers", default="A4,A3")
+    q.add_argument("--nibs", default="", help="comma list of nib styles, e.g. a,b+,c,e,c+e (one sheet each)")
+    q.add_argument("--pen", type=float, default=0.35, help="pen width mm (with --nibs)")
     q.set_defaults(fn=cmd_polish)
     a = ap.parse_args(argv)
     a.fn(a)

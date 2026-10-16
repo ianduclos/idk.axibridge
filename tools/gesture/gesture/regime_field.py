@@ -818,9 +818,11 @@ def _close_flagged(paths, closed) -> list[np.ndarray]:
     return out
 
 
-def engine(which: str = "auto") -> Engine:
+def engine(which: str = "auto", nib_renderer=None) -> Engine:
     """'auto': gesture.regime / gesture.signs if importable (each
-    independently), else the stand-in; 'standin': always the stand-in."""
+    independently), else the stand-in; 'standin': always the stand-in.
+    nib_renderer: optional regime.render hook (gesture.penrender.nib_style)
+    for nib ribbons; used only on full (fill=True) renders."""
     reg = _try_import("regime") if which == "auto" else None
     sg = _try_import("signs") if which == "auto" else None
     ok_reg = reg is not None and hasattr(reg, "from_field") and hasattr(reg, "render")
@@ -830,13 +832,15 @@ def engine(which: str = "auto") -> Engine:
             f2 = lambda x, y: ffn(np.column_stack([np.ravel(x), np.ravel(y)]))  # noqa: E731
             return reg.from_field(q, f2, phi=phi, W=W, mass=shape_w, w_min=0.0)
 
-        def render(st, *, pen, fill=True):
+        def render(st, *, pen, fill=True, styled=True):
+            if fill and styled and nib_renderer is not None:
+                return list(reg.render(st, pen=pen, fill=True, nib_renderer=nib_renderer))
             return reg.render(st, pen=pen, fill=fill)
     else:
         def stroke(q, ffn, *, phi, W, shape_w, pen):
             return standin_from_field(q, ffn, phi=phi, W=W, shape_w=shape_w, pen=pen)
 
-        def render(st, *, pen):
+        def render(st, *, pen, fill=True, styled=True):
             return standin_render(st)
     if ok_sg:
         def signs(lines, rng, *, n, w, pen, grouped=False):
@@ -1275,7 +1279,7 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
             pen_px: float | None = None, overlap: float | None = None, piece: float | None = None,
             engine_name: str = "auto", label: str = "", sign_w: float | None = None,
             field_kw: dict | None = None, script: int = 0, script_hand: str | None = None,
-            clip: bool = True) -> Composition:
+            clip: bool = True, nib_style=None) -> Composition:
     """structure → hands (per-line runs, cross-faded) → optional tremor →
     regime r(s) sampled from `field` → RegimeStroke rendering → signs,
     echoes, drips → plotter polylines (px, y down, on a `size` sheet).
@@ -1286,6 +1290,9 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
     (structure "grammar"/"single") are not restyled.
     clip=False keeps marks that run past the sheet edge whole (the caller
     fits the ink, e.g. regime_compose.sheet_to_mm(fit_ink=True)).
+    nib_style: how nib ribbons are inked (gesture.penrender.nib_style):
+    None/"a" outline (default), "b"/"b+"/"c"/"e", a combination such as
+    ["b+", "c"] or "c+e", or a per-mark mix {"c": .5, "e": .5}.
     Deterministic in seed. Widths default to fractions of the sheet height:
     nib 1.0 %, shape 3.0 %; pen = 0.4 mm on A4 portrait."""
     W, H = int(size[0]), int(size[1])
@@ -1335,7 +1342,7 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
             q = restyle_line(p, runs, lr, amount=amount, R=R, overlap=overlap or 0.02 * H)
             outs.append(Stroke(q, closed=False, meta=dict(s.meta)))
             hs = [h for _, _, h in runs]
-            line_hands.append(max(set(hs), key=hs.count))
+            line_hands.append(max(dict.fromkeys(hs), key=hs.count))  # ties: first run wins (set order is hash-seeded)
         welded, _ = rs.weld_junctions(st, outs, R) if len(outs) > 1 else (outs, {})
         lines = [w.points for w in welded]
     if script:
@@ -1347,7 +1354,11 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
     if tremor and tremor > 0:
         lines = _tremor_lines(lines, line_hands, (W, H), t_rng, tremor, R)
     # regimes
-    eng = engine(engine_name)
+    nib_r = None
+    if nib_style not in (None, "a"):
+        from gesture import penrender as _pr
+        nib_r = _pr.nib_style(nib_style, seed=seed)
+    eng = engine(engine_name, nib_renderer=nib_r)
     ffn = lambda q: fobj.at_px(q, (W, H))  # noqa: E731
     polys: list[np.ndarray] = []
     centre, regs = [], []
@@ -1359,7 +1370,14 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
             continue
         rsk = eng.stroke(q, ffn, phi=math.radians(phi_deg), W=nib_w, shape_w=shape_w, pen=pen)
         rp = _as_polylines(eng.render(rsk, pen=pen))
-        n_out = _n_outline(eng, rsk, pen, len(rp))
+        if nib_r is not None:
+            # a styled render is chained (passes and outline interleave), so it
+            # is not prefix-ordered: tag the whole mark as fill if it pools
+            fw = getattr(rsk, "fill_weight", None)
+            pooled = fw is not None and float(np.max(fw())) > 0.0
+            n_out = 0 if pooled else len(rp)
+        else:
+            n_out = _n_outline(eng, rsk, pen, len(rp))
         tags += [(next_gid, "line")] * n_out
         comp = fill_components(rp[n_out:], pen)
         tags += [(next_gid + 1 + int(c), "fill") for c in comp]
@@ -1369,7 +1387,10 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
         rr = np.asarray(getattr(rsk, "r", np.zeros(0)))
         regs.append(rr)
         if rr.size and rr.max() > 1.5:
-            shape_rings += _closed_rings(rp)
+            # echoes/drips grow from the plain render, so the nib style changes
+            # only the ink, never the composition
+            src = rp if nib_r is None else _as_polylines(eng.render(rsk, pen=pen, styled=False))
+            shape_rings += _closed_rings(src)
     # signs, echoes, drips
     n_signs = int(signs) if not isinstance(signs, bool) else (6 if signs else 0)
     sign_polys: list[np.ndarray] = []
