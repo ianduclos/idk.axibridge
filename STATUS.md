@@ -3,28 +3,31 @@ project: idk.axibridge
 state: active
 updated: 2026-10-16
 machine: mac+pi
-summary: The MCP server and live sync are merged and the live app runs them, and a gesture-bank research line has started with its Matisse corpus gathered; native acceptance of the MCP, live sync and the 8 October integration remains with Ian.
+summary: The MCP server and live sync are merged and the live app runs them; the gesture-bank research line has a working extractor, measurement panel and grammar preview, with its artist test confounded by medium; native acceptance of the MCP, live sync and the 8 October integration remains with Ian.
 next:
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
   - Check recovery close/relaunch, nested groups, Assets and Mosca 2 in the native app
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank stage 0: add Gallica line works, the Ingres/Hokusai comparison set and null drawings (see HANDOFF "Gesture bank")
+  - Gesture bank: decide how to remove the medium confound (medium-invariant features vs a medium-matched corpus) — see HANDOFF "Gesture bank"
 handoff_for: Codex
 ---
 
 # idk.axibridge — status
 
-**Gesture bank, 16 October (research only, no code):** idea pass 5 —
-distil an artist's line *hand* as curvature-vs-arc-length statistics, then
-generate and juxtapose hands. Five research passes shaped a six-stage plan
-with a gate per stage ([docs/IDEAS-gesture-bank.md](docs/IDEAS-gesture-bank.md)).
-Key cautions: geometry-only features discriminated weakly in prior work
-(thickness, which the plotter can't draw, was strongest), and every statistic
-must beat null drawings. Corpus started: 31 public-domain SMK Matisse scans
-(19 pure line, 12 line+tone, 179 MB) in gitignored `.local/gesture/`, manifest
-in `docs/research/gesture-corpus/matisse-smk.csv`.
+**Gesture bank, 16 October (overnight research run):** `tools/gesture/`
+(research code, own venv in `.local/gesture/.venv`, never imported by the
+app). Corpus: 31 Matisse (SMK) + 27 Hokusai + 34 Ingres (Met), all public
+domain, scans gitignored, manifests in `docs/research/gesture-corpus/`.
+A six-way extraction bake-off picked `extract_hybrid` (curvature error on
+synthetic ground truth 0.72 → 0.09). Stage-2: nulls separate from a
+pipeline-matched control (AUC 0.92–0.999), but Matisse's own etchings vs
+lithographs separate at 0.78–0.80, so the artist signal is mostly medium —
+gate not met. A grammar preview generates and juxtaposes strokes but has no
+composition. An independent review caught a fair-test bug and the confounds;
+read `tools/gesture/results/review-2026-10-16.md` before the other results.
+Suite: 160 passed (`.local/gesture/.venv/bin/python -m pytest -q tools/gesture/tests`).
 
 **MCP server + live sync, 12–13 October:** `axibridge_mcp/` lets an agent see,
 compose, tune and diagnose through the HTTP API, with `live`/`sandbox` targets;

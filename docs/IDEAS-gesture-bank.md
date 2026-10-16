@@ -229,9 +229,10 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
 - **Stage 3 — preview only.** `grammar.py` learns, generates, code-switches,
   translates, restyles. At σ = 0.01·ref ~90% of strokes fit as one segment,
   so order is barely modelled; drawings have no composition. Not a result.
-- **Representation note:** clothoid DP fitter (`clothoid.py`) works on
-  synthetic data; a corner-angle overflow on scan strokes was being fixed at
-  the end of the run.
+- **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
+  continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
+  (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the
+  run: 5,758 → 0 over 48k fits. The grammar's guard filters can be relaxed.
 
 ## Open decisions (flagged, not settled)
 

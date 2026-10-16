@@ -4,12 +4,12 @@ updated: 2026-10-16
 entries: 31
 ---
 
-### Gesture bank: finish the stage-0 corpus — opened 2026-10-16, owner: claude
+### Gesture bank: stage-2 artist test is confounded by medium — opened 2026-10-16, owner: ian
 
-- done: Research plan written ([docs/IDEAS-gesture-bank.md](docs/IDEAS-gesture-bank.md), stages 0–6 with gates). 31 public-domain SMK Matisse scans downloaded to the gitignored `.local/gesture/corpus/matisse/` (tier A pure line 19, tier B line+tone 12; 4 tier-A images are low-res ~1,600 px; KKS21180 is a white-on-black linocut needing inversion). Manifest with rights, SMK page and download URL per file: [matisse-smk.csv](docs/research/gesture-corpus/matisse-smk.csv). Tonal 1920s lithographs were excluded on sight.
-- next: Add Gallica line works (Mallarmé etchings, Ronsard lithographs, *Thèmes et Variations* plates; free non-commercial reuse with credit; Gallica blocks automated fetches, so use the browser pane or ask Ian). Then the comparison set (Ingres, Hokusai: public domain) and the generated null drawings plus synthetic/plotter ground truth described in stage 0. Ask Ian before each download (name, source, size).
-- blockers: none. Open decisions (where research code lives; whether scikit-image/sknw become an optional extra) are flagged in the plan; settle them before stage 1 code, not implicitly.
-- context: [plan](docs/IDEAS-gesture-bank.md), [manifest](docs/research/gesture-corpus/matisse-smk.csv). Scans are not in git — on another machine, refetch from the manifest's `download_url` column.
+- done: Overnight run (2026-10-16): corpus (Matisse 31 SMK, Hokusai 27 + Ingres 34 Met, all PD); `tools/gesture/` research package with synthetic ground truth, nulls + identity control, six-way extraction bake-off (default `extract_hybrid`), clothoid κ(s) fitter, 74-feature panel, discrimination experiment, grammar preview (generate / code-switch / translate / restyle). Independent Fable review; its fixes are in. 160 tests pass.
+- next: Ian decides how to remove the medium confound: (a) medium-invariant features (drop/normalise what the etching-vs-litho control separates on), or (b) a medium-matched corpus (a second etcher/lithographer; downloads need Ian's go). Then rerun `experiments/discriminate.py` (commands in results/discriminate-real-v3.md). Grammar: refit at a finer σ so strokes carry more than one segment, then run stage-3 test 1 (classifier can't tell generated from real).
+- blockers: decision above. Gallica needs a human Cloudflare check in the browser pane. Physical plotter round-trip (stage 0 ground truth) needs Ian at the machine.
+- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [read first: review](tools/gesture/results/review-2026-10-16.md), [v3 results + medium control](tools/gesture/results/discriminate-real-v3.md), [bake-off](tools/gesture/results/extraction-bakeoff-2026-10-16.md), [non-artist sources](docs/research/gesture-corpus/hands-to-collect.md), [package README](tools/gesture/README.md). Scans and outputs live in gitignored `.local/gesture/`; refetch scans from the manifests' `download_url`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 
