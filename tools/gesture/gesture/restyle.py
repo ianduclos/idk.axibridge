@@ -49,13 +49,19 @@ ref_length (bbox diagonal), grammar tokens dimensionless in R. Pure and
 deterministic: inputs are never mutated; randomness via np.random.Generator
 or a seed (one child stream per stroke, independent of `amount`).
 
-Uses the FROZEN grammar v4 (`grammar_v4_frozen`, since the composite round
-of 2026-10-16; v3 before). `source="chain"` uses v4's source-stroke runs
+Grammar: any frozen grammar object — `grammar_v4_frozen` (composite round)
+or `grammar_v6_frozen` (composite-v6 round, the default in
+experiments/composite.py). The token math is identical in both; with a v6
+grammar, `trace` and `chain` also apply v6's per-line **corner/turning
+budget** (`TRACE_BUDGET`, results/composite-v6-2026-10-16.md): each traced
+line draws a plan from a training stroke of similar length and the chain's
+k-NN proposals are re-weighted against it (`budget=0` = v4 behaviour).
+`source="chain"` uses v4's source-stroke runs
 (`P_FOLLOW`, `MAX_RUN`), and so does `trace` (`TRACE_FOLLOW`): the runs carry
 more of the hand (pairwise hand test 0.75–0.90 vs 0.45–0.80 without) at the
 price of more corners (rate ≈ 3.9 vs 3.2; real 1.3–1.6). Any object with
 the same `strokes`, `name` and v4 chain interface (`draw` returning
-(kind, params, record)) works. `source="trace_ln"` takes a
+(kind, params, record); `weights=` for the budget) works. `source="trace_ln"` takes a
 `lognormal.Hand` instead and redraws the structure pulse by pulse.
 
 **Junction welding** (`restyle_drawing(weld=True)`, default): an open end that
@@ -70,6 +76,7 @@ then means the same on a spiral as on a tree limb.
 """
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 
 import numpy as np
@@ -106,6 +113,7 @@ CTX_N = 6                # transplant: coarse-κ context sampled at this many po
 TRACE_KMAX = 16          # trace: proposals per token at amount → 0 ...
 TRACE_KMIN = 2           # ... and at amount = 1 (k = KMIN + (KMAX−KMIN)(1−amount))
 TRACE_LOOK = 0.03        # trace: look-ahead ray, R units
+TRACE_BUDGET = 1.0       # trace/chain with a v6 grammar: gain of v6's per-line corner/turning budget (0 = off)
 TRACE_FOLLOW = True      # trace: v4 source-stroke runs (P_FOLLOW, MAX_RUN); off = fewer corners, weaker hand identity (composite-2026-10-16.md)
 WELD_R = 0.006           # weld: a source end this close (R units) to another stroke is a junction
 WELD_FADE = 2.0          # weld: the end correction fades out over this many σ_s (≤ half the stroke)
@@ -197,15 +205,36 @@ def _source(points: np.ndarray, closed: bool, R: float) -> _Src | None:
 # hand residuals
 # ---------------------------------------------------------------------------
 
-def _hand_theta_chain(g, rng, M: int, R: float, h: float) -> np.ndarray:
+def _gmod(g):
+    """The grammar module a grammar object belongs to (v4 / v6 frozen …)."""
+    return sys.modules.get(type(g).__module__, gm)
+
+
+def _budget_for(g, rng, length_r: float, gain: float | None):
+    """A v6 `_Budget` for one line of length_r (R units), or None (v4
+    grammars, gain 0). None consumes no randomness, so budget=0 on a v6
+    grammar draws exactly like v4's trace."""
+    gain = TRACE_BUDGET if gain is None else float(gain)
+    mod = _gmod(g)
+    if gain <= 0 or not hasattr(mod, "_Budget") or not hasattr(mod, "plan_line"):
+        return None
+    plan = mod.plan_line(g, rng, length=max(float(length_r), 1e-6))
+    return mod._Budget(plan, rng, gain, length=max(float(length_r), 1e-6))
+
+
+def _hand_theta_chain(g, rng, M: int, R: float, h: float, budget: float | None = None) -> np.ndarray:
     """θ (M samples, step h) of chain output, chained stroke after stroke
-    until long enough (heading continuous across the joins)."""
+    until long enough (heading continuous across the joins). v6 grammars:
+    each chunk runs under v6's own chain budget (`generate_tokens(budget=)`)."""
+    gain = TRACE_BUDGET if budget is None else float(budget)
+    mod = _gmod(g)
+    bkw = {"budget": gain} if gain > 0 and hasattr(mod, "_Budget") else {}
     out: list[np.ndarray] = []
     got, last, tries = 0, 0.0, 0
     while got < M and tries < 50:
         tries += 1
         need = (M - got + 4) * h / R
-        toks, _ = gm.generate_tokens(g, rng, length=need, p_follow=gm.P_FOLLOW)
+        toks, _ = (mod if bkw else gm).generate_tokens(g, rng, length=need, p_follow=gm.P_FOLLOW, **bkw)
         if not toks:
             continue
         pts, _, _ = gm.tokens_to_points(toks, R, step=h)
@@ -240,9 +269,10 @@ def _periodic(r_ext: np.ndarray, M: int) -> np.ndarray:
     return r - r.mean()
 
 
-def residual_chain(g, rng, M: int, sd: float, R: float, h: float, closed: bool) -> np.ndarray:
+def residual_chain(g, rng, M: int, sd: float, R: float, h: float, closed: bool,
+                   budget: float | None = None) -> np.ndarray:
     O = int(min(max(3 * sd, 8), M // 2)) if closed else 0
-    th = _hand_theta_chain(g, rng, M + O, R, h)
+    th = _hand_theta_chain(g, rng, M + O, R, h, budget)
     r = _highpass(th, sd)
     return _periodic(r, M) if closed else r
 
@@ -350,16 +380,20 @@ def _tok_points(tok, R, pos, heading, h):
 
 
 def trace_theta(g, rng, path: np.ndarray, theta_path: np.ndarray, h: float, R: float,
-                k: int, look: float = TRACE_LOOK) -> np.ndarray:
+                k: int, look: float = TRACE_LOOK, budget: float | None = None) -> np.ndarray:
     """The hand redraws `path` (positions at step h, M+1 points) token by
     token: the chain proposes k continuations from its own context; the one
     whose points (plus a look-ahead ray of `look`·R along its end tangent)
     stay closest to the path at matching arc length is kept. Nothing is
     inserted or bent: every kept token is one the chain proposed. Returns
-    the traced line's θ resampled to M samples."""
+    the traced line's θ resampled to M samples.
+    budget (v6 grammars; default TRACE_BUDGET): the chain's proposals are
+    re-weighted by a corner/turning budget planned for a line of this
+    length (`_budget_for`); the closest-to-path choice is unchanged."""
     M = len(path) - 1
     L = M * h
     Lr = L / R
+    bud = _budget_for(g, rng, Lr, budget)
     pos, head = path[0].astype(float), float(theta_path[0])
     p2, p1 = ["START"], ["START"]
     toks: list = []
@@ -373,7 +407,8 @@ def trace_theta(g, rng, path: np.ndarray, theta_path: np.ndarray, h: float, R: f
         best, best_sc = None, np.inf
         pf = gm.P_FOLLOW if (TRACE_FOLLOW and run < gm.MAX_RUN) else 0.0
         for _k in range(max(k, 1)):
-            kind, par, rec_k = g.draw(p2, p1, s / R, Lr, rng, prev_rec=rec, p_follow=pf)
+            kind, par, rec_k = g.draw(p2, p1, s / R, Lr, rng, prev_rec=rec, p_follow=pf,
+                                      **({"weights": bud.weights(s / R)} if bud is not None else {}))
             tok = gm._tok_corner(par[0]) if kind == "corner" else gm._tok_seg(kind, *par)
             if kind == "corner" and (not toks or toks[-1][0] == "corner"):
                 continue
@@ -400,6 +435,8 @@ def trace_theta(g, rng, path: np.ndarray, theta_path: np.ndarray, h: float, R: f
         if toks and newprev is not None and newprev is not p1 and toks[-1] is p1:
             toks[-1] = newprev
         toks.append(tok)
+        if bud is not None:
+            bud.spend([tok])
         if len(P) > 1:
             pts_all.append(P[1:])
         pos, head = P[-1].astype(float), eh
@@ -703,14 +740,16 @@ def feature_length(src: _Src, R: float) -> float:
 def restyle_points(points, g, rng, *, amount: float, ref_length: float, closed: bool = False,
                    method: str = "gauss", source: str = "chain", hand_gain: float = 1.0,
                    tol: float = TOL, scale: str = "drawing",
-                   max_sigma: float | None = None) -> tuple[np.ndarray, dict]:
+                   max_sigma: float | None = None, budget: float | None = None) -> tuple[np.ndarray, dict]:
     """One polyline (px) → (new polyline, info). amount = 0 returns a copy.
     info["n_out"]/["M"] let a caller map output samples back to the source
     (sample i of the output ↔ arc fraction i/M of the source).
     max_sigma (px): cap on σ_s. A line shorter than ~2 σ_s gets only its two
     end pins; the hand then wanders and the pin fit stretches its steps
     (up to STRETCH_MAX^passes) into a long needle or loop — the chain fix
-    caps σ_s at a fraction of each run's length (composite.restyle_chain)."""
+    caps σ_s at a fraction of each run's length (composite.restyle_chain).
+    budget: v6 corner/turning budget gain for trace/chain (None =
+    TRACE_BUDGET; ignored for v4 grammars and the lognormal hand)."""
     pts = np.array(points, dtype=np.float64, copy=True)
     R = float(ref_length)
     info = {"amount": float(amount), "method": method, "source": source}
@@ -738,12 +777,13 @@ def restyle_points(points, g, rng, *, amount: float, ref_length: float, closed: 
                             BASIS * sd, closed, tol * sig)
         path = _integrate(src.p[0], base, hb)
         k = int(round(TRACE_KMIN + (TRACE_KMAX - TRACE_KMIN) * (1 - float(np.clip(amount, 0, 1)))))
-        th_t = (trace_theta if source == "trace" else trace_theta_ln)(g, rng, path, base, src.h, R, k)
+        th_t = trace_theta(g, rng, path, base, src.h, R, k, budget=budget) if source == "trace" else \
+            trace_theta_ln(g, rng, path, base, src.h, R, k)
         r = hand_gain * (th_t - base)
         h_out = src.h
     else:
         if source == "chain":
-            r = residual_chain(g, rng, M, st.sd_res, R, src.h, closed)
+            r = residual_chain(g, rng, M, st.sd_res, R, src.h, closed, budget)
         elif source == "transplant":
             r = residual_transplant(g, rng, st.theta, st.sd_res, src.h, R, closed)
         else:

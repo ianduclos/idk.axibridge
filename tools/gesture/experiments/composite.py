@@ -7,15 +7,19 @@ tests/test_composite.py) plus subcommands (run from tools/gesture):
       1. structure: `topology.generate_structure` — kind "oehlen_tree"
          (complexity params) or "learned" (the hand's own TopologyModel) —
          or any given Drawing (e.g. a real drawing's long strokes);
-      2. restyle into the hand (`restyle.restyle_drawing`, FROZEN v4 grammar,
-         gauss/trace, junctions welded) or `model="lognormal"` (the kinematic
-         hand, `source="trace_ln"`);
+      2. restyle into the hand (`restyle.restyle_drawing`, FROZEN v6 grammar
+         by default — `GRAMMAR_VERSION`, `grammar_version="v4"` for the
+         round-3/4 numbers — gauss/trace with v6's corner budget, junctions
+         welded) or `model="lognormal"` (the kinematic hand, `source="trace_ln"`);
       3. chain (optional): `chain_paths` joins the lines into as few
          continuous pen paths as possible (Euler path on the junction graph,
          odd ends paired by a min-weight matching = minimal retrace);
          chain="before" chains the skeleton and restyles the single line;
-      4. tremor (optional): `gesture.tremor.apply_tremor` if that module and
-         a fitted model exist.
+      4. tremor (optional): `gesture.tremor` with the per-hand default model
+         (`TREMOR_DEFAULT`: v2 bursty for Hokusai/Ingres, v1 for Matisse),
+         applied AFTER chaining; single lines go through `tremor_chain`
+         (offset return passes follow their outward pass's displacement, so
+         the double line keeps its spacing). results/composite-v6-2026-10-16.md.
 
   pairwise   panel pairwise hand test: same structure in hand A and hand B;
              a classifier trained on REAL drawings of A vs B says which is A.
@@ -40,14 +44,17 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from gesture import grammar_v4_frozen as gm  # noqa: E402
+from gesture import grammar_v4_frozen as gm  # noqa: E402  (long_drawing, v4 baseline)
+from gesture import grammar_v6_frozen as gm6  # noqa: E402,F401  (default hand grammar)
 from gesture import restyle as rs  # noqa: E402
 from gesture import topology  # noqa: E402
 from gesture.core import Drawing, Stroke  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
 OUTROOT = ROOT / ".local/gesture/out"
-GRAMMARS = OUTROOT / "grammar_v4_frozen"
+GRAMMARS = OUTROOT / "grammar_v4_frozen"     # v4 snapshot: line widths (hand_w, w_common) and the v4 hands
+GRAMMAR_DIRS = {"v4": GRAMMARS, "v6": OUTROOT / "grammar_v6_frozen"}
+GRAMMAR_VERSION = "v6"                        # default hand grammar (composite-v6-2026-10-16.md); "v4" = rounds 3–4
 TOPO = OUTROOT / "topology"
 LOGN = OUTROOT / "lognormal"
 EXTRACT = OUTROOT / "extract_hybrid"
@@ -59,10 +66,15 @@ JOBS = 3                                    # shared machine: keep pools small
 _CACHE: dict = {}
 
 
-def grammar(art: str):
-    k = ("g", art)
+def grammar(art: str, version: str | None = None):
+    """The frozen learned grammar of a hand: version "v6" (default,
+    `GRAMMAR_VERSION`) loads grammar_v6_frozen.Grammar from the v6 snapshot,
+    "v4" the round-3/4 grammar."""
+    v = version or GRAMMAR_VERSION
+    k = ("g", art, v)
     if k not in _CACHE:
-        _CACHE[k] = gm.Grammar.load(GRAMMARS / f"grammar_{art}.json")
+        mod = {"v4": gm, "v6": gm6}[v]
+        _CACHE[k] = mod.Grammar.load(GRAMMAR_DIRS[v] / f"grammar_{art}.json")
     return _CACHE[k]
 
 
@@ -470,7 +482,7 @@ def restyle_chain(chained: Drawing, g, *, amount: float, seed: int = 0, ref_leng
                   method: str = "gauss", source: str = "trace", scale: str = "drawing",
                   pin: str = "turns", pin_angle: float = 60.0, retrace: str = "offset",
                   offset_w: float = OFFSET_W, w: float | None = None,
-                  run_sigmas: float | None = RUN_SIGMAS) -> Drawing:
+                  run_sigmas: float | None = RUN_SIGMAS, budget: float | None = None) -> Drawing:
     """Redraw a chained skeleton (`chain_paths` output) in hand g as single
     lines that keep the structure — the chain fix.
 
@@ -497,6 +509,9 @@ def restyle_chain(chained: Drawing, g, *, amount: float, seed: int = 0, ref_leng
     run_sigmas: cap σ_s at run length / run_sigmas, so a short run (a twig
     between two anchors) still gets interior pins; None = no cap.
     w: line width in px (default 0.0017 R, the corpus median).
+    budget: v6 corner/turning budget gain inside trace (restyle.TRACE_BUDGET).
+    Output stroke meta: "anchors" (point indices), "runs" ([i0, i1, is_return]
+    per run, inclusive point indices; neighbouring runs share their anchor).
     Pure and deterministic (run r of path i draws from default_rng([seed, i, r]))."""
     R = float(ref_length) if ref_length is not None else chained.ref_length()
     w = float(w) if w is not None else 0.0017 * R
@@ -510,7 +525,7 @@ def restyle_chain(chained: Drawing, g, *, amount: float, seed: int = 0, ref_leng
         mp = st.meta.get("chain_pieces")
         if not mp:
             o = rs.restyle_points(P, g, np.random.default_rng([int(seed), pi, 0]), amount=amount, ref_length=R,
-                                  method=method, source=source, scale=scale)[0]
+                                  method=method, source=source, scale=scale, budget=budget)[0]
             strokes.append(Stroke(o, meta={"chain": True}))
             continue
         turns = node_turns(P, mp, d_turn)
@@ -524,7 +539,7 @@ def restyle_chain(chained: Drawing, g, *, amount: float, seed: int = 0, ref_leng
                 cut.append(b)
         n_anchor += len(cut)
         bounds = [0] + cut + [len(mp)]
-        parts, anchors_out = [], []
+        parts, anchors_out, spans = [], [], []
         for r, (a, b) in enumerate(zip(bounds[:-1], bounds[1:])):
             i_s, i_e = mp[a][0], mp[b - 1][1]
             src = P[i_s:i_e + 1]
@@ -548,7 +563,7 @@ def restyle_chain(chained: Drawing, g, *, amount: float, seed: int = 0, ref_leng
                 cap = s[-1] / run_sigmas if run_sigmas else None
                 o, info = rs.restyle_points(src, g, np.random.default_rng([int(seed), pi, r]), amount=amount,
                                             ref_length=R, closed=False, method=method, source=source, scale=scale,
-                                            max_sigma=cap)
+                                            max_sigma=cap, budget=budget)
                 out = _end_fix(o, src[0], src[-1], rs.WELD_FADE * min(sig, cap or sig))
                 M = info.get("M")
                 for t in range(a, b):
@@ -562,12 +577,14 @@ def restyle_chain(chained: Drawing, g, *, amount: float, seed: int = 0, ref_leng
                     q = out[j0:max(j1, j0 + 1) + 1]
                     store[mp[t][2]] = q if mp[t][3] else q[::-1]
             n_runs += 1
+            i0 = sum(len(x) for x in parts) - 1 if parts else 0
             if parts:
                 out = out[1:]
             parts.append(out)
             anchors_out.append(sum(len(x) for x in parts) - 1)
+            spans.append([int(i0), int(anchors_out[-1]), bool(is_ret)])
         strokes.append(Stroke(np.vstack(parts), meta={"chain": True, "anchors": anchors_out[:-1],
-                                                      "n_runs": len(parts)}))
+                                                      "n_runs": len(parts), "runs": spans}))
     return Drawing(strokes, source=f"{chained.source}|restyle_chain:{getattr(g, 'name', '')}:{amount:g}",
                    size=chained.size, meta={**chained.meta, "restyle_chain": {
                        "pin": pin, "pin_angle": pin_angle, "retrace": retrace, "offset_w": offset_w,
@@ -593,33 +610,176 @@ def structure_of(kind, hand: str | None, rng, size, params: dict | None = None) 
 
 def hand_w(art: str) -> float:
     """The hand's median line width w/R over its real drawings (corpus
-    median 0.0017 for an unnamed hand)."""
+    median 0.0017 for an unnamed hand). Read from the v4 snapshot for every
+    grammar version, so offsets and measurements stay comparable."""
     if art in ARTISTS and GRAMMARS.exists():
         try:
-            return float(np.median([x["w_over_R"] for x in grammar(art).drawings if x["w_over_R"] > 0]))
+            return float(np.median([x["w_over_R"] for x in grammar(art, "v4").drawings if x["w_over_R"] > 0]))
         except Exception:  # noqa: BLE001
             pass
     return 0.0017
 
 
-def _tremor(d: Drawing, art: str, rng, amount: float):
-    """Optional stage: another agent's gesture.tremor (if it imports and a
-    fitted model is on disk at out/tremor/models/{art}.json). Line width w =
-    the hand's own median w/R × the drawing's R, so tremor is at the hand's
-    scale. Returns (drawing, note)."""
+# per-hand default tremor (tremor-v2-2026-10-16.md §7): v2 (bursty) where it
+# closes the burst gap, v1 for Matisse (v2 overshoots there). (dir, model, apply_tremor mode)
+TREMOR_DIRS = {"v1": OUTROOT / "tremor" / "models", "v2": OUTROOT / "tremor_v2" / "models"}
+TREMOR_DEFAULT = {"matisse": ("v1", "matisse", "v1"), "hokusai": ("v2", "hokusai", "auto"),
+                  "ingres": ("v2", "ingres", "auto")}
+TREMOR_CHOICES = {"v1": lambda art: ("v1", art, "v1"), "v2": lambda art: ("v2", art, "auto"),
+                  "v2_etching": lambda art: ("v2", "matisse_etching", "auto"),
+                  "default": lambda art: TREMOR_DEFAULT.get(art, ("v1", art, "v1"))}
+
+
+def tremor_model(art: str, which: str = "default"):
+    """(TremorModel, apply mode, label) for a hand: which = "default" (per
+    hand, `TREMOR_DEFAULT`), "v1", "v2" or "v2_etching" (Matisse etching v2,
+    no kinks). Raises if the model file is missing."""
+    from gesture import tremor as tr
+    ver, name, mode = TREMOR_CHOICES[which](art)
+    p = TREMOR_DIRS[ver] / f"{name}.json"
+    k = ("tremor", str(p))
+    if k not in _CACHE:
+        _CACHE[k] = tr.TremorModel.load(p)
+    return _CACHE[k], mode, f"{ver}:{name}"
+
+
+def _arc_index(s_from: np.ndarray, s_to: np.ndarray) -> np.ndarray:
+    """For each arc position in s_from, the nearest sample index in s_to."""
+    j = np.clip(np.searchsorted(s_to, s_from), 1, len(s_to) - 1)
+    return np.where(np.abs(s_to[j - 1] - s_from) <= np.abs(s_to[j] - s_from), j - 1, j)
+
+
+def tremor_chain(d: Drawing, model, rng: np.random.Generator, amount: float, *, w: float, mode: str = "auto",
+                 returns: str = "follow", pin_w: float = 0.0) -> Drawing:
+    """Tremor on chained single lines (`restyle_chain` output), AFTER the
+    chain. Each pen path gets one tremor displacement (gesture.tremor's
+    per-stroke synthesis: ends pinned, κ/end envelope, v2 regime + kinks).
+    returns: "follow" — a return pass (meta "runs" is_return) takes the
+    displacement *vector* of the nearest outward-pass sample, so an offset
+    return keeps its spacing exactly (one hand-tremor field over the
+    double line); "independent" — each pass trembles on its own (plain
+    apply_tremor on the path; the passes can touch).
+    pin_w: ramp the displacement to 0 within pin_w line widths of every
+    anchor (junction passage), 0 = off. Strokes without "runs" meta fall
+    back to plain apply_tremor for that stroke. Pure; deterministic in rng."""
+    from scipy.spatial import cKDTree
+
+    from gesture import tremor as tr
+    out, rms = [], []
+    v2 = mode != "v1" and getattr(model, "version", 1) >= 2
+    for st in d.strokes:
+        if len(st) < 3 or st.length() < 4 * w:
+            out.append(Stroke(st.points.copy(), closed=st.closed, meta=dict(st.meta)))
+            continue
+        q, P, disp = tr._perturb_stroke(st, w, model, rng, amount, v2=v2)
+        disp = disp.copy()
+        runs = st.meta.get("runs")
+        s0, s1 = _arclen(st.points), _arclen(P)
+        if returns == "follow" and runs and any(r[2] for r in runs):
+            ret = np.zeros(len(P), bool)
+            for i0, i1, is_ret in runs:
+                if is_ret:
+                    ret |= (s1 >= s0[i0]) & (s1 <= s0[i1])
+            if (~ret).sum() >= 2 and ret.any():
+                _, j = cKDTree(P[~ret]).query(P[ret])
+                disp[ret] = disp[~ret][j]
+        elif returns not in ("follow", "independent"):
+            raise ValueError(f"unknown returns {returns!r}")
+        an = st.meta.get("anchors") or []
+        if pin_w > 0 and an:
+            sa = s0[np.asarray(an, int)]
+            dmin = np.min(np.abs(s1[:, None] - sa[None, :]), axis=1) if len(sa) < 4000 else \
+                np.abs(s1 - sa[np.clip(_arc_index(s1, sa), 0, len(sa) - 1)])
+            disp *= _smoothstep(dmin / (pin_w * w))[:, None]
+        rms.append(float(np.sqrt(np.mean(np.sum(disp ** 2, 1)))))
+        m = dict(st.meta)
+        if runs:     # re-index runs / anchors onto the resampled points
+            m["runs"] = [[int(_arc_index(np.array([s0[a]]), s1)[0]), int(_arc_index(np.array([s0[b]]), s1)[0]), r]
+                         for a, b, r in runs]
+            m["anchors"] = [int(x) for x in _arc_index(s0[np.asarray(an, int)], s1)] if an else []
+        m["tremor"] = {"model": model.name, "amount": float(amount), "mode": mode, "returns": returns}
+        out.append(Stroke(P + disp, closed=st.closed, meta=m))
+    return Drawing(out, source=d.source, size=d.size,
+                   meta={**d.meta, "tremor": {"model": model.name, "amount": float(amount), "mode": mode,
+                                              "returns": returns, "w": float(w),
+                                              "disp_rms_px": float(np.median(rms)) if rms else 0.0}})
+
+
+def _tangents(P: np.ndarray) -> np.ndarray:
+    t = np.gradient(P, axis=0)
+    return t / np.maximum(np.linalg.norm(t, axis=1, keepdims=True), 1e-12)
+
+
+def return_spacing(d: Drawing, w: float, R: float, offset_w: float = OFFSET_W) -> dict:
+    """The double line's spacing: for every return-pass sample (meta "runs"
+    is_return) outside its taper zones (taper as in restyle_chain), the
+    distance to its **counterpart** — the nearest OUTWARD-pass sample running
+    the opposite way (tangent dot < −0.7) within 4 w — in line widths: min,
+    q01, q50, share below 1.0 / 0.5 w, and the share of return samples with
+    no counterpart (`sp_unpaired`, e.g. where a return passes a node). Other
+    lines crossing the return are structure, not spacing, and are ignored.
+    Without return runs: empty dict."""
+    from scipy.spatial import cKDTree
+    taper = max(4 * offset_w * w, 0.004 * R)
+    vals, unpaired, tot = [], 0, 0
+    for st in d.strokes:
+        runs = st.meta.get("runs")
+        if not runs or not any(r[2] for r in runs):
+            continue
+        P = st.points
+        T = _tangents(P)
+        first = np.ones(len(P), bool)
+        for i0, i1, ret in runs:
+            if ret:
+                first[i0 + 1:i1] = False
+        if first.sum() < 2:
+            continue
+        F, TF = P[first], T[first]
+        tree = cKDTree(F)
+        for i0, i1, ret in runs:
+            if not ret or i1 - i0 < 4:
+                continue
+            q, tq = P[i0:i1 + 1], T[i0:i1 + 1]
+            s = _arclen(q)
+            m = np.flatnonzero((s > taper) & (s < s[-1] - taper))
+            if not len(m):
+                continue
+            dd, jj = tree.query(q[m], k=24, distance_upper_bound=4 * w)
+            for row, (dr, jr) in enumerate(zip(dd, jj)):
+                tot += 1
+                ok = np.isfinite(dr)
+                if ok.any():
+                    jr, dr = jr[ok], dr[ok]
+                    anti = (TF[jr] @ tq[m[row]]) < -0.7
+                    if anti.any():
+                        vals.append(dr[anti].min() / w)
+                        continue
+                unpaired += 1
+    if not vals:
+        return {}
+    v = np.asarray(vals)
+    return {"sp_min": float(v.min()), "sp_q01": float(np.quantile(v, 0.01)), "sp_q50": float(np.median(v)),
+            "sp_lt1": float(np.mean(v < 1.0)), "sp_lt05": float(np.mean(v < 0.5)), "sp_n": int(len(v)),
+            "sp_unpaired": unpaired / max(tot, 1)}
+
+
+def _tremor(d: Drawing, art: str, rng, amount: float, which: str = "default", returns: str = "follow",
+            pin_w: float = 0.0):
+    """Tremor stage (after the chain): the hand's default model
+    (`tremor_model`), line width w = the hand's own median w/R × R so the
+    tremor is at the hand's scale. Single lines (strokes with "runs" meta)
+    go through `tremor_chain`, everything else through apply_tremor (which
+    re-snaps contacts). Returns (drawing, note)."""
     try:
         from gesture import tremor as tr
+        model, mode, lab = tremor_model(art, which)
     except Exception as e:  # noqa: BLE001
         return d, f"tremor unavailable: {e}"
-    p = OUTROOT / "tremor" / "models" / f"{art}.json"
-    if not p.exists():
-        return d, "tremor: no fitted model on disk"
-    try:
-        model = tr.TremorModel.load(p)
-        wr = float(np.median([x["w_over_R"] for x in grammar(art).drawings if x["w_over_R"] > 0]))
-        return tr.apply_tremor(d, model, rng, amount, w=wr * d.ref_length()), f"tremor {p.name} x{amount:g}"
-    except Exception as e:  # noqa: BLE001 — someone else's work in progress
-        return d, f"tremor failed: {e}"
+    w = hand_w(art) * d.ref_length()
+    if any(st.meta.get("runs") for st in d.strokes):
+        return tremor_chain(d, model, rng, amount, w=w, mode=mode, returns=returns, pin_w=pin_w), \
+            f"tremor {lab} ({mode}) x{amount:g}, chain, returns {returns}"
+    return tr.apply_tremor(d, model, rng, amount, w=w, mode=mode), f"tremor {lab} ({mode}) x{amount:g}"
 
 
 def composite(structure, hand, rng: np.random.Generator, *, size=1200, amount: float = 0.6,
@@ -629,10 +789,14 @@ def composite(structure, hand, rng: np.random.Generator, *, size=1200, amount: f
               structure_hand: str | None = None, max_retrace: float | None = None,
               pin: str = "none", pin_angle: float = 60.0, retrace: str = "redraw", offset_w: float = OFFSET_W,
               walk: str = "any", connect: bool = False, max_paths: int | None = None,
-              run_sigmas: float | None = RUN_SIGMAS) -> Drawing:
+              run_sigmas: float | None = RUN_SIGMAS, grammar_version: str | None = None,
+              budget: float | None = None, tremor_which: str = "default", tremor_returns: str = "follow",
+              tremor_pin_w: float = 0.0) -> Drawing:
     """structure ("oehlen_tree" | "learned" | a Drawing) → restyled into
     `hand` (artist name, or a Grammar / lognormal.Hand object; model
-    "grammar" = frozen v4 + trace, "lognormal" =
+    "grammar" = frozen grammar (`grammar_version`, default GRAMMAR_VERSION
+    "v6", with v6's corner budget at gain `budget`, default
+    restyle.TRACE_BUDGET) + trace, "lognormal" =
     kinematic trace) → optional chain (True/"after": chain the restyled
     lines; "before": chain the skeleton, restyle the single line) →
     optional tremor amount. "learned" uses structure_hand's TopologyModel
@@ -642,6 +806,9 @@ def composite(structure, hand, rng: np.random.Generator, *, size=1200, amount: f
     "none"/"redraw" is the chain fix (`restyle_chain`: anchors at reversals /
     sharp node turns, offset or exact return passes); line width for the
     offset = the hand's own median w/R × R.
+    tremor: amount (None/0 = off), model `tremor_which` (default per hand),
+    single lines via `tremor_chain` (returns `tremor_returns`, pins
+    `tremor_pin_w`).
     meta["composite"] records stages and seconds per stage."""
     t0 = time.perf_counter()
     s_seed, r_seed, t_seed = (int(x) for x in rng.integers(0, 2 ** 31, 3))
@@ -649,7 +816,7 @@ def composite(structure, hand, rng: np.random.Generator, *, size=1200, amount: f
     st = structure_of(structure, structure_hand or (hand if named else None), np.random.default_rng(s_seed), size,
                       structure_params)
     t1 = time.perf_counter()
-    g = hand if not named else grammar(hand) if model == "grammar" else ln_hand(hand)
+    g = hand if not named else grammar(hand, grammar_version) if model == "grammar" else ln_hand(hand)
     hname = hand if named else getattr(hand, "name", "")
     src = "trace" if model == "grammar" else "trace_ln"
     R = st.ref_length()
@@ -660,16 +827,16 @@ def composite(structure, hand, rng: np.random.Generator, *, size=1200, amount: f
         cm = sk.meta.get("chain", {})
         if pin == "none" and retrace == "redraw":
             o = rs.restyle_drawing(sk, g, amount=amount, seed=r_seed, method=method, source=src,
-                                   ref_length=R, scale=scale, weld=False)
+                                   ref_length=R, scale=scale, weld=False, budget=budget)
         else:
             o = restyle_chain(sk, g, amount=amount, seed=r_seed, ref_length=R, method=method, source=src,
                               scale=scale, pin=pin, pin_angle=pin_angle, retrace=retrace, offset_w=offset_w,
-                              w=hand_w(hname) * R, run_sigmas=run_sigmas)
+                              w=hand_w(hname) * R, run_sigmas=run_sigmas, budget=budget)
             cm = {**cm, **o.meta.get("restyle_chain", {})}
         t2 = t3 = time.perf_counter()
     else:
         o = rs.restyle_drawing(st, g, amount=amount, seed=r_seed, method=method, source=src,
-                               ref_length=R, scale=scale, weld=weld)
+                               ref_length=R, scale=scale, weld=weld, budget=budget)
         t2 = time.perf_counter()
         if chain:
             o = chain_paths(o, **ckw)
@@ -677,11 +844,14 @@ def composite(structure, hand, rng: np.random.Generator, *, size=1200, amount: f
         t3 = time.perf_counter()
     note = ""
     if tremor:
-        o, note = _tremor(o, hname, np.random.default_rng(t_seed), float(tremor))
+        o, note = _tremor(o, hname, np.random.default_rng(t_seed), float(tremor), tremor_which, tremor_returns,
+                          tremor_pin_w)
     t4 = time.perf_counter()
     kind = structure if isinstance(structure, str) else "given"
     return Drawing(o.strokes, source=f"composite:{kind}:{hname}:{model}:{amount:g}", size=st.size,
                    meta={"composite": {"structure": kind, "hand": hname, "model": model, "amount": amount,
+                                       "grammar": (grammar_version or GRAMMAR_VERSION) if model == "grammar" else None,
+                                       "tremor_meta": o.meta.get("tremor"),
                                        "chain": chain, "tremor": tremor, "tremor_note": note,
                                        "n_structure": len(st.strokes), "n_out": len(o.strokes),
                                        "chain_meta": cm, "welds": o.meta.get("restyle", {}).get("welds"),
@@ -822,7 +992,7 @@ def with_width(d: Drawing, wr: float) -> Drawing:
 def w_common() -> float:
     ws = []
     for art in ARTISTS:
-        ws += [d["w_over_R"] for d in grammar(art).drawings if d["w_over_R"] > 0]
+        ws += [d["w_over_R"] for d in grammar(art, "v4").drawings if d["w_over_R"] > 0]
     return float(np.median(ws))
 
 
@@ -920,7 +1090,7 @@ def _pair_job(args):
 
 def _gen_job(args):
     hand, seed, wr = args
-    d = gm.generate_drawing(grammar(hand), np.random.default_rng(seed), (1200, 1200))
+    d = gm.generate_drawing(grammar(hand, "v4"), np.random.default_rng(seed), (1200, 1200))
     return hand, feats(with_width(d, wr))
 
 

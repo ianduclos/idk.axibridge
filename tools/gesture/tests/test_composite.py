@@ -263,3 +263,133 @@ def test_svg_roundtrip():
         assert np.allclose(p[0], q[0], atol=1e-3) and np.allclose(p[-1], q[-1], atol=1e-3)
     down = sum(np.sum(np.linalg.norm(np.diff(p, axis=0), axis=1)) for p in paths)
     assert st["pen_down_mm"] == pytest.approx(down, abs=0.2) and st["est_min"] > 0
+
+
+# ---------------------------------------------------------------------------
+# composite on grammar v6 + tremor after the chain (composite-v6-2026-10-16.md)
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def g6():
+    from gesture.grammar_v6_frozen import learn as learn6
+    rng = np.random.default_rng(1)
+    ds = [synth.scene_matisse_like(rng, 600, n_strokes=5) for _ in range(3)]
+    return learn6(ds, name="synth_m6")
+
+
+@pytest.fixture(scope="module")
+def tmodel():
+    """A bursty (v2) tremor model fitted to synthetic AR offsets, scaled up so
+    the effect is unmistakable."""
+    from gesture import tremor as tr
+    rng = np.random.default_rng(0)
+    W, st = 3.0, []
+    for k in range(10):
+        n = int(300 / tr.STEP_W)
+        off = gaussian_ar(rng, n)
+        st.append(Stroke(np.column_stack([50 + np.arange(n) * tr.STEP_W * W, 50 + 40 * k + off * 0.12 * W]),
+                         width=np.full(n, W)))
+    m = tr.fit_model(tr.drawing_residuals(Drawing(st, size=(1000, 500))), name="ar")
+    return tr.TremorModel(**{**m.__dict__, "rms": m.rms * 3, "psd": list(np.asarray(m.psd) * 9), "version": 2,
+                             "regime": {"kind": "lognormal", "sigma": 0.6, "corr_w": 6.0},
+                             "kinks": {"rate_per_100w": 3.0, "amp_w": 0.3, "amp_log_sd": 0.3, "tau_w": 0.75}})
+
+
+def gaussian_ar(rng, n, a1=1.6, a2=-0.7):
+    e = rng.standard_normal(n + 200)
+    x = np.zeros(n + 200)
+    for i in range(2, n + 200):
+        x[i] = a1 * x[i - 1] + a2 * x[i - 2] + e[i]
+    x = x[200:]
+    return x / x.std()
+
+
+def test_v6_budget_reaches_trace(g, g6):
+    """v4 grammars get no budget; v6 grammars get v6's own _Budget inside
+    trace. budget=0 on v6 consumes no randomness (= v4's trace rule), and
+    the budget changes the line while keeping it pinned and finite."""
+    from gesture import grammar_v6_frozen as gm6
+    assert rs._budget_for(g, np.random.default_rng(0), 0.5, 1.0) is None
+    assert isinstance(rs._budget_for(g6, np.random.default_rng(0), 0.5, 1.0), gm6._Budget)
+    assert rs._budget_for(g6, np.random.default_rng(0), 0.5, 0.0) is None
+    st = _tree().strokes[0]
+    R = 850.0
+    outs = {}
+    for b in (0.0, 1.0):
+        o1, i1 = rs.restyle_points(st.points, g6, np.random.default_rng(3), amount=0.8, ref_length=R,
+                                   source="trace", budget=b)
+        o2, _ = rs.restyle_points(st.points, g6, np.random.default_rng(3), amount=0.8, ref_length=R,
+                                  source="trace", budget=b)
+        assert np.array_equal(o1, o2) and np.all(np.isfinite(o1))
+        assert i1["pin_err"] <= 0.1 * i1["sigma_s"]
+        outs[b] = o1
+    assert np.max(np.abs(outs[0.0] - outs[1.0])) > 0.1
+
+
+def test_grammar_version_switch(g, g6, tmp_path, monkeypatch):
+    """composite(hand=name, grammar_version=…) loads the right frozen grammar;
+    the default is GRAMMAR_VERSION (v6)."""
+    from gesture import grammar_v4_frozen as gm4
+    from gesture import grammar_v6_frozen as gm6
+    for v, gg in (("v4", g), ("v6", g6)):
+        (tmp_path / v).mkdir()
+        gg.save(tmp_path / v / "grammar_x.json")
+    monkeypatch.setattr(cp, "GRAMMAR_DIRS", {"v4": tmp_path / "v4", "v6": tmp_path / "v6"})
+    monkeypatch.setattr(cp, "_CACHE", {})
+    assert isinstance(cp.grammar("x", "v4"), gm4.Grammar) and isinstance(cp.grammar("x"), gm6.Grammar)
+    assert cp.GRAMMAR_VERSION == "v6"
+    kw = dict(amount=0.7, chain="before", pin="turns", retrace="offset", walk="min_turn")
+    a = cp.composite(_tree(), "x", np.random.default_rng(2), **kw)
+    b = cp.composite(_tree(), "x", np.random.default_rng(2), grammar_version="v4", **kw)
+    assert a.meta["composite"]["grammar"] == "v6" and b.meta["composite"]["grammar"] == "v4"
+    assert len(a.strokes) == len(b.strokes) == 1
+    assert not np.array_equal(a.strokes[0].points, b.strokes[0].points)
+
+
+def _tremored_line(g6, tmodel, returns, amount=1.0, pin_w=0.0):
+    d = _tree()
+    R = d.ref_length()
+    w = 2.0
+    line = cp.restyle_chain(cp.chain_paths(d, walk="min_turn"), g6, amount=0.7, seed=5, ref_length=R,
+                            pin="turns", retrace="offset", w=w)
+    t = cp.tremor_chain(line, tmodel, np.random.default_rng(9), amount, w=w, returns=returns, pin_w=pin_w)
+    return d, line, t, w, R
+
+
+def test_tremor_after_chain_keeps_ends_and_spacing(g6, tmodel):
+    d, line, t, w, R = _tremored_line(g6, tmodel, "follow")
+    p0, p1 = line.strokes[0].points, t.strokes[0].points
+    assert len(t.strokes) == 1 and np.all(np.isfinite(p1))
+    assert np.allclose(p1[0], p0[0], atol=1e-6) and np.allclose(p1[-1], p0[-1], atol=1e-6)   # path ends pinned
+    assert t.meta["tremor"]["disp_rms_px"] > 0.05 * w                                          # it does tremble
+    base = cp.return_spacing(line, w, R)
+    fol = cp.return_spacing(t, w, R)
+    ind = cp.return_spacing(_tremored_line(g6, tmodel, "independent")[2], w, R)
+    assert abs(base["sp_q50"] - cp.OFFSET_W) < 0.1
+    # follow: the double line keeps its spacing; independent passes wander toward each other
+    assert abs(fol["sp_q50"] - base["sp_q50"]) < 0.1
+    assert fol["sp_lt1"] <= ind["sp_lt1"] + 1e-9
+
+
+def test_tremor_after_chain_pins_anchors(g6, tmodel):
+    """pin_w > 0: every junction passage (anchor) stays exactly on the
+    chained skeleton, so contacts survive the tremor."""
+    d, line, t, w, R = _tremored_line(g6, tmodel, "follow", pin_w=3.0)
+    q = cp.chain_paths(d, walk="min_turn").strokes[0].points
+    p = t.strokes[0].points
+    an = t.strokes[0].meta["anchors"]
+    assert len(an) >= 3
+    gaps = [_gap(p[i], q) for i in an]                  # resampled anchor sample → skeleton polyline
+    assert max(gaps) < 0.15 * w
+    free = _tremored_line(g6, tmodel, "follow")[2].strokes[0].points
+    assert max(_gap(free[i], q) for i in an) > 3 * max(gaps)      # without pins the anchors move
+
+
+def test_tremored_line_svg_bounds(g6, tmodel):
+    _d, _line, t, _w, _R = _tremored_line(g6, tmodel, "follow")
+    svg, st = cp.to_svg(t, paper="A4", margin_mm=10.0)
+    (W, H), paths = cp.read_svg_paths(svg)
+    assert st["paths"] == 1 and st["lifts"] == 0 and len(paths) == 1
+    P = paths[0]
+    assert P[:, 0].min() >= 10 - 1e-3 and P[:, 0].max() <= W - 10 + 1e-3
+    assert P[:, 1].min() >= 10 - 1e-3 and P[:, 1].max() <= H - 10 + 1e-3
