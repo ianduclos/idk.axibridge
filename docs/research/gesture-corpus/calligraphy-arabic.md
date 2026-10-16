@@ -160,6 +160,23 @@ Recommended policy (Ian's decision; E1 and E3 are the load-bearing ones):
 - **E6. Before exhibiting**, show a selection to a practising calligrapher or
   Muslim reader. This costs little and catches what the policy misses.
 
+### Adopted policy (Ian, 2026-10-16)
+
+1. **Qur'anic text: measurement only.** Qur'anic folios may be used for
+   statistics (the panel, curvature, tremor measurements). They are never a
+   source of strokes, tokens or segments for generation, restyle or
+   juxtaposition. (This replaces E1's full exclusion.)
+2. **E2–E4 as drafted:** other devotional text is measure-only; never
+   output legible Arabic, and have a reader check anything shown publicly;
+   call outputs "line studies after the X hand", never "Arabic calligraphy".
+3. **Abstraction by design.** Ian: "the output process should abstract
+   anyways". Generation draws from line statistics, never from letterforms,
+   so outputs are non-textual by construction. E3's reader check stays as
+   the safety net.
+4. In manifests, tag each item's `content_type` (qur'an / devotional /
+   poetry / exercise / document / …) so training code can enforce (1)–(2)
+   mechanically.
+
 ## 4. Technical notes for the pipeline
 
 - **T1. Ribbons, not lines.** A broad-nib stroke is a filled ribbon. Extract
