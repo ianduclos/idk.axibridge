@@ -7,7 +7,7 @@ entries: 31
 ### Gesture bank: round 8 review + round 9 pick — opened 2026-10-16, owner: ian
 
 - done: Rounds 1–7 (ledger in docs/IDEAS-gesture-bank.md). Nib styles b/c/e are options with combinations (tools/gesture/results/nib-styles-2026-10-16.md); compose is now reproducible across processes. c+e looked right to Ian (density control still to do). Research is judged from images; no plotting. 364 gesture tests pass.
-- next: Ian reviews round 8 (tools/gesture/results/round8-2026-10-16.md; image artifact with notes) and picks round 9 from its candidates; items 2–3 in round7-2026-10-16.md still open.
+- next: Ian reviews round 8 (tools/gesture/results/round8-2026-10-16.md; image review artifact with per-image notes at https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY — notes live in its db collection `notes`, doc id = image name, `round`, or `exp-<name>`) and picks round 9 from its candidates; items 2–3 in round7-2026-10-16.md still open.
 - blockers: 15 AIC + 7 other manual sources need a browser session.
 - context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 7](tools/gesture/results/round7-2026-10-16.md), [nib styles](tools/gesture/results/nib-styles-2026-10-16.md), [package README](tools/gesture/README.md). Scans/outputs in gitignored `.local/gesture/`.
 
