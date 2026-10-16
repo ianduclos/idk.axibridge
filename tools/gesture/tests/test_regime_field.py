@@ -140,3 +140,18 @@ def test_svg_bounds(hand):
     assert P[:, 0].min() >= 10 - 0.5 and P[:, 0].max() <= W - 10 + 0.5
     assert P[:, 1].min() >= 10 - 0.5 and P[:, 1].max() <= H - 10 + 0.5
     assert st["paths"] == len(paths) and st["pen_down_mm"] > 0
+
+
+def test_clip_cuts_and_mark_tags():
+    """Polylines leaving the sheet are cut at the edge, never clamped onto it;
+    fill paths are split per connected mass; small marks group by containment."""
+    q = np.array([[50.0, 50.0], [150.0, 50.0], [150.0, 80.0], [50.0, 80.0]])
+    out = rf.clip_to_sheet(q, 100, 100)
+    assert len(out) == 2 and all(p[:, 0].max() <= 100 + 1e-9 for p in out)
+    assert sum(float(np.linalg.norm(np.diff(p, axis=0), axis=1).sum()) for p in out) == pytest.approx(100.0)
+    t = np.linspace(0, 2 * np.pi, 41)
+    ring = lambda c, r: np.column_stack([c[0] + r * np.cos(t), c[1] + r * np.sin(t)])  # noqa: E731
+    fills = [ring((20, 20), 5), ring((80, 20), 5), ring((20, 20), 4), ring((80, 20), 4)]
+    assert rf.fill_components(fills, 1.0) == [0, 1, 0, 1]
+    tags, nxt = rf.nest_tags([ring((50, 50), 6), ring((50, 50), 5), np.array([[0.0, 0], [5, 5]])], 10, 1.0, "sign")
+    assert tags == [(10, "sign"), (10, "fill"), (11, "sign")] and nxt == 12

@@ -40,6 +40,14 @@ has three parts:
    components of an ink mask, split into thick masses and thin ink, with
    their relation to the lines around them.
 
+4. **Line events** (`plan_events`, `apply_events`, `place_events`,
+   `render_events`; results/signs-events-2026-10-16.md). Replaces stamping:
+   the grammar picks WHERE on the line network (end / interior / loop /
+   junction / corner, arc position, side) and WHICH `gesture.regime`
+   operator turns that part of the line into the sign; clusters grow
+   responsively along a line. Output is RegimeStrokes (the edited lines +
+   children grown from them); only rare detached dots leave the line.
+
 Pure and deterministic: randomness only through the `rng` argument; inputs
 are never mutated. Coordinates follow the README contract (pixels, y down).
 """
@@ -56,7 +64,9 @@ from shapely.ops import polygonize, unary_union
 
 from . import broadnib
 
-__all__ = ["vocabulary", "make_sign", "Sign", "PlacedSign", "PlacementGrammar", "DEFAULT_GRAMMAR",
+__all__ = ["EventGrammar", "LineEvent", "learn_event_grammar", "plan_events", "apply_events", "place_events",
+           "render_events", "DEFAULT_EVENT_GRAMMAR", "EVENT_OPS", "EVENT_SITES", "REFERENCE_EVENTS",
+           "vocabulary", "make_sign", "Sign", "PlacedSign", "PlacementGrammar", "DEFAULT_GRAMMAR",
            "learn_grammar", "place_signs", "place_random", "sign_paths", "ink_components",
            "inventory", "measure_dots", "RELATIONS"]
 
@@ -1232,3 +1242,965 @@ DEFAULT_GRAMMAR = PlacementGrammar(
     pair_angle=[0.127, 0.179, 0.438, 0.778, 1.343], pair_spacing_w=[1.17, 1.23, 1.41, 2.24, 2.56],
     end_share=0.065, sources=["default (deciles of the 2026-10-16 fit)"],
     meta={"constellation_p": 0.6, "constellation_r_w": 16.0, "size_spread": 0.4})
+
+
+# ===========================================================================
+# LINE EVENTS — signs as the line itself changing (results/signs-events-2026-10-16.md)
+# ===========================================================================
+#
+# Round 6 stamped separate sign objects next to lines; the reference's forms
+# are the LINE changing (a goblet is the line swelling, a knot is the line
+# filling in). Here the placement grammar only chooses WHERE (a free line
+# end, an interior stretch, a loop, a junction, a corner; arc position; side)
+# and WHICH regime operator turns that part of the line into the sign:
+#
+#   site      op            what the line does there (gesture.regime)
+#   end       drop          r → 2 at the end: a teardrop          terminal_drop("drop")
+#             lozenge       thickens to nib (fitted ramp), nuqta press   thicken + terminal_drop
+#             hook          ends in a nib loop whose counter shrinks     close_fill(0.5)
+#             ring          ends in a plain line loop                    close_fill(0)
+#             block         ends in a loop that closes into a dot        close_fill(1)
+#             vessel        the end flares into a goblet                 swell("vessel")
+#             eye           loop + inward spiral swelling to a pupil      eye
+#             detached      line stops; a dot continues it after a gap (calligraphic gap)
+#   interior  bead          asymmetric swelling (rise/fall drawn separately)
+#             vessel_mid    slow rise (fitted nib ramp), fast fall: an oval mass on the line
+#             nib           a stretch thickens to nib and back (fitted ramp)
+#             knot          the line makes a small loop that fills in
+#             comb / tick   the line sheds 1–3 short tapering ticks
+#             drip          the line sheds a hanging drip ending in a drop
+#             body          Oehlen's body rule: a thick core on the line with
+#                           2–4 thinning exits moving away from it
+#   loop      fill_loop     a small loop of the line closes and fills
+#             pupil         a short stalk grows from the loop's rim into a pupil
+#   junction  junction_mass the lines thicken into one mass where they meet (exits = the lines)
+#   corner    comma         the line thickens through a corner into a hook / comma
+#
+# Rates, sizes, cluster sizes and spacings come from the reference reading
+# (26 forms, each mapped to the event above that makes it, + the 16 masses
+# with ≥ 3 exits); the detached-dot gap from calligraphic dots (policy
+# gate); thin→thick ramps from regime.PROFILE_DEFAULTS. Groups are grown
+# RESPONSIVELY: each event in a cluster sits a characteristic spacing along
+# the line from the previous one and its op, side and size are conditioned
+# on the previous event's.
+
+EVENT_SITES = ("end", "interior", "loop", "junction", "corner")
+EVENT_OPS = {
+    "end": ("drop", "lozenge", "hook", "ring", "block", "vessel", "eye", "detached"),
+    "interior": ("bead", "vessel_mid", "nib", "knot", "comb", "drip", "body"),
+    "loop": ("fill_loop", "pupil"),
+    "junction": ("junction_mass", "body"),
+    "corner": ("comma",),
+}
+HEAVY_OPS = frozenset({"vessel", "block", "vessel_mid", "junction_mass", "body", "knot", "fill_loop", "bead", "eye"})
+
+# The 26 clear forms of the reference (signs_study.MANUAL_REF order), each
+# read as the line event that would make it. None = not representable (a
+# negative eye inside a mass). Group ids: the four constellations.
+REFERENCE_EVENTS = [
+    ("loop", "pupil", None), ("loop", "pupil", 3), ("end", "drop", 3), ("end", "detached", 3),
+    ("end", "lozenge", None), ("end", "drop", None), ("interior", "knot", 2), ("end", "detached", 2),
+    ("end", "drop", None), ("corner", "comma", None), ("interior", "knot", None), ("interior", "bead", None),
+    ("interior", "bead", 4), ("end", "vessel", 4), ("interior", "vessel_mid", 4), ("end", "block", 1),
+    ("end", "ring", 1), ("corner", "comma", 1), ("interior", "comb", 1), ("end", "hook", 1),
+    ("loop", "pupil", None), ("end", "detached", None), ("interior", "nib", None), (None, None, None),
+    ("end", "hook", None), ("end", "drop", None),
+]
+
+
+@dataclass
+class EventGrammar:
+    """Where line events happen and which operator makes them. Sizes and
+    spacings in units of w (the reference's thin-line width). Learned fields
+    are sample lists (drawn with replacement + jitter)."""
+    site_p: dict = field(default_factory=dict)
+    op_p: dict = field(default_factory=dict)              # site → {op: p}
+    size_w: dict = field(default_factory=dict)            # op → [size / w]
+    density: float = 0.009                                # events per w of line
+    group_p: float = 0.5                                  # P(an event starts a group of ≥ 2)
+    group_sizes: list = field(default_factory=list)       # sizes of groups (≥ 2)
+    spacing_w: list = field(default_factory=list)         # neighbour spacing inside a group / w
+    size_ratio: list = field(default_factory=list)        # log(size_next / size_prev) inside groups
+    same_op_damp: float = 0.25                            # responsive: an answer rarely repeats
+    contrast_boost: float = 1.6                           # heavy answers light and vice versa
+    side_flip_p: float = 0.6                              # the next event answers on the other side
+    gap_ratio: list = field(default_factory=list)         # detached: clear gap / dot size (calligraphy)
+    nib_ratio: tuple = (3.01, 3.35, 4.13)                 # nib W / w (reference thick/thin q25-50-75)
+    sources: list = field(default_factory=list)
+    meta: dict = field(default_factory=dict)
+
+    def to_json(self) -> dict:
+        return asdict(self)
+
+    @staticmethod
+    def from_json(d: dict) -> "EventGrammar":
+        d = dict(d)
+        d["nib_ratio"] = tuple(d.get("nib_ratio", (3.01, 3.35, 4.13)))
+        return EventGrammar(**d)
+
+
+def learn_event_grammar(forms: list[dict], *, junction_masses: dict | None = None, skeleton_w: float,
+                        dot_records: list[dict] | None = None, manifest: dict | None = None,
+                        auto_sizes: dict | None = None, body_share: float = 0.12) -> EventGrammar:
+    """Event grammar from the reference reading and calligraphic dots.
+
+    forms: [{site, op, extent_w, group, centre_w (x, y)}] — the reference's
+    clear forms mapped to events (REFERENCE_EVENTS + the study's boxes).
+    junction_masses: {"n": masses with ≥ 3 exits, "diam_w": [..]}.
+    skeleton_w: the reference's line length in w (for the density).
+    dot_records: calligraphy dots (`measure_dots`) for the detached-dot gap;
+    POLICY GATE: every source must pass `calligraphy.require_generative`.
+    body_share: design share (not measured) of Oehlen's body op among
+    interior and junction events.
+    auto_sizes: the automated inventory's mass sizes / w by relation
+    (`inventory()["size_w_by_relation"]`): "interior" swellings set the bead
+    diameter (the read forms' boxes include the line, so they overstate
+    it); "junction" thickenings (≥ 2 w) join the junction masses, giving the
+    heavy tail many small knots + a few large masses."""
+    from . import calligraphy as cg
+    g = EventGrammar()
+    if dot_records:
+        srcs = sorted({r["source"] for r in dot_records})
+        cg.require_generative(srcs, manifest)
+        g.sources = srcs
+        g.gap_ratio = [round(float(r["host_gap_w"]) / max(float(r["size_w"]), 1e-6), 4)
+                       for r in dot_records if r.get("host_gap_w") is not None and r.get("size_w")]
+        g.meta["dot_size_w"] = [round(float(r["size_w"]), 3) for r in dot_records if r.get("size_w")]
+    fs = [f for f in forms if f.get("site")]
+    site_n: dict = {}
+    op_n: dict = {}
+    for f in fs:
+        site_n[f["site"]] = site_n.get(f["site"], 0) + 1
+        op_n.setdefault(f["site"], {})
+        op_n[f["site"]][f["op"]] = op_n[f["site"]].get(f["op"], 0) + 1
+        g.size_w.setdefault(f["op"], []).append(round(float(f["extent_w"]), 3))
+    nj = int((junction_masses or {}).get("n", 0))
+    if nj:
+        site_n["junction"] = site_n.get("junction", 0) + nj
+        op_n.setdefault("junction", {})["junction_mass"] = nj
+        g.size_w["junction_mass"] = [round(float(v), 3) for v in junction_masses.get("diam_w", [])]
+    if auto_sizes:
+        if auto_sizes.get("interior"):
+            g.size_w["bead"] = [round(float(v), 3) for v in auto_sizes["interior"]]
+        if auto_sizes.get("junction"):
+            g.size_w.setdefault("junction_mass", [])
+            g.size_w["junction_mass"] += [round(float(v), 3) for v in auto_sizes["junction"] if v >= 2.0]
+    # Oehlen's body rule: a design share, carved out of interior + junction
+    for site in ("interior", "junction"):
+        if site in op_n:
+            tot = sum(op_n[site].values())
+            op_n[site]["body"] = body_share * tot / max(1 - body_share, 1e-9)
+    g.size_w.setdefault("body", [6.0, 8.0, 10.0, 13.0])
+    if g.meta.get("dot_size_w"):
+        # a detached dot is a calligraphic dot: its size relative to the
+        # line is the calligraphic dot/line ratio (×1.5: the line's end is
+        # taken as slightly pressed, as a nib stroke ends) — not the
+        # reference's box extents, which include the specks' spread
+        g.size_w["detached"] = [round(1.5 * v, 3) for v in g.meta["dot_size_w"]]
+    g.site_p = _norm({k: float(v) for k, v in site_n.items()})
+    g.op_p = {k: _norm({o: float(c) for o, c in v.items()}) for k, v in op_n.items()}
+    n_events = len(fs) + nj
+    g.density = n_events / max(skeleton_w, 1e-9)
+    # groups: sizes, nearest-neighbour spacing, consecutive size ratios
+    groups: dict = {}
+    for f in fs:
+        if f.get("group") is not None:
+            groups.setdefault(f["group"], []).append(f)
+    n_grouped = sum(len(v) for v in groups.values())
+    g.group_sizes = sorted(len(v) for v in groups.values())
+    # P(a group starts) such that the grouped share of events matches
+    mean_k = float(np.mean(g.group_sizes)) if g.group_sizes else 2.0
+    share = n_grouped / max(len(fs), 1)
+    g.group_p = float(share / mean_k / max(share / mean_k + (1 - share), 1e-9))
+    sp, rat = [], []
+    for v in groups.values():
+        C = np.array([f["centre_w"] for f in v], float)
+        for i in range(len(v)):
+            d = np.linalg.norm(C - C[i], axis=1)
+            d[i] = np.inf
+            j = int(np.argmin(d))
+            sp.append(round(float(d[j]), 3))
+            rat.append(round(float(np.log(v[j]["extent_w"] / v[i]["extent_w"])), 4))
+    g.spacing_w, g.size_ratio = sp, rat
+    g.meta.update({"n_forms": len(fs), "n_junction_masses": nj, "n_grouped": n_grouped,
+                   "body_share_design": body_share})
+    return g
+
+
+@dataclass
+class LineEvent:
+    site: str
+    op: str
+    line: int
+    s: float                     # arc length (mm) on the line; ends: 0 or the line length
+    size: float                  # characteristic size (mm)
+    side: float = 1.0            # +1 / −1: left / right of the line's direction
+    end: int = -1                # 0 = start, 1 = end (site "end")
+    other: tuple | None = None   # junction: (line j, s_j)
+    group: int = -1
+    params: dict = field(default_factory=dict)
+
+    def to_json(self) -> dict:
+        d = asdict(self)
+        d["s"] = round(float(self.s), 3)
+        d["size"] = round(float(self.size), 3)
+        return d
+
+
+class _Net:
+    """Sites of a line network (mm): free ends, junctions (T and X),
+    corners, self-loops, multi-line faces."""
+
+    def __init__(self, lines: list[np.ndarray], w: float):
+        from scipy.spatial import cKDTree
+        from shapely import STRtree
+        self.w = w
+        self.lines = lines
+        self.L = [float(np.sum(np.linalg.norm(np.diff(p, axis=0), axis=1))) for p in lines]
+        self.S = [np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(p, axis=0), axis=1))]) for p in lines]
+        step = max(w / 2, 1e-3)
+        P, own, ss = [], [], []
+        self.res = []
+        for i, p in enumerate(lines):
+            s = self.S[i]
+            t = np.arange(0, s[-1] + 1e-9, step)
+            q = np.column_stack([np.interp(t, s, p[:, 0]), np.interp(t, s, p[:, 1])])
+            self.res.append((t, q))
+            P.append(q); own.append(np.full(len(q), i)); ss.append(t)
+        self.P = np.vstack(P)
+        self.own = np.concatenate(own)
+        self.ss = np.concatenate(ss)
+        self.tree = cKDTree(self.P)
+        self.geoms = [LineString(p) for p in lines]
+        self.total = float(sum(self.L))
+        # free ends and T-junctions
+        self.ends = []                      # (line, end, point, heading)
+        self.junctions = []                 # (line i, s_i, line j, s_j, point)
+        for i, p in enumerate(lines):
+            if np.allclose(p[0], p[-1]) or self.L[i] < 6 * w:
+                continue
+            for e, sidx in ((0, 0), (1, -1)):
+                pt = p[sidx]
+                idx = [k for k in self.tree.query_ball_point(pt, 2.5 * w) if self.own[k] != i]
+                if not idx:
+                    t, q = self.res[i]
+                    nb = q[min(4, len(q) - 1)] if e == 0 else q[max(len(q) - 5, 0)]
+                    d = pt - nb
+                    self.ends.append((i, e, pt, math.atan2(d[1], d[0])))
+                else:
+                    k = min(idx, key=lambda kk: np.linalg.norm(self.P[kk] - pt))
+                    self.junctions.append((i, 0.0 if e == 0 else self.L[i], int(self.own[k]), float(self.ss[k]),
+                                           self.P[k].copy()))
+        # crossings
+        st = STRtree(self.geoms)
+        for i, gi in enumerate(self.geoms):
+            for j in st.query(gi):
+                j = int(j)
+                if j <= i:
+                    continue
+                x = gi.intersection(self.geoms[j])
+                pts = [x] if x.geom_type == "Point" else [q for q in getattr(x, "geoms", []) if q.geom_type == "Point"]
+                for q in pts:
+                    si, sj = gi.project(q), self.geoms[j].project(q)
+                    if min(si, self.L[i] - si) < 3 * w or min(sj, self.L[j] - sj) < 3 * w:
+                        continue
+                    self.junctions.append((i, float(si), j, float(sj), np.array(q.coords[0])))
+        # corners: turning ≥ 70° within ±2 w, local maxima, ≥ 4 w from the ends
+        self.corners = []                   # (line, s, turn sign)
+        for i, (t, q) in enumerate(self.res):
+            if len(q) < 12:
+                continue
+            k = max(int(round(2 * w / step)), 2)
+            d1 = q[k:-k] - q[:-2 * k]
+            d2 = q[2 * k:] - q[k:-k]
+            a1 = np.arctan2(d1[:, 1], d1[:, 0])
+            a2 = np.arctan2(d2[:, 1], d2[:, 0])
+            turn = np.angle(np.exp(1j * (a2 - a1)))
+            at = np.abs(turn)
+            for m in range(1, len(at) - 1):
+                if at[m] >= np.deg2rad(70) and at[m] >= at[m - 1] and at[m] > at[m + 1]:
+                    s0 = t[m + k]
+                    if 4 * w < s0 < self.L[i] - 4 * w:
+                        if not self.corners or self.corners[-1][0] != i or s0 - self.corners[-1][1] > 4 * w:
+                            self.corners.append((i, float(s0), float(np.sign(turn[m]))))
+        # self-loops of one line (arc range) and faces of the arrangement
+        self.selfloops = []                 # (line, s0, s1, polygon)
+        self.faces = []                     # (polygon, boundary line, s on it)
+        U = unary_union(self.geoms)
+        for f in polygonize(U):
+            A = f.area
+            if not (6 * w * w <= A <= 900 * w * w) or 4 * math.pi * A / max(f.length, 1e-9) ** 2 < 0.25:
+                continue
+            bd = np.asarray(f.exterior.coords)
+            ii = self.tree.query(bd)[1]
+            owners = np.unique(self.own[ii])
+            if len(owners) == 1:
+                i = int(owners[0])
+                s_on = self.ss[ii]
+                self.selfloops.append((i, float(s_on.min()), float(s_on.max()), f))
+            c = np.asarray(f.centroid.coords[0])
+            k = int(self.tree.query(c)[1])
+            self.faces.append((f, int(self.own[k]), float(self.ss[k])))
+
+    def loop_sites(self, used: set) -> list[tuple]:
+        """(line, s0, s1[, polygon]) for self-loops (polygon looked up) and
+        faces of several lines (root = the boundary line nearest the centroid)."""
+        out = [(i, s0, s1) for (i, s0, s1, _) in self.selfloops if (i, round(s0, 2)) not in used]
+        for f, i, s in self.faces:
+            if (i, round(s, 2)) not in used and not any(q[3].equals(f) for q in self.selfloops):
+                out.append((i, s, s, f))
+        return out
+
+    def point(self, i: int, s: float) -> tuple[np.ndarray, np.ndarray]:
+        """Point and unit tangent on line i at arc length s."""
+        t, q = self.res[i]
+        s = float(np.clip(s, 0, self.L[i]))
+        x = np.array([np.interp(s, t, q[:, 0]), np.interp(s, t, q[:, 1])])
+        j = int(np.clip(np.searchsorted(t, s), 1, len(t) - 1))
+        a, b = q[max(j - 3, 0)], q[min(j + 3, len(q) - 1)]
+        d = b - a
+        return x, d / (np.linalg.norm(d) + 1e-12)
+
+    def site_at(self, i: int, s: float, used_ends: set) -> tuple[str, dict]:
+        """Which site a position on a line is, read off the line there."""
+        w = self.w
+        for (li, e, pt, h) in self.ends:
+            if li == i and abs((0.0 if e == 0 else self.L[i]) - s) < 3 * w and (li, e) not in used_ends:
+                return "end", {"end": e}
+        for (a, sa, b, sb, pt) in self.junctions:
+            if (a == i and abs(sa - s) < 2.5 * w) or (b == i and abs(sb - s) < 2.5 * w):
+                return "junction", {"j": (a, sa, b, sb)}
+        for (li, sc, sg) in self.corners:
+            if li == i and abs(sc - s) < 2.5 * w:
+                return "corner", {"s": sc, "turn": sg}
+        for (li, s0, s1, f) in self.selfloops:
+            if li == i and s0 <= s <= s1:
+                return "loop", {"loop": (li, s0, s1)}
+        return "interior", {}
+
+
+def _lognormal_q(rng, q):
+    """Log-normal through a quartile triple, clipped to [0.7·q25, 1.4·q75]
+    (an unclipped tail draw once made a 'nib' 1 mm long)."""
+    lo, med, hi = q
+    sd = (math.log(hi) - math.log(lo)) / (2 * 0.674)
+    v = float(math.exp(math.log(med) + sd * rng.standard_normal()))
+    return float(np.clip(v, 0.7 * lo, 1.4 * hi))
+
+
+def _sample_list(rng, xs, default, jitter=0.12):
+    if not xs:
+        return float(default)
+    return float(xs[int(rng.integers(len(xs)))]) * float(math.exp(jitter * rng.standard_normal()))
+
+
+_SIZE_CLIP_W = {"detached": (1.5, 5.0), "drop": (2.5, 9.0), "lozenge": (2.5, 7.0), "hook": (4.0, 12.0),
+                "ring": (4.0, 10.0), "block": (4.0, 12.0), "vessel": (10.0, 26.0), "eye": (6.0, 14.0),
+                "bead": (2.2, 8.0), "vessel_mid": (5.0, 14.0), "nib": (4.0, 10.0), "knot": (4.0, 12.0),
+                "comb": (3.0, 8.0), "drip": (4.0, 12.0), "body": (5.0, 13.0), "fill_loop": (3.0, 14.0),
+                "pupil": (1.4, 4.0), "junction_mass": (2.0, 10.0), "comma": (3.0, 12.0)}
+
+
+def _op_size(rng, g: EventGrammar, op: str, w: float) -> float:
+    lo, hi = _SIZE_CLIP_W.get(op, (2.0, 10.0))
+    default = 0.5 * (lo + hi)
+    xs = g.size_w.get(op, [])
+    v = _sample_list(rng, xs, default, jitter=0.3) if xs else default * math.exp(0.3 * rng.standard_normal())
+    return float(np.clip(v, lo, hi)) * w
+
+
+def _choose_op(rng, g: EventGrammar, site: str, prev: "LineEvent | None") -> str | None:
+    ops = dict(g.op_p.get(site, {}))
+    if site == "end":
+        ops.pop("junction_mass", None)
+    if not ops:
+        return None
+    if prev is not None:      # responsive: answer the previous event, don't repeat it
+        for o in list(ops):
+            if o == prev.op:
+                ops[o] *= g.same_op_damp
+            if (o in HEAVY_OPS) != (prev.op in HEAVY_OPS):
+                ops[o] *= g.contrast_boost
+    return _choice(ops, rng)
+
+
+def plan_events(lines, rng: np.random.Generator, grammar: EventGrammar | None = None, *, w: float = 1.0,
+                n: int | None = None, mode: str = "grammar", like: list[LineEvent] | None = None) -> list[LineEvent]:
+    """Choose events on `lines` ((N, 2) arrays, mm). mode "grammar": sites
+    by the grammar, events in responsive groups along lines. mode "random"
+    (the null; needs `like`): the SAME ops and sizes at random positions —
+    uniform along the network for interior-type ops, a random free end for
+    end ops, a random loop for loop ops; no groups."""
+    g = grammar or DEFAULT_EVENT_GRAMMAR
+    arrs = _as_arrays(lines)
+    if not arrs:
+        return []
+    N = _Net(arrs, w)
+    occupied: dict = {}               # line → [(s0, s1)]
+    used_ends: set = set()
+    used_loops: set = set()
+    anchors: list = []
+    out: list[LineEvent] = []
+
+    def ext_of(op, size):
+        k = {"vessel": 1.2, "vessel_mid": 2.5, "nib": 3.5, "bead": 2.2, "body": 1.4, "junction_mass": 1.6,
+             "comma": 2.0, "knot": 1.2, "comb": 1.0, "drip": 0.8, "fill_loop": 0.5, "pupil": 0.5}.get(op, 1.0)
+        return k * size
+
+    def free(i, s, e):
+        return all(s + e < a or s - e > b for a, b in occupied.get(i, []))
+
+    def clear(xy, size):
+        return all(np.linalg.norm(xy - a) > 0.7 * (size + sa) for a, sa in anchors)
+
+    def commit(ev: LineEvent, xy):
+        e = ext_of(ev.op, ev.size)
+        if ev.site == "end":
+            used_ends.add((ev.line, ev.end))
+            a = (0.0, e + 2 * w) if ev.end == 0 else (N.L[ev.line] - e - 2 * w, N.L[ev.line])
+            occupied.setdefault(ev.line, []).append(a)
+        elif ev.site == "loop":
+            used_loops.add(ev.params.get("loop_key"))
+            occupied.setdefault(ev.line, []).append((ev.s - e, ev.s + e))
+        else:
+            occupied.setdefault(ev.line, []).append((ev.s - e, ev.s + e))
+            if ev.other is not None:
+                j, sj = ev.other
+                occupied.setdefault(j, []).append((sj - e, sj + e))
+        anchors.append((np.asarray(xy, float), ev.size))
+        out.append(ev)
+
+    def build(site, op, i, s, size, side, info, group):
+        """A concrete event at line i, arc s; None if it doesn't fit."""
+        if site == "end":
+            e = info["end"]
+            if (i, e) in used_ends:
+                return None
+            s = 0.0 if e == 0 else N.L[i]
+            if N.L[i] < 3 * ext_of(op, size) + 6 * w:
+                return None
+            ev = LineEvent(site, op, i, s, size, side, end=e, group=group)
+        elif site == "loop":
+            li, s0, s1 = info["loop"][:3]
+            poly = info["loop"][3] if len(info["loop"]) > 3 else None
+            key = (li, round(s0, 2))
+            if key in used_loops:
+                return None
+            if poly is not None and op != "pupil":
+                op = "pupil"                 # a face of several lines: only a pupil can grow into it
+            ev = LineEvent(site, op, li, 0.5 * (s0 + s1), size, side, group=group,
+                           params={"s0": s0, "s1": s1, "loop_key": key})
+            if op == "pupil":
+                if poly is None:
+                    f = [q for q in N.selfloops if q[0] == li and abs(q[1] - s0) < 1e-6]
+                    if not f:
+                        return None
+                    poly = f[0][3]
+                r_in = poly.exterior.distance(poly.representative_point())
+                ev.size = float(np.clip(min(size, 0.75 * r_in), 0.8 * w, 4 * w))
+                c = np.asarray(poly.centroid.coords[0])
+                ev.params["centre"] = [float(c[0]), float(c[1])]
+            else:
+                ev.size = float(max(size, 2.0 * w))
+        elif site == "junction":
+            a, sa, b, sb = info["j"]
+            if op == "body":
+                ev = LineEvent(site, op, a, sa, size, side, other=(b, sb), group=group)
+            else:
+                ev = LineEvent(site, op, a, sa, size, side, other=(b, sb), group=group)
+            if not free(b, sb, ext_of(op, size)):
+                return None
+            i, s = a, sa
+        elif site == "corner":
+            ev = LineEvent(site, op, i, info["s"], size, info["turn"], group=group)
+            s = info["s"]
+        else:
+            if not (0.06 * N.L[i] < s < 0.94 * N.L[i]) or N.L[i] < 2.5 * ext_of(op, size):
+                return None
+            ev = LineEvent(site, op, i, s, size, side, group=group)
+        if ev.site != "end" and not free(ev.line, ev.s, ext_of(op, ev.size)):
+            return None
+        xy, _ = N.point(ev.line, ev.s)
+        if not clear(xy, ev.size):
+            return None
+        return ev
+
+    if mode == "random":
+        if like is None:
+            raise ValueError("mode='random' needs like=")
+        for ev0 in like:
+            for _ in range(60):
+                if ev0.site == "end":
+                    cand = [(li, e) for (li, e, _, _) in N.ends if (li, e) not in used_ends]
+                    if not cand:
+                        break
+                    li, e = cand[int(rng.integers(len(cand)))]
+                    ev = build("end", ev0.op, li, 0.0, ev0.size, ev0.side, {"end": e}, -1)
+                elif ev0.site == "loop" and N.loop_sites(used_loops):
+                    cand = N.loop_sites(used_loops)
+                    ev = build("loop", ev0.op, 0, 0.0, ev0.size, ev0.side, {"loop": cand[int(rng.integers(len(cand)))]}, -1)
+                else:
+                    k = int(rng.integers(len(N.P)))
+                    i, s = int(N.own[k]), float(N.ss[k])
+                    op = {"junction_mass": "bead", "fill_loop": "knot", "pupil": "knot",
+                          "comma": "comma"}.get(ev0.op, ev0.op)
+                    ev = build("interior", op, i, s, ev0.size, float(rng.choice([-1.0, 1.0])), {}, -1)
+                if ev is not None:
+                    commit(ev, N.point(ev.line, ev.s)[0])
+                    break
+        return out
+
+    if n is None:
+        n = max(1, int(round(g.density * N.total / w)))
+    avail = {"end": bool(N.ends), "interior": True, "loop": bool(N.selfloops or N.faces), "junction": bool(N.junctions),
+             "corner": bool(N.corners)}
+    site_p = {k: v for k, v in g.site_p.items() if avail.get(k)}
+    gid = 0
+    stall = 0
+    while len(out) < n and stall < 40 * n:
+        k_group = 1
+        if rng.random() < g.group_p and g.group_sizes:
+            k_group = int(g.group_sizes[int(rng.integers(len(g.group_sizes)))])
+        # first event of the group: a site drawn by the grammar
+        site = _choice(site_p, rng)
+        op = _choose_op(rng, g, site, None)
+        size = _op_size(rng, g, op, w)
+        side = float(rng.choice([-1.0, 1.0]))
+        if site == "end":
+            cand = [(li, e) for (li, e, _, _) in N.ends if (li, e) not in used_ends]
+            if not cand:
+                site_p.pop("end", None); stall += 1; continue
+            li, e = cand[int(rng.integers(len(cand)))]
+            ev = build(site, op, li, 0.0, size, side, {"end": e}, gid)
+        elif site == "loop":
+            cand = N.loop_sites(used_loops)
+            if not cand:
+                site_p.pop("loop", None); stall += 1; continue
+            ev = build(site, op, 0, 0.0, size, side, {"loop": cand[int(rng.integers(len(cand)))]}, gid)
+        elif site == "junction":
+            a, sa, b, sb, _ = N.junctions[int(rng.integers(len(N.junctions)))]
+            ev = build(site, op, a, sa, size, side, {"j": (a, sa, b, sb)}, gid)
+        elif site == "corner":
+            li, sc, sg = N.corners[int(rng.integers(len(N.corners)))]
+            ev = build(site, op, li, sc, size, side, {"s": sc, "turn": sg}, gid)
+        else:
+            kk = int(rng.integers(len(N.P)))
+            ev = build(site, op, int(N.own[kk]), float(N.ss[kk]), size, side, {}, gid)
+        if ev is None:
+            stall += 1
+            continue
+        commit(ev, N.point(ev.line, ev.s)[0])
+        prev = ev
+        direction = float(rng.choice([-1.0, 1.0]))
+        # followers: responsive, along the line at the characteristic spacing
+        for _m in range(k_group - 1):
+            if len(out) >= n:
+                break
+            placed = False
+            for _t in range(12):
+                d = _sample_list(rng, g.spacing_w, 12.0, jitter=0.25) * w
+                i = prev.line
+                s = prev.s + direction * d
+                if s < 0 or s > N.L[i]:
+                    # off the line's end: hop to the nearest other line near there
+                    x, _ = N.point(i, float(np.clip(s, 0, N.L[i])))
+                    idx = [kk for kk in N.tree.query_ball_point(x, d) if N.own[kk] != i]
+                    if not idx:
+                        direction = -direction
+                        continue
+                    kk = idx[int(rng.integers(len(idx)))]
+                    i, s = int(N.own[kk]), float(N.ss[kk])
+                site2, info = N.site_at(i, s, used_ends)
+                op2 = _choose_op(rng, g, site2, prev)
+                if op2 is None:
+                    continue
+                lo, hi = _SIZE_CLIP_W.get(op2, (2.0, 10.0))
+                r = _sample_list(rng, g.size_ratio, 0.0, jitter=0.0) + 0.15 * rng.standard_normal()
+                size2 = float(np.clip(prev.size * math.exp(r), lo * w, hi * w))
+                side2 = -prev.side if rng.random() < g.side_flip_p else prev.side
+                ev2 = build(site2, op2, i, s, size2, side2, info, gid)
+                if ev2 is None:
+                    continue
+                ev2.params["answers"] = prev.op
+                commit(ev2, N.point(ev2.line, ev2.s)[0])
+                prev = ev2
+                placed = True
+                break
+            if not placed:
+                break
+        gid += 1
+    return out
+
+
+# --- applying events: the line itself changes ------------------------------
+
+def _rg():
+    from . import regime
+    return regime
+
+
+def _bump(s, c, rise, fall):
+    """Asymmetric smooth bump in [0, 1]: smoothstep up over `rise` before c,
+    down over `fall` after c."""
+    rg = _rg()
+    up = rg._smoothstep((s - (c - rise)) / max(rise, 1e-9))
+    dn = 1.0 - rg._smoothstep((s - c) / max(fall, 1e-9))
+    return np.where(s <= c, up, dn)
+
+
+def _swell_at(st, c, size, rise, fall, peak=2.0):
+    rg = _rg()
+    s = rg.arclength(st.points, st.closed)[:len(st)]
+    b = _bump(s, c, rise, fall)
+    r = np.maximum(st.r, peak * b)
+    mass = np.where(b > 0.02, np.maximum(size, st.mass * (st.r > 1.5)), st.mass)
+    return replace_stroke(st, r=r, mass=mass)
+
+
+def replace_stroke(st, **kw):
+    from dataclasses import replace as _r
+    return _r(st, **kw)
+
+
+def _slice(st, i0, i1):
+    rg = _rg()
+    f = st.fill
+    return rg.RegimeStroke(st.points[i0:i1], st.r[i0:i1], st.phi[i0:i1], st.W[i0:i1], st.mass[i0:i1], st.w_min,
+                           False, None if f is None else f[i0:i1], st.meta)
+
+
+def _child(root, direction, length, rng, *, r_root, W, mass, phi, curl=0.0, step=None, drop=0.0, wobble=0.08):
+    """A thin stroke grown from `root` along `direction` (unit), curling by
+    `curl` rad over its length; r falls from r_root to 0 over the first 45 %,
+    optionally ending in a small drop (diameter `drop`)."""
+    rg = _rg()
+    step = step or max(length / 40, 0.05)
+    m = max(int(length / step), 8)
+    t = np.linspace(0, 1, m)
+    h0 = math.atan2(direction[1], direction[0])
+    h = h0 + curl * t ** 1.5 + np.cumsum(rng.normal(0, wobble / math.sqrt(m), m))
+    d = np.column_stack([np.cos(h), np.sin(h)]) * (length / (m - 1))
+    pts = root + np.vstack([[0, 0], np.cumsum(d[:-1], axis=0)])
+    r = r_root * (1 - rg._smoothstep(t / 0.45))
+    ms = np.full(m, mass)
+    if drop > 0:
+        x2 = (t - 0.93) / 0.09
+        r = np.maximum(r, 2.0 * np.where(np.abs(x2) < 1, 0.5 * (1 + np.cos(np.pi * x2)), 0))
+        ms = np.where(t > 0.6, drop, ms)
+    return rg.RegimeStroke(pts, r, np.full(m, phi), np.full(m, W), ms, 0.0, False, None, {})
+
+
+def _loop_pts(start, heading, radius, side, step, turns=1.0):
+    n = max(int(math.ceil(2 * math.pi * radius * turns / step)), 12)
+    t = np.linspace(0, 2 * math.pi * turns, n + 1)
+    nrm = np.array([-math.sin(heading), math.cos(heading)]) * side
+    c = start + nrm * radius
+    a0 = math.atan2(start[1] - c[1], start[0] - c[0])
+    ang = a0 + side * t
+    return c + np.column_stack([np.cos(ang), np.sin(ang)]) * radius
+
+
+def apply_events(lines, events: list[LineEvent], rng: np.random.Generator, *, w: float = 1.0,
+                 phi: float = math.radians(55.0), W: float | None = None, grammar: EventGrammar | None = None):
+    """The lines as RegimeStrokes with the events applied. Returns a list:
+    one stroke per input line (meta: line, events, mark) followed by child
+    strokes (shed ticks/drips, body exits, pupils, detached dots; meta:
+    parent, event, mark). `mark` ids group strokes that render as ONE mark
+    (unioned): a line with its children and the lines meeting in a junction
+    mass. W: nib width (mm); default w × the reference thick/thin ratio
+    drawn per line."""
+    rg = _rg()
+    arrs = _as_arrays(lines)
+    strokes = []
+    for i, p in enumerate(arrs):
+        Wi = W if W is not None else w * _lognormal_q(rng, (grammar or DEFAULT_EVENT_GRAMMAR).nib_ratio)
+        strokes.append(rg.make(p, 0.0, phi=phi, W=Wi, mass=2.6 * Wi, meta={"line": i, "events": []}))
+    children = []
+    parent = list(range(len(arrs)))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    ramp_q = (1.11, 1.49, 2.88)          # reference: thin→thick 25–75 % in thick widths
+
+    def nib_ramp(size):
+        # ink width climbs 25 → 75 % over ≈ 0.22 of a smoothstep r ramp
+        # (calibrated with regime.ink_width), so a measured ramp of q thick
+        # widths needs an r ramp of q / 0.22 × size
+        return _lognormal_q(rng, ramp_q) / 0.22 * size
+
+    def compact_ramp(size):
+        # beads / knots / junction masses: the reference's compact masses are
+        # rounder than its nib transitions — same fitted shape, a quarter of the length
+        return 0.25 * nib_ramp(size)
+
+    by_line: dict = {}
+    for ev in events:
+        by_line.setdefault(ev.line, []).append(ev)
+        if ev.other is not None:
+            by_line.setdefault(ev.other[0], []).append(LineEvent(ev.site, "junction_peer" if ev.op != "body"
+                                                                 else "body_peer", ev.other[0], ev.other[1],
+                                                                 ev.size, ev.side, group=ev.group))
+            parent[find(ev.other[0])] = find(ev.line)
+
+    for i, evs in by_line.items():
+        st = strokes[i]
+        L = st.length()
+        log = []
+        # 1. r edits on the original geometry (and children rooted on it)
+        for ev in sorted(evs, key=lambda e: e.s):
+            if ev.site == "end" or ev.op == "knot":
+                continue
+            s, size = ev.s, ev.size
+            x, tng = _Net.point_on(st.points, s)
+            nrm = np.array([-tng[1], tng[0]]) * ev.side
+            if ev.op == "bead":
+                st = _swell_at(st, s, size, compact_ramp(size), compact_ramp(size))
+            elif ev.op in ("junction_mass", "junction_peer"):
+                # rounder than a bead: the mass sits where the lines meet
+                st = _swell_at(st, s, size, 0.6 * compact_ramp(size), 0.6 * compact_ramp(size))
+            elif ev.op == "vessel_mid":
+                st = _swell_at(st, s, size, nib_ramp(size) * 0.6, compact_ramp(size) * 0.6)
+            elif ev.op == "nib":
+                # a stretch turns into a broad nib stroke (W ∝ size) and back,
+                # over the fitted thin→thick ramp; r ≈ 1.3 pools a little so
+                # the ribbon doesn't read as a hollow pipe
+                Wn = 0.45 * size
+                ramp = _lognormal_q(rng, rg.PROFILE_DEFAULTS["ramp_w_q"]) * Wn * 0.5
+                sl = rg.arclength(st.points)[:len(st)]
+                st = replace_stroke(st, W=np.where(np.abs(sl - s) < 1.6 * ramp, Wn, st.W))
+                st = _swell_at(st, s, 0.9 * Wn, ramp, ramp * float(np.exp(0.3 * rng.standard_normal())),
+                               peak=float(rng.uniform(1.15, 1.4)))
+            elif ev.op == "comma":
+                # thickens INTO the corner, holds through it, drops fast after
+                # a comma: the head pools AT the corner (short rise), the tail
+                # thins out along the outgoing leg over the fitted nib ramp
+                st = _swell_at(st, s, size, compact_ramp(size) * 0.5, nib_ramp(size) * 0.3,
+                               peak=float(rng.uniform(1.7, 2.0)))
+            elif ev.op == "fill_loop":
+                s0, s1 = ev.params["s0"], ev.params["s1"]
+                sl = rg.arclength(st.points)[:len(st)]
+                inside = rg._smoothstep((sl - s0) / max(0.35 * (s1 - s0), 1e-6))
+                inside = inside * (1 - rg._smoothstep((sl - s1) / max(compact_ramp(size), 1e-6)))
+                r = np.maximum(st.r, float(rng.uniform(1.6, 2.0)) * inside)
+                st = replace_stroke(st, r=r, mass=np.where(inside > 0.02, size, st.mass))
+            elif ev.op in ("body", "body_peer"):
+                st = _swell_at(st, s, size, compact_ramp(size) * 1.3, compact_ramp(size) * 1.3)
+                if ev.op == "body":
+                    k = int(rng.integers(2, 5))
+                    base = math.atan2(nrm[1], nrm[0])
+                    lens = []
+                    for m in range(k):
+                        # exits move AWAY from the core, alternating sides, each answering the last
+                        sd = 1 if m % 2 == 0 else -1
+                        ang = base * 1.0 + (0 if sd > 0 else math.pi) + rng.normal(0, 0.55)
+                        ln = (size * float(rng.uniform(1.3, 2.8)) if not lens
+                              else lens[-1] * float(np.exp(rng.normal(-0.15, 0.3))))
+                        ln = float(np.clip(ln, 0.8 * size, 3.2 * size))
+                        lens.append(ln)
+                        dvec = np.array([math.cos(ang), math.sin(ang)])
+                        root = x + dvec * 0.15 * size
+                        c = _child(root, dvec, ln, rng, r_root=1.8, W=0.5 * size, mass=0.8 * size, phi=float(st.phi[0]),
+                                   curl=float(rng.normal(0, 0.7)))
+                        c.meta.update({"parent": i, "event": "body_exit"})
+                        children.append((i, c))
+            elif ev.op == "comb":
+                k = int(rng.integers(1, 4))
+                sp = max(0.35 * size, 1.4 * w)
+                ang0 = float(rng.uniform(0.9, 1.6))
+                for m in range(k):
+                    xm, tm = _Net.point_on(st.points, s + (m - (k - 1) / 2) * sp)
+                    nm = np.array([-tm[1], tm[0]]) * ev.side
+                    dvec = math.cos(ang0) * tm + math.sin(ang0) * nm
+                    ln = size * float(rng.uniform(0.55, 1.0))
+                    c = _child(xm, dvec, ln, rng, r_root=1.3, W=1.3 * w, mass=1.4 * w, phi=float(st.phi[0]))
+                    c.meta.update({"parent": i, "event": "tick"})
+                    children.append((i, c))
+            elif ev.op == "drip":
+                st = _swell_at(st, s, 0.8 * size, compact_ramp(0.5 * size), compact_ramp(0.5 * size), peak=1.6)
+                c = _child(x, np.array([0.0, 1.0]), size * float(rng.uniform(1.0, 1.8)), rng, r_root=1.6,
+                           W=0.4 * size, mass=0.6 * size, phi=float(st.phi[0]), drop=0.35 * size, wobble=0.04)
+                c.meta.update({"parent": i, "event": "drip"})
+                children.append((i, c))
+            elif ev.op == "pupil":
+                cen = np.asarray(ev.params["centre"])
+                sl = rg.arclength(st.points)[:len(st)]
+                band = (sl >= ev.params["s0"]) & (sl <= ev.params["s1"])
+                cand = np.flatnonzero(band)
+                j = int(cand[int(rng.integers(len(cand)))]) if len(cand) else int(np.argmin(np.abs(sl - s)))
+                root = st.points[j]
+                tgt = cen + rng.normal(0, 0.15 * size, 2)
+                dvec = tgt - root
+                dl = float(np.linalg.norm(dvec))
+                if dl > 1e-6:
+                    c = _child(root, dvec / dl, dl, rng, r_root=0.0, W=0.5 * w, mass=size, phi=float(st.phi[0]),
+                               curl=float(rng.choice([-1, 1]) * rng.uniform(0.8, 1.6)), wobble=0.03)
+                    c = replace_stroke(c, r=2.0 * rg._smoothstep((np.linspace(0, 1, len(c)) - 0.55) / 0.4))
+                    c.meta.update({"parent": i, "event": "pupil"})
+                    children.append((i, c))
+            log.append(ev.op)
+        # 2. knots: the line makes a small loop that fills (geometry insert), from the far end back
+        for ev in sorted([e for e in evs if e.op == "knot"], key=lambda e: -e.s):
+            sl = rg.arclength(st.points)[:len(st)]
+            j = int(np.clip(np.searchsorted(sl, ev.s), 2, len(st) - 3))
+            _, tng = _Net.point_on(st.points, ev.s)
+            h = math.atan2(tng[1], tng[0])
+            rad = 0.5 * ev.size * float(rng.uniform(0.6, 0.9))
+            step = max(rad / 8, 0.05)
+            loop = _loop_pts(st.points[j], h, rad, ev.side, step)[1:-1]
+            g = np.linspace(0, 1, len(loop))
+            amount = float(rng.uniform(0.7, 1.0))
+            rl = 2.0 * amount * rg._smoothstep(g / 0.6)
+            a = _slice(st, 0, j + 1)
+            b = _slice(st, j, len(st))
+            # rise into the knot along the incoming line, fall along the outgoing one
+            sa = rg.arclength(a.points)[:len(a)]
+            a = replace_stroke(a, r=np.maximum(a.r, 1.0 * rg._smoothstep((sa - (sa[-1] - compact_ramp(ev.size)))
+                                                                          / max(compact_ramp(ev.size), 1e-6))))
+            sb = rg.arclength(b.points)[:len(b)]
+            b = replace_stroke(b, r=np.maximum(b.r, 2.0 * amount * (1 - rg._smoothstep(sb / max(compact_ramp(ev.size), 1e-6)))),
+                               mass=np.where(sb < compact_ramp(ev.size), 2.2 * rad, b.mass))
+            mid = rg.RegimeStroke(loop, rl, np.full(len(loop), st.phi[j]), np.full(len(loop), st.W[j]),
+                                  np.full(len(loop), 2.2 * rad * amount), st.w_min, False, None, {})
+            st = rg.concat(rg.concat(a, mid), b)
+            log.append("knot")
+        # 3. ends (start end first, via reversal)
+        for ev in sorted([e for e in evs if e.site == "end"], key=lambda e: e.end):
+            rev = ev.end == 0
+            cur = rg.reverse(st) if rev else st
+            size = ev.size
+            Wl = float(np.median(cur.W))
+            cur, kids = _end_op(cur, ev, rng, w, Wl, nib_ramp, compact_ramp, grammar)
+            st = rg.reverse(cur) if rev else cur
+            for c in kids:
+                c.meta.update({"parent": i, "event": ev.op})
+                children.append((i, c))
+            log.append(ev.op)
+        st.meta["events"] = log
+        strokes[i] = st
+    for k, st in enumerate(strokes):
+        st.meta["line"] = k
+        st.meta.setdefault("events", [])
+        st.meta["mark"] = find(k)
+    out = list(strokes)
+    for i, c in children:
+        c.meta["mark"] = find(i)
+        out.append(c)
+    return out
+
+
+def _tail_W(st, s_from: float, value: float):
+    """Nib width `value` from arc length s_from on (the rest of the line keeps its W)."""
+    rg = _rg()
+    sl = rg.arclength(st.points)[:len(st)]
+    return replace_stroke(st, W=np.where(sl >= s_from, value, st.W))
+
+
+def _end_op(st, ev: LineEvent, rng, w, Wl, nib_ramp, compact_ramp, g=None):
+    """Apply an end event to the LAST point of st. Returns (stroke, children)."""
+    rg = _rg()
+    size = ev.size
+    L = st.length()
+    if ev.op == "drop":
+        # the end pools: a short rise along the line (compact), then the drop
+        pre = min(compact_ramp(size), 0.3 * L)
+        st = rg.thicken(st, at=max(0.0, 1 - pre / L), ramp=pre, to=float(rng.uniform(0.3, 0.9)))
+        return rg.terminal_drop(st, kind="drop", size=size), []
+    if ev.op == "lozenge":
+        pre = min(nib_ramp(0.6 * size), 0.45 * L)
+        st = rg.thicken(_tail_W(st, L - pre - 0.5 * size, 0.7 * size), at=max(0.0, 1 - pre / L), ramp=pre * 0.8)
+        return rg.terminal_drop(st, kind="lozenge", size=0.6 * size), []
+    if ev.op in ("hook", "ring", "block"):
+        amount = {"hook": float(rng.uniform(0.4, 0.6)), "ring": 0.0, "block": 1.0}[ev.op]
+        rad = 0.5 * size * (0.55 if ev.op == "block" else 0.75)
+        if amount > 0:
+            pre = min(compact_ramp(size), 0.3 * L)
+            st = rg.thicken(_tail_W(st, L - pre - 0.5 * size, max(0.45 * size, 1.5 * w)),
+                            at=max(0.0, 1 - pre / L), ramp=pre, to=0.6 * amount + 0.2)
+        return rg.close_fill(st, radius=rad, amount=amount, side=ev.side), []
+    if ev.op == "vessel":
+        Lv = min(size, 0.5 * L)
+        at = max(0.0, 1 - Lv / L)
+        sl = rg.arclength(st.points)[:len(st)]
+        Wv = np.where(sl >= at * L, 0.22 * size, st.W)
+        st = replace_stroke(st, W=Wv, mass=np.where(sl >= at * L, 0.35 * size, st.mass))
+        return rg.swell(st, at=at, kind="vessel", size=0.35 * size), []
+    if ev.op == "eye":
+        return rg.eye(st, radius=0.5 * size, pupil=0.32 * size, side=ev.side), []
+    if ev.op == "detached":
+        # the line stops; a dot continues it after the calligraphic gap
+        g = g or DEFAULT_EVENT_GRAMMAR
+        u, h = rg._tangent_end(st.points, 2 * w)
+        gap = float(np.clip(_sample_list(rng, g.gap_ratio, 1.0, jitter=0.1), 0.3, 3.0)) * size
+        h2 = h + rng.normal(0, 0.35)
+        d = np.array([math.cos(h2), math.sin(h2)])
+        c0 = st.points[-1] + d * (gap + 0.5 * size)
+        ln = 0.45 * size
+        pts = c0 + np.outer(np.linspace(-0.5, 0.5, 12) * ln, d)
+        dot = rg.make(pts, 2.0, phi=float(st.phi[-1]), W=0.5 * size, mass=0.75 * size)
+        dot.meta["detached"] = True
+        return st, [dot]
+    raise ValueError(f"unknown end op {ev.op!r}")
+
+
+def _point_on(points: np.ndarray, s: float):
+    seg = np.linalg.norm(np.diff(points, axis=0), axis=1)
+    sl = np.concatenate([[0.0], np.cumsum(seg)])
+    s = float(np.clip(s, 0, sl[-1]))
+    x = np.array([np.interp(s, sl, points[:, 0]), np.interp(s, sl, points[:, 1])])
+    j = int(np.clip(np.searchsorted(sl, s), 1, len(points) - 1))
+    k0 = int(np.searchsorted(sl, s - 1.0))
+    k1 = int(np.searchsorted(sl, s + 1.0))
+    a, b = points[max(min(k0, j - 1), 0)], points[min(max(k1, j), len(points) - 1)]
+    d = b - a
+    return x, d / (np.linalg.norm(d) + 1e-12)
+
+
+_Net.point_on = staticmethod(_point_on)
+
+
+def place_events(lines, rng: np.random.Generator, grammar: EventGrammar | None = None, *, w: float = 1.0,
+                 n: int | None = None, phi: float = math.radians(55.0), W: float | None = None):
+    """Signs as line events: plan with the grammar (WHERE + WHICH operator)
+    and apply them, so the line itself changes. Returns RegimeStrokes (see
+    `apply_events`): the input lines edited in place of stamps, plus child
+    strokes grown from them; the only strokes not connected to their line
+    are the rare detached dots (meta["detached"])."""
+    evs = plan_events(lines, rng, grammar, w=w, n=n)
+    return apply_events(lines, evs, rng, w=w, phi=phi, W=W, grammar=grammar)
+
+
+def render_events(strokes, pen: float = 0.35) -> list[np.ndarray]:
+    """Plotter polylines: strokes grouped by meta["mark"], each group rendered
+    as one mark (regime.render unions the ribbons). Lines without events and
+    without children are drawn as their own centreline."""
+    rg = _rg()
+    groups: dict = {}
+    for st in strokes:
+        groups.setdefault(st.meta.get("mark", id(st)), []).append(st)
+    out = []
+    for _, sts in sorted(groups.items(), key=lambda kv: str(kv[0])):
+        if all(float(s.r.max()) <= 0.0 for s in sts) and len(sts) == 1:
+            out.append(np.asarray(sts[0].points, float))
+            continue
+        out += rg.render(sts, pen)
+    return out
+
+
+DEFAULT_EVENT_GRAMMAR = EventGrammar(
+    # fitted 2026-10-16 by experiments/signs_study.py `events_grammar` (deciles
+    # of the sample lists; the study's .local/gesture/out/signs_events/
+    # event_grammar.json holds the full samples). 25 read reference forms +
+    # 16 masses with ≥ 3 exits; detached-dot gap from 299 calligraphic dots
+    # on 11 generative-allowed sheets; body share = design (Oehlen).
+    site_p={'loop': 0.0732, 'end': 0.3171, 'interior': 0.1707, 'corner': 0.0488, 'junction': 0.3902},
+    op_p={'loop': {'pupil': 1.0}, 'end': {'drop': 0.3077, 'detached': 0.2308, 'lozenge': 0.0769, 'vessel': 0.0769, 'block': 0.0769, 'ring': 0.0769, 'hook': 0.1538}, 'interior': {'knot': 0.2514, 'bead': 0.2514, 'vessel_mid': 0.1257, 'comb': 0.1257, 'nib': 0.1257, 'body': 0.12}, 'corner': {'comma': 1.0}, 'junction': {'junction_mass': 0.88, 'body': 0.12}},
+    size_w={'pupil': [10.277, 10.277, 17.393], 'drop': [3.479, 4.743, 5.534, 6.325], 'detached': [1.365, 2.237, 2.364, 2.518, 2.716, 2.957, 3.185, 3.757, 4.292], 'lozenge': [5.218], 'knot': [9.487, 15.021], 'comma': [5.534, 21.345], 'bead': [2.363, 2.52, 2.596, 2.705, 3.082, 3.452, 3.837, 4.567, 7.787], 'vessel': [63.246], 'vessel_mid': [19.764], 'block': [12.175], 'ring': [9.961], 'comb': [7.589], 'hook': [7.115, 11.384], 'nib': [22.136], 'junction_mass': [2.003, 2.141, 2.484, 2.62, 2.975, 4.522, 5.33, 7.695, 9.936], 'body': [6.0, 8.0, 10.0, 13.0]},
+    density=0.009, group_p=0.25, group_sizes=[2, 3, 3, 5],
+    spacing_w=[6.743, 6.817, 10.001, 10.238, 12.76, 12.873, 13.083, 16.719, 18.315], size_ratio=[-1.342, -1.153, -0.748, -0.514, -0.201, 0.272, 0.623, 1.153, 1.572],
+    gap_ratio=[0.231, 0.347, 0.488, 0.655, 0.925, 1.238, 1.811, 2.536, 3.584], nib_ratio=(3.014, 3.349, 4.134),
+    sources=["default (deciles of the 2026-10-16 fit)"],
+    meta={"dot_size_w": [0.91, 1.491, 1.576, 1.678, 1.811, 1.971, 2.123, 2.505, 2.861], "body_share_design": 0.12})

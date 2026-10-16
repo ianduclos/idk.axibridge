@@ -830,8 +830,8 @@ def engine(which: str = "auto") -> Engine:
             f2 = lambda x, y: ffn(np.column_stack([np.ravel(x), np.ravel(y)]))  # noqa: E731
             return reg.from_field(q, f2, phi=phi, W=W, mass=shape_w, w_min=0.0)
 
-        def render(st, *, pen):
-            return reg.render(st, pen=pen)
+        def render(st, *, pen, fill=True):
+            return reg.render(st, pen=pen, fill=fill)
     else:
         def stroke(q, ffn, *, phi, W, shape_w, pen):
             return standin_from_field(q, ffn, phi=phi, W=W, shape_w=shape_w, pen=pen)
@@ -839,16 +839,17 @@ def engine(which: str = "auto") -> Engine:
         def render(st, *, pen):
             return standin_render(st)
     if ok_sg:
-        def signs(lines, rng, *, n, w, pen):
+        def signs(lines, rng, *, n, w, pen, grouped=False):
             placed = sg.place_signs(lines, rng, None, w=w, n=n)
             out = []
             for ps in placed:
                 paths, closed = sg.sign_paths(ps, pen=pen)
-                out += _close_flagged(paths, closed)
-            return out
+                out.append(_close_flagged(paths, closed))
+            return out if grouped else [q for g in out for q in g]
     else:
-        def signs(lines, rng, *, n, w, pen):
-            return standin_signs(lines, rng, n=n, size_px=3 * w, pen=pen)
+        def signs(lines, rng, *, n, w, pen, grouped=False):
+            out = standin_signs(lines, rng, n=n, size_px=3 * w, pen=pen)
+            return [out] if grouped else out
     return Engine("regime" if ok_reg else "standin", "signs" if ok_sg else "standin", stroke, render, signs)
 
 
@@ -949,6 +950,8 @@ class Composition:
     meta: dict
     centrelines: list[np.ndarray] = dc_field(default_factory=list)
     regimes: list[np.ndarray] = dc_field(default_factory=list)
+    groups: list[int] = dc_field(default_factory=list)     # mark id per polyline (path ordering)
+    kinds: list[str] = dc_field(default_factory=list)      # "line" | "fill" | "sign" | "echo" | "drip"
 
     def drawing(self) -> Drawing:
         """As a Drawing (closed rings as closed strokes) for composite.to_svg."""
@@ -1271,7 +1274,8 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
             nib_w: float | None = None, shape_w: float | None = None, phi_deg: float = 60.0,
             pen_px: float | None = None, overlap: float | None = None, piece: float | None = None,
             engine_name: str = "auto", label: str = "", sign_w: float | None = None,
-            field_kw: dict | None = None, script: int = 0, script_hand: str | None = None) -> Composition:
+            field_kw: dict | None = None, script: int = 0, script_hand: str | None = None,
+            clip: bool = True) -> Composition:
     """structure → hands (per-line runs, cross-faded) → optional tremor →
     regime r(s) sampled from `field` → RegimeStroke rendering → signs,
     echoes, drips → plotter polylines (px, y down, on a `size` sheet).
@@ -1280,6 +1284,8 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
     derived from the structure), or a preset name (`PRESETS`).
     hands: a HandField or one hand name. Lines that come already handed
     (structure "grammar"/"single") are not restyled.
+    clip=False keeps marks that run past the sheet edge whole (the caller
+    fits the ink, e.g. regime_compose.sheet_to_mm(fit_ink=True)).
     Deterministic in seed. Widths default to fractions of the sheet height:
     nib 1.0 %, shape 3.0 %; pen = 0.4 mm on A4 portrait."""
     W, H = int(size[0]), int(size[1])
@@ -1346,11 +1352,18 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
     polys: list[np.ndarray] = []
     centre, regs = [], []
     shape_rings: list[np.ndarray] = []
+    tags: list[tuple[int, str]] = []          # (group, kind) per polyline, for path ordering
+    next_gid = 0
     for q in lines:
         if len(q) < 2:
             continue
         rsk = eng.stroke(q, ffn, phi=math.radians(phi_deg), W=nib_w, shape_w=shape_w, pen=pen)
         rp = _as_polylines(eng.render(rsk, pen=pen))
+        n_out = _n_outline(eng, rsk, pen, len(rp))
+        tags += [(next_gid, "line")] * n_out
+        comp = fill_components(rp[n_out:], pen)
+        tags += [(next_gid + 1 + int(c), "fill") for c in comp]
+        next_gid += 2 + (int(max(comp)) if len(comp) else 0)
         polys += rp
         centre.append(np.asarray(getattr(rsk, "points", q)))
         rr = np.asarray(getattr(rsk, "r", np.zeros(0)))
@@ -1360,16 +1373,28 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
     # signs, echoes, drips
     n_signs = int(signs) if not isinstance(signs, bool) else (6 if signs else 0)
     sign_polys: list[np.ndarray] = []
+    sign_groups: list[list[np.ndarray]] = []
     if n_signs > 0:
         sw = sign_w if sign_w is not None else 0.6 * nib_w
         try:
-            sign_polys = _as_polylines(eng.signs(centre, g_rng, n=n_signs, w=sw, pen=pen))
+            sign_groups = [_as_polylines(g) for g in eng.signs(centre, g_rng, n=n_signs, w=sw, pen=pen,
+                                                                grouped=True)]
         except Exception as e:  # noqa: BLE001
             warnings.warn(f"place_signs failed ({e!r}); stand-in signs used")
-            sign_polys = _as_polylines(standin_signs(centre, g_rng, n=n_signs, size_px=3 * sw, pen=pen))
+            sign_groups = [_as_polylines(standin_signs(centre, g_rng, n=n_signs, size_px=3 * sw, pen=pen))]
+    sign_polys = [q for g in sign_groups for q in g]
     echo_polys = echoes(shape_rings, centre, fobj, (W, H), e_rng, n=echo, sign_px=0.016 * H, pen=pen) if echo else []
     drip_polys = drips(shape_rings, e_rng, H=H, n=drip, pen=pen) if drip else []
-    allp = [np.clip(q, [0, 0], [W, H]) for q in polys + sign_polys + echo_polys + drip_polys if len(q) >= 2]
+    gid = next_gid
+    for g in sign_groups:
+        t, gid = nest_tags(g, gid, pen, "sign")
+        tags += t
+    for extra, kind in ((echo_polys, "echo"), (drip_polys, "drip")):
+        t, gid = nest_tags(extra, gid, pen, kind)
+        tags += t
+    tagged = [(piece, t) for q, t in zip(polys + sign_polys + echo_polys + drip_polys, tags) if len(q) >= 2
+              for piece in (clip_to_sheet(q, W, H) if clip else [np.asarray(q, float)])]
+    allp = [q for q, _ in tagged]
     rcat = np.concatenate([r for r in regs if r.size]) if any(r.size for r in regs) else np.zeros(0)
     meta = {"label": label, "seed": seed, "structure": structure if isinstance(structure, str) else "given",
             "field": fobj.name, "hands": hf.hands, "hand_field": hf.name, "engine": eng.name, "signs_engine":
@@ -1380,7 +1405,96 @@ def compose(seed: int, size=(840, 1200), *, structure="tree", field: Field | Cal
                              "nib": float(np.mean((rcat >= 0.5) & (rcat < 1.5))) if rcat.size else 0.0,
                              "shape": float(np.mean(rcat >= 1.5)) if rcat.size else 0.0},
             "line_hands": line_hands}
-    return Composition(allp, (W, H), meta, centre, regs)
+    return Composition(allp, (W, H), meta, centre, regs, groups=[t[0] for _, t in tagged],
+                       kinds=[t[1] for _, t in tagged])
+
+
+def clip_to_sheet(q: np.ndarray, W: float, H: float) -> list[np.ndarray]:
+    """The parts of a polyline inside the sheet [0, W] × [0, H]. Cut, not
+    clamped: clamping (np.clip) flattened everything beyond the edge onto
+    the border as a straight bar along it (a ribbon end became a ruled
+    line on the r6 Strahler sheet)."""
+    q = np.asarray(q, float)
+    if q.min(axis=0)[0] >= 0 and q.min(axis=0)[1] >= 0 and q.max(axis=0)[0] <= W and q.max(axis=0)[1] <= H:
+        return [q]
+    from shapely.geometry import LineString, box
+    g = LineString(q).intersection(box(0, 0, W, H))
+    parts = [g] if g.geom_type == "LineString" else [x for x in getattr(g, "geoms", []) if x.geom_type == "LineString"]
+    out = [np.asarray(x.coords, float) for x in parts if not x.is_empty and len(x.coords) >= 2]
+    return [o for o in out if float(np.sum(np.linalg.norm(np.diff(o, axis=0), axis=1))) > 1e-6]
+
+
+def _n_outline(eng: "Engine", rsk, pen: float, n_all: int) -> int:
+    """How many of a render's polylines precede the mass fill: regime.render
+    returns runs + outlines, then the concentric fill (its documented order),
+    so the count is the length of the same render without fill. Strokes that
+    never fill skip the second render."""
+    fw = getattr(rsk, "fill_weight", None)
+    try:
+        if fw is None or float(np.max(fw())) <= 0.0:
+            return n_all
+        return min(len(_as_polylines(eng.render(rsk, pen=pen, fill=False))), n_all)
+    except TypeError:                     # stand-in engine: no fill switch
+        return n_all
+
+
+def fill_components(fill: list[np.ndarray], pen: float) -> list[int]:
+    """Connected-mass index of each concentric fill path of one stroke: one
+    stroke can swell into several separate masses, and its fill visits them
+    depth by depth. Paths whose 0.75-pen buffers touch belong to one mass
+    (adjacent insets are one pen apart)."""
+    if not fill:
+        return []
+    from shapely.geometry import LineString
+    from shapely.strtree import STRtree
+    bufs = [LineString(q).buffer(0.75 * pen, quad_segs=2) for q in fill]
+    parent = list(range(len(fill)))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    tree = STRtree(bufs)
+    for i, b in enumerate(bufs):
+        for j in tree.query(b, predicate="intersects"):
+            a, c = find(i), find(int(j))
+            if a != c:
+                parent[max(a, c)] = min(a, c)
+    roots = {}
+    return [roots.setdefault(find(i), len(roots)) for i in range(len(fill))]
+
+
+def nest_tags(polys: list[np.ndarray], gid: int, pen: float, kind: str) -> tuple[list[tuple[int, str]], int]:
+    """(group, kind) tags for a list of small marks by containment: a path
+    lying inside a closed ring of the list joins that ring's (outermost)
+    group as "fill"; everything else starts its own group. Returns the tags
+    and the next free group id."""
+    from shapely.geometry import Polygon
+    from shapely.prepared import prep
+    rings = []
+    for k, q in enumerate(polys):
+        if len(q) >= 4 and np.linalg.norm(q[0] - q[-1]) < 1e-6:
+            pg = Polygon(q).buffer(0.5 * pen)
+            if not pg.is_empty and pg.area > 0:
+                rings.append((pg.area, k, prep(pg)))
+    rings.sort(key=lambda t: -t[0])
+    owner = [-1] * len(polys)
+    from shapely.geometry import MultiPoint
+    for area, k, pg in rings:                 # biggest first: outermost container wins
+        for j, q in enumerate(polys):
+            if j == k or owner[j] >= 0 or owner[k] == j:
+                continue
+            if pg.contains(MultiPoint(np.asarray(q[:: max(1, len(q) // 24)]))):
+                owner[j] = k if owner[k] < 0 else owner[k]
+    tags, ids = [], {}
+    for j in range(len(polys)):
+        root = j if owner[j] < 0 else owner[j]
+        if root not in ids:
+            ids[root] = gid
+            gid += 1
+        tags.append((ids[root], kind if owner[j] < 0 else "fill"))
+    return tags, gid
 
 
 def _tremor_lines(lines, hands, size, rng, amount, R):

@@ -36,13 +36,21 @@ INTERFACE (for gesture/signs.py, gesture/regime_field.py and others)
     make(points, r=0.0, phi=..., W=..., mass=None, ...) -> RegimeStroke
         Scalars broadcast; mass defaults to 2.5·W.
 
-    render(stroke_or_strokes, pen=0.35, *, fill=True) -> list[np.ndarray]
+    render(stroke_or_strokes, pen=0.35, *, fill=True, wet=None, edge=None,
+           seed=None, fill_style="concentric", nib_renderer=None) -> list[np.ndarray]
         Plotter polylines, each (M, 2) float, in drawing order. CLOSED
         contours repeat their first point at the end, so every array is
         drawable as-is. A list of strokes is rendered as ONE mark: their
         ribbons are unioned before outlining (a mass and the drips it
         sheds share one outline). Never hatching: line runs, ribbon
         outlines, concentric insets.
+        Round 7 options (all default off): wet= a WET_PROFILES name
+        ("reference" | "marden" | "hokusai" | "calligraphy") or True for
+        data-fitted wet mass edges; edge= "scallop" | "notch" | dict for a
+        rhythmic event on one side of a mass; per-stroke meta["wet"] /
+        meta["edge"] override both; fill_style="spiral" chains the insets
+        into few paths; nib_renderer= a hook for gesture/penrender.
+        `rim_gap(strokes, paths, pen)` measures the white rim inside masses.
 
     from_field(points, field_fn, *, phi=..., W=..., mass=None, smooth=...,
                closed=False) -> RegimeStroke
@@ -104,6 +112,7 @@ __all__ = [
     "pen_cost", "regime_cost", "resample", "concat", "reverse", "arclength",
     "thicken", "swell", "close_fill", "eye", "terminal_drop", "shed",
     "PROFILE_DEFAULTS", "sample_profile", "LINE", "NIB", "SHAPE",
+    "massness", "WET_PROFILES", "wet_params", "rim_gap",
 ]
 
 LINE, NIB, SHAPE = 0.0, 1.0, 2.0
@@ -337,14 +346,47 @@ def _prep(st: RegimeStroke, pen: float, step: float | None):
     return q, a, rr, uvec, pairs
 
 
-def _geom_parts(strokes: list[RegimeStroke], pen: float, step: float | None, eps_frac: float = 0.05):
-    """Pen-centre polygons, filled sub-region, and exact line runs."""
+def _stroke_samples(q: RegimeStroke, a: np.ndarray, rr: np.ndarray, sid: int) -> dict:
+    """Per-sample data the fill grading and the edge process need."""
+    p = q.points
+    n = len(p)
+    if n >= 2:
+        g = np.gradient(np.vstack([p[-1:], p, p[:1]]) if q.closed else p, axis=0)
+        if q.closed:
+            g = g[1:-1]
+    else:
+        g = np.zeros((n, 2))
+    tan = g / (np.linalg.norm(g, axis=1, keepdims=True) + 1e-12)
+    s = arclength(p, q.closed)[:n]
+    L = max(float(arclength(p, q.closed)[-1]), 1e-12)
+    m = massness(q.r)
+    # massy runs: position inside the run (0 → 1 along the stroke) and run length
+    trun = np.zeros(n)
+    lrun = np.zeros(n)
+    on = m > 0.3
+    if on.any():
+        idx = np.flatnonzero(on)
+        cuts = np.flatnonzero(np.diff(idx) > 1)
+        for seg in np.split(idx, cuts + 1):
+            s0, s1 = s[seg[0]], s[seg[-1]]
+            trun[seg] = (s[seg] - s0) / max(s1 - s0, 1e-9)
+            lrun[seg] = s1 - s0
+    return {"P": p, "f": q.fill_weight(), "H": a + rr, "r": q.r, "m": m, "tan": tan, "sfrac": s / L,
+            "trun": trun, "lrun": lrun, "sid": np.full(n, sid),
+            "wet_ok": np.full(n, 0.0 if "shed" in q.meta else 1.0)}
+
+
+def _geom_parts(strokes: list[RegimeStroke], pen: float, step: float | None, eps_frac: float = 0.05,
+                edge_fn=None):
+    """Pen-centre polygons, filled sub-region, exact line runs and per-sample
+    data. `edge_fn(G, samples) -> G` (the wet / scallop edge process) runs
+    on the unioned outline before line runs are clipped to it."""
     import shapely
     from shapely.geometry import LineString
 
     eps = eps_frac * pen
     polys, fills, runs, samples = [], [], [], []
-    for st in strokes:
+    for sid, st in enumerate(strokes):
         a0, rho0 = footprint(st, pen)
         if np.all(a0 + np.maximum(rho0 - 0.5 * pen, 0.0) < eps):
             # a pure line: the centreline itself, exactly as given
@@ -353,7 +395,7 @@ def _geom_parts(strokes: list[RegimeStroke], pen: float, step: float | None, eps
         q, a, rr, uvec, pairs = _prep(st, pen, step)
         ext = a + rr
         is_line = ext < eps
-        samples.append((q.points, q.fill_weight(), a + rr))
+        samples.append(_stroke_samples(q, a, rr, sid))
         if len(pairs) == 0:
             if len(q):
                 runs.append(q.points.copy())
@@ -384,6 +426,8 @@ def _geom_parts(strokes: list[RegimeStroke], pen: float, step: float | None, eps
     F = None
     if fills and G is not None:
         F = _polygonal(shapely.union_all(np.concatenate(fills)))
+    if edge_fn is not None and G is not None and samples:
+        G = _polygonal(edge_fn(G, samples)) or G
     # line runs that pass over a ribbon/mass are hidden there (no ink twice)
     if G is not None and not G.is_empty:
         out = []
@@ -400,6 +444,23 @@ def _geom_parts(strokes: list[RegimeStroke], pen: float, step: float | None, eps
                     out.append(c)
         runs = out
     return G, F, runs, samples
+
+
+def _cat_samples(samples: list[dict]) -> dict:
+    return {k: np.concatenate([d[k] for d in samples]) for k in samples[0]}
+
+
+def _attribute(tree, H: np.ndarray, pts: np.ndarray, k: int = 64) -> np.ndarray:
+    """For each point, the centreline sample whose footprint GENERATES the
+    outline there: argmax_j (H_j − |x − P_j|) over the k nearest samples.
+    The nearest sample is wrong at a round mass's ends (the outline there is
+    the disc of a sample well inside), which is what left the white rim."""
+    k = int(min(k, tree.n))
+    d, j = tree.query(pts, k=k)
+    if k == 1:
+        return np.atleast_1d(j)
+    best = np.argmax(H[j] - d, axis=1)
+    return j[np.arange(len(pts)), best]
 
 
 def _polygonal(g):
@@ -475,17 +536,17 @@ def _densify(c: np.ndarray, step: float) -> np.ndarray:
 def _fill_paths(G, F, pen: float, samples, max_rings: int = 400) -> list[np.ndarray]:
     """Graded concentric fill. Insets of G every `pen` (the last one half a
     step, so no white spine is left); an inset vertex at depth d below the
-    outline is kept where the nearest centreline sample's fill weight f
-    satisfies d ≥ (1 − f)·h, h = that sample's pen-centre half-extent. So
+    outline is kept where the GENERATING centreline sample's (`_attribute`)
+    fill weight f satisfies d ≥ (1 − f)·h, h = that sample's pen-centre
+    half-extent. So
     as f rises the ink pools from the CENTRE outward and reaches the
     outline at f = 1 — no straight seam where the fill begins."""
     from scipy.spatial import cKDTree
     from shapely.geometry import LineString
     if G is None or F is None or not samples:
         return []
-    P = np.vstack([q for q, _, _ in samples])
-    Fw = np.concatenate([f for _, f, _ in samples])
-    H = np.concatenate([h for _, _, h in samples])
+    S = _cat_samples(samples)
+    P, Fw, H = S["P"], S["f"], S["H"]
     tree = cKDTree(P)
     Fb = F.buffer(pen)
     out = []
@@ -499,7 +560,7 @@ def _fill_paths(G, F, pen: float, samples, max_rings: int = 400) -> list[np.ndar
                 if not LineString(ring.coords).intersects(Fb):
                     continue
                 c = _densify(np.asarray(ring.coords), 0.5 * pen)
-                _, j = tree.query(c)
+                j = _attribute(tree, H, c)
                 keep = depth >= (1.0 - Fw[j]) * H[j] - 1e-9
                 if keep.all():
                     out.append(_ring(c))
@@ -526,6 +587,309 @@ def _fill_paths(G, F, pen: float, samples, max_rings: int = 400) -> list[np.ndar
         g = nxt
         depth += step
         k += 1
+    return out
+
+
+# ---------------------------------------------------------------------------
+# wet mass edges and edge events (results/regime-masses-2026-10-16.md)
+# ---------------------------------------------------------------------------
+
+def massness(r) -> np.ndarray:
+    """How much a sample is a SHAPE (0 below r = 1.2, 1 from r = 1.8): the
+    weight of the wet-edge process. Lines and nibs keep their exact outline,
+    so a line still enters a wet mass tangentially."""
+    return _smoothstep((np.asarray(r, dtype=np.float64) - 1.2) / 0.6)
+
+
+# Mass-edge profiles fitted by experiments/regime_study.py `edges` (results/
+# regime-masses-2026-10-16.md, raw: .local/gesture/out/regime_masses/).
+# Units: the mass's equivalent diameter D (= √(4A/π)); spatial frequency in
+# cycles per D along the outline.
+#   bands    RMS outline deviation from the smoothed core outline per band
+#            (0.5–1, 1–2, 2–4, 4–8, 8–16 cycles/D), median over masses. The
+#            0.5–1 band is floor-corrected (a smooth 1.6:1 ellipse leaks
+#            0.054 D there) and taken at 0.7 — the least certain number. It
+#            is synthesised as ring harmonics 2–3 (lobes of the whole mass).
+#            Above 1 cycle/D a smooth stadium already measures about as
+#            rough as the data (0.019 / 0.012 / 0.008 D vs 0.022 / 0.007 /
+#            0.003 D for compact data masses), so only about half the data's
+#            value is added there: the wetness is low-order lumpiness, not
+#            jitter.
+#   skew     a in the negative-skew transform x → (1 − e^(−a·x))/a of the
+#            unit noise: rounded outward lobes, sharper inward cusps (data
+#            skew −0.2 calligraphy … −0.8 Marden on compact masses)
+#   band_sd  log-sd of a per-mass multiplier on all bands (from the IQR of
+#            the per-mass roughness: the variety between masses)
+#   bays     mean count of EDGE bays per mass (hull pockets deeper than
+#            0.06 D that the smoothed core outline does not have)
+#   bay_q    bay depth quartiles (D); half of it is used (the measured
+#            pockets include the core shape's own concavities)
+#   aniso    edge RMS at the mass's ends ÷ at its sides
+#   end      width ratio, heavy end third ÷ light end third (median); no
+#            gravity preference was measurable (heavy end lower 40–57 %)
+#   exits    (share of masses with thin exits, exits per mass, exit length
+#            q50 in D) — dry-brush hairs and line exits are not separable at
+#            scan resolution
+# `reference` = Ian's 2024 image (27 masses), `marden` = Brice Marden
+# stick-and-ink (221), `hokusai` = Hokusai brush drawings (810),
+# `calligraphy` = the 13 generative-allowed sheets only (371 masses; gated
+# by calligraphy.require_generative — the measure-only sheets are reported
+# in the results doc and never used here).
+WET_PROFILES: dict[str, dict] = {
+    "reference": {"bands": (0.068, 0.011, 0.0030, 0.0011, 0.0008), "band_sd": 0.41, "skew": 0.6, "bays": 0.6,
+                  "bay_q": (0.098, 0.18, 0.266), "aniso": 0.97, "end": 1.25, "exits": (0.93, 3, 0.18)},
+    "marden": {"bands": (0.058, 0.011, 0.0035, 0.0013, 0.0008), "band_sd": 0.35, "skew": 1.1, "bays": 0.8,
+               "bay_q": (0.096, 0.148, 0.253), "aniso": 0.66, "end": 1.24, "exits": (1.0, 5, 0.28)},
+    "hokusai": {"bands": (0.055, 0.012, 0.0040, 0.0015, 0.0008), "band_sd": 0.38, "skew": 0.4, "bays": 0.8,
+                "bay_q": (0.096, 0.154, 0.27), "aniso": 0.98, "end": 1.32, "exits": (0.96, 4, 0.15)},
+    "calligraphy": {"bands": (0.012, 0.009, 0.0030, 0.0015, 0.0008), "band_sd": 0.47, "skew": 0.3, "bays": 0.3,
+                    "bay_q": (0.105, 0.17, 0.28), "aniso": 1.04, "end": 1.19, "exits": (0.89, 2, 0.18)},
+}
+WET_BANDS = ((0.5, 1.0), (1.0, 2.0), (2.0, 4.0), (4.0, 8.0), (8.0, 16.0))
+
+
+def _lognorm_q(rng, q) -> float:
+    lo, med, hi = q
+    sd = (np.log(hi) - np.log(max(lo, 1e-9))) / (2 * 0.674)
+    return float(np.exp(np.log(med) + sd * rng.standard_normal()))
+
+
+def wet_params(profile, rng: np.random.Generator) -> dict:
+    """One mass's edge parameters drawn from a profile (name or dict): the
+    band amplitudes get a shared log-normal multiplier plus a small per-band
+    one, the bay count is Poisson, the bay depths log-normal — so no two
+    masses come out alike."""
+    pr = dict(WET_PROFILES[profile]) if isinstance(profile, str) else dict(profile)
+    if "base" in pr:
+        pr = {**WET_PROFILES[pr["base"]], **pr}
+    mult = float(np.exp(pr.get("band_sd", 0.45) * rng.standard_normal())) * pr.get("gain", 1.0)
+    bands = [b * mult * float(np.exp(0.25 * rng.standard_normal())) for b in pr["bands"]]
+    nb = int(rng.poisson(pr.get("bays", 1.0) * pr.get("gain", 1.0) ** 0.5))
+    # measured pockets include shape concavities: half their depth is taken as the edge's own
+    bays = [min(0.5 * _lognorm_q(rng, pr["bay_q"]), 0.2) for _ in range(nb)]
+    end = float(pr.get("end", 1.2)) ** float(np.exp(0.4 * rng.standard_normal()))
+    beta = 1.5 * (end - 1.0) / (end + 1.0)
+    return {"bands": bands, "bays": bays, "aniso": float(pr.get("aniso", 1.0)), "beta": beta,
+            "skew": float(pr.get("skew", 0.0))}
+
+
+def _ring_noise(tau: np.ndarray, T: float, bands, rng) -> np.ndarray:
+    """Periodic coloured noise over τ ∈ [0, T) (units of D) with the given
+    RMS per octave band (cycles per D)."""
+    out = np.zeros_like(tau)
+    if T <= 0:
+        return out
+    for bi, ((lo, hi), rms) in enumerate(zip(WET_BANDS, bands)):
+        # the lowest band is lumpiness of the WHOLE mass: harmonics 2–3 of
+        # the ring (a compact mass has T ≈ π, so that is ≈ 0.6–1 cycle/D);
+        # counted per D along a long bar it would make a caterpillar
+        ks = np.arange(2, 4) if bi == 0 else np.arange(max(int(np.ceil(lo * T)), 4), int(np.ceil(hi * T)))
+        if not len(ks) or rms <= 0:
+            continue
+        amp = rms * np.sqrt(2.0 / len(ks))
+        ph = rng.uniform(0, 2 * np.pi, len(ks))
+        out += amp * np.cos(2 * np.pi * np.outer(tau, ks) / T + ph).sum(axis=1)
+    return out
+
+
+def _seed_of(strokes, seed) -> int:
+    if seed is not None:
+        return int(seed)
+    for st in strokes:
+        if "seed" in st.meta:
+            return int(st.meta["seed"])
+    h = 0
+    for st in strokes:
+        v = np.round(st.points[:: max(len(st) // 16, 1)] * 100).astype(np.int64)
+        h = (h * 1000003 + int(np.abs(v).sum()) + 7 * len(st)) % (2 ** 31)
+    return h
+
+
+def _edge_process(strokes, pen: float, wet, edge, seed):
+    """→ edge_fn(G, samples) for _geom_parts, or None when nothing applies.
+    Per stroke, meta["wet"] / meta["edge"] override the render arguments."""
+    wets = [st.meta.get("wet", wet) for st in strokes]
+    edges = [st.meta.get("edge", edge) for st in strokes]
+    if not any(w for w in wets) and not any(e for e in edges):
+        return None
+    rng0 = np.random.default_rng(_seed_of(strokes, seed))
+
+    def fn(G, samples):
+        from scipy.spatial import cKDTree
+        from shapely.geometry import Polygon
+        from shapely.geometry.polygon import orient
+        from shapely import union_all
+        S = _cat_samples(samples)
+        tree = cKDTree(S["P"])
+        out = []
+        for poly0 in _polys(G):
+            poly = orient(poly0, 1.0)
+            rng = np.random.default_rng(rng0.integers(2 ** 31))
+            rings = [np.asarray(poly.exterior.coords)] + [np.asarray(h.coords) for h in poly.interiors]
+            new_rings = []
+            params = {}
+            touched = False
+            for ri, rc in enumerate(rings):
+                c = _densify(rc, 0.5 * pen)[:-1]
+                if len(c) < 8:
+                    new_rings.append(rc)
+                    continue
+                j = _attribute(tree, S["H"], c)
+                m = S["m"][j] * S["wet_ok"][j]
+                if m.max() < 0.02:
+                    new_rings.append(rc)
+                    continue
+                touched = True
+                # fade the edge process out before it reaches a line / nib / drip outline,
+                # so a line still enters the mass cleanly (no detached necks)
+                from scipy.ndimage import minimum_filter1d
+                win = max(int(0.8 * float(np.median(2 * S["H"][j] + pen)) / (0.5 * pen)), 3)
+                m = gaussian_filter1d(minimum_filter1d(m, win, mode="wrap"), win / 3, mode="wrap")
+                sid = S["sid"][j]
+                nxt, prv = np.roll(c, -1, axis=0), np.roll(c, 1, axis=0)
+                t = nxt - prv
+                t /= np.linalg.norm(t, axis=1, keepdims=True) + 1e-12
+                nrm = np.column_stack([t[:, 1], -t[:, 0]])          # out of the ink (orient: ink on the left)
+                Wl = 2 * S["H"][j] + pen                            # local ink width
+                Deq = np.sqrt(4 / np.pi * Wl * np.clip(S["lrun"][j], Wl, 1.6 * Wl))
+                ds = np.linalg.norm(nxt - c, axis=1)
+                delta = np.zeros(len(c))
+                tan_s = S["tan"][j]
+                along = np.abs(np.sum(nrm * tan_s, axis=1))        # 1 at the ends, 0 on the sides
+                for k in np.unique(sid):
+                    sel = sid == k
+                    w_k, e_k = wets[k], edges[k]
+                    if w_k:
+                        prof = "reference" if w_k is True else w_k
+                        if k not in params:
+                            params[k] = wet_params(prof, rng)
+                        pk = params[k]
+                        D_ring = float(np.median(Deq[sel & (m > 0.5)])) if np.any(sel & (m > 0.5)) else float(np.median(Deq[sel]))
+                        tau = np.concatenate([[0.0], np.cumsum(ds / np.maximum(Deq, 1e-9))])[:-1]
+                        T = float(tau[-1] + ds[-1] / max(Deq[-1], 1e-9))
+                        n = _ring_noise(tau, T, pk["bands"], rng)
+                        sk = pk["skew"]
+                        sd_n = float(np.std(n))
+                        if sk > 0 and sd_n > 0:
+                            x = (1 - np.exp(-sk * n / sd_n)) / sk
+                            n = (x - x.mean()) / max(np.std(x), 1e-12) * sd_n
+                        an = pk["aniso"]
+                        aw = (1 + (an - 1) * along) / (1 + (an - 1) * 0.5)
+                        d_k = n * aw * Deq
+                        # bays: narrow inward notches at random massy positions
+                        cand = np.flatnonzero(sel & (m > 0.6))
+                        s_c = np.concatenate([[0.0], np.cumsum(ds)])[:-1]
+                        Pr = s_c[-1] + ds[-1]
+                        for dep in pk["bays"]:
+                            if not len(cand):
+                                break
+                            i0 = int(rng.choice(cand))
+                            depth = dep * Deq[i0]
+                            wid = depth * float(rng.uniform(0.35, 0.8))
+                            dd = np.abs(s_c - s_c[i0])
+                            dd = np.minimum(dd, Pr - dd)
+                            d_k -= depth * np.exp(-0.5 * (dd / max(wid, 1e-9)) ** 2)
+                        # pooled end heavier: the run's far end bulges, its start narrows
+                        # (elongated runs only: a round blob has no 'end' to pool at)
+                        el = _smoothstep((S["lrun"][j] / np.maximum(Wl, 1e-9) - 1.0) / 2.0)
+                        d_k += pk["beta"] * Wl * (S["trun"][j] - 0.5) * (1 - along) * el
+                        delta[sel] += (m * d_k)[sel]
+                    if e_k:
+                        delta[sel] += (m * _edge_event(e_k, S, j, nrm, Wl, along))[sel]
+                # never eat through the mass nor sprout spikes: |move| bounded by the local width
+                delta = np.clip(delta, -0.45 * S["H"][j], 0.3 * Wl)
+                new_rings.append(np.vstack([c + delta[:, None] * nrm, c[:1] + delta[0] * nrm[0]]))
+            if not touched:
+                out.append(poly0)
+                continue
+            try:
+                import shapely
+                g = _polygonal(shapely.make_valid(Polygon(new_rings[0], new_rings[1:])))
+                g = poly if g is None else g
+            except Exception:  # noqa: BLE001 — degenerate ring: keep the clean outline
+                g = poly
+            out.append(g if not g.is_empty else poly)
+        return union_all(out)
+
+    return fn
+
+
+def _edge_event(spec, S: dict, j: np.ndarray, nrm: np.ndarray, Wl: np.ndarray, along: np.ndarray) -> np.ndarray:
+    """A rhythmic edge event over part of one side of a mass (after Oehlen's
+    trunks, Baum 44 / 92). spec = {"mode": "scallop" | "notch", "count": 7,
+    "amp": 0.18 (× local ink width), "extent": (0.25, 0.75) (stroke arc
+    fraction), "side": +1 (left of the stroke's direction, as seen on the
+    page with y down: +1 = the side n·(−t_y, t_x) > 0) | −1, "jitter": 0.15}.
+    scallop = a run of rounded bumps out of the edge; notch = sharp V cuts in."""
+    if isinstance(spec, str):
+        spec = {"mode": spec}
+    mode = spec.get("mode", "scallop")
+    count = float(spec.get("count", 7))
+    amp = float(spec.get("amp", 0.18))
+    e0, e1 = spec.get("extent", (0.25, 0.75))
+    side = float(spec.get("side", 1.0))
+    jit = float(spec.get("jitter", 0.15))
+    u = S["sfrac"][j]
+    tan = S["tan"][j]
+    left = np.column_stack([tan[:, 1], -tan[:, 0]])                # +90° from the tangent (y down: page-left)
+    on_side = (np.sum(nrm * left, axis=1) * side > 0.3) & (along < 0.75)
+    ph = count * (u - e0) / max(e1 - e0, 1e-9)
+    # a little irregularity in rhythm (hand-made): phase wobble, per-bump amplitude
+    rng = np.random.default_rng(int(spec.get("seed", 0)))
+    nb = int(np.ceil(count)) + 2
+    ph = ph + jit * np.interp(ph, np.arange(nb) - 1, rng.uniform(-1, 1, nb))
+    ampk = 1 + jit * np.interp(ph, np.arange(nb) - 1, rng.uniform(-1, 1, nb))
+    win = _smoothstep((u - e0) / max(0.04 * (e1 - e0), 1e-9)) * _smoothstep((e1 - u) / max(0.04 * (e1 - e0), 1e-9))
+    x = np.mod(ph, 1.0)
+    if mode == "scallop":
+        shape = np.sqrt(np.clip(np.sin(np.pi * x), 0, 1))         # round bumps, cusps between
+    elif mode == "notch":
+        shape = -np.clip(1 - np.abs(2 * x - 1) / 0.35, 0, 1)        # V cuts, flat between
+    else:
+        raise ValueError(f"unknown edge mode {mode!r}")
+    inside = (ph >= 0) & (ph <= count)
+    return amp * Wl * ampk * shape * win * on_side * inside
+
+
+def _chain_fill(paths: list[np.ndarray], pen: float, reach: float = 1.25, look: int = 60) -> list[np.ndarray]:
+    """Spiral-like fill: join each fill contour to the next one whose nearest
+    vertex is within `reach`·pen of the current end (closed rings are
+    rotated to start there, open arcs are reversed if that is nearer). The
+    connector crosses ink that the fill inks anyway. Turns ring-per-lift
+    into a few long paths, and closes the open graded arcs at a mass's ends
+    into a meander."""
+    if not paths:
+        return []
+    rest = [np.asarray(p) for p in paths]
+    out = []
+    while rest:
+        cur = rest.pop(0)
+        while True:
+            e = cur[-1]
+            best, bi, how = reach * pen, -1, None
+            for k, p in enumerate(rest[:look]):
+                isring = len(p) > 2 and np.allclose(p[0], p[-1])
+                if isring:
+                    d = np.linalg.norm(p[:-1] - e, axis=1)
+                    v = int(np.argmin(d))
+                    if d[v] < best:
+                        best, bi, how = d[v], k, ("ring", v)
+                else:
+                    for end, rev in ((0, False), (-1, True)):
+                        d = float(np.linalg.norm(p[end] - e))
+                        if d < best:
+                            best, bi, how = d, k, ("open", rev)
+            if bi < 0:
+                break
+            p = rest.pop(bi)
+            if how[0] == "ring":
+                rg_ = p[:-1]
+                v = how[1]
+                p = np.vstack([rg_[v:], rg_[:v], rg_[v:v + 1]])
+            elif how[1]:
+                p = p[::-1]
+            cur = np.vstack([cur, p])
+        out.append(cur)
     return out
 
 
@@ -582,22 +946,85 @@ def _splice(runs: list[np.ndarray], rings: list[np.ndarray], tol: float) -> list
 
 
 def render(strokes, pen: float = 0.35, *, fill: bool = True, step: float | None = None,
-           splice: bool = True, min_area: float | None = None) -> list[np.ndarray]:
+           splice: bool = True, min_area: float | None = None, wet=None, edge=None,
+           seed: int | None = None, fill_style: str = "concentric", nib_renderer=None) -> list[np.ndarray]:
     """Plotter polylines for one stroke or one MARK (a list of strokes whose
     ribbons are unioned). See the module docstring. Order: line runs (each
     continuing round the outline its end enters), remaining outlines,
-    concentric fill contours. Closed contours repeat their first point."""
+    concentric fill contours. Closed contours repeat their first point.
+
+    Optional (defaults keep the round-6 behaviour, apart from the rim fix):
+      wet         None/False | True (= "reference") | profile name in
+                  WET_PROFILES | dict: wet, irregular mass edges (coloured
+                  noise along the outline, bays, a heavier pooled end),
+                  weighted by `massness(r)` so lines and nibs are untouched.
+      edge        None | "scallop" | "notch" | dict (see `_edge_event`): a
+                  rhythmic edge event over part of one side of a mass.
+      (a stroke's meta["wet"] / meta["edge"] override these per stroke)
+      seed        edge-process seed (default: meta["seed"] or a hash of the
+                  geometry — deterministic either way)
+      fill_style  "concentric" (one path per inset) | "spiral" (insets
+                  chained into few paths; also closes the open graded arcs)
+      nib_renderer  callable(strokes=, pen=, paths=, parts=) → paths: a hook
+                  for an alternative nib-ribbon renderer (gesture/penrender);
+                  parts = {"G", "F", "runs", "rings", "fill"} (shapely
+                  geometry and the default polylines)."""
     sts = [strokes] if isinstance(strokes, RegimeStroke) else list(strokes)
     sts = [s for s in sts if len(s)]
     if not sts:
         return []
-    G, F, runs, samples = _geom_parts(sts, pen, step)
+    G, F, runs, samples = _geom_parts(sts, pen, step, edge_fn=_edge_process(sts, pen, wet, edge, seed))
     ma = (0.02 * pen * pen) if min_area is None else min_area
     rings = _outline_rings(G, pen, ma) if G is not None else []
     paths = _splice(runs, rings, tol=0.05 * pen + 1e-9) if splice else runs + rings
-    if fill:
-        paths += _fill_paths(G, F, pen, samples)
-    return [np.asarray(p, dtype=np.float64) for p in paths if len(p) >= 2]
+    fp = _fill_paths(G, F, pen, samples) if fill else []
+    if fill_style == "spiral":
+        fp = _chain_fill(fp, pen)
+    elif fill_style != "concentric":
+        raise ValueError(f"unknown fill_style {fill_style!r}")
+    paths = paths + fp
+    paths = [np.asarray(p, dtype=np.float64) for p in paths if len(p) >= 2]
+    if nib_renderer is not None:
+        paths = nib_renderer(strokes=sts, pen=pen, paths=paths,
+                             parts={"G": G, "F": F, "runs": runs, "rings": rings, "fill": fp})
+    return paths
+
+
+def rim_gap(strokes, paths: list[np.ndarray], pen: float = 0.35, *, m_min: float = 0.9) -> float:
+    """Widest white gap (mm, 2 × largest inscribed radius) left inside the
+    drawn silhouette where the stroke is a full mass (massness ≥ m_min). The
+    round-6 rim artefact is a gap > pen between a mass's outline and its
+    pooled core; a solid mass has none."""
+    import shapely
+    from shapely.geometry import LineString, Point
+    sts = [strokes] if isinstance(strokes, RegimeStroke) else list(strokes)
+    lines = [LineString(p) for p in paths if len(p) >= 2]
+    if not lines:
+        return 0.0
+    U = shapely.union_all(lines)                       # noded
+    ink = U.buffer(0.5 * pen)
+    sil = shapely.union_all([ink, shapely.polygonize(list(getattr(U, "geoms", [U])))])
+    # a white gap counts when the sample that GENERATES the outline there is a full mass
+    from scipy.spatial import cKDTree
+    P, H, M = [], [], []
+    for st in sts:
+        a, rho = footprint(st, pen)
+        P.append(st.points)
+        H.append(a + np.maximum(rho - 0.5 * pen, 0.0))
+        M.append(massness(st.r))
+    P, H, M = np.vstack(P), np.concatenate(H), np.concatenate(M)
+    tree = cKDTree(P)
+    white = sil.difference(ink)
+    best = 0.0
+    for g in _polys(white):
+        if g.area < 1e-6:
+            continue
+        c = shapely.maximum_inscribed_circle(g, tolerance=0.02 * pen)
+        x = np.asarray(c.coords[0])[None]
+        j = _attribute(tree, H, x)[0]
+        if M[j] >= m_min and np.linalg.norm(P[j] - x[0]) <= H[j] + 1e-6:
+            best = max(best, 2 * float(c.length))
+    return best
 
 
 def pen_cost(paths: list[np.ndarray]) -> dict:
@@ -876,16 +1303,35 @@ def terminal_drop(st: RegimeStroke, *, kind: str = "lozenge", size: float | None
     raise ValueError(f"unknown terminal kind {kind!r}")
 
 
+def _bump(t, c, half):
+    x = (t - c) / max(half, 1e-9)
+    return np.where(np.abs(x) < 1, 0.5 * (1 + np.cos(np.pi * x)), 0.0)
+
+
+def _lowfreq(rng, t, n_knots: int = 5) -> np.ndarray:
+    """Smooth zero-mean noise in about [−1, 1] over t ∈ [0, 1]."""
+    k = np.linspace(0, 1, n_knots)
+    return np.interp(t, k, rng.uniform(-1, 1, n_knots))
+
+
 def shed(st: RegimeStroke, rng: np.random.Generator, *, n: int = 4, kind: str = "drips",
          length: float | None = None, where: tuple[float, float] = (0.0, 1.0),
          wobble: float = 0.15, bead: bool = True) -> list[RegimeStroke]:
     """A mass emits thin lines. Returns [st, child, …] — render them as one
     mark (`render([...])`) and the children's roots merge into the mass's
-    outline. kind="drips": vertical runs (+y) from the lower edge of the
-    swollen part (samples with r ≥ 1.5 inside `where`), each starting inside
-    the mass at r ≈ 1.6 and thinning to a line, with an optional small drop
-    at the end. kind="hairs": brush hairs trailing past the stroke's end,
-    fanning slightly, thinning from nib to line."""
+    outline.
+
+    kind="drips": runs down the page (+y) from the lower part of the swollen
+    stretch (samples with r ≥ 1.5 inside `where`). Each drip is a SHAPE-regime
+    thread (r = 2, width carried by `mass`, fill = 1, so it is solid at any
+    width — no double ribbon): a wet neck that leaves the mass at
+    0.15–0.4 of its diameter and thins to a pen line over 12–50 % of its
+    length; length log-normal around `length` (default 6·W); a lean and a
+    slow curvature walk (`wobble`); sometimes a hanging swelling halfway and,
+    if `bead`, a drop at the tip in about half the drips.
+    kind="hairs": dry-brush exits past the stroke's end — irregularly spaced
+    roots, log-normal lengths, a fan, each a wet wedge that dries into a pen
+    line; about a third skip (broken into dashes)."""
     s, L = _s_frac(st)
     W0 = float(np.median(st.W))
     out = [st]
@@ -895,47 +1341,69 @@ def shed(st: RegimeStroke, rng: np.random.Generator, *, n: int = 4, kind: str = 
         if not len(sel):
             sel = np.flatnonzero((s >= where[0] * L) & (s <= where[1] * L))
         picks = np.sort(rng.choice(sel, size=min(n, len(sel)), replace=False))
-        _, rho = footprint(st, 0.0)
-        a, _ = footprint(st, 0.0)
+        a, rho = footprint(st, 0.0)
         for j in picks:
-            # root: inside the mass, 60 % of the way to its lower edge
             reach = 0.6 * (rho[j] + a[j] * abs(np.cos(st.phi[j])))
             root = st.points[j] + np.array([0.0, reach])
-            ln = ln0 * float(rng.uniform(0.5, 1.4))
-            m = max(int(ln / (W0 / 5)), 10)
+            ln = ln0 * float(np.clip(np.exp(0.5 * rng.standard_normal()), 0.3, 2.5))
+            stepd = max(min(W0 / 5, ln / 40), 0.03)
+            m = max(int(ln / stepd), 12)
             t = np.linspace(0, 1, m)
-            x = root[0] + np.cumsum(rng.normal(0, wobble * W0 / np.sqrt(m), m))
-            x = x - x[0] + root[0]
-            pts = np.column_stack([x, root[1] + t * ln])
-            # leaves the mass as a mass (r 1.8), thins to a line within 25 %
-            r = 1.8 * (1 - _smoothstep(t / 0.25))
-            mass = np.full(m, 0.5 * (st.mass[j]))
-            if bead:
-                # a small round drop at the end of the drip
-                x2 = (t - 0.95) / 0.06
-                r = np.maximum(r, 2.0 * np.where(np.abs(x2) < 1, 0.5 * (1 + np.cos(np.pi * x2)), 0))
-                mass = np.where(t > 0.6, float(rng.uniform(0.5, 0.9)) * W0, mass)
-            out.append(RegimeStroke(pts, r, np.full(m, st.phi[j]), np.full(m, st.W[j] * 0.3), mass,
-                                    st.w_min, False, None, {"shed": "drip"}))
+            # heading: down, a lean, a slow curvature walk
+            lean = rng.normal(0, 0.09)
+            curv = np.cumsum(rng.normal(0, wobble * 0.6 / np.sqrt(m), m))
+            th = np.pi / 2 + lean + curv - curv[0]
+            dxy = np.column_stack([np.cos(th), np.sin(th)]) * (ln / (m - 1))
+            pts = root + np.vstack([[0, 0], np.cumsum(dxy[:-1], axis=0)])
+            md = float(st.mass[j])
+            w0 = md * float(rng.uniform(0.15, 0.4))
+            tn = float(rng.uniform(0.12, 0.5))
+            w = w0 * (1 - _smoothstep(t / tn)) ** 1.5 * (1 + 0.25 * _lowfreq(rng, t))
+            if rng.random() < 0.3:                                   # a hanging swelling on the way
+                c = float(rng.uniform(0.4, 0.75))
+                w = np.maximum(w, w0 * float(rng.uniform(0.45, 0.85)) * _bump(t, c, float(rng.uniform(0.03, 0.06))))
+            if bead and rng.random() < 0.5:                          # sometimes a drop at the tip
+                d = w0 * float(rng.uniform(0.5, 1.0))
+                c = 1.0 - 0.5 * d / ln
+                w = np.maximum(w, d * np.sqrt(np.clip(1 - ((t - c) / max(0.5 * d / ln, 1e-9)) ** 2, 0, 1)))
+            out.append(RegimeStroke(pts, np.full(m, 2.0), np.full(m, st.phi[j]), np.full(m, 1e-3 * W0),
+                                    np.maximum(w, 0.0), st.w_min, False, np.ones(m), {"shed": "drip"}))
         return out
     if kind == "hairs":
         u, h = _tangent_end(st.points, 2 * W0)
         nrm = np.array([-u[1], u[0]])
         a, rho = footprint(st, 0.0)
         half = max(rho[-1] + a[-1], 0.5 * W0)
-        for k in range(n):
-            off = (k / max(n - 1, 1) - 0.5) * 1.4 * half
+        offs = np.sort(rng.uniform(-0.75, 0.75, n)) * half
+        spread = float(rng.uniform(0.12, 0.35))
+        for k, off in enumerate(offs):
             root = st.points[-1] - 0.8 * half * u + off * nrm
-            ln = ln0 * float(rng.uniform(0.6, 1.3))
-            m = max(int(ln / (W0 / 5)), 10)
+            ln = ln0 * float(np.clip(np.exp(0.45 * rng.standard_normal()), 0.25, 2.2))
+            m = max(int(ln / (W0 / 5)), 12)
             t = np.linspace(0, 1, m)
-            fan = off / max(half, 1e-9) * 0.25
+            fan = off / max(half, 1e-9) * spread + rng.normal(0, 0.05)
             dirv = u + fan * nrm
             dirv /= np.linalg.norm(dirv)
             lat = np.cumsum(rng.normal(0, wobble * W0 / np.sqrt(m), m))
             pts = root + np.outer(t * ln, dirv) + np.outer(lat - lat[0], nrm)
-            r = 1.0 * (1 - _smoothstep(t / 0.5))
-            out.append(RegimeStroke(pts, r, np.full(m, st.phi[-1]), np.full(m, 0.35 * st.W[-1]),
-                                    np.full(m, 0.5 * W0), st.w_min, False, None, {"shed": "hair"}))
+            # a wet wedge (shape regime) that dries into a pen line
+            td = float(rng.uniform(0.1, 0.3))
+            wr = 2 * half / max(n, 1) * float(rng.uniform(0.6, 1.2))
+            w = wr * (1 - _smoothstep(t / td))
+            r = np.full(m, 2.0)
+            child = RegimeStroke(pts, r, np.full(m, st.phi[-1]), np.full(m, 1e-3 * W0), w, st.w_min, False,
+                                 np.ones(m), {"shed": "hair"})
+            if rng.random() < 0.35:                                  # dry skip: broken into dashes
+                cuts = np.sort(rng.uniform(td + 0.1, 0.95, int(rng.integers(1, 3))))
+                keep = np.ones(m, bool)
+                for c in cuts:
+                    keep &= np.abs(t - c) > float(rng.uniform(0.02, 0.05))
+                idx = np.flatnonzero(keep)
+                for seg in np.split(idx, np.flatnonzero(np.diff(idx) > 1) + 1):
+                    if len(seg) >= 2:
+                        out.append(RegimeStroke(pts[seg], r[seg], child.phi[seg], child.W[seg], w[seg], st.w_min,
+                                                False, np.ones(len(seg)), {"shed": "hair"}))
+            else:
+                out.append(child)
         return out
     raise ValueError(f"unknown shed kind {kind!r}")

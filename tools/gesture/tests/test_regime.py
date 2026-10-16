@@ -187,3 +187,128 @@ def test_regime_cost_partitions_pen_length():
     tot = sum(v["pen_mm"] for v in c.values())
     assert tot == pytest.approx(rg.pen_cost(paths)["length"], rel=1e-6)
     assert c["line"]["per_mm"] < c["nib"]["per_mm"] < c["shape"]["per_mm"]
+
+
+# ---------------------------------------------------------------------------
+# round 7: wet mass edges, rim fix, edge events, spiral fill, drips
+# ---------------------------------------------------------------------------
+
+def _oval():
+    p = np.column_stack([np.linspace(0, 10, 60), np.zeros(60)])
+    return rg.make(p, 2.0, W=1e-3, mass=np.full(60, 9.0))
+
+
+def _wet_marks():
+    W = 2.4
+    straight = rg.make(np.column_stack([np.linspace(0, 40, 200), np.zeros(200)]), 0.0, W=W)
+    base = rg.make(_wave(), 0.0, phi=np.deg2rad(50), W=W)
+    return {
+        "bead": rg.swell(straight, 0.5, length=12, size=6),
+        "nib_mass": rg.swell(rg.thicken(base, 0.1, until=0.95), 0.35, length=20, size=9),
+        "drop": rg.terminal_drop(base, kind="drop", size=4.5),
+        "oval": _oval(),
+    }
+
+
+@pytest.mark.parametrize("name", ["bead", "nib_mass", "drop", "oval"])
+@pytest.mark.parametrize("wet", [None, "marden"])
+def test_fill_reaches_the_edge(name, wet):
+    """No white rim wider than the pen between a mass's outline and its fill
+    (round 6 left 1.05–1.17 mm on bead / nib-mass / drop)."""
+    st = _wet_marks()[name]
+    paths = rg.render(st, PEN, wet=wet, seed=3)
+    assert rg.rim_gap(st, paths, PEN) <= PEN + 1e-9, (name, wet)
+
+
+def test_wet_outlines_closed_polylines_and_deterministic():
+    st = _wet_marks()["nib_mass"]
+    a = rg.render(st, PEN, wet="hokusai", seed=5)
+    b = rg.render(st, PEN, wet="hokusai", seed=5)
+    c = rg.render(st, PEN, wet="hokusai", seed=6)
+    assert len(a) == len(b) and all(np.array_equal(x, y) for x, y in zip(a, b))
+    assert not (len(a) == len(c) and all(np.array_equal(x, y) for x, y in zip(a, c)))
+    for p in a:
+        assert isinstance(p, np.ndarray) and p.ndim == 2 and p.shape[1] == 2 and len(p) >= 2
+        assert np.isfinite(p).all()
+    outl = rg.render(st, PEN, wet="hokusai", seed=5, fill=False, splice=False)
+    rings = [p for p in outl if len(p) > 3 and np.allclose(p[0], p[-1])]
+    assert rings, "the mass outline is a closed ring"
+    # default seed is a geometry hash: deterministic without a seed too
+    d1, d2 = rg.render(st, PEN, wet=True), rg.render(st, PEN, wet=True)
+    assert all(np.array_equal(x, y) for x, y in zip(d1, d2))
+
+
+def test_wet_leaves_lines_and_nibs_untouched():
+    for r in (0.0, 1.0):
+        st = rg.make(_wave(), r, phi=np.deg2rad(50), W=2.4)
+        dry = rg.render(st, PEN)
+        wet = rg.render(st, PEN, wet="marden", seed=1)
+        assert len(dry) == len(wet) and all(np.allclose(x, y) for x, y in zip(dry, wet)), r
+
+
+def test_wet_mass_varies_and_stays_one_piece():
+    from shapely.geometry import Polygon
+    areas = []
+    for sd in range(4):
+        outl = rg.render(_oval(), PEN, wet="reference", seed=sd, fill=False)
+        ring = max(outl, key=len)
+        assert np.allclose(ring[0], ring[-1])
+        areas.append(Polygon(ring).area)
+    assert np.std(areas) > 0.5                       # no two masses alike
+    assert min(areas) > 0.6 * max(areas)             # but none eaten away
+
+
+def test_scallop_and_notch_edge_events():
+    from shapely.geometry import Polygon
+    vert = rg.make(np.column_stack([np.zeros(240), np.linspace(0, 48, 240)]), 2.0, W=1e-3,
+                   mass=np.full(240, 7.0))
+    plain = Polygon(max(rg.render(vert, PEN, fill=False), key=len))
+    for mode, sign in (("scallop", 1), ("notch", -1)):
+        ev = {"mode": mode, "count": 6, "amp": 0.2, "extent": (0.2, 0.8), "side": 1}
+        g = Polygon(max(rg.render(vert, PEN, fill=False, edge=ev), key=len))
+        assert sign * (g.area - plain.area) > 0.5, mode
+        # one side only: the other half-plane is unchanged
+        cx = plain.centroid.x
+        from shapely.geometry import box
+        dl = abs(g.intersection(box(cx - 20, -10, cx, 60)).area - plain.intersection(box(cx - 20, -10, cx, 60)).area)
+        dr = abs(g.intersection(box(cx, -10, cx + 20, 60)).area - plain.intersection(box(cx, -10, cx + 20, 60)).area)
+        assert min(dl, dr) < 0.05 * max(dl, dr), mode
+    # per-stroke meta works like the argument
+    m = rg.render(rg.replace(vert, meta={"edge": "scallop"}), PEN, fill=False)
+    assert not np.allclose(max(m, key=len)[:50], max(rg.render(vert, PEN, fill=False), key=len)[:50])
+
+
+def test_spiral_fill_fewer_lifts_same_ink():
+    st = _wet_marks()["nib_mass"]
+    conc = rg.render(st, PEN, wet="reference", seed=2)
+    spir = rg.render(st, PEN, wet="reference", seed=2, fill_style="spiral")
+    assert len(spir) < len(conc)
+    ic, isp = _ink(conc), _ink(spir)
+    assert isp.symmetric_difference(ic).area < 0.03 * ic.area
+
+
+def test_drips_are_solid_threads_with_variety():
+    rng = np.random.default_rng(1)
+    st = rg.swell(rg.make(np.column_stack([np.linspace(0, 40, 200), np.zeros(200)]), 1.0, W=2.4), 0.5,
+                  length=30, size=10)
+    mark = rg.shed(st, rng, n=6, kind="drips", length=14, where=(0.3, 0.7))
+    kids = mark[1:]
+    assert len(kids) == 6 and all(k.meta.get("shed") == "drip" for k in kids)
+    lens = [k.length() for k in kids]
+    assert np.std(lens) / np.mean(lens) > 0.15       # irregular lengths
+    assert all(k.fill is not None and np.all(k.fill == 1) for k in kids)
+    paths = rg.render(mark, PEN)
+    assert rg.rim_gap(mark, paths, PEN) <= PEN + 1e-9
+    assert _n_components(_ink(rg.render(mark, PEN, fill=False))) == 1
+
+
+def test_nib_renderer_hook():
+    st = _wet_marks()["bead"]
+    seen = {}
+
+    def hook(*, strokes, pen, paths, parts):
+        seen.update(parts)
+        return paths[:1]
+
+    out = rg.render(st, PEN, nib_renderer=hook)
+    assert len(out) == 1 and {"G", "F", "runs", "rings", "fill"} <= set(seen)

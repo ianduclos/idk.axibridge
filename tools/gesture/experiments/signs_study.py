@@ -11,6 +11,13 @@ Stages (run in order; each writes to .local/gesture/out/signs/):
   sheets     results/signs-v6.jpg, results/signs-tree.jpg (learned | random)
   pairs      blinded judge pairs → .local/gesture/out/blind_signs/pairs/,
              key OUTSIDE the repo (/tmp/gesture_signs_key.json)
+  events_grammar  line-event grammar (signs.learn_event_grammar) →
+             .local/gesture/out/signs_events/event_grammar.json
+  events_vocab    results/signs-events-vocabulary.jpg
+  events_sheets   results/signs-events-v6.jpg (events | round-6 stamps),
+                  results/signs-events-tree.jpg (events | random events)
+  events_pairs    blinded pairs → .local/gesture/out/blind_events/pairs/,
+                  key OUTSIDE the repo (/tmp/gesture_events_key.json)
 
   cd tools/gesture && ../../.local/gesture/.venv/bin/python -m experiments.signs_study all
 """
@@ -470,8 +477,264 @@ def stage_pairs(n_test=12, n_calib=8):
           "calib", sum(1 for v in key.values() if v["cond"] == "calib"), "key", KEY)
 
 
+# ---------------------------------------------------------------------------
+# LINE EVENTS (results/signs-events-2026-10-16.md)
+# ---------------------------------------------------------------------------
+
+EV_OUT = ROOT / ".local/gesture/out/signs_events"
+EV_PAIRS = ROOT / ".local/gesture/out/blind_events/pairs"
+EV_KEY = Path(os.environ.get("EVENTS_KEY", "/tmp/gesture_events_key.json"))
+MM_PER_PX = 0.2          # a 900 × 1200 px drawing = 180 × 240 mm
+EV_W = 0.6               # sign sizes are in units of the drawn line (pen 0.5 mm inks ≈ 0.6 mm), as in round 6
+EV_PEN = 0.5             # mm
+EV_PXMM = 5.0            # preview px per mm
+
+
+def reference_forms() -> list[dict]:
+    """The 26 read forms as line events, with extents and centres in w."""
+    ref = json.loads((OUT / "reference.json").read_text())
+    w = ref["w_px"]
+    forms = []
+    for (form, rel, box), (site, op, grp) in zip(MANUAL_REF, signs.REFERENCE_EVENTS):
+        x0, y0, x1, y1 = box
+        forms.append({"form": form, "relation": rel, "site": site, "op": op, "group": grp,
+                      "extent_w": max(x1 - x0, y1 - y0) / w, "centre_w": [(x0 + x1) / 2 / w, (y0 + y1) / 2 / w]})
+    return forms
+
+
+def stage_events_grammar():
+    EV_OUT.mkdir(parents=True, exist_ok=True)
+    ref = json.loads((OUT / "reference.json").read_text())
+    fit = json.loads((ROOT / ".local/gesture/out/regime/fit.json").read_text())["reference"]
+    dots = json.loads((OUT / "dots.json").read_text())["dots"]
+    ms = fit["masses"]
+    n_j = int(round(ms["n"] * ms["exits_ge3_share"]))
+    thin_to_w = fit["w_thin_px"] / ref["w_px"]
+    diam_w = [round(v * thin_to_w, 2) for v in ms["diam_thin_q"]]
+    forms = reference_forms()
+    g = signs.learn_event_grammar(forms, junction_masses={"n": n_j, "diam_w": diam_w},
+                                  skeleton_w=ref["skeleton_px"] / ref["w_px"], dot_records=dots,
+                                  auto_sizes={k: ref["size_w_by_relation"].get(k, [])
+                                              for k in ("interior", "junction")})
+    g.nib_ratio = tuple(round(v, 3) for v in fit["thick_over_thin_q"][:3])
+    (EV_OUT / "event_grammar.json").write_text(json.dumps(g.to_json(), indent=1))
+    q = lambda xs: [round(float(v), 2) for v in np.percentile(xs, [10, 25, 50, 75, 90])] if xs else None  # noqa: E731
+    print(json.dumps({"site_p": g.site_p, "op_p": g.op_p, "density_per_w": g.density, "group_p": g.group_p,
+                      "group_sizes": g.group_sizes, "spacing_w_q": q(g.spacing_w),
+                      "size_ratio": g.size_ratio, "gap_ratio_q": q(g.gap_ratio), "n_gap": len(g.gap_ratio),
+                      "size_w": {k: q(v) for k, v in g.size_w.items()}, "nib_ratio": g.nib_ratio,
+                      "meta": g.meta}, indent=1))
+
+
+def load_event_grammar() -> signs.EventGrammar:
+    p = EV_OUT / "event_grammar.json"
+    return signs.EventGrammar.from_json(json.loads(p.read_text())) if p.exists() else signs.DEFAULT_EVENT_GRAMMAR
+
+
+def draw_paths(paths, size_mm, *, pxmm=EV_PXMM, pen=EV_PEN, ss=2, img=None, offset=(0.0, 0.0)):
+    """Plotter paths (mm) drawn with a round pen."""
+    Wd, Hd = int(size_mm[0] * pxmm), int(size_mm[1] * pxmm)
+    big = Image.new("L", (Wd * ss, Hd * ss), 255)
+    d = ImageDraw.Draw(big)
+    lw = max(int(round(pen * pxmm * ss)), 1)
+    r = pen * pxmm * ss / 2
+    for p in paths:
+        q = (np.asarray(p, float) + offset) * pxmm * ss
+        if len(q) >= 2:
+            d.line([tuple(v) for v in q], fill=20, width=lw, joint="curve")
+        for v in (q[0], q[-1]):
+            d.ellipse([v[0] - r, v[1] - r, v[0] + r, v[1] + r], fill=20)
+    out = big.resize((Wd, Hd), Image.Resampling.LANCZOS)
+    if img is not None:
+        return Image.fromarray(np.minimum(np.asarray(img), np.asarray(out)))
+    return out
+
+
+def structure_lines(src: str, seed: int):
+    """Lines in mm for a structure: v6:<hand>, tree."""
+    if src.startswith("v6:"):
+        L = v6_lines(src[3:], seed)
+    elif src == "tree":
+        L = tree_lines(seed)
+    else:
+        raise ValueError(src)
+    return [np.asarray(p, float) * MM_PER_PX for p in L if len(p) >= 2]
+
+
+def stamp_paths(lines_mm, placed):
+    """Round-6 stamps as plotter paths at the events' pen."""
+    out = []
+    for s in placed:
+        paths, closed = signs.sign_paths(s, pen=EV_PEN)
+        for p, c in zip(paths, closed):
+            out.append(np.vstack([p, p[:1]]) if c else p)
+    return [np.asarray(p, float) for p in lines_mm] + out
+
+
+def event_panel(lines_mm, seed, g, *, mode="grammar", like=None):
+    rng = np.random.default_rng(seed)
+    evs = signs.plan_events(lines_mm, rng, g, w=EV_W, mode=mode, like=like)
+    sts = signs.apply_events(lines_mm, evs, np.random.default_rng(seed + 7), w=EV_W, grammar=g)
+    return evs, signs.render_events(sts, EV_PEN)
+
+
+def _vocab_items():
+    """(label, lines, events) for each op on a simple host."""
+    t = np.linspace(0, 1, 400)
+    wave = np.column_stack([5 + 60 * t, 20 + 3 * np.sin(2 * np.pi * t)])
+    E = signs.LineEvent
+    w = EV_W
+    items = []
+    for op, size in (("drop", 5), ("lozenge", 5), ("hook", 9), ("ring", 8), ("block", 11), ("vessel", 24),
+                     ("eye", 10), ("detached", 3)):
+        items.append((f"end · {op}", [wave], [E("end", op, 0, 0.0, size * w, 1.0, end=1)]))
+    for op, size in (("bead", 3.5), ("vessel_mid", 10), ("nib", 8), ("knot", 11), ("comb", 6), ("drip", 8),
+                     ("body", 9)):
+        items.append((f"interior · {op}", [wave], [E("interior", op, 0, 30.0, size * w, -1.0)]))
+    host = np.column_stack([5 + 60 * t, 24 + 0 * t])
+    stem = np.column_stack([35 + 0 * t, 4 + 20 * t])
+    items.append(("junction · junction_mass", [host, stem],
+                  [E("junction", "junction_mass", 1, 20.0, 6 * w, 1.0, other=(0, 30.0))]))
+    u = np.linspace(0, 1, 200)
+    corner = np.vstack([np.column_stack([5 + 30 * u, 10 + 18 * u]),
+                        np.column_stack([35 + 30 * u[1:], 28 - 14 * u[1:]])])
+    sc = float(np.sum(np.linalg.norm(np.diff(corner[:200], axis=0), axis=1)))
+    items.append(("corner · comma", [corner], [E("corner", "comma", 0, sc, 8 * w, 1.0)]))
+    # a line making its own small loop
+    a = np.linspace(0, 2 * np.pi, 160)
+    v = np.linspace(0, 1, 100)
+    loop = np.vstack([np.column_stack([5 + 25 * v, 22 + 0 * v]),
+                      np.column_stack([30 + 6 * np.sin(a), 16 + 6 * np.cos(a)]),
+                      np.column_stack([30 + 35 * v, 22 + 0 * v])])
+    S = signs._Net([loop], w)
+    if S.selfloops:
+        i, s0, s1, f = S.selfloops[0]
+        items.append(("loop · fill_loop", [loop], [E("loop", "fill_loop", 0, (s0 + s1) / 2, 8 * w, 1.0,
+                                                     params={"s0": s0, "s1": s1})]))
+        c = np.asarray(f.centroid.coords[0])
+        items.append(("loop · pupil", [loop], [E("loop", "pupil", 0, (s0 + s1) / 2, 2.5 * w, 1.0,
+                                                 params={"s0": s0, "s1": s1, "centre": [c[0], c[1]]})]))
+    return items
+
+
+def _caption(img, xy, text, size=16):
+    ImageDraw.Draw(img).text(xy, text, fill=70, font=_font(size))
+
+
+def stage_events_vocab():
+    items = _vocab_items()
+    cols, cw, ch = 4, 72.0, 40.0
+    rows = int(math.ceil(len(items) / cols))
+    sheet = Image.new("L", (int(cols * cw * EV_PXMM), int(rows * ch * EV_PXMM)), 255)
+    for k, (lab, lines, evs) in enumerate(items):
+        sts = signs.apply_events(lines, evs, np.random.default_rng(k + 3), w=EV_W)
+        paths = signs.render_events(sts, EV_PEN)
+        off = ((k % cols) * cw, (k // cols) * ch + 4)
+        sheet = draw_paths(paths, (cols * cw, rows * ch), img=sheet, offset=off)
+        _caption(sheet, (int(off[0] * EV_PXMM) + 8, int((k // cols) * ch * EV_PXMM) + 4), f"{k + 1}. {lab}")
+    _save_jpg(sheet.convert("RGB"), RESULTS / "signs-events-vocabulary.jpg")
+
+
+def _panel_job(args):
+    """One rendered panel: (src, seed, kind) → (PIL image, n marks, ops)."""
+    src, seed, kind, n_like = args
+    g = load_event_grammar()
+    L = structure_lines(src, seed)
+    evs, paths = event_panel(L, seed, g)
+    if kind == "events":
+        return draw_paths(paths, (180, 240)), len(evs), [e.op for e in evs]
+    if kind == "random_events":
+        rnd, rpaths = event_panel(L, seed + 50, g, mode="random", like=evs)
+        return draw_paths(rpaths, (180, 240)), len(rnd), [e.op for e in rnd]
+    pg = load_grammar()
+    # round-6 stamps at matched VISUAL WEIGHT: the stamps' sizes follow
+    # round 6's rules in units of w, which leaves them much lighter than the
+    # events; scale their w so the sign ink (pixels beyond the bare lines)
+    # roughly matches the events', so the judge can't pick on weight alone
+    ev_img = draw_paths(paths, (180, 240))
+    bare = np.asarray(draw_paths(L, (180, 240))) < 128
+    ev_ink = max(int((np.asarray(ev_img) < 128).sum() - bare.sum()), 1)
+    w_st = EV_W
+    for _ in range(2):
+        pl = signs.place_signs(L, np.random.default_rng(seed + 1), pg, w=w_st, n=len(evs))
+        st_ink = max(int((np.asarray(draw_paths(stamp_paths(L, pl), (180, 240))) < 128).sum() - bare.sum()), 1)
+        w_st = float(np.clip(w_st * math.sqrt(ev_ink / st_ink), EV_W, 4 * EV_W))
+    pl = signs.place_signs(L, np.random.default_rng(seed + 1), pg, w=w_st, n=len(evs))
+    if kind == "stamps":
+        return draw_paths(stamp_paths(L, pl), (180, 240)), len(pl), [p.kind for p in pl]
+    if kind == "scatter":
+        pr = signs.place_random(L, np.random.default_rng(seed + 2), pl, w=w_st)
+        return draw_paths(stamp_paths(L, pr), (180, 240)), len(pr), [p.kind for p in pr]
+    raise ValueError(kind)
+
+
+def stage_events_sheets():
+    jobs = []
+    for art, seed in (("matisse", 3), ("hokusai", 5), ("ingres", 2)):
+        jobs += [(f"v6:{art}", seed, "events", None), (f"v6:{art}", seed, "stamps", None)]
+    jobs += [("tree", 1, "events", None), ("tree", 1, "random_events", None),
+             ("tree", 4, "events", None), ("tree", 4, "random_events", None)]
+    with ProcessPoolExecutor(JOBS) as ex:
+        res = list(ex.map(_panel_job, jobs))
+    labels = {"events": "line events", "stamps": "round-6 stamps", "random_events": "same events, random places"}
+    tiles = []
+    for (src, seed, kind, _), (img, n, ops) in zip(jobs, res):
+        img = img.convert("L")
+        _caption(img, (12, 8), f"{src} seed {seed} — {labels[kind]} ({n})", 20)
+        tiles.append(img)
+        print(src, seed, kind, n, {o: ops.count(o) for o in sorted(set(ops))})
+    for name, part in (("v6", tiles[:6]), ("tree", tiles[6:])):
+        rows = len(part) // 2
+        sheet = Image.new("L", (1800, 1200 * rows), 255)
+        for i, t in enumerate(part):
+            sheet.paste(t, ((i % 2) * 900, (i // 2) * 1200))
+            ImageDraw.Draw(sheet).line([(900, 0), (900, 1200 * rows)], fill=170, width=2)
+        sheet = sheet.resize((1350, 900 * rows), Image.Resampling.LANCZOS)
+        _save_jpg(sheet.convert("RGB"), RESULTS / f"signs-events-{name}.jpg")
+
+
+EV_QUESTION = ("Each image shows two panels, A (left) and B (right), built on the same lines. In which panel "
+               "do the small shapes (dots, drops, swellings, knots, hooks, ticks) seem to BELONG to the lines — "
+               "to say something? Answer A or B, with a confidence 1-5.")
+
+
+def stage_events_pairs(n_per=12):
+    EV_PAIRS.mkdir(parents=True, exist_ok=True)
+    for f in EV_PAIRS.glob("*.jpg"):
+        f.unlink()
+    srcs = ["v6:matisse", "v6:hokusai", "v6:ingres", "tree"]
+    conds = {"a_events_vs_stamps": "stamps", "b_events_vs_random_events": "random_events",
+             "c_calib_events_vs_scatter": "scatter"}
+    jobs, meta = [], []
+    for ci, (cond, other) in enumerate(conds.items()):
+        for i in range(n_per):
+            src = srcs[i % len(srcs)]
+            seed = 3000 + 100 * ci + i
+            jobs += [(src, seed, "events", None), (src, seed, other, None)]
+            meta.append((cond, src, seed))
+    with ProcessPoolExecutor(JOBS) as ex:
+        res = list(ex.map(_panel_job, jobs))
+    rng = np.random.default_rng(4242)
+    order = rng.permutation(len(meta))
+    key = {}
+    for idx, j in enumerate(order):
+        cond, src, seed = meta[j]
+        (ev_img, n_ev, _), (ot_img, n_ot, _) = res[2 * j], res[2 * j + 1]
+        left = bool(rng.random() < 0.5)
+        A, B = (ev_img, ot_img) if left else (ot_img, ev_img)
+        name = f"pair_{idx:02d}.jpg"
+        _pair_image(A, B).save(EV_PAIRS / name, quality=85)
+        key[name] = {"cond": cond, "src": src, "seed": seed, "events_panel": "A" if left else "B",
+                     "n_marks": {"events": n_ev, "other": n_ot}}
+    (EV_PAIRS / "QUESTION.txt").write_text(EV_QUESTION + "\n")
+    EV_KEY.write_text(json.dumps(key, indent=1))
+    print("pairs", len(key), {c: sum(1 for v in key.values() if v["cond"] == c) for c in conds}, "key", EV_KEY)
+
+
 STAGES = {"reference": stage_reference, "dots": stage_dots, "fonts": stage_fonts, "grammar": stage_grammar,
-          "catalogue": stage_catalogue, "sheets": stage_sheets, "pairs": stage_pairs}
+          "catalogue": stage_catalogue, "sheets": stage_sheets, "pairs": stage_pairs,
+          "events_grammar": stage_events_grammar, "events_vocab": stage_events_vocab,
+          "events_sheets": stage_events_sheets, "events_pairs": stage_events_pairs}
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
