@@ -1,0 +1,272 @@
+[
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   120.0
+  ],
+  "seed": 7003,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next_rechain",
+      "cut": "inflection",
+      "grain": 0.012,
+      "order": "time",
+      "rotate": true,
+      "mirror": false,
+      "blend": 0.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "re-chained from its atlas: time order (the original, a check)"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   120.0
+  ],
+  "seed": 7003,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next_rechain",
+      "cut": "inflection",
+      "grain": 0.012,
+      "order": "sign",
+      "rotate": false,
+      "mirror": false,
+      "blend": 0.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "re-chained from its atlas: signs alternating, translated only — the collage"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   120.0
+  ],
+  "seed": 7003,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next_rechain",
+      "cut": "inflection",
+      "grain": 0.012,
+      "order": "sign",
+      "rotate": true,
+      "mirror": false,
+      "blend": 0.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "re-chained from its atlas: signs alternating, tangent continued"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   120.0
+  ],
+  "seed": 7003,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next_rechain",
+      "cut": "inflection",
+      "grain": 0.012,
+      "order": "turning",
+      "rotate": true,
+      "mirror": false,
+      "blend": 0.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "re-chained from its atlas: calm to coiled"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   120.0
+  ],
+  "seed": 7003,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next_rechain",
+      "cut": "inflection",
+      "grain": 0.012,
+      "order": "match",
+      "rotate": true,
+      "mirror": false,
+      "blend": 0.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "re-chained from its atlas: each next specimen matches the curvature"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   120.0
+  ],
+  "seed": 7003,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next_rechain",
+      "cut": "inflection",
+      "grain": 0.012,
+      "order": "shuffle",
+      "rotate": true,
+      "mirror": false,
+      "blend": 0.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "re-chained from its atlas: shuffled"
+ }
+]

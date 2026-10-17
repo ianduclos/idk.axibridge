@@ -1,0 +1,63 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7500,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "measure_next_duet",
+    "hand_a": "matisse",
+    "hand_b": "lichtenberg",
+    "length": 3.5,
+    "apart": 0.3,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "measure_next",
+     "cut": "inflection",
+     "grain": 0.012,
+     "plate": "taxonomy",
+     "order": "time",
+     "norm": "chord",
+     "cells": 36,
+     "families": 5,
+     "group": "hand",
+     "trace": false,
+     "hist": "none",
+     "hist_style": "steps",
+     "page": "diptych",
+     "split": 0.4,
+     "rechain": "sign",
+     "mirror": false,
+     "blend": 0.0,
+     "shadow": "none",
+     "shadow_gain": 5.0,
+     "degrees": true,
+     "explode": 0.6,
+     "cap": 2.5,
+     "label_h": 2.0,
+     "index_h": 2.0,
+     "avoid": true,
+     "drawn_by": null,
+     "straight": "rules+labels",
+     "amount": 1.5,
+     "keep": 0.006
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "measure_wire",
+  "pen": 0.4,
+  "chart_pen": 0.25
+ },
+ "label": "numbered atlas v2: a drawing of two voices (matisse + lichtenberg), specimens grouped by hand"
+}
