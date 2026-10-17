@@ -1,0 +1,54 @@
+{
+ "id": "shikasta",
+ "kind": "hand",
+ "label": "Shikasta (exercise)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hybrid_hands/grammars/shikasta.json",
+  "research_commit": "5d3cca3",
+  "description": "Shekasteh nasta'liq siyah mashq and a petition",
+  "rights": "calligraphy-harvest.csv: generative-allowed content types only",
+  "corpus": "calligraphy",
+  "training_sheets": [
+   "wc-12",
+   "wc-13",
+   "wc-15"
+  ],
+  "n_records": 740,
+  "n_strokes": 226,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "train": [
+    "wc-12",
+    "wc-13",
+    "wc-15"
+   ],
+   "excluded_measure_only": [
+    "met-450714",
+    "met-716315",
+    "wc-10",
+    "wc-17"
+   ],
+   "strokes": 226,
+   "min_len_w": 12
+  },
+  "allow_list": "every training sheet passes calligraphy.require_generative (manifest content type exercise/poetry/document, nothing to verify) and is not in script_syntax.EXCLUDE_GENERATIVE",
+  "excluded_measure_only": [
+   "met-450714",
+   "met-716315",
+   "wc-10",
+   "wc-17"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Round-8 hand (results/hybrid_hands-2026-10-16.md); the Hand Drift bench's frozen copy is identical. Line statistics only — outputs are line studies after the hand, never legible Arabic.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 15864
+}

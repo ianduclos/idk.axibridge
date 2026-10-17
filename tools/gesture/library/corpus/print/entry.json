@@ -1,0 +1,684 @@
+{
+ "id": "print",
+ "kind": "corpus",
+ "label": "print corpus (index)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "local_path": ".local/gesture/corpus/print",
+  "indexed_commit": "5d3cca3",
+  "manifests": [
+   {
+    "file": "docs/research/gesture-corpus/print-harvest.csv",
+    "rows": 127,
+    "rows_on_disk": 124,
+    "filter": null
+   }
+  ],
+  "docs": [
+   "docs/research/gesture-corpus/typography.md"
+  ],
+  "policy_source": "calligraphy.generative_allowed over the manifest content_type, minus script_syntax.EXCLUDE_GENERATIVE; docs/research/gesture-corpus/calligraphy-arabic.md 'Adopted policy'"
+ },
+ "policy": "measure-only",
+ "notes": "Arabic print books, cassette covers and fonts; no row passes the generative gate (books may hold Qur'anic/devotional text). Fonts are shaped with neutral strings only (calligraphy.NEUTRAL_STRINGS).",
+ "files": {},
+ "size_bytes": 0,
+ "counts": {
+  "files": 124,
+  "bytes": 43280799,
+  "by_extension": {
+   ".jp2": 80,
+   ".jpg": 31,
+   ".ttf": 13
+  },
+  "subfolders": {
+   "fonts": {
+    "files": 13,
+    "bytes": 3031080
+   },
+   "scans": {
+    "files": 111,
+    "bytes": 40249719
+   }
+  }
+ },
+ "items": {
+  "AF01": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AF02": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AF03": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AF04": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AF05": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AF06a": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AF06b": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AF07": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AF09": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AF11": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AF16": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0010": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0033": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0056": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0079": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0101": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0124": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0147": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0170": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0193": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0216": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0238": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0261": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0284": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0307": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0330": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0353": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0375": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0398": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0421": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL01_p0444": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0010": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0045": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0080": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0115": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0150": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0185": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0220": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0255": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0290": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0325": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0359": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0394": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0429": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0464": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0499": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0534": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0569": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0604": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0639": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL04_p0674": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0011": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0014": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0018": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0021": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0024": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0028": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0031": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0035": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0038": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0041": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0045": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0048": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0051": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0055": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0058": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0062": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0065": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0068": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0072": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL08_p0075": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0010": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0029": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0048": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0067": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0086": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0105": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0124": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0143": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0162": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0181": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0199": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0218": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0237": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0256": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0275": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0294": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0313": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0332": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0351": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AL09_p0370": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP01": {
+   "content_type": "poster",
+   "generative": false,
+   "on_disk": false
+  },
+  "AP02": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": false
+  },
+  "AP03_SMA_0171_1": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0171_2": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0171_3": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0257_1": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0257_2": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0257_3": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0326_1": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0326_2": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0326_3": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0326_4": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0444_1": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0444_2": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0444_3": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0480_1": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0480_2": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0480_3": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0513_1": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0513_2": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0513_3": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0538_1": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0538_2": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0538_3": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0671_1": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0671_2": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0708_1": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0708_2": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0708_3": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0855_1": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0855_2": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0855_3": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP03_SMA_0855_4": {
+   "content_type": "cassette",
+   "generative": false,
+   "on_disk": true
+  },
+  "AP04": {
+   "content_type": "book",
+   "generative": false,
+   "on_disk": false
+  },
+  "LF01": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  },
+  "LF02": {
+   "content_type": "font",
+   "generative": false,
+   "on_disk": true
+  }
+ },
+ "generative_items": []
+}

@@ -1,0 +1,41 @@
+{
+ "id": "bubble",
+ "kind": "hand",
+ "label": "Bubble chamber",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hybrid_hands/grammars/bubble.json",
+  "research_commit": "5d3cca3",
+  "description": "One bubble-chamber print, tiled 2x2",
+  "rights": "earth-physics-harvest.csv",
+  "corpus": "earth",
+  "training_sheets": [
+   "bc-06#00",
+   "bc-06#01",
+   "bc-06#10",
+   "bc-06#11"
+  ],
+  "n_records": 232,
+  "n_strokes": 55,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "train": [
+    "bc-06"
+   ],
+   "strokes": 55,
+   "min_len_w": 12,
+   "drawings": 4
+  }
+ },
+ "policy": "generative",
+ "notes": "Round-8 hand (results/hybrid_hands-2026-10-16.md); the Hand Drift bench's frozen copy is identical.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 6477
+}

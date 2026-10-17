@@ -86,5 +86,7 @@ Run from the repo root:
 | `panel.py` | 2 | per-drawing feature vector (the fingerprint) |
 | `medium.py` | 2 | standard preprocessing for artist comparisons: σ floor + within-hand medium projection |
 | `grammar.py` | 3 (preview) | clothoid-segment Markov grammar: learn, generate, juxtapose |
+| `kit/` | 9 | **gesture kit**: saved grammars + combinable technique modules (voice → modulators → renderer, arranged by recipe JSON); `kit.run(recipe)`, `kit.preview`, `kit.list()`. New technique = new file — contract in `gesture/kit/README.md` |
+| `../library/` | 9 | the kit's committed library: one folder per entry (`hand`, `tempo`, `corpus` index), policy-gated; regenerate seeds with `build_library.py` |
 | `experiments/` | 1–3 | bench, corpus extraction, discrimination, demos |
 | `results/` | — | committed write-ups of each experiment |

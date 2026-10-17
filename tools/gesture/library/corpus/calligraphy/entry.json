@@ -1,0 +1,235 @@
+{
+ "id": "calligraphy",
+ "kind": "corpus",
+ "label": "calligraphy corpus (index)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "local_path": ".local/gesture/corpus/calligraphy",
+  "indexed_commit": "5d3cca3",
+  "manifests": [
+   {
+    "file": "docs/research/gesture-corpus/calligraphy-harvest.csv",
+    "rows": 35,
+    "rows_on_disk": 33,
+    "filter": null
+   }
+  ],
+  "docs": [
+   "docs/research/gesture-corpus/calligraphy-arabic.md"
+  ],
+  "policy_source": "calligraphy.generative_allowed over the manifest content_type, minus script_syntax.EXCLUDE_GENERATIVE; docs/research/gesture-corpus/calligraphy-arabic.md 'Adopted policy'"
+ },
+ "policy": "measure-only",
+ "notes": "Contains Qur'anic and devotional sheets: the folder is measure-only. generative_items is the allow-list (manifest content_type exercise/poetry/document, nothing to verify, minus script_syntax.EXCLUDE_GENERATIVE). Never output legible Arabic; call outputs 'line studies after the X hand'.",
+ "files": {},
+ "size_bytes": 0,
+ "counts": {
+  "files": 33,
+  "bytes": 131194877,
+  "by_extension": {
+   ".gif": 1,
+   ".jpg": 31,
+   ".pdf": 1
+  },
+  "subfolders": {
+   ".": {
+    "files": 33,
+    "bytes": 131194877
+   }
+  }
+ },
+ "items": {
+  "aic-108853": {
+   "content_type": "album page",
+   "generative": false,
+   "on_disk": false
+  },
+  "aic-131868": {
+   "content_type": "exercise (proportion sheet)",
+   "generative": true,
+   "on_disk": false
+  },
+  "cma-1945.383.b": {
+   "content_type": "manuscript text page",
+   "generative": false,
+   "on_disk": true
+  },
+  "cma-1977.91.a": {
+   "content_type": "manuscript text page",
+   "generative": false,
+   "on_disk": true
+  },
+  "cma-1983.1115.a": {
+   "content_type": "exercise + poetry",
+   "generative": true,
+   "on_disk": true
+  },
+  "met-449533": {
+   "content_type": "tughra",
+   "generative": false,
+   "on_disk": true
+  },
+  "met-450713": {
+   "content_type": "album page",
+   "generative": false,
+   "on_disk": true
+  },
+  "met-450714": {
+   "content_type": "album page",
+   "generative": false,
+   "on_disk": true
+  },
+  "met-451802": {
+   "content_type": "ceramic (bowl)",
+   "generative": false,
+   "on_disk": true
+  },
+  "met-665823": {
+   "content_type": "composition",
+   "generative": false,
+   "on_disk": true
+  },
+  "met-716304": {
+   "content_type": "exercise",
+   "generative": true,
+   "on_disk": true
+  },
+  "met-716305": {
+   "content_type": "exercise",
+   "generative": true,
+   "on_disk": true
+  },
+  "met-716307": {
+   "content_type": "exercise",
+   "generative": true,
+   "on_disk": true
+  },
+  "met-716315": {
+   "content_type": "album page",
+   "generative": false,
+   "on_disk": true
+  },
+  "nyu-baghdadi": {
+   "content_type": "exercise (model book, 141 pp.)",
+   "generative": false,
+   "on_disk": true
+  },
+  "wal-W668-66b": {
+   "content_type": "exercise",
+   "generative": true,
+   "on_disk": true
+  },
+  "wal-W668-74b": {
+   "content_type": "exercise",
+   "generative": true,
+   "on_disk": true
+  },
+  "wal-W672-5b": {
+   "content_type": "exercise",
+   "generative": true,
+   "on_disk": true
+  },
+  "wal-W672-6a": {
+   "content_type": "exercise",
+   "generative": true,
+   "on_disk": true
+  },
+  "wc-05": {
+   "content_type": "document",
+   "generative": true,
+   "on_disk": true
+  },
+  "wc-06": {
+   "content_type": "document (ferman)",
+   "generative": true,
+   "on_disk": true
+  },
+  "wc-10": {
+   "content_type": "album page",
+   "generative": false,
+   "on_disk": true
+  },
+  "wc-12": {
+   "content_type": "exercise",
+   "generative": true,
+   "on_disk": true
+  },
+  "wc-13": {
+   "content_type": "exercise",
+   "generative": true,
+   "on_disk": true
+  },
+  "wc-15": {
+   "content_type": "document (petition)",
+   "generative": true,
+   "on_disk": true
+  },
+  "wc-17": {
+   "content_type": "album page",
+   "generative": false,
+   "on_disk": true
+  },
+  "wc-19": {
+   "content_type": "album/manuscript page",
+   "generative": false,
+   "on_disk": true
+  },
+  "wc-22": {
+   "content_type": "manuscript page",
+   "generative": false,
+   "on_disk": true
+  },
+  "wc-24": {
+   "content_type": "album page",
+   "generative": false,
+   "on_disk": true
+  },
+  "wc-30": {
+   "content_type": "document (treaty)",
+   "generative": false,
+   "on_disk": true
+  },
+  "wc-32": {
+   "content_type": "manuscript page",
+   "generative": false,
+   "on_disk": true
+  },
+  "wc-33": {
+   "content_type": "manuscript page",
+   "generative": false,
+   "on_disk": true
+  },
+  "wc-35": {
+   "content_type": "diagram",
+   "generative": false,
+   "on_disk": true
+  },
+  "wc-37": {
+   "content_type": "devotional (verify)",
+   "generative": false,
+   "on_disk": true
+  },
+  "wc-39": {
+   "content_type": "album page",
+   "generative": false,
+   "on_disk": true
+  }
+ },
+ "generative_items": [
+  "aic-131868",
+  "cma-1983.1115.a",
+  "met-716304",
+  "met-716305",
+  "met-716307",
+  "wal-W668-66b",
+  "wal-W668-74b",
+  "wal-W672-5b",
+  "wal-W672-6a",
+  "wc-05",
+  "wc-06",
+  "wc-12",
+  "wc-13",
+  "wc-15"
+ ]
+}

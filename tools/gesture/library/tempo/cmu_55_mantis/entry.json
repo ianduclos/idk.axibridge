@@ -1,0 +1,30 @@
+{
+ "id": "cmu_55_mantis",
+ "kind": "tempo",
+ "label": "CMU 55_13 praying mantis",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "source": "dance/cmu-55/55_13.amc",
+  "effector": "rhand",
+  "window_s": [
+   10.0,
+   49.99166666666667
+  ],
+  "fps": 120.00000000000682,
+  "frames": 4800,
+  "pauses": 3,
+  "corpus": "dance",
+  "rights": "CMU terms (as cmu-05)",
+  "description": "CMU mocap subject 55 trial 13, right hand",
+  "made_by": "experiments/gesture_timing.take_timing → gesture_timing.timing_from_motion",
+  "research_commit": "5d3cca3"
+ },
+ "policy": "generative",
+ "notes": "A dancer's timing over a window (speed, wrist angle, lateral residual, jerk, pauses); time is the only axis. Loads as gesture_timing.Timing (results/gesture_timing-2026-10-16.md).",
+ "files": {
+  "profile": "profile.npz",
+  "sheet": "sheet.json.gz"
+ },
+ "size_bytes": 156042
+}

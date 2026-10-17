@@ -1,0 +1,37 @@
+{
+ "id": "matisse",
+ "kind": "corpus",
+ "label": "matisse corpus (index)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "local_path": ".local/gesture/corpus/matisse",
+  "indexed_commit": "5d3cca3",
+  "manifests": [
+   {
+    "file": "docs/research/gesture-corpus/matisse-smk.csv",
+    "rows": 31,
+    "rows_on_disk": 31,
+    "filter": null
+   }
+  ],
+  "docs": []
+ },
+ "policy": "generative",
+ "notes": "SMK prints/drawings; public domain mark.",
+ "files": {},
+ "size_bytes": 0,
+ "counts": {
+  "files": 31,
+  "bytes": 178712118,
+  "by_extension": {
+   ".jpg": 31
+  },
+  "subfolders": {
+   ".": {
+    "files": 31,
+    "bytes": 178712118
+   }
+  }
+ }
+}
