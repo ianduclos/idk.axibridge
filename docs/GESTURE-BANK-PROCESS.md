@@ -147,6 +147,8 @@ library".
   generation source (the library's policy gate and `calligraphy.require_generative`
   enforce it); never output legible Arabic. A sheet that opens with a
   devotional invocation is measure-only.
+- **Abstract script is never legible in any script**, Latin included; a page
+  with an Arabic look gets a human reader's check before it is kept.
 - **Licences** are recorded, not used as a filter (private research); every
   download still needs Ian's go (name, source, size). No CAPTCHAs.
 - **Taste** (from Ian's notes; details in the review files):
@@ -181,6 +183,7 @@ library".
 | Round 9 | Corpus voices, machine/diagram voices, prosody, polyphonic sheets, built into the kit; Ian: "save the methods" of the two-voice and danced-chain recipes | `round9-2026-10-17.md`, `round9-review-2026-10-17.md` |
 | Round 10 + Studies | Gesture Studies bench in the app (8 studies, Hand Drift first; new hands flow in on refreeze); explorations: drawing + its measurement (numbered atlas, merged shadow), developments (beads, rare machine events, chorus), combination search (proxy AUC 0.87 / 0.61) | `round10-2026-10-17.md`, [studies spec](superpowers/specs/2026-10-17-gesture-studies.md) |
 | Studies v2 | Seven studies from the round-10 review (numbered atlas, dance atlas, margin chart, merged shadow, chorus kept as a pen-per-voice group, sampler, ledger with straight lines); edits stay pinned; exact clothoid memos (~1.45×) | [studies spec](superpowers/specs/2026-10-17-gesture-studies.md) "Studies v2" |
+| Round 11 | Emphasis on hands: 20 new hands (rivers at three zooms + a braid voice; leaf-miner, beetle, slime, borer, oak-net, grazer and particle-track trails; two fly hands from mosca-draw's simulated walks; six per-dancer hands, barely distinguishable); smooth swelling into round mass (drop/press/lens), deliberate dot shapes, bold single gestures; solid abstract script (joining decides it; weight window 0.25–0.42 band cover); measurement versions (taxonomy plate, specimens re-chained into a second drawing); refreeze to 44 hands; ten new corpora approved for download | `round11-2026-10-17.md`, review page in `HANDOFF.md` |
 
 ### Turns in direction (Ian's words)
 
@@ -194,6 +197,10 @@ library".
   yet strange in themselves." (round 8 review)
 - "These feel like pieces … save these, each with its own relevant parameters,
   still able to have dynamism, and develop on top." (round 9 review)
+- "Curiously I dig the unbred ones more. It's like these are collapsing into a
+  style." (round 10 review)
+- "An experimental approach, this is the most important" and "return more
+  emphasis to the different hands." (round 11 brief)
 
 ---
 
@@ -212,3 +219,20 @@ library".
   the ones he passed over. In the round-10 review he liked most of the proxy's
   bottom picks too, and preferred unbred samples: breeding toward a score
   collapses variety into one style. Sample widely; let Ian pick.
+- A new corpus becomes a hand only at the right scale: rivers are distinct at
+  the zoom where they fall into the human band, trails only from a coarse
+  centre-line (plain extraction gave nothing on bark and fossils). Measure
+  distinctness against the whole library before claiming a hand is new.
+- Not every source is a hand: six dancers measured as two families, because
+  the instruction outweighs the dancer. A negative result like that is worth
+  keeping.
+- Weight is not solidity: abstract script reads as writing when it is joined;
+  more ink past half the band closes the counters and turns blocky.
+- Smooth and round are compatible only if the slow part of a swell stays at
+  line width; a symmetric swell turns into a sausage past one head diameter.
+- Legibility slips in sideways: small-arch hands drift toward Latin cursive
+  ("Don…", "bit"), and OCR misses what the eye catches. Check every script
+  page by eye, in Latin as well as Arabic.
+- An app build can change shared research modules while research agents run,
+  if every change is default-preserving and parity-checked (the clothoid memos
+  were bit-identical on every fixture).

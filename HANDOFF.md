@@ -4,12 +4,12 @@ updated: 2026-10-17
 entries: 31
 ---
 
-### Gesture bank: Studies v2 + round 11 (planned) — opened 2026-10-16, owner: claude (next session)
+### Gesture bank: round 11 review (awaiting Ian's notes) — opened 2026-10-16, owner: claude (next session)
 
-- done: Rounds 8–10, each with a review page and a review record of Ian's notes vs the lead's reads (`tools/gesture/results/round*-review-2026-10-17.md`); gesture kit + library; Gesture Studies in the app (6f5511d: 8 studies; Ian kept Hand Drift and Drawing and its measure). Round-10 review done (b42fd67). Process: `docs/GESTURE-BANK-PROCESS.md`.
-- next: In a fresh session, run `docs/superpowers/plans/2026-10-17-round11-plan.md`: A) Studies v2 — measurement pairs (atlas pairing kept exactly as is), chorus with multiple pens (decide one-layer-per-pen first, with Ian), sampler study (unbred), ledger with straight lines; B) round 11 explorations with risks — new hands from unused corpora (Amazon rivers as a hand, insect/leaf-miner/slime trails, per-dancer, Diwani if policy allows), swelling into mass, solid abstract script, measurement next versions.
-- blockers: none. Open: Shape atlas study ~60 s with a hand; Resume re-pins on first edit; native window not checked; Pi clone not synced. New corpus downloads need Ian's go each.
-- context: [plan](docs/superpowers/plans/2026-10-17-round11-plan.md), [process](docs/GESTURE-BANK-PROCESS.md), [round 10 review](tools/gesture/results/round10-review-2026-10-17.md), [studies spec](docs/superpowers/specs/2026-10-17-gesture-studies.md), review pages: r10 https://claude.ai/artifact/2HcJTktg4ZFLu3Megpjc6w, r9 https://claude.ai/artifact/4Z61rcGvWnEAsEuczdNmLv, r8 https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY.
+- done: Studies v2 in the app (346efc5, 7b27f28: 15 studies — numbered atlas verbatim, dance atlas, margin chart, merged shadow, chorus kept as a pen-per-voice group, sampler, ledger with straight lines; edits stay pinned, "Update to current library" re-pins). Round 11 explorations committed (8583282 rivers, e399fda trails/flies/dancers, af5b26f swell, cf80bdf script, 8ee6c6d measurement versions); refreeze f4c291d (44 hands). Summary `tools/gesture/results/round11-2026-10-17.md`; process doc updated.
+- next: Read Ian's notes on the round-11 review page with ArtifactData (collection `notes`), write `tools/gesture/results/round11-review-*.md` comparing his notes with the lead's reads BEFORE acting, then keep → studies / round 12. Round 12 candidates: learn hands from the approved downloads (manifest `docs/research/gesture-corpus/round11-harvest.*`), the Arabic OCR check on script A, the fly hands and braid in combinations.
+- blockers: none. Open: restart AxiBridge to see Studies v2 (static_dist not rebuilt by the agents; run `npm run build` first); Shape atlas still ~50 s; chorus Keep adds Flexoki pens to the pen library (Ian's choice); one pre-existing UI test failure (`test_failed_pen_commit_keeps_draft_for_retry`) not re-verified; native window not checked; Pi clone not synced.
+- context: [round 11](tools/gesture/results/round11-2026-10-17.md), [process](docs/GESTURE-BANK-PROCESS.md), [studies spec](docs/superpowers/specs/2026-10-17-gesture-studies.md), review pages: r11 https://claude.ai/artifact/RKPordy71hTdUzttTgmjNj, r10 https://claude.ai/artifact/2HcJTktg4ZFLu3Megpjc6w, r9 https://claude.ai/artifact/4Z61rcGvWnEAsEuczdNmLv, r8 https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 
