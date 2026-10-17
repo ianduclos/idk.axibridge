@@ -1,0 +1,38 @@
+{
+ "kit": 1,
+ "frame": [
+  180.0,
+  130.0
+ ],
+ "seed": 7200,
+ "margin": null,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "trail_miner",
+    "length": 3.5,
+    "joins": "smooth"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "trail_gallery",
+  "pen": 0.3,
+  "w0": 0.3,
+  "w1": 3.2,
+  "grow": 1.8,
+  "chamber": 2.2,
+  "ramp": 1.5,
+  "fill": "chamber",
+  "solid_from": 0.85,
+  "frass": "line",
+  "mother_w": 1.2,
+  "pitch": 0.85
+ },
+ "label": "Leaf miner gallery (study default: trail_miner, seed 7200)"
+}

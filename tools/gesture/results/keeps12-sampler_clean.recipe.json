@@ -1,0 +1,313 @@
+{
+ "title": "Sampler v2 \u2014 Keep it clean off / on (seeds 19 and 30, current library)",
+ "cells": {
+  "seed 19, clean off": {
+   "kit": 1,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 19,
+   "margin": null,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift",
+      "hands": [
+       "dance_staccato",
+       "trail_grazer",
+       "mime_roadrunner"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 4.8,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "timing",
+       "tempo": "staccato",
+       "amount": 1.15,
+       "wrist_nib": true,
+       "mass_width": 8.6,
+       "pen": 0.4,
+       "jitter_gain": 1.0,
+       "q_mass": 6.0
+      }
+     ],
+     "renderer": {
+      "id": "nib",
+      "style": "c+e",
+      "pen": 0.4
+     },
+     "label": "heavy"
+    },
+    {
+     "voice": {
+      "id": "machine",
+      "grammar": "ruler",
+      "hand": "marden",
+      "length": 3.1,
+      "unit": 0.035,
+      "source_part": null,
+      "k": 5,
+      "angle": 72.0,
+      "rules": "L=LSR,R=RRS,S=SL",
+      "depth": 2,
+      "overshoot": 0.25
+     },
+     "modulators": [
+      {
+       "id": "wire"
+      }
+     ],
+     "renderer": {
+      "id": "wire",
+      "pen": 0.27
+     },
+     "label": "wire"
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "seed 19, clean off"
+  },
+  "seed 19, clean on": {
+   "kit": 1,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 19,
+   "margin": null,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift",
+      "hands": [
+       "dance_staccato",
+       "trail_grazer",
+       "mime_roadrunner"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 4.8,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "timing",
+       "tempo": "staccato",
+       "amount": 1.15,
+       "wrist_nib": true,
+       "mass_width": 8.6,
+       "pen": 0.4,
+       "jitter_gain": 1.0,
+       "q_mass": 6.0
+      }
+     ],
+     "renderer": {
+      "id": "nib",
+      "style": "c+e",
+      "pen": 0.4
+     },
+     "label": "heavy"
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "marden",
+      "length": 3.1,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "wire"
+      }
+     ],
+     "renderer": {
+      "id": "wire",
+      "pen": 0.27
+     },
+     "label": "wire"
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "seed 19, clean on"
+  },
+  "seed 30, clean off": {
+   "kit": 1,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 30,
+   "margin": null,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift",
+      "hands": [
+       "dancer_amber",
+       "matisse"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 5.1,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "constant",
+       "r": null,
+       "phi": null,
+       "W": 2.2,
+       "M": 6.6
+      },
+      {
+       "id": "field",
+       "preset": "radial",
+       "scale": 0.14,
+       "amount": 0.82,
+       "smooth": null,
+       "seed_offset": 0
+      },
+      {
+       "id": "annotate",
+       "chart": "atlas",
+       "rows": 4,
+       "label_h": 2.2,
+       "drawn_by": null,
+       "amount": 1.5,
+       "keep": 0.006,
+       "layout": "right",
+       "split": 0.44,
+       "gap": 1.54,
+       "gain": 2.49
+      }
+     ],
+     "renderer": {
+      "id": "nib",
+      "style": "e",
+      "pen": 0.4
+     },
+     "label": "heavy"
+    },
+    {
+     "voice": {
+      "id": "dance",
+      "trail": "particles",
+      "effectors": "rhand",
+      "t0": 14.9,
+      "seconds": 10.1,
+      "cut": "phrase"
+     },
+     "modulators": [
+      {
+       "id": "wire"
+      }
+     ],
+     "renderer": {
+      "id": "wire",
+      "pen": 0.33
+     },
+     "label": "wire"
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "seed 30, clean off"
+  },
+  "seed 30, clean on": {
+   "kit": 1,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 30,
+   "margin": null,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift",
+      "hands": [
+       "dancer_amber",
+       "matisse"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 5.1,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "constant",
+       "r": null,
+       "phi": null,
+       "W": 2.2,
+       "M": 6.6
+      },
+      {
+       "id": "field",
+       "preset": "radial",
+       "scale": 0.14,
+       "amount": 0.82,
+       "smooth": null,
+       "seed_offset": 0
+      }
+     ],
+     "renderer": {
+      "id": "nib",
+      "style": "e",
+      "pen": 0.4
+     },
+     "label": "heavy"
+    },
+    {
+     "voice": {
+      "id": "dance",
+      "trail": "particles",
+      "effectors": "rhand",
+      "t0": 14.9,
+      "seconds": 10.1,
+      "cut": "phrase"
+     },
+     "modulators": [
+      {
+       "id": "wire"
+      }
+     ],
+     "renderer": {
+      "id": "wire",
+      "pen": 0.33
+     },
+     "label": "wire"
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "seed 30, clean on"
+  }
+ }
+}

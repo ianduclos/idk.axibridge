@@ -1,0 +1,64 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7100,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "dance",
+    "trail": "mantis",
+    "effectors": "all",
+    "t0": 0.0,
+    "seconds": 20.0,
+    "cut": "phrase"
+   },
+   "modulators": [
+    {
+     "id": "measure_next",
+     "cut": "pause",
+     "grain": 0.01,
+     "plate": "grid",
+     "order": "time",
+     "norm": "chord",
+     "cells": 30,
+     "families": 5,
+     "group": "shape",
+     "trace": false,
+     "hist": "none",
+     "hist_style": "steps",
+     "page": "triptych",
+     "split": 0.34,
+     "rechain": "match",
+     "mirror": false,
+     "blend": 0.0,
+     "shadow": "none",
+     "shadow_gain": 5.0,
+     "degrees": true,
+     "explode": 0.6,
+     "cap": 2.5,
+     "label_h": 1.8,
+     "index_h": 1.7,
+     "avoid": true,
+     "numbers": "none",
+     "drawn_by": null,
+     "straight": "rules+labels",
+     "amount": 1.5,
+     "keep": 0.006
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "measure_wire",
+  "pen": 0.4,
+  "chart_pen": 0.25
+ },
+ "label": "Dance, atlas, one line \u2014 Numbers on the drawings: none"
+}

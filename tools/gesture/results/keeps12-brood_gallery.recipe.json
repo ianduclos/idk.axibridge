@@ -1,0 +1,89 @@
+{
+ "title": "Brood gallery \u2014 study default (tile 4) and tile 5 through the controls",
+ "cells": {
+  "default: mother trail_grazer, 14 larvae dancer_cristel, seed 7303": {
+   "kit": 1,
+   "frame": [
+    180.0,
+    130.0
+   ],
+   "seed": 7303,
+   "margin": null,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "trail_brood",
+      "mother": "trail_grazer",
+      "larvae": "dancer_cristel",
+      "mother_length": 0.8,
+      "larva_length": 0.3,
+      "count": 14,
+      "fan": 40.0,
+      "straighten": 0.85
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "trail_gallery",
+    "pen": 0.3,
+    "w0": 0.3,
+    "w1": 1.6,
+    "grow": 1.6,
+    "chamber": 2.0,
+    "ramp": 1.5,
+    "fill": "chamber",
+    "solid_from": 0.85,
+    "frass": "line",
+    "mother_w": 1.2,
+    "pitch": 0.85
+   },
+   "label": "default: mother trail_grazer, 14 larvae dancer_cristel, seed 7303"
+  },
+  "tile 5: mother trail_tracks, 12 larvae fly_fru, seed 7304": {
+   "kit": 1,
+   "frame": [
+    180.0,
+    130.0
+   ],
+   "seed": 7304,
+   "margin": null,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "trail_brood",
+      "mother": "trail_tracks",
+      "larvae": "fly_fru",
+      "mother_length": 0.8,
+      "larva_length": 0.3,
+      "count": 12,
+      "fan": 40.0,
+      "straighten": 0.85
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "trail_gallery",
+    "pen": 0.3,
+    "w0": 0.3,
+    "w1": 1.6,
+    "grow": 1.6,
+    "chamber": 2.0,
+    "ramp": 1.5,
+    "fill": "chamber",
+    "solid_from": 0.85,
+    "frass": "line",
+    "mother_w": 1.2,
+    "pitch": 0.85
+   },
+   "label": "tile 5: mother trail_tracks, 12 larvae fly_fru, seed 7304"
+  }
+ }
+}

@@ -1,0 +1,51 @@
+{
+ "script": "tools/gesture/experiments/keeps12_river_belt.py",
+ "hand_recipe": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 12407,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_belt",
+     "length": 8.0,
+     "joins": "smooth"
+    }
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  }
+ },
+ "step_mm": 0.25,
+ "variants": [
+  {
+   "label": "the hand as learned (river_belt, 8 R)",
+   "gain": null,
+   "pull": null
+  },
+  {
+   "label": "belt: gain 1.0, pull 0.15",
+   "gain": 1.0,
+   "pull": 0.15
+  },
+  {
+   "label": "belt: gain 1.8, pull 0.25 (tighter)",
+   "gain": 1.8,
+   "pull": 0.25
+  },
+  {
+   "label": "belt: gain 2.6, pull 0.35 (tightest)",
+   "gain": 2.6,
+   "pull": 0.35
+  }
+ ]
+}

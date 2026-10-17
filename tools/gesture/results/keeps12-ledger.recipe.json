@@ -1,0 +1,101 @@
+{
+ "title": "Ledger v2 \u2014 default: plain text, every rule drawn \u00b7 option frame+text: top and bottom straight",
+ "cells": {
+  "default: straight = text": {
+   "kit": 1,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 7200,
+   "margin": 8.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 5.0,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "measure_pair",
+       "chart": "ledger",
+       "layout": "diptych",
+       "split": 0.45,
+       "index": 9,
+       "index_by": "peaks",
+       "rows": 5,
+       "cells": 24,
+       "order": "time",
+       "label_h": 2.2,
+       "index_h": 2.2,
+       "drawn_by": "matisse",
+       "amount": 1.5,
+       "keep": 0.006,
+       "straight": "text",
+       "straight_share": 0.0
+      }
+     ]
+    }
+   ],
+   "renderer": {
+    "id": "measure_wire",
+    "pen": 0.4,
+    "chart_pen": 0.25
+   },
+   "label": "default: straight = text"
+  },
+  "straight = frame+text": {
+   "kit": 1,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 7200,
+   "margin": 8.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 5.0,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "measure_pair",
+       "chart": "ledger",
+       "layout": "diptych",
+       "split": 0.45,
+       "index": 9,
+       "index_by": "peaks",
+       "rows": 5,
+       "cells": 24,
+       "order": "time",
+       "label_h": 2.2,
+       "index_h": 2.2,
+       "drawn_by": "matisse",
+       "amount": 1.5,
+       "keep": 0.006,
+       "straight": "frame+text",
+       "straight_share": 0.0
+      }
+     ]
+    }
+   ],
+   "renderer": {
+    "id": "measure_wire",
+    "pen": 0.4,
+    "chart_pen": 0.25
+   },
+   "label": "straight = frame+text"
+  }
+ }
+}

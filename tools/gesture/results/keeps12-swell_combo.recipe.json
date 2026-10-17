@@ -1,0 +1,190 @@
+{
+ "title": "Dry line, swelling answer (two pens) \u00b7 Swell sentence \u2014 both defaults",
+ "cells": {
+  "Dry line, swelling answer (black + red voices, shown in one ink)": {
+   "kit": 1,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 7700,
+   "margin": null,
+   "arranger": {
+    "id": "dev_chorus",
+    "answer_to": "all",
+    "listen_by": "space",
+    "radius": 14.0,
+    "answer": 0.8,
+    "delay": 0.05,
+    "window": 0.012,
+    "layout": "single",
+    "inks": "black,red",
+    "voices": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 1.6,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 0.6,
+       "gap": 40.0,
+       "unit": "pulse",
+       "span": 8.0,
+       "lead": 0.0,
+       "primary": 0.5,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "wire",
+      "pen": 0.4
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "shikasta",
+      "length": 1.2,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 0.5,
+       "gap": 40.0,
+       "unit": "pulse",
+       "span": 8.0,
+       "lead": 0.0,
+       "primary": 0.5,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "swell",
+      "profile": "drop",
+      "at": "peak",
+      "line": "wire",
+      "pen": 0.5,
+      "thr": 0.15,
+      "size": 14.0,
+      "length_gain": 0.25,
+      "length": 1.0,
+      "k_head": 0.75,
+      "tail": 40.0,
+      "tail_w": 2.2,
+      "carry": 0.45,
+      "sag": 0.7,
+      "lobes": 3,
+      "pitch": 0.85,
+      "dots": "none",
+      "dot_shape": "disc",
+      "dot_size": 6.0,
+      "dot_gap": 24.0,
+      "dot_scale": 2.0
+     }
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "Dry line, swelling answer (black + red voices, shown in one ink)"
+  },
+  "Swell sentence: full stops, drops inside the phrases": {
+   "kit": 1,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 7000,
+   "margin": null,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "matisse",
+       "shikasta",
+       "lichtenberg"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 0.5,
+       "gap": 35.0,
+       "unit": "segment",
+       "span": 8.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ]
+    }
+   ],
+   "renderer": {
+    "id": "swell_dots",
+    "rule": "fullstop",
+    "sizes": "",
+    "shape_L": "ring",
+    "shape_s": "disc",
+    "line": "swell",
+    "swell_profile": "drop",
+    "swell_size": 8.0,
+    "pen": 0.4,
+    "size": 6.5,
+    "medium": 0.68,
+    "small": 0.4,
+    "gap": 18.0,
+    "scale": 5.0,
+    "period": 16.0,
+    "phrase": 70.0,
+    "space": 9.0,
+    "decel_n": 6,
+    "decel_q": 0.68,
+    "thr": 0.15,
+    "hole": 0.45,
+    "pitch": 0.85,
+    "wobble": 0.05
+   },
+   "label": "Swell sentence: full stops, drops inside the phrases"
+  }
+ }
+}
