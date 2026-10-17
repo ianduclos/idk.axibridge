@@ -42,8 +42,8 @@ always a control.
 The app never reads `tools/` or `.local/`. The kit modules the built-in
 studies need are frozen into `axibridge/sources/_gesture_studies/kit/` (same
 discipline as `_hand_drift`: header with the research commit, a freeze script
-in `tools/gesture_studies/freeze.py`, numpy/scipy/shapely only, frozen library
-entries for the hands/tempos/trails the studies use). Freeze from the committed
+in `tools/gesture_studies/freeze.py`, numpy/scipy/shapely only, every
+generative library hand/tempo/trail frozen — see below). Freeze from the committed
 HEAD, never from files being edited. Same recipe ⇒ same paths as the research
 kit (parity test).
 
