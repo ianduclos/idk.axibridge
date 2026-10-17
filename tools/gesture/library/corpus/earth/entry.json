@@ -6,7 +6,7 @@
  "created": "2026-10-17",
  "provenance": {
   "local_path": ".local/gesture/corpus/earth",
-  "indexed_commit": "5d3cca3",
+  "indexed_commit": "d698db8",
   "manifests": [
    {
     "file": "docs/research/gesture-corpus/earth-physics-harvest.csv",
@@ -24,13 +24,14 @@
  "files": {},
  "size_bytes": 0,
  "counts": {
-  "files": 132,
-  "bytes": 840879281,
+  "files": 169,
+  "bytes": 1072933897,
   "by_extension": {
    ".cpg": 6,
    ".dbf": 6,
-   ".jpeg": 1,
-   ".jpg": 38,
+   ".h5": 2,
+   ".jpeg": 3,
+   ".jpg": 68,
    ".json": 1,
    ".md": 1,
    ".mseed": 5,
@@ -40,7 +41,7 @@
    ".shp": 6,
    ".shx": 6,
    ".tfw": 6,
-   ".tif": 17,
+   ".tif": 20,
    ".txt": 5,
    ".xlsx": 1,
    ".xml": 18,
@@ -163,6 +164,10 @@
     "files": 6,
     "bytes": 51383602
    },
+   "iceland-analog-seismograms": {
+    "files": 32,
+    "bytes": 107877633
+   },
    "insect-01": {
     "files": 1,
     "bytes": 6914190
@@ -251,6 +256,10 @@
     "files": 3,
     "bytes": 30548784
    },
+   "s2-18MUC-20240731-pastaza": {
+    "files": 3,
+    "bytes": 28784559
+   },
    "s2-19MDN-20210802": {
     "files": 3,
     "bytes": 29177632
@@ -278,6 +287,10 @@
    "usgs-pp422h-langbein-leopold": {
     "files": 1,
     "bytes": 666120
+   },
+   "zenodo-5017751-fly": {
+    "files": 2,
+    "bytes": 95392424
    }
   }
  }

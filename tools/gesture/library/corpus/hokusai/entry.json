@@ -6,7 +6,7 @@
  "created": "2026-10-17",
  "provenance": {
   "local_path": ".local/gesture/corpus/hokusai",
-  "indexed_commit": "5d3cca3",
+  "indexed_commit": "d698db8",
   "manifests": [
    {
     "file": "docs/research/gesture-corpus/comparison-met.csv",

@@ -86,8 +86,9 @@ CORPORA = {
     "hokusai": ("comparison-met.csv", ("artist", "hokusai"), None, "generative", "Met Open Access (CC0) sketches."),
     "ingres": ("comparison-met.csv", ("artist", "ingres"), None, "generative", "Met Open Access (CC0) drawings."),
     "artists": ("artists-harvest.csv", None, "artists-line.md", "generative",
-                "Marden, Cohen, Molnar, Nake, Noll, Henry, Kelly. Several in copyright: private research only, "
-                "never published as training material."),
+                "Marden, Cohen, Molnar, Nake, Noll, Henry, Kelly; Picasso line drawings (round 11); Oehlen works on "
+                "paper (round 12, albert_oehlen/, manifest oehlen-works-on-paper.csv). Several in copyright: "
+                "private research only, never published as training material."),
     "calligraphy": ("calligraphy-harvest.csv", None, "calligraphy-arabic.md", "measure-only",
                     "Contains Qur'anic and devotional sheets: the folder is measure-only. generative_items is the "
                     "allow-list (manifest content_type exercise/poetry/document, nothing to verify, minus "
@@ -101,6 +102,11 @@ CORPORA = {
               "here."),
     "earth": ("earth-physics-harvest.csv", None, "earth-physics-lines.md", "generative",
               "Bubble-chamber prints, Lichtenberg figures, rivers (GRWL), cloud-chamber tracks."),
+    "animal": ("round11-harvest.csv", ("group", "animal"), "round11-harvest.md", "generative",
+               "Movement tracks: LifeTrack white stork and tropicbird GPS (Movebank, CC0), GeoLife (zipped). "
+               "Used as drivers (round 12), not as hands."),
+    "fabric": ("round11-harvest.csv", ("group", "fabric"), "round11-harvest.md", "generative",
+               "Fabric Stain Dataset (466 photos + annotations): a mass-edge corpus (wicking fronts, tide lines)."),
 }
 
 

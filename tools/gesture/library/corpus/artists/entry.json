@@ -6,7 +6,7 @@
  "created": "2026-10-17",
  "provenance": {
   "local_path": ".local/gesture/corpus/artists",
-  "indexed_commit": "5d3cca3",
+  "indexed_commit": "d698db8",
   "manifests": [
    {
     "file": "docs/research/gesture-corpus/artists-harvest.csv",
@@ -20,19 +20,23 @@
   ]
  },
  "policy": "generative",
- "notes": "Marden, Cohen, Molnar, Nake, Noll, Henry, Kelly. Several in copyright: private research only, never published as training material.",
+ "notes": "Marden, Cohen, Molnar, Nake, Noll, Henry, Kelly; Picasso line drawings (round 11); Oehlen works on paper (round 12, albert_oehlen/, manifest oehlen-works-on-paper.csv). Several in copyright: private research only, never published as training material.",
  "files": {},
  "size_bytes": 0,
  "counts": {
-  "files": 32,
-  "bytes": 11502719,
+  "files": 95,
+  "bytes": 56802727,
   "by_extension": {
-   ".jpg": 32
+   ".jpg": 95
   },
   "subfolders": {
    "a_michael_noll": {
     "files": 3,
     "bytes": 1329957
+   },
+   "albert_oehlen": {
+    "files": 30,
+    "bytes": 41675972
    },
    "brice_marden": {
     "files": 12,
@@ -61,6 +65,10 @@
    "nake_frieder": {
     "files": 1,
     "bytes": 649954
+   },
+   "picasso-museu-barcelona": {
+    "files": 33,
+    "bytes": 3624036
    },
    "vera_molnar": {
     "files": 1,
