@@ -1,0 +1,52 @@
+{
+ "id": "trail_borer",
+ "kind": "hand",
+ "label": "Trail: wood-borer galleries",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_trails/grammars/trail_borer.json",
+  "research_commit": "0dc1785",
+  "description": "metallic wood-boring beetle galleries under bark, coarse scale (galleries mixed with grain)",
+  "rights": "insect-08: CC BY-SA 4.0 (Commons licence tag; candidate CSV: CC BY-SA 4.0)",
+  "corpus": "earth",
+  "training_sheets": [
+   "borer@coarse"
+  ],
+  "n_records": 36,
+  "n_strokes": 14,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 1,
+   "extracts": [
+    "borer@coarse"
+   ],
+   "kind": "trail",
+   "sources": [
+    "borer@coarse"
+   ],
+   "strokes": 14,
+   "records": 36,
+   "min_len_w": 12,
+   "drawings": 1,
+   "secs": 0.1
+  },
+  "experiment": "tools/gesture/experiments/hands_trails.py learn",
+  "earth_items": [
+   "insect-08"
+  ],
+  "extracts": [
+   "borer@coarse"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_trails hand (results/hands_trails-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 2631
+}

@@ -1,0 +1,52 @@
+{
+ "id": "trail_beetle",
+ "kind": "hand",
+ "label": "Trail: bark-beetle gallery",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_trails/grammars/trail_beetle.json",
+  "research_commit": "0dc1785",
+  "description": "a didactic wall relief after a bark-beetle gallery (mother gallery + larval galleries); made by people after the insect, so second-hand",
+  "rights": "insect-03: CC BY-SA 2.0 (Commons licence tag; candidate CSV: CC BY-SA 2.0)",
+  "corpus": "earth",
+  "training_sheets": [
+   "beetle_didactic"
+  ],
+  "n_records": 52,
+  "n_strokes": 7,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 1,
+   "extracts": [
+    "beetle_didactic"
+   ],
+   "kind": "trail",
+   "sources": [
+    "beetle_didactic"
+   ],
+   "strokes": 7,
+   "records": 52,
+   "min_len_w": 12,
+   "drawings": 1,
+   "secs": 0.2
+  },
+  "experiment": "tools/gesture/experiments/hands_trails.py learn",
+  "earth_items": [
+   "insect-03"
+  ],
+  "extracts": [
+   "beetle_didactic"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_trails hand (results/hands_trails-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 2695
+}

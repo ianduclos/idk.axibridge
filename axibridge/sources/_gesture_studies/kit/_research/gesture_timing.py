@@ -1,4 +1,4 @@
-# FROZEN from research commit 4aa0ed1: tools/gesture/gesture/gesture_timing.py
+# FROZEN from research commit 6332b35: tools/gesture/gesture/gesture_timing.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Gesture timing → line texture: the dance corpus as DYNAMICS, not geometry.
 

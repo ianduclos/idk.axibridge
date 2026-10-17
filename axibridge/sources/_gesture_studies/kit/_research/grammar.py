@@ -1,4 +1,4 @@
-# FROZEN from research commit 4aa0ed1: tools/gesture/gesture/grammar.py
+# FROZEN from research commit 6332b35: tools/gesture/gesture/grammar.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Clothoid-alphabet grammar v2: learn a hand from long lines, draw long lines.
 

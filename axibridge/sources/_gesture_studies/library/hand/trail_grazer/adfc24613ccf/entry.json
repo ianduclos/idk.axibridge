@@ -1,0 +1,62 @@
+{
+ "id": "trail_grazer",
+ "kind": "hand",
+ "label": "Trail: grazing trace fossils",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_trails/grammars/trail_grazer.json",
+  "research_commit": "0dc1785",
+  "description": "Helminthoida, Nereites, Paleodictyon relief photographs read as gradient-energy bands",
+  "rights": "trace-helminthoida-carnero: CC BY-SA 3.0 (Commons licence tag; candidate CSV: CC BY-SA 3.0); trace-nereites-cymru: CC BY-SA 4.0 (Commons licence tag; candidate CSV: CC BY-SA 4.0); trace-paleodictyon-I01: CC BY-SA 3.0 (Commons licence tag; candidate CSV: CC BY-SA 3.0)",
+  "corpus": "earth",
+  "training_sheets": [
+   "helminthoida@relief",
+   "nereites@relief",
+   "paleodictyon@relief"
+  ],
+  "n_records": 56,
+  "n_strokes": 20,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 1,
+   "extracts": [
+    "helminthoida@relief",
+    "nereites@relief",
+    "paleodictyon@relief"
+   ],
+   "kind": "trail",
+   "sources": [
+    "helminthoida@relief",
+    "nereites@relief",
+    "paleodictyon@relief"
+   ],
+   "strokes": 20,
+   "records": 56,
+   "min_len_w": 12,
+   "drawings": 3,
+   "secs": 0.1
+  },
+  "experiment": "tools/gesture/experiments/hands_trails.py learn",
+  "earth_items": [
+   "trace-helminthoida-carnero",
+   "trace-nereites-cymru",
+   "trace-paleodictyon-I01"
+  ],
+  "extracts": [
+   "helminthoida@relief",
+   "nereites@relief",
+   "paleodictyon@relief"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_trails hand (results/hands_trails-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 3216
+}

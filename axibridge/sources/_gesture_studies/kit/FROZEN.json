@@ -1,5 +1,5 @@
 {
- "frozen_from": "4aa0ed1",
+ "frozen_from": "6332b35",
  "frozen": "2026-10-17",
  "kit_modules": [
   "__init__",
@@ -51,131 +51,131 @@
  "files": {
   "kit/__init__.py": {
    "research": "tools/gesture/gesture/kit/__init__.py",
-   "sha256": "083ce0babf0d555e7a5d195eef4721644c4608fce26a6cf34addbec8763d63c6"
+   "sha256": "61272b40204a88e0e9cef47f05f30a4eda3f7ed27e995810cd674e4b6dcb0463"
   },
   "kit/core.py": {
    "research": "tools/gesture/gesture/kit/core.py",
-   "sha256": "579aa9b668f68a55c2eea989c676913ca1f6d4b7edee1f81ec106d0f539b5570"
+   "sha256": "b76d4a5f1a7f81b1602205f90dc364475b31edd2eafb2e9a75df3d1f77ffef33"
   },
   "kit/library.py": {
    "research": "tools/gesture/gesture/kit/library.py",
-   "sha256": "42c7a80234a6b4b1ee2897c3253afd201ae7dfe2740b4dfb63b46bcc455e18aa"
+   "sha256": "86a53945a05ebcb0e177ce92f76cb5426f0a6357fcb5f7d916090f8c311c2048"
   },
   "kit/arrangers_base.py": {
    "research": "tools/gesture/gesture/kit/arrangers_base.py",
-   "sha256": "acb7e30278c9661fb24d9557ab0524a7077501469e60615b97c9e001255d67dd"
+   "sha256": "82c7484bb8b2c2289f4a8a4e425ab5ab78a8b69dbf6963bf93f7762ba19b9684"
   },
   "kit/modulators_base.py": {
    "research": "tools/gesture/gesture/kit/modulators_base.py",
-   "sha256": "9cdb4e072017744e4f5fb9e14e415a00802807095ee47884191dcadd04040bae"
+   "sha256": "0399b56729e83a7fc70c7d2a0809e864546b7cb96660a24ec2d3c386536e0a17"
   },
   "kit/renderers_base.py": {
    "research": "tools/gesture/gesture/kit/renderers_base.py",
-   "sha256": "3603211814ee61d3b2cce806703cc671aa8e9c1d8598904b2ca5db6294033d92"
+   "sha256": "70dd0bf25820d0e24bcf63192910645f10fc3779ef4e5f8425754ebdacfe6cc3"
   },
   "kit/voices_base.py": {
    "research": "tools/gesture/gesture/kit/voices_base.py",
-   "sha256": "69a1bb9a5dd809aa497c136f6e3cf08b270a2ddfbf13e81045dfc7e10acac74e"
+   "sha256": "201f63638b004548e2b294d79d6201994bcaf53c62f591045fed7724141ba2a1"
   },
   "kit/voices_machine.py": {
    "research": "tools/gesture/gesture/kit/voices_machine.py",
-   "sha256": "2c7c6fbb0cf9c8e3b13d4098f8c222b4d00d0fade3450dad7e84d287f6706e9b"
+   "sha256": "117176855c5513a3fbb9f211a2fcb8f5cb571925fc7549858fc4e9f52420a345"
   },
   "kit/voices_machine_diagram.py": {
    "research": "tools/gesture/gesture/kit/voices_machine_diagram.py",
-   "sha256": "dc29ef4ae690912adce531a2a2bb30f13c3651fe26ddafc670f337ee25759819"
+   "sha256": "dcfeb7cd71f5b2dc87c76ec5d361451206355b5fc3e1e4d45cf419c8f605ced5"
   },
   "kit/poly_sheets.py": {
    "research": "tools/gesture/gesture/kit/poly_sheets.py",
-   "sha256": "4a9f7297ca3735c77d4900f9a800d1fa953eb5a8089d9db22f034091561a1e42"
+   "sha256": "01a87fb1d061772bdd60a2af40a9bce1865cdf5fd4622c9a8d76a9133d89d141"
   },
   "kit/poly_converse.py": {
    "research": "tools/gesture/gesture/kit/poly_converse.py",
-   "sha256": "e6bf107217de7610f852796ea860b15e0226f6ce6f3be47a314c5d0ae6ebc368"
+   "sha256": "ba0f1953546e1bd16844201ce4c413e876250f3b01eb4a392af6ee2d607f0ac9"
   },
   "kit/voices_corpus.py": {
    "research": "tools/gesture/gesture/kit/voices_corpus.py",
-   "sha256": "eb23e3e6bc7a96a2b31d26b13faf70b33eb0b7158317fdb3b80e692c8b838716"
+   "sha256": "5947fd4c201dca6734db0b08eb9dceef042d53b73b7a9ce65ec72de067d60ed0"
   },
   "kit/measure_pairs.py": {
    "research": "tools/gesture/gesture/kit/measure_pairs.py",
-   "sha256": "e287b3cc6f3c56e5fa0abde55f6b781819deb13fbe2c399e7fadcbea8fe04e5a"
+   "sha256": "2d9a93156b3cf21c03142eccffd58f58f4fceff36515e1aebc05112c74bf9db1"
   },
   "kit/prosody_voices.py": {
    "research": "tools/gesture/gesture/kit/prosody_voices.py",
-   "sha256": "324e3e01ab013576801cb198eb927ca7e75b11e3f34f0cad4df1f8abcb0a182b"
+   "sha256": "cc1945c9cef665a16df889cceec33ec807d1044474789b6b1b8ef6108d126437"
   },
   "kit/prosody_modulators.py": {
    "research": "tools/gesture/gesture/kit/prosody_modulators.py",
-   "sha256": "70d2cbb4eb934bc92735e753a364aa8067cabaa7552d60a35a5f54fd3dff1581"
+   "sha256": "2ae290ec89fb4a68104fad0d32005839c3100b6f1c23ce326d102a0a8b6f38c4"
   },
   "kit/prosody_renderers.py": {
    "research": "tools/gesture/gesture/kit/prosody_renderers.py",
-   "sha256": "08d394dd391c94bb173be4cdead65a5541c1ad09ce6823f423f5d2f09d4ffd62"
+   "sha256": "d015ba698bee1647c126538242394b8bf67103d0f5c4280223ed56c1de0351d4"
   },
   "kit/prosody_arrangers.py": {
    "research": "tools/gesture/gesture/kit/prosody_arrangers.py",
-   "sha256": "4459703596f67f7b1836bcb4d67f6d5e951bae70d3e3b8fd7ead39aceb817572"
+   "sha256": "b16e4d6e564e1d0bd4f6a0980b877d0b73189167cc29e83adaef1c04a9a775cb"
   },
   "kit/dev_beads.py": {
    "research": "tools/gesture/gesture/kit/dev_beads.py",
-   "sha256": "981d308b99aa3007045d53b2eaefdfcd0b77a36a312d26212a79b892751f7dd2"
+   "sha256": "7c569ae5c8bd57ce683898a16958e7240293ac629cde21cec533dc5d1e7d0529"
   },
   "kit/dev_chorus.py": {
    "research": "tools/gesture/gesture/kit/dev_chorus.py",
-   "sha256": "1cb9be5dc208ac205c7b67c0774808e17ec827e15d1d4b4bc601fd25cfbb15a1"
+   "sha256": "b69e88be8f3512ec177640e06b6a5f45caeaf8d253ee49f30c644213f8b89203"
   },
   "kit/sampler.py": {
    "research": "tools/gesture/gesture/kit/sampler.py",
-   "sha256": "5f8bbcd3083e9f44bda75658967c8b547975be703eba15cce938da43cf3108a8"
+   "sha256": "d0954b4bb84521d3d0681ce479d4b11d67949e51f9da25f0980e61404cbb3f7b"
   },
   "kit/_research/__init__.py": {
    "research": "tools/gesture/gesture/__init__.py",
-   "sha256": "a10543993ddd3bb22719c449443f3396e1fb2069314fb24bd035bdf6532a9716"
+   "sha256": "094b17c4af9ea12f2070a853ebbb0abca91b5b38a726ad5ca22fead33e5bae18"
   },
   "kit/_research/core.py": {
    "research": "tools/gesture/gesture/core.py",
-   "sha256": "a6eec1d13a47e4f7bedda21c1f62fb04a96b3698411b41687bd5204d0d503802"
+   "sha256": "0416b2bd58fcf94bf1a3770d93d85bae7e5be13dd2ee07eb9840c6df4d720274"
   },
   "kit/_research/curvature.py": {
    "research": "tools/gesture/gesture/curvature.py",
-   "sha256": "d74e90ad7291b9ec7a3effc79d4726a9538224d731f6c736436b8159fb069f78"
+   "sha256": "8b954a9ee97356851b59e692d195ab1ac265910834954d90b52bbe21c6a5bf31"
   },
   "kit/_research/clothoid.py": {
    "research": "tools/gesture/gesture/clothoid.py",
-   "sha256": "af7affeeb7cb1cc41701eb2db0be8c1401da814263adabcee2da93e38c20a266"
+   "sha256": "ffd86df5d97987f9743bd6e3d6fff4fa072c72f3fec98b69d2dba2770b0ea3ea"
   },
   "kit/_research/grammar.py": {
    "research": "tools/gesture/gesture/grammar.py",
-   "sha256": "352cf4bc3b7b91169ace5ffc8d78d266354496c5d98b9fb92393695a04926c45"
+   "sha256": "625057b3e17c7d4ff54a6eb26ec9b558e82007a2f1dcd79289e28b02afdd06cd"
   },
   "kit/_research/hybrid.py": {
    "research": "tools/gesture/gesture/hybrid.py",
-   "sha256": "c4948175cad5b41c6de077f6efee4b6a0736d3e7bf99293dc19e595fe8a17ad6"
+   "sha256": "18aa6102f8fd01a03869bb60be0f3a4a74f9f74ddd4dd430997d84e94e3f639d"
   },
   "kit/_research/regime.py": {
    "research": "tools/gesture/gesture/regime.py",
-   "sha256": "4b78ffd6669a26b8ee064869c998eee9e252cd90b38cbe5601293c4b1c6c0cfb"
+   "sha256": "abb8e24571193e9198fa319f697e076159cdad3fc2975c0cf1ab92cffeead413"
   },
   "kit/_research/penrender.py": {
    "research": "tools/gesture/gesture/penrender.py",
-   "sha256": "665e8466e2294aaa5d33b752e3a22a16eb7c41a3d0013e55132685d9706c918c"
+   "sha256": "6550bcb8dc30a99362ab06459d949755207458e81cc4d37ff1feb4250e95e04d"
   },
   "kit/_research/regime_field.py": {
    "research": "tools/gesture/gesture/regime_field.py",
-   "sha256": "bfd157229739ebe5cc0b814a7a501a5af4e704033032fe8780c2451b9965939d"
+   "sha256": "e3519c4b2b7e554acb7ef5e6c93ce35a30bbb60667387839503e30504f93b8b3"
   },
   "kit/_research/gesture_timing.py": {
    "research": "tools/gesture/gesture/gesture_timing.py",
-   "sha256": "46fab28f2d4cc5adf97123c5454a1f4a9b0a1cb082aac456bf67cec044f4b637"
+   "sha256": "01415413a3306382d70396dd71e6a884ee84771943e10a938eb49f9795bac1ac"
   },
   "kit/_research/broadnib.py": {
    "research": "tools/gesture/gesture/broadnib.py",
-   "sha256": "011fd3b84a9466eaf7661163950eddb71ec176466abea6f9ea08bf873919685e"
+   "sha256": "b00af4c8d3e953dfd80f400582a1d641d98ab10f87a7a58c580736bca444bce2"
   },
   "kit/_research/calligraphy.py": {
    "research": "tools/gesture/gesture/calligraphy.py (stub)",
-   "sha256": "d2f1d2fd327002175f4b8ac85a6c0ad7ed68b7e86a3527d8c6a01d80371b6410"
+   "sha256": "ec751eb3a8db65ac3e07703daf256c84db48ae0789ff8d295cdb9f8d9736d294"
   }
  }
 }
