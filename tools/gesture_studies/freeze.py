@@ -36,7 +36,9 @@ into the app. It writes:
    snapshot.
 
 3. `tests/fixtures/gesture_studies/<study>.json` — the parity fixture: each
-   built-in kit study's recipe run through the HEAD research kit with the HEAD
+   built-in kit study's recipe (a sampler study: the recipe its seed samples,
+   recorded as `sampled`, after checking the frozen sampler picks the same one)
+   run through the HEAD research kit with the HEAD
    research library (this interpreter), summarised per ink (point count,
    closed/filled, pen, end points, coordinate moments) plus a strided sample of
    the points, and the GEOS version. Before writing it the script runs the
@@ -75,7 +77,11 @@ FIXTURES = ROOT / "tests/fixtures/gesture_studies"
 # kit modules (tools/gesture/gesture/kit/<name>.py) the built-in studies need
 KIT_MODULES = ("__init__", "core", "library", "arrangers_base", "modulators_base", "renderers_base",
                "voices_base", "voices_machine", "voices_machine_diagram", "poly_sheets", "poly_converse",
-               "voices_corpus")
+               "voices_corpus",
+               # Studies v2 (2026-10-17): measurement pairs, the chorus and the sampler (its sample
+               # space reaches prosody, restatement and coils, so those come too)
+               "measure_pairs", "prosody_voices", "prosody_modulators", "prosody_renderers",
+               "prosody_arrangers", "dev_beads", "dev_chorus", "sampler")
 # research modules (tools/gesture/gesture/<name>.py) they import, transitively
 RESEARCH_MODULES = ("core", "curvature", "clothoid", "grammar", "hybrid", "regime", "penrender",
                     "regime_field", "gesture_timing", "broadnib")
@@ -259,16 +265,34 @@ def parity_fixtures(src_root: Path, commit: str) -> None:
     from axibridge.sources._gesture_studies import frozen_library as frozen_lib  # noqa: PLC0415
     from axibridge.sources._gesture_studies.kit import core as frozen_kit  # noqa: PLC0415
     FIXTURES.mkdir(parents=True, exist_ok=True)
+    from axibridge.sources._gesture_studies.kit import sampler as frozen_sampler  # noqa: PLC0415
+    from gesture.kit import sampler as research_sampler  # noqa: PLC0415
     order = json.loads((STUDIES / "index.json").read_text())["order"]
     for sid in order:
         study = json.loads((STUDIES / sid / "study.json").read_text())
-        if study["engine"] != "kit":
+        sampled = None
+        if study["engine"] == "sampler":
+            # the seed picks a combination from the library's pools: the research
+            # sampler over the HEAD research library and the frozen sampler over
+            # the frozen library must pick the very same recipe
+            r = study["recipe"]
+            recipe = research_sampler.sample(int(r["seed"]), library=lib, frame=tuple(r["frame"]))
+            mine_r = frozen_sampler.sample(int(r["seed"]), library=frozen_lib.FrozenLibrary(),
+                                           frame=tuple(r["frame"]))
+            if json.dumps(recipe, sort_keys=True) != json.dumps(mine_r, sort_keys=True):
+                raise SystemExit(f"{sid}: the frozen sampler does not pick the research sampler's recipe")
+            sampled = recipe
+        elif study["engine"] != "kit":
             continue
-        sheet = kit.run(study["recipe"], library=lib)
+        else:
+            recipe = study["recipe"]
+        sheet = kit.run(recipe, library=lib)
         out = {"study": sid, "version": study["version"], "research_commit": commit,
                "numpy": np.__version__, "geos": shapely.geos_version_string, **_summary(sheet)}
+        if sampled is not None:
+            out["sampled"] = sampled
         # the frozen copy, run by THIS interpreter, must reproduce the research exactly
-        mine = frozen_kit.run(study["recipe"], library=frozen_lib.FrozenLibrary())
+        mine = frozen_kit.run(recipe, library=frozen_lib.FrozenLibrary())
         if _summary(mine) != {k: out[k] for k in ("inks", "stride", "sample", "n_points")}:
             raise SystemExit(f"{sid}: the frozen kit does not reproduce the research kit")
         (FIXTURES / f"{sid}.json").write_text(json.dumps(out, separators=(",", ":")) + "\n")
