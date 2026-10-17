@@ -281,4 +281,12 @@
 #process-gesture-studies .gs-error[hidden] { display:none; }
 .gesture-studies-frame { fill:none; stroke:var(--bench-edge); stroke-width:.4; stroke-dasharray:2 2; }
 .gesture-studies-ink .draw-line { stroke-width:inherit; }
+.gesture-studies-ink .gs-voice .draw-line { stroke:var(--gs-voice); }
+#process-gesture-studies .gs-pinned { margin:var(--space-2) 0; padding:var(--space-2); border:1px solid var(--bench-edge); border-radius:4px; font-size:var(--type-note); }
+#process-gesture-studies .gs-pinned[hidden], #process-gesture-studies .gs-summary[hidden] { display:none; }
+#process-gesture-studies .gs-pinned button { margin-top:var(--space-1); }
+#process-gesture-studies .gs-summary { margin:var(--space-2) 0; font-size:var(--type-note); overflow-wrap:anywhere; }
+#process-gesture-studies .gs-voices { display:flex; flex-wrap:wrap; gap:var(--space-1) var(--space-3); margin:0; padding:0; list-style:none; }
+#process-gesture-studies .gs-voices li { display:flex; align-items:center; gap:var(--space-1); }
+#process-gesture-studies .gs-swatch { width:.9em; height:.9em; border-radius:50%; background:var(--gs-voice); flex:none; }
 .gesture-studies-pending .gesture-studies-ink { opacity:.3; }

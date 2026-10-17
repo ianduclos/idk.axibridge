@@ -6,7 +6,16 @@
 // frozen library then). Save as new study / delete / recipe validation use
 // /api/gesture-studies. Hand / tempo / dance controls list every entry of the
 // frozen library the server reports, never a hard-coded list.
+//
+// Studies v2 (2026-10-17):
+// - a resumed layer STAYS PINNED to its library snapshot through every edit
+//   (Ian: "stay pinned; explicit update"); its hand controls list that
+//   snapshot's hands, and "Update to current library" re-pins on purpose;
+// - a voices study (the chorus) previews each voice in its ink and Keep makes
+//   a group with one layer per voice, each on its own pen (/api/gesture-studies/keep);
+// - the Sampler shows the combination its seed picked (the sampler's summary).
 import { api } from './api.js';
+import { actions } from './main.js';
 import { benchProjectEpoch, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from './bench_host.js';
 import { openGallerySave } from './gallery.js';
 import { createPresetControls } from './module_library.js';
@@ -21,10 +30,12 @@ let active = null;
 let wired = false;
 let presetControls = null;
 let catalogue = null;
+const snapshots = new Map();   // pinned snapshot id -> {hand, tempo, dance_trail} options
 
 // A study as the source takes it (the catalogue adds display-only fields).
 function studyOf(entry) {
-  const { builtin, defaults, ...study } = entry; // eslint-disable-line no-unused-vars
+  // the catalogue and /validate add display-only fields; the source takes the study alone
+  const { builtin, defaults, run_recipe, summary, voices, ...study } = entry; // eslint-disable-line no-unused-vars
   return copy(study);
 }
 async function loadCatalogue() {
@@ -37,6 +48,23 @@ function canon(v) {
   if (v && typeof v === 'object') return `{${Object.keys(v).sort().map(k => `${JSON.stringify(k)}:${canon(v[k])}`).join(',')}}`;
   return JSON.stringify(v);
 }
+// The snapshot a resumed layer is pinned to, when it is not the current one.
+function pinnedSnapshot() {
+  const sid = active?.draft.params.library;
+  return sid && sid !== catalogue?.snapshot ? sid : null;
+}
+function libraryList(kind) {
+  const sid = pinnedSnapshot();
+  return (sid && snapshots.get(sid)?.[kind]) || catalogue?.library?.[kind] || [];
+}
+async function ensureSnapshot() {
+  const sid = pinnedSnapshot();
+  if (!sid || snapshots.has(sid)) return;
+  const res = await api.get(`/api/gesture-studies/library/${encodeURIComponent(sid)}`);
+  snapshots.set(sid, res.library);
+}
+const isVoices = study => study?.keep === 'voices';
+const isSampler = study => study?.engine === 'sampler';
 function catalogueEntry(study) {
   return catalogue?.studies.find(s => s.id === study.id && s.version === study.version
     && canon(s.recipe) === canon(study.recipe)) || null;
@@ -60,13 +88,12 @@ function remember(before) {
   if (active.draft.undo.length > 80) active.draft.undo.shift();
   active.draft.redo = [];
 }
-// Any edit makes a fresh recipe: a resumed layer's library pins no longer apply
-// (Keep pins the current library again, on the server).
+// An edit keeps a resumed layer's own library snapshot and pins: a control
+// changes only what it controls. Only "Update to current library" re-pins.
 function change(fn) {
   if (!active || active.keeping) return;
   const before = copy(active.draft.params);
   fn(active.draft.params);
-  delete active.draft.params.library; delete active.draft.params.pins;
   if (JSON.stringify(before) === key()) { renderControls(); return; }
   remember(before);
   invalidate();
@@ -91,7 +118,7 @@ function setValue(c, v) { change(p => { p.values[c.key] = v; }); }
 
 // ---------------------------------------------------------------- controls
 function libraryOptions(c) {
-  const list = (catalogue?.library?.[KIND_OF[c.type]] || []).map(e => [e.id, e.label]);
+  const list = libraryList(KIND_OF[c.type]).map(e => [e.id, e.label]);
   return c.allow_none ? [[c.none_value ?? '', `— ${c.none_label || 'none'} —`], ...list] : list;
 }
 function selectEl(options, current) {
@@ -181,7 +208,7 @@ function routeControl(c, v) {
 function poolControl(c, v) {
   const chosen = new Set(String(v || '').split(/\s+/).filter(Boolean));
   const box = document.createElement('div'); box.className = 'gs-pool';
-  const hands = catalogue?.library?.hand || [];
+  const hands = libraryList('hand');
   for (const h of hands) {
     const l = document.createElement('label'); l.className = 'gs-check';
     const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = h.id; cb.checked = chosen.has(h.id);
@@ -249,7 +276,67 @@ function buildControls() {
   $('gs-delete').hidden = !(entry && !entry.builtin);
   $('gs-save-name').value = `${st.label} — variation`;
   active.builtFor = JSON.stringify(params);
+  active.info = null;
+  renderPinned(); renderInfo();
   renderControls();
+}
+
+// The pinned-library notice and its one way out.
+function renderPinned() {
+  const sid = pinnedSnapshot();
+  $('gs-pinned').hidden = !sid;
+  if (!sid) return;
+  const mine = snapshots.get(sid)?.hand?.length, now = catalogue?.library?.hand?.length;
+  $('gs-pinned-text').textContent = `This layer is pinned to library ${sid}${mine ? ` (${mine} hands)` : ''}; `
+    + `the current library has ${now ?? '?'} hands. Edits keep the layer's own hands.`;
+}
+function updateLibrary() {
+  if (!active || !pinnedSnapshot()) return;
+  change(p => { delete p.library; delete p.pins; delete p.sampled; });
+  buildControls();
+}
+
+// What the resolved study draws: the Sampler's combination, a chorus's voices.
+function renderInfo() {
+  const st = active?.draft.params.study;
+  const box = $('gs-summary');
+  const info = active?.info;
+  box.hidden = !(isSampler(st) || isVoices(st));
+  if (box.hidden) return;
+  box.replaceChildren();
+  if (!info) { box.textContent = isSampler(st) ? 'Sampling…' : ''; return; }
+  if (isSampler(st) && info.summary) {
+    const p = document.createElement('p'); p.className = 'hint gs-summary-text';
+    p.textContent = info.summary; box.append(p);
+  }
+  if (info.voices?.length) {
+    const ul = document.createElement('ul'); ul.className = 'gs-voices'; ul.setAttribute('aria-label', 'Voices and their pens');
+    for (const v of info.voices) {
+      const li = document.createElement('li'); li.title = v.label || '';
+      const sw = document.createElement('span'); sw.className = 'gs-swatch'; sw.style.setProperty('--gs-voice', v.color);
+      li.append(sw, document.createTextNode(`${v.index + 1} · ${v.ink}`));
+      ul.append(li);
+    }
+    box.append(ul);
+  }
+}
+function infoBody(p) {
+  return { study: p.study, values: p.values, library: p.library || null, pins: p.pins || [], sampled: p.sampled || null };
+}
+async function refreshInfo() {
+  if (!active) return;
+  const owner = active, st = owner.draft.params.study;
+  if (!(isSampler(st) || isVoices(st))) return;
+  const expected = key();
+  try {
+    const res = await api.post('/api/gesture-studies/validate', infoBody(copy(owner.draft.params)));
+    if (active !== owner || key() !== expected) return;
+    owner.info = { summary: res.summary, voices: res.voices, run_recipe: res.run_recipe };
+  } catch {
+    if (active !== owner || key() !== expected) return;
+    owner.info = null;
+  }
+  renderInfo();
 }
 
 function renderControls() {
@@ -284,11 +371,14 @@ function renderControls() {
   $('gesture-studies-keep').disabled = busy;
   $('gesture-studies-save-gallery').disabled = busy;
   $('gs-save').disabled = active.saving || active.inFlight;
-  $('gesture-studies-keep').textContent = active.keeping ? 'Keeping…' : 'Keep as layer';
   const label = active.draft.params.study.label;
+  const voices = active.output?.layers?.length ? ` · ${active.output.layers.length} voices` : '';
   $('process-status').textContent = active.error ? 'Preview unavailable — retry below'
     : active.renderedKey !== key() ? `Drawing ${label}…`
-      : `${label} · ${active.output.lines.length.toLocaleString()} ink paths · ${active.output.points.toLocaleString()} points${active.output.decimated ? ' · simplified preview' : ''}`;
+      : `${label}${voices} · ${active.output.lines.length.toLocaleString()} ink paths · ${active.output.points.toLocaleString()} points${active.output.decimated ? ' · simplified preview' : ''}`;
+  $('gesture-studies-keep').textContent = active.keeping ? 'Keeping…'
+    : isVoices(active.draft.params.study) ? 'Keep as group' : 'Keep as layer';
+  renderPinned();
 }
 
 // ---------------------------------------------------------------- shell
@@ -299,6 +389,8 @@ export function initGestureStudiesBench() {
   panel.id = 'process-gesture-studies'; panel.hidden = true;
   panel.innerHTML = `
     <label class="gs-field gs-study-field"><span>Study</span><select id="gs-study"></select></label>
+    <div id="gs-pinned" class="gs-pinned" hidden><span id="gs-pinned-text"></span><br><button id="gs-update-library" type="button">Update to current library</button></div>
+    <div id="gs-summary" class="gs-summary" aria-live="polite" hidden></div>
     <details id="gs-about"><summary>About this study</summary><p class="hint" id="gs-notes"></p><p class="hint" id="gs-source"></p></details>
     <div id="gs-controls"></div>
     <details id="gs-save-group"><summary>Save as new study</summary>
@@ -326,6 +418,7 @@ export function initGestureStudiesBench() {
   $('gs-recipe-reload').onclick = loadRecipe;
   $('gs-recipe-apply').onclick = applyRecipe;
   $('gs-save').onclick = saveStudy;
+  $('gs-update-library').onclick = updateLibrary;
   $('gs-delete').onclick = deleteStudy;
   const bar = document.createElement('div');
   bar.id = 'gesture-studies-actions'; bar.hidden = true;
@@ -349,6 +442,7 @@ export async function openGestureStudiesBench({ mod, params, contextKey, onKeep,
   const original = { mod, params, contextKey, onKeep, onClose };
   const input = copy({ ...mod.defaults, ...params });
   input.values = input.values || {};
+  delete input.voice;              // a chorus voice layer resumes the whole chorus
   const inputKey = JSON.stringify(input);
   const context = `${benchProjectEpoch()}:${contextKey || `new:${mod.id}`}`;
   let draft = drafts.get(context);
@@ -385,6 +479,8 @@ export async function openGestureStudiesBench({ mod, params, contextKey, onKeep,
     return;
   }
   if (active !== owner) return;
+  try { await ensureSnapshot(); } catch { /* the current library's lists stand in */ }
+  if (active !== owner) return;
   installPresetControls();
   buildControls(); invalidate(); requestPreview();
 }
@@ -408,7 +504,11 @@ function installPresetControls() {
   presetControls = createPresetControls({
     kind: 'source',
     mod: owner.mod,
-    getParams: () => { const p = copy(owner.draft.params); delete p.library; delete p.pins; return p; },
+    getParams: () => {
+      const p = copy(owner.draft.params);
+      for (const k of ['library', 'pins', 'sampled', 'voice']) delete p[k];
+      return p;
+    },
     isBusy: () => active !== owner || owner.keeping || owner.savingGallery || owner.inFlight,
     onApply: async (params) => {
       if (active !== owner || owner.keeping || owner.savingGallery || owner.inFlight) {
@@ -432,6 +532,7 @@ async function requestPreview() {
   const exact = copy(owner.draft.params), expected = JSON.stringify(exact);
   owner.inFlight = true; owner.queued = false; owner.error = false;
   clearBenchError(); renderControls();
+  refreshInfo();
   try {
     const output = await api.post('/api/generators/preview', { module: owner.mod.id, params: exact });
     if (active !== owner || key() !== expected) return;
@@ -448,11 +549,23 @@ async function requestPreview() {
     const ink = document.createElementNS(NS, 'g');
     ink.classList.add('gesture-studies-ink');
     ink.style.strokeWidth = String(penWidth(exact.study));   // drawn at the pen's width
-    for (const line of output.lines) {
-      const el = document.createElementNS(NS, 'polyline');
-      el.setAttribute('points', line.map(([x, y]) => `${x},${y}`).join(' '));
-      el.setAttribute('class', 'draw-line');
-      ink.append(el);
+    // a chorus comes back as consecutive runs of lines, one per voice, each in its ink
+    const runs = output.layers?.length ? output.layers : [{ paths: output.lines.length, color: null }];
+    let at = 0;
+    for (const run of runs) {
+      const g = document.createElementNS(NS, 'g');
+      if (run.color) {
+        g.classList.add('gs-voice'); g.style.setProperty('--gs-voice', run.color);
+        g.dataset.voice = run.name || '';
+      }
+      for (const line of output.lines.slice(at, at + run.paths)) {
+        const el = document.createElementNS(NS, 'polyline');
+        el.setAttribute('points', line.map(([x, y]) => `${x},${y}`).join(' '));
+        el.setAttribute('class', 'draw-line');
+        g.append(el);
+      }
+      at += run.paths;
+      ink.append(g);
     }
     svg.append(frame, ink);
     svg.dataset.renderedRecipe = expected;
@@ -473,8 +586,18 @@ async function keep() {
   const owner = active, exact = copy(owner.draft.params);
   owner.keeping = true; clearBenchError(); renderControls();
   try {
-    const layer = await owner.onKeep(exact);
-    if (active === owner) $('gesture-studies-kept').textContent = `Kept · ${layer?.name || 'layer'}`;
+    if (isVoices(exact.study)) {
+      // one undo step on the server: a group named after the study, a layer per voice on its own pen
+      const res = await api.post('/api/gesture-studies/keep', { params: exact });
+      await actions.refreshProject();
+      await actions.refreshResolved();
+      actions.setSelectionTargets([{ kind: 'group', id: res.group.id }]);
+      const pens = new Set(res.layers.map(l => l.pen_id)).size;
+      if (active === owner) $('gesture-studies-kept').textContent = `Kept · group ${res.group.name} · ${res.layers.length} layers on ${pens} pens`;
+    } else {
+      const layer = await owner.onKeep(exact);
+      if (active === owner) $('gesture-studies-kept').textContent = `Kept · ${layer?.name || 'layer'}`;
+    }
   } catch (error) {
     if (active === owner) showBenchError(error); // no automatic retry of writes
   } finally {
@@ -504,7 +627,7 @@ async function saveStudy() {
   if (!label) { $('gs-save-status').textContent = 'Give the study a name.'; return; }
   owner.saving = true; renderControls(); $('gs-save-status').textContent = 'Saving…';
   try {
-    const saved = await api.post('/api/gesture-studies', { label, study: p.study, values: p.values });
+    const saved = await api.post('/api/gesture-studies', { label, ...infoBody(p) });
     await loadCatalogue();
     if (active !== owner) return;
     owner.saving = false;
@@ -536,8 +659,9 @@ async function loadRecipe() {
   const p = copy(active.draft.params);
   $('gs-recipe-error').hidden = true;
   try {
-    const res = await api.post('/api/gesture-studies/validate', { study: p.study, values: p.values });
-    if (active && key() === JSON.stringify(p)) $('gs-recipe').value = JSON.stringify(res.recipe, null, 1);
+    const res = await api.post('/api/gesture-studies/validate', infoBody(p));
+    // a sampler shows the combination it drew; applying it makes a kit study of it
+    if (active && key() === JSON.stringify(p)) $('gs-recipe').value = JSON.stringify(isSampler(p.study) ? res.run_recipe : res.recipe, null, 1);
   } catch (error) {
     $('gs-recipe-error').textContent = error.message || String(error); $('gs-recipe-error').hidden = false;
   }
@@ -552,7 +676,9 @@ async function applyRecipe() {
     $('gs-recipe-error').textContent = `Not valid JSON: ${error.message}`; $('gs-recipe-error').hidden = false; return;
   }
   try {
-    const res = await api.post('/api/gesture-studies/validate', { study: { ...owner.draft.params.study, recipe }, values: {} });
+    const st = owner.draft.params.study;
+    const study = isSampler(st) ? { ...st, engine: 'kit', recipe } : { ...st, recipe };
+    const res = await api.post('/api/gesture-studies/validate', { ...infoBody(owner.draft.params), study, values: {}, sampled: null });
     if (active !== owner) return;
     change(q => { q.study = studyOf(res); q.values = {}; });
     buildControls();

@@ -3,7 +3,8 @@ import json
 import os
 from pathlib import Path
 
-from test_acceptance_ui import _get, frontend_mode, select_layer, server, ui  # noqa: F401
+import pytest
+from test_acceptance_ui import _get, _post, frontend_mode, reload_app, select_layer, server, ui  # noqa: F401
 
 
 def open_bench(page):
@@ -131,3 +132,126 @@ def test_edit_recipe_drawer_validates(ui):
     assert ui.locator('#gs-study').input_value() == '__draft__'
     # the only console noise is the refused (400) recipe above
     assert all('status of 400' in e for e in ui.errors), ui.errors
+
+
+# ---------------------------------------------------------------------------
+# Studies v2
+# ---------------------------------------------------------------------------
+
+def test_new_studies_follow_the_eight(ui):
+    open_bench(ui)
+    labels = ui.eval_on_selector_all('#gs-study option', 'os => os.map(o => o.value)')
+    assert labels[8:15] == ['numbered_atlas', 'dance_atlas', 'margin_chart', 'merged_shadow', 'chorus', 'sampler',
+                            'ledger_straight']
+    # the numbered atlas exposes the drawing's route only, never layout or numbering
+    ui.select_option('#gs-study', 'numbered_atlas')
+    ready(ui)
+    keys = ui.eval_on_selector_all('#gs-controls [data-control-key]', 'els => els.map(e => e.dataset.controlKey)')
+    assert set(keys) == {'parts.0.voice.hands', 'parts.0.voice.blend', 'parts.0.voice.joins', 'seed'}
+    # the margin chart offers every layout but the wrap
+    ui.select_option('#gs-study', 'margin_chart')
+    ready(ui)
+    layouts = control(ui, 'parts.0.modulators.0.layout').locator('button').all_text_contents()
+    assert layouts == ['margin', 'diptych', 'under']
+    # the sampler names the combination its seed picked, and the next seed picks another
+    ui.select_option('#gs-study', 'sampler')
+    ready(ui)
+    ui.wait_for_function("() => document.querySelector('#gs-summary .gs-summary-text')?.textContent.includes(' x ')",
+                         timeout=30000)
+    first = ui.locator('#gs-summary .gs-summary-text').text_content()
+    shot(ui, 'sampler')
+    control(ui, 'seed').locator('.gs-next-seed').click()
+    ready(ui)
+    ui.wait_for_function("(a) => { const t = document.querySelector('#gs-summary .gs-summary-text')?.textContent;"
+                         " return t && t !== a; }", arg=first, timeout=30000)
+    assert not ui.errors
+
+
+def test_chorus_keeps_as_a_group_with_one_layer_per_voice_on_its_own_pen(ui, server):
+    open_bench(ui)
+    ui.select_option('#gs-study', 'chorus')
+    ready(ui)
+    inks = ui.eval_on_selector_all('#process-canvas .gs-voice', 'gs => gs.map(g => g.style.getPropertyValue("--gs-voice"))')
+    assert len(inks) == 4 and len(set(inks)) == 4                  # every voice in its own ink
+    ui.wait_for_function("() => document.querySelectorAll('#gs-summary .gs-voices li').length === 4")
+    assert ui.locator('#gesture-studies-keep').text_content() == 'Keep as group'
+    shot(ui, 'chorus')
+    # three voices: the first three of the four
+    ui.locator('#gs-controls [data-control-key="arranger.voices"] input').evaluate(
+        "el => { el.value = '3'; el.dispatchEvent(new Event('change')); }")
+    ready(ui)
+    ui.wait_for_function("() => document.querySelectorAll('#process-canvas .gs-voice').length === 3")
+    ui.click('#gesture-studies-keep')
+    ui.wait_for_function("() => document.querySelector('#gesture-studies-kept').textContent.includes('group')",
+                         timeout=90000)
+    assert '3 layers on 3 pens' in ui.locator('#gesture-studies-kept').text_content()
+    project = _get(f'{server}/api/project')
+    groups = [g for g in project['groups'] if g['name'] == 'Chorus, several pens']
+    assert len(groups) == 1
+    members = [l for l in project['layers'] if l['group_id'] == groups[0]['id']]
+    assert [l['source']['params']['voice'] for l in members] == [0, 1, 2]
+    assert len({l['pen_id'] for l in members}) == 3 and all(l['pen_id'] for l in members)
+    assert len({l['source']['params']['library'] for l in members}) == 1
+
+    # resume one voice: the bench reopens the whole chorus
+    ui.click('#process-close')
+    ui.wait_for_timeout(500)
+    ui.get_by_role('button', name='Enter Chorus, several pens').click()
+    row = ui.locator('#layer-list .layer-row', has_text='Chorus, several pens · red')
+    row.locator('.lname').click()
+    ui.wait_for_selector('#layer-detail-panel:not([hidden])', timeout=10000)
+    ui.click('#process-resume')
+    ready(ui)
+    resumed = recipe(ui)
+    assert 'voice' not in resumed and resumed['study']['id'] == 'chorus'
+    ui.wait_for_function("() => document.querySelectorAll('#process-canvas .gs-voice').length === 3")
+    assert not ui.errors
+
+
+def test_a_resumed_layer_stays_pinned_until_updated_on_purpose(ui, server):
+    from axibridge.sources._gesture_studies import frozen_library as FL
+    from axibridge.sources._gesture_studies import studies as ST
+
+    history = FL.index()['history']
+    if len(history) < 2:
+        pytest.skip('the frozen library has a single snapshot')
+    old, current = history[0], FL.current_snapshot()
+    study = ST.builtin('three_voices').model_dump(mode='json')
+    made = _post(f'{server}/api/layers/generate', {'module': 'gesture_studies',
+                                                   'params': {'study': study, 'values': {}, 'library': old}})
+    assert made['source']['params']['library'] == old
+    reload_app(ui)
+    # seeding behind the page's back supersedes the OLD page's in-flight render (409 render_cancelled)
+    ui.errors[:] = [e for e in ui.errors if 'status of 409' not in e]
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 1", timeout=10000)
+    select_layer(ui)
+    ui.click('#process-resume')
+    ready(ui)
+    assert ui.locator('#gs-pinned').is_visible()
+    assert old in ui.locator('#gs-pinned-text').text_content()
+    hands_old = len(FL.options('hand', old))
+    voice = control(ui, 'parts.1.voice.hand').locator('select')
+    assert voice.locator('option').count() == hands_old         # the hands of ITS snapshot
+    # an edit keeps the snapshot …
+    control(ui, 'seed').locator('.gs-next-seed').click()
+    ready(ui)
+    assert recipe(ui)['library'] == old
+    ui.click('#gesture-studies-keep')
+    ui.wait_for_function("() => document.querySelector('#gesture-studies-kept').textContent.includes('Kept')")
+    layers = _get(f'{server}/api/project')['layers']
+    assert layers[-1]['source']['params']['library'] == old
+    assert layers[-1]['source']['params']['values']['seed'] != made['source']['params']['values'].get('seed')
+    # … until "Update to current library"
+    ui.click('#gs-update-library')
+    ready(ui)
+    assert not ui.locator('#gs-pinned').is_visible()
+    assert 'library' not in recipe(ui)
+    assert voice.locator('option').count() == len(FL.options('hand'))
+    ui.click('#gesture-studies-keep')
+    for _ in range(100):
+        layers = _get(f'{server}/api/project')['layers']
+        if len(layers) == 3:
+            break
+        ui.wait_for_timeout(200)
+    assert len(layers) == 3 and layers[-1]['source']['params']['library'] == current
+    assert not ui.errors
