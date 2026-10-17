@@ -291,6 +291,10 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   (`tools/gesture/gesture/kit/`); round 9 (`tools/gesture/results/round9-2026-10-17.md`)
   added corpus voices, machine/diagram voices, prosody/accumulation and
   polyphonic arrangers to it.
+- **Round 10 + Gesture Studies (2026-10-17)** —
+  `tools/gesture/results/round10-2026-10-17.md`: Gesture Studies bench in the
+  app (saved pieces with their own controls; new hands flow in); measurement
+  pairs, beads/rare machine/chorus developments, combination search.
 - **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
   continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the

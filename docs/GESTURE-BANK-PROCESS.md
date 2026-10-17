@@ -58,7 +58,7 @@ Images are the medium of judgement. Nothing is plotted unless Ian asks.
 | Kit | saved library + combinable techniques + recipes | `tools/gesture/gesture/kit/` ([contract](../tools/gesture/gesture/kit/README.md), [spec](superpowers/specs/2026-10-17-gesture-kit.md)) |
 | Library | every learned hand, tempo, dance trail, shape set, corpus index, with provenance and policy | `tools/gesture/library/<kind>/<id>/` |
 | Hand Drift bench | the first app bench: one line drifting through hands | `axibridge/sources/hand_drift.py` ([plan](superpowers/plans/2026-10-17-hand-drift-bench.md)) |
-| Gesture Studies | saved pieces with their own controls, one bench with its own dropdown | `axibridge/sources/gesture_studies.py` ([spec](superpowers/specs/2026-10-17-gesture-studies.md)) |
+| Gesture Studies | saved pieces with their own controls, one bench with its own dropdown (8 built-in; forks in a machine-level store) | `axibridge/sources/gesture_studies.py`, `_gesture_studies/`, `gesture_studies_store.py`, `gesture_studies_api.py` ([spec](superpowers/specs/2026-10-17-gesture-studies.md)) |
 
 ### The kit in one paragraph
 
@@ -117,8 +117,17 @@ how distinct and how self-consistent it is. To get it into the app, rerun
 renderer or arranger with a param spec; tests; an image made through
 `kit.run` + `kit.preview`.
 
-**Keep a piece.** Promote its recipe to a built-in study (pick its controls,
-bound them, note why), refreeze, test parity.
+**Keep a piece.** In the app, the Gesture Studies bench's "Save as new
+study" forks a study into the machine-level store (records its parent). To
+make a recipe a built-in study: add `axibridge/sources/_gesture_studies/studies/<id>/study.json`
+(the recipe, 3–8 bounded controls, notes on why), rerun
+`tools/gesture_studies/freeze.py` with the research venv (it freezes the kit
+from HEAD and every generative library entry, and checks parity), run
+`tests/test_gesture_studies.py`.
+
+**Bring new hands into the app.** Learn and save them in the library, commit,
+rerun `tools/gesture_studies/freeze.py`: every study's hand controls list them.
+Kept layers stay pinned to the snapshot they were made from.
 
 ---
 
@@ -162,7 +171,7 @@ bound them, note why), refreeze, test parity.
 | 2026-10-17 | Hand Drift bench in the app | [plan](superpowers/plans/2026-10-17-hand-drift-bench.md) |
 | 2026-10-17 | Gesture kit: library + techniques + recipes | [spec](superpowers/specs/2026-10-17-gesture-kit.md) |
 | Round 9 | Corpus voices, machine/diagram voices, prosody, polyphonic sheets, built into the kit; Ian: "save the methods" of the two-voice and danced-chain recipes | `round9-2026-10-17.md`, `round9-review-2026-10-17.md` |
-| Round 10 + Studies | Gesture Studies bench (first set of 8 studies); explorations: drawing + its measurement, developments, combination search | in progress — `round10-*.md` |
+| Round 10 + Studies | Gesture Studies bench in the app (8 studies, Hand Drift first; new hands flow in on refreeze); explorations: drawing + its measurement (numbered atlas, merged shadow), developments (beads, rare machine events, chorus), combination search (proxy AUC 0.87 / 0.61) | `round10-2026-10-17.md`, [studies spec](superpowers/specs/2026-10-17-gesture-studies.md) |
 
 ### Turns in direction (Ian's words)
 
@@ -187,4 +196,8 @@ bound them, note why), refreeze, test parity.
 - Blending grammars collapses them; drifting between them or setting them side
   by side keeps them alive.
 - Parallel agents in one checkout work when each only adds its own files;
-  shared contracts (the kit README) must exist before the round starts.
+  shared contracts (the kit README) must exist before the round starts. An
+  app build can run beside research agents if it freezes from HEAD.
+- A taste proxy is a candidate generator, not a judge: it caught the obvious
+  dislikes (capsules) but could not tell the multi-voice sheets Ian liked from
+  the ones he passed over.
