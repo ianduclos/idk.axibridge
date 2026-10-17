@@ -4,12 +4,12 @@ updated: 2026-10-16
 entries: 31
 ---
 
-### Gesture bank: Hand Drift bench shipped; Ian tries it, then round 9 — opened 2026-10-16, owner: ian
+### Gesture bank: round 9 review, then the next combinations — opened 2026-10-16, owner: ian
 
-- done: Round 8 (tools/gesture/results/round8-2026-10-16.md) and Ian's review (round8-review-2026-10-17.md: keep the parallel-rounds + review-artifact loop; distinct grammars side by side, never averaged). The Hand Drift bench is in the app (85f0449): frozen engine + hands in axibridge/sources/_hand_drift, source hand_drift.py, adapter hand-drift v1; plan docs/superpowers/plans/2026-10-17-hand-drift-bench.md. Full suite 1748 passed / 233 skipped. Checked in a sandbox server only.
-- next: Ian quits and reopens AxiBridge.app (the running app predates the bench), tries Hand Drift (Generate → Hand Drift → Bench), and says what to change; then plan round 9 from the review record. Pi clone not synced.
-- blockers: none. Unverified: the bench in the live native window; UI acceptance tests skip without the bundled chromium (`.venv/bin/python -m playwright install chromium`).
-- context: [round 8](tools/gesture/results/round8-2026-10-16.md), [review](tools/gesture/results/round8-review-2026-10-17.md), [bench plan](docs/superpowers/plans/2026-10-17-hand-drift-bench.md), [review page with Ian's notes](https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY). Scans/outputs in gitignored `.local/gesture/`.
+- done: Hand Drift bench in the app (85f0449; Ian: "works amazing"). Gesture kit (1245f20): saved library (24 hands, 6 tempos, 9 dance trails, 8 corpus indexes, one policy gate) + combinable voices/modulators/renderers/arrangers + JSON recipes saved beside every image; spec docs/superpowers/specs/2026-10-17-gesture-kit.md, contract tools/gesture/gesture/kit/README.md. Round 9 (8cc0058): corpus voices, machine/diagram voices, prosody/accumulation, polyphonic arrangers — tools/gesture/results/round9-2026-10-17.md. 519 research tests pass.
+- next: Ian annotates the round-9 review page (https://claude.ai/artifact/4Z61rcGvWnEAsEuczdNmLv; notes in its db collection `notes`, doc id = image name / `exp-<thread>` / `round`) — includes a legibility check on the shikasta nib rows of the interlinear pages. Read his notes back, compare with the lead's reads first, then pick combinations / round 10; consider the kit-core changes listed in round9-2026-10-17.md and refreezing chosen recipes into the bench.
+- blockers: none.
+- context: [round 9](tools/gesture/results/round9-2026-10-17.md), [round 8 review](tools/gesture/results/round8-review-2026-10-17.md), [kit spec](docs/superpowers/specs/2026-10-17-gesture-kit.md), [bench plan](docs/superpowers/plans/2026-10-17-hand-drift-bench.md), round-8 notes page https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY. Scans/outputs in gitignored `.local/gesture/`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 
