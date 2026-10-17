@@ -200,4 +200,6 @@ Kept layers stay pinned to the snapshot they were made from.
   app build can run beside research agents if it freezes from HEAD.
 - A taste proxy is a candidate generator, not a judge: it caught the obvious
   dislikes (capsules) but could not tell the multi-voice sheets Ian liked from
-  the ones he passed over.
+  the ones he passed over. In the round-10 review he liked most of the proxy's
+  bottom picks too, and preferred unbred samples: breeding toward a score
+  collapses variety into one style. Sample widely; let Ian pick.
