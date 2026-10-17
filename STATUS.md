@@ -10,7 +10,7 @@ next:
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank: Ian annotates the round-10 review page and tries Gesture Studies after restarting AxiBridge; then round 11 (see HANDOFF "Gesture bank")
+  - Gesture bank: Studies v2 + round 11 in a fresh session (docs/superpowers/plans/2026-10-17-round11-plan.md)
 handoff_for: Codex
 ---
 

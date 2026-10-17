@@ -4,12 +4,12 @@ updated: 2026-10-17
 entries: 31
 ---
 
-### Gesture bank: round 10 review + try Gesture Studies, then round 11 — opened 2026-10-16, owner: ian
+### Gesture bank: Studies v2 + round 11 (planned) — opened 2026-10-16, owner: claude (next session)
 
-- done: Rounds 8–10 with review pages and review records (Ian's notes vs the lead's reads: `tools/gesture/results/round8/9-review-2026-10-17.md`); gesture kit + library (1245f20); round 10 (b32994a): measurement pairs (numbered atlas, merged shadow), developments (round beads, rare machine events, chorus), combination search; **Gesture Studies** in the app (6f5511d): 8 studies incl. Hand Drift, forks in `~/.axibridge/gesture_studies/`, new hands flow in on refreeze, kept layers pinned. Process documented: `docs/GESTURE-BANK-PROCESS.md`.
-- next: Ian restarts AxiBridge.app (the running server predates Gesture Studies), tries the bench, and annotates the round-10 page https://claude.ai/artifact/2HcJTktg4ZFLu3Megpjc6w (db `notes`; includes the shikasta legibility check, still unanswered). Then: read notes back, compare with the lead's reads first (write `round10-review-*.md`), promote what he keeps to studies, plan round 11 as parallel explorations with risks.
-- blockers: none. Open: Shape atlas study renders ~60 s with a hand (fix in research clothoid fit, then refreeze); Resume re-pins a layer to the current library on first edit; live native window not checked (tests + temp-port screenshots only); UI tests skip without `.venv/bin/python -m playwright install chromium`; Pi clone not synced.
-- context: [process](docs/GESTURE-BANK-PROCESS.md), [round 10](tools/gesture/results/round10-2026-10-17.md), [studies spec](docs/superpowers/specs/2026-10-17-gesture-studies.md), [kit spec](docs/superpowers/specs/2026-10-17-gesture-kit.md), round-9 page https://claude.ai/artifact/4Z61rcGvWnEAsEuczdNmLv, round-8 page https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY. Scans/outputs in gitignored `.local/gesture/`.
+- done: Rounds 8–10, each with a review page and a review record of Ian's notes vs the lead's reads (`tools/gesture/results/round*-review-2026-10-17.md`); gesture kit + library; Gesture Studies in the app (6f5511d: 8 studies; Ian kept Hand Drift and Drawing and its measure). Round-10 review done (b42fd67). Process: `docs/GESTURE-BANK-PROCESS.md`.
+- next: In a fresh session, run `docs/superpowers/plans/2026-10-17-round11-plan.md`: A) Studies v2 — measurement pairs (atlas pairing kept exactly as is), chorus with multiple pens (decide one-layer-per-pen first, with Ian), sampler study (unbred), ledger with straight lines; B) round 11 explorations with risks — new hands from unused corpora (Amazon rivers as a hand, insect/leaf-miner/slime trails, per-dancer, Diwani if policy allows), swelling into mass, solid abstract script, measurement next versions.
+- blockers: none. Open: Shape atlas study ~60 s with a hand; Resume re-pins on first edit; native window not checked; Pi clone not synced. New corpus downloads need Ian's go each.
+- context: [plan](docs/superpowers/plans/2026-10-17-round11-plan.md), [process](docs/GESTURE-BANK-PROCESS.md), [round 10 review](tools/gesture/results/round10-review-2026-10-17.md), [studies spec](docs/superpowers/specs/2026-10-17-gesture-studies.md), review pages: r10 https://claude.ai/artifact/2HcJTktg4ZFLu3Megpjc6w, r9 https://claude.ai/artifact/4Z61rcGvWnEAsEuczdNmLv, r8 https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 
