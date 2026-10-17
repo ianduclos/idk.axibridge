@@ -637,7 +637,11 @@ def test_keep_chorus_makes_one_group_with_a_layer_per_voice_on_its_own_pen():
 def test_keep_endpoint():
     from axibridge.app import create_app
 
-    c = TestClient(create_app())
+    with TestClient(create_app()) as c:           # a project mutation: run the app's lifespan (events)
+        _keep_endpoint(c)
+
+
+def _keep_endpoint(c):
     r = c.post("/api/gesture-studies/keep", json={"params": params("chorus", {"arranger.voices": 2})})
     assert r.status_code == 200, r.text
     body = r.json()
