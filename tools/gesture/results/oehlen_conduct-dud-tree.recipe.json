@@ -1,0 +1,182 @@
+[
+ {
+  "kit": 1,
+  "frame": [
+   145.0,
+   218.0
+  ],
+  "seed": 5507,
+  "margin": 10.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "oehlen_conduct_tree",
+     "trail": "staccato",
+     "effector": "rhand",
+     "t0": 5.0,
+     "seconds": 7.0,
+     "hands": [
+      "trail_miner"
+     ],
+     "corner": "none",
+     "src_size": 30.0,
+     "gesture": 0.5,
+     "K": 16,
+     "pull": 8.0,
+     "clear": 2.0,
+     "chunk": 0.12,
+     "step": 0.35,
+     "pens": [
+      1.4,
+      0.8,
+      0.45,
+      0.25
+     ],
+     "still_q": 0.12,
+     "turn_deg": 75.0,
+     "burst_q": 0.93,
+     "min_gap_s": 0.35,
+     "branch_len": 0.3,
+     "orders": 2,
+     "spread": 1.2,
+     "land": 0.6,
+     "double": 0.3,
+     "double_amp": 6.0,
+     "double_memory": 3.0,
+     "double_splits": 2.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_conduct_ink",
+   "pen": 0.4,
+   "scale": 1.0,
+   "min_run": 1.5
+  },
+  "label": "oehlen_conduct: tree dud"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   145.0,
+   218.0
+  ],
+  "seed": 5508,
+  "margin": 10.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "oehlen_conduct_tree",
+     "trail": "staccato",
+     "effector": "rhand",
+     "t0": 5.0,
+     "seconds": 7.0,
+     "hands": [
+      "trail_miner"
+     ],
+     "corner": "none",
+     "src_size": 30.0,
+     "gesture": 0.5,
+     "K": 16,
+     "pull": 8.0,
+     "clear": 2.0,
+     "chunk": 0.12,
+     "step": 0.35,
+     "pens": [
+      1.4,
+      0.8,
+      0.45,
+      0.25
+     ],
+     "still_q": 0.12,
+     "turn_deg": 75.0,
+     "burst_q": 0.93,
+     "min_gap_s": 0.35,
+     "branch_len": 0.3,
+     "orders": 2,
+     "spread": 1.2,
+     "land": 0.6,
+     "double": 0.3,
+     "double_amp": 6.0,
+     "double_memory": 3.0,
+     "double_splits": 2.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_conduct_ink",
+   "pen": 0.4,
+   "scale": 1.0,
+   "min_run": 1.5
+  },
+  "label": "oehlen_conduct: tree dud"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   145.0,
+   218.0
+  ],
+  "seed": 5511,
+  "margin": 10.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "oehlen_conduct_tree",
+     "trail": "staccato",
+     "effector": "rhand",
+     "t0": 5.0,
+     "seconds": 7.0,
+     "hands": [
+      "trail_miner"
+     ],
+     "corner": "none",
+     "src_size": 30.0,
+     "gesture": 0.5,
+     "K": 16,
+     "pull": 8.0,
+     "clear": 2.0,
+     "chunk": 0.12,
+     "step": 0.35,
+     "pens": [
+      1.4,
+      0.8,
+      0.45,
+      0.25
+     ],
+     "still_q": 0.12,
+     "turn_deg": 75.0,
+     "burst_q": 0.93,
+     "min_gap_s": 0.35,
+     "branch_len": 0.3,
+     "orders": 2,
+     "spread": 1.2,
+     "land": 0.6,
+     "double": 0.3,
+     "double_amp": 6.0,
+     "double_memory": 3.0,
+     "double_splits": 2.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_conduct_ink",
+   "pen": 0.4,
+   "scale": 1.0,
+   "min_run": 1.5
+  },
+  "label": "oehlen_conduct: tree dud"
+ }
+]

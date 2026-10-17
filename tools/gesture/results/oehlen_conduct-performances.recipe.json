@@ -1,0 +1,298 @@
+[
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 3323,
+  "margin": 12.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "oehlen_conduct",
+     "trail": "staccato",
+     "effector": "rhand",
+     "t0": 5.0,
+     "seconds": 7.0,
+     "hands": [
+      "trail_miner"
+     ],
+     "corner": "tl",
+     "src_size": 34.0,
+     "enlarge": 6.0,
+     "place": [
+      0.55,
+      0.52
+     ],
+     "gesture": 0.6,
+     "sustain": 0.3,
+     "stop_action": "tacet",
+     "hold_s": 0.08,
+     "still_q": 0.12,
+     "turn_deg": 75.0,
+     "burst_q": 0.93,
+     "min_gap_s": 0.35,
+     "blanks": [
+      0.1,
+      0.95,
+      0.42
+     ],
+     "K": 16,
+     "pull": 8.0,
+     "clear": 2.0,
+     "chunk": 0.12,
+     "step": 0.35,
+     "pens": [
+      2.2,
+      0.5
+     ],
+     "double": 0.6,
+     "double_amp": 8.0,
+     "double_memory": 3.0,
+     "double_splits": 2.0,
+     "double_pen": "same",
+     "min_cue_mm": 20.0,
+     "blank_hard": false,
+     "edge_p": 1.0,
+     "change_on": "both",
+     "corner_cost": 0.4,
+     "land": 0.75
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_conduct_ink",
+   "pen": 0.4,
+   "scale": 1.0,
+   "min_run": 1.5
+  },
+  "label": "oehlen_conduct: piece"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 3322,
+  "margin": 12.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "oehlen_conduct",
+     "trail": "staccato",
+     "effector": "rhand",
+     "t0": 5.0,
+     "seconds": 7.0,
+     "hands": [
+      "trail_miner"
+     ],
+     "corner": "tl",
+     "src_size": 34.0,
+     "enlarge": 6.0,
+     "place": [
+      0.55,
+      0.52
+     ],
+     "gesture": 0.6,
+     "sustain": 0.3,
+     "stop_action": "tacet",
+     "hold_s": 0.08,
+     "still_q": 0.12,
+     "turn_deg": 75.0,
+     "burst_q": 0.93,
+     "min_gap_s": 0.35,
+     "blanks": [
+      0.1,
+      0.95,
+      0.42
+     ],
+     "K": 16,
+     "pull": 8.0,
+     "clear": 2.0,
+     "chunk": 0.12,
+     "step": 0.35,
+     "pens": [
+      2.2,
+      0.5
+     ],
+     "double": 0.6,
+     "double_amp": 8.0,
+     "double_memory": 3.0,
+     "double_splits": 2.0,
+     "double_pen": "same",
+     "min_cue_mm": 20.0,
+     "blank_hard": false,
+     "edge_p": 1.0,
+     "change_on": "both",
+     "corner_cost": 0.4,
+     "land": 0.75
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_conduct_ink",
+   "pen": 0.4,
+   "scale": 1.0,
+   "min_run": 1.5
+  },
+  "label": "oehlen_conduct: piece"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 3333,
+  "margin": 12.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "oehlen_conduct",
+     "trail": "staccato",
+     "effector": "rhand",
+     "t0": 5.0,
+     "seconds": 7.0,
+     "hands": [
+      "trail_miner"
+     ],
+     "corner": "tl",
+     "src_size": 34.0,
+     "enlarge": 6.0,
+     "place": [
+      0.55,
+      0.52
+     ],
+     "gesture": 0.6,
+     "sustain": 0.3,
+     "stop_action": "tacet",
+     "hold_s": 0.08,
+     "still_q": 0.12,
+     "turn_deg": 75.0,
+     "burst_q": 0.93,
+     "min_gap_s": 0.35,
+     "blanks": [
+      0.1,
+      0.95,
+      0.42
+     ],
+     "K": 16,
+     "pull": 8.0,
+     "clear": 2.0,
+     "chunk": 0.12,
+     "step": 0.35,
+     "pens": [
+      2.2,
+      0.5
+     ],
+     "double": 0.6,
+     "double_amp": 8.0,
+     "double_memory": 3.0,
+     "double_splits": 2.0,
+     "double_pen": "same",
+     "min_cue_mm": 20.0,
+     "blank_hard": false,
+     "edge_p": 1.0,
+     "change_on": "both",
+     "corner_cost": 0.4,
+     "land": 0.75
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_conduct_ink",
+   "pen": 0.4,
+   "scale": 1.0,
+   "min_run": 1.5
+  },
+  "label": "oehlen_conduct: piece"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 3334,
+  "margin": 12.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "oehlen_conduct",
+     "trail": "staccato",
+     "effector": "rhand",
+     "t0": 5.0,
+     "seconds": 7.0,
+     "hands": [
+      "trail_miner"
+     ],
+     "corner": "tl",
+     "src_size": 34.0,
+     "enlarge": 6.0,
+     "place": [
+      0.55,
+      0.52
+     ],
+     "gesture": 0.6,
+     "sustain": 0.3,
+     "stop_action": "tacet",
+     "hold_s": 0.08,
+     "still_q": 0.12,
+     "turn_deg": 75.0,
+     "burst_q": 0.93,
+     "min_gap_s": 0.35,
+     "blanks": [
+      0.1,
+      0.95,
+      0.42
+     ],
+     "K": 16,
+     "pull": 8.0,
+     "clear": 2.0,
+     "chunk": 0.12,
+     "step": 0.35,
+     "pens": [
+      2.2,
+      0.5
+     ],
+     "double": 0.6,
+     "double_amp": 8.0,
+     "double_memory": 3.0,
+     "double_splits": 2.0,
+     "double_pen": "same",
+     "min_cue_mm": 20.0,
+     "blank_hard": false,
+     "edge_p": 1.0,
+     "change_on": "both",
+     "corner_cost": 0.4,
+     "land": 0.75
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_conduct_ink",
+   "pen": 0.4,
+   "scale": 1.0,
+   "min_run": 1.5
+  },
+  "label": "oehlen_conduct: piece"
+ }
+]
