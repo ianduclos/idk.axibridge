@@ -1,0 +1,93 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 11410,
+ "margin": 10.0,
+ "arranger": {
+  "id": "script_solid_page",
+  "layout": "wrap",
+  "split": 0.64,
+  "side": "right",
+  "clear": 5.0,
+  "drawing_box": [
+   0.3,
+   0.12,
+   0.42,
+   0.72
+  ],
+  "angle": 35.0
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "mime_mantis",
+    "length": 5.0,
+    "joins": "smooth"
+   },
+   "modulators": [],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.35
+   }
+  },
+  {
+   "voice": {
+    "id": "script_solid",
+    "hand": "mime_mantis",
+    "length": 8.0,
+    "x_height": 4.6,
+    "rows": 0,
+    "leading": 2.5,
+    "direction": "ltr",
+    "slant": -8.0,
+    "inventory": 10,
+    "zipf": 1.0,
+    "turn_lo": 0.8,
+    "turn_hi": 2.0,
+    "glyph_w": 1.2,
+    "asc_h": 2.3,
+    "asc_rate": 0.2,
+    "desc_rate": 0.12,
+    "word_mean": 2.6,
+    "min_glyphs": 2,
+    "simple_only": false,
+    "word_sd": 0.6,
+    "join_gap": 0.15,
+    "word_gap": 0.85,
+    "gap_sd": 0.35,
+    "baseline": "wander",
+    "tilt": 22.0,
+    "ignore": 0.1,
+    "line_end": "both",
+    "swash_rate": 0.15,
+    "dots": 0.0,
+    "dot_shape": "nib",
+    "join": "word",
+    "kashida_w": 0.12,
+    "connector_w": 0.7,
+    "nib_angle": 95.0,
+    "nib_w": 0.4,
+    "jitter": 1.0,
+    "smooth": 0.02,
+    "indent": false
+   },
+   "modulators": [],
+   "renderer": {
+    "id": "script_solid_nib",
+    "pen": 0.3,
+    "pitch": 0.75,
+    "contrast": 1.0,
+    "hairline": true
+   }
+  }
+ ],
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "label": "a mantis dance drawing; the dance script answers around it"
+}

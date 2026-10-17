@@ -1,0 +1,652 @@
+{
+ "a": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   30.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "shikasta",
+     "length": 8.0,
+     "x_height": 6.0,
+     "rows": 1,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 0.0,
+     "inventory": 14,
+     "zipf": 1.0,
+     "turn_lo": 1.7,
+     "turn_hi": 3.4,
+     "glyph_w": 1.8,
+     "asc_h": 2.3,
+     "asc_rate": 0.16,
+     "desc_rate": 0.1,
+     "word_mean": 3.0,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.0,
+     "join_gap": 0.08,
+     "word_gap": 0.2,
+     "gap_sd": 0.0,
+     "baseline": "hanging",
+     "tilt": 8.0,
+     "ignore": 0.05,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.22,
+     "dot_shape": "nib",
+     "join": "row",
+     "kashida_w": 0.7,
+     "connector_w": 0.9,
+     "nib_angle": 70.0,
+     "nib_w": 0.42,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script sweep"
+ },
+ "b": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   30.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "shikasta",
+     "length": 8.0,
+     "x_height": 6.0,
+     "rows": 1,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 0.0,
+     "inventory": 14,
+     "zipf": 1.0,
+     "turn_lo": 1.7,
+     "turn_hi": 3.4,
+     "glyph_w": 1.8,
+     "asc_h": 2.3,
+     "asc_rate": 0.16,
+     "desc_rate": 0.1,
+     "word_mean": 1.0,
+     "min_glyphs": 1,
+     "simple_only": false,
+     "word_sd": 0.0,
+     "join_gap": 0.08,
+     "word_gap": 1.1,
+     "gap_sd": 0.35,
+     "baseline": "hanging",
+     "tilt": 8.0,
+     "ignore": 0.05,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.22,
+     "dot_shape": "nib",
+     "join": "word",
+     "kashida_w": 0.12,
+     "connector_w": 0.9,
+     "nib_angle": 70.0,
+     "nib_w": 0.42,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script sweep"
+ },
+ "c": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   30.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "shikasta",
+     "length": 8.0,
+     "x_height": 6.0,
+     "rows": 1,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 0.0,
+     "inventory": 14,
+     "zipf": 1.0,
+     "turn_lo": 1.7,
+     "turn_hi": 3.4,
+     "glyph_w": 1.8,
+     "asc_h": 2.3,
+     "asc_rate": 0.16,
+     "desc_rate": 0.1,
+     "word_mean": 3.0,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.0,
+     "join_gap": 0.08,
+     "word_gap": 0.7,
+     "gap_sd": 0.0,
+     "baseline": "hanging",
+     "tilt": 8.0,
+     "ignore": 0.05,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.22,
+     "dot_shape": "nib",
+     "join": "word",
+     "kashida_w": 0.12,
+     "connector_w": 0.9,
+     "nib_angle": 70.0,
+     "nib_w": 0.42,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script sweep"
+ },
+ "d": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   30.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "shikasta",
+     "length": 8.0,
+     "x_height": 6.0,
+     "rows": 1,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 0.0,
+     "inventory": 14,
+     "zipf": 1.0,
+     "turn_lo": 1.7,
+     "turn_hi": 3.4,
+     "glyph_w": 1.8,
+     "asc_h": 2.3,
+     "asc_rate": 0.16,
+     "desc_rate": 0.1,
+     "word_mean": 3.0,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.45,
+     "join_gap": 0.08,
+     "word_gap": 0.7,
+     "gap_sd": 0.35,
+     "baseline": "hanging",
+     "tilt": 8.0,
+     "ignore": 0.05,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.22,
+     "dot_shape": "nib",
+     "join": "word",
+     "kashida_w": 0.12,
+     "connector_w": 0.9,
+     "nib_angle": 70.0,
+     "nib_w": 0.42,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script sweep"
+ },
+ "e": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   30.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "shikasta",
+     "length": 8.0,
+     "x_height": 6.0,
+     "rows": 1,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 0.0,
+     "inventory": 14,
+     "zipf": 1.0,
+     "turn_lo": 1.7,
+     "turn_hi": 3.4,
+     "glyph_w": 1.8,
+     "asc_h": 2.3,
+     "asc_rate": 0.16,
+     "desc_rate": 0.1,
+     "word_mean": 3.0,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.9,
+     "join_gap": 0.08,
+     "word_gap": 0.7,
+     "gap_sd": 0.9,
+     "baseline": "hanging",
+     "tilt": 8.0,
+     "ignore": 0.05,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.22,
+     "dot_shape": "nib",
+     "join": "word",
+     "kashida_w": 0.12,
+     "connector_w": 0.9,
+     "nib_angle": 70.0,
+     "nib_w": 0.42,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script sweep"
+ },
+ "f": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   30.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "shikasta",
+     "length": 8.0,
+     "x_height": 6.0,
+     "rows": 1,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 0.0,
+     "inventory": 14,
+     "zipf": 1.0,
+     "turn_lo": 1.7,
+     "turn_hi": 3.4,
+     "glyph_w": 1.8,
+     "asc_h": 2.3,
+     "asc_rate": 0.16,
+     "desc_rate": 0.1,
+     "word_mean": 7.0,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.45,
+     "join_gap": 0.08,
+     "word_gap": 1.1,
+     "gap_sd": 0.35,
+     "baseline": "hanging",
+     "tilt": 8.0,
+     "ignore": 0.05,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.22,
+     "dot_shape": "nib",
+     "join": "word",
+     "kashida_w": 0.12,
+     "connector_w": 0.9,
+     "nib_angle": 70.0,
+     "nib_w": 0.42,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script sweep"
+ },
+ "g": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   30.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "shikasta",
+     "length": 8.0,
+     "x_height": 6.0,
+     "rows": 1,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 0.0,
+     "inventory": 14,
+     "zipf": 1.0,
+     "turn_lo": 1.7,
+     "turn_hi": 3.4,
+     "glyph_w": 1.8,
+     "asc_h": 2.3,
+     "asc_rate": 0.16,
+     "desc_rate": 0.1,
+     "word_mean": 3.0,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.45,
+     "join_gap": 0.08,
+     "word_gap": 0.7,
+     "gap_sd": 0.35,
+     "baseline": "hanging",
+     "tilt": 8.0,
+     "ignore": 0.05,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.22,
+     "dot_shape": "nib",
+     "join": "row",
+     "kashida_w": 0.12,
+     "connector_w": 0.9,
+     "nib_angle": 70.0,
+     "nib_w": 0.42,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script sweep"
+ },
+ "h": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   30.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "shikasta",
+     "length": 8.0,
+     "x_height": 6.0,
+     "rows": 1,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 0.0,
+     "inventory": 48,
+     "zipf": 0.0,
+     "turn_lo": 1.7,
+     "turn_hi": 3.4,
+     "glyph_w": 1.8,
+     "asc_h": 2.3,
+     "asc_rate": 0.16,
+     "desc_rate": 0.1,
+     "word_mean": 3.0,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.45,
+     "join_gap": 0.08,
+     "word_gap": 0.7,
+     "gap_sd": 0.35,
+     "baseline": "hanging",
+     "tilt": 8.0,
+     "ignore": 0.05,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.22,
+     "dot_shape": "nib",
+     "join": "word",
+     "kashida_w": 0.12,
+     "connector_w": 0.9,
+     "nib_angle": 70.0,
+     "nib_w": 0.42,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script sweep"
+ },
+ "i": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   30.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "shikasta",
+     "length": 8.0,
+     "x_height": 6.0,
+     "rows": 1,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 0.0,
+     "inventory": 48,
+     "zipf": 0.0,
+     "turn_lo": 1.7,
+     "turn_hi": 3.4,
+     "glyph_w": 1.8,
+     "asc_h": 2.3,
+     "asc_rate": 0.0,
+     "desc_rate": 0.0,
+     "word_mean": 3.0,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.0,
+     "join_gap": 0.08,
+     "word_gap": 0.2,
+     "gap_sd": 0.0,
+     "baseline": "hanging",
+     "tilt": 8.0,
+     "ignore": 0.05,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.0,
+     "dot_shape": "nib",
+     "join": "row",
+     "kashida_w": 0.7,
+     "connector_w": 0.9,
+     "nib_angle": 70.0,
+     "nib_w": 0.42,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script sweep"
+ },
+ "j": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   30.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "shikasta",
+     "length": 8.0,
+     "x_height": 6.0,
+     "rows": 1,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 0.0,
+     "inventory": 14,
+     "zipf": 1.0,
+     "turn_lo": 1.7,
+     "turn_hi": 3.4,
+     "glyph_w": 1.8,
+     "asc_h": 2.3,
+     "asc_rate": 0.16,
+     "desc_rate": 0.1,
+     "word_mean": 3.0,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.45,
+     "join_gap": 0.08,
+     "word_gap": 0.7,
+     "gap_sd": 0.35,
+     "baseline": "wander",
+     "tilt": 40.0,
+     "ignore": 0.5,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.22,
+     "dot_shape": "nib",
+     "join": "word",
+     "kashida_w": 0.12,
+     "connector_w": 0.9,
+     "nib_angle": 70.0,
+     "nib_w": 0.42,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script sweep"
+ }
+}

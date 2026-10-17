@@ -1,0 +1,130 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 11310,
+ "margin": 10.0,
+ "arranger": {
+  "id": "script_solid_page",
+  "layout": "diagonal",
+  "split": 0.7,
+  "side": "left",
+  "clear": 6.0,
+  "drawing_box": [
+   0.08,
+   0.1,
+   0.6,
+   0.75
+  ],
+  "angle": 50.0
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "script_solid",
+    "hand": "shikasta",
+    "length": 8.0,
+    "x_height": 5.2,
+    "rows": 0,
+    "leading": 2.7,
+    "direction": "rtl",
+    "slant": 0.0,
+    "inventory": 14,
+    "zipf": 1.0,
+    "turn_lo": 1.7,
+    "turn_hi": 3.4,
+    "glyph_w": 1.8,
+    "asc_h": 2.3,
+    "asc_rate": 0.16,
+    "desc_rate": 0.1,
+    "word_mean": 3.0,
+    "min_glyphs": 2,
+    "simple_only": false,
+    "word_sd": 0.45,
+    "join_gap": 0.08,
+    "word_gap": 0.7,
+    "gap_sd": 0.35,
+    "baseline": "hanging",
+    "tilt": 6.0,
+    "ignore": 0.05,
+    "line_end": "both",
+    "swash_rate": 0.15,
+    "dots": 0.22,
+    "dot_shape": "nib",
+    "join": "row",
+    "kashida_w": 0.12,
+    "connector_w": 0.9,
+    "nib_angle": 70.0,
+    "nib_w": 0.42,
+    "jitter": 0.6,
+    "smooth": 0.05,
+    "indent": false
+   },
+   "modulators": [],
+   "renderer": {
+    "id": "script_solid_nib",
+    "pen": 0.3,
+    "pitch": 0.75,
+    "contrast": 1.0,
+    "hairline": true
+   }
+  },
+  {
+   "voice": {
+    "id": "script_solid",
+    "hand": "shikasta",
+    "length": 8.0,
+    "x_height": 3.4,
+    "rows": 0,
+    "leading": 2.4,
+    "direction": "rtl",
+    "slant": 0.0,
+    "inventory": 14,
+    "zipf": 1.0,
+    "turn_lo": 1.7,
+    "turn_hi": 3.4,
+    "glyph_w": 1.8,
+    "asc_h": 2.3,
+    "asc_rate": 0.1,
+    "desc_rate": 0.1,
+    "word_mean": 3.0,
+    "min_glyphs": 2,
+    "simple_only": false,
+    "word_sd": 0.45,
+    "join_gap": 0.08,
+    "word_gap": 0.7,
+    "gap_sd": 0.35,
+    "baseline": "hanging",
+    "tilt": 4.0,
+    "ignore": 0.05,
+    "line_end": "both",
+    "swash_rate": 0.15,
+    "dots": 0.22,
+    "dot_shape": "nib",
+    "join": "word",
+    "kashida_w": 0.12,
+    "connector_w": 0.9,
+    "nib_angle": 70.0,
+    "nib_w": 0.42,
+    "jitter": 0.6,
+    "smooth": 0.05,
+    "indent": false
+   },
+   "modulators": [],
+   "renderer": {
+    "id": "script_solid_nib",
+    "pen": 0.3,
+    "pitch": 0.75,
+    "contrast": 1.0,
+    "hairline": true
+   }
+  }
+ ],
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "label": "a manuscript page: script A as joined rows + a diagonal marginal gloss"
+}

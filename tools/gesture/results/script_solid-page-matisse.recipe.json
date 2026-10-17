@@ -1,0 +1,65 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 11320,
+ "margin": 12.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "script_solid",
+    "hand": "matisse",
+    "length": 8.0,
+    "x_height": 5.5,
+    "rows": 0,
+    "leading": 2.7,
+    "direction": "ltr",
+    "slant": 14.0,
+    "inventory": 12,
+    "zipf": 0.8,
+    "turn_lo": 2.2,
+    "turn_hi": 4.5,
+    "glyph_w": 2.2,
+    "asc_h": 2.3,
+    "asc_rate": 0.1,
+    "desc_rate": 0.08,
+    "word_mean": 2.6,
+    "min_glyphs": 2,
+    "simple_only": false,
+    "word_sd": 0.45,
+    "join_gap": 0.25,
+    "word_gap": 1.0,
+    "gap_sd": 0.35,
+    "baseline": "wander",
+    "tilt": 10.0,
+    "ignore": 0.05,
+    "line_end": "both",
+    "swash_rate": 0.15,
+    "dots": 0.1,
+    "dot_shape": "bead",
+    "join": "word",
+    "kashida_w": 0.12,
+    "connector_w": 0.7,
+    "nib_angle": 30.0,
+    "nib_w": 0.46,
+    "jitter": 0.6,
+    "smooth": 0.12,
+    "indent": true
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "script_solid_nib",
+  "pen": 0.3,
+  "pitch": 0.75,
+  "contrast": 1.0,
+  "hairline": true
+ },
+ "label": "a page of the Matisse script"
+}

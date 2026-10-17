@@ -1,0 +1,251 @@
+{
+ "1": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   100.0
+  ],
+  "seed": 11000,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "molnar_letters",
+     "length": 8.0,
+     "x_height": 6.5,
+     "rows": 4,
+     "leading": 3.0,
+     "direction": "rtl",
+     "slant": 6.0,
+     "inventory": 18,
+     "zipf": 1.0,
+     "turn_lo": 1.4,
+     "turn_hi": 3.0,
+     "glyph_w": 1.2,
+     "asc_h": 2.3,
+     "asc_rate": 0.12,
+     "desc_rate": 0.05,
+     "word_mean": 4.5,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.45,
+     "join_gap": 0.05,
+     "word_gap": 0.6,
+     "gap_sd": 0.35,
+     "baseline": "ruled",
+     "tilt": 12.0,
+     "ignore": 0.05,
+     "line_end": "both",
+     "swash_rate": 0.15,
+     "dots": 0.06,
+     "dot_shape": "nib",
+     "join": "row",
+     "kashida_w": 0.12,
+     "connector_w": 0.7,
+     "nib_angle": 45.0,
+     "nib_w": 0.3,
+     "jitter": 0.6,
+     "smooth": 0.05,
+     "indent": false
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "script_solid_nib",
+   "pen": 0.3,
+   "pitch": 0.75,
+   "contrast": 1.0,
+   "hairline": true
+  },
+  "label": "script molnar"
+ },
+ "2": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 11300,
+  "margin": 12.0,
+  "arranger": {
+   "id": "script_solid_stack",
+   "heights": [
+    0.13,
+    0.72,
+    0.15
+   ],
+   "insets": [
+    0.35,
+    0.0,
+    0.0
+   ],
+   "right": [
+    0.0,
+    0.0,
+    0.5
+   ]
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "bubble",
+     "length": 8.0,
+     "x_height": 7.5,
+     "rows": 1,
+     "leading": 2.6,
+     "direction": "rtl",
+     "slant": 6.0,
+     "inventory": 18,
+     "zipf": 0.2,
+     "turn_lo": 1.4,
+     "turn_hi": 3.0,
+     "glyph_w": 1.2,
+     "asc_h": 2.3,
+     "asc_rate": 0.12,
+     "desc_rate": 0.05,
+     "word_mean": 4.5,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.25,
+     "join_gap": 0.05,
+     "word_gap": 0.6,
+     "gap_sd": 0.1,
+     "baseline": "ruled",
+     "tilt": 12.0,
+     "ignore": 0.0,
+     "line_end": "none",
+     "swash_rate": 0.15,
+     "dots": 0.06,
+     "dot_shape": "nib",
+     "join": "word",
+     "kashida_w": 0.12,
+     "connector_w": 0.7,
+     "nib_angle": 45.0,
+     "nib_w": 0.3,
+     "jitter": 0.15,
+     "smooth": 0.0,
+     "indent": false
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "script_solid_nib",
+     "pen": 0.3,
+     "pitch": 0.75,
+     "contrast": 1.0,
+     "hairline": true
+    }
+   },
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "bubble",
+     "length": 8.0,
+     "x_height": 4.6,
+     "rows": 0,
+     "leading": 2.5,
+     "direction": "rtl",
+     "slant": 6.0,
+     "inventory": 18,
+     "zipf": 0.2,
+     "turn_lo": 1.4,
+     "turn_hi": 3.0,
+     "glyph_w": 1.2,
+     "asc_h": 2.3,
+     "asc_rate": 0.12,
+     "desc_rate": 0.05,
+     "word_mean": 4.5,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.25,
+     "join_gap": 0.05,
+     "word_gap": 0.6,
+     "gap_sd": 0.1,
+     "baseline": "ruled",
+     "tilt": 12.0,
+     "ignore": 0.0,
+     "line_end": "both",
+     "swash_rate": 0.08,
+     "dots": 0.06,
+     "dot_shape": "nib",
+     "join": "word",
+     "kashida_w": 0.12,
+     "connector_w": 0.7,
+     "nib_angle": 45.0,
+     "nib_w": 0.3,
+     "jitter": 0.15,
+     "smooth": 0.0,
+     "indent": true
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "script_solid_nib",
+     "pen": 0.3,
+     "pitch": 0.75,
+     "contrast": 1.0,
+     "hairline": true
+    }
+   },
+   {
+    "voice": {
+     "id": "script_solid",
+     "hand": "bubble",
+     "length": 8.0,
+     "x_height": 4.6,
+     "rows": 2,
+     "leading": 2.5,
+     "direction": "rtl",
+     "slant": 6.0,
+     "inventory": 18,
+     "zipf": 0.2,
+     "turn_lo": 1.4,
+     "turn_hi": 3.0,
+     "glyph_w": 1.2,
+     "asc_h": 2.3,
+     "asc_rate": 0.12,
+     "desc_rate": 0.05,
+     "word_mean": 4.5,
+     "min_glyphs": 2,
+     "simple_only": false,
+     "word_sd": 0.25,
+     "join_gap": 0.05,
+     "word_gap": 0.6,
+     "gap_sd": 0.1,
+     "baseline": "ruled",
+     "tilt": 12.0,
+     "ignore": 0.0,
+     "line_end": "swash",
+     "swash_rate": 0.15,
+     "dots": 0.06,
+     "dot_shape": "nib",
+     "join": "word",
+     "kashida_w": 0.12,
+     "connector_w": 0.7,
+     "nib_angle": 45.0,
+     "nib_w": 0.3,
+     "jitter": 0.15,
+     "smooth": 0.0,
+     "indent": false
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "script_solid_nib",
+     "pen": 0.3,
+     "pitch": 0.75,
+     "contrast": 1.0,
+     "hairline": true
+    }
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.4
+  },
+  "label": "a letter in the machine script (Cohen meander hand): heading, body, closing"
+ }
+}
