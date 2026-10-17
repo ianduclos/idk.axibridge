@@ -1,15 +1,15 @@
 ---
 project: idk.axibridge
-updated: 2026-10-16
+updated: 2026-10-17
 entries: 31
 ---
 
-### Gesture bank: round 9 review, then the next combinations — opened 2026-10-16, owner: ian
+### Gesture bank: round 10 review + try Gesture Studies, then round 11 — opened 2026-10-16, owner: ian
 
-- done: Hand Drift bench in the app (85f0449; Ian: "works amazing"). Gesture kit (1245f20): saved library (24 hands, 6 tempos, 9 dance trails, 8 corpus indexes, one policy gate) + combinable voices/modulators/renderers/arrangers + JSON recipes saved beside every image; spec docs/superpowers/specs/2026-10-17-gesture-kit.md, contract tools/gesture/gesture/kit/README.md. Round 9 (8cc0058): corpus voices, machine/diagram voices, prosody/accumulation, polyphonic arrangers — tools/gesture/results/round9-2026-10-17.md. 519 research tests pass.
-- next: Ian annotates the round-9 review page (https://claude.ai/artifact/4Z61rcGvWnEAsEuczdNmLv; notes in its db collection `notes`, doc id = image name / `exp-<thread>` / `round`) — includes a legibility check on the shikasta nib rows of the interlinear pages. Read his notes back, compare with the lead's reads first, then pick combinations / round 10; consider the kit-core changes listed in round9-2026-10-17.md and refreezing chosen recipes into the bench.
-- blockers: none.
-- context: [round 9](tools/gesture/results/round9-2026-10-17.md), [round 8 review](tools/gesture/results/round8-review-2026-10-17.md), [kit spec](docs/superpowers/specs/2026-10-17-gesture-kit.md), [bench plan](docs/superpowers/plans/2026-10-17-hand-drift-bench.md), round-8 notes page https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY. Scans/outputs in gitignored `.local/gesture/`.
+- done: Rounds 8–10 with review pages and review records (Ian's notes vs the lead's reads: `tools/gesture/results/round8/9-review-2026-10-17.md`); gesture kit + library (1245f20); round 10 (b32994a): measurement pairs (numbered atlas, merged shadow), developments (round beads, rare machine events, chorus), combination search; **Gesture Studies** in the app (6f5511d): 8 studies incl. Hand Drift, forks in `~/.axibridge/gesture_studies/`, new hands flow in on refreeze, kept layers pinned. Process documented: `docs/GESTURE-BANK-PROCESS.md`.
+- next: Ian restarts AxiBridge.app (the running server predates Gesture Studies), tries the bench, and annotates the round-10 page https://claude.ai/artifact/2HcJTktg4ZFLu3Megpjc6w (db `notes`; includes the shikasta legibility check, still unanswered). Then: read notes back, compare with the lead's reads first (write `round10-review-*.md`), promote what he keeps to studies, plan round 11 as parallel explorations with risks.
+- blockers: none. Open: Shape atlas study renders ~60 s with a hand (fix in research clothoid fit, then refreeze); Resume re-pins a layer to the current library on first edit; live native window not checked (tests + temp-port screenshots only); UI tests skip without `.venv/bin/python -m playwright install chromium`; Pi clone not synced.
+- context: [process](docs/GESTURE-BANK-PROCESS.md), [round 10](tools/gesture/results/round10-2026-10-17.md), [studies spec](docs/superpowers/specs/2026-10-17-gesture-studies.md), [kit spec](docs/superpowers/specs/2026-10-17-gesture-kit.md), round-9 page https://claude.ai/artifact/4Z61rcGvWnEAsEuczdNmLv, round-8 page https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY. Scans/outputs in gitignored `.local/gesture/`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 

@@ -1,20 +1,31 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-10-16
+updated: 2026-10-17
 machine: mac+pi
-summary: The MCP server and live sync are merged and the live app runs them; the gesture-bank research line now has a regimes model (lines, nibs and shapes becoming one another), learned sign placement and structure-driven compositions, with several corpora harvested; native acceptance of the MCP, live sync and the 8 October integration remains with Ian.
+summary: The gesture bank now runs as a working loop (parallel research rounds, a review page Ian annotates, kept work saved as Gesture Studies in the app with a kit and library behind them); MCP/live-sync and the 8 October integration still await Ian's native acceptance.
 next:
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
   - Check recovery close/relaunch, nested groups, Assets and Mosca 2 in the native app
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank: decide nib rendering / wet defaults / striations, then plot the A4 regimes candidate (see HANDOFF "Gesture bank")
+  - Gesture bank: Ian annotates the round-10 review page and tries Gesture Studies after restarting AxiBridge; then round 11 (see HANDOFF "Gesture bank")
 handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Gesture bank, 17 October:** the research became a workflow, documented in
+`docs/GESTURE-BANK-PROCESS.md`. In the app: the Hand Drift bench, then
+**Gesture Studies** (one generator with its own study dropdown; 8 built-in
+studies with their own controls; forks saved machine-level; new library hands
+appear in every study after `tools/gesture_studies/freeze.py`). Research side:
+the gesture kit (`tools/gesture/gesture/kit/`: saved library of 24 hands,
+tempos, dance trails; combinable voices/modulators/renderers/arrangers; JSON
+recipes beside every image) and rounds 8–10 (`tools/gesture/results/round*-*.md`,
+each with a review record of Ian's notes vs the lead's reads). App suite 1780
+passed / 235 skipped; research suite 553 passed.
 
 **Gesture bank, 16 October (overnight research run):** `tools/gesture/`
 (research code, own venv in `.local/gesture/.venv`, never imported by the
