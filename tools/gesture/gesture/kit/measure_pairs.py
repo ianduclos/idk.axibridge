@@ -423,9 +423,14 @@ def _pair_reach(p):
     P("label_h", "float", 2.0, "label cap height, mm", min=0.8, max=8.0),
     P("index_h", "float", 1.6, "index number height on the drawing, mm", min=0.6, max=6.0),
     *_HAND_PARAMS,
+    P("straight", "choice", "none", "drawn_by: which chart lines stay machine-straight — none | rules (table "
+      "rules, axes, bars) | text (the lettering) | rules+text (only the data is hand-drawn)",
+      choices=vd.STRAIGHT),
+    P("straight_share", "float", 0.0, "drawn_by: a further share of the chart's lines, chosen from the seed, "
+      "that stay straight", min=0.0, max=1.0),
 ], doc="a drawing paired with its own measurement, places tied by numbered indices", reach=_pair_reach)
 def measure_pair(ctx, marks, *, chart, layout, split, index, index_by, rows, cells, order, label_h, index_h,
-                 drawn_by, amount, keep):
+                 drawn_by, amount, keep, straight="none", straight_share=0.0):
     live = [m for m in marks if len(m) >= 2]
     if not live:
         return list(marks)
@@ -481,8 +486,9 @@ def measure_pair(ctx, marks, *, chart, layout, split, index, index_by, rows, cel
         idx_polys = index_on_drawing(M, ss, labs, label_h=index_h, tick=1.6)
     polys = [np.asarray(p, float) for p in polys if len(p) >= 2]
     if drawn_by:
+        flags = vd.straight_flags(polys, label_h, straight, straight_share, ctx.rng("straight"))
         polys = vd.hand_drawn(polys, ctx.use("hand", drawn_by), ctx.rng("drawn_by", drawn_by), amount=amount,
-                              keep=keep)
+                              keep=keep, straight=flags)
     out = list(drawing)
     out += _new_marks(polys, template, "chart", {"chart": chart, "layout": layout, "drawn_by": drawn_by}, part)
     out += _new_marks(idx_polys, template, "index", {"chart": chart}, part)

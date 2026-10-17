@@ -63,9 +63,13 @@ def parse_inks(spec: str) -> list[str]:
     P("window", "float", 0.012, "time: quiet margin either side, share of the line", min=0.0, max=0.2),
     P("layout", "choice", "single", "single: one surface | rows: one band per voice", choices=("single", "rows")),
     P("inks", "str", "black,red,blue,cyan,orange,purple", "Flexoki ink per voice, in part order (cycled)"),
+    P("voices", "int", None, "sing only the first n parts (null = all); every voice answers only earlier "
+      "ones, so on one surface the first n are exactly what they are in the full chorus", min=1, max=16, optional=True),
 ], doc="call and response for N voices, each in its own weight and ink; beads can answer lines")
-def dev_chorus(ctx, parts, *, answer_to, listen_by, radius, answer, delay, window, layout, inks):
+def dev_chorus(ctx, parts, *, answer_to, listen_by, radius, answer, delay, window, layout, inks, voices=None):
     parse_inks(inks)
+    if voices is not None:
+        parts = list(parts)[:voices]
     x0, y0, W, H = ctx.box
     n = len(parts)
     placed = []

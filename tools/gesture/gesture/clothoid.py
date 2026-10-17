@@ -115,6 +115,10 @@ closed stroke sits at segments[0].s0 and its angle closes the loop.
 """
 from __future__ import annotations
 
+import copy
+import hashlib
+import threading
+from collections import OrderedDict
 from dataclasses import dataclass, field, replace
 from math import comb
 
@@ -475,6 +479,14 @@ class _Model:
         fs[fs == 0] = 1.0
         self.fixed_n, self.fixed_s = fw / fs, fs
         self.cache: dict = {}
+        # speed only (2026-10-17, exact): the knot list of each piece and the
+        # SSE of each whole knot configuration, memoised. A configuration
+        # always solves to the same bits, and the greedy re-visits ~35 % of
+        # them (hill-climb polish steps back onto known positions, removals
+        # are re-tried every iteration), so a hit returns what a re-solve
+        # would have returned.
+        self.piece_cache: dict = {}
+        self.sse_cache: dict = {}
         self.n_eval = 0
 
     def _sh(self, table: np.ndarray, t: int) -> np.ndarray:
@@ -505,14 +517,16 @@ class _Model:
         return ((3, int(K[j - 1]), 1 / hl), (3, int(K[j]), -1 / hl - 1 / hr),
                 (3, int(K[j + 1]), 1 / hr))
 
-    def _col(self, p: int, K: np.ndarray, j: int, domain: str) -> tuple[np.ndarray, float]:
+    def _col(self, p: int, K: np.ndarray, j: int, domain: str,
+             Kt: list[int] | None = None) -> tuple[np.ndarray, float]:
         """(unit-norm column, its norm) for hat j of piece p; cached by the
-        knots it depends on."""
-        L = len(K)
+        knots it depends on. Kt: K as Python ints (the key only)."""
+        if Kt is None:
+            Kt = K.tolist()
+        L = len(Kt)
         per = self.pieces[p][2]
-        key = (domain, p, L == 1, j == 0, j == L - 1, int(K[max(j - 1, 0)]), int(K[j]),
-               int(K[min(j + 1, L - 1)]),
-               int(K[-1]) if (per and j == 0) else -1, int(K[0]) if (per and j == L - 1) else -1)
+        key = (domain, p, L == 1, j == 0, j == L - 1, Kt[max(j - 1, 0)], Kt[j], Kt[min(j + 1, L - 1)],
+               Kt[-1] if (per and j == 0) else -1, Kt[0] if (per and j == L - 1) else -1)
         hit = self.cache.get(key)
         if hit is not None:
             return hit
@@ -529,9 +543,25 @@ class _Model:
         self.cache[key] = out
         return out
 
+    def _cols(self, knots: list[np.ndarray], domain: str) -> list[tuple[np.ndarray, float]]:
+        """Every hat column of every piece, in order (each piece's list
+        cached by its whole knot vector; columns by the knots they depend on)."""
+        out: list[tuple[np.ndarray, float]] = []
+        for p, K in enumerate(knots):
+            Kt = K.tolist()
+            pk = (domain, p, *Kt)
+            hit = self.piece_cache.get(pk)
+            if hit is None:
+                hit = [self._col(p, K, j, domain, Kt) for j in range(len(Kt))]
+                if len(self.piece_cache) > 20000:
+                    self.piece_cache.clear()
+                self.piece_cache[pk] = hit
+            out += hit
+        return out
+
     def design(self, knots: list[np.ndarray], domain: str = "y") -> np.ndarray:
         """Design matrix (unnormalised; y-domain columns are weighted)."""
-        cols = [self._col(p, K, j, domain) for p, K in enumerate(knots) for j in range(len(K))]
+        cols = self._cols(knots, domain)
         return np.column_stack([c * s for c, s in cols])
 
     def solve(self, knots: list[np.ndarray], P: np.ndarray | None = None):
@@ -539,18 +569,16 @@ class _Model:
         (constraints). Returns (sse, knot_values, fixed_coefs)."""
         self.n_eval += 1
         nf = self.fixed_n.shape[1]
+        cols = self._cols(knots, "y")
         if P is None:
-            cols = [self._col(p, K, j, "y") for p, K in enumerate(knots) for j in range(len(K))]
             m = len(cols)
             A = np.empty((self.n, m + nf))
             scale = np.empty(m + nf)
-            for i, (c, s) in enumerate(cols):
-                A[:, i] = c
-                scale[i] = s
+            A[:, :m] = np.array([c for c, _ in cols]).reshape(m, self.n).T   # the same copies, one call
+            scale[:m] = [s for _, s in cols]
         else:
             # P is a 0/1 grouping (each knot value → at most one free
             # parameter): sum the member columns instead of a dense H @ P
-            cols = [self._col(p, K, j, "y") for p, K in enumerate(knots) for j in range(len(K))]
             m = P.shape[1]
             H = np.zeros((self.n, m))
             for r, g in zip(*np.nonzero(P)):
@@ -591,7 +619,14 @@ class _Model:
         return e, vals, c[m:]
 
     def sse(self, knots: list[np.ndarray]) -> float:
-        return self.solve(knots)[0]
+        key = tuple(tuple(K.tolist()) for K in knots)
+        e = self.sse_cache.get(key)
+        if e is None:
+            e = self.solve(knots)[0]
+            if len(self.sse_cache) > 200000:
+                self.sse_cache.clear()
+            self.sse_cache[key] = e
+        return e
 
     def kappa_pred(self, knots: list[np.ndarray], vals: np.ndarray) -> np.ndarray:
         """Fitted κ convolved with the smoothing kernel, per sample (1/px)."""
@@ -718,10 +753,41 @@ def _true_arclength_grid(kappa, theta, sm, corners, closed, step, sd, total_turn
     return k2, t2, s2, c2, step2, vmed
 
 
+_FIT_MEMO: "OrderedDict[bytes, Fit]" = OrderedDict()
+_FIT_MEMO_MAX = 4096
+_FIT_MEMO_LOCK = threading.Lock()
+
+
 def fit_stroke(points, *, sigma: float, step: float | None = None, closed: bool = False,
                penalty: float | None = None, kappa_tol: float | None = None,
                corner_angle: float = float(np.deg2rad(35)),
                turn_tol: float | None = None, slope_tol: float | None = None) -> Fit:
+    """Fit a stroke's κ(s) with line / arc / clothoid segments and corners
+    (see `_fit_stroke`). Memoised per process on the exact input bytes and
+    arguments (speed only: a fit is deterministic, so a hit is the fit a
+    re-run would return; a chart redrawn through another hand, or with
+    another `amount`, refits the very same polylines). Returns a fresh copy."""
+    pts = np.ascontiguousarray(np.asarray(points, dtype=np.float64))
+    key = hashlib.sha256(pts.tobytes() + repr((pts.shape, float(sigma), step, bool(closed), penalty, kappa_tol,
+                                               float(corner_angle), turn_tol, slope_tol)).encode()).digest()
+    with _FIT_MEMO_LOCK:
+        hit = _FIT_MEMO.get(key)
+        if hit is not None:
+            _FIT_MEMO.move_to_end(key)
+            return copy.deepcopy(hit)
+    fit = _fit_stroke(points, sigma=sigma, step=step, closed=closed, penalty=penalty, kappa_tol=kappa_tol,
+                      corner_angle=corner_angle, turn_tol=turn_tol, slope_tol=slope_tol)
+    with _FIT_MEMO_LOCK:
+        _FIT_MEMO[key] = copy.deepcopy(fit)
+        while len(_FIT_MEMO) > _FIT_MEMO_MAX:
+            _FIT_MEMO.popitem(last=False)
+    return fit
+
+
+def _fit_stroke(points, *, sigma: float, step: float | None = None, closed: bool = False,
+                penalty: float | None = None, kappa_tol: float | None = None,
+                corner_angle: float = float(np.deg2rad(35)),
+                turn_tol: float | None = None, slope_tol: float | None = None) -> Fit:
     """Fit a stroke's κ(s) with line / arc / clothoid segments and corners.
 
     points: (N, 2) polyline (px), never mutated. sigma: smoothing scale
