@@ -205,6 +205,8 @@ before generating anything.
   type skeletons, Ian's own hand via the draw tool (which also records
   timing — the one source with real speed).
 
+> **How this work is done** — the loop, the parts, how-tos, rules and history: [GESTURE-BANK-PROCESS.md](GESTURE-BANK-PROCESS.md).
+
 ## Ledger — overnight run 2026-10-16
 
 Code in `tools/gesture/` (research only, own venv; see its README). Results
