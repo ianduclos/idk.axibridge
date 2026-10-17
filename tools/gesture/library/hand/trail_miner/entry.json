@@ -1,0 +1,57 @@
+{
+ "id": "trail_miner",
+ "kind": "hand",
+ "label": "Trail: leaf miner",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_trails/grammars/trail_miner.json",
+  "research_commit": "0dc1785",
+  "description": "aspen serpentine leaf-miner galleries (Phyllocnistis populiella), the frass centre-line at a coarser scale (blur to the mine width, then extract)",
+  "rights": "insect-01: CC BY-SA 4.0 (Commons licence tag; candidate CSV: CC BY-SA 4.0); insect-02: CC BY-SA 4.0 (Commons licence tag; candidate CSV: CC BY-SA 4.0)",
+  "corpus": "earth",
+  "training_sheets": [
+   "miner_a@coarse",
+   "miner_b@coarse"
+  ],
+  "n_records": 76,
+  "n_strokes": 6,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 1,
+   "extracts": [
+    "miner_a@coarse",
+    "miner_b@coarse"
+   ],
+   "kind": "trail",
+   "sources": [
+    "miner_a@coarse",
+    "miner_b@coarse"
+   ],
+   "strokes": 6,
+   "records": 76,
+   "min_len_w": 12,
+   "drawings": 2,
+   "secs": 0.1
+  },
+  "experiment": "tools/gesture/experiments/hands_trails.py learn",
+  "earth_items": [
+   "insect-01",
+   "insect-02"
+  ],
+  "extracts": [
+   "miner_a@coarse",
+   "miner_b@coarse"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_trails hand (results/hands_trails-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 2967
+}

@@ -1,0 +1,69 @@
+{
+ "id": "dancer_cristel",
+ "kind": "hand",
+ "label": "Dancer: Cristel De Frankrijker",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_trails/grammars/dancer_cristel.json",
+  "research_commit": "0dc1785",
+  "description": "end-effector trails (hands, feet, head; front view) of e2mb-unusual/Cristel_De_Frankrijker_Take2.bvh, 12 windows of 15 s spread through the take; task 'Unusual Poses' (all six dancers had the same task)",
+  "rights": "E2-Create Motion Bank Dataset (Zenodo 7031672): manifest says CC BY 4.0, the dataset Readme says CC BY-NC-SA (dance-harvest.csv)",
+  "corpus": "dance",
+  "training_sheets": [
+   "Cristel_De_Frankrijker_Take2@5s",
+   "Cristel_De_Frankrijker_Take2@35s",
+   "Cristel_De_Frankrijker_Take2@50s",
+   "Cristel_De_Frankrijker_Take2@80s",
+   "Cristel_De_Frankrijker_Take2@110s",
+   "Cristel_De_Frankrijker_Take2@140s",
+   "Cristel_De_Frankrijker_Take2@155s",
+   "Cristel_De_Frankrijker_Take2@185s",
+   "Cristel_De_Frankrijker_Take2@215s",
+   "Cristel_De_Frankrijker_Take2@245s",
+   "Cristel_De_Frankrijker_Take2@260s",
+   "Cristel_De_Frankrijker_Take2@290s"
+  ],
+  "n_records": 5208,
+  "n_strokes": 186,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "windows_s": 15.0,
+   "n_windows": 12,
+   "task": "Unusual Poses",
+   "kind": "dancer",
+   "sources": [
+    "Cristel_De_Frankrijker_Take2@5s",
+    "Cristel_De_Frankrijker_Take2@35s",
+    "Cristel_De_Frankrijker_Take2@50s",
+    "Cristel_De_Frankrijker_Take2@80s",
+    "Cristel_De_Frankrijker_Take2@110s",
+    "Cristel_De_Frankrijker_Take2@140s",
+    "Cristel_De_Frankrijker_Take2@155s",
+    "Cristel_De_Frankrijker_Take2@185s",
+    "Cristel_De_Frankrijker_Take2@215s",
+    "Cristel_De_Frankrijker_Take2@245s",
+    "Cristel_De_Frankrijker_Take2@260s",
+    "Cristel_De_Frankrijker_Take2@290s"
+   ],
+   "strokes": 186,
+   "records": 5208,
+   "min_len_w": 12,
+   "drawings": 12,
+   "secs": 45.4
+  },
+  "experiment": "tools/gesture/experiments/hands_trails.py learn",
+  "performer": "Cristel De Frankrijker",
+  "task": "Unusual Poses"
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_trails hand (results/hands_trails-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 84047
+}

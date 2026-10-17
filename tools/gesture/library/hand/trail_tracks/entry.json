@@ -1,0 +1,67 @@
+{
+ "id": "trail_tracks",
+ "kind": "hand",
+ "label": "Trail: particle tracks",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_trails/grammars/trail_tracks.json",
+  "research_commit": "0dc1785",
+  "description": "Anderson's 1932 positron track + the physicists' tracings of three bubble-chamber events (bc-01, bc-02, bc-10; not bc-06, which is the `bubble` hand): spirals, kinks, long arcs",
+  "rights": "cc-positron-1932: Public domain (Commons licence tag; candidate CSV: Public domain); bc-01: Public domain (Commons licence tag; candidate CSV: Public domain (US federal work tag; verify per file)); bc-02: Public domain (Commons licence tag; candidate CSV: Public domain (US federal work tag; verify per file)); bc-10: Public domain (Commons licence tag; candidate CSV: Public domain (US federal work tag; verify per file))",
+  "corpus": "earth",
+  "training_sheets": [
+   "positron@coarse",
+   "bc-01t",
+   "bc-02t",
+   "bc-10t"
+  ],
+  "n_records": 504,
+  "n_strokes": 132,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 1,
+   "extracts": [
+    "positron@coarse",
+    "bc-01t",
+    "bc-02t",
+    "bc-10t"
+   ],
+   "kind": "trail",
+   "sources": [
+    "positron@coarse",
+    "bc-01t",
+    "bc-02t",
+    "bc-10t"
+   ],
+   "strokes": 132,
+   "records": 504,
+   "min_len_w": 12,
+   "drawings": 4,
+   "secs": 6.6
+  },
+  "experiment": "tools/gesture/experiments/hands_trails.py learn",
+  "earth_items": [
+   "cc-positron-1932",
+   "bc-01",
+   "bc-02",
+   "bc-10"
+  ],
+  "extracts": [
+   "positron@coarse",
+   "bc-01t",
+   "bc-02t",
+   "bc-10t"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_trails hand (results/hands_trails-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 11842
+}

@@ -1,0 +1,52 @@
+{
+ "id": "trail_slime",
+ "kind": "hand",
+ "label": "Trail: slug and snail slime",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_trails/grammars/trail_slime.json",
+  "research_commit": "0dc1785",
+  "description": "forty years of slug and snail slime trails on a concrete wall",
+  "rights": "slime-trails-forty-years: CC0 (Commons licence tag; candidate CSV: CC0)",
+  "corpus": "earth",
+  "training_sheets": [
+   "slime"
+  ],
+  "n_records": 36,
+  "n_strokes": 17,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 1,
+   "extracts": [
+    "slime"
+   ],
+   "kind": "trail",
+   "sources": [
+    "slime"
+   ],
+   "strokes": 17,
+   "records": 36,
+   "min_len_w": 12,
+   "drawings": 1,
+   "secs": 0.1
+  },
+  "experiment": "tools/gesture/experiments/hands_trails.py learn",
+  "earth_items": [
+   "slime-trails-forty-years"
+  ],
+  "extracts": [
+   "slime"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_trails hand (results/hands_trails-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 2647
+}

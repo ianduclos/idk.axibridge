@@ -1,0 +1,69 @@
+{
+ "id": "dancer_madeline",
+ "kind": "hand",
+ "label": "Dancer: Madeline Harms",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_trails/grammars/dancer_madeline.json",
+  "research_commit": "0dc1785",
+  "description": "end-effector trails (hands, feet, head; front view) of e2mb-unusual/Madeline_Harms_Take2.bvh, 12 windows of 15 s spread through the take; task 'Unusual Poses' (all six dancers had the same task)",
+  "rights": "E2-Create Motion Bank Dataset (Zenodo 7031672): manifest says CC BY 4.0, the dataset Readme says CC BY-NC-SA (dance-harvest.csv)",
+  "corpus": "dance",
+  "training_sheets": [
+   "Madeline_Harms_Take2@5s",
+   "Madeline_Harms_Take2@35s",
+   "Madeline_Harms_Take2@65s",
+   "Madeline_Harms_Take2@95s",
+   "Madeline_Harms_Take2@125s",
+   "Madeline_Harms_Take2@155s",
+   "Madeline_Harms_Take2@200s",
+   "Madeline_Harms_Take2@230s",
+   "Madeline_Harms_Take2@260s",
+   "Madeline_Harms_Take2@290s",
+   "Madeline_Harms_Take2@320s",
+   "Madeline_Harms_Take2@350s"
+  ],
+  "n_records": 3926,
+  "n_strokes": 138,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "windows_s": 15.0,
+   "n_windows": 12,
+   "task": "Unusual Poses",
+   "kind": "dancer",
+   "sources": [
+    "Madeline_Harms_Take2@5s",
+    "Madeline_Harms_Take2@35s",
+    "Madeline_Harms_Take2@65s",
+    "Madeline_Harms_Take2@95s",
+    "Madeline_Harms_Take2@125s",
+    "Madeline_Harms_Take2@155s",
+    "Madeline_Harms_Take2@200s",
+    "Madeline_Harms_Take2@230s",
+    "Madeline_Harms_Take2@260s",
+    "Madeline_Harms_Take2@290s",
+    "Madeline_Harms_Take2@320s",
+    "Madeline_Harms_Take2@350s"
+   ],
+   "strokes": 138,
+   "records": 3926,
+   "min_len_w": 12,
+   "drawings": 12,
+   "secs": 27.2
+  },
+  "experiment": "tools/gesture/experiments/hands_trails.py learn",
+  "performer": "Madeline Harms",
+  "task": "Unusual Poses"
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_trails hand (results/hands_trails-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 59726
+}

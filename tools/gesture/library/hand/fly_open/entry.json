@@ -1,0 +1,77 @@
+{
+ "id": "fly_open",
+ "kind": "hand",
+ "label": "Fly: open-field walk",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_trails/grammars/fly_open.json",
+  "research_commit": "0dc1785",
+  "description": "simulated walks of the male Drosophila CNS connectome driving a differential-drive body (mosca-draw out/k4_circulation/open_control_s{7,11,23,42,99}.npz, read in place): 3 s strokes, 4 per drawing",
+  "rights": "Ian's own project (mosca-draw); connectome: male CNS v1.0, Janelia/Google (see mosca-draw docs)",
+  "training_sheets": [
+   "k4_circulation/open_control_s7@0s",
+   "k4_circulation/open_control_s7@12s",
+   "k4_circulation/open_control_s11@0s",
+   "k4_circulation/open_control_s11@12s",
+   "k4_circulation/open_control_s23@0s",
+   "k4_circulation/open_control_s23@12s",
+   "k4_circulation/open_control_s42@0s",
+   "k4_circulation/open_control_s42@12s",
+   "k4_circulation/open_control_s99@0s",
+   "k4_circulation/open_control_s99@12s"
+  ],
+  "n_records": 3534,
+  "n_strokes": 20,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "walks": [
+    "k4_circulation/open_control_s7",
+    "k4_circulation/open_control_s11",
+    "k4_circulation/open_control_s23",
+    "k4_circulation/open_control_s42",
+    "k4_circulation/open_control_s99"
+   ],
+   "stroke_s": 3.0,
+   "strokes_per_drawing": 4,
+   "decimate_rows": 50,
+   "kind": "fly",
+   "sources": [
+    "k4_circulation/open_control_s7@0s",
+    "k4_circulation/open_control_s7@12s",
+    "k4_circulation/open_control_s11@0s",
+    "k4_circulation/open_control_s11@12s",
+    "k4_circulation/open_control_s23@0s",
+    "k4_circulation/open_control_s23@12s",
+    "k4_circulation/open_control_s42@0s",
+    "k4_circulation/open_control_s42@12s",
+    "k4_circulation/open_control_s99@0s",
+    "k4_circulation/open_control_s99@12s"
+   ],
+   "strokes": 20,
+   "records": 3534,
+   "min_len_w": 12,
+   "drawings": 10,
+   "secs": 235.3
+  },
+  "experiment": "tools/gesture/experiments/hands_trails.py learn",
+  "source_paths": [
+   "~/_SecondBrain/01_Projects/mosca-draw/out/k4_circulation/open_control_s7.npz",
+   "~/_SecondBrain/01_Projects/mosca-draw/out/k4_circulation/open_control_s11.npz",
+   "~/_SecondBrain/01_Projects/mosca-draw/out/k4_circulation/open_control_s23.npz",
+   "~/_SecondBrain/01_Projects/mosca-draw/out/k4_circulation/open_control_s42.npz",
+   "~/_SecondBrain/01_Projects/mosca-draw/out/k4_circulation/open_control_s99.npz"
+  ],
+  "simulated": true
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_trails hand (results/hands_trails-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 55540
+}

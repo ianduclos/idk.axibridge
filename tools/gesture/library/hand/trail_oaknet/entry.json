@@ -1,0 +1,52 @@
+{
+ "id": "trail_oaknet",
+ "kind": "hand",
+ "label": "Trail: skeletonised oak leaf",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_trails/grammars/trail_oaknet.json",
+  "research_commit": "0dc1785",
+  "description": "the vein net left by insects eating a white-oak leaf (negative of the feeding), coarse",
+  "rights": "leaf-eaten-white-oak: Public domain (Commons licence tag; candidate CSV: Public domain)",
+  "corpus": "earth",
+  "training_sheets": [
+   "oak_net@coarse"
+  ],
+  "n_records": 48,
+  "n_strokes": 14,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 1,
+   "extracts": [
+    "oak_net@coarse"
+   ],
+   "kind": "trail",
+   "sources": [
+    "oak_net@coarse"
+   ],
+   "strokes": 14,
+   "records": 48,
+   "min_len_w": 12,
+   "drawings": 1,
+   "secs": 0.1
+  },
+  "experiment": "tools/gesture/experiments/hands_trails.py learn",
+  "earth_items": [
+   "leaf-eaten-white-oak"
+  ],
+  "extracts": [
+   "oak_net@coarse"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_trails hand (results/hands_trails-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 2855
+}
