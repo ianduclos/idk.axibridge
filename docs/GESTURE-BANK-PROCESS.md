@@ -201,6 +201,9 @@ library".
   style." (round 10 review)
 - "An experimental approach, this is the most important" and "return more
   emphasis to the different hands." (round 11 brief)
+- "Perhaps the new hands are a bit meh … more interested in using these
+  kinematics to drive other stuff." / Abstract script: "too similar to real …
+  keep it a separate thing." (round 11 review)
 
 ---
 
@@ -236,3 +239,73 @@ library".
 - An app build can change shared research modules while research agents run,
   if every change is default-preserving and parity-checked (the clothoid memos
   were bit-identical on every fixture).
+- A pathway can saturate while still producing "correct" results: by round 11
+  new hands measured as distinct yet read to Ian as "a bit meh". When a pathway
+  keeps passing the numbers and stops moving him, change the pathway, not the
+  parameters (see §8).
+
+---
+
+## 8. Development method — notes
+
+How the work is actually run, what keeps it healthy, and how to tell when it is
+calcifying. Written at the end of rounds 8–11 (2026-10-17).
+
+### Roles
+
+- **Ian** sets direction in a sentence or two, annotates review pages, and
+  decides what is kept. He reacts to images, not to descriptions.
+- **The lead** (the main Claude session) turns that into briefs, runs the
+  explorations as parallel agents, reviews every diff and headline image, writes
+  its own read *before* seeing his, commits, publishes the review page, and
+  compares his notes with its reads first. It owns the contracts (kit README,
+  specs) and the records (round summaries, review records, this file).
+- **Exploration agents** (Opus, background) each own one idea, one risk and
+  only their own files. App builds are a separate agent that freezes from HEAD.
+- **Sessions**: one long session per run, then a wrap-up and a plan; the next
+  run starts fresh from `HANDOFF.md` and the plan file (stale context is the
+  main failure source in long sessions).
+
+### Cadence of one run
+
+1. Plan file for the run (direction, threads, risks, what to keep) — written
+   at the end of the previous run.
+2. Build what was kept (studies, refreeze) beside the new explorations.
+3. Lead review → round summary → review page.
+4. Ian annotates → review record (notes vs reads, divergences, pattern).
+5. Method notes and history updated here; wrap-up; next plan.
+
+### What keeps it healthy
+
+- The notes-first comparison: each round the lead has been wrong in a new way
+  (systematic picks, capsules, the proxy, new hands), and the record makes the
+  correction stick.
+- Wide sampling over optimisation; duds kept as evidence.
+- Recipes beside every image, so anything Ian names can be rebuilt.
+- Small, explicit contracts before parallel work; freezing from HEAD.
+- Policy and taste rules written down once (§5) instead of re-argued per round.
+
+### Signs of calcification (check at every plan)
+
+- A pathway keeps meeting its own metrics while Ian's notes go flat ("we've
+  done better", "meh", "¯\_(ツ)_/¯").
+- The same defaults keep reappearing: the matisse → shikasta → lichtenberg route,
+  seed 7000, one A4 sheet, ink-on-paper preview, kit recipes as the only medium.
+- Briefs reuse the lead's vocabulary and the same exploration shapes (one corpus
+  → one hand → one sheet), so outcomes converge.
+- The lead's read and Ian's agree only on what the previous round already
+  established.
+- Review pages grow (40+ images) while the number of things Ian keeps shrinks.
+
+### Ways to break it
+
+- Change the unit: a series, a sequence, a large multi-sheet piece, a timeline
+  instead of one sheet.
+- Change the role of a source: driver instead of grammar (kinematics steering
+  weight, rhythm, pen changes).
+- Change who seeds the round: Ian brings a sketch, photo or word; or a second
+  model (Codex / Gemini agents) explores with its own taste.
+- Constraint rounds: one technique only, no kit, or revisit an old round's duds
+  with today's tools.
+- Fewer images, more depth: one finished piece per thread instead of a
+  population sheet.
