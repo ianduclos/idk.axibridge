@@ -1,0 +1,113 @@
+{
+ "id": "merged_shadow",
+ "label": "Merged shadow",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "measure_pairs round 10: tools/gesture/results/measure_pairs-shadow_turns.recipe.json (variants: measure_pairs-shadow.recipe.json)",
+ "engine": "kit",
+ "notes": "The drawing and its shadow merged into one contour: the strip between the line and a shadow offset by its own measurement is unioned and traced as outline rings, pinching to the line where the shadow does. Starts as the shadow on the inner side of every turn (beads at turns). Ian, round 10: \"love all the different options\", so the law (what sets the distance), the side, the shape of the union, the closing radius, the gap and the gain are all controls, with the route and the seed.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_shadow",
+      "law": "kappa",
+      "side": "turns",
+      "gap": 0.6,
+      "gain": 6.0,
+      "merge": "union",
+      "shape": "beads",
+      "close": 1.0,
+      "keep_drawing": false
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "shadow turns"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hands",
+   "label": "Route",
+   "type": "hands",
+   "min_len": 2,
+   "max_len": 4
+  },
+  {
+   "path": "parts.0.modulators.0.law",
+   "label": "Distance from",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.side",
+   "label": "Side",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.shape",
+   "label": "Shape",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.close",
+   "label": "Close (mm)",
+   "type": "float",
+   "min": 0.0,
+   "max": 6.0,
+   "step": 0.1
+  },
+  {
+   "path": "parts.0.modulators.0.gap",
+   "label": "Gap (mm)",
+   "type": "float",
+   "min": 0.0,
+   "max": 6.0,
+   "step": 0.1
+  },
+  {
+   "path": "parts.0.modulators.0.gain",
+   "label": "Gain (mm)",
+   "type": "float",
+   "min": 0.0,
+   "max": 16.0,
+   "step": 0.25
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

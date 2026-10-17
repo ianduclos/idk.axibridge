@@ -1,0 +1,67 @@
+{
+ "entries": {
+  "corpus": {
+   "artists": "9db28ec15076",
+   "calligraphy": "ae0a1068a129",
+   "dance": "0ffa2b27aab0",
+   "earth": "fdc1dfaaed20",
+   "hokusai": "58d7e89dc355",
+   "ingres": "878d53972f55",
+   "matisse": "2c1afca947b6",
+   "print": "571a5ac4c01c"
+  },
+  "dance_trail": {
+   "dragon": "efda6c7aa7bc",
+   "hummingbird": "693deb72f99a",
+   "levitation": "4312dc150203",
+   "mantis": "273c43dd66fb",
+   "outofbalance": "b98eb4981a46",
+   "particles": "57c11715ef4e",
+   "penguin": "c0890ec6f90b",
+   "staccato": "4987cd54e935",
+   "thrusting": "8b99ca6f715c"
+  },
+  "hand": {
+   "aaron": "584a7089b7e4",
+   "bubble": "db7f0a87301f",
+   "dance_fluidity": "c0e42bfbfaae",
+   "dance_levitation": "53533c0e97ec",
+   "dance_particles": "64134cbb43a3",
+   "dance_staccato": "9160a1d9964a",
+   "dance_thrusting": "2eeb0715501b",
+   "hokusai": "b0476cb77bbf",
+   "ingres": "89c51b4067ba",
+   "lichtenberg": "b1726afb2618",
+   "marden": "cf07c23bd414",
+   "matisse": "3b4643415073",
+   "meander69": "0382a45742c9",
+   "mime_dragon": "1681c6a3cbd9",
+   "mime_mantis": "43b8597c384f",
+   "mime_monkey": "2eb9ba75fe67",
+   "mime_monkey_hands": "a6caeded61bd",
+   "mime_penguin": "b324650a2dc5",
+   "mime_prairiedog": "29ab5738ac4c",
+   "mime_roadrunner": "fb797d219845",
+   "molnar_letters": "985c42ba3fa6",
+   "nastaliq": "e6c68c912f71",
+   "polygon_walk": "3659ed9fd471",
+   "river_belt": "b37c29f373d3",
+   "river_bend": "e8a1124697d4",
+   "river_meander": "7f37cb8cc53b",
+   "river_oxbow": "2ec7a998fd04",
+   "river_threads": "059ec9c3f11a",
+   "shikasta": "a8b3145de99d"
+  },
+  "tempo": {
+   "cmu_49_10": "7f2d42c1f114",
+   "cmu_55_mantis": "c6ef9fa81397",
+   "fluidity": "8010d02cb680",
+   "levitation": "e469ed0a17c8",
+   "particles": "c9ca032327f5",
+   "staccato": "d9c61771c801"
+  }
+ },
+ "frozen": "2026-10-17",
+ "frozen_from": "4aa0ed1",
+ "id": "e49dc43ce974"
+}

@@ -1,0 +1,102 @@
+{
+ "id": "ledger_straight",
+ "label": "Ledger, straight rules",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "measure_pairs round 10: tools/gesture/results/measure_pairs-pair_ledger.recipe.json + straight lines",
+ "engine": "kit",
+ "notes": "mime_roadrunner's hand beside its ledger (a stat table drawn with rules), the ledger drawn by Matisse, deciles numbered on the line. Ian, round 10: \"an option to keep some of the lines in the graph straight.\" Straight lines: none (the round-10 piece), rules (table rules and bars stay machine-straight, the lettering is drawn), text (the lettering stays machine, the rules are drawn) or both; a further share of lines chosen from the seed can stay straight too. Also the drawing hand, the ledger's hand and how much turning it owns. Cost: ~15-25 s with a drawing hand.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7200,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_roadrunner",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_pair",
+      "chart": "ledger",
+      "layout": "diptych",
+      "split": 0.45,
+      "index": 9,
+      "index_by": "peaks",
+      "rows": 5,
+      "cells": 24,
+      "order": "time",
+      "label_h": 2.2,
+      "index_h": 2.2,
+      "drawn_by": "matisse",
+      "amount": 1.5,
+      "keep": 0.006,
+      "straight": "rules",
+      "straight_share": 0.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "mime_roadrunner's hand + its ledger, the ledger drawn by matisse; deciles 01–10 on the line"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hand",
+   "label": "Drawing hand",
+   "type": "hand"
+  },
+  {
+   "path": "parts.0.modulators.0.drawn_by",
+   "label": "Ledger drawn by",
+   "type": "hand",
+   "allow_none": true,
+   "none_value": null,
+   "none_label": "the machine (fast)"
+  },
+  {
+   "path": "parts.0.modulators.0.straight",
+   "label": "Straight lines",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.straight_share",
+   "label": "More straight (share)",
+   "type": "float",
+   "min": 0.0,
+   "max": 1.0,
+   "step": 0.05
+  },
+  {
+   "path": "parts.0.modulators.0.amount",
+   "label": "Hand's share of turning",
+   "type": "float",
+   "min": 0.0,
+   "max": 3.0,
+   "step": 0.05
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

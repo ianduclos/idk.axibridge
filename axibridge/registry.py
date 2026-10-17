@@ -338,7 +338,8 @@ _PRESET_EXCLUSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     ("source", "magnetic_field"): ("magnets", "presets", "preset_sizes",
                                      "mix_x", "mix_y", "mix_active"),
     # a kept layer's library pins are captured state, not a portable setting
-    ("source", "gesture_studies"): ("library", "pins"),
+    # (and a Sampler's stored combination, a chorus layer's voice)
+    ("source", "gesture_studies"): ("library", "pins", "sampled", "voice"),
 }
 
 _REPRESENTATIVE_PARAMS: dict[tuple[str, str], dict[str, Any]] = {

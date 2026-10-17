@@ -1,0 +1,106 @@
+{
+ "id": "margin_chart",
+ "label": "Margin chart",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "measure_pairs round 10: tools/gesture/results/measure_pairs-pair_margin.recipe.json (layouts: measure_pairs-pairs.recipe.json cells 2-7)",
+ "engine": "kit",
+ "notes": "A meander69 > shikasta drift with chain joins and its curvature rows in the margin below; the seams where the hand changes are numbered on both. Ian, round 10: \"super nice\"; of the layouts sheet, \"every one of them good except for the first\" (the wrap). So the layout switch offers margin, diptych and under (route lanes under the drawing in the same box), never wrap. Also the route, the joins, the rows and what the numbers mark.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7300,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "meander69",
+      "shikasta"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 5.0,
+     "joins": "chain"
+    },
+    "modulators": [
+     {
+      "id": "measure_pair",
+      "chart": "kappa",
+      "layout": "margin",
+      "split": 0.34,
+      "index": 7,
+      "index_by": "seams",
+      "rows": 3,
+      "cells": 24,
+      "order": "time",
+      "label_h": 2.0,
+      "index_h": 2.0,
+      "drawn_by": null,
+      "amount": 1.5,
+      "keep": 0.006
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "meander69, chain joins + κ rows in the margin below; seams indexed"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hands",
+   "label": "Route",
+   "type": "hands",
+   "min_len": 2,
+   "max_len": 4
+  },
+  {
+   "path": "parts.0.voice.joins",
+   "label": "Joins",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.layout",
+   "label": "Layout",
+   "type": "choice",
+   "choices": [
+    "margin",
+    "diptych",
+    "under"
+   ]
+  },
+  {
+   "path": "parts.0.modulators.0.rows",
+   "label": "Chart rows",
+   "type": "int",
+   "min": 1,
+   "max": 8,
+   "step": 1
+  },
+  {
+   "path": "parts.0.modulators.0.index_by",
+   "label": "Numbers mark",
+   "type": "choice"
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

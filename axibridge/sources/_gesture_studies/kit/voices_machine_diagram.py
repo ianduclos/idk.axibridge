@@ -1,4 +1,4 @@
-# FROZEN from research commit 31f7575: tools/gesture/gesture/kit/voices_machine_diagram.py
+# FROZEN from research commit 4aa0ed1: tools/gesture/gesture/kit/voices_machine_diagram.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Diagram voices: the system's own measurements drawn as plotter line (round 9).
 
@@ -447,10 +447,17 @@ def shadow(marks, *, measure_of: str, gap: float, gain: float) -> list[np.ndarra
 # the limb: a chart drawn by a hand
 # ---------------------------------------------------------------------------
 
-def hand_drawn(polys: list[np.ndarray], g, rng, *, amount: float, keep: float = 0.006, min_len: float = 1.5) -> list[np.ndarray]:
+def hand_drawn(polys: list[np.ndarray], g, rng, *, amount: float, keep: float = 0.006, min_len: float = 1.5,
+               straight=None) -> list[np.ndarray]:
     """Every polyline redrawn through hand g (`grammar.restyle`) in a common
     native frame (the chart's bbox diagonal ↦ 1000 px, so the hand's scale is
-    shared by every line of the chart)."""
+    shared by every line of the chart).
+
+    straight: optional per-polyline flags (2026-10-17, Ian: "an option to
+    keep some of the lines in the graph straight"). A flagged line keeps its
+    machine shape; it is still restyled first and the result dropped, so the
+    shared generator advances exactly as without the flag and every other
+    line comes out identical. None (default) = every line hand-drawn."""
     from ._research import grammar as gm  # noqa: PLC0415
     from .voices_machine import resample  # noqa: PLC0415
     if not polys:
@@ -461,7 +468,7 @@ def hand_drawn(polys: list[np.ndarray], g, rng, *, amount: float, keep: float = 
     k = 1000.0 / diag
     R = 1000.0 / 0.9
     out = []
-    for p in polys:
+    for i, p in enumerate(polys):
         L = float(np.sum(np.linalg.norm(np.diff(p, axis=0), axis=1)))
         if L < min_len:
             out.append(p)
@@ -472,10 +479,49 @@ def hand_drawn(polys: list[np.ndarray], g, rng, *, amount: float, keep: float = 
             continue
         try:
             st = gm.restyle(q, g, rng, ref_length=R, amount=amount, coarse_frac=keep, step=1.0)
-            out.append(st.points / k + lo)
+            out.append(p if straight is not None and straight[i] else st.points / k + lo)
         except Exception:  # noqa: BLE001 — a degenerate line keeps its machine shape
             out.append(p)
     return out
+
+
+STRAIGHT = ("none", "rules", "text", "rules+text")
+
+
+def chart_roles(polys: list[np.ndarray], label_h: float) -> list[str]:
+    """What each chart polyline is, from its geometry alone: "rule" (one
+    straight run longer than 1.25 cap heights: table rules, axes, bars,
+    long ticks), "text" (a short stroke inside a 1.15 cap-height box with
+    ≤ 10 points: the stroke font's glyph strokes, short ticks), "trace"
+    (everything else: data curves, specimens, brackets)."""
+    out = []
+    for p in polys:
+        p = np.asarray(p, float)
+        d = np.diff(p, axis=0)
+        L = float(np.sum(np.linalg.norm(d, axis=1)))
+        chord = float(np.linalg.norm(p[-1] - p[0])) if len(p) >= 2 else 0.0
+        ext = float(np.max(np.ptp(p, axis=0))) if len(p) else 0.0
+        if len(p) >= 2 and L > 1.25 * label_h and chord >= L * (1 - 1e-9):
+            out.append("rule")
+        elif len(p) <= 10 and ext <= 1.15 * label_h:
+            out.append("text")
+        else:
+            out.append("trace")
+    return out
+
+
+def straight_flags(polys: list[np.ndarray], label_h: float, keep_straight: str, share: float, rng) -> list[bool] | None:
+    """Per-polyline flags for `hand_drawn(straight=...)`: the roles named by
+    `keep_straight` ("rules", "text", "rules+text"; "none"), plus a `share`
+    of the remaining lines drawn from `rng` (its own stream, so the hand's
+    generator is untouched). None when nothing stays straight (= the
+    original output, bit for bit)."""
+    if keep_straight == "none" and share <= 0:
+        return None
+    roles = chart_roles(polys, label_h)
+    keep = {"none": set(), "rules": {"rule"}, "text": {"text"}, "rules+text": {"rule", "text"}}[keep_straight]
+    u = rng.random(len(polys))
+    return [r in keep or (share > 0 and bool(ui < share)) for r, ui in zip(roles, u)]
 
 
 def _chart_marks(polys, template_channels, kind, drawn_by) -> list[Mark]:

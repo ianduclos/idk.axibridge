@@ -1,0 +1,78 @@
+{
+ "id": "river_meander",
+ "kind": "hand",
+ "label": "River: meander (150 w)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_rivers/grammars/river_meander.json",
+  "research_commit": "0dc1785",
+  "description": "Amazon main stems (GRWL), stretches of 150 channel widths, 5 pieces each: a train of bends",
+  "rights": "GRWL V01.01, Allen & Pavelsky 2018, CC BY 4.0 (earth-physics-harvest.csv)",
+  "corpus": "earth",
+  "corpus_ids": [
+   "grwl-vec-SB18",
+   "grwl-vec-SB19",
+   "grwl-vec-SB20",
+   "grwl-vec-SC18",
+   "grwl-vec-SC20"
+  ],
+  "training_sheets": [
+   "grwl:SB18:seg6@0+600",
+   "grwl:SB19:seg1@0+600",
+   "grwl:SB20:seg6@0+600",
+   "grwl:SC18:seg10@0+600",
+   "grwl:SC20:seg11@0+600",
+   "grwl:SB18:seg39@0+600",
+   "grwl:SB19:seg0@0+600",
+   "grwl:SB20:seg36@0+600",
+   "grwl:SC18:seg13@0+600",
+   "grwl:SC20:seg30@0+600",
+   "grwl:SB18:seg45@0+600",
+   "grwl:SB19:seg2@0+600",
+   "grwl:SB20:seg23@0+600",
+   "grwl:SC18:seg47@0+600"
+  ],
+  "zoom_w": 150,
+  "zoom_unit": "channel widths along the channel per drawing",
+  "extraction": "GRWL vertices of segments with median width 150–700 m and median nchannels ≤ 1 (lakes dropped), resampled at w/4, smoothed at 1.5 w; non-overlapping stretches of 150 w round-robin over tiles SB18, SB19, SB20, SC18, SC20, longest stems first; each stretch cut into 5 pieces with 1.5 w pen lifts",
+  "line_width": "nominal: 0.0025 × R (channel width is not ink width; the dance convention)",
+  "n_records": 422,
+  "n_strokes": 42,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "sources": [
+    "grwl:SB18:seg6@0+600",
+    "grwl:SB19:seg1@0+600",
+    "grwl:SB20:seg6@0+600",
+    "grwl:SC18:seg10@0+600",
+    "grwl:SC20:seg11@0+600",
+    "grwl:SB18:seg39@0+600",
+    "grwl:SB19:seg0@0+600",
+    "grwl:SB20:seg36@0+600",
+    "grwl:SC18:seg13@0+600",
+    "grwl:SC20:seg30@0+600",
+    "grwl:SB18:seg45@0+600",
+    "grwl:SB19:seg2@0+600",
+    "grwl:SB20:seg23@0+600",
+    "grwl:SC18:seg47@0+600"
+   ],
+   "strokes": 42,
+   "records": 422,
+   "min_len_w": 12,
+   "drawings": 14,
+   "secs": 6.0
+  },
+  "experiment": "tools/gesture/experiments/hands_rivers.py learn"
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_rivers hand (results/hands_rivers-2026-10-17.md). Curvature along arc length only: rivers give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 9545
+}

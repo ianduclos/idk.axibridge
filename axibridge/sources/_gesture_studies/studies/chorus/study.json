@@ -1,0 +1,260 @@
+{
+ "id": "chorus",
+ "label": "Chorus, several pens",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "developments round 10: .local/gesture/out/developments/c5-four-ghost.recipe.json (c2/c4 are its first 2/3 voices)",
+ "engine": "kit",
+ "keep": "voices",
+ "notes": "Call and response for up to four voices, each in its own weight and its own ink: a drift in nib masses (black), a restated answer (red), clusters of beads (blue) and a shikasta ghost whose line is never drawn, only its beads (cyan). Each voice speaks where the earlier ones are silent. Ian, round 10: \"very nice actually, and I like these specific ones with multiple pens.\" Keep makes a group named after the study with one layer per voice, each on its own pen, so each plots as its own pass. Controls: how many voices sing (2-4; the first n are exactly those of the full chorus), who listens to whom, by space or by time, how near a voice is heard, the leader's route and the seed.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7100,
+  "margin": null,
+  "arranger": {
+   "id": "dev_chorus",
+   "answer_to": "all",
+   "listen_by": "space",
+   "radius": 15.0,
+   "answer": 0.8,
+   "delay": 0.05,
+   "window": 0.012,
+   "layout": "single",
+   "inks": "black,red,blue,cyan",
+   "voices": 4
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift_tokens",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 3.0,
+     "joins": "chain"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 1.0,
+      "gap": 20.0,
+      "unit": "pulse",
+      "span": 5.0,
+      "lead": 0.0,
+      "primary": 0.34,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ],
+    "renderer": {
+     "id": "nib",
+     "style": "e",
+     "pen": 0.4
+    },
+    "label": "leader: drift, pulse, nib e masses"
+   },
+   {
+    "voice": {
+     "id": "drift_tokens",
+     "hands": [
+      "bubble",
+      "hokusai"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 3.0,
+     "joins": "chain"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 1.0,
+      "gap": 20.0,
+      "unit": "segment",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.34,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ],
+    "renderer": {
+     "id": "restate",
+     "pen": 0.4,
+     "thr": 0.15,
+     "copies": 8,
+     "gamma": 1.0,
+     "drift": 0.7,
+     "slide": 1.5,
+     "turn": 1.5,
+     "wobble": 0.35,
+     "trim": 2.0,
+     "bound": "contour",
+     "bound_gap": 1.2
+    },
+    "label": "bubble > hokusai, restated + bound"
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "meander69",
+     "length": 3.0,
+     "joins": "chain"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 1.5,
+      "gap": 20.0,
+      "unit": "segment",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.34,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ],
+    "renderer": {
+     "id": "dev_beads",
+     "shape": "cluster",
+     "at": "peak",
+     "line": "wire",
+     "nib_style": "e",
+     "nib_cap": 0.5,
+     "pen": 0.35,
+     "thr": 0.15,
+     "size": 6.0,
+     "length_gain": 0.25,
+     "spacing": 1.5,
+     "pitch": 0.85,
+     "wobble": 0.06,
+     "loops": 4
+    },
+    "label": "meander69 chain, clusters"
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "shikasta",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 2.0,
+      "gap": 12.0,
+      "unit": "pulse",
+      "span": 5.0,
+      "lead": 0.0,
+      "primary": 0.6,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ],
+    "renderer": {
+     "id": "dev_beads",
+     "shape": "gather",
+     "at": "peak",
+     "line": "none",
+     "nib_style": "e",
+     "nib_cap": 0.5,
+     "pen": 0.35,
+     "thr": 0.15,
+     "size": 6.0,
+     "length_gain": 0.25,
+     "spacing": 1.5,
+     "pitch": 0.85,
+     "wobble": 0.06,
+     "loops": 4
+    },
+    "label": "shikasta ghost: beads only"
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.4
+  },
+  "label": "e  four: + a shikasta ghost (cyan) whose line is never drawn — beads answering lines"
+ },
+ "controls": [
+  {
+   "path": "arranger.voices",
+   "label": "Voices",
+   "type": "int",
+   "min": 2,
+   "max": 4,
+   "step": 1
+  },
+  {
+   "path": "arranger.answer_to",
+   "label": "Answers",
+   "type": "choice"
+  },
+  {
+   "path": "arranger.listen_by",
+   "label": "Listens by",
+   "type": "choice"
+  },
+  {
+   "path": "arranger.radius",
+   "label": "Hears within (mm)",
+   "type": "float",
+   "min": 2.0,
+   "max": 60.0,
+   "step": 0.5
+  },
+  {
+   "path": "parts.0.voice.hands",
+   "label": "Leader route",
+   "type": "hands",
+   "min_len": 2,
+   "max_len": 4
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

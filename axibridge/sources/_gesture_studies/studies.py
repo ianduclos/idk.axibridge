@@ -121,7 +121,8 @@ class Study(BaseModel):
     parent: Parent | None = None
     created: str = Field(default="", max_length=40)
     source: str = Field(default="", max_length=400)
-    engine: Literal["kit", "hand_drift"] = "kit"
+    engine: Literal["kit", "hand_drift", "sampler"] = "kit"
+    keep: Literal["layer", "voices"] = "layer"
     notes: str = Field(default="", max_length=4000)
     recipe: dict[str, Any]
     controls: list[Control] = Field(min_length=1, max_length=32)
@@ -133,6 +134,8 @@ class Study(BaseModel):
             raise ValueError("control keys must be unique")
         if len(json.dumps(self.recipe)) > RECIPE_MAX_BYTES:
             raise ValueError(f"recipe larger than {RECIPE_MAX_BYTES} bytes")
+        if self.keep == "voices" and self.engine != "kit":
+            raise ValueError("only a kit study can keep its voices as a group of layers")
         return self
 
 
@@ -248,8 +251,18 @@ def hand_drift_spec(path: str) -> Spec:
     return Spec("int" if ann is int else "float", lo, hi)
 
 
+def sampler_spec(path: str) -> Spec:
+    if path == "seed":
+        return Spec("int", 0, SEED_MAX)
+    raise StudyError(f"control path {path!r}: a sampler study's only control is its seed")
+
+
 def spec_at(study: Study, recipe: dict, path: str) -> Spec:
-    return kit_spec(recipe, path) if study.engine == "kit" else hand_drift_spec(path)
+    if study.engine == "kit":
+        return kit_spec(recipe, path)
+    if study.engine == "sampler":
+        return sampler_spec(path)
+    return hand_drift_spec(path)
 
 
 def library_ids(lib: FL.FrozenLibrary, kind: str) -> set[str]:
@@ -272,19 +285,40 @@ def hand_drift_ids(kind: str, lib: FL.FrozenLibrary) -> set[str]:
     return own | library_ids(lib, kind)
 
 
+def _kit_recipe(recipe: dict, lib: FL.FrozenLibrary) -> dict:
+    kit = _kit()
+    try:
+        out = kit.validate(recipe, library=lib)
+    except (kit.RecipeError, KeyError, TypeError) as e:
+        raise StudyError(f"recipe: {e}") from None
+    # the kit allows sheets up to 2 m; the app keeps a study near bed size
+    # (ink is laid in mm, so a huge frame is a huge, slow drawing)
+    if not all(FRAME_MM[0] <= v <= FRAME_MM[1] for v in out["frame"]):
+        raise StudyError(f"recipe: frame sides must be {FRAME_MM[0]:g}–{FRAME_MM[1]:g} mm, got {out['frame']}")
+    return out
+
+
+def _sampler_recipe(recipe: dict) -> dict:
+    """A sampler study's recipe: {"frame": [W, H], "seed": n} and nothing else."""
+    extra = sorted(set(recipe) - {"frame", "seed"})
+    if extra:
+        raise StudyError(f"recipe: a sampler recipe is frame + seed, not {extra}")
+    frame, seed = recipe.get("frame", [267.0, 180.0]), recipe.get("seed", 0)
+    if (not isinstance(frame, list) or len(frame) != 2
+            or not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in frame)
+            or not all(FRAME_MM[0] <= float(v) <= FRAME_MM[1] for v in frame)):
+        raise StudyError(f"recipe: frame must be [W, H] with sides {FRAME_MM[0]:g}–{FRAME_MM[1]:g} mm")
+    if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed <= SEED_MAX:
+        raise StudyError(f"recipe: seed must be an int in [0, {SEED_MAX}]")
+    return {"frame": [float(frame[0]), float(frame[1])], "seed": int(seed)}
+
+
 def validate_recipe(study: Study, recipe: dict, lib: FL.FrozenLibrary) -> dict:
     """Engine validation → the normalized recipe (defaults filled)."""
     if study.engine == "kit":
-        kit = _kit()
-        try:
-            out = kit.validate(recipe, library=lib)
-        except (kit.RecipeError, KeyError) as e:
-            raise StudyError(f"recipe: {e}") from None
-        # the kit allows sheets up to 2 m; the app keeps a study near bed size
-        # (ink is laid in mm, so a huge frame is a huge, slow drawing)
-        if not all(FRAME_MM[0] <= v <= FRAME_MM[1] for v in out["frame"]):
-            raise StudyError(f"recipe: frame sides must be {FRAME_MM[0]:g}–{FRAME_MM[1]:g} mm, got {out['frame']}")
-        return out
+        return _kit_recipe(recipe, lib)
+    if study.engine == "sampler":
+        return _sampler_recipe(recipe)
     hand_drift, _ = _hd()
     r = dict(recipe)
     loose = {**r, **{h: "matisse" for h in _HD_HANDS if h in r}, "timing": "staccato"}
@@ -347,6 +381,65 @@ def _check_control(study: Study, recipe: dict, c: Control) -> None:
                 raise StudyError(f"{where}: the param is not one {c.kind} id")
             if c.allow_none and (not sp.optional or c.none_value != sp.none_value):
                 raise StudyError(f"{where}: the param does not take {c.none_value!r} as none")
+
+
+# ---------------------------------------------------------------------------
+# what a resolved study runs: the kit recipe (a sampler's sampled one), voices
+# ---------------------------------------------------------------------------
+
+def sample_key(recipe: dict) -> str:
+    """What a sampled recipe was sampled FROM (frame + seed), canonical."""
+    return json.dumps(recipe, sort_keys=True, separators=(",", ":"))
+
+
+def run_recipe(study: Study, recipe: dict, lib: FL.FrozenLibrary, sampled: dict | None = None) -> dict:
+    """The kit recipe a resolved study runs. Kit: the recipe itself. Sampler:
+    the combination its seed samples from `lib`'s pools — or, when `sampled`
+    ({"of": sample_key, "recipe": ...}, what a kept layer stores) was sampled
+    from this very recipe, that stored combination, so a refreeze that adds
+    hands (or changes the sampler) never changes a kept layer."""
+    if study.engine != "sampler":
+        return recipe
+    if sampled and sampled.get("of") == sample_key(recipe) and isinstance(sampled.get("recipe"), dict):
+        return _kit_recipe(sampled["recipe"], lib)
+    from .kit import sampler  # noqa: PLC0415
+    _kit()
+    try:
+        out = sampler.sample(recipe["seed"], library=lib, frame=tuple(recipe["frame"]))
+    except (_kit().RecipeError, KeyError, StopIteration, ValueError) as e:
+        raise StudyError(f"sampler: {e}") from None
+    return _kit_recipe(out, lib)
+
+
+def summary_of(study: Study, kit_recipe: dict) -> str:
+    """One line naming what is combined (the sampler's own summary)."""
+    from .kit import sampler  # noqa: PLC0415
+    if study.engine not in ("kit", "sampler"):
+        return ""
+    try:
+        return sampler.summarize(kit_recipe)
+    except (KeyError, TypeError):           # an arranger or voice the summary does not know
+        return ""
+
+
+def voices_of(study: Study, kit_recipe: dict) -> list[dict]:
+    """A voices study (`keep: "voices"`): one entry per sung voice — index,
+    ink name and colour (the dev_chorus arranger's Flexoki inks), label."""
+    if study.keep != "voices":
+        return []
+    from .kit import dev_chorus  # noqa: PLC0415
+    arr = kit_recipe["arranger"]
+    n = len(kit_recipe["parts"])
+    if arr.get("voices") is not None:
+        n = min(n, int(arr["voices"]))
+    inks = dev_chorus.parse_inks(arr["inks"]) if arr.get("id") == "dev_chorus" else ["black"]
+    out = []
+    for i in range(n):
+        ink = inks[i % len(inks)]
+        part = kit_recipe["parts"][i]
+        out.append({"index": i, "ink": ink, "color": dev_chorus.FLEXOKI[ink],
+                    "label": part.get("label") or part["voice"]["id"]})
+    return out
 
 
 def options_for(study: Study, c: Control, lib: FL.FrozenLibrary) -> set[str]:

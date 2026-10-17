@@ -406,6 +406,11 @@ def preview_generator(body: GenerateBody) -> dict[str, Any]:
         raise _fail(e, 400)
     paths = [p for layer in doc.layers for p in layer.paths]
     result = {**_preview_payload(paths), "width": doc.width, "height": doc.height}
+    if len(doc.layers) > 1:
+        # a source that draws several inks (Gesture Studies' chorus): which
+        # consecutive run of `lines` each is, so a preview can colour them
+        result["layers"] = [{"name": layer.name, "color": layer.color, "paths": len(layer.paths)}
+                            for layer in doc.layers]
     if isinstance(src, ProcessModule):
         params = src.Params(**body.params)
         run = src.trajectory(params)

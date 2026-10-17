@@ -1,0 +1,52 @@
+{
+ "id": "river_threads",
+ "kind": "hand",
+ "label": "River: Anavilhanas threads",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_rivers/grammars/river_threads.json",
+  "research_commit": "0dc1785",
+  "description": "the narrow (< ~400 m) channels between the Anavilhanas islands, Rio Negro (Sentinel-2 20MQC 2020-07-29, NIR < 700), extract_hybrid, 2×2 tiles",
+  "rights": "Copernicus Sentinel-2 L2A (Earth Search COG), free use (earth-physics-harvest.csv)",
+  "corpus": "earth",
+  "corpus_ids": [
+   "s2-20MQC-20200729"
+  ],
+  "training_sheets": [
+   "s2-20MQC-20200729:narrow#00",
+   "s2-20MQC-20200729:narrow#01",
+   "s2-20MQC-20200729:narrow#10",
+   "s2-20MQC-20200729:narrow#11"
+  ],
+  "extraction": "Sentinel-2 B08 < 700 → water; opening with a 20 px disk = wide water; narrow = water − wide; extract_hybrid on the narrow mask at 1500 px; 2×2 tiles",
+  "line_width": "nominal: 0.0025 × R (channel width is not ink width; the dance convention)",
+  "n_records": 574,
+  "n_strokes": 99,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "sources": [
+    "s2-20MQC-20200729:narrow#00",
+    "s2-20MQC-20200729:narrow#01",
+    "s2-20MQC-20200729:narrow#10",
+    "s2-20MQC-20200729:narrow#11"
+   ],
+   "strokes": 99,
+   "records": 574,
+   "min_len_w": 12,
+   "drawings": 4,
+   "secs": 3.3
+  },
+  "experiment": "tools/gesture/experiments/hands_rivers.py learn"
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_rivers hand (results/hands_rivers-2026-10-17.md). Curvature along arc length only: rivers give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 11534
+}

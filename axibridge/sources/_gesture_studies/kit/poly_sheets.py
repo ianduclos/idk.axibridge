@@ -1,4 +1,4 @@
-# FROZEN from research commit 31f7575: tools/gesture/gesture/kit/poly_sheets.py
+# FROZEN from research commit 4aa0ed1: tools/gesture/gesture/kit/poly_sheets.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Polyphonic sheets — arrangers that compose a sheet of separate UNITS, each
 part its own grammar, plus annotation: one part comments on the others.

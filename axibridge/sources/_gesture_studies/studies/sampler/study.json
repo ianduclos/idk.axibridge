@@ -1,0 +1,27 @@
+{
+ "id": "sampler",
+ "label": "Sampler",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "combo_search round 10 (sampling only): tools/gesture/gesture/kit/sampler.py",
+ "engine": "sampler",
+ "notes": "The seed picks a whole combination from the kit, unbred: a heavy voice (a drift, a hand or a dance, with a field, a tempo or prosody for weight, in nib or line-built ink), a dry wire voice, and sometimes a third (its own measurement, or a dance). Ian, round 10: \"some golden ones here\" and \"curiously I dig the unbred ones more\". The sample space is every generative hand, dance and tempo in the frozen library, so hands learned later enter it after a refreeze; a kept layer stores the combination it drew, so a refreeze never changes it. Save as new study keeps the combination as a study of its own.",
+ "recipe": {
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 12
+ },
+ "controls": [
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

@@ -36,6 +36,8 @@ REVIEWED_NOT_MOTION: dict[str, str] = {
     "/api/gesture-studies": "saves a study recipe to the machine-level store, never touches the machine",
     "/api/gesture-studies/validate": "validates a study recipe, never touches the machine",
     "/api/gesture-studies/{}": "deletes a saved study recipe, never touches the machine",
+    # Studies v2 (2026-10-17): a chorus kept as a group of layers (creates project layers, no machine)
+    "/api/gesture-studies/keep": "adds a group of layers to the project, never touches the machine",
 }
 
 

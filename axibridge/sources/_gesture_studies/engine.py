@@ -23,6 +23,9 @@ from __future__ import annotations
 
 import dataclasses
 import functools
+import json
+import threading
+from collections import OrderedDict
 
 import numpy as np
 
@@ -97,27 +100,55 @@ def _simplify(arrs: list[np.ndarray]) -> list[np.ndarray]:
 def inks_to_paths(inks) -> list[Path]:
     """Kit inks → Paths: simplified, closed rings closed exactly, `filled`
     only on a closed ring with ≥ 4 points."""
+    return [p for _, p in _inks_to_tagged(inks)]
+
+
+def _inks_to_tagged(inks) -> list[tuple[int, Path]]:
+    """(part index, Path) per kept ink (see inks_to_paths)."""
     arrs = _simplify([ink.points for ink in inks])
     out = []
     for ink, a, full in zip(inks, arrs, (ink.points for ink in inks)):
         if len(a) < 2:
             continue
+        part = int(ink.meta.get("part", 0))
         if ink.closed:
             ring = a if len(a) >= 4 else np.asarray(full, dtype=np.float64)
             pts = [(float(x), float(y)) for x, y in ring]
             if pts[0] != pts[-1]:
                 pts.append(pts[0])
             pts[-1] = pts[0]
-            out.append(Path(points=pts, filled=bool(ink.filled) and len(pts) >= 4))
+            out.append((part, Path(points=pts, filled=bool(ink.filled) and len(pts) >= 4)))
         else:
-            out.append(Path(points=[(float(x), float(y)) for x, y in a], filled=False))
+            out.append((part, Path(points=[(float(x), float(y)) for x, y in a], filled=False)))
     return out
 
 
+# The last few sheets, by recipe + library: the layers of one chorus resolve
+# the same recipe and each keeps its own voice, so they share one run.
+_SHEETS: "OrderedDict[str, object]" = OrderedDict()
+_SHEETS_MAX = 4
+_SHEETS_LOCK = threading.Lock()
+
+
+def _sheet_key(recipe: dict, lib: FL.FrozenLibrary) -> str:
+    pins = sorted(f"{k}/{i}@{h}" for (k, i), h in lib.pins.items())
+    return json.dumps([recipe, str(FL.ROOT), lib.snapshot_id, pins], sort_keys=True, separators=(",", ":"))
+
+
 def run_kit(recipe: dict, lib: FL.FrozenLibrary):
+    key = _sheet_key(recipe, lib)
+    with _SHEETS_LOCK:
+        hit = _SHEETS.get(key)
+        if hit is not None:
+            _SHEETS.move_to_end(key)
+            return hit
     report_progress(0.05, "drawing the study")
     sheet = _kit.run(recipe, library=lib)
     report_progress(0.95, f"{len(sheet.inks)} ink paths")
+    with _SHEETS_LOCK:
+        _SHEETS[key] = sheet
+        while len(_SHEETS) > _SHEETS_MAX:
+            _SHEETS.popitem(last=False)
     return sheet
 
 
@@ -181,6 +212,18 @@ def run_hand_drift(recipe: dict, lib: FL.FrozenLibrary) -> list[Path]:
         return H.load_timing(name) if name in H.TIMING_IDS else _hd_timing(lib, name)
 
     return hd.render_paths(params, load_hand=load_hand, load_timing=load_timing)
+
+
+def render_voices(recipe: dict, lib: FL.FrozenLibrary) -> dict[int, list[Path]]:
+    """A kit recipe → its paths per part (voice), fitted inside the frame as
+    ONE drawing (so voices kept as separate layers stay in register)."""
+    W, H = frame_of("kit", recipe)
+    tagged = _inks_to_tagged(run_kit(recipe, lib).inks)
+    fitted = _fit_inside([p for _, p in tagged], W, H)
+    out: dict[int, list[Path]] = {}
+    for (part, _), p in zip(tagged, fitted):
+        out.setdefault(part, []).append(p)
+    return out
 
 
 def render(engine: str, recipe: dict, lib: FL.FrozenLibrary) -> list[Path]:

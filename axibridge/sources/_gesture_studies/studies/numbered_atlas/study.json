@@ -1,0 +1,89 @@
+{
+ "id": "numbered_atlas",
+ "label": "Numbered atlas",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "measure_pairs round 10: tools/gesture/results/measure_pairs-pair_atlas.recipe.json",
+ "engine": "kit",
+ "notes": "A drift beside its own shape atlas in order of time; each specimen's number sits on the drawing where it came from. Ian, round 10: \"amazing. keep as is. we can make a new version if we do developments on the drawing side or in the specimen side.\" So the recipe is the round-10 one verbatim and only the drawing's route is exposed: which hands, how they mix, how they join, and the seed. Layout, numbering and the specimens are fixed; a development of either side is a new study.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_pair",
+      "chart": "atlas",
+      "layout": "diptych",
+      "split": 0.4,
+      "index": 9,
+      "index_by": "peaks",
+      "rows": 5,
+      "cells": 24,
+      "order": "time",
+      "label_h": 2.0,
+      "index_h": 2.0,
+      "drawn_by": null,
+      "amount": 1.5,
+      "keep": 0.006
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "drift + its shape atlas in order of time; each specimen's number sits where it came from"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hands",
+   "label": "Route",
+   "type": "hands",
+   "min_len": 2,
+   "max_len": 4
+  },
+  {
+   "path": "parts.0.voice.blend",
+   "label": "Hands mix by",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.voice.joins",
+   "label": "Joins",
+   "type": "choice"
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

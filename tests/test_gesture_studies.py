@@ -31,13 +31,17 @@ load_builtin_modules()
 SRC = get_source("gesture_studies")
 HD = get_source("hand_drift")
 ORDER = ["hand_drift", "danced_chain", "two_voices", "drawing_and_measure", "shape_atlas", "conversation",
-         "annotated_page", "three_voices"]
-KIT_STUDIES = ORDER[1:]
+         "annotated_page", "three_voices",
+         # Studies v2 (2026-10-17)
+         "numbered_atlas", "dance_atlas", "margin_chart", "merged_shadow", "chorus", "sampler", "ledger_straight"]
+KIT_STUDIES = ORDER[1:]                        # the sampler draws through the kit too
 # Studies whose ink depends on GEOS's offset/buffer details: nib "c" lanes come out
 # slightly differently under GEOS 3.13 (app venv) and 3.14 (research venv). The
 # freeze script proves the frozen copy reproduces the research exactly under the
 # research interpreter; here they must still agree structurally.
-GEOS_SENSITIVE = {"two_voices"}
+# The sampler's default combination changes when a refreeze adds hands; it may
+# then be inked in nib "c" lanes, so it is held to the structural check too.
+GEOS_SENSITIVE = {"two_voices", "sampler"}
 
 _SHEETS: dict = {}
 
@@ -46,7 +50,8 @@ def sheet(sid):
     """The built-in study's kit sheet with its default values (rendered once)."""
     if sid not in _SHEETS:
         lib = FL.FrozenLibrary()
-        _SHEETS[sid] = engine.run_kit(ST.resolve(ST.builtin(sid), {}, lib), lib)
+        st = ST.builtin(sid)
+        _SHEETS[sid] = engine.run_kit(ST.run_recipe(st, ST.resolve(st, {}, lib), lib), lib)
     return _SHEETS[sid]
 
 
@@ -56,7 +61,7 @@ def study_paths(sid):
     recipe = ST.resolve(st, {}, lib)
     if st.engine == "hand_drift":
         return engine.render(st.engine, recipe, lib), engine.frame_of(st.engine, recipe)
-    W, H = engine.frame_of(st.engine, recipe)
+    W, H = engine.frame_of("kit", ST.run_recipe(st, recipe, lib))
     return engine._fit_inside(engine.inks_to_paths(sheet(sid).inks), W, H), (W, H)
 
 
@@ -86,6 +91,8 @@ def test_builtin_studies_load_in_order_with_few_bounded_controls():
         assert any(c.key == "seed" and c.type == "int" for c in s.controls), s.id
         if s.engine == "kit":
             assert 3 <= len(s.controls) <= 8, s.id
+        if s.engine == "sampler":                      # the seed IS the piece: it picks the combination
+            assert [c.key for c in s.controls] == ["seed"]
         for c in s.controls:
             if c.type in ("int", "float"):
                 assert c.min is not None and c.max is not None and c.min < c.max
@@ -138,7 +145,7 @@ def test_source_registration_and_hand_drift_leaves_the_dropdown():
     assert not hd["listed"] and "bench" not in hd["library_categories"]
     assert hd["bench"]["adapter"] == "hand-drift"           # still resolves and resumes kept layers
     assert all(spec.get("hidden") for spec in gs["schema"]["properties"].values())
-    assert gs["preset_exclusions"] == ["library", "pins"]
+    assert gs["preset_exclusions"] == ["library", "pins", "sampled", "voice"]
     assert SRC.placement_frame(params("shape_atlas")) == (267.0, 120.0)
     assert SRC.placement_frame(params("hand_drift", {"width": 200.0, "height": 150.0})) == (200.0, 150.0)
 
@@ -188,7 +195,7 @@ def test_every_builtin_study_renders_valid_paths_inside_its_frame(sid):
         assert all(-1e-6 <= x <= W + 1e-6 and -1e-6 <= y <= H + 1e-6 for x, y in p.points)
         if p.filled:
             assert is_closed(p.points) and len(p.points) >= 4
-    if sid in ("two_voices", "three_voices"):
+    if sid in ("two_voices", "three_voices", "chorus"):
         assert any(p.filled for p in paths)            # mass / nib rims occlude
 
 
@@ -231,6 +238,10 @@ def test_parity_with_the_research_kit(sid):
     tools/gesture_studies/freeze.py from the HEAD research kit + library)."""
     fx = json.loads((FIXTURES / f"{sid}.json").read_text())
     assert fx["version"] == ST.builtin(sid).version
+    if "sampled" in fx:                                    # the frozen sampler picked the research's recipe
+        st = ST.builtin(sid)
+        lib = FL.FrozenLibrary()
+        assert ST.run_recipe(st, ST.resolve(st, {}, lib), lib) == ST._kit_recipe(fx["sampled"], lib)
     got, allp = _summary(sheet(sid))
     assert len(got) == len(fx["inks"])
     exact = sid not in GEOS_SENSITIVE or fx["geos"] == shapely.geos_version_string
@@ -384,6 +395,7 @@ def test_kept_layer_survives_study_deletion_and_a_refreeze(tmp_path, library_roo
 
     gesture_study_store.delete(saved.id)
     gencache.clear()                                           # really regenerate, no memo
+    engine._SHEETS.clear()
     session.regenerate_layer(layer.id)
     assert fingerprint(session.source_geometry[layer.id]) == before
 
@@ -394,6 +406,7 @@ def test_kept_layer_survives_study_deletion_and_a_refreeze(tmp_path, library_roo
     fresh = gen({"study": saved.model_dump(mode="json"), "values": {}})
     assert fingerprint(fresh) != before                        # a new preview sees the new matisse …
     gencache.clear()
+    engine._SHEETS.clear()
     session.regenerate_layer(layer.id)
     assert fingerprint(session.source_geometry[layer.id]) == before   # … the kept layer does not
 
@@ -478,3 +491,164 @@ def test_api_lists_saves_validates_and_deletes():
     assert c.delete(f"/api/gesture-studies/{saved['id']}").status_code == 200
     assert c.delete(f"/api/gesture-studies/{saved['id']}").status_code == 404
     assert c.delete("/api/gesture-studies/Not.A.Study").status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Studies v2: pinned edits, the sampler, the chorus kept as a group
+# ---------------------------------------------------------------------------
+
+def _old_snapshot_layer_params(tmp_path, library_root):
+    """Params of a layer kept under the CURRENT snapshot, then a refreeze that
+    adds a hand: the layer's snapshot is now the older one."""
+    kept = SRC.complete_params(params("three_voices", {"parts.1.voice.hand": "matisse"}))
+    root = _temp_library(tmp_path, {("hand", "test_new_hand"): ("bubble", {"label": "Test hand"})})
+    library_root(root)
+    assert FL.current_snapshot() != kept["library"]
+    return kept
+
+
+def test_edits_of_a_resumed_layer_stay_on_its_own_snapshot(tmp_path, library_root):
+    kept = _old_snapshot_layer_params(tmp_path, library_root)
+    old = kept["library"]
+    # an edit (another seed, another hand of ITS snapshot) keeps the snapshot and the pins it had
+    edited = {**copy.deepcopy(kept), "values": {**kept["values"], "seed": 99, "parts.2.voice.hand": "aaron"}}
+    again = SRC.complete_params(edited)
+    assert again["library"] == old
+    pins = {(x["kind"], x["id"]): x["hash"] for x in again["pins"]}
+    before = {(x["kind"], x["id"]): x["hash"] for x in kept["pins"]}
+    assert pins[("hand", "matisse")] == before[("hand", "matisse")]
+    assert ("hand", "aaron") in pins
+    assert all(k in before or k == ("hand", "aaron") for k in pins)      # only what a control names
+    # the pinned layer's hand controls list ITS snapshot: the newer hand is refused there …
+    with pytest.raises(ValidationError):
+        SRC.Params(**{**kept, "values": {**kept["values"], "parts.2.voice.hand": "test_new_hand"}})
+    assert "test_new_hand" not in [o["id"] for o in FL.options("hand", old)]
+    # … and offered once the layer is updated to the current library on purpose
+    updated = {k: v for k, v in kept.items() if k not in ("library", "pins")}
+    up = SRC.complete_params({**updated, "values": {**kept["values"], "parts.2.voice.hand": "test_new_hand"}})
+    assert up["library"] == FL.current_snapshot()
+
+
+def test_library_options_endpoint_lists_a_pinned_snapshot(tmp_path, library_root):
+    from axibridge.app import create_app
+
+    kept = _old_snapshot_layer_params(tmp_path, library_root)
+    c = TestClient(create_app())
+    r = c.get(f"/api/gesture-studies/library/{kept['library']}")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["current"] == FL.current_snapshot() and body["snapshot"] == kept["library"]
+    assert "test_new_hand" not in {o["id"] for o in body["library"]["hand"]}
+    assert "test_new_hand" in {o["id"] for o in c.get("/api/gesture-studies").json()["library"]["hand"]}
+    assert c.get("/api/gesture-studies/library/" + "0" * 12).status_code == 404
+    # validate resolves against the pinned snapshot too
+    st = ST.builtin("three_voices").model_dump(mode="json")
+    bad = {"study": st, "values": {"parts.2.voice.hand": "test_new_hand"}, "library": kept["library"],
+           "pins": kept["pins"]}
+    assert c.post("/api/gesture-studies/validate", json=bad).status_code == 400
+    assert c.post("/api/gesture-studies/validate", json={**bad, "library": None, "pins": []}).status_code == 200
+
+
+def test_sampler_seed_picks_a_whole_combination_and_a_kept_layer_stores_it():
+    a = SRC.Params(**params("sampler", {"seed": 5})).run_recipe
+    b = SRC.Params(**params("sampler", {"seed": 6})).run_recipe
+    assert a != b and a["seed"] == 5 and 2 <= len(a["parts"]) <= 3
+    assert a == SRC.Params(**params("sampler", {"seed": 5})).run_recipe            # deterministic
+    kept = SRC.complete_params(params("sampler", {"seed": 5}))
+    assert kept["sampled"]["of"] == ST.sample_key({"frame": [267.0, 180.0], "seed": 5})
+    assert kept["sampled"]["recipe"] == a
+    # the stored combination is what the layer draws, whatever the sampler would pick now
+    other = copy.deepcopy(kept)
+    other["sampled"]["recipe"] = b
+    assert SRC.Params(**other).run_recipe == b
+    # a different seed is a different sample (the stored one no longer applies)
+    moved = {**copy.deepcopy(kept), "values": {"seed": 6}}
+    assert SRC.Params(**moved).run_recipe == b
+    assert fingerprint(gen(kept)) == fingerprint(gen(params("sampler", {"seed": 5})))
+    with pytest.raises(ValidationError):
+        SRC.Params(**params("sampler", {"seed": 5, "frame": 3}))
+
+
+def test_sampler_save_and_validate_api():
+    from axibridge.app import create_app
+
+    c = TestClient(create_app())
+    st = ST.builtin("sampler").model_dump(mode="json")
+    r = c.post("/api/gesture-studies/validate", json={"study": st, "values": {"seed": 9}})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["summary"] and " x " in body["summary"] and body["run_recipe"]["seed"] == 9
+    assert body["voices"] == []
+    r = c.post("/api/gesture-studies", json={"label": "Found combination", "study": st, "values": {"seed": 9}})
+    assert r.status_code == 200, r.text
+    saved = r.json()
+    assert saved["engine"] == "kit" and saved["recipe"] == body["run_recipe"]   # it keeps what it found
+    assert saved["parent"] == {"id": "sampler", "version": 1}
+    assert c.delete(f"/api/gesture-studies/{saved['id']}").status_code == 200
+
+
+def test_chorus_voices_resolve_one_at_a_time_and_add_up_to_the_chorus():
+    full = gen(params("chorus"))
+    voices = [gen(params("chorus", voice=i)) for i in range(4)]
+    assert all(voices) and sum(len(v) for v in voices) == len(full)
+    assert fingerprint([q for v in voices for q in v]) == fingerprint(full)
+    doc = SRC.generate(SRC.Params(**params("chorus")))
+    assert [layer.color for layer in doc.layers] == ["#100F0F", "#AF3029", "#205EA6", "#24837B"]
+    three = gen(params("chorus", {"arranger.voices": 3}))
+    assert fingerprint(three) == fingerprint([q for v in voices[:3] for q in v])   # the first 3, exactly
+    with pytest.raises(ValidationError):
+        SRC.Params(**params("chorus", {"arranger.voices": 3}, voice=3))           # not sung
+    with pytest.raises(ValidationError):
+        SRC.Params(**params("danced_chain", voice=0))                             # not a voices study
+
+
+def test_keep_chorus_makes_one_group_with_a_layer_per_voice_on_its_own_pen():
+    from axibridge.session import session
+    from axibridge.stores import pen_library
+
+    before = session.project.model_copy(deep=True)
+    n_layers, n_groups = len(session.project.layers), len(session.project.groups)
+    group, layers = session.keep_gesture_study_voices(params("chorus", {"arranger.voices": 3}))
+    assert group.name == "Chorus, several pens" and len(layers) == 3
+    assert all(layer.group_id == group.id for layer in layers)
+    assert [layer.source.params["voice"] for layer in layers] == [0, 1, 2]
+    pens = [pen_library.get(layer.pen_id) for layer in layers]
+    assert len({p.id for p in pens}) == 3
+    assert [p.color.lower() for p in pens] == ["#100f0f", "#af3029", "#205ea6"]
+    lib = {layer.source.params["library"] for layer in layers}
+    assert lib == {FL.current_snapshot()}                                   # pinned once, the same for all
+    assert len({json.dumps(layer.source.params["pins"]) for layer in layers}) == 1
+    assert len({json.dumps(layer.transform.model_dump(), sort_keys=True) for layer in layers}) == 1
+    for i, layer in enumerate(layers):
+        assert fingerprint(session.source_geometry[layer.id]) == fingerprint(
+            gen(params("chorus", {"arranger.voices": 3}, voice=i)))
+    assert len(session.project.layers) == n_layers + 3 and len(session.project.groups) == n_groups + 1
+    # a second chorus reuses the pens (by colour), never adds more
+    _, again = session.keep_gesture_study_voices(params("chorus", {"arranger.voices": 2}))
+    assert [layer.pen_id for layer in again] == [layer.pen_id for layer in layers[:2]]
+    session.undo()
+    session.undo()                                                          # one undo per keep
+    assert [l.id for l in session.project.layers] == [l.id for l in before.layers]
+    assert [g.id for g in session.project.groups] == [g.id for g in before.groups]
+    with pytest.raises(ValueError):
+        session.keep_gesture_study_voices(params("danced_chain"))
+
+
+def test_keep_endpoint():
+    from axibridge.app import create_app
+
+    c = TestClient(create_app())
+    r = c.post("/api/gesture-studies/keep", json={"params": params("chorus", {"arranger.voices": 2})})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert len(body["layers"]) == 2 and body["group"]["name"] == "Chorus, several pens"
+    proj = c.get("/api/project").json()
+    assert {l["group_id"] for l in proj["layers"] if l["id"] in {x["id"] for x in body["layers"]}} == \
+        {body["group"]["id"]}
+    assert c.post("/api/gesture-studies/keep", json={"params": params("danced_chain")}).status_code == 400
+    r = c.post("/api/gesture-studies/validate", json={"study": ST.builtin("chorus").model_dump(mode="json")})
+    assert [v["ink"] for v in r.json()["voices"]] == ["black", "red", "blue", "cyan"]
+    r = c.post("/api/generators/preview", json={"module": "gesture_studies", "params": params("chorus")})
+    layers = r.json()["layers"]
+    assert [x["color"] for x in layers] == ["#100F0F", "#AF3029", "#205EA6", "#24837B"]
+    assert sum(x["paths"] for x in layers) == len(r.json()["lines"])

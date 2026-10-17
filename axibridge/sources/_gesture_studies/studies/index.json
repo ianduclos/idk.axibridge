@@ -7,6 +7,13 @@
   "shape_atlas",
   "conversation",
   "annotated_page",
-  "three_voices"
+  "three_voices",
+  "numbered_atlas",
+  "dance_atlas",
+  "margin_chart",
+  "merged_shadow",
+  "chorus",
+  "sampler",
+  "ledger_straight"
  ]
 }
