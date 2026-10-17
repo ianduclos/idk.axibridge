@@ -1,0 +1,60 @@
+{
+ "id": "nastaliq",
+ "kind": "hand",
+ "label": "Nasta'liq (exercise)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hybrid_hands/grammars/nastaliq.json",
+  "research_commit": "5d3cca3",
+  "description": "Nasta'liq calligraphic exercises / pen trials",
+  "rights": "calligraphy-harvest.csv: generative-allowed content types only",
+  "corpus": "calligraphy",
+  "training_sheets": [
+   "cma-1983.1115.a",
+   "met-716304",
+   "met-716305",
+   "met-716307",
+   "wal-W668-66b",
+   "wal-W668-74b"
+  ],
+  "n_records": 968,
+  "n_strokes": 265,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "train": [
+    "cma-1983.1115.a",
+    "met-716304",
+    "met-716305",
+    "met-716307",
+    "wal-W668-66b",
+    "wal-W668-74b"
+   ],
+   "excluded_measure_only": [
+    "met-450713",
+    "wc-19",
+    "wc-22",
+    "wc-24"
+   ],
+   "strokes": 265,
+   "min_len_w": 12
+  },
+  "allow_list": "every training sheet passes calligraphy.require_generative (manifest content type exercise/poetry/document, nothing to verify) and is not in script_syntax.EXCLUDE_GENERATIVE",
+  "excluded_measure_only": [
+   "met-450713",
+   "wc-19",
+   "wc-22",
+   "wc-24"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Round-8 hand (results/hybrid_hands-2026-10-16.md); the Hand Drift bench's frozen copy is identical. Line statistics only — outputs are line studies after the hand, never legible Arabic.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 19167
+}

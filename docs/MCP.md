@@ -100,6 +100,11 @@ The app is still moving, so drift is caught by tests, not by memory:
   when a tool has no description.
 - Modules, params and schemas are read live, so new generators and effects
   work through `modules` / `try_generator` / `add_layer` with no MCP change.
+  Gesture Studies is one such generator: `add_layer` with
+  `{"study": <a study from GET /api/gesture-studies>, "values": {...}}`; the
+  layer pins the frozen library on creation. Its store routes
+  (`/api/gesture-studies`, `/validate`, `/{id}`) are plain `call_api` use —
+  recipe data, never the machine (reviewed in the freshness test).
 - Every tool warns once when the MCP process is older than its own source
   (reconnect with `/mcp`), and the first live call warns when port 2942 is
   serving older code than the working tree.

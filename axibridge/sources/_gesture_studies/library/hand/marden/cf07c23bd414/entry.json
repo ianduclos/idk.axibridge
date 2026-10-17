@@ -1,0 +1,52 @@
+{
+ "id": "marden",
+ "kind": "hand",
+ "label": "Marden",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hybrid_hands/grammars/marden.json",
+  "research_commit": "5d3cca3",
+  "description": "Brice Marden drawings (MoMA open data images)",
+  "rights": "artists-harvest.csv: (c) artist/estate, museum permits personal use; private research",
+  "corpus": "artists",
+  "training_sheets": [
+   "moma-102386",
+   "moma-102387",
+   "moma-102388",
+   "moma-35286",
+   "moma-37245",
+   "moma-69038",
+   "moma-69053",
+   "moma-96607"
+  ],
+  "n_records": 968,
+  "n_strokes": 219,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "train": [
+    "moma-102386",
+    "moma-102387",
+    "moma-102388",
+    "moma-35286",
+    "moma-37245",
+    "moma-69038",
+    "moma-69053",
+    "moma-96607"
+   ],
+   "strokes": 219,
+   "min_len_w": 12,
+   "drawings": 8
+  }
+ },
+ "policy": "generative",
+ "notes": "Round-8 hand (results/hybrid_hands-2026-10-16.md); the Hand Drift bench's frozen copy is identical.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 19512
+}

@@ -1,0 +1,129 @@
+{
+ "id": "two_voices",
+ "label": "Two voices, one surface",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "kit demo 4 (round 9): .local/gesture/out/kit/4-polyphony.recipe.json",
+ "engine": "kit",
+ "notes": "Polyphony on one surface: an interpolating drift under a noise field, inked in lanes (nib c), against a dry machine-like hand with chain joins. Controls: the heavy voice's route, the dry voice, how much and how broad the field is, and the dry voice's length. Nib widths, styles and the two-part structure are fixed. Cost: ~10 s (nib c lanes are dense).",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7300,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "hokusai",
+      "nastaliq"
+     ],
+     "blend": "interp",
+     "plateau": 0.12,
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "constant",
+      "r": null,
+      "phi": null,
+      "W": 3.0,
+      "M": 8.0
+     },
+     {
+      "id": "field",
+      "preset": "noise",
+      "scale": 0.16,
+      "amount": 0.75,
+      "smooth": null,
+      "seed_offset": 0
+     }
+    ],
+    "renderer": {
+     "id": "nib",
+     "style": "c",
+     "pen": 0.4
+    },
+    "label": "field drift"
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "bubble",
+     "length": 4.0,
+     "joins": "chain"
+    },
+    "modulators": [
+     {
+      "id": "wire"
+     }
+    ],
+    "renderer": {
+     "id": "wire",
+     "pen": 0.3
+    },
+    "label": "machine wire"
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.4
+  },
+  "label": "4  one surface, two voices: hokusai > nastaliq interp drift under a noise field (nib c) x bubble hand, chain joins, dry wire"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hands",
+   "label": "Heavy voice route",
+   "type": "hands",
+   "min_len": 2,
+   "max_len": 4
+  },
+  {
+   "path": "parts.1.voice.hand",
+   "label": "Dry voice",
+   "type": "hand"
+  },
+  {
+   "path": "parts.0.modulators.1.amount",
+   "label": "Field amount",
+   "type": "float",
+   "min": 0.0,
+   "max": 2.0,
+   "step": 0.05
+  },
+  {
+   "path": "parts.0.modulators.1.scale",
+   "label": "Field scale",
+   "type": "float",
+   "min": 0.06,
+   "max": 0.4,
+   "step": 0.01
+  },
+  {
+   "path": "parts.1.voice.length",
+   "label": "Dry voice length (R)",
+   "type": "float",
+   "min": 1.0,
+   "max": 8.0,
+   "step": 0.1
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

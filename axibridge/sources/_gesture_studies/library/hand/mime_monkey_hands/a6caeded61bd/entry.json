@@ -1,0 +1,38 @@
+{
+ "id": "mime_monkey_hands",
+ "kind": "hand",
+ "label": "Mime: monkey, hands only (CMU 55_08)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/voices_corpus/limb/L_monkey_hands.json",
+  "research_commit": "1245f20",
+  "description": "hand trails only (lhand, rhand; front view) of cmu-55/55_08.amc (monkey mime), 2 windows of 15 s cut at whole-body stillness",
+  "rights": "CMU Graphics Lab Motion Capture DB, free use (dance-harvest.csv)",
+  "corpus": "dance",
+  "training_sheets": [
+   "55_08@0s",
+   "55_08@15s"
+  ],
+  "n_records": 752,
+  "n_strokes": 15,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "limb": {
+   "dist_nearest_library": 2.612,
+   "nearest_library": "mime_monkey",
+   "tightness": 1.696,
+   "self_recognition": 1.0
+  },
+  "experiment": "tools/gesture/experiments/voices_corpus.py limb"
+ },
+ "policy": "generative",
+ "notes": "Round-9 voices_corpus limb winner among dance variants: farthest from every library hand. Token statistics only.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 13924
+}

@@ -1,0 +1,125 @@
+{
+ "id": "drawing_and_measure",
+ "label": "Drawing and its measure",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "voices_machine round 9: tools/gesture/results/voices_machine-annotated.recipe.json",
+ "engine": "kit",
+ "notes": "A drift line that hands stretches to two machine grammars at its seams, with the system's own measurement of it (a curvature seismograph) drawn beside it. Controls: the route, how much of the line the machines take, which two machines, the chart and its rows. Layout (chart on the right) and the chart's label size are fixed.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "handover",
+      "a": "ruler",
+      "b": "stair",
+      "share": 0.3,
+      "stretch": 22.0,
+      "at": "seams",
+      "unit": 3.0,
+      "k": 5,
+      "angle": 72.0,
+      "rules": "L=LSR,R=RRS,S=SL",
+      "depth": 2,
+      "overshoot": 0.25
+     },
+     {
+      "id": "annotate",
+      "chart": "kappa",
+      "rows": 6,
+      "label_h": 2.0,
+      "drawn_by": null,
+      "amount": 1.5,
+      "keep": 0.006,
+      "layout": "right",
+      "split": 0.5,
+      "gap": 1.5,
+      "gain": 5.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.4
+  },
+  "label": "a drawing with its diagram"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hands",
+   "label": "Route",
+   "type": "hands",
+   "min_len": 2,
+   "max_len": 4
+  },
+  {
+   "path": "parts.0.modulators.0.share",
+   "label": "Machine share",
+   "type": "float",
+   "min": 0.0,
+   "max": 0.7,
+   "step": 0.01
+  },
+  {
+   "path": "parts.0.modulators.0.a",
+   "label": "First machine",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.b",
+   "label": "Second machine",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.1.chart",
+   "label": "Chart",
+   "type": "choice",
+   "choices": [
+    "kappa",
+    "route",
+    "phase"
+   ]
+  },
+  {
+   "path": "parts.0.modulators.1.rows",
+   "label": "Chart rows",
+   "type": "int",
+   "min": 2,
+   "max": 10,
+   "step": 1
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

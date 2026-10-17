@@ -157,15 +157,17 @@ def _ink_reach(params: HandDriftParams) -> float:
     return 0.5 * max(mass, params.nib_width) + 0.5 * params.pen + jitter
 
 
-def drift_centrelines(params: HandDriftParams) -> list[np.ndarray]:
+def drift_centrelines(params: HandDriftParams, *, load_hand=H.load_hand) -> list[np.ndarray]:
     """Every line grown in the research frame, then fitted (one common scale)
-    into its grid cell of the mm frame. Points in mm, frame origin."""
+    into its grid cell of the mm frame. Points in mm, frame origin.
+    `load_hand(name) -> Grammar` is the frozen hand set by default; the
+    Gesture Studies bench passes a loader that also reaches its library."""
     routes = line_routes(params)
     total = len(routes)
     raw = []
     for i, route in enumerate(routes):
         report_progress(0.6 * i / total, f"growing line {i + 1} of {total}")
-        grams = [H.load_hand(h) for h in route]
+        grams = [load_hand(h) for h in route]
         res = hy.drift_line(grams, np.random.default_rng(params.seed + i), total=params.length,
                             mode=params.blend, size=RESEARCH_SIZE, plateau=params.plateau,
                             context="chain" if params.joins == "chain" else "kappa", checkpoint=checkpoint)
@@ -185,11 +187,12 @@ def drift_centrelines(params: HandDriftParams) -> list[np.ndarray]:
     return out
 
 
-def _strokes(params: HandDriftParams, lines: list[np.ndarray]) -> list[rg.RegimeStroke]:
+def _strokes(params: HandDriftParams, lines: list[np.ndarray], *,
+             load_timing=H.load_timing) -> list[rg.RegimeStroke]:
     W = params.nib_width
     phi = math.radians(params.nib_angle)
     if params.regimes == "timing":
-        tm = H.load_timing(params.timing)
+        tm = load_timing(params.timing)
         sts = pz.danced(lines, tm, W=W, shape_w=params.mass_width, pen=params.pen, amount=params.amount)
         if not params.wrist_nib:
             sts = [rg.make(st.points, st.r, phi=phi, W=st.W, mass=st.mass) for st in sts]
@@ -255,12 +258,12 @@ def _fit_inside(paths: list[Path], width: float, height: float) -> list[Path]:
     return out
 
 
-def render_paths(params: HandDriftParams) -> list[Path]:
-    lines = drift_centrelines(params)
+def render_paths(params: HandDriftParams, *, load_hand=H.load_hand, load_timing=H.load_timing) -> list[Path]:
+    lines = drift_centrelines(params, load_hand=load_hand)
     if params.regimes == "off":
         return _fit_inside([Path(points=[(float(x), float(y)) for x, y in p]) for p in _simplified(lines)],
                            params.width, params.height)
-    strokes = _strokes(params, lines)
+    strokes = _strokes(params, lines, load_timing=load_timing)
 
     def ink_one(st: rg.RegimeStroke) -> list[Path]:
         checkpoint()
@@ -297,7 +300,11 @@ class HandDriftSource(SourceModule):
                    "Ingres, shikasta and nasta'liq exercises, Marden, Lichtenberg, bubble chamber), "
                    "with switchable blend, joins, routes per line and regimes")
     orientation = "geometry"
-    library_bench = True
+    # Superseded by the Gesture Studies bench, where Hand Drift is the first
+    # study (same engine, identical output). Kept registered so existing
+    # layers resolve and resume; no longer offered in the dropdown or browser.
+    library_bench = False
+    listed = False
     bench = {"adapter": "hand-drift", "version": 1, "modes": ["new", "resume"]}
     Params = HandDriftParams
 

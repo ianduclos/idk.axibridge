@@ -254,3 +254,31 @@
 .hand-drift-frame { fill:none; stroke:var(--bench-edge); stroke-width:.4; stroke-dasharray:2 2; }
 .hand-drift-ink .draw-line { stroke-width:inherit; }
 .hand-drift-pending .hand-drift-ink { opacity:.3; }
+
+/* Gesture Studies bench: a study dropdown, then only that study's controls. */
+.gesture-studies .bench-transport, .gesture-studies .process-generic-actions { display:none; }
+#gesture-studies-actions { display:flex; gap:var(--space-2); flex-wrap:wrap; align-items:center; padding:var(--space-3); border-top:1px solid var(--bench-edge); }
+#gesture-studies-actions[hidden], #process-gesture-studies[hidden] { display:none; }
+#gesture-studies-keep { margin-left:auto; }
+#process-gesture-studies label.gs-field { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--space-1); margin:var(--space-2) 0; align-items:center; }
+#process-gesture-studies label.gs-field > span { grid-column:1; }
+#process-gesture-studies label.gs-field > output { grid-column:2; grid-row:1; font-variant-numeric:tabular-nums; }
+#process-gesture-studies label.gs-field > select, #process-gesture-studies label.gs-field > input,
+#process-gesture-studies label.gs-field > .gs-switch, #process-gesture-studies label.gs-field > .gs-route,
+#process-gesture-studies label.gs-field > .gs-pool, #process-gesture-studies label.gs-field > .gs-seed { grid-column:1 / -1; width:100%; min-width:0; box-sizing:border-box; }
+#process-gesture-studies .gs-study-field select { font-weight:600; }
+#process-gesture-studies .gs-switch { display:flex; flex-wrap:wrap; gap:2px; }
+#process-gesture-studies .gs-switch button { flex:1 1 auto; min-width:0; padding-inline:var(--space-2); }
+#process-gesture-studies .gs-switch button[aria-pressed="true"] { border-color:var(--live); color:var(--ink-hi); background:var(--bench-edge); }
+#process-gesture-studies .gs-route { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-1); }
+#process-gesture-studies .gs-pool { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2px var(--space-2); max-height:12em; overflow:auto; }
+#process-gesture-studies .gs-seed { display:flex; gap:var(--space-2); align-items:center; }
+#process-gesture-studies .gs-seed input { flex:1; min-width:0; }
+#process-gesture-studies .gs-check { display:flex; align-items:center; gap:var(--space-2); margin:var(--space-1) 0; font-size:var(--type-note); }
+#process-gesture-studies .gs-row { display:flex; gap:var(--space-2); flex-wrap:wrap; margin:var(--space-2) 0; }
+#process-gesture-studies textarea { width:100%; box-sizing:border-box; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:11px; }
+#process-gesture-studies .gs-error { color:var(--rust); font-size:var(--type-note); white-space:pre-wrap; }
+#process-gesture-studies .gs-error[hidden] { display:none; }
+.gesture-studies-frame { fill:none; stroke:var(--bench-edge); stroke-width:.4; stroke-dasharray:2 2; }
+.gesture-studies-ink .draw-line { stroke-width:inherit; }
+.gesture-studies-pending .gesture-studies-ink { opacity:.3; }

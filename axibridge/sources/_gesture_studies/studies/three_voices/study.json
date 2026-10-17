@@ -1,0 +1,132 @@
+{
+ "id": "three_voices",
+ "label": "Three voices",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "voices_corpus round 9: .local/gesture/out/voices_corpus/sheets/grid__polyphony.recipe.json",
+ "engine": "kit",
+ "notes": "One surface, three voices: a dance drawing itself (end-effector trails, beads at its own pauses, nib e) against two dry hands. Controls: the dance (every frozen trail), which body ends draw, how many seconds of the dance, the two other voices and the bead width.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7300,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "dance",
+     "trail": "mantis",
+     "effectors": "all",
+     "t0": 0.0,
+     "seconds": 12.0,
+     "cut": "phrase"
+    },
+    "modulators": [
+     {
+      "id": "own_tempo",
+      "amount": 1.0,
+      "still": 0.12,
+      "nib": 0.25,
+      "norm": "self",
+      "v_ref": 1.5,
+      "a_ref": 8.0,
+      "beads": "pauses",
+      "min_pause_s": 0.25,
+      "merge_s": 0.6,
+      "bead_mm": 1.2,
+      "mass_width": 3.0
+     }
+    ],
+    "renderer": {
+     "id": "nib",
+     "style": "e",
+     "pen": 0.35
+    }
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "polygon_walk",
+     "length": 4.0,
+     "joins": "chain"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "wire",
+     "pen": 0.3
+    }
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "aaron",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "wire",
+     "pen": 0.3
+    }
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "one surface: mantis dance itself (own_tempo, nib e) x polygon_walk wire x aaron wire"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.trail",
+   "label": "Dance",
+   "type": "trail"
+  },
+  {
+   "path": "parts.0.voice.effectors",
+   "label": "Body ends",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.voice.seconds",
+   "label": "Seconds of dance",
+   "type": "float",
+   "min": 4.0,
+   "max": 30.0,
+   "step": 0.5
+  },
+  {
+   "path": "parts.1.voice.hand",
+   "label": "Second voice",
+   "type": "hand"
+  },
+  {
+   "path": "parts.2.voice.hand",
+   "label": "Third voice",
+   "type": "hand"
+  },
+  {
+   "path": "parts.0.modulators.0.mass_width",
+   "label": "Bead width (mm)",
+   "type": "float",
+   "min": 1.0,
+   "max": 8.0,
+   "step": 0.25
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

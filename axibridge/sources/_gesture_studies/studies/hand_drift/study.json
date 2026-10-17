@@ -1,0 +1,231 @@
+{
+ "id": "hand_drift",
+ "label": "Hand Drift",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "the Hand Drift bench (round 8 limb), sources/hand_drift.py",
+ "engine": "hand_drift",
+ "notes": "The first study: the Hand Drift bench as it is, through its own frozen engine (sources/_hand_drift), so its output is identical to the standalone generator. Every switch of the bench stays a control (the one study that keeps more than eight, by the spec). Hands and tempos offer every frozen library entry; the eight original hands and six tempos come from the Hand Drift engine's own frozen copies, any newer one from the Gesture Studies library.",
+ "recipe": {
+  "hand_1": "matisse",
+  "hand_2": "shikasta",
+  "hand_3": "lichtenberg",
+  "hand_4": "none",
+  "plateau": 0.12,
+  "blend": "mixture",
+  "joins": "smooth",
+  "length": 6.0,
+  "lines": 1,
+  "route_per_line": "same",
+  "regimes": "off",
+  "timing": "staccato",
+  "wrist_nib": true,
+  "amount": 1.0,
+  "nib_width": 3.5,
+  "mass_width": 9.0,
+  "nib_angle": 35.0,
+  "ink": "e",
+  "pen": 0.4,
+  "width": 267.0,
+  "height": 180.0,
+  "seed": 7000
+ },
+ "controls": [
+  {
+   "path": "hand_1",
+   "label": "Hand 1",
+   "type": "hand",
+   "group": "Route"
+  },
+  {
+   "path": "hand_2",
+   "label": "Hand 2",
+   "type": "hand",
+   "group": "Route"
+  },
+  {
+   "path": "hand_3",
+   "label": "Hand 3",
+   "type": "hand",
+   "allow_none": true,
+   "none_value": "none",
+   "group": "Route"
+  },
+  {
+   "path": "hand_4",
+   "label": "Hand 4",
+   "type": "hand",
+   "allow_none": true,
+   "none_value": "none",
+   "group": "Route"
+  },
+  {
+   "path": "plateau",
+   "label": "Plateau",
+   "type": "float",
+   "min": 0.0,
+   "max": 0.6,
+   "step": 0.01,
+   "group": "Route"
+  },
+  {
+   "path": "blend",
+   "label": "Blend",
+   "type": "choice",
+   "choices": [
+    "mixture",
+    "interp"
+   ],
+   "group": "Line"
+  },
+  {
+   "path": "joins",
+   "label": "Joins",
+   "type": "choice",
+   "choices": [
+    "smooth",
+    "chain"
+   ],
+   "group": "Line"
+  },
+  {
+   "path": "length",
+   "label": "Length (R)",
+   "type": "float",
+   "min": 1.0,
+   "max": 12.0,
+   "step": 0.1,
+   "group": "Line"
+  },
+  {
+   "path": "lines",
+   "label": "Lines",
+   "type": "int",
+   "min": 1,
+   "max": 8,
+   "step": 1,
+   "group": "Line"
+  },
+  {
+   "path": "route_per_line",
+   "label": "Route per line",
+   "type": "choice",
+   "choices": [
+    "same",
+    "rotate",
+    "shuffle",
+    "each"
+   ],
+   "group": "Line"
+  },
+  {
+   "path": "regimes",
+   "label": "Regimes",
+   "type": "choice",
+   "choices": [
+    "off",
+    "timing",
+    "field"
+   ],
+   "group": "Regimes"
+  },
+  {
+   "path": "timing",
+   "label": "Tempo",
+   "type": "tempo",
+   "group": "Regimes"
+  },
+  {
+   "path": "wrist_nib",
+   "label": "Wrist holds the nib",
+   "type": "bool",
+   "group": "Regimes"
+  },
+  {
+   "path": "amount",
+   "label": "Regime amount",
+   "type": "float",
+   "min": 0.0,
+   "max": 2.0,
+   "step": 0.05,
+   "group": "Regimes"
+  },
+  {
+   "path": "nib_width",
+   "label": "Nib width (mm)",
+   "type": "float",
+   "min": 0.5,
+   "max": 12.0,
+   "step": 0.1,
+   "group": "Regimes"
+  },
+  {
+   "path": "mass_width",
+   "label": "Mass width (mm)",
+   "type": "float",
+   "min": 1.0,
+   "max": 30.0,
+   "step": 0.5,
+   "group": "Regimes"
+  },
+  {
+   "path": "nib_angle",
+   "label": "Nib angle (°)",
+   "type": "float",
+   "min": -90.0,
+   "max": 90.0,
+   "step": 1,
+   "group": "Regimes"
+  },
+  {
+   "path": "ink",
+   "label": "Ink style",
+   "type": "choice",
+   "choices": [
+    "a",
+    "b+",
+    "c",
+    "e",
+    "c+e"
+   ],
+   "group": "Ink"
+  },
+  {
+   "path": "pen",
+   "label": "Pen width (mm)",
+   "type": "float",
+   "min": 0.1,
+   "max": 2.0,
+   "step": 0.05,
+   "group": "Ink"
+  },
+  {
+   "path": "width",
+   "label": "Width (mm)",
+   "type": "float",
+   "min": 40.0,
+   "max": 300.0,
+   "step": 1,
+   "group": "Frame"
+  },
+  {
+   "path": "height",
+   "label": "Height (mm)",
+   "type": "float",
+   "min": 40.0,
+   "max": 218.0,
+   "step": 1,
+   "group": "Frame"
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1,
+   "group": "Frame"
+  }
+ ]
+}

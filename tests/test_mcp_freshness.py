@@ -32,6 +32,10 @@ MOTION_WORDS = {"machine", "plot", "jog", "goto", "home", "pen", "motor", "motor
                 "raw", "calibration", "teststroke", "servo"}
 REVIEWED_NOT_MOTION: dict[str, str] = {
     # "/api/example/plot-preview": "renders an image, never touches the machine",
+    # Gesture Studies (2026-10-17): saved-study store + recipe validation; no geometry, no machine
+    "/api/gesture-studies": "saves a study recipe to the machine-level store, never touches the machine",
+    "/api/gesture-studies/validate": "validates a study recipe, never touches the machine",
+    "/api/gesture-studies/{}": "deletes a saved study recipe, never touches the machine",
 }
 
 

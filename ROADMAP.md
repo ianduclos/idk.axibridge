@@ -15,7 +15,26 @@ This file tracks open work and acceptance still pending. Shipped implementation
 notes remain beside their follow-ups; see `git log` and `STATUS.md` for delivery
 history.
 
+## Gesture Studies bench (2026-10-17)
+
+Ian: save the round 8–9 pieces "each with its own relevant parameters, still
+able to have dynamism, and develop on top, but without overcrowding the
+generator dropdown"; and "if they use the line corpuses and we add more, make
+them accept the new ones". Built per
+`docs/superpowers/specs/2026-10-17-gesture-studies.md` (`gesture_studies`,
+docs/MODULES.md "Gesture Studies bench"): one bench, study dropdown, eight
+built-in studies (Hand Drift first, identical output), frozen gesture kit and
+every generative library hand/tempo/trail, saved studies, Edit recipe drawer.
+Pending: Ian's acceptance on screen. Known cost: Shape atlas ~60 s per render
+with a drawing hand (every chart line refitted through the hand's clothoid
+grammar; ~0.6 s machine-drawn) — speeding up the research `clothoid` fit and
+refreezing is the fix. Not decided here: promoting a saved study into the
+repo (a later script), the node-editor question (stays open).
+
 ## Hand Drift bench (2026-10-17)
+
+Superseded in the dropdown by Gesture Studies (Hand Drift is its first study,
+same engine); `hand_drift` stays registered so kept layers resolve and resume.
 
 Ian, after gesture round 8: the hybrid/drift thread is "the closest to the idea
 I had in mind when I first started this bench … I would make this a bench as it

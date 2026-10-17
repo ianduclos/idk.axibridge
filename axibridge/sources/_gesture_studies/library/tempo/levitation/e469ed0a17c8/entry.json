@@ -1,0 +1,30 @@
+{
+ "id": "levitation",
+ "kind": "tempo",
+ "label": "Levitation (Romero)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "source": "dance/e2-stocos/Levitation_FullBody_Take1_proc.bvh",
+  "effector": "rhand",
+  "window_s": [
+   30.0,
+   69.98
+  ],
+  "fps": 50.000000000001066,
+  "frames": 2000,
+  "pauses": 8,
+  "corpus": "dance",
+  "rights": "CC BY 4.0",
+  "description": "E2-Create Stocos, Levitation take 1, right hand",
+  "made_by": "experiments/gesture_timing.take_timing → gesture_timing.timing_from_motion",
+  "research_commit": "5d3cca3"
+ },
+ "policy": "generative",
+ "notes": "A dancer's timing over a window (speed, wrist angle, lateral residual, jerk, pauses); time is the only axis. Loads as gesture_timing.Timing (results/gesture_timing-2026-10-16.md).",
+ "files": {
+  "profile": "profile.npz",
+  "sheet": "sheet.json.gz"
+ },
+ "size_bytes": 66672
+}

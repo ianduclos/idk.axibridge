@@ -720,6 +720,7 @@ class Session(GroupSessionMixin, RecoveryStateMixin):
         # bites callers that never went through one — the API, a script, a
         # test — which used to get seed 0 every time.
         params = self._rolled_seed(src, params)
+        params = self._completed(src, params)
         doc = gencache.generate_cached(src, params)
         paths = [p for layer in doc.layers for p in layer.paths]
         layer = CanvasLayer(
@@ -804,6 +805,7 @@ class Session(GroupSessionMixin, RecoveryStateMixin):
             # model failures must preserve both the live recipe and undo branch.
             candidate = layer
             if params is not None:
+                params = self._completed(get_source(layer.source.generator), params)
                 candidate = layer.model_copy(update={
                     "source": layer.source.model_copy(update={"params": params}),
                 })
@@ -2745,6 +2747,15 @@ class Session(GroupSessionMixin, RecoveryStateMixin):
                 self._snapshot_pen(layer.pen_id)
                 created.append(layer)
             return created
+
+    @staticmethod
+    def _completed(module: Any, params: dict[str, Any]) -> dict[str, Any]:
+        """A source may complete a recipe before it is stored in a layer
+        (``complete_params``): Gesture Studies pins its frozen-library
+        snapshot and entry hashes so a later refreeze never changes the layer.
+        Previews never pass through here; only what a layer keeps does."""
+        complete = getattr(module, "complete_params", None)
+        return complete(params) if complete is not None else params
 
     @staticmethod
     def _rolled_seed(module: Any, params: dict[str, Any]) -> dict[str, Any]:

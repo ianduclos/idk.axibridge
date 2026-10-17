@@ -1,0 +1,139 @@
+{
+ "id": "shape_atlas",
+ "label": "Shape atlas",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "voices_machine round 9: tools/gesture/results/voices_machine-limb-atlas-ledger.recipe.json",
+ "engine": "kit",
+ "notes": "The atlas and the ledger of one drift line's shapes, both redrawn through a hand (Matisse in the round-9 sheet). One control drives both charts. Controls: the drawing hand (or none: the machine draws, much faster), the measured route, its length, how much fine turning the hand owns. Cost: ~55 s with a drawing hand (every chart line is refitted through the hand's clothoid grammar); ~0.6 s machine-drawn.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   120.0
+  ],
+  "seed": 7000,
+  "margin": null,
+  "arranger": {
+   "id": "grid",
+   "cols": 2,
+   "scale": "cell",
+   "gap": 10.0
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "diagram",
+     "chart": "atlas",
+     "rows": 2,
+     "label_h": 2.0,
+     "drawn_by": "matisse",
+     "amount": 1.5,
+     "keep": 0.006,
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "length": 6.0,
+     "joins": "smooth",
+     "of_part": 0,
+     "machine_a": "none",
+     "machine_b": "none",
+     "share": 0.35,
+     "aspect": 1.05
+    },
+    "modulators": [],
+    "label": "atlas drawn by matisse"
+   },
+   {
+    "voice": {
+     "id": "diagram",
+     "chart": "ledger",
+     "rows": 2,
+     "label_h": 2.0,
+     "drawn_by": "matisse",
+     "amount": 1.5,
+     "keep": 0.006,
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "length": 6.0,
+     "joins": "smooth",
+     "of_part": 0,
+     "machine_a": "none",
+     "machine_b": "none",
+     "share": 0.35,
+     "aspect": 1.05
+    },
+    "modulators": [],
+    "label": "ledger drawn by matisse"
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.4
+  },
+  "label": "charts drawn by a hand"
+ },
+ "controls": [
+  {
+   "key": "drawn_by",
+   "paths": [
+    "parts.0.voice.drawn_by",
+    "parts.1.voice.drawn_by"
+   ],
+   "label": "Drawn by",
+   "type": "hand",
+   "allow_none": true,
+   "none_value": null,
+   "none_label": "the machine (fast)"
+  },
+  {
+   "key": "hands",
+   "paths": [
+    "parts.0.voice.hands",
+    "parts.1.voice.hands"
+   ],
+   "label": "Measured route",
+   "type": "hands",
+   "min_len": 1,
+   "max_len": 4
+  },
+  {
+   "key": "length",
+   "paths": [
+    "parts.0.voice.length",
+    "parts.1.voice.length"
+   ],
+   "label": "Length (R)",
+   "type": "float",
+   "min": 2.0,
+   "max": 10.0,
+   "step": 0.1
+  },
+  {
+   "key": "amount",
+   "paths": [
+    "parts.0.voice.amount",
+    "parts.1.voice.amount"
+   ],
+   "label": "Hand's share of turning",
+   "type": "float",
+   "min": 0.0,
+   "max": 3.0,
+   "step": 0.05
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

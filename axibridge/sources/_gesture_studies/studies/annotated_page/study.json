@@ -1,0 +1,140 @@
+{
+ "id": "annotated_page",
+ "label": "Annotated page",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "polyphonic_sheets round 9 P2: .local/gesture/out/polyphonic_sheets/page-P2-columns-rtl.recipe.json",
+ "engine": "kit",
+ "notes": "A page of writing: a chain drift cut into words as the body (two columns, right to left), a hand's glosses in the margin, brackets and underlines by a staccato-danced nib. Controls: the body route, the gloss hand, the annotating hand, direction, columns and the annotation mode. Row count, word cutting and the gloss geometry are fixed.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 9201,
+  "margin": null,
+  "arranger": {
+   "id": "poly_page",
+   "roles": "body gloss",
+   "columns": 2,
+   "rows": 14,
+   "words": 44,
+   "interlinear": true,
+   "direction": "rtl",
+   "justify": true,
+   "x_height": 0.5,
+   "word_gap": 0.35,
+   "margin": "left",
+   "gloss_width": 0.24,
+   "gloss_size": 0.45,
+   "gloss_share": 0.35,
+   "bleed": 0.15,
+   "annotate": "mixed",
+   "annotator": -1,
+   "n_annot": 7,
+   "annot_amp": 2.4
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "hokusai",
+      "nastaliq"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 8.0,
+     "joins": "chain"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "matisse",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "marden",
+     "length": 0.8,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "timing",
+      "tempo": "staccato",
+      "amount": 1.0,
+      "wrist_nib": true,
+      "mass_width": 3.0,
+      "pen": 0.4,
+      "jitter_gain": 1.0,
+      "q_mass": 6.0
+     }
+    ],
+    "renderer": {
+     "id": "nib",
+     "style": "e",
+     "pen": 0.4
+    }
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "P2  two columns rtl, hokusai > nastaliq chain drift as body, matisse glosses left, brackets + underlines by a staccato-danced nib (mixed)"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hands",
+   "label": "Body route",
+   "type": "hands",
+   "min_len": 1,
+   "max_len": 4
+  },
+  {
+   "path": "parts.1.voice.hand",
+   "label": "Gloss hand",
+   "type": "hand"
+  },
+  {
+   "path": "parts.2.voice.hand",
+   "label": "Annotating hand",
+   "type": "hand"
+  },
+  {
+   "path": "arranger.direction",
+   "label": "Direction",
+   "type": "choice"
+  },
+  {
+   "path": "arranger.columns",
+   "label": "Columns",
+   "type": "int",
+   "min": 1,
+   "max": 3,
+   "step": 1
+  },
+  {
+   "path": "arranger.annotate",
+   "label": "Annotation",
+   "type": "choice"
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

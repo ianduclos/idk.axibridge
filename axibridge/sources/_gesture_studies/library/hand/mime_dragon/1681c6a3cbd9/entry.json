@@ -1,0 +1,46 @@
+{
+ "id": "mime_dragon",
+ "kind": "hand",
+ "label": "Mime: dragon (CMU 55_19)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/voices_corpus/grammars/mime_dragon.json",
+  "research_commit": "1245f20",
+  "description": "end-effector trails (hands, feet, head; front view) of cmu-55/55_19.amc, 2 windows of 15 s cut at whole-body stillness",
+  "rights": "CMU Graphics Lab Motion Capture DB, free use (dance-harvest.csv)",
+  "corpus": "dance",
+  "training_sheets": [
+   "55_19@0s",
+   "55_19@15s"
+  ],
+  "n_records": 740,
+  "n_strokes": 27,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "duration_s": 39.5,
+   "windows_s": 15.0,
+   "n_windows": 2,
+   "sources": [
+    "55_19@0s",
+    "55_19@15s"
+   ],
+   "strokes": 27,
+   "records": 740,
+   "min_len_w": 12,
+   "drawings": 2,
+   "secs": 17.0
+  },
+  "experiment": "tools/gesture/experiments/voices_corpus.py learn"
+ },
+ "policy": "generative",
+ "notes": "Round-9 voices_corpus hand (results/voices_corpus-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 13971
+}

@@ -607,8 +607,18 @@ project format or route to hardware is introduced.
 The visible working-bench list was first curated to Venation, Homeostat and
 Second Reading (Ian, 8 September); sources now join it by declaring
 `library_bench = True` (Magnetic field, Mosca, Mosca 2, Linedraw, Territory,
-Hand Drift since 2026-10-17). Time-axis compatibility remains available for
+Gesture Studies since 2026-10-17). Hand Drift joined the same day and left it
+again for Gesture Studies, where it is the first study: a source may declare
+`listed = False` (catalogue field `listed`) to stay registered, so its layers
+resolve and resume in their bench, while leaving the generator dropdown,
+quick selectors and browser. Time-axis compatibility remains available for
 ordinary layer Watch; it does not place other generators in the Benches category.
+
+A source may also implement `complete_params(params) -> params`, which
+`Session` applies to what a layer KEEPS (creation and regenerate, never a
+preview): Gesture Studies uses it to pin its frozen-library snapshot and the
+content hash of every entry the study names, so a later refreeze never
+changes a kept layer.
 
 
 ### Animation random identity (2026-09-09)

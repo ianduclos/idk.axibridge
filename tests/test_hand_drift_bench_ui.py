@@ -3,14 +3,33 @@ import json
 import os
 from pathlib import Path
 
-from test_acceptance_ui import _get, frontend_mode, select_layer, server, ui  # noqa: F401
+from test_acceptance_ui import _get, add_layer, frontend_mode, select_layer, server, ui  # noqa: F401
+from test_live_sync_ui import wait_until_drawn
 
 
 def open_hand_drift(page):
-    page.wait_for_function("() => !!document.querySelector('#gen-select option[value=hand_drift]')", timeout=5000)
-    page.select_option('#gen-select', 'hand_drift')
-    page.click('#btn-bench')
+    """Hand Drift left the generator dropdown for the Gesture Studies bench (where
+    it is the first study); a kept Hand Drift layer still resumes in its bench."""
+    page.wait_for_function("() => !!document.querySelector('#gen-select option[value=gesture_studies]')",
+                           timeout=5000)
+    assert not page.locator('#gen-select option[value=hand_drift]').count()
+    add_layer(page, 'hand_drift', {'seed': 7000})
+    page.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 1")
+    wait_until_drawn(page)     # don't race the seeded layer's own render (409 render_cancelled)
+    resume(page, 0)
+
+
+def resume(page, index):
+    select_layer(page, index)
+    page.click('#process-resume')
     ready(page)
+
+
+def real_errors(page):
+    """Console errors, minus 409 render_cancelled: resuming from a layer redraws
+    the canvas, superseding an in-flight /api/plan, which the app absorbs by
+    design (see test_live_sync_ui.wait_until_drawn) but Chromium still logs."""
+    return [e for e in page.errors if 'status of 409' not in e]
 
 
 def ready(page):
@@ -57,27 +76,26 @@ def test_hand_drift_switches_change_the_preview_keep_and_resume(ui, server):
     shot(ui, 'timing')
 
     expected = recipe(ui)
-    assert not _get(f'{server}/api/project')['layers']
+    assert len(_get(f'{server}/api/project')['layers']) == 1
     ui.click('#hand-drift-keep')
     ui.wait_for_function("() => document.querySelector('#hand-drift-kept').textContent.includes('Kept')")
     layers = _get(f'{server}/api/project')['layers']
-    assert len(layers) == 1 and layers[0]['source']['generator'] == 'hand_drift'
-    assert layers[0]['source']['params'] == expected
+    assert len(layers) == 2 and layers[1]['source']['generator'] == 'hand_drift'
+    assert layers[1]['source']['params'] == expected
 
     # Resume copies the kept recipe; Keep makes another layer, the first is untouched.
     ui.click('#process-close')
-    select_layer(ui)
-    ui.click('#process-resume')
-    ready(ui)
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 2")
+    resume(ui, 1)
     assert recipe(ui) == expected
     ui.click('#hd-route_per_line-each')
     ready(ui)
     ui.click('#hand-drift-keep')
     ui.wait_for_function("() => document.querySelector('#hand-drift-kept').textContent.includes('Kept')")
     layers = _get(f'{server}/api/project')['layers']
-    assert len(layers) == 2 and layers[0]['source']['params'] == expected
-    assert layers[1]['source']['params']['route_per_line'] == 'each'
-    assert not ui.errors
+    assert len(layers) == 3 and layers[1]['source']['params'] == expected
+    assert layers[2]['source']['params']['route_per_line'] == 'each'
+    assert not real_errors(ui)
 
 
 def test_hand_drift_undo_and_draft_survive_close(ui):
@@ -93,7 +111,6 @@ def test_hand_drift_undo_and_draft_survive_close(ui):
     ui.click('#hand-drift-redo')
     ready(ui)
     ui.click('#process-close')
-    ui.click('#btn-bench')
-    ready(ui)
+    resume(ui, 0)
     assert recipe(ui) == changed
-    assert not ui.errors
+    assert not real_errors(ui)

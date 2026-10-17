@@ -1,0 +1,71 @@
+{
+ "id": "artists",
+ "kind": "corpus",
+ "label": "artists corpus (index)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "local_path": ".local/gesture/corpus/artists",
+  "indexed_commit": "5d3cca3",
+  "manifests": [
+   {
+    "file": "docs/research/gesture-corpus/artists-harvest.csv",
+    "rows": 48,
+    "rows_on_disk": 33,
+    "filter": null
+   }
+  ],
+  "docs": [
+   "docs/research/gesture-corpus/artists-line.md"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Marden, Cohen, Molnar, Nake, Noll, Henry, Kelly. Several in copyright: private research only, never published as training material.",
+ "files": {},
+ "size_bytes": 0,
+ "counts": {
+  "files": 32,
+  "bytes": 11502719,
+  "by_extension": {
+   ".jpg": 32
+  },
+  "subfolders": {
+   "a_michael_noll": {
+    "files": 3,
+    "bytes": 1329957
+   },
+   "brice_marden": {
+    "files": 12,
+    "bytes": 2878494
+   },
+   "desmond_paul_henry": {
+    "files": 3,
+    "bytes": 2317141
+   },
+   "ellsworth_kelly": {
+    "files": 1,
+    "bytes": 63750
+   },
+   "frieder_nake": {
+    "files": 1,
+    "bytes": 289978
+   },
+   "harold_cohen": {
+    "files": 8,
+    "bytes": 3295193
+   },
+   "molnar_vera": {
+    "files": 2,
+    "bytes": 611110
+   },
+   "nake_frieder": {
+    "files": 1,
+    "bytes": 649954
+   },
+   "vera_molnar": {
+    "files": 1,
+    "bytes": 67142
+   }
+  }
+ }
+}

@@ -3,6 +3,9 @@ import { uploadAssetFiles } from "./assets_tab.js";
 import { beginDrawingUpdate, restartDrawingUpdate } from "./drawing_status.js";
 // The catalogue distinguishes working benches from temporal Watch views.
 const isWorkingBench = mod => mod?.library_categories?.includes("bench");
+// Registered but superseded generators (listed: false) still resolve and resume
+// their layers; they are just not offered for new ones.
+const listedSources = () => (S.state?.modules?.sources || []).filter((m) => m.listed !== false);
 import { benchUnavailableReason } from "./bench_registry.js";
 import { openGallerySave } from "./gallery.js";
 import { openModuleBrowser, createPresetControls, quickModules } from "./module_library.js";
@@ -252,7 +255,7 @@ export function initComposeTab() {
   const usesImage = (m) => Object.values(m.schema.properties || {}).some(
     (p) => (p.format || ((p.anyOf || []).find((a) => a.format) || {}).format) === "asset");
   $("gen-browse").onclick = () => openModuleBrowser({
-    kind: "source", modules: S.state.modules.sources, currentModule: sel.value,
+    kind: "source", modules: listedSources(), currentModule: sel.value,
     getCurrentParams: () => genParams,
     onUse: async ({ module, params }) => {
       if (presetMutationBusy()) throw new Error("Wait for the current layer update to finish.");
@@ -274,7 +277,7 @@ export function initComposeTab() {
     sel.appendChild(g);
     return g;
   }
-  for (const m of S.state.modules.sources) {
+  for (const m of listedSources()) {
     const o = document.createElement("option");
     o.value = m.id; o.textContent = m.label; o.title = m.description;
     optgroups[isWorkingBench(m) ? "benches" : usesImage(m)].appendChild(o);
@@ -732,7 +735,7 @@ async function applyGeneratorPreset(layerId, moduleId, params) {
 
 async function refreshQuickSelectors() {
   const epoch = ++quickSelectEpoch;
-  const selectors = [[$("gen-select"), "source", S.state?.modules?.sources || []],
+  const selectors = [[$("gen-select"), "source", listedSources()],
     [$("fx-select"), "effect", S.state?.modules?.effects || []]];
   await Promise.all(selectors.map(async ([select, kind, modules]) => {
     if (!select) return;

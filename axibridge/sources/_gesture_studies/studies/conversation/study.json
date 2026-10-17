@@ -1,0 +1,124 @@
+{
+ "id": "conversation",
+ "label": "Conversation",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "polyphonic_sheets round 9: .local/gesture/out/polyphonic_sheets/converse-contrast-9300.recipe.json",
+ "engine": "kit",
+ "notes": "Scattered units taking turns (Cohen-like): each reply's hand, length, weight and start derive from the previous unit. Controls: number of turns, how a reply answers, the pool of hands a reply may use (every library hand is offered; leave all unticked for every generative hand), unit size and the two opening voices. Weight inversion, memory and gap are fixed.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 9300,
+  "margin": null,
+  "arranger": {
+   "id": "poly_converse",
+   "turns": 14,
+   "reply": "contrast",
+   "pool": "bubble hokusai ingres lichtenberg marden matisse nastaliq shikasta",
+   "size": 0.22,
+   "memory": 2,
+   "gap": 10.0,
+   "weight": "invert",
+   "length_follow": 0.5,
+   "annotate": "none",
+   "annotator": -1,
+   "n_annot": 5,
+   "annot_amp": 2.2
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "matisse",
+     "length": 1.4,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "timing",
+      "tempo": "staccato",
+      "amount": 1.0,
+      "wrist_nib": true,
+      "mass_width": 5.0,
+      "pen": 0.4,
+      "jitter_gain": 1.0,
+      "q_mass": 6.0
+     }
+    ],
+    "renderer": {
+     "id": "nib",
+     "style": "e",
+     "pen": 0.4
+    }
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "marden",
+     "length": 1.4,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "conversation, reply = contrast: each unit's hand, length, weight and start are derived from the previous unit"
+ },
+ "controls": [
+  {
+   "path": "arranger.turns",
+   "label": "Turns",
+   "type": "int",
+   "min": 4,
+   "max": 24,
+   "step": 1
+  },
+  {
+   "path": "arranger.reply",
+   "label": "Reply",
+   "type": "choice"
+  },
+  {
+   "path": "arranger.pool",
+   "label": "Hands that may reply",
+   "type": "hands",
+   "join": " ",
+   "min_len": 0,
+   "max_len": 64
+  },
+  {
+   "path": "arranger.size",
+   "label": "Unit size",
+   "type": "float",
+   "min": 0.1,
+   "max": 0.4,
+   "step": 0.01
+  },
+  {
+   "path": "parts.0.voice.hand",
+   "label": "Opening voice",
+   "type": "hand"
+  },
+  {
+   "path": "parts.1.voice.hand",
+   "label": "Second voice",
+   "type": "hand"
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

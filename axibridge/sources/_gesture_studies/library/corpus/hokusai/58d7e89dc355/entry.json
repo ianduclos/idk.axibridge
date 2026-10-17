@@ -1,0 +1,40 @@
+{
+ "id": "hokusai",
+ "kind": "corpus",
+ "label": "hokusai corpus (index)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "local_path": ".local/gesture/corpus/hokusai",
+  "indexed_commit": "5d3cca3",
+  "manifests": [
+   {
+    "file": "docs/research/gesture-corpus/comparison-met.csv",
+    "rows": 27,
+    "rows_on_disk": 27,
+    "filter": [
+     "artist",
+     "hokusai"
+    ]
+   }
+  ],
+  "docs": []
+ },
+ "policy": "generative",
+ "notes": "Met Open Access (CC0) sketches.",
+ "files": {},
+ "size_bytes": 0,
+ "counts": {
+  "files": 27,
+  "bytes": 93040937,
+  "by_extension": {
+   ".jpg": 27
+  },
+  "subfolders": {
+   ".": {
+    "files": 27,
+    "bytes": 93040937
+   }
+  }
+ }
+}

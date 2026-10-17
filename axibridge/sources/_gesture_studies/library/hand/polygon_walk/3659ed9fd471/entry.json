@@ -1,0 +1,48 @@
+{
+ "id": "polygon_walk",
+ "kind": "hand",
+ "label": "Polygon walk (Noll, Nake)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/voices_corpus/grammars/polygon_walk.json",
+  "research_commit": "1245f20",
+  "description": "Noll 'Gaussian-Quadratic' (1963) + Nake 'Random Polygons' (1965): straight runs and hard corners",
+  "rights": "V&A Collections API images (artists-harvest.csv); private research, statistics only, never published as training material",
+  "corpus": "artists",
+  "training_sheets": [
+   "noll_gq",
+   "nake_poly"
+  ],
+  "n_records": 616,
+  "n_strokes": 61,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 1,
+   "extracts": [
+    "noll_gq",
+    "nake_poly"
+   ],
+   "sources": [
+    "noll_gq",
+    "nake_poly"
+   ],
+   "strokes": 61,
+   "records": 616,
+   "min_len_w": 12,
+   "drawings": 2,
+   "secs": 1.6
+  },
+  "experiment": "tools/gesture/experiments/voices_corpus.py learn"
+ },
+ "policy": "generative",
+ "notes": "Round-9 voices_corpus hand (results/voices_corpus-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 11620
+}

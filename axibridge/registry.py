@@ -337,6 +337,8 @@ _PRESET_EXCLUSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     ("source", "second_reading"): ("events", "historical_stacks"),
     ("source", "magnetic_field"): ("magnets", "presets", "preset_sizes",
                                      "mix_x", "mix_y", "mix_active"),
+    # a kept layer's library pins are captured state, not a portable setting
+    ("source", "gesture_studies"): ("library", "pins"),
 }
 
 _REPRESENTATIVE_PARAMS: dict[tuple[str, str], dict[str, Any]] = {
@@ -483,6 +485,9 @@ def describe_modules() -> dict[str, list[dict[str, Any]]]:
             d["time_axis"] = effective_time_axis(inst)
             d["bench"] = effective_bench(inst)
             d["bench_capabilities"] = list(inst.bench_capabilities)
+            # False: registered (existing layers resolve, resume works) but not
+            # offered in the generator dropdown or browser (superseded).
+            d["listed"] = bool(getattr(inst, "listed", True))
         return d
 
     return {

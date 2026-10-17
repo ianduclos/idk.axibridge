@@ -1,0 +1,102 @@
+{
+ "id": "danced_chain",
+ "label": "Danced chain",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "kit demo 2 (round 9): .local/gesture/out/kit/2-chain-staccato-nib-e.recipe.json",
+ "engine": "kit",
+ "notes": "One drift line with chain joins, danced by a tempo and inked as nib traces (style e). Controls: the route (2-4 hands, any library hand), the tempo that dances it, line length, how heavy the dance lands and the mass width. Chain joins, the nib style and the pen are the study itself and stay fixed.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7000,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "chain"
+    },
+    "modulators": [
+     {
+      "id": "timing",
+      "tempo": "staccato",
+      "amount": 1.0,
+      "wrist_nib": true,
+      "mass_width": 9.0,
+      "pen": 0.4,
+      "jitter_gain": 1.0,
+      "q_mass": 6.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "nib",
+   "style": "e",
+   "pen": 0.4
+  },
+  "label": "2  same route, chain joins, danced by Staccato, nib e"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hands",
+   "label": "Route",
+   "type": "hands",
+   "min_len": 2,
+   "max_len": 4
+  },
+  {
+   "path": "parts.0.modulators.0.tempo",
+   "label": "Tempo",
+   "type": "tempo"
+  },
+  {
+   "path": "parts.0.voice.length",
+   "label": "Length (R)",
+   "type": "float",
+   "min": 2.0,
+   "max": 10.0,
+   "step": 0.1
+  },
+  {
+   "path": "parts.0.modulators.0.amount",
+   "label": "Dance weight",
+   "type": "float",
+   "min": 0.0,
+   "max": 2.0,
+   "step": 0.05
+  },
+  {
+   "path": "parts.0.modulators.0.mass_width",
+   "label": "Mass width (mm)",
+   "type": "float",
+   "min": 3.0,
+   "max": 18.0,
+   "step": 0.5
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

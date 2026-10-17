@@ -112,7 +112,8 @@ def test_every_numeric_param_is_bounded_and_validated():
 
 def test_bench_descriptor_placement_and_orientation():
     assert SRC.bench == {"adapter": "hand-drift", "version": 1, "modes": ["new", "resume"]}
-    assert SRC.library_bench is True and SRC.orientation == "geometry"
+    # superseded by the Gesture Studies bench (its first study): registered, unlisted
+    assert SRC.library_bench is False and SRC.listed is False and SRC.orientation == "geometry"
     assert SRC.placement_frame({"width": 200, "height": 150}) == (200.0, 150.0)
     assert SRC.placement_frame(SRC.Params().model_dump()) == (267.0, 180.0)
 

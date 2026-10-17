@@ -366,7 +366,7 @@ not constrain manual layer transforms or effects.
 
 
 Bench adapters currently registered at version 1 are `process`, `homeostat`, `territory`,
-`second-reading`, `magnetic-field`, `linedraw`, `mosca`, `mosca2` and `hand-drift`. Homeostat owns a grouped form schema in `homeostat_bench.js`;
+`second-reading`, `magnetic-field`, `linedraw`, `mosca`, `mosca2`, `hand-drift` and `gesture-studies`. Homeostat owns a grouped form schema in `homeostat_bench.js`;
 its generation recipe is unchanged. Schema groups may set `groupOpen: true` for
 an initially expanded group; a remembered user preference takes precedence.
 
@@ -428,6 +428,78 @@ along a route of 2–4 learned hands. Plan and Ian's decisions:
   0.01 mm. Line i uses `seed + i`.
 - **Cost.** Wire: ~0.2 s per line. Regimes: ~1.5–3 s for one line, ~9–13 s
   for eight (inking runs one thread per line; output is order-identical).
+- **Unlisted (2026-10-17).** Gesture Studies replaced it in the dropdown: Hand
+  Drift is that bench's first study, through this same engine (identical
+  output). `hand_drift` keeps `listed = False`, `library_bench = False` and
+  its `hand-drift` bench, so kept layers resolve and resume. `render_paths`
+  takes optional `load_hand` / `load_timing` so the study can reach library
+  hands this engine never froze.
+
+### Gesture Studies bench (2026-10-17)
+
+`gesture_studies` (`sources/gesture_studies.py`, adapter `gesture-studies` v1
+in `static/js/gesture_studies_bench.js`, modes `new`/`resume`,
+`library_bench`). Spec and Ian's decisions:
+`docs/superpowers/specs/2026-10-17-gesture-studies.md`. One generator, a
+study dropdown inside; each study shows only its own controls.
+
+- **A study** (`sources/_gesture_studies/studies.py`) is a frozen recipe + a
+  few controls + version + parent. A control points into the recipe (`path`,
+  or `paths` to set several places at once) with a label and a type: `int` /
+  `float` (`min`/`max` required, inside the module param's own bounds), `bool`,
+  `choice` (a subset of the param's), or a library pick — `hand`, `hands`
+  (`min_len`/`max_len`; `join: " "` for a space-separated pool), `tempo`,
+  `trail`. Seed is always a control. Everything else is fixed. A control's
+  default is the value at its path. `check_study` validates the recipe with
+  its engine and every control against the param it points at; `resolve`
+  writes values in and validates again.
+- **Engines.** `kit`: the frozen gesture kit (`_gesture_studies/kit/`, research
+  commit in `kit/FROZEN.json` and every file header; `kit/_research/` holds the
+  research modules it imports; calligraphy is a `PolicyError` stub). `hand_drift`
+  (the first study): delegates to `sources/hand_drift.render_paths`, identical
+  to the standalone generator; hands/tempos outside that engine's frozen set
+  are decoded from the Gesture Studies library into its compact grammar form.
+  The kit needs numpy / scipy / shapely, plus Pillow (a declared app
+  dependency) for penrender's pen-lift coverage raster — kept for parity.
+  `engine.install_hooks` wraps every kit stage and the long research loops with
+  `checkpoint()` so superseded previews cancel; output is unchanged.
+- **Library** (`_gesture_studies/library/`, `frozen_library.py`): EVERY
+  generative hand / tempo / dance trail of the research library (policy gate
+  applied at freeze time; measure-only entries never become options) plus the
+  corpus index entries the gate reads. Content-addressed and append-only:
+  `<kind>/<id>/<hash12>/`, `snapshots/<id>.json`, `index.json` (`current`,
+  `history`, `withdrawn`). Hand / tempo / dance controls list whatever the
+  current snapshot holds, so a refreeze after new hands are learned adds them
+  to every study with no study edits.
+- **Kept layers** carry `study` (full snapshot), `values`, and — filled by
+  `complete_params` when a layer is created or regenerated, never on preview —
+  `library` (snapshot id) and `pins` (kind/id/version/hash of every entry the
+  controls name). A layer therefore never changes when a study is edited or
+  deleted, or the library refrozen (old hash folders and snapshots stay).
+  Resume restores the layer's recipe and pins; the first edit drops the pins
+  (Keep pins the current library again). Presets exclude `library`/`pins`.
+- **Saved studies** (`gesture_studies_store.py`, machine-level beside the pens
+  and gallery, `AXIBRIDGE_CONFIG_DIR` in tests): "Save as new study" stores
+  the current study with the current values as its recipe, a fresh id,
+  version 1 and `parent` = the study + version it grew from. Built-ins ship in
+  `_gesture_studies/studies/<id>/study.json` (order in `index.json`) and cannot
+  be deleted. API (`gesture_studies_api.py`): `GET /api/gesture-studies`
+  (studies, library options, snapshot), `POST /api/gesture-studies` (save a
+  fork), `POST /api/gesture-studies/validate` (Edit recipe drawer),
+  `DELETE /api/gesture-studies/{id}`.
+- **Output.** The recipe's frame in mm (`placement_frame`), simplified at
+  0.01 mm, closed rings closed exactly, nib/mass outline rings `filled=True`,
+  everything else open or unfilled; `_fit_inside` safety net. Deterministic
+  across processes and `PYTHONHASHSEED`.
+- **Refreeze**: `.local/gesture/.venv/bin/python tools/gesture_studies/freeze.py`
+  (reads `git archive HEAD`, never the working tree; re-checks that the frozen
+  copy reproduces the research kit exactly; writes the parity fixtures in
+  `tests/fixtures/gesture_studies/`). Adding a kit module a new study needs:
+  append it to `KIT_MODULES` / `RESEARCH_MODULES` there.
+- **Cost** (app venv, default values): Hand Drift 0.4 s, Drawing and its
+  measure 0.3 s, Three voices 0.8 s, Conversation 1.6 s, Danced chain 4 s,
+  Annotated page 4 s, Two voices 10 s, Shape atlas ~60 s (drawn by a hand;
+  ~0.6 s machine-drawn).
 
  adapters call
 `openGallerySave({kind: 'generator', module, params}, suggestedName)` with the
