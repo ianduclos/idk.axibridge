@@ -58,7 +58,7 @@ Images are the medium of judgement. Nothing is plotted unless Ian asks.
 | Kit | saved library + combinable techniques + recipes | `tools/gesture/gesture/kit/` ([contract](../tools/gesture/gesture/kit/README.md), [spec](superpowers/specs/2026-10-17-gesture-kit.md)) |
 | Library | every learned hand, tempo, dance trail, shape set, corpus index, with provenance and policy | `tools/gesture/library/<kind>/<id>/` |
 | Hand Drift bench | the first app bench: one line drifting through hands | `axibridge/sources/hand_drift.py` ([plan](superpowers/plans/2026-10-17-hand-drift-bench.md)) |
-| Gesture Studies | saved pieces with their own controls, one bench with its own dropdown (8 built-in; forks in a machine-level store) | `axibridge/sources/gesture_studies.py`, `_gesture_studies/`, `gesture_studies_store.py`, `gesture_studies_api.py` ([spec](superpowers/specs/2026-10-17-gesture-studies.md)) |
+| Gesture Studies | saved pieces with their own controls, one bench with its own dropdown (15 built-in; forks in a machine-level store) | `axibridge/sources/gesture_studies.py`, `_gesture_studies/`, `gesture_studies_store.py`, `gesture_studies_api.py` ([spec](superpowers/specs/2026-10-17-gesture-studies.md)) |
 
 ### The kit in one paragraph
 
@@ -79,7 +79,9 @@ version and a parent. Built-in studies ship in the app; "Save as new study"
 forks one into a machine-level store; kept layers embed the whole recipe so
 they never change. Hand controls list every hand in the frozen library, so new
 hands appear in every study after a refreeze. One generator, "Gesture
-Studies", holds them all, with its own study dropdown.
+Studies", holds them all, with its own study dropdown. A multi-pen study (the
+chorus) keeps as a group with one layer per voice, each on its own pen; the
+Sampler's seed picks a whole unbred combination from the kit.
 
 ### Research vs app
 
@@ -117,7 +119,11 @@ how distinct and how self-consistent it is. To get it into the app, rerun
 renderer or arranger with a param spec; tests; an image made through
 `kit.run` + `kit.preview`.
 
-**Keep a piece.** In the app, the Gesture Studies bench's "Save as new
+**Keep a piece.** In the app, the Gesture Studies bench's "Keep as layer"
+makes a layer pinned to the library it was drawn with ("Keep as group" for the
+chorus: one layer per voice, each on its own pen, one undo step). Resuming a
+kept layer keeps it on its own library through every edit; "Update to current
+library" moves it on purpose. "Save as new
 study" forks a study into the machine-level store (records its parent). To
 make a recipe a built-in study: add `axibridge/sources/_gesture_studies/studies/<id>/study.json`
 (the recipe, 3–8 bounded controls, notes on why), rerun
@@ -126,8 +132,10 @@ from HEAD and every generative library entry, and checks parity), run
 `tests/test_gesture_studies.py`.
 
 **Bring new hands into the app.** Learn and save them in the library, commit,
-rerun `tools/gesture_studies/freeze.py`: every study's hand controls list them.
-Kept layers stay pinned to the snapshot they were made from.
+rerun `tools/gesture_studies/freeze.py`: every study's hand controls list them,
+and they enter the Sampler's sample space. Kept layers stay pinned to the
+snapshot they were made from, edits included, until "Update to current
+library".
 
 ---
 
@@ -172,6 +180,7 @@ Kept layers stay pinned to the snapshot they were made from.
 | 2026-10-17 | Gesture kit: library + techniques + recipes | [spec](superpowers/specs/2026-10-17-gesture-kit.md) |
 | Round 9 | Corpus voices, machine/diagram voices, prosody, polyphonic sheets, built into the kit; Ian: "save the methods" of the two-voice and danced-chain recipes | `round9-2026-10-17.md`, `round9-review-2026-10-17.md` |
 | Round 10 + Studies | Gesture Studies bench in the app (8 studies, Hand Drift first; new hands flow in on refreeze); explorations: drawing + its measurement (numbered atlas, merged shadow), developments (beads, rare machine events, chorus), combination search (proxy AUC 0.87 / 0.61) | `round10-2026-10-17.md`, [studies spec](superpowers/specs/2026-10-17-gesture-studies.md) |
+| Studies v2 | Seven studies from the round-10 review (numbered atlas, dance atlas, margin chart, merged shadow, chorus kept as a pen-per-voice group, sampler, ledger with straight lines); edits stay pinned; exact clothoid memos (~1.45×) | [studies spec](superpowers/specs/2026-10-17-gesture-studies.md) "Studies v2" |
 
 ### Turns in direction (Ian's words)
 
