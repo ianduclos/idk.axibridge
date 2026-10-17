@@ -1,0 +1,54 @@
+{
+ "kit": 1,
+ "frame": [
+  290.0,
+  200.0
+ ],
+ "seed": 1201,
+ "margin": null,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "revisit_glyph",
+    "trail": "mantis",
+    "host": "head",
+    "with_": "others",
+    "layout": "rows",
+    "row_gap": 0.1,
+    "t0": 0.0,
+    "seconds": 60.0,
+    "still": 0.2,
+    "min_hold_s": 0.25,
+    "merge_s": 0.3,
+    "pad_s": 0.5,
+    "draw": "figures",
+    "pick": "path",
+    "limbs": "loudest",
+    "max_fig_s": 1.6,
+    "size": "fit",
+    "spread": 0.4,
+    "scale": 0.35,
+    "fig": 0.05,
+    "close": "excursion",
+    "max_glyphs": 10,
+    "r_glyph": 1.15,
+    "slow_mass": 0.6,
+    "slow_at": 0.35,
+    "ramp": 0.15,
+    "nib_mm": 0.9,
+    "mass_mm": 1.6,
+    "nib_deg": 40.0
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "revisit_nib",
+  "style": "c+e",
+  "pen": 0.35,
+  "inks": "black,red,blue,cyan,orange"
+ }
+}

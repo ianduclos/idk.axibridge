@@ -1,0 +1,30 @@
+{
+ "id": "drive_stork",
+ "kind": "drive_signal",
+ "label": "White stork 'Oduella', Sicily 2015",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "corpus": "animal/movebank-lifetrack-stork-sicily",
+  "file": "stork-gps.csv",
+  "individual": "Oduella + / IAB PA339 (eobs 4563)",
+  "licence": "CC0",
+  "recorded": true,
+  "research_file": "tools/gesture/experiments/drive_sources.py"
+ },
+ "policy": "generative",
+ "notes": "A juvenile that stayed in Sicily (no crossing): five months of days — night roosts, morning thermals, foraging. 5-min fixes on a uniform grid. A driver: never drawn as a shape (no lon/lat is stored).",
+ "files": {
+  "series": "series.npz"
+ },
+ "size_bytes": 307466,
+ "rate_hz": 0.0033333333333333335,
+ "duration_s": 13975200.0,
+ "channels": {
+  "alt": "height above ellipsoid, m (median-3, spikes clipped): thermal climbs",
+  "speed": "ground speed from successive fixes, m/s (median-3)",
+  "gap": "1 where no fix within 20 min (interpolated)",
+  "hour": "approximate local hour of day (UTC+1)"
+ },
+ "start_utc": "2015-06-23T14:00:11+00:00"
+}

@@ -1,0 +1,27 @@
+{
+ "id": "drive_surrogate_mosquito",
+ "kind": "drive_signal",
+ "label": "Control: mosquito, phases randomised",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "derived_from": "drive_signal/drive_mosquito",
+  "method": "Fourier phase randomisation",
+  "seed": 5813,
+  "recorded": false,
+  "research_file": "tools/gesture/experiments/drive_sources.py"
+ },
+ "policy": "generative",
+ "notes": "A control for the honest test: same spectrum as the mosquito, no bursts. If a drawing driven by this looks the same as one driven by the fly, the fly does not matter.",
+ "files": {
+  "series": "series.npz"
+ },
+ "size_bytes": 370875,
+ "rate_hz": 40.0,
+ "duration_s": 749.45,
+ "channels": {
+  "steer": "left−right wingbeat amplitude (wbad): the fly's steering command, signed — phase-randomised surrogate",
+  "effort": "left+right wingbeat amplitude (wbas): flight effort; < 0.3 = wings stopped — phase-randomised surrogate",
+  "heading": "the fly's heading in the simulator, degrees, continuous (trial resets removed); some trials spin at hundreds of degrees per second — phase-randomised surrogate"
+ }
+}

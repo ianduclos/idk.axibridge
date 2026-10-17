@@ -1,0 +1,26 @@
+{
+ "id": "drive_mosca",
+ "kind": "drive_signal",
+ "label": "mosca-draw: simulated fly, courtship neurons driven",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "project": "mosca-draw",
+  "file": "out/k4_circulation/open_fru_s11.npz",
+  "recorded": false,
+  "simulated": "connectome LIF model, differential-drive body",
+  "research_file": "tools/gesture/experiments/drive_sources.py"
+ },
+ "policy": "generative",
+ "notes": "Simulated, not recorded: 30 s of motor-neuron rates from Ian's mosca-draw. A driver: never drawn as a shape.",
+ "files": {
+  "series": "series.npz"
+ },
+ "size_bytes": 56721,
+ "rate_hz": 200.0,
+ "duration_s": 29.995,
+ "channels": {
+  "turn": "left − right motor pool rate, Hz (the walk's steering)",
+  "drive": "left + right motor pool rate, Hz (the walk's speed)"
+ }
+}

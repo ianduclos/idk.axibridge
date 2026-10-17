@@ -1,0 +1,128 @@
+[
+ {
+  "kit": 1,
+  "frame": [
+   150.0,
+   210.0
+  ],
+  "seed": 1201,
+  "margin": 10.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "revisit_glyph",
+     "trail": "particles",
+     "host": "rfoot",
+     "with_": "head",
+     "layout": "body",
+     "row_gap": 0.25,
+     "t0": 0.0,
+     "seconds": 60.0,
+     "still": 0.2,
+     "min_hold_s": 0.25,
+     "merge_s": 0.3,
+     "pad_s": 0.5,
+     "draw": "stops",
+     "pick": "path",
+     "limbs": "loudest",
+     "max_fig_s": 1.6,
+     "size": "fit",
+     "spread": 1.0,
+     "scale": 0.35,
+     "fig": 0.07,
+     "close": "excursion",
+     "max_glyphs": 5,
+     "r_glyph": 1.15,
+     "slow_mass": 0.6,
+     "slow_at": 0.35,
+     "ramp": 0.15,
+     "nib_mm": 0.9,
+     "mass_mm": 1.6,
+     "nib_deg": 40.0
+    },
+    "modulators": [
+     {
+      "id": "revisit_notate",
+      "code": "hold=body,end=none",
+      "size_mm": 1.4,
+      "still": 0.12,
+      "min_hold_s": 0.3,
+      "reverse_deg": 125.0,
+      "launch_q": 0.9,
+      "meet_mm": 2.5,
+      "meet_s": 0.4,
+      "gap_mm": 0.0,
+      "source": "stops",
+      "max_per_line": 6
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "revisit_signs",
+   "pen": 0.35,
+   "nib_deg": 55.0,
+   "nib_mm": 1.2,
+   "inks": "black,red"
+  },
+  "label": "revisit: where one limb stops, its line writes what the others did"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   150.0,
+   210.0
+  ],
+  "seed": 1201,
+  "margin": 10.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "revisit_glyph",
+     "trail": "particles",
+     "host": "rfoot",
+     "with_": "head",
+     "layout": "body",
+     "row_gap": 0.25,
+     "t0": 0.0,
+     "seconds": 60.0,
+     "still": 0.2,
+     "min_hold_s": 0.25,
+     "merge_s": 0.3,
+     "pad_s": 0.5,
+     "draw": "figures",
+     "pick": "path",
+     "limbs": "loudest",
+     "max_fig_s": 1.6,
+     "size": "fit",
+     "spread": 1.0,
+     "scale": 0.35,
+     "fig": 0.07,
+     "close": "excursion",
+     "max_glyphs": 5,
+     "r_glyph": 1.15,
+     "slow_mass": 0.6,
+     "slow_at": 0.35,
+     "ramp": 0.15,
+     "nib_mm": 0.9,
+     "mass_mm": 1.6,
+     "nib_deg": 40.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "revisit_nib",
+   "style": "c+e",
+   "pen": 0.35,
+   "inks": "black,red"
+  },
+  "label": "revisit: where one limb stops, its line writes what the others did"
+ }
+]

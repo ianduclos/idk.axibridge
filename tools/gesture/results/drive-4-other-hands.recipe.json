@@ -1,0 +1,438 @@
+[
+ {
+  "tile": 0,
+  "label": "mime_monkey_hands seed 8846",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    280.0,
+    210.0
+   ],
+   "seed": 8846,
+   "margin": 6.0,
+   "arranger": {
+    "id": "drive_beside",
+    "show": "hidden",
+    "layout": "below",
+    "share": 0.38,
+    "gap": 8.0,
+    "scale": null,
+    "scale_max": 1.0,
+    "trace_h": 6.0,
+    "row_gap": 3.0,
+    "traces": true,
+    "unroll": true,
+    "max_traces": 4
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_monkey_hands",
+      "length": 3.5,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "drive_regime",
+       "driver": "drive_stork",
+       "channel": "speed",
+       "transform": "value",
+       "tau": 1.0,
+       "start": 0.37094281,
+       "span": 0.04945904,
+       "norm": "window",
+       "smooth": 0.5,
+       "stretch": false,
+       "invert": true,
+       "gamma": 1.0,
+       "step": 0.5,
+       "nib_at": 0.88,
+       "mass_at": 1.01,
+       "hyst": 0.04,
+       "min_run": 4.0,
+       "W": 3.5,
+       "M": 7.0,
+       "ramp": 2.0
+      },
+      {
+       "id": "drive_phi",
+       "driver": "drive_mosquito",
+       "channel": "heading",
+       "transform": "value",
+       "tau": 1.0,
+       "start": 0.56041097,
+       "span": 0.13343118,
+       "smooth": 1.0,
+       "step": 0.5,
+       "gain": 0.5,
+       "phi0": 35.0,
+       "max_rate": 12.0
+      },
+      {
+       "id": "drive_pen",
+       "driver": "drive_mosquito",
+       "channel": "steer",
+       "transform": "highpass",
+       "tau": 3.0,
+       "start": 0.50703849,
+       "span": 0.26686237,
+       "norm": "signed",
+       "smooth": 6.0,
+       "stretch": true,
+       "invert": false,
+       "gamma": 1.0,
+       "step": 0.5,
+       "pens": "black,red,blue",
+       "mode": "sign",
+       "thr": 0.3,
+       "hyst": 0.08,
+       "min_run": 20.0
+      }
+     ],
+     "renderer": {
+      "id": "drive_ink",
+      "pen": 0.4,
+      "pitch": 0.85,
+      "sweep_from": 1.6,
+      "knots": "wound",
+      "knot_size": 6.0,
+      "chart_pen": 0.25,
+      "body": "nib_e"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   }
+  }
+ },
+ {
+  "tile": 1,
+  "label": "marden seed 3301",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    280.0,
+    210.0
+   ],
+   "seed": 3301,
+   "margin": 6.0,
+   "arranger": {
+    "id": "drive_beside",
+    "show": "hidden",
+    "layout": "below",
+    "share": 0.38,
+    "gap": 8.0,
+    "scale": null,
+    "scale_max": 1.0,
+    "trace_h": 6.0,
+    "row_gap": 3.0,
+    "traces": true,
+    "unroll": true,
+    "max_traces": 4
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "marden",
+      "length": 3.5,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "drive_regime",
+       "driver": "drive_stork",
+       "channel": "speed",
+       "transform": "value",
+       "tau": 1.0,
+       "start": 0.37094281,
+       "span": 0.04945904,
+       "norm": "window",
+       "smooth": 0.5,
+       "stretch": false,
+       "invert": true,
+       "gamma": 1.0,
+       "step": 0.5,
+       "nib_at": 0.88,
+       "mass_at": 1.01,
+       "hyst": 0.04,
+       "min_run": 4.0,
+       "W": 3.5,
+       "M": 7.0,
+       "ramp": 2.0
+      },
+      {
+       "id": "drive_phi",
+       "driver": "drive_mosquito",
+       "channel": "heading",
+       "transform": "value",
+       "tau": 1.0,
+       "start": 0.56041097,
+       "span": 0.13343118,
+       "smooth": 1.0,
+       "step": 0.5,
+       "gain": 0.5,
+       "phi0": 35.0,
+       "max_rate": 12.0
+      },
+      {
+       "id": "drive_pen",
+       "driver": "drive_mosquito",
+       "channel": "steer",
+       "transform": "highpass",
+       "tau": 3.0,
+       "start": 0.50703849,
+       "span": 0.26686237,
+       "norm": "signed",
+       "smooth": 6.0,
+       "stretch": true,
+       "invert": false,
+       "gamma": 1.0,
+       "step": 0.5,
+       "pens": "black,red,blue",
+       "mode": "sign",
+       "thr": 0.3,
+       "hyst": 0.08,
+       "min_run": 20.0
+      }
+     ],
+     "renderer": {
+      "id": "drive_ink",
+      "pen": 0.4,
+      "pitch": 0.85,
+      "sweep_from": 1.6,
+      "knots": "wound",
+      "knot_size": 6.0,
+      "chart_pen": 0.25,
+      "body": "nib_e"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   }
+  }
+ },
+ {
+  "tile": 2,
+  "label": "dance_levitation seed 5120",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    280.0,
+    210.0
+   ],
+   "seed": 5120,
+   "margin": 6.0,
+   "arranger": {
+    "id": "drive_beside",
+    "show": "hidden",
+    "layout": "below",
+    "share": 0.38,
+    "gap": 8.0,
+    "scale": null,
+    "scale_max": 1.0,
+    "trace_h": 6.0,
+    "row_gap": 3.0,
+    "traces": true,
+    "unroll": true,
+    "max_traces": 4
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_levitation",
+      "length": 3.5,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "drive_regime",
+       "driver": "drive_stork",
+       "channel": "speed",
+       "transform": "value",
+       "tau": 1.0,
+       "start": 0.37094281,
+       "span": 0.04945904,
+       "norm": "window",
+       "smooth": 0.5,
+       "stretch": false,
+       "invert": true,
+       "gamma": 1.0,
+       "step": 0.5,
+       "nib_at": 0.88,
+       "mass_at": 1.01,
+       "hyst": 0.04,
+       "min_run": 4.0,
+       "W": 3.5,
+       "M": 7.0,
+       "ramp": 2.0
+      },
+      {
+       "id": "drive_phi",
+       "driver": "drive_mosquito",
+       "channel": "heading",
+       "transform": "value",
+       "tau": 1.0,
+       "start": 0.56041097,
+       "span": 0.13343118,
+       "smooth": 1.0,
+       "step": 0.5,
+       "gain": 0.5,
+       "phi0": 35.0,
+       "max_rate": 12.0
+      },
+      {
+       "id": "drive_pen",
+       "driver": "drive_mosquito",
+       "channel": "steer",
+       "transform": "highpass",
+       "tau": 3.0,
+       "start": 0.50703849,
+       "span": 0.26686237,
+       "norm": "signed",
+       "smooth": 6.0,
+       "stretch": true,
+       "invert": false,
+       "gamma": 1.0,
+       "step": 0.5,
+       "pens": "black,red,blue",
+       "mode": "sign",
+       "thr": 0.3,
+       "hyst": 0.08,
+       "min_run": 20.0
+      }
+     ],
+     "renderer": {
+      "id": "drive_ink",
+      "pen": 0.4,
+      "pitch": 0.85,
+      "sweep_from": 1.6,
+      "knots": "wound",
+      "knot_size": 6.0,
+      "chart_pen": 0.25,
+      "body": "nib_e"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   }
+  }
+ },
+ {
+  "tile": 3,
+  "label": "hokusai seed 3301",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    280.0,
+    210.0
+   ],
+   "seed": 3301,
+   "margin": 6.0,
+   "arranger": {
+    "id": "drive_beside",
+    "show": "hidden",
+    "layout": "below",
+    "share": 0.38,
+    "gap": 8.0,
+    "scale": null,
+    "scale_max": 1.0,
+    "trace_h": 6.0,
+    "row_gap": 3.0,
+    "traces": true,
+    "unroll": true,
+    "max_traces": 4
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.5,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "drive_regime",
+       "driver": "drive_stork",
+       "channel": "speed",
+       "transform": "value",
+       "tau": 1.0,
+       "start": 0.37094281,
+       "span": 0.04945904,
+       "norm": "window",
+       "smooth": 0.5,
+       "stretch": false,
+       "invert": true,
+       "gamma": 1.0,
+       "step": 0.5,
+       "nib_at": 0.88,
+       "mass_at": 1.01,
+       "hyst": 0.04,
+       "min_run": 4.0,
+       "W": 3.5,
+       "M": 7.0,
+       "ramp": 2.0
+      },
+      {
+       "id": "drive_phi",
+       "driver": "drive_mosquito",
+       "channel": "heading",
+       "transform": "value",
+       "tau": 1.0,
+       "start": 0.56041097,
+       "span": 0.13343118,
+       "smooth": 1.0,
+       "step": 0.5,
+       "gain": 0.5,
+       "phi0": 35.0,
+       "max_rate": 12.0
+      },
+      {
+       "id": "drive_pen",
+       "driver": "drive_mosquito",
+       "channel": "steer",
+       "transform": "highpass",
+       "tau": 3.0,
+       "start": 0.50703849,
+       "span": 0.26686237,
+       "norm": "signed",
+       "smooth": 6.0,
+       "stretch": true,
+       "invert": false,
+       "gamma": 1.0,
+       "step": 0.5,
+       "pens": "black,red,blue",
+       "mode": "sign",
+       "thr": 0.3,
+       "hyst": 0.08,
+       "min_run": 20.0
+      }
+     ],
+     "renderer": {
+      "id": "drive_ink",
+      "pen": 0.4,
+      "pitch": 0.85,
+      "sweep_from": 1.6,
+      "knots": "wound",
+      "knot_size": 6.0,
+      "chart_pen": 0.25,
+      "body": "nib_e"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   }
+  }
+ }
+]

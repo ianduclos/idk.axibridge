@@ -1,0 +1,682 @@
+{
+ "sheets": [
+  {
+   "kit": 1,
+   "frame": [
+    180.0,
+    180.0
+   ],
+   "seed": 5300,
+   "margin": null,
+   "arranger": {
+    "id": "dev_chorus",
+    "answer_to": "all",
+    "listen_by": "space",
+    "radius": 15.0,
+    "answer": 0.8,
+    "delay": 0.05,
+    "window": 0.012,
+    "layout": "single",
+    "inks": "black,red",
+    "voices": 2
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "hokusai"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "pulse",
+       "span": 5.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "nib",
+      "style": "e",
+      "pen": 0.4
+     },
+     "label": "call: hokusai"
+    },
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "bubble"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "segment",
+       "span": 8.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "restate",
+      "pen": 0.4,
+      "thr": 0.15,
+      "copies": 8,
+      "gamma": 1.0,
+      "drift": 0.7,
+      "slide": 1.5,
+      "turn": 1.5,
+      "wobble": 0.35,
+      "trim": 2.0,
+      "bound": "contour",
+      "bound_gap": 1.2
+     },
+     "label": "answer: bubble"
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "relay 1/6: hokusai calls, bubble answers"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    180.0,
+    180.0
+   ],
+   "seed": 5301,
+   "margin": null,
+   "arranger": {
+    "id": "dev_chorus",
+    "answer_to": "all",
+    "listen_by": "space",
+    "radius": 15.0,
+    "answer": 0.8,
+    "delay": 0.05,
+    "window": 0.012,
+    "layout": "single",
+    "inks": "black,red",
+    "voices": 2
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "bubble"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "pulse",
+       "span": 5.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "nib",
+      "style": "e",
+      "pen": 0.4
+     },
+     "label": "call: bubble"
+    },
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "marden"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "segment",
+       "span": 8.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "restate",
+      "pen": 0.4,
+      "thr": 0.15,
+      "copies": 8,
+      "gamma": 1.0,
+      "drift": 0.7,
+      "slide": 1.5,
+      "turn": 1.5,
+      "wobble": 0.35,
+      "trim": 2.0,
+      "bound": "contour",
+      "bound_gap": 1.2
+     },
+     "label": "answer: marden"
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "relay 2/6: bubble calls, marden answers"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    180.0,
+    180.0
+   ],
+   "seed": 5302,
+   "margin": null,
+   "arranger": {
+    "id": "dev_chorus",
+    "answer_to": "all",
+    "listen_by": "space",
+    "radius": 15.0,
+    "answer": 0.8,
+    "delay": 0.05,
+    "window": 0.012,
+    "layout": "single",
+    "inks": "black,red",
+    "voices": 2
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "marden"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "pulse",
+       "span": 5.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "nib",
+      "style": "e",
+      "pen": 0.4
+     },
+     "label": "call: marden"
+    },
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "meander69"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "segment",
+       "span": 8.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "restate",
+      "pen": 0.4,
+      "thr": 0.15,
+      "copies": 8,
+      "gamma": 1.0,
+      "drift": 0.7,
+      "slide": 1.5,
+      "turn": 1.5,
+      "wobble": 0.35,
+      "trim": 2.0,
+      "bound": "contour",
+      "bound_gap": 1.2
+     },
+     "label": "answer: meander69"
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "relay 3/6: marden calls, meander69 answers"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    180.0,
+    180.0
+   ],
+   "seed": 5303,
+   "margin": null,
+   "arranger": {
+    "id": "dev_chorus",
+    "answer_to": "all",
+    "listen_by": "space",
+    "radius": 15.0,
+    "answer": 0.8,
+    "delay": 0.05,
+    "window": 0.012,
+    "layout": "single",
+    "inks": "black,red",
+    "voices": 2
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "meander69"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "pulse",
+       "span": 5.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "nib",
+      "style": "e",
+      "pen": 0.4
+     },
+     "label": "call: meander69"
+    },
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "river_meander"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "segment",
+       "span": 8.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "restate",
+      "pen": 0.4,
+      "thr": 0.15,
+      "copies": 8,
+      "gamma": 1.0,
+      "drift": 0.7,
+      "slide": 1.5,
+      "turn": 1.5,
+      "wobble": 0.35,
+      "trim": 2.0,
+      "bound": "contour",
+      "bound_gap": 1.2
+     },
+     "label": "answer: river_meander"
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "relay 4/6: meander69 calls, river_meander answers"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    180.0,
+    180.0
+   ],
+   "seed": 5304,
+   "margin": null,
+   "arranger": {
+    "id": "dev_chorus",
+    "answer_to": "all",
+    "listen_by": "space",
+    "radius": 15.0,
+    "answer": 0.8,
+    "delay": 0.05,
+    "window": 0.012,
+    "layout": "single",
+    "inks": "black,red",
+    "voices": 2
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "river_meander"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "pulse",
+       "span": 5.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "nib",
+      "style": "e",
+      "pen": 0.4
+     },
+     "label": "call: river_meander"
+    },
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "trail_miner"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "segment",
+       "span": 8.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "restate",
+      "pen": 0.4,
+      "thr": 0.15,
+      "copies": 8,
+      "gamma": 1.0,
+      "drift": 0.7,
+      "slide": 1.5,
+      "turn": 1.5,
+      "wobble": 0.35,
+      "trim": 2.0,
+      "bound": "contour",
+      "bound_gap": 1.2
+     },
+     "label": "answer: trail_miner"
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "relay 5/6: river_meander calls, trail_miner answers"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    180.0,
+    180.0
+   ],
+   "seed": 5305,
+   "margin": null,
+   "arranger": {
+    "id": "dev_chorus",
+    "answer_to": "all",
+    "listen_by": "space",
+    "radius": 15.0,
+    "answer": 0.8,
+    "delay": 0.05,
+    "window": 0.012,
+    "layout": "single",
+    "inks": "black,red",
+    "voices": 2
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "trail_miner"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "pulse",
+       "span": 5.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "nib",
+      "style": "e",
+      "pen": 0.4
+     },
+     "label": "call: trail_miner"
+    },
+    {
+     "voice": {
+      "id": "drift_tokens",
+      "hands": [
+       "fly_fru"
+      ],
+      "blend": "mixture",
+      "plateau": 0.12,
+      "length": 2.6,
+      "joins": "chain"
+     },
+     "modulators": [
+      {
+       "id": "prosody",
+       "rhythm": "event",
+       "listen": "switch,corner,kappa,inflection,token,tempo",
+       "contrast": 0.5,
+       "density": 1.0,
+       "gap": 20.0,
+       "unit": "segment",
+       "span": 8.0,
+       "lead": 0.0,
+       "primary": 0.34,
+       "quiet": 0.5,
+       "metre": 2,
+       "phrase_min": 120.0,
+       "r_max": 2.0,
+       "W": 2.5,
+       "M": 7.0
+      }
+     ],
+     "renderer": {
+      "id": "restate",
+      "pen": 0.4,
+      "thr": 0.15,
+      "copies": 8,
+      "gamma": 1.0,
+      "drift": 0.7,
+      "slide": 1.5,
+      "turn": 1.5,
+      "wobble": 0.35,
+      "trim": 2.0,
+      "bound": "contour",
+      "bound_gap": 1.2
+     },
+     "label": "answer: fly_fru"
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "label": "relay 6/6: trail_miner calls, fly_fru answers"
+  }
+ ]
+}

@@ -1,0 +1,34 @@
+{
+ "id": "drive_mosquito",
+ "kind": "drive_signal",
+ "label": "Mosquito in a flight simulator",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "corpus": "earth/zenodo-5017751-fly",
+  "file": "mos_vision.h5",
+  "columns": [
+   "trajectory__wbad",
+   "trajectory__wbas",
+   "trajectory__case",
+   "trajectory__pOri_x"
+  ],
+  "licence": "CC0",
+  "recorded": true,
+  "research_file": "tools/gesture/experiments/drive_sources.py"
+ },
+ "policy": "generative",
+ "notes": "Tethered mosquito, closed-loop visual flight simulator, 12.5 min at ~165 Hz resampled to 40 Hz (σ 8 ms). hover_vision.h5's /df store is byte-identical to this one, so only one fly is frozen. A driver: never drawn as a shape.",
+ "files": {
+  "series": "series.npz"
+ },
+ "size_bytes": 362219,
+ "rate_hz": 40.0,
+ "duration_s": 749.45,
+ "channels": {
+  "steer": "left−right wingbeat amplitude (wbad): the fly's steering command, signed",
+  "effort": "left+right wingbeat amplitude (wbas): flight effort; < 0.3 = wings stopped",
+  "trial": "visual condition 0..3 (30 s blocks), categorical",
+  "heading": "the fly's heading in the simulator, degrees, continuous (trial resets removed); some trials spin at hundreds of degrees per second"
+ }
+}

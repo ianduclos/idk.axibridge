@@ -1,0 +1,27 @@
+{
+ "id": "drive_tropicbird",
+ "kind": "drive_signal",
+ "label": "White-tailed tropicbird 24202, one trip",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "corpus": "animal/movebank-tropicbird-santos2019",
+  "file": "tropicbird-gps.csv",
+  "individual": "24202",
+  "licence": "CC0",
+  "recorded": true,
+  "research_file": "tools/gesture/experiments/drive_sources.py"
+ },
+ "policy": "generative",
+ "notes": "One 10 h foraging trip from Fernando de Noronha: flights broken by sitting on the water. A driver: never drawn as a shape.",
+ "files": {
+  "series": "series.npz"
+ },
+ "size_bytes": 3906,
+ "rate_hz": 0.016666666666666666,
+ "duration_s": 35760.0,
+ "channels": {
+  "speed": "speed from successive 1-min fixes, m/s (sitting on the water ≈ 0)",
+  "gap": "1 where no fix within 4 min"
+ }
+}

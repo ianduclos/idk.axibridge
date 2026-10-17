@@ -1,0 +1,149 @@
+{
+ "kit": 1,
+ "frame": [
+  1036.0,
+  210.0
+ ],
+ "seed": 4247,
+ "margin": 0.0,
+ "arranger": {
+  "id": "series_row",
+  "sheets": 7,
+  "at": [
+   0.5
+  ],
+  "inks": "black,black,blue",
+  "tuck": 13.0
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "series_travel",
+    "hands": [
+     "trail_miner",
+     "fly_fru"
+    ],
+    "hand_at": [
+     0.5
+    ],
+    "fade": 0.01,
+    "length": 22.0,
+    "sheets": 7,
+    "route": [
+     0.0,
+     0.5,
+     0.62,
+     0.03,
+     0.85,
+     0.5,
+     0.06,
+     1.05,
+     0.3,
+     0.09,
+     1.5,
+     0.15,
+     0.12,
+     1.85,
+     0.6,
+     0.14,
+     2.1,
+     0.82,
+     0.19,
+     2.8,
+     0.8,
+     0.25,
+     2.8,
+     0.22,
+     0.31,
+     2.2,
+     0.2,
+     0.36,
+     2.35,
+     0.55,
+     0.4,
+     2.75,
+     0.5,
+     0.44,
+     3.2,
+     0.25,
+     0.5,
+     4.0,
+     0.78,
+     0.53,
+     4.4,
+     0.6,
+     0.6,
+     5.05,
+     0.3,
+     0.66,
+     5.8,
+     0.2,
+     0.72,
+     5.8,
+     0.75,
+     0.78,
+     5.25,
+     0.8,
+     0.84,
+     5.25,
+     0.3,
+     0.9,
+     5.6,
+     0.45,
+     0.96,
+     6.3,
+     0.35,
+     1.0,
+     6.7,
+     -0.4
+    ],
+    "pull": 4.0,
+    "clear": 5.0,
+    "K": 16,
+    "scale": 1.0,
+    "exit": true,
+    "step": 0.25,
+    "chunk": 0.4
+   },
+   "modulators": [],
+   "label": "the line"
+  },
+  {
+   "voice": {
+    "id": "series_stretch"
+   },
+   "modulators": [],
+   "renderer": {
+    "id": "trail_gallery",
+    "pen": 0.35,
+    "w0": 0.3,
+    "w1": 8.0,
+    "grow": 1.4,
+    "chamber": 3.2,
+    "ramp": 1.2,
+    "fill": "chamber",
+    "solid_from": 0.93,
+    "frass": "line",
+    "mother_w": 1.2,
+    "pitch": 0.85
+   },
+   "label": "the mine"
+  },
+  {
+   "voice": {
+    "id": "series_stretch"
+   },
+   "modulators": [],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.3
+   },
+   "label": "the fly"
+  }
+ ],
+ "renderer": {
+  "id": "wire",
+  "pen": 0.35
+ },
+ "label": "metamorphosis \u2014 seven sheets, one line (seed 4247)"
+}
