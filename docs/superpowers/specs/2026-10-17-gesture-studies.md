@@ -47,6 +47,15 @@ entries for the hands/tempos/trails the studies use). Freeze from the committed
 HEAD, never from files being edited. Same recipe ⇒ same paths as the research
 kit (parity test).
 
+## New hands flow in (Ian, 2026-10-17)
+
+"If they use the line corpuses and we add more, make them accept the new
+ones." Hand / tempo / dance-trail controls list every generative entry of that
+kind in the frozen library; the freeze script freezes all of them (policy gate
+applied), so refreezing after new hands are learned adds them to every study
+with no study edits. Kept layers pin the entry's version/content hash so a
+refreeze never changes them.
+
 ## The bench
 
 One generator **"Gesture Studies"** in the dropdown (`library_bench`), adapter
