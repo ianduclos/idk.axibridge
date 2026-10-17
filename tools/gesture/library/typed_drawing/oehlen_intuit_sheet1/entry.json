@@ -1,0 +1,25 @@
+{
+ "id": "oehlen_intuit_sheet1",
+ "kind": "typed_drawing",
+ "label": "oehlen_intuit sheet 1: typed lines + a stork's nest",
+ "version": 1,
+ "created": "2026-10-18",
+ "provenance": {
+  "typed": "typed blind as numbers during the round-12 oehlen_intuit session (2026-10-17)",
+  "corpus": "animal/movebank-lifetrack-stork-sicily",
+  "file": "stork-gps.csv",
+  "individual": "Oduella + / IAB PA339 (eobs 4563)",
+  "fixes": [
+   4500,
+   4800
+  ],
+  "licence": "CC0",
+  "research_file": "tools/gesture/experiments/oehlen_intuit_session.py"
+ },
+ "policy": "generative",
+ "notes": "Source lines of the session's finished sheet; the voice oehlen_intuit_sheet replays the session's operations (smooth, clip, turn, pixel stretch, knot split at its own crossings). Log: tools/gesture/results/oehlen_intuit-2026-10-17.md",
+ "files": {
+  "lines": "lines.json.gz"
+ },
+ "size_bytes": 2304
+}

@@ -1,0 +1,34 @@
+{
+ "kit": 1,
+ "frame": [
+  200.0,
+  300.0
+ ],
+ "seed": 4127,
+ "margin": 0.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "oehlen_intuit_sheet",
+    "drawing": "oehlen_intuit_sheet1",
+    "tau": 2.0,
+    "cell": 3.0,
+    "fat_to": 0.33,
+    "stop_short": 0.62,
+    "feeler": true,
+    "stub": false,
+    "colour": "red",
+    "turn": true
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "oehlen_intuit_pens"
+ },
+ "label": "oehlen_intuit \u2014 sheet 1",
+ "notes": "drawn on the AxiDraw in landscape (300 x 200, turn=false), seen turned to portrait. Three pens: 0.3 fine liner, 1.6 marker (the pixel stretches), 0.5 red-400."
+}

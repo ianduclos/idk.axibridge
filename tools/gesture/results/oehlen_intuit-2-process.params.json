@@ -1,0 +1,13 @@
+{
+ "made_by": "tools/gesture/experiments/oehlen_intuit_final.py",
+ "frames": [
+  ".local/gesture/out/oehlen_intuit/s01_typed_blind.jpg (+ .params.json; rebuild: experiments/oehlen_intuit_session.py)",
+  ".local/gesture/out/oehlen_intuit/s05_typed_charcoal.jpg (+ .params.json; rebuild: experiments/oehlen_intuit_session.py)",
+  ".local/gesture/out/oehlen_intuit/s07_knot_on_horizon.jpg (+ .params.json; rebuild: experiments/oehlen_intuit_session.py)",
+  ".local/gesture/out/oehlen_intuit/s09_turned.jpg (+ .params.json; rebuild: experiments/oehlen_intuit_session.py)",
+  ".local/gesture/out/oehlen_intuit/s12_without_swoosh.jpg (+ .params.json; rebuild: experiments/oehlen_intuit_session.py)",
+  ".local/gesture/out/oehlen_intuit/s15b_no_arrow.jpg (+ .params.json; rebuild: experiments/oehlen_intuit_session.py)",
+  ".local/gesture/out/oehlen_intuit/s19_ragged_bare.jpg (+ .params.json; rebuild: experiments/oehlen_intuit_session.py)",
+  "final: oehlen_intuit-1-sheet1.recipe.json"
+ ]
+}
