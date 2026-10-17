@@ -1,0 +1,562 @@
+{
+ "river_bend-a": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "river_bend  (hand, 5 R, seed 7010)"
+ },
+ "river_bend-near": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_levitation",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "dance_levitation [nearest to river_bend, sheets]  (hand, 5 R, seed 7010)"
+ },
+ "river_bend-kitnear": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "bubble",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "bubble [nearest to river_bend, kit]  (hand, 5 R, seed 7010)"
+ },
+ "river_bend-far": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_monkey_hands",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "mime_monkey_hands [farthest from river_bend]  (hand, 5 R, seed 7010)"
+ },
+ "river_meander-a": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_meander",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "river_meander  (hand, 5 R, seed 7010)"
+ },
+ "river_meander-near": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_levitation",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "dance_levitation [nearest to river_meander, sheets]  (hand, 5 R, seed 7010)"
+ },
+ "river_meander-kitnear": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "bubble",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "bubble [nearest to river_meander, kit]  (hand, 5 R, seed 7010)"
+ },
+ "river_meander-far": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_monkey_hands",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "mime_monkey_hands [farthest from river_meander]  (hand, 5 R, seed 7010)"
+ },
+ "river_belt-a": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_belt",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "river_belt  (hand, 5 R, seed 7010)"
+ },
+ "river_belt-near": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_levitation",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "dance_levitation [nearest to river_belt, sheets]  (hand, 5 R, seed 7010)"
+ },
+ "river_belt-kitnear": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "ingres",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "ingres [nearest to river_belt, kit]  (hand, 5 R, seed 7010)"
+ },
+ "river_belt-far": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_monkey_hands",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "mime_monkey_hands [farthest from river_belt]  (hand, 5 R, seed 7010)"
+ },
+ "river_oxbow-a": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_oxbow",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "river_oxbow  (hand, 5 R, seed 7010)"
+ },
+ "river_oxbow-near": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_levitation",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "dance_levitation [nearest to river_oxbow, sheets]  (hand, 5 R, seed 7010)"
+ },
+ "river_oxbow-kitnear": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_penguin",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "mime_penguin [nearest to river_oxbow, kit]  (hand, 5 R, seed 7010)"
+ },
+ "river_oxbow-far": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_monkey_hands",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "mime_monkey_hands [farthest from river_oxbow]  (hand, 5 R, seed 7010)"
+ },
+ "river_threads-a": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_threads",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "river_threads  (hand, 5 R, seed 7010)"
+ },
+ "river_threads-near": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "ingres",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "ingres [nearest to river_threads, sheets]  (hand, 5 R, seed 7010)"
+ },
+ "river_threads-kitnear": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "shikasta",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "shikasta [nearest to river_threads, kit]  (hand, 5 R, seed 7010)"
+ },
+ "river_threads-far": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7010,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_monkey_hands",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "mime_monkey_hands [farthest from river_threads]  (hand, 5 R, seed 7010)"
+ }
+}

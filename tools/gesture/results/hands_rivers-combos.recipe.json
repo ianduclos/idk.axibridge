@@ -1,0 +1,234 @@
+{
+ "drift-mat-river-lich": {
+  "kit": 1,
+  "frame": [
+   200.0,
+   130.0
+  ],
+  "seed": 7000,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "river_meander",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 7.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "drift matisse > river_meander > lichtenberg  (seed 7000)"
+ },
+ "drift-scalejump": {
+  "kit": 1,
+  "frame": [
+   200.0,
+   130.0
+  ],
+  "seed": 7001,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "river_bend",
+      "river_belt",
+      "river_bend"
+     ],
+     "blend": "mixture",
+     "plateau": 0.25,
+     "length": 7.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "drift river_bend > river_belt > river_bend (scale jumps in one line)  (seed 7001)"
+ },
+ "braid-beads": {
+  "kit": 1,
+  "frame": [
+   200.0,
+   130.0
+  ],
+  "seed": 7002,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_braid",
+     "braid": "river_anavilhanas",
+     "host": "river_bend",
+     "length": 3.0,
+     "threads": 4,
+     "width": 0.05,
+     "node": 3.0,
+     "open": 0.6,
+     "wander": 0.15
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "dev_beads",
+   "shape": "gather",
+   "at": "peak",
+   "line": "wire",
+   "nib_style": "e",
+   "nib_cap": 0.5,
+   "pen": 0.35,
+   "thr": 0.3,
+   "size": 4.0,
+   "length_gain": 0.25,
+   "spacing": 1.5,
+   "pitch": 0.85,
+   "wobble": 0.06,
+   "loops": 4
+  },
+  "label": "braid on river_bend, beads at the splits  (seed 7002)"
+ },
+ "loops-stress-hokusai": {
+  "kit": 1,
+  "frame": [
+   200.0,
+   130.0
+  ],
+  "seed": 7003,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_loops",
+     "loops": "river_cutoffs",
+     "family": "oxbow",
+     "mode": "knot",
+     "host": "hokusai",
+     "length": 5.0,
+     "n": 7,
+     "size": 1.0,
+     "size_sd": 0.35,
+     "gap": 0.12,
+     "jitter": 0.15,
+     "loop_r": 1.6
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "nib",
+   "style": "e",
+   "pen": 0.35
+  },
+  "label": "oxbow loops as the stresses of hokusai (knot, loop_r 1.6, nib e)  (seed 7003)"
+ },
+ "two-voices": {
+  "kit": 1,
+  "frame": [
+   200.0,
+   130.0
+  ],
+  "seed": 7004,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_belt",
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "river_loops",
+     "loops": "river_cutoffs",
+     "family": "oxbow",
+     "mode": "alone",
+     "host": "river_meander",
+     "length": 5.0,
+     "n": 9,
+     "size": 0.22,
+     "size_sd": 0.35,
+     "gap": 0.12,
+     "jitter": 0.15,
+     "loop_r": 0.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "two voices on one surface: river_belt hand + oxbow loops alone"
+ },
+ "shikasta-oxbows": {
+  "kit": 1,
+  "frame": [
+   200.0,
+   130.0
+  ],
+  "seed": 7005,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_loops",
+     "loops": "river_cutoffs",
+     "family": "oxbow",
+     "mode": "beside",
+     "host": "shikasta",
+     "length": 5.0,
+     "n": 6,
+     "size": 0.6,
+     "size_sd": 0.35,
+     "gap": 0.12,
+     "jitter": 0.15,
+     "loop_r": 1.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "nib",
+   "style": "e",
+   "pen": 0.35
+  },
+  "label": "shikasta with abandoned oxbows beside its bends, nib e"
+ }
+}

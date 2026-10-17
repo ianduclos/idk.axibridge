@@ -1,0 +1,40 @@
+{
+ "id": "river_anavilhanas",
+ "kind": "river_braid",
+ "label": "Braid: Anavilhanas islands",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "corpus": "earth",
+  "corpus_ids": [
+   "s2-20MQC-20200729"
+  ],
+  "rights": "Copernicus Sentinel-2 L2A (Earth Search COG), free use (earth-physics-harvest.csv)",
+  "research_commit": "0dc1785",
+  "training_sheets": [
+   "s2-20MQC-20200729"
+  ],
+  "extraction": "B08 < 700 → water; land components not touching the tile edge, ≥ 400 px (4 ha); aspect = major/minor axis (≥ 1.5, solidity ≥ 0.6); half-width profile along the major axis in 32 bins",
+  "counts": {
+   "n_islands": 32,
+   "n_kept": 14,
+   "aspect_q": [
+    2.9,
+    4.96,
+    10.0
+   ],
+   "area_km2_q": [
+    0.044,
+    0.123,
+    0.933
+   ]
+  },
+  "experiment": "tools/gesture/experiments/hands_rivers.py learn"
+ },
+ "policy": "generative",
+ "notes": "Read by the river_braid voice (kit/voices_rivers.py).",
+ "files": {
+  "braid": "braid.npz"
+ },
+ "size_bytes": 2237
+}

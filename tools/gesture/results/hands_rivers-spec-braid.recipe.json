@@ -1,0 +1,320 @@
+{
+ "b4": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7000,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_braid",
+     "braid": "river_anavilhanas",
+     "host": "river_bend",
+     "length": 3.0,
+     "threads": 4,
+     "width": 0.05,
+     "node": 3.0,
+     "open": 0.6,
+     "wander": 0.15,
+     "smooth": 0.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "braid, 4 threads on river_bend (islands as measured)  (seed 7000)"
+ },
+ "b4-smooth": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7000,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_braid",
+     "braid": "river_anavilhanas",
+     "host": "river_bend",
+     "length": 3.0,
+     "threads": 4,
+     "width": 0.05,
+     "node": 3.0,
+     "open": 0.6,
+     "wander": 0.15,
+     "smooth": 3.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "same, islands eased (smooth 3)  (seed 7000)"
+ },
+ "b3-meander": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7001,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_braid",
+     "braid": "river_anavilhanas",
+     "host": "river_meander",
+     "length": 3.0,
+     "threads": 3,
+     "width": 0.035,
+     "node": 3.0,
+     "open": 0.6,
+     "wander": 0.15,
+     "smooth": 3.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "3 threads on river_meander  (seed 7001)"
+ },
+ "b6-wide": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7002,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_braid",
+     "braid": "river_anavilhanas",
+     "host": "river_bend",
+     "length": 3.0,
+     "threads": 6,
+     "width": 0.06,
+     "node": 3.0,
+     "open": 0.6,
+     "wander": 0.15,
+     "smooth": 3.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "6 threads, wide  (seed 7002)"
+ },
+ "b2-open": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7003,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_braid",
+     "braid": "river_anavilhanas",
+     "host": "river_bend",
+     "length": 3.0,
+     "threads": 2,
+     "width": 0.05,
+     "node": 0.5,
+     "open": 1.0,
+     "wander": 0.15,
+     "smooth": 3.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "2 threads, islands everywhere  (seed 7003)"
+ },
+ "b5-rare": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7004,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_braid",
+     "braid": "river_anavilhanas",
+     "host": "river_bend",
+     "length": 3.0,
+     "threads": 5,
+     "width": 0.05,
+     "node": 3.0,
+     "open": 0.3,
+     "wander": 0.15,
+     "smooth": 3.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "5 threads, rare islands  (seed 7004)"
+ },
+ "b4-long": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7006,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_braid",
+     "braid": "river_anavilhanas",
+     "host": "river_bend",
+     "length": 6.0,
+     "threads": 4,
+     "width": 0.08,
+     "node": 3.0,
+     "open": 0.6,
+     "wander": 0.15,
+     "smooth": 3.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "4 threads, long bold backbone (6 R, width 0.08)  (seed 7006)"
+ },
+ "b3-beads": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7007,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_braid",
+     "braid": "river_anavilhanas",
+     "host": "river_bend",
+     "length": 3.0,
+     "threads": 3,
+     "width": 0.06,
+     "node": 3.0,
+     "open": 0.6,
+     "wander": 0.15,
+     "smooth": 3.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "dev_beads",
+   "shape": "gather",
+   "at": "peak",
+   "line": "wire",
+   "nib_style": "e",
+   "nib_cap": 0.5,
+   "pen": 0.35,
+   "thr": 0.3,
+   "size": 4.0,
+   "length_gain": 0.25,
+   "spacing": 1.5,
+   "pitch": 0.85,
+   "wobble": 0.06,
+   "loops": 4
+  },
+  "label": "3 threads, beads at the splits  (seed 7007)"
+ },
+ "b4-matisse": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7005,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_braid",
+     "braid": "river_anavilhanas",
+     "host": "matisse",
+     "length": 4.0,
+     "threads": 4,
+     "width": 0.05,
+     "node": 3.0,
+     "open": 0.6,
+     "wander": 0.15,
+     "smooth": 0.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "4 threads on matisse (dud?)  (seed 7005)"
+ }
+}

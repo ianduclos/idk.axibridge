@@ -1,0 +1,182 @@
+{
+ "alone-ox": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7000,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_loops",
+     "loops": "river_cutoffs",
+     "family": "oxbow",
+     "mode": "alone",
+     "host": "river_meander",
+     "length": 5.0,
+     "n": 12,
+     "size": 0.8,
+     "size_sd": 0.35,
+     "gap": 0.12,
+     "jitter": 0.15,
+     "loop_r": 0.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "loops alone, oxbow  (seed 7000)"
+ },
+ "alone-neck": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7001,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_loops",
+     "loops": "river_cutoffs",
+     "family": "neck",
+     "mode": "alone",
+     "host": "river_meander",
+     "length": 5.0,
+     "n": 12,
+     "size": 0.8,
+     "size_sd": 0.35,
+     "gap": 0.12,
+     "jitter": 0.15,
+     "loop_r": 0.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "loops alone, neck  (seed 7001)"
+ },
+ "knot": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7000,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_loops",
+     "loops": "river_cutoffs",
+     "family": "oxbow",
+     "mode": "knot",
+     "host": "river_meander",
+     "length": 5.0,
+     "n": 6,
+     "size": 0.8,
+     "size_sd": 0.35,
+     "gap": 0.12,
+     "jitter": 0.15,
+     "loop_r": 0.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "knot on river_meander  (seed 7000)"
+ },
+ "knot-big": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7002,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_loops",
+     "loops": "river_cutoffs",
+     "family": "oxbow",
+     "mode": "knot",
+     "host": "river_meander",
+     "length": 5.0,
+     "n": 4,
+     "size": 1.4,
+     "size_sd": 0.35,
+     "gap": 0.12,
+     "jitter": 0.15,
+     "loop_r": 0.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "knot, size 1.4, 4 loops  (seed 7002)"
+ },
+ "beside": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7001,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_loops",
+     "loops": "river_cutoffs",
+     "family": "oxbow",
+     "mode": "beside",
+     "host": "river_meander",
+     "length": 5.0,
+     "n": 7,
+     "size": 0.8,
+     "size_sd": 0.35,
+     "gap": 0.12,
+     "jitter": 0.15,
+     "loop_r": 0.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "beside river_meander  (seed 7001)"
+ }
+}

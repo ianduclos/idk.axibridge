@@ -1,0 +1,142 @@
+{
+ "s7000": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7000,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "river_bend  (hand, 5 R, seed 7000)"
+ },
+ "s7001": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7001,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "river_bend  (hand, 5 R, seed 7001)"
+ },
+ "s7002": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7002,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "river_bend  (hand, 5 R, seed 7002)"
+ },
+ "s7003": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7003,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "river_bend  (hand, 5 R, seed 7003)"
+ },
+ "chain": {
+  "kit": 1,
+  "frame": [
+   130.0,
+   100.0
+  ],
+  "seed": 7004,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 5.0,
+     "joins": "chain"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "river_bend  (hand, 5 R, seed 7004, chain)"
+ }
+}

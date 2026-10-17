@@ -1,0 +1,45 @@
+{
+ "id": "river_cutoffs",
+ "kind": "river_loops",
+ "label": "River cut-off loops",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "corpus": "earth",
+  "corpus_ids": [
+   "osm-oxbows-amazon",
+   "li-amazon-cutoffs"
+  ],
+  "rights": "OpenStreetMap contributors, ODbL (earth-physics-harvest.csv); Li, Edmonds, Konsoer, Constantine et al. 2026, Zenodo 18340214, CC BY 4.0 (earth-physics-harvest.csv)",
+  "research_commit": "0dc1785",
+  "training_sheets": [
+   "osm-oxbows-amazon",
+   "li-amazon-cutoffs"
+  ],
+  "extraction": "turning function θ(u) at 128 equal arc steps; oxbows: closed OSM outlines (φ = θ − 2πu, traced counter-clockwise, aspect ≤ 12), random sample of 600 (seeded); cut-off bends: Li et al. centrelines smoothed, θ(end) ≥ 0.8π",
+  "counts": {
+   "n_oxbow_osm": 1598,
+   "n_oxbow_kept": 582,
+   "n_cutoffs": 1098,
+   "n_neck_kept": 885,
+   "n_neck_type_neck": 589,
+   "oxbow_aspect_q": [
+    1.27,
+    2.23,
+    5.42
+   ],
+   "neck_gap_q": [
+    0.047,
+    0.105,
+    0.447
+   ]
+  },
+  "experiment": "tools/gesture/experiments/hands_rivers.py learn"
+ },
+ "policy": "generative",
+ "notes": "Read by the river_loops voice (kit/voices_rivers.py). Shapes are resampled curvature profiles: behaviours, never a map.",
+ "files": {
+  "loops": "loops.npz"
+ },
+ "size_bytes": 693640
+}

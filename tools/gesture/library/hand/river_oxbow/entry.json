@@ -1,0 +1,72 @@
+{
+ "id": "river_oxbow",
+ "kind": "hand",
+ "label": "River: oxbow outlines",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/hands_rivers/grammars/river_oxbow.json",
+  "research_commit": "0dc1785",
+  "description": "OSM water=oxbow closed outlines in the western/central Amazon, the oxbows of one 0.12° cell per drawing, each outline started at its sharpest horn",
+  "rights": "OpenStreetMap contributors, ODbL (earth-physics-harvest.csv)",
+  "corpus": "earth",
+  "corpus_ids": [
+   "osm-oxbows-amazon"
+  ],
+  "training_sheets": [
+   "osm-oxbows:cell-517,-17",
+   "osm-oxbows:cell-615,-75",
+   "osm-oxbows:cell-599,-60",
+   "osm-oxbows:cell-593,-58",
+   "osm-oxbows:cell-514,-19",
+   "osm-oxbows:cell-594,-58",
+   "osm-oxbows:cell-518,-18",
+   "osm-oxbows:cell-516,-17",
+   "osm-oxbows:cell-575,-31",
+   "osm-oxbows:cell-571,-25",
+   "osm-oxbows:cell-597,-59",
+   "osm-oxbows:cell-592,-57",
+   "osm-oxbows:cell-590,-58",
+   "osm-oxbows:cell-577,-47"
+  ],
+  "extraction": "closed OSM ways tagged water=oxbow, ≥ 12 vertices, perimeter ≥ 1.5 km; 0.12° cells with ≥ 4",
+  "line_width": "nominal: 0.0025 × R (channel width is not ink width; the dance convention)",
+  "n_records": 1572,
+  "n_strokes": 93,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "sources": [
+    "osm-oxbows:cell-517,-17",
+    "osm-oxbows:cell-615,-75",
+    "osm-oxbows:cell-599,-60",
+    "osm-oxbows:cell-593,-58",
+    "osm-oxbows:cell-514,-19",
+    "osm-oxbows:cell-594,-58",
+    "osm-oxbows:cell-518,-18",
+    "osm-oxbows:cell-516,-17",
+    "osm-oxbows:cell-575,-31",
+    "osm-oxbows:cell-571,-25",
+    "osm-oxbows:cell-597,-59",
+    "osm-oxbows:cell-592,-57",
+    "osm-oxbows:cell-590,-58",
+    "osm-oxbows:cell-577,-47"
+   ],
+   "strokes": 93,
+   "records": 1572,
+   "min_len_w": 12,
+   "drawings": 14,
+   "secs": 5.3
+  },
+  "experiment": "tools/gesture/experiments/hands_rivers.py learn"
+ },
+ "policy": "generative",
+ "notes": "Round-11 hands_rivers hand (results/hands_rivers-2026-10-17.md). Curvature along arc length only: rivers give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 23430
+}
