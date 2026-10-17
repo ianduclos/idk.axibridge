@@ -1,0 +1,48 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7100,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "dance",
+    "trail": "levitation",
+    "effectors": "all",
+    "t0": 0.0,
+    "seconds": 12.0,
+    "cut": "phrase"
+   },
+   "modulators": [
+    {
+     "id": "measure_pair",
+     "chart": "phase",
+     "layout": "diptych",
+     "split": 0.42,
+     "index": 8,
+     "index_by": "even",
+     "rows": 5,
+     "cells": 24,
+     "order": "time",
+     "label_h": 2.2,
+     "index_h": 2.0,
+     "drawn_by": null,
+     "amount": 1.5,
+     "keep": 0.006
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "measure_wire",
+  "pen": 0.4,
+  "chart_pen": 0.25
+ },
+ "label": "the dance drawing itself (levitation) + its phase plot (\u03ba, d\u03ba/ds); 8 even indices"
+}

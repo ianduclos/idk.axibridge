@@ -1,0 +1,52 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7004,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "drift",
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "blend": "mixture",
+    "plateau": 0.12,
+    "length": 6.0,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "measure_pair",
+     "chart": "route",
+     "layout": "under",
+     "split": 0.42,
+     "index": 8,
+     "index_by": "peaks",
+     "rows": 5,
+     "cells": 24,
+     "order": "time",
+     "label_h": 3.0,
+     "index_h": 2.2,
+     "drawn_by": null,
+     "amount": 1.5,
+     "keep": 0.006
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "measure_wire",
+  "pen": 0.4,
+  "chart_pen": 0.25
+ },
+ "label": "drift with its route lanes UNDER it in the same box (finer pen), peaks indexed"
+}

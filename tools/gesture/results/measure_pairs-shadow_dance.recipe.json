@@ -1,0 +1,43 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7100,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "dance",
+    "trail": "mantis",
+    "effectors": "all",
+    "t0": 0.0,
+    "seconds": 14.0,
+    "cut": "phrase"
+   },
+   "modulators": [
+    {
+     "id": "measure_shadow",
+     "law": "speed",
+     "side": "turns",
+     "gap": 0.3,
+     "gain": 5.0,
+     "merge": "union",
+     "shape": "beads",
+     "close": 0.8,
+     "keep_drawing": false
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "measure_wire",
+  "pen": 0.4,
+  "chart_pen": 0.25
+ },
+ "label": "shadow dance"
+}

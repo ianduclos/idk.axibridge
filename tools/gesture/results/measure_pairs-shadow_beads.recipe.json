@@ -1,0 +1,47 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7003,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "drift",
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "blend": "mixture",
+    "plateau": 0.12,
+    "length": 6.0,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "measure_shadow",
+     "law": "kappa",
+     "side": "left",
+     "gap": 1.2,
+     "gain": 4.0,
+     "merge": "union",
+     "shape": "beads",
+     "close": 0.0,
+     "keep_drawing": false
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "measure_wire",
+  "pen": 0.4,
+  "chart_pen": 0.25
+ },
+ "label": "shadow merged"
+}

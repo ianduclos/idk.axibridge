@@ -1,0 +1,47 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7003,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "drift",
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "blend": "mixture",
+    "plateau": 0.12,
+    "length": 6.0,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "measure_answer",
+     "hand": "lichtenberg",
+     "where": "silence",
+     "spine": 0.05,
+     "offset": 5.0,
+     "amount": 2.2,
+     "listen": 0.08,
+     "contrast": 1.6,
+     "quiet": "lift"
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "measure_wire",
+  "pen": 0.4,
+  "chart_pen": 0.25
+ },
+ "label": "lift: lichtenberg only interjects in the drift's silences, 5 mm off"
+}

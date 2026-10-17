@@ -1,0 +1,52 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7000,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "drift",
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "blend": "mixture",
+    "plateau": 0.12,
+    "length": 6.0,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "measure_atlas",
+     "order": "time",
+     "layout": "exploded",
+     "cells": 120,
+     "grain": 0.005,
+     "rows": 3,
+     "explode": 0.6,
+     "numbers": true,
+     "degrees": true,
+     "label_h": 2.0,
+     "keep_drawing": false,
+     "drawn_by": null,
+     "amount": 1.5,
+     "keep": 0.006
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "measure_wire",
+  "pen": 0.4,
+  "chart_pen": 0.25
+ },
+ "label": "the drift taken apart at its inflections, each specimen where it was, pushed out \u00d70.6"
+}

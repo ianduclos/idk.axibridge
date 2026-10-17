@@ -1,0 +1,52 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7003,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "drift",
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "blend": "mixture",
+    "plateau": 0.12,
+    "length": 6.0,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "measure_pair",
+     "chart": "kappa",
+     "layout": "wrap",
+     "split": 0.5,
+     "index": 9,
+     "index_by": "peaks",
+     "rows": 5,
+     "cells": 24,
+     "order": "time",
+     "label_h": 2.4,
+     "index_h": 2.2,
+     "drawn_by": null,
+     "amount": 1.5,
+     "keep": 0.006
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "measure_wire",
+  "pen": 0.4,
+  "chart_pen": 0.25
+ },
+ "label": "drift + its \u03ba(s), wrapped round it on a rounded frame; 9 strongest turns numbered on both"
+}

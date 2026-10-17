@@ -1,0 +1,378 @@
+[
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_shadow",
+      "law": "kappa",
+      "side": "left",
+      "gap": 1.2,
+      "gain": 4.0,
+      "merge": "none",
+      "shape": "beads",
+      "close": 0.0,
+      "keep_drawing": false
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "round 9: unmerged, κ left"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_shadow",
+      "law": "kappa",
+      "side": "left",
+      "gap": 1.2,
+      "gain": 4.0,
+      "merge": "union",
+      "shape": "strip",
+      "close": 0.0,
+      "keep_drawing": false
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "merged strip, κ left"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_shadow",
+      "law": "kappa",
+      "side": "left",
+      "gap": 1.2,
+      "gain": 4.0,
+      "merge": "union",
+      "shape": "beads",
+      "close": 0.0,
+      "keep_drawing": false
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "merged beads, κ left"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_shadow",
+      "law": "kappa",
+      "side": "turns",
+      "gap": 0.6,
+      "gain": 6.0,
+      "merge": "union",
+      "shape": "beads",
+      "close": 0.0,
+      "keep_drawing": false
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "beads, κ inner side of turns"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_shadow",
+      "law": "speed",
+      "side": "right",
+      "gap": 0.4,
+      "gain": 3.5,
+      "merge": "union",
+      "shape": "beads",
+      "close": 0.0,
+      "keep_drawing": false
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "beads, speed right (wide on straights)"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_shadow",
+      "law": "kappa",
+      "side": "turns",
+      "gap": 0.6,
+      "gain": 6.0,
+      "merge": "union",
+      "shape": "beads",
+      "close": 1.5,
+      "keep_drawing": false
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "beads, κ turns, close 1.5"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_shadow",
+      "law": "voice",
+      "side": "left",
+      "gap": 0.8,
+      "gain": 4.0,
+      "merge": "union",
+      "shape": "beads",
+      "close": 0.0,
+      "keep_drawing": false
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "beads, voice left (each hand its own width)"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   134.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 6.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_shadow",
+      "law": "kappa",
+      "side": "outer",
+      "gap": 2.0,
+      "gain": 8.0,
+      "merge": "union",
+      "shape": "beads",
+      "close": 0.0,
+      "keep_drawing": false
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "beads, κ outer side, far"
+ }
+]

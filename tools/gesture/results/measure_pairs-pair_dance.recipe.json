@@ -1,0 +1,48 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7100,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "dance",
+    "trail": "mantis",
+    "effectors": "all",
+    "t0": 0.0,
+    "seconds": 20.0,
+    "cut": "phrase"
+   },
+   "modulators": [
+    {
+     "id": "measure_pair",
+     "chart": "atlas",
+     "layout": "diptych",
+     "split": 0.42,
+     "index": 9,
+     "index_by": "peaks",
+     "rows": 5,
+     "cells": 20,
+     "order": "time",
+     "label_h": 2.2,
+     "index_h": 2.0,
+     "drawn_by": null,
+     "amount": 1.5,
+     "keep": 0.006
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "measure_wire",
+  "pen": 0.4,
+  "chart_pen": 0.25
+ },
+ "label": "the mantis dance itself (hands+feet, 20 s) + its shape atlas in order of time, origins numbered"
+}
