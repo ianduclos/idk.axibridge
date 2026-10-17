@@ -1,0 +1,65 @@
+{
+ "kit": 1,
+ "frame": [
+  200.0,
+  200.0
+ ],
+ "seed": 6620,
+ "margin": null,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "dance",
+    "trail": "levitation",
+    "effectors": "hands",
+    "t0": 15.0,
+    "seconds": 15.0,
+    "cut": "none"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "stain",
+  "pen": 0.3,
+  "stains": "stain_fabric",
+  "events": 6,
+  "R": 12.0,
+  "R_min": 1.8,
+  "wet": 0.5,
+  "window": 3.0,
+  "tail": 0.8,
+  "tide": "rim",
+  "rim_p": 0.5,
+  "arc": 0.63,
+  "pitch": 0.55,
+  "contrast": 1.6,
+  "halo": 0.16,
+  "weave": 0.1,
+  "period": 0.9,
+  "fiber": 0.3,
+  "elong": 1.0,
+  "angle": null,
+  "satellites": 0,
+  "schedule": "passes",
+  "passes": 7,
+  "arc_max": 0.75,
+  "arc_min": 0.2,
+  "inner": 3,
+  "arms": 0.0,
+  "arm_p": 0.08,
+  "slip": 1.5,
+  "pile": 0.15
+ },
+ "label": "stain: levitation, both hands, bleeding at their pauses",
+ "_crop_mm": [
+  112,
+  80,
+  184,
+  136
+ ],
+ "_px_per_mm": 30
+}

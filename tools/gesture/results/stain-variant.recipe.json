@@ -1,0 +1,56 @@
+{
+ "kit": 1,
+ "frame": [
+  200.0,
+  130.0
+ ],
+ "seed": 7311,
+ "margin": null,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "fly_fru",
+    "length": 4.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "stain",
+  "pen": 0.3,
+  "stains": "stain_fabric",
+  "events": 5,
+  "R": 9.0,
+  "R_min": 1.8,
+  "wet": 0.5,
+  "window": 3.0,
+  "tail": 0.8,
+  "tide": "rim",
+  "rim_p": 0.5,
+  "arc": 0.63,
+  "pitch": 0.55,
+  "contrast": 1.6,
+  "halo": 0.16,
+  "weave": 0.1,
+  "period": 0.9,
+  "fiber": 0.3,
+  "elong": 1.0,
+  "angle": null,
+  "satellites": 0,
+  "schedule": "passes",
+  "passes": 7,
+  "arc_max": 0.75,
+  "arc_min": 0.2,
+  "inner": 3,
+  "arms": 0.0,
+  "arm_p": 0.08,
+  "slip": 1.5,
+  "pile": 0.15
+ },
+ "label": "stain variant: fly_fru hand, slowing from the 2/3 power law"
+}
