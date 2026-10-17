@@ -1,0 +1,54 @@
+{
+ "id": "dance_levitation",
+ "kind": "hand",
+ "label": "Dance: Levitation",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/voices_corpus/grammars/dance_levitation.json",
+  "research_commit": "1245f20",
+  "description": "end-effector trails (hands, feet, head; front view) of e2-stocos/Levitation_FullBody_Take1_proc.bvh, 6 windows of 15 s cut at whole-body stillness",
+  "rights": "E2-Create Stocos, CC BY 4.0 (dance-harvest.csv)",
+  "corpus": "dance",
+  "training_sheets": [
+   "Levitation_FullBody_Take1_proc@0s",
+   "Levitation_FullBody_Take1_proc@15s",
+   "Levitation_FullBody_Take1_proc@30s",
+   "Levitation_FullBody_Take1_proc@45s",
+   "Levitation_FullBody_Take1_proc@60s",
+   "Levitation_FullBody_Take1_proc@75s"
+  ],
+  "n_records": 730,
+  "n_strokes": 29,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "duration_s": 134.2,
+   "windows_s": 15.0,
+   "n_windows": 6,
+   "sources": [
+    "Levitation_FullBody_Take1_proc@0s",
+    "Levitation_FullBody_Take1_proc@15s",
+    "Levitation_FullBody_Take1_proc@30s",
+    "Levitation_FullBody_Take1_proc@45s",
+    "Levitation_FullBody_Take1_proc@60s",
+    "Levitation_FullBody_Take1_proc@75s"
+   ],
+   "strokes": 29,
+   "records": 730,
+   "min_len_w": 12,
+   "drawings": 6,
+   "secs": 12.4
+  },
+  "experiment": "tools/gesture/experiments/voices_corpus.py learn"
+ },
+ "policy": "generative",
+ "notes": "Round-9 voices_corpus hand (results/voices_corpus-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 13308
+}

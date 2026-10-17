@@ -1,0 +1,146 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7000,
+ "margin": null,
+ "arranger": {
+  "id": "grid",
+  "cols": 2,
+  "scale": "cell",
+  "gap": 8.0
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "drift",
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "blend": "mixture",
+    "plateau": 0.12,
+    "length": 6.0,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "handover",
+     "a": "ruler",
+     "b": "compass",
+     "share": 0.4,
+     "stretch": 16.0,
+     "at": "seams",
+     "unit": 2.2,
+     "k": 5,
+     "angle": 72.0,
+     "rules": "L=LSR,R=RRS,S=SL",
+     "depth": 2,
+     "overshoot": 0.25
+    }
+   ],
+   "label": "ruler+compass @seams"
+  },
+  {
+   "voice": {
+    "id": "drift",
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "blend": "mixture",
+    "plateau": 0.12,
+    "length": 6.0,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "handover",
+     "a": "stair",
+     "b": "koch",
+     "share": 0.4,
+     "stretch": 16.0,
+     "at": "even",
+     "unit": 2.2,
+     "k": 5,
+     "angle": 72.0,
+     "rules": "L=LSR,R=RRS,S=SL",
+     "depth": 2,
+     "overshoot": 0.25
+    }
+   ],
+   "label": "stair+koch @even"
+  },
+  {
+   "voice": {
+    "id": "drift",
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "blend": "mixture",
+    "plateau": 0.12,
+    "length": 6.0,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "handover",
+     "a": "lsys",
+     "b": "codebook",
+     "share": 0.4,
+     "stretch": 16.0,
+     "at": "random",
+     "unit": 2.2,
+     "k": 5,
+     "angle": 72.0,
+     "rules": "L=LSR,R=RRS,S=SL",
+     "depth": 2,
+     "overshoot": 0.25
+    }
+   ],
+   "label": "lsys+codebook @random"
+  },
+  {
+   "voice": {
+    "id": "drift",
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "blend": "mixture",
+    "plateau": 0.12,
+    "length": 6.0,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "handover",
+     "a": "compass",
+     "b": "ruler",
+     "share": 0.4,
+     "stretch": 16.0,
+     "at": "straight",
+     "unit": 2.2,
+     "k": 3,
+     "angle": 72.0,
+     "rules": "L=LSR,R=RRS,S=SL",
+     "depth": 2,
+     "overshoot": 0.25
+    }
+   ],
+   "label": "compass+ruler @straight"
+  }
+ ],
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "label": "drift hands stretches to machines"
+}

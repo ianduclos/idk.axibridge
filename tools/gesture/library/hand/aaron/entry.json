@@ -1,0 +1,51 @@
+{
+ "id": "aaron",
+ "kind": "hand",
+ "label": "AARON (Cohen)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/voices_corpus/grammars/aaron.json",
+  "research_commit": "1245f20",
+  "description": "Harold Cohen's AARON line drawings, 1985 and 1987 (signature cropped)",
+  "rights": "V&A Collections API images (artists-harvest.csv); private research, statistics only, never published as training material",
+  "corpus": "artists",
+  "training_sheets": [
+   "aaron_1985",
+   "aaron_1987a",
+   "aaron_1987b"
+  ],
+  "n_records": 4230,
+  "n_strokes": 552,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 1,
+   "extracts": [
+    "aaron_1985",
+    "aaron_1987a",
+    "aaron_1987b"
+   ],
+   "sources": [
+    "aaron_1985",
+    "aaron_1987a",
+    "aaron_1987b"
+   ],
+   "strokes": 552,
+   "records": 4230,
+   "min_len_w": 12,
+   "drawings": 3,
+   "secs": 7.1
+  },
+  "experiment": "tools/gesture/experiments/voices_corpus.py learn"
+ },
+ "policy": "generative",
+ "notes": "Round-9 voices_corpus hand (results/voices_corpus-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 72098
+}

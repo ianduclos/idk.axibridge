@@ -408,10 +408,11 @@ def test_committed_hands_equal_research_json(hand):
 
 def test_committed_library_shape_and_budget():
     lib = L.default()
-    assert set(lib.ids("hand")) == {"matisse", "hokusai", "ingres", "shikasta", "nastaliq", "marden",
-                                    "lichtenberg", "bubble"}
-    assert set(lib.ids("tempo")) == {"staccato", "levitation", "fluidity", "particles", "cmu_49_10",
-                                     "cmu_55_mantis"}
+    # the seed entries are always present; later rounds add more (own folders)
+    assert {"matisse", "hokusai", "ingres", "shikasta", "nastaliq", "marden",
+            "lichtenberg", "bubble"} <= set(lib.ids("hand"))
+    assert {"staccato", "levitation", "fluidity", "particles", "cmu_49_10",
+            "cmu_55_mantis"} <= set(lib.ids("tempo"))
     assert {"calligraphy", "print", "matisse", "dance", "earth"} <= set(lib.ids("corpus"))
     for e in lib.entries():
         assert e["policy"] in L.POLICIES

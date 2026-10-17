@@ -1,0 +1,51 @@
+{
+ "id": "molnar_letters",
+ "kind": "hand",
+ "label": "Molnar 'Letters from my Mother'",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/voices_corpus/grammars/molnar_letters.json",
+  "research_commit": "1245f20",
+  "description": "Vera Molnar 'Letters from my Mother' (1988): rows of pseudo-script zigzag",
+  "rights": "V&A Collections API images (artists-harvest.csv); private research, statistics only, never published as training material",
+  "corpus": "artists",
+  "training_sheets": [
+   "molnar_letters#00",
+   "molnar_letters#01",
+   "molnar_letters#10",
+   "molnar_letters#11"
+  ],
+  "n_records": 234,
+  "n_strokes": 84,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 2,
+   "extracts": [
+    "molnar_letters"
+   ],
+   "sources": [
+    "molnar_letters#00",
+    "molnar_letters#01",
+    "molnar_letters#10",
+    "molnar_letters#11"
+   ],
+   "strokes": 84,
+   "records": 234,
+   "min_len_w": 12,
+   "drawings": 4,
+   "secs": 0.4
+  },
+  "experiment": "tools/gesture/experiments/voices_corpus.py learn"
+ },
+ "policy": "generative",
+ "notes": "Round-9 voices_corpus hand (results/voices_corpus-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 6622
+}

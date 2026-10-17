@@ -1,0 +1,60 @@
+{
+ "id": "meander69",
+ "kind": "hand",
+ "label": "Cohen meanders 1969",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/voices_corpus/grammars/meander69.json",
+  "research_commit": "1245f20",
+  "description": "Harold Cohen 1969 untitled plotter meanders: right-angle routes, concentric squares",
+  "rights": "V&A Collections API images (artists-harvest.csv); private research, statistics only, never published as training material",
+  "corpus": "artists",
+  "training_sheets": [
+   "meander_1969a#00",
+   "meander_1969a#01",
+   "meander_1969a#10",
+   "meander_1969a#11",
+   "meander_1969b#00",
+   "meander_1969b#01",
+   "meander_1969b#10",
+   "meander_1969b#11"
+  ],
+  "n_records": 3924,
+  "n_strokes": 148,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "tile": 2,
+   "extracts": [
+    "meander_1969a",
+    "meander_1969b"
+   ],
+   "sources": [
+    "meander_1969a#00",
+    "meander_1969a#01",
+    "meander_1969a#10",
+    "meander_1969a#11",
+    "meander_1969b#00",
+    "meander_1969b#01",
+    "meander_1969b#10",
+    "meander_1969b#11"
+   ],
+   "strokes": 148,
+   "records": 3924,
+   "min_len_w": 12,
+   "drawings": 8,
+   "secs": 2.9
+  },
+  "experiment": "tools/gesture/experiments/voices_corpus.py learn"
+ },
+ "policy": "generative",
+ "notes": "Round-9 voices_corpus hand (results/voices_corpus-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 46668
+}

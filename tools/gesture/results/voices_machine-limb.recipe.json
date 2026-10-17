@@ -1,0 +1,91 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  240.0
+ ],
+ "seed": 7000,
+ "margin": null,
+ "arranger": {
+  "id": "grid",
+  "cols": 1,
+  "scale": "cell",
+  "gap": 6.0
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "kappa",
+    "rows": 2,
+    "label_h": 2.0,
+    "drawn_by": null,
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "shikasta"
+    ],
+    "length": 4.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "none",
+    "machine_b": "none",
+    "share": 0.35,
+    "aspect": 3.4
+   },
+   "modulators": [],
+   "label": "drawn by machine"
+  },
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "kappa",
+    "rows": 2,
+    "label_h": 2.0,
+    "drawn_by": "matisse",
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "shikasta"
+    ],
+    "length": 4.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "none",
+    "machine_b": "none",
+    "share": 0.35,
+    "aspect": 3.4
+   },
+   "modulators": [],
+   "label": "drawn by matisse"
+  },
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "kappa",
+    "rows": 2,
+    "label_h": 2.0,
+    "drawn_by": "lichtenberg",
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "shikasta"
+    ],
+    "length": 4.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "none",
+    "machine_b": "none",
+    "share": 0.35,
+    "aspect": 3.4
+   },
+   "modulators": [],
+   "label": "drawn by lichtenberg"
+  }
+ ],
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "label": "a diagram that becomes a drawing"
+}

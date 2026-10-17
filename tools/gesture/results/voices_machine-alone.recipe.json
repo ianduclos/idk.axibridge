@@ -1,0 +1,151 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  150.0
+ ],
+ "seed": 9100,
+ "margin": null,
+ "arranger": {
+  "id": "grid",
+  "cols": 4,
+  "scale": "cell",
+  "gap": 7.0
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "matisse",
+    "length": 4.0,
+    "joins": "smooth"
+   },
+   "modulators": [],
+   "label": "hand"
+  },
+  {
+   "voice": {
+    "id": "machine",
+    "grammar": "compass",
+    "hand": "matisse",
+    "length": 4.0,
+    "unit": 0.035,
+    "source_part": 0,
+    "k": 5,
+    "angle": 72.0,
+    "rules": "L=LSR,R=RRS,S=SL",
+    "depth": 2,
+    "overshoot": 0.25
+   },
+   "modulators": [],
+   "label": "compass k5"
+  },
+  {
+   "voice": {
+    "id": "machine",
+    "grammar": "compass",
+    "hand": "matisse",
+    "length": 4.0,
+    "unit": 0.035,
+    "source_part": 0,
+    "k": 3,
+    "angle": 72.0,
+    "rules": "L=LSR,R=RRS,S=SL",
+    "depth": 2,
+    "overshoot": 0.25
+   },
+   "modulators": [],
+   "label": "compass k3"
+  },
+  {
+   "voice": {
+    "id": "machine",
+    "grammar": "ruler",
+    "hand": "matisse",
+    "length": 4.0,
+    "unit": 0.035,
+    "source_part": 0,
+    "k": 5,
+    "angle": 72.0,
+    "rules": "L=LSR,R=RRS,S=SL",
+    "depth": 2,
+    "overshoot": 0.25
+   },
+   "modulators": [],
+   "label": "ruler"
+  },
+  {
+   "voice": {
+    "id": "machine",
+    "grammar": "stair",
+    "hand": "matisse",
+    "length": 4.0,
+    "unit": 0.035,
+    "source_part": 0,
+    "k": 5,
+    "angle": 72.0,
+    "rules": "L=LSR,R=RRS,S=SL",
+    "depth": 2,
+    "overshoot": 0.25
+   },
+   "modulators": [],
+   "label": "stair"
+  },
+  {
+   "voice": {
+    "id": "machine",
+    "grammar": "koch",
+    "hand": "matisse",
+    "length": 4.0,
+    "unit": 0.035,
+    "source_part": 0,
+    "k": 5,
+    "angle": 72.0,
+    "rules": "L=LSR,R=RRS,S=SL",
+    "depth": 2,
+    "overshoot": 0.25
+   },
+   "modulators": [],
+   "label": "koch"
+  },
+  {
+   "voice": {
+    "id": "machine",
+    "grammar": "lsys",
+    "hand": "matisse",
+    "length": 4.0,
+    "unit": 0.035,
+    "source_part": 0,
+    "k": 5,
+    "angle": 72.0,
+    "rules": "L=LSR,R=RRS,S=SL",
+    "depth": 2,
+    "overshoot": 0.25
+   },
+   "modulators": [],
+   "label": "lsys"
+  },
+  {
+   "voice": {
+    "id": "machine",
+    "grammar": "codebook",
+    "hand": "matisse",
+    "length": 4.0,
+    "unit": 0.035,
+    "source_part": 0,
+    "k": 6,
+    "angle": 72.0,
+    "rules": "L=LSR,R=RRS,S=SL",
+    "depth": 2,
+    "overshoot": 0.25
+   },
+   "modulators": [],
+   "label": "codebook k6"
+  }
+ ],
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "label": "machine voices alone"
+}

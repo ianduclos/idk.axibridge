@@ -1,0 +1,52 @@
+{
+ "id": "mime_roadrunner",
+ "kind": "hand",
+ "label": "Mime: roadrunner (CMU 55_15)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "research_file": ".local/gesture/out/voices_corpus/grammars/mime_roadrunner.json",
+  "research_commit": "1245f20",
+  "description": "end-effector trails (hands, feet, head; front view) of cmu-55/55_15.amc, 5 windows of 15 s cut at whole-body stillness",
+  "rights": "CMU Graphics Lab Motion Capture DB, free use (dance-harvest.csv)",
+  "corpus": "dance",
+  "training_sheets": [
+   "55_15@0s",
+   "55_15@15s",
+   "55_15@30s",
+   "55_15@45s",
+   "55_15@60s"
+  ],
+  "n_records": 2548,
+  "n_strokes": 74,
+  "sigma_w": 2.0,
+  "selection": {
+   "min_len_w": 12
+  },
+  "training": {
+   "duration_s": 80.8,
+   "windows_s": 15.0,
+   "n_windows": 5,
+   "sources": [
+    "55_15@0s",
+    "55_15@15s",
+    "55_15@30s",
+    "55_15@45s",
+    "55_15@60s"
+   ],
+   "strokes": 74,
+   "records": 2548,
+   "min_len_w": 12,
+   "drawings": 5,
+   "secs": 24.0
+  },
+  "experiment": "tools/gesture/experiments/voices_corpus.py learn"
+ },
+ "policy": "generative",
+ "notes": "Round-9 voices_corpus hand (results/voices_corpus-2026-10-17.md). Token statistics only: corpora give behaviours, never forms.",
+ "files": {
+  "sheet": "sheet.json.gz",
+  "tables": "tables.npz"
+ },
+ "size_bytes": 39806
+}

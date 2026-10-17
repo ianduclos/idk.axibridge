@@ -1,0 +1,72 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  120.0
+ ],
+ "seed": 7000,
+ "margin": null,
+ "arranger": {
+  "id": "grid",
+  "cols": 2,
+  "scale": "cell",
+  "gap": 10.0
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "atlas",
+    "rows": 2,
+    "label_h": 2.0,
+    "drawn_by": "matisse",
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "length": 6.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "none",
+    "machine_b": "none",
+    "share": 0.35,
+    "aspect": 1.05
+   },
+   "modulators": [],
+   "label": "atlas drawn by matisse"
+  },
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "ledger",
+    "rows": 2,
+    "label_h": 2.0,
+    "drawn_by": "matisse",
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "length": 6.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "none",
+    "machine_b": "none",
+    "share": 0.35,
+    "aspect": 1.05
+   },
+   "modulators": [],
+   "label": "ledger drawn by matisse"
+  }
+ ],
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "label": "charts drawn by a hand"
+}

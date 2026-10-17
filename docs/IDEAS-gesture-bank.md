@@ -283,6 +283,12 @@ in `tools/gesture/results/` — read `review-2026-10-16.md` first.
   that come from the source (discharge width, stillness, rewrite coincidence,
   void rims) beat placed ones; learned shapes read as notation; our sheets are
   one welded net. Nib styles b/c/e became options the same day.
+- **Hand Drift bench + gesture kit + round 9 (2026-10-17)** — the drift line
+  became an app bench (`axibridge/sources/hand_drift.py`); the research side
+  became a kit of saved grammars and combinable techniques
+  (`tools/gesture/gesture/kit/`); round 9 (`tools/gesture/results/round9-2026-10-17.md`)
+  added corpus voices, machine/diagram voices, prosody/accumulation and
+  polyphonic arrangers to it.
 - **Representation note:** clothoid fitter (`clothoid.py`) — DP seeding,
   continuous κ spline, line/arc/clothoid labels. Scan-stroke blow-ups
   (corner angles ~1e6 rad from unregularised pieces) fixed at the end of the

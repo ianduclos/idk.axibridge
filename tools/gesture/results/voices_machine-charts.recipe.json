@@ -1,0 +1,166 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 7000,
+ "margin": null,
+ "arranger": {
+  "id": "grid",
+  "cols": 3,
+  "scale": "cell",
+  "gap": 10.0
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "kappa",
+    "rows": 4,
+    "label_h": 1.7,
+    "drawn_by": null,
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "length": 6.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "ruler",
+    "machine_b": "compass",
+    "share": 0.35
+   },
+   "modulators": [],
+   "label": "kappa"
+  },
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "route",
+    "rows": 4,
+    "label_h": 1.7,
+    "drawn_by": null,
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "length": 6.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "ruler",
+    "machine_b": "compass",
+    "share": 0.35
+   },
+   "modulators": [],
+   "label": "route"
+  },
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "tempo",
+    "rows": 4,
+    "label_h": 1.7,
+    "drawn_by": null,
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "length": 6.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "ruler",
+    "machine_b": "compass",
+    "share": 0.35
+   },
+   "modulators": [],
+   "label": "tempo"
+  },
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "phase",
+    "rows": 4,
+    "label_h": 1.7,
+    "drawn_by": null,
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "length": 6.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "ruler",
+    "machine_b": "compass",
+    "share": 0.35
+   },
+   "modulators": [],
+   "label": "phase"
+  },
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "atlas",
+    "rows": 4,
+    "label_h": 1.7,
+    "drawn_by": null,
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "length": 6.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "ruler",
+    "machine_b": "compass",
+    "share": 0.35
+   },
+   "modulators": [],
+   "label": "atlas"
+  },
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "ledger",
+    "rows": 4,
+    "label_h": 1.7,
+    "drawn_by": null,
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "matisse",
+     "shikasta",
+     "lichtenberg"
+    ],
+    "length": 6.0,
+    "joins": "smooth",
+    "of_part": 0,
+    "machine_a": "ruler",
+    "machine_b": "compass",
+    "share": 0.35
+   },
+   "modulators": [],
+   "label": "ledger"
+  }
+ ],
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "label": "six diagrams of one line"
+}

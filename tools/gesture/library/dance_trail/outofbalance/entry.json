@@ -1,0 +1,33 @@
+{
+ "id": "outofbalance",
+ "kind": "dance_trail",
+ "label": "Dance trail: outofbalance",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "corpus": "dance",
+  "file": ".local/gesture/corpus/dance/e2-stocos/OutOfBalance_FullBody_Take1_proc.bvh",
+  "t0_s": 20.0,
+  "duration_s": 45.0,
+  "fps": 25.0,
+  "view": "front",
+  "units": "body heights (median root-head x2); y down; speed in body heights/s",
+  "smoothing_s": 0.03,
+  "rights": "E2-Create Stocos, CC BY 4.0 (dance-harvest.csv)",
+  "research_commit": "1245f20",
+  "effectors": [
+   "lhand",
+   "rhand",
+   "lfoot",
+   "rfoot",
+   "head"
+  ],
+  "experiment": "tools/gesture/experiments/voices_corpus.py learn"
+ },
+ "policy": "generative",
+ "notes": "Frozen end-effector trails (the dance drawing itself) with per-frame speed/acceleration and whole-body energy; read by the voices_corpus `dance` voice.",
+ "files": {
+  "trail": "trail.npz"
+ },
+ "size_bytes": 89689
+}
