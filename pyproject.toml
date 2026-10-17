@@ -75,7 +75,8 @@ axibridge = "axibridge.__main__:main"
 include = ["axibridge*"]
 
 [tool.setuptools.package-data]
-axibridge = ["static/**/*", "mosca2/*.json", "mosca2/*.mjs", "mosca2/*.txt"]
+axibridge = ["static/**/*", "mosca2/*.json", "mosca2/*.mjs", "mosca2/*.txt",
+             "sources/_hand_drift/hands/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

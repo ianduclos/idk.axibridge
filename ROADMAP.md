@@ -15,6 +15,20 @@ This file tracks open work and acceptance still pending. Shipped implementation
 notes remain beside their follow-ups; see `git log` and `STATUS.md` for delivery
 history.
 
+## Hand Drift bench (2026-10-17)
+
+Ian, after gesture round 8: the hybrid/drift thread is "the closest to the idea
+I had in mind when I first started this bench … I would make this a bench as it
+is". Built per `docs/superpowers/plans/2026-10-17-hand-drift-bench.md`
+(`hand_drift`, docs/MODULES.md "Hand Drift bench"): frozen engine and hands,
+blend / joins (incl. the chained "failure") / lines with route per line
+(`each` = distinct grammars side by side) / regimes off|timing|field / nib
+styles. Pending: Ian's acceptance on screen and on paper (regimes are heavy
+ink: plot one line first). Not in v1: signs at jolts, learned shapes,
+data-born fields, dance structures. Possible next: faster regime inking for
+eight-line sheets (~10 s today), regime prosody from the line's own rhythm
+(round-8 review, B).
+
 ## Mosca × Territory composition instrument (2026-10-05)
 
 Ian wants “compositions not just doodles,” the earlier flowing line before fine

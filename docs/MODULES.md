@@ -366,7 +366,7 @@ not constrain manual layer transforms or effects.
 
 
 Bench adapters currently registered at version 1 are `process`, `homeostat`, `territory`,
-`second-reading`, and `magnetic-field`. Homeostat owns a grouped form schema in `homeostat_bench.js`;
+`second-reading`, `magnetic-field`, `linedraw`, `mosca`, `mosca2` and `hand-drift`. Homeostat owns a grouped form schema in `homeostat_bench.js`;
 its generation recipe is unchanged. Schema groups may set `groupOpen: true` for
 an initially expanded group; a remembered user preference takes precedence.
 
@@ -392,7 +392,44 @@ the existing geometry. It compares closest sampled approaches within 12 mm of
 each pole, not global curve clearance.
 
 
-**Gallery capture (2026-09-10):** adapters call
+### Hand Drift bench (2026-10-17)
+
+`hand_drift` (`sources/hand_drift.py`, adapter `hand-drift` v1 in
+`static/js/hand_drift_bench.js`, modes `new`/`resume`) is the gesture
+research's round-8 "limb" made a bench as it is: one line whose hand drifts
+along a route of 2–4 learned hands. Plan and Ian's decisions:
+`docs/superpowers/plans/2026-10-17-hand-drift-bench.md`.
+
+- **Frozen engine.** `sources/_hand_drift/` is a vendored, trimmed copy of the
+  research code (`tools/gesture/gesture/`) frozen at commit `c897f28`
+  (`FROZEN_FROM`): grammar chain, `drift_line`, regimes, nib styles, timing
+  and field. It does not follow the research; a change there is a deliberate
+  engine version (`tests/test_hand_drift.py` holds golden research values).
+  numpy / scipy / shapely only. The app never reads `.local/` or `tools/`.
+- **Frozen hands.** `_hand_drift/hands/*.npz` (eight hands, ~600 KB with six
+  dance tempo profiles) are written by `tools/hand_drift/freeze.py` from the
+  research grammars, lossless (integers at the research's rounding; the
+  drift is bit-identical to the research on the same seeds). Provenance per
+  hand is in `hands.json`. Arabic hands come only from generative-allowed
+  sheets; a test holds the allow-list. Qur'anic/devotional material is
+  measure-only and never reaches a hand.
+- **Switches** (all visible as segmented controls in the bench): blend
+  `mixture`|`interp`; joins `smooth`|`chain` (chained context — the
+  "failure" Ian kept); lines 1–8 with route per line
+  `same`|`rotate`|`shuffle`|`each` (`each`: one hand whole per line, no
+  drift); regimes `off`|`timing`|`field` with amount, nib/mass width, nib
+  angle and the wrist toggle; ink `a`|`b+`|`c`|`e`|`c+e`; pen width.
+- **Output.** Lines are grown in the research frame (1000×1200 px), fitted at
+  one common scale into grid cells of the `width`×`height` frame
+  (`placement_frame`; default 267×180 sits inside the A4 guide once
+  centred on the bed). Wire lines are open paths. With regimes on, ribbon and
+  mass outline rings are closed `filled=True` (exterior and holes, even-odd);
+  line runs, fills and lanes are `filled=False`. Paths are simplified at
+  0.01 mm. Line i uses `seed + i`.
+- **Cost.** Wire: ~0.2 s per line. Regimes: ~1.5–3 s for one line, ~9–13 s
+  for eight (inking runs one thread per line; output is order-identical).
+
+ adapters call
 `openGallerySave({kind: 'generator', module, params}, suggestedName)` with the
 exact completed preview recipe. The promise spans the save/cancel dialog;
 guard against pending renders, stale keys, gestures and other writes. Save

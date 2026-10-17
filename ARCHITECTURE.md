@@ -604,8 +604,10 @@ unsaved-work guard, server revision/mutation reconciliation, and the full future
 service/factory API in the design proposal remain separate work. No new saved
 project format or route to hardware is introduced.
 
-The visible working-bench list is currently curated to Venation, Homeostat and
-Second Reading (Ian, 8 September). Time-axis compatibility remains available for
+The visible working-bench list was first curated to Venation, Homeostat and
+Second Reading (Ian, 8 September); sources now join it by declaring
+`library_bench = True` (Magnetic field, Mosca, Mosca 2, Linedraw, Territory,
+Hand Drift since 2026-10-17). Time-axis compatibility remains available for
 ordinary layer Watch; it does not place other generators in the Benches category.
 
 

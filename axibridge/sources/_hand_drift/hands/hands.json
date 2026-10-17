@@ -1,0 +1,364 @@
+{
+ "frozen_from": "c897f28",
+ "hands": {
+  "matisse": {
+   "label": "Matisse",
+   "description": "Henri Matisse prints and drawings (SMK open data)",
+   "rights": "matisse-smk.csv: public domain mark (SMK)",
+   "scale": {
+    "logl": 0.9491693816786058,
+    "ak": 2.102902154136922,
+    "angle": 1.419082194409999
+   },
+   "spread": {
+    "line": 0.0,
+    "arc": 23.7818669487,
+    "clothoid": 26.685017544149996
+   },
+   "records": 14046,
+   "strokes": 1308,
+   "sheets": [
+    "KKS10069",
+    "KKS10070",
+    "KKS10071",
+    "KKS10283",
+    "KKS10289_5",
+    "KKS10289_6",
+    "KKS13215",
+    "KKS13216",
+    "KKS13418_1",
+    "KKS13418_2",
+    "KKS13418_3",
+    "KKS13418_4",
+    "KKS13418_5",
+    "KKS13418_6",
+    "KKS13429_V",
+    "KKS13600",
+    "KKS17799",
+    "KKS17881",
+    "KKS18238",
+    "KKS1961-113",
+    "KKS1962-111",
+    "KKS1966-158",
+    "KKS1966-159",
+    "KKS1967-233",
+    "KKS1971-302",
+    "KKS1971-93",
+    "KKS21174",
+    "KKS21175",
+    "KKS21176",
+    "KKS21178",
+    "KKS21180"
+   ],
+   "research_file": ".local/gesture/out/grammar_v7/grammar_matisse.json"
+  },
+  "hokusai": {
+   "label": "Hokusai",
+   "description": "Hokusai sketches (museum open-access scans)",
+   "rights": "artists manifests: open access",
+   "scale": {
+    "logl": 0.8308598224940774,
+    "ak": 1.8268717538162438,
+    "angle": 1.4420409998754717
+   },
+   "spread": {
+    "line": 0.0,
+    "arc": 22.00215709629,
+    "clothoid": 33.03017044635
+   },
+   "records": 6600,
+   "strokes": 726,
+   "sheets": [
+    "57252",
+    "57253",
+    "57254",
+    "57256",
+    "57257",
+    "57258",
+    "57259",
+    "57260",
+    "57261",
+    "57262",
+    "57263",
+    "57264",
+    "57265",
+    "57267",
+    "57269",
+    "57270",
+    "57271",
+    "57272",
+    "57276",
+    "57279",
+    "57280",
+    "57281",
+    "57283",
+    "57285",
+    "57287",
+    "57288",
+    "57289"
+   ],
+   "research_file": ".local/gesture/out/grammar_v7/grammar_hokusai.json"
+  },
+  "ingres": {
+   "label": "Ingres",
+   "description": "Ingres graphite drawings (museum open-access scans)",
+   "rights": "artists manifests: open access",
+   "scale": {
+    "logl": 0.8484193710261896,
+    "ak": 2.0819588095504726,
+    "angle": 1.532622320632371
+   },
+   "spread": {
+    "line": 0.0,
+    "arc": 19.32381284232,
+    "clothoid": 36.275901865559995
+   },
+   "records": 9302,
+   "strokes": 1272,
+   "sheets": [
+    "334075",
+    "334710",
+    "337339",
+    "337340",
+    "337343",
+    "337363",
+    "337364",
+    "337365",
+    "337431",
+    "337438",
+    "337439",
+    "337440",
+    "337441",
+    "337444",
+    "337445",
+    "337473",
+    "343053",
+    "343054",
+    "366342",
+    "366344",
+    "408997",
+    "408998",
+    "408999",
+    "409000",
+    "409001",
+    "409002",
+    "409003",
+    "409004",
+    "409005",
+    "459213",
+    "459380",
+    "459381",
+    "459965",
+    "697751"
+   ],
+   "research_file": ".local/gesture/out/grammar_v7/grammar_ingres.json"
+  },
+  "shikasta": {
+   "label": "Shikasta (exercise)",
+   "description": "Shekasteh nasta'liq siyah mashq and a petition",
+   "rights": "calligraphy manifest: generative-allowed content types only",
+   "scale": {
+    "logl": 0.9190257202550799,
+    "ak": 2.244578953899129,
+    "angle": 1.8183056364969656
+   },
+   "spread": {
+    "line": 0.0,
+    "arc": 44.388210259889995,
+    "clothoid": 46.593439136789996
+   },
+   "records": 740,
+   "strokes": 226,
+   "sheets": [
+    "wc-12",
+    "wc-13",
+    "wc-15"
+   ],
+   "research_file": ".local/gesture/out/hybrid_hands/grammars/shikasta.json",
+   "policy": "generative-allowed sheets only (calligraphy.require_generative passed at freeze time)"
+  },
+  "nastaliq": {
+   "label": "Nasta'liq (exercise)",
+   "description": "Nasta'liq calligraphic exercises / pen trials",
+   "rights": "calligraphy manifest: generative-allowed content types only",
+   "scale": {
+    "logl": 0.7421236049027027,
+    "ak": 1.7015163463797367,
+    "angle": 1.659067496858991
+   },
+   "spread": {
+    "line": 0.0,
+    "arc": 18.74572352898,
+    "clothoid": 68.26907055885
+   },
+   "records": 968,
+   "strokes": 265,
+   "sheets": [
+    "cma-1983.1115.a",
+    "met-716304",
+    "met-716305",
+    "met-716307",
+    "wal-W668-66b",
+    "wal-W668-74b"
+   ],
+   "research_file": ".local/gesture/out/hybrid_hands/grammars/nastaliq.json",
+   "policy": "generative-allowed sheets only (calligraphy.require_generative passed at freeze time)"
+  },
+  "marden": {
+   "label": "Marden",
+   "description": "Brice Marden drawings (MoMA open data images)",
+   "rights": "artists-harvest.csv: (c) artist/estate, museum permits personal use; private research",
+   "scale": {
+    "logl": 0.8075281334384339,
+    "ak": 1.5126739463482881,
+    "angle": 1.3627576913920734
+   },
+   "spread": {
+    "line": 0.0,
+    "arc": 12.416128141620002,
+    "clothoid": 20.894706787289998
+   },
+   "records": 968,
+   "strokes": 219,
+   "sheets": [
+    "moma-102386",
+    "moma-102387",
+    "moma-102388",
+    "moma-35286",
+    "moma-37245",
+    "moma-69038",
+    "moma-69053",
+    "moma-96607"
+   ],
+   "research_file": ".local/gesture/out/hybrid_hands/grammars/marden.json"
+  },
+  "lichtenberg": {
+   "label": "Lichtenberg",
+   "description": "One Lichtenberg figure, tiled 2x2",
+   "rights": "earth-physics manifest",
+   "scale": {
+    "logl": 0.5536721434473205,
+    "ak": 1.5057225361958433,
+    "angle": 1.164456230516494
+   },
+   "spread": {
+    "line": 0.0,
+    "arc": 6.982027157279998,
+    "clothoid": 45.629600061359994
+   },
+   "records": 336,
+   "strokes": 135,
+   "sheets": [
+    "lichtenberg-02#00",
+    "lichtenberg-02#01",
+    "lichtenberg-02#10",
+    "lichtenberg-02#11"
+   ],
+   "research_file": ".local/gesture/out/hybrid_hands/grammars/lichtenberg.json"
+  },
+  "bubble": {
+   "label": "Bubble chamber",
+   "description": "One bubble-chamber print, tiled 2x2",
+   "rights": "earth-physics manifest",
+   "scale": {
+    "logl": 1.0724220705088012,
+    "ak": 1.4496230988445595,
+    "angle": 1.3361245874292134
+   },
+   "spread": {
+    "line": 0.0,
+    "arc": 17.68786618998,
+    "clothoid": 2.7266154119399997
+   },
+   "records": 232,
+   "strokes": 55,
+   "sheets": [
+    "bc-06#00",
+    "bc-06#01",
+    "bc-06#10",
+    "bc-06#11"
+   ],
+   "research_file": ".local/gesture/out/hybrid_hands/grammars/bubble.json"
+  }
+ },
+ "timing": {
+  "staccato": {
+   "label": "Staccato (Romero)",
+   "description": "E2-Create Stocos, Staccato take 1, right hand",
+   "fps": 50.000000000001066,
+   "frames": 2000,
+   "file": "e2-stocos/Staccato_FullBody_Take1_proc.bvh",
+   "effector": "rhand",
+   "window_s": [
+    30.0,
+    39.980000000000004
+   ],
+   "pauses": 13
+  },
+  "fluidity": {
+   "label": "Fluidity (Romero)",
+   "description": "E2-Create Stocos, Fluidity take 1, right hand",
+   "fps": 50.000000000001066,
+   "frames": 2000,
+   "file": "e2-stocos/Fluidity_FullBody_Take1_proc.bvh",
+   "effector": "rhand",
+   "window_s": [
+    30.0,
+    39.980000000000004
+   ],
+   "pauses": 1
+  },
+  "levitation": {
+   "label": "Levitation (Romero)",
+   "description": "E2-Create Stocos, Levitation take 1, right hand",
+   "fps": 50.000000000001066,
+   "frames": 2000,
+   "file": "e2-stocos/Levitation_FullBody_Take1_proc.bvh",
+   "effector": "rhand",
+   "window_s": [
+    30.0,
+    39.980000000000004
+   ],
+   "pauses": 8
+  },
+  "particles": {
+   "label": "Particles (Romero)",
+   "description": "E2-Create Stocos, Particles take 1, right hand",
+   "fps": 50.000000000001066,
+   "frames": 2000,
+   "file": "e2-stocos/Particles_FullBody_Take1_proc.bvh",
+   "effector": "rhand",
+   "window_s": [
+    30.0,
+    39.980000000000004
+   ],
+   "pauses": 2
+  },
+  "cmu_49_10": {
+   "label": "CMU 49_10 fold-in, curl",
+   "description": "CMU mocap subject 49 trial 10, right hand",
+   "fps": 120.0,
+   "frames": 1416,
+   "file": "cmu-49/49_10.amc",
+   "effector": "rhand",
+   "window_s": [
+    0.0,
+    11.791666666666666
+   ],
+   "pauses": 14
+  },
+  "cmu_55_mantis": {
+   "label": "CMU 55_13 praying mantis",
+   "description": "CMU mocap subject 55 trial 13, right hand",
+   "fps": 120.00000000000682,
+   "frames": 4800,
+   "file": "cmu-55/55_13.amc",
+   "effector": "rhand",
+   "window_s": [
+    10.0,
+    39.99166666666667
+   ],
+   "pauses": 3
+  }
+ }
+}

@@ -6,6 +6,15 @@ discrimination experiments. **Research code, not part of the `axibridge`
 package** — same status as `tools/territory02/`. Nothing here is imported by
 the app, and the app's test suite never runs it.
 
+**The app holds a frozen copy of part of it.** The Hand Drift bench
+(`axibridge/sources/_hand_drift/`, 2026-10-17) vendors the drift line, the
+grammar chain, regimes, nib styles, the noise-front field and the timing
+mapping as of commit `c897f28`, with the hands and six dance tempo profiles
+frozen to `_hand_drift/hands/` by `tools/hand_drift/freeze.py`. Changes made
+here do not reach the app (kept layers must not change); porting one is a
+deliberate engine version — refreeze, update the golden values in
+`tests/test_hand_drift.py`, and say so.
+
 ## Environment
 
 Its own interpreter, so the pinned `.venv` is never touched:

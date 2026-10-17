@@ -76,6 +76,7 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
 | Layer model + compositor (resolve, occlusion masks) | `axibridge/compose.py` |
 | One open project + the resolve pipeline + undo history | `axibridge/session.py` |
 | Image assets (depth maps, `clip#NNNN` frame sequences) | `axibridge/assets.py` |
+| Hand Drift bench (frozen copy of the gesture research's drift line + regimes; frozen hands; never reads `tools/` or `.local/`) | `axibridge/sources/hand_drift.py`, `sources/_hand_drift/`, `static/js/hand_drift_bench.js`; refreeze with `tools/hand_drift/freeze.py`; `docs/MODULES.md` "Hand Drift bench" |
 | Local line-asset gallery (frozen geometry across projects) | `axibridge/gallery.py`, `gallery_api.py`; workflow in `docs/ASSET-GALLERY.md` |
 | Module registry (Source / Effect / Transform) | `axibridge/registry.py` |
 | Module browsers, starting-settings presets and stars/tags | `axibridge/module_library.py`, `module_library_api.py`; workflow in `docs/MODULE-LIBRARY.md` |

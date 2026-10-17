@@ -232,3 +232,25 @@
 .tb-fill button[aria-pressed="true"] { border-color:var(--live); color:var(--ink-hi); }
 .tb-dial[hidden] { display:none; }
 #tb-sub.tb-v8::before { content:'Version 8 caps every dial at 1.'; display:block; font-size:var(--type-note); color:var(--ink-soft); margin:var(--space-1) 0; }
+
+/* Hand Drift bench: switches are segmented button groups, always visible. */
+.hand-drift .bench-transport, .hand-drift .process-generic-actions { display:none; }
+#hand-drift-actions { display:flex; gap:var(--space-2); flex-wrap:wrap; align-items:center; padding:var(--space-3); border-top:1px solid var(--bench-edge); }
+#hand-drift-actions[hidden], #process-hand-drift[hidden] { display:none; }
+#hand-drift-keep { margin-left:auto; }
+#process-hand-drift .hd-switch { display:flex; flex-wrap:wrap; gap:2px; margin:var(--space-1) 0 var(--space-2); }
+#process-hand-drift .hd-switch button { flex:1 1 auto; min-width:0; padding-inline:var(--space-2); }
+#process-hand-drift .hd-switch button[aria-pressed="true"] { border-color:var(--live); color:var(--ink-hi); background:var(--bench-edge); }
+#process-hand-drift .hd-label { font-size:11px; color:var(--ink-soft); margin-top:var(--space-2); }
+#process-hand-drift .hd-hands, #process-hand-drift .hd-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--space-2); }
+#process-hand-drift label.hd-field { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--space-1); margin:var(--space-2) 0; align-items:center; }
+#process-hand-drift label.hd-field > span { grid-column:1; }
+#process-hand-drift label.hd-field > output { grid-column:2; grid-row:1; font-variant-numeric:tabular-nums; }
+#process-hand-drift label.hd-field > select, #process-hand-drift label.hd-field > input { grid-column:1 / -1; width:100%; min-width:0; box-sizing:border-box; }
+#process-hand-drift label[hidden] { display:none; }
+#process-hand-drift .hd-check { display:flex; align-items:center; gap:var(--space-2); margin:var(--space-2) 0; }
+#process-hand-drift .hd-check[hidden] { display:none; }
+#process-hand-drift .hd-inactive .hd-switch { opacity:.55; }
+.hand-drift-frame { fill:none; stroke:var(--bench-edge); stroke-width:.4; stroke-dasharray:2 2; }
+.hand-drift-ink .draw-line { stroke-width:inherit; }
+.hand-drift-pending .hand-drift-ink { opacity:.3; }

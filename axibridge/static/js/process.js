@@ -32,6 +32,7 @@ import { openMoscaBench, closeMoscaBench } from "./mosca_bench.js";
 import { openTerritoryBench, closeTerritoryBench } from "./territory_bench.js";
 import { openMosca2Bench, closeMosca2Bench } from "./mosca2_bench.js";
 import { initMagneticBench, openMagneticBench, closeMagneticBench } from "./magnetic_bench.js";
+import { initHandDriftBench, openHandDriftBench, closeHandDriftBench } from "./hand_drift_bench.js";
 import { renderForm } from "./forms.js";
 import { openGallerySave } from "./gallery.js";
 import { createPresetControls } from "./module_library.js";
@@ -109,6 +110,7 @@ export function initProcessPopup() {
   if (!$("process-popup")) return; // stale cached index.html: degrade silently
   wired = true;
   initMagneticBench();
+  initHandDriftBench();
   initSecondReadingBench();
   initBenchHost();
   $("process-trace").onchange = drawTelemetry;
@@ -179,6 +181,7 @@ export async function openProcessPopup(id) {
   closeTerritoryBench(false);
   closeMosca2Bench(false);
   closeMagneticBench(false);
+  closeHandDriftBench(false);
   closeSecondReadingBench(false);
   stop();
   const layer = (S.state?.project?.layers || []).find((l) => l.id === id);
@@ -205,6 +208,7 @@ export function openProcessLayerBench(id) {
   closeTerritoryBench(false);
   closeMosca2Bench(false);
   closeMagneticBench(false);
+  closeHandDriftBench(false);
   closeSecondReadingBench(false);
   stop();
   renderSerial++;
@@ -242,6 +246,7 @@ export async function openProcessBench(entry) {
   closeTerritoryBench(false);
   closeMosca2Bench(false);
   closeMagneticBench(false);
+  closeHandDriftBench(false);
   const adapter = benchAdapter(entry.mod, 'new');
   if (!adapter) {
     $('process-title').textContent = entry.mod.label;
@@ -263,6 +268,7 @@ async function openGenericBench({ mod, params, onCreate, onReroll, onClose }) {
   closeTerritoryBench(false);
   closeMosca2Bench(false);
   closeMagneticBench(false);
+  closeHandDriftBench(false);
   closeSecondReadingBench(false);
   axis = moduleAxis(mod);
   layerId = null;
@@ -306,7 +312,13 @@ registerBenchAdapter('mosca2', 1, { open: ({mod, params, contextKey, onCreate, o
 } });
 registerBenchAdapter('magnetic-field', 1, { open: ({ mod, params, contextKey, onCreate, onClose }) => {
   closeSecondReadingBench(false);
+  closeHandDriftBench(false);
   openMagneticBench({ mod, params, contextKey: contextKey || `new:${mod.id}`, onKeep: onCreate, onClose });
+} });
+registerBenchAdapter('hand-drift', 1, { open: ({ mod, params, contextKey, onCreate, onClose }) => {
+  closeSecondReadingBench(false);
+  closeMagneticBench(false);
+  openHandDriftBench({ mod, params, contextKey: contextKey || `new:${mod.id}`, onKeep: onCreate, onClose });
 } });
 
 function setBenchChrome(on) {
