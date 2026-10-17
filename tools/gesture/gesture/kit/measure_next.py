@@ -538,6 +538,107 @@ def plate_hist(values: list[float], labels: list[str], box, *, what: str, style:
     return out
 
 
+def plate_strip(sp_all: list[dict], sp: list[dict], labels: list[str], box, *, label_h: float) -> list:
+    """The graph under the plate drawn by the drawing's own line (round 12; Ian
+    on the taxonomy's length histogram: "feels detached"). Every specimen, in
+    the order the line drew them, is turned so its chord lies on one baseline
+    and set where the previous one ended: the drawing laid straight, cut where
+    the plate cuts it. Each piece starts and ends on the baseline, so the strip
+    is one continuous line; one scale for all, so each span's width is that
+    specimen's chord and the long and short ones read straight off it. A tick
+    at every cut, and under each span the specimen's label (A3, C1 …) — the
+    same names as the plate above and the numbers on the drawing beside it."""
+    x0, y0, w, h = box
+    if not sp_all:
+        return []
+    pieces, chords = [], []
+    for t in sorted(sp_all, key=lambda t: t["s0"]):
+        p = np.asarray(t["p"], float)
+        if len(p) < 2:
+            continue
+        d = p[-1] - p[0]
+        c = float(np.hypot(*d))
+        if c < 1e-9:                                   # a closed loop: lay it on its widest axis
+            j = int(np.argmax(np.linalg.norm(p - p[0], axis=1)))
+            d = p[j] - p[0]
+            c = 0.0
+        q = _rot(p - p[0], -math.atan2(d[1], d[0]))
+        pieces.append((t, q))
+        chords.append(c)
+    if not pieces:
+        return []
+    head = 1.6 * label_h
+    lh = 0.7 * label_h
+    lab_of = {id(t): lab for t, lab in zip(sp, labels)}
+    ext = [(float(np.ptp(q[:, 0])) if c == 0.0 else c, max(-q[:, 1].min(), 0.0), max(q[:, 1].max(), 0.0))
+           for (_, q), c in zip(pieces, chords)]
+
+    def lay(k):
+        """Rows like writing (a row breaks between specimens) → rows, labels per row, height."""
+        rows, cur, xw = [], [], 0.0
+        for i, (wi, _, _) in enumerate(ext):
+            if cur and xw + wi * k > w - 2.0:
+                rows.append(cur)
+                cur, xw = [], 0.0
+            cur.append(i)
+            xw += wi * k
+        rows.append(cur)
+        tot, meta = head, []
+        for r in rows:
+            up_ = max(ext[i][1] for i in r) * k
+            dn_ = max(ext[i][2] for i in r) * k
+            ends, x, slots = [], 0.0, []
+            for i in r:
+                xc = x + ext[i][0] * k / 2
+                x += ext[i][0] * k
+                lab = lab_of.get(id(pieces[i][0]))
+                if lab is None:
+                    slots.append(None)
+                    continue
+                half = vd.text_width(lab, lh) / 2
+                j = next((j for j, e in enumerate(ends) if xc - half > e + 0.35 * lh), len(ends))
+                if j == len(ends):
+                    ends.append(-1e9)
+                ends[j] = xc + half
+                slots.append(j)
+            rh = up_ + dn_ + (0.6 + 1.3 * max(len(ends), 1)) * lh + 0.8 * label_h
+            meta.append((up_, dn_, slots, rh))
+            tot += rh
+        return rows, meta, tot
+
+    lo, hi = 1e-4, 1e2
+    for _ in range(50):
+        mid = math.sqrt(lo * hi)
+        if lay(mid)[2] <= h and len(lay(mid)[0]) <= 4:
+            lo = mid
+        else:
+            hi = mid
+    k = lo
+    rows, meta, _ = lay(k)
+    out = _text("THE LINE LAID STRAIGHT, CUT AS THE PLATE", x0, y0, 0.75 * label_h, anchor="left")
+    y = y0 + head
+    tk = 0.9 * lh
+    for r, (up_, dn_, slots, rh) in zip(rows, meta):
+        base = y + up_
+        x = x0 + 1.0
+        line = []
+        for n, i in enumerate(r):
+            (t, q), c = pieces[i], chords[i]
+            qq = q * k + np.array([x, base])
+            if c == 0.0:
+                qq[:, 0] -= qq[:, 0].min() - x
+            line.append(qq if not line else qq[1:])
+            if n:
+                out.append((mp._rule(x, base - 0.5 * tk, x, base + 0.5 * tk), "rule"))
+            xc = x + ext[i][0] * k / 2
+            x += ext[i][0] * k
+            if slots[n] is not None:
+                out += _text(lab_of[id(t)], xc, base + dn_ + 0.6 * lh + slots[n] * 1.3 * lh, lh)
+        out.append((np.vstack(line), "specimen"))
+        y += rh
+    return [(p_, r_) for p_, r_ in out if len(p_) >= 2]
+
+
 # ---------------------------------------------------------------------------
 # index numbers on a drawing, avoiding each other and the line
 # ---------------------------------------------------------------------------
@@ -910,8 +1011,9 @@ def _items(M, sp, labels, norm):
     P("group", "choice", "shape", "taxonomy: families by shape (clustered) or by the hand speaking",
       choices=("shape", "hand")),
     P("trace", "bool", False, "each specimen with its own κ trace under it"),
-    P("hist", "choice", "none", "histogram on the plate: none | length | turning", choices=("none", "length",
-                                                                                          "turning")),
+    P("hist", "choice", "none", "graph under the plate: none | length | turning (histograms) | strip (the "
+      "line's own turning on one baseline, cut and labelled as the plate: tied to the drawing)",
+      choices=("none", "length", "turning", "strip")),
     P("hist_style", "choice", "steps", "steps (a staircase line) | tally (bars built of specimen numbers)",
       choices=("steps", "tally")),
     P("page", "choice", "diptych", "diptych (plate right) | margin (plate below) | triptych (drawing | plate | the "
@@ -930,12 +1032,15 @@ def _items(M, sp, labels, norm):
     P("label_h", "float", 2.0, "plate label height, mm", min=0.8, max=8.0),
     P("index_h", "float", 2.0, "index number height on the drawing, mm", min=0.6, max=6.0),
     P("avoid", "bool", True, "index numbers avoid each other and the line (False = round 10 placement)"),
+    P("numbers", "choice", "all", "which drawings carry the specimen numbers: all | drawing (not the re-chained "
+      "one) | rechain (only the re-chained one) | none (only the plate is labelled)",
+      choices=("all", "drawing", "rechain", "none")),
     *_HAND,
 ], doc="a drawing paired with its specimen plate, next versions: new cuts, normalised specimens, κ traces, "
        "packed frieze, capped explosion, taxonomy, histogram, a re-chained third drawing", reach=lambda p: 2.0)
 def measure_next(ctx, marks, *, cut, grain, plate, order, norm, cells, families, group, trace, hist, hist_style, page,
                  split, rechain, mirror, blend, shadow, shadow_gain, degrees, explode, cap, label_h, index_h, avoid,
-                 drawn_by, straight, amount, keep):
+                 drawn_by, straight, amount, keep, numbers="all"):
     live = _live(marks)
     if not live:
         return list(marks)
@@ -1003,7 +1108,9 @@ def measure_next(ctx, marks, *, cut, grain, plate, order, norm, cells, families,
                             label_h=label_h)
     else:
         pr = plate_taxonomy(items, fam, pbox, label_h=label_h, trace=trace, kref=kref, names=fam_names)
-    if hb is not None:
+    if hb is not None and hist == "strip":
+        pr += plate_strip(sp_all, sp, labels, hb, label_h=label_h)
+    elif hb is not None:
         vals = [t["length"] if hist == "length" else math.degrees(t["turn"]) for t in sp]
         pr += plate_hist(vals, labels, hb, what=hist, style=hist_style, label_h=label_h)
     pr = _hand_roles(ctx, pr, drawn_by, amount, keep, straight)
@@ -1019,8 +1126,10 @@ def measure_next(ctx, marks, *, cut, grain, plate, order, norm, cells, families,
         extra = np.vstack(rings) if rings else None
     else:
         out += drawing
-    idx, _ = place_labels(M, [t["s_mid"] for t in sp], labels, label_h=index_h, avoid=avoid, extra_pts=extra,
-                          bounds=dbox)
+    idx = []
+    if numbers in ("all", "drawing"):
+        idx, _ = place_labels(M, [t["s_mid"] for t in sp], labels, label_h=index_h, avoid=avoid, extra_pts=extra,
+                              bounds=dbox)
     polys = [np.asarray(p, float) for p, _ in pr if len(p) >= 2]
     roles = [r for p, r in pr if len(p) >= 2]
     for p_, r_ in zip(polys, roles):
@@ -1042,9 +1151,10 @@ def measure_next(ctx, marks, *, cut, grain, plate, order, norm, cells, families,
             i0, i1 = ch["spans"][pos[id(t)]]
             ss2.append(float(s_ch[(i0 + i1 - 1) // 2]) * k_)
             lab2.append(lab)
-        idx2, _ = place_labels(M2, ss2, lab2, label_h=index_h, avoid=avoid, bounds=rbox)
         out.append(mk2)
-        out += mp._new_marks(idx2, template, "index", {"chart": "next:rechain"}, part)
+        if numbers in ("all", "rechain"):
+            idx2, _ = place_labels(M2, ss2, lab2, label_h=index_h, avoid=avoid, bounds=rbox)
+            out += mp._new_marks(idx2, template, "index", {"chart": "next:rechain"}, part)
     return out
 
 

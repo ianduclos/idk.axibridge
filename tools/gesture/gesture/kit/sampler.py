@@ -267,13 +267,53 @@ def sample_recipe(rng, seed: int | None = None, *, pools: Pools = PRIORS, frame=
     return rec
 
 
-def sample(seed: int, *, library=None, frame=FRAME, pools: Pools | None = None) -> dict:
+# Machines whose lines are straight runs (compass headings, ruler runs with
+# corner ticks, stair rook moves, koch polygons). Ian on Sampler seed 19 (round
+# 11): "i dont like those staggered barbed straight lines".
+STRAIGHT_MACHINES = ("compass", "ruler", "stair", "koch", "lsys")
+
+
+def tidy(recipe: dict, pools: Pools = PRIORS, library=None) -> dict:
+    """The `clean` option (round 12): the same combination with what Ian
+    called pollution taken out, by rule, with no new draw from the generator,
+    so the drawing he liked stays the drawing. Ian on seed 30: "nice drawing,
+    unsure of the pollution to the right"; on seed 19: "i dont like those
+    staggered barbed straight lines".
+
+    - a wire voice that is a straight-run machine speaks its own hand instead
+      (same hand, same length, smooth joins);
+    - a handover to a straight-run machine is dropped from the heavy chain;
+    - a measurement laid BESIDE the drawing (`annotate` right / below) is
+      dropped, so nothing is drawn off the main drawing (one laid over it as a
+      shadow stays);
+    - a scatter of small copies becomes one surface (`single`).
+    A recipe with none of these comes back unchanged."""
+    r = copy.deepcopy(recipe)
+    for part in r["parts"]:
+        v = part["voice"]
+        if v.get("id") == "machine" and v.get("grammar") in STRAIGHT_MACHINES:
+            part["voice"] = {"id": "hand", "hand": v["hand"], "length": v.get("length", 3.0), "joins": "smooth"}
+        part["modulators"] = [m for m in part.get("modulators", [])
+                              if not (m["id"] == "handover" and (m.get("a") in STRAIGHT_MACHINES
+                                                                 or m.get("b") in STRAIGHT_MACHINES))
+                              and not (m["id"] == "annotate" and m.get("layout") in ("right", "below"))]
+    if r.get("arranger", {}).get("id") == "poly_scatter":
+        r["arranger"] = {"id": "single"}
+    r = repair(r, pools)
+    r["label"] = summarize(r)
+    validate(r, library=library)
+    return r
+
+
+def sample(seed: int, *, library=None, frame=FRAME, pools: Pools | None = None, clean: bool = False) -> dict:
     """One whole, unbred combination for `seed`: the generator is seeded from
     the seed alone, the pools come from `library` (default: the committed
-    library), and the recipe's own seed is `seed`. Deterministic."""
+    library), and the recipe's own seed is `seed`. Deterministic. `clean`
+    tidies the combination (`tidy`); False is the sample exactly as before."""
     if library is None:
         from . import library as _lib  # noqa: PLC0415
         library = _lib.default()
     pools = pools if pools is not None else library_pools(library)
     rng = np.random.default_rng(int(seed))
-    return sample_recipe(rng, seed=int(seed), pools=pools, frame=frame, library=library)
+    rec = sample_recipe(rng, seed=int(seed), pools=pools, frame=frame, library=library)
+    return tidy(rec, pools, library) if clean else rec

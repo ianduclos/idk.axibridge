@@ -331,7 +331,84 @@ SWELL_PARAMS = [
 ]
 
 
-@renderer("swell", params=SWELL_PARAMS, reach=_swell_reach,
+# Occasional dots on a swelling line (round 12). Ian on round 11's dots: "I
+# like 3 7" (dots counted 1, 2, 3 at the strongest events; the line winding
+# into wound dots at its turns) and on the shapes: "not crazy about split and
+# wound. others can be useful from time to time". So: an option, never the
+# default — `dots: none` draws exactly what the swell renderer drew before.
+SWELL_DOT_RULES = ("none", "count", "turns")
+SWELL_DOT_SHAPES = ("disc", "ring", "comma", "wound")
+SWELL_DOT_PARAMS = [
+    P("dots", "choice", "none", "occasional deliberate dots on the swelling line: none | count (1, 2, 3 at its "
+      "strongest events) | turns (at its turns)", choices=SWELL_DOT_RULES),
+    P("dot_shape", "choice", "disc", "dots: their shape (wound: the line itself winds out and back in)",
+      choices=SWELL_DOT_SHAPES),
+    P("dot_size", "float", 6.0, "dots: large dot diameter, mm", min=0.5, max=30.0),
+    P("dot_gap", "float", 24.0, "dots: minimum mm between dots (or groups)", min=0.0, max=500.0),
+    P("dot_scale", "float", 2.0, "dots = turns: the scale the line is heard at, mm", min=0.5, max=60.0),
+]
+
+
+def _swell_dot_inks(ctx, mi, m, prm, line_ink, g=None):
+    """Dots for one mark by the swell's dot option; a wound dot is spliced into
+    the line (→ the replaced line ink), every other shape is its own ink. No
+    dot is placed inside or against a swell's mass (`g`)."""
+    avoid = None
+    if g is not None:
+        import shapely  # noqa: PLC0415
+        clear = 0.5 * prm["dot_size"] + 2.0 * prm["pen"]
+
+        def avoid(q, x):
+            pts_, s_ = np.asarray(q.points), q.arclength()
+            c = shapely.Point(float(np.interp(x, s_, pts_[:, 0])), float(np.interp(x, s_, pts_[:, 1])))
+            return bool(g.distance(c) < clear)
+    count = prm["dots"] == "count"
+    plan, _, q = dot_plan(m, {"rule": prm["dots"], "sizes": "", "gap": prm["dot_gap"], "scale": prm["dot_scale"],
+                              "period": 16.0, "phrase": 70.0, "decel_n": 6, "decel_q": 0.68, "thr": 0.15,
+                              "size": prm["dot_size"]}, avoid=None if count else avoid)
+    if count and avoid is not None and plan:
+        # a count sits on the line's strongest events, which are where it swells:
+        # each group slides on, in the direction of travel, until it is clear of
+        # the mass — the mass, then its 1, 2 or 3 dots (dropped if none fits)
+        L = float(q.arclength()[-1])
+        moved = []
+        for gi in sorted({g for _, _, g in plan}):
+            grp = [(x, c) for x, c, g in plan if g == gi]
+            for t in np.arange(0.0, 80.0, 1.0):
+                if all(2.0 < x + t < L - 2.0 and not avoid(q, x + t) for x, _ in grp):
+                    moved += [(float(x + t), c, gi) for x, c in grp]
+                    break
+        plan = moved
+    if not plan:
+        return line_ink, []
+    vid = m.meta.get("voice_id")
+    rng = ctx.rng("swell_dots", mi)
+    pts = np.asarray(q.points)
+    s = q.arclength()
+    tg = _tangents(pts)
+    frac = {"L": 1.0, "m": 0.68, "s": 0.4}
+    pen, pitch, shp = prm["pen"], prm["pitch"], prm["dot_shape"]
+    dots, wound_at = [], []
+    for x, cls, g in plan:
+        c = np.array([np.interp(x, s, pts[:, 0]), np.interp(x, s, pts[:, 1])])
+        t = np.array([np.interp(x, s, tg[:, 0]), np.interp(x, s, tg[:, 1])])
+        t = t / (np.linalg.norm(t) + 1e-12)
+        d = prm["dot_size"] * frac[cls]
+        if shp == "wound" and line_ink is not None:
+            wound_at.append((x, c, t, d))
+            continue
+        for p, closed, filled in dot_shapes(shp, c, t, d, pen, pitch, rng, 0.05, 0.45):
+            dots.append(Ink_(p, pen, {"voice": vid, "role": f"dot:{shp}:{cls}", "group": int(g)}, closed, filled))
+    if wound_at:
+        path = pts
+        for x, c, t, d in sorted(wound_at, key=lambda w: -w[0]):
+            k = int(np.searchsorted(s, x))
+            path = np.vstack([path[:k], wound_path(c, t, 0.5 * d, pen, pitch, 0.0), path[k:]])
+        line_ink = Ink_(path, pen, {"voice": vid, "role": "line"})
+    return line_ink, dots
+
+
+@renderer("swell", params=[*SWELL_PARAMS, *SWELL_DOT_PARAMS], reach=_swell_reach,
           doc="the line swells smoothly into round masses at its stresses (a sweep of growing discs), line-built")
 def swell(ctx, marks, **prm):
     out = []
@@ -339,13 +416,20 @@ def swell(ctx, marks, **prm):
         if len(m) < 2:
             continue
         vid = m.meta.get("voice_id")
+        li = None
         if prm["line"] == "wire":
+            li = len(out)
             out.append(Ink_(m.points, prm["pen"], {"voice": vid, "role": "line"}))
         g, _ = swell_geometry(m, prm)
-        if g is None:
-            continue
-        for p, closed, filled in line_fill(g, prm["pen"], prm["pitch"]):
-            out.append(Ink_(p, prm["pen"], {"voice": vid, "role": f"swell:{prm['profile']}"}, closed, filled))
+        dots = []
+        if prm.get("dots", "none") != "none":
+            line_ink, dots = _swell_dot_inks(ctx, mi, m, prm, out[li] if li is not None else None, g)
+            if li is not None:
+                out[li] = line_ink
+        if g is not None:
+            for p, closed, filled in line_fill(g, prm["pen"], prm["pitch"]):
+                out.append(Ink_(p, prm["pen"], {"voice": vid, "role": f"swell:{prm['profile']}"}, closed, filled))
+        out += dots
     return out
 
 
@@ -497,9 +581,11 @@ def shape_events(q, rule, scale):
     return out
 
 
-def dot_plan(mark, prm):
+def dot_plan(mark, prm, avoid=None):
     """[(s mm, size class 'L'|'m'|'s', group)] along the mark, by `rule`, plus
-    the phrase ends used (for fullstop). Deterministic."""
+    the phrase ends used (for fullstop). Deterministic. `avoid(q, s)` (optional)
+    → True where an event must not take a dot (the swell option: not inside a
+    mass)."""
     from .prosody_modulators import STEP as PSTEP  # noqa: PLC0415
     from .prosody_modulators import line_events  # noqa: PLC0415
     q = mark.resampled(PSTEP)
@@ -511,6 +597,8 @@ def dot_plan(mark, prm):
     def greedy(evs):
         keep = []
         for x, lv, kd in sorted(evs, key=lambda e: (-e[1], e[0])):
+            if avoid is not None and avoid(q, x):
+                continue
             if 2.0 < x < L - 2.0 and all(abs(x - y[0]) >= gap for y in keep):
                 keep.append((x, lv, kd))
         return sorted(keep)
