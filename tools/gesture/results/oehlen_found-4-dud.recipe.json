@@ -1,0 +1,153 @@
+{
+ "kit": 1,
+ "frame": [
+  205.0,
+  297.0
+ ],
+ "seed": 2611,
+ "margin": 10.0,
+ "arranger": {
+  "id": "oehlen_found",
+  "found": 2,
+  "late": 1,
+  "roles": "",
+  "found_boxes": [
+   0.42,
+   0.27,
+   0.72,
+   0.36,
+   -3.0,
+   0.55,
+   0.64,
+   0.98,
+   0.26,
+   -16.0
+  ],
+  "crop": 1.0,
+  "made_box": [],
+  "late_box": [],
+  "step": 0.4,
+  "capture": 3.0,
+  "align": 0.75,
+  "ride": 22.0,
+  "ride_sd": 0.6,
+  "min_ride": 5.0,
+  "listen": 40.0,
+  "ignore": 70.0,
+  "return_mm": 35.0,
+  "ramp": 2.5,
+  "grow": true,
+  "grow_reach": 40.0,
+  "max_rides": 6,
+  "ride_gap": 0.0,
+  "max_offset": 18.0,
+  "covers": 2,
+  "cover_mode": "cut",
+  "cover_shape": "torn",
+  "cover_boxes": [],
+  "cover_w": [
+   0.28,
+   0.42
+  ],
+  "cover_aspect": [
+   0.5,
+   1.6
+  ],
+  "cover_tilt": 14.0,
+  "cover_margin": 12.0,
+  "cover_cuts": "all",
+  "cover_edge": "none",
+  "late_borrow": "edges",
+  "late_grow": false,
+  "grow_flip": true,
+  "late_capture": 6.0,
+  "min_stub": 4.0,
+  "found_ink": "blue",
+  "found_pen": 0.3,
+  "made_ink": "black",
+  "made_pen": 0.4,
+  "late_ink": "black",
+  "late_pen": 0.7,
+  "tint_ink": "green",
+  "tint_found_ink": "green-400",
+  "edge_pen": 0.25
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "hokusai",
+    "length": 4.0,
+    "joins": "smooth"
+   },
+   "modulators": [
+    {
+     "id": "measure_next",
+     "cut": "inflection",
+     "grain": 0.012,
+     "plate": "taxonomy",
+     "order": "time",
+     "norm": "chord",
+     "cells": 24,
+     "families": 5,
+     "group": "shape",
+     "trace": false,
+     "hist": "none",
+     "hist_style": "steps",
+     "page": "diptych",
+     "split": 0.4,
+     "rechain": "sign",
+     "mirror": false,
+     "blend": 0.0,
+     "shadow": "none",
+     "shadow_gain": 5.0,
+     "degrees": true,
+     "explode": 0.6,
+     "cap": 2.5,
+     "label_h": 2.0,
+     "index_h": 2.0,
+     "avoid": true,
+     "numbers": "all",
+     "drawn_by": null,
+     "straight": "rules+labels",
+     "amount": 1.5,
+     "keep": 0.006
+    }
+   ]
+  },
+  {
+   "voice": {
+    "id": "oehlen_found_river",
+    "tile": "SB19",
+    "rank": 0,
+    "start": 0.0,
+    "span_w": 2400,
+    "angle": 0.0
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "ingres",
+    "length": 5.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "marden",
+    "length": 4.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "oehlen_found_ink",
+  "pen": 0.4
+ },
+ "label": "oehlen_found"
+}
