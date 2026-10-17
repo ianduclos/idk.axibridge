@@ -1,0 +1,357 @@
+{
+ "b1-one-drop": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7601,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "shikasta",
+     "length": 0.9,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 0.4,
+      "gap": 60.0,
+      "unit": "pulse",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.5,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "swell",
+   "profile": "drop",
+   "at": "peak",
+   "line": "wire",
+   "pen": 0.6,
+   "thr": 0.15,
+   "size": 22.0,
+   "length_gain": 0.25,
+   "length": 1.0,
+   "k_head": 0.8,
+   "tail": 55.0,
+   "tail_w": 2.6,
+   "carry": 0.45,
+   "sag": 0.7,
+   "lobes": 3,
+   "pitch": 0.85
+  },
+  "label": "a  one gesture, the sheet: shikasta, two loud stresses, drop (head 22 mm), pen 0.6"
+ },
+ "b2-thirds": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7610,
+  "margin": null,
+  "arranger": {
+   "id": "swell_place",
+   "boxes": [
+    0.0,
+    0.05,
+    0.42,
+    0.9,
+    0.3,
+    0.0,
+    0.42,
+    1.0,
+    0.6,
+    0.05,
+    0.4,
+    0.9
+   ],
+   "inks": "black"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "hokusai",
+     "length": 0.8,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 0.5,
+      "gap": 60.0,
+      "unit": "pulse",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.5,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ],
+    "renderer": {
+     "id": "swell",
+     "profile": "drop",
+     "at": "peak",
+     "line": "wire",
+     "pen": 0.55,
+     "thr": 0.15,
+     "size": 16.0,
+     "length_gain": 0.25,
+     "length": 1.0,
+     "k_head": 0.75,
+     "tail": 40.0,
+     "tail_w": 2.2,
+     "carry": 0.45,
+     "sag": 0.7,
+     "lobes": 3,
+     "pitch": 0.85
+    }
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_roadrunner",
+     "length": 0.9,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 0.5,
+      "gap": 60.0,
+      "unit": "pulse",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.5,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ],
+    "renderer": {
+     "id": "swell",
+     "profile": "press",
+     "at": "peak",
+     "line": "wire",
+     "pen": 0.55,
+     "thr": 0.15,
+     "size": 15.0,
+     "length_gain": 0.25,
+     "length": 1.0,
+     "k_head": 0.75,
+     "tail": 45.0,
+     "tail_w": 2.2,
+     "carry": 0.45,
+     "sag": 0.7,
+     "lobes": 3,
+     "pitch": 0.85
+    }
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "matisse",
+     "length": 0.8,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 0.5,
+      "gap": 60.0,
+      "unit": "pulse",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.5,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ],
+    "renderer": {
+     "id": "swell",
+     "profile": "momentum",
+     "at": "peak",
+     "line": "wire",
+     "pen": 0.55,
+     "thr": 0.15,
+     "size": 15.0,
+     "length_gain": 0.25,
+     "length": 1.0,
+     "k_head": 0.75,
+     "tail": 35.0,
+     "tail_w": 2.2,
+     "carry": 0.55,
+     "sag": 0.7,
+     "lobes": 3,
+     "pitch": 0.85
+    }
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.4
+  },
+  "label": "b  three gestures, a third of the page each: hokusai drop / roadrunner press / matisse momentum"
+ },
+ "b3-press-sweep": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7620,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "meander69",
+     "length": 1.0,
+     "joins": "chain"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 0.25,
+      "gap": 90.0,
+      "unit": "pulse",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.5,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "swell",
+   "profile": "press",
+   "at": "peak",
+   "line": "wire",
+   "pen": 0.7,
+   "thr": 0.15,
+   "size": 24.0,
+   "length_gain": 0.25,
+   "length": 1.0,
+   "k_head": 0.85,
+   "tail": 90.0,
+   "tail_w": 3.0,
+   "carry": 0.45,
+   "sag": 0.7,
+   "lobes": 3,
+   "pitch": 0.85
+  },
+  "label": "c  one long press: meander69 lands at its loudest turn and lifts across the sheet"
+ },
+ "b4-turn-knots": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7630,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "marden",
+     "length": 0.9,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 0.35,
+      "gap": 60.0,
+      "unit": "pulse",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.5,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "swell",
+   "profile": "turn",
+   "at": "peak",
+   "line": "wire",
+   "pen": 0.6,
+   "thr": 0.15,
+   "size": 18.0,
+   "length_gain": 0.25,
+   "length": 1.0,
+   "k_head": 0.85,
+   "tail": 30.0,
+   "tail_w": 1.6,
+   "carry": 0.45,
+   "sag": 0.7,
+   "lobes": 3,
+   "pitch": 0.85
+  },
+  "label": "d  marden, large, the mass sits on its tightest turns (turn profile, 18 mm)"
+ }
+}
