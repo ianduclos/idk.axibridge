@@ -4,12 +4,12 @@ updated: 2026-10-16
 entries: 31
 ---
 
-### Gesture bank: round 8 review + round 9 pick — opened 2026-10-16, owner: ian
+### Gesture bank: Hand Drift bench shipped; Ian tries it, then round 9 — opened 2026-10-16, owner: ian
 
-- done: Rounds 1–7 (ledger in docs/IDEAS-gesture-bank.md). Nib styles b/c/e are options with combinations (tools/gesture/results/nib-styles-2026-10-16.md); compose is now reproducible across processes. c+e looked right to Ian (density control still to do). Research is judged from images; no plotting. 364 gesture tests pass.
-- next: Ian reviewed round 8 on 2026-10-17 (tools/gesture/results/round8-review-2026-10-17.md: keep the approach; hybrid/drift = the bench to build, regimes switchable; reference digested conceptually). Then: plan round 9 around that. Earlier: Ian reviews round 8 (tools/gesture/results/round8-2026-10-16.md; image review artifact with per-image notes at https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY — notes live in its db collection `notes`, doc id = image name, `round`, or `exp-<name>`) and picks round 9 from its candidates; items 2–3 in round7-2026-10-16.md still open.
-- blockers: 15 AIC + 7 other manual sources need a browser session.
-- context: [plan + ledger](docs/IDEAS-gesture-bank.md), [round 7](tools/gesture/results/round7-2026-10-16.md), [nib styles](tools/gesture/results/nib-styles-2026-10-16.md), [package README](tools/gesture/README.md). Scans/outputs in gitignored `.local/gesture/`.
+- done: Round 8 (tools/gesture/results/round8-2026-10-16.md) and Ian's review (round8-review-2026-10-17.md: keep the parallel-rounds + review-artifact loop; distinct grammars side by side, never averaged). The Hand Drift bench is in the app (85f0449): frozen engine + hands in axibridge/sources/_hand_drift, source hand_drift.py, adapter hand-drift v1; plan docs/superpowers/plans/2026-10-17-hand-drift-bench.md. Full suite 1748 passed / 233 skipped. Checked in a sandbox server only.
+- next: Ian quits and reopens AxiBridge.app (the running app predates the bench), tries Hand Drift (Generate → Hand Drift → Bench), and says what to change; then plan round 9 from the review record. Pi clone not synced.
+- blockers: none. Unverified: the bench in the live native window; UI acceptance tests skip without the bundled chromium (`.venv/bin/python -m playwright install chromium`).
+- context: [round 8](tools/gesture/results/round8-2026-10-16.md), [review](tools/gesture/results/round8-review-2026-10-17.md), [bench plan](docs/superpowers/plans/2026-10-17-hand-drift-bench.md), [review page with Ian's notes](https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY). Scans/outputs in gitignored `.local/gesture/`.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 
