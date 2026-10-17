@@ -1,4 +1,4 @@
-# FROZEN from research commit 6332b35: tools/gesture/gesture/kit/prosody_arrangers.py
+# FROZEN from research commit 529a195: tools/gesture/gesture/kit/prosody_arrangers.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Prosody thread (round 9) — the limb: call and response between voices.
 

@@ -1,4 +1,4 @@
-# FROZEN from research commit 6332b35: tools/gesture/gesture/kit/measure_pairs.py
+# FROZEN from research commit 529a195: tools/gesture/gesture/kit/measure_pairs.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """A drawing and its measurement (round 10, exploration `measure_pairs`).
 
@@ -426,7 +426,8 @@ def _pair_reach(p):
     P("index_h", "float", 1.6, "index number height on the drawing, mm", min=0.6, max=6.0),
     *_HAND_PARAMS,
     P("straight", "choice", "none", "drawn_by: which chart lines stay machine-straight — none | rules (table "
-      "rules, axes, bars) | text (the lettering) | rules+text (only the data is hand-drawn)",
+      "rules, axes, bars) | text (the lettering) | rules+text (only the data is hand-drawn) | frame (only the "
+      "rules as wide as the chart: a ledger's top and bottom) | frame+text",
       choices=vd.STRAIGHT),
     P("straight_share", "float", 0.0, "drawn_by: a further share of the chart's lines, chosen from the seed, "
       "that stay straight", min=0.0, max=1.0),

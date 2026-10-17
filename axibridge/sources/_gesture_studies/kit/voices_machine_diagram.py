@@ -1,4 +1,4 @@
-# FROZEN from research commit 6332b35: tools/gesture/gesture/kit/voices_machine_diagram.py
+# FROZEN from research commit 529a195: tools/gesture/gesture/kit/voices_machine_diagram.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Diagram voices: the system's own measurements drawn as plotter line (round 9).
 
@@ -485,7 +485,12 @@ def hand_drawn(polys: list[np.ndarray], g, rng, *, amount: float, keep: float = 
     return out
 
 
-STRAIGHT = ("none", "rules", "text", "rules+text")
+STRAIGHT = ("none", "rules", "text", "rules+text", "frame", "frame+text")
+# "frame": only the outermost rules stay straight — the rules as long as the
+# chart is wide (a ledger's top and bottom), while the rules inside it (bars,
+# short ticks) are drawn by the hand (Ian, round 11: "keep the lines inside
+# stylized. top and bottom straight (as option) is good").
+FRAME_SHARE = 0.9          # a frame rule is at least this share of the longest rule
 
 
 def chart_roles(polys: list[np.ndarray], label_h: float) -> list[str]:
@@ -512,14 +517,22 @@ def chart_roles(polys: list[np.ndarray], label_h: float) -> list[str]:
 
 def straight_flags(polys: list[np.ndarray], label_h: float, keep_straight: str, share: float, rng) -> list[bool] | None:
     """Per-polyline flags for `hand_drawn(straight=...)`: the roles named by
-    `keep_straight` ("rules", "text", "rules+text"; "none"), plus a `share`
+    `keep_straight` ("rules", "text", "rules+text", "frame", "frame+text";
+    "none"), plus a `share`
     of the remaining lines drawn from `rng` (its own stream, so the hand's
     generator is untouched). None when nothing stays straight (= the
     original output, bit for bit)."""
     if keep_straight == "none" and share <= 0:
         return None
     roles = chart_roles(polys, label_h)
-    keep = {"none": set(), "rules": {"rule"}, "text": {"text"}, "rules+text": {"rule", "text"}}[keep_straight]
+    if keep_straight.startswith("frame"):
+        lens = [float(np.sum(np.linalg.norm(np.diff(np.asarray(p, float), axis=0), axis=1))) if r == "rule" else 0.0
+                for p, r in zip(polys, roles)]
+        top = max(lens, default=0.0)
+        roles = ["frame" if r == "rule" and top > 0 and ln >= FRAME_SHARE * top else r
+                 for r, ln in zip(roles, lens)]
+    keep = {"none": set(), "rules": {"rule"}, "text": {"text"}, "rules+text": {"rule", "text"},
+            "frame": {"frame"}, "frame+text": {"frame", "text"}}[keep_straight]
     u = rng.random(len(polys))
     return [r in keep or (share > 0 and bool(ui < share)) for r, ui in zip(roles, u)]
 

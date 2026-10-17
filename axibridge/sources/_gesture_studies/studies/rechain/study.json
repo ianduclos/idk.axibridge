@@ -1,0 +1,100 @@
+{
+ "id": "rechain",
+ "label": "Re-chained from its atlas",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "measure_next round 11: tools/gesture/results/measure_next-rechain.recipe.json (cell 3: signs, tangent continued)",
+ "engine": "kit",
+ "notes": "The drawing redrawn from its own atlas: the drift cut into specimens, which are chained back into one line in a new order, each turned so it continues the chain's tangent. Ian, round 11: \"super nice\". Controls: the route, where it is cut, the new order (time = the original exactly; sign, turning (calm to coiled), match (curvature), shuffle, …), whether specimens are turned to continue the line (off = the collage), mirrored, how much each join is smoothed, the seed. The sheet's six cells are the orders time, sign without turning, sign, turning, match, shuffle.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   134.0,
+   120.0
+  ],
+  "seed": 7003,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next_rechain",
+      "cut": "inflection",
+      "grain": 0.012,
+      "order": "sign",
+      "rotate": true,
+      "mirror": false,
+      "blend": 0.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "re-chained from its atlas: signs alternating, tangent continued"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hands",
+   "label": "Route",
+   "type": "hands",
+   "min_len": 2,
+   "max_len": 4
+  },
+  {
+   "path": "parts.0.modulators.0.cut",
+   "label": "Cut at",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.order",
+   "label": "New order",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.rotate",
+   "label": "Continue the tangent",
+   "type": "bool"
+  },
+  {
+   "path": "parts.0.modulators.0.mirror",
+   "label": "Mirror to alternate",
+   "type": "bool"
+  },
+  {
+   "path": "parts.0.modulators.0.blend",
+   "label": "Smooth joins (mm)",
+   "type": "float",
+   "min": 0.0,
+   "max": 6.0,
+   "step": 0.1
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

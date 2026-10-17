@@ -1,0 +1,169 @@
+{
+ "id": "swell_answer",
+ "label": "Dry line, swelling answer",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "swell round 11: tools/gesture/results/swell-combo.recipe.json (row 1, c1-one-swells)",
+ "engine": "kit",
+ "keep": "voices",
+ "notes": "Two hands on one surface in two inks: roadrunner stays a dry line (black); shikasta swells into drops (red) only where roadrunner is silent. Ian, round 11: \"first and last row are very good\" (this is the first; the last is Swell sentence). Keep makes a group with one layer per voice, each on its own pen. Controls: the dry hand, the swelling hand, its profile and head size, how near it hears the dry line, occasional dots on the swelling voice (off by default), the seed.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7700,
+  "margin": null,
+  "arranger": {
+   "id": "dev_chorus",
+   "answer_to": "all",
+   "listen_by": "space",
+   "radius": 14.0,
+   "answer": 0.8,
+   "delay": 0.05,
+   "window": 0.012,
+   "layout": "single",
+   "inks": "black,red"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_roadrunner",
+     "length": 1.6,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 0.6,
+      "gap": 40.0,
+      "unit": "pulse",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.5,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ],
+    "renderer": {
+     "id": "wire",
+     "pen": 0.4
+    }
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "shikasta",
+     "length": 1.2,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 0.5,
+      "gap": 40.0,
+      "unit": "pulse",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.5,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ],
+    "renderer": {
+     "id": "swell",
+     "profile": "drop",
+     "at": "peak",
+     "line": "wire",
+     "pen": 0.5,
+     "thr": 0.15,
+     "size": 14.0,
+     "length_gain": 0.25,
+     "length": 1.0,
+     "k_head": 0.75,
+     "tail": 40.0,
+     "tail_w": 2.2,
+     "carry": 0.45,
+     "sag": 0.7,
+     "lobes": 3,
+     "pitch": 0.85
+    }
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.4
+  },
+  "label": "a  two hands, one surface: roadrunner stays a dry line (black); shikasta swells where roadrunner is silent (red)"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hand",
+   "label": "Dry hand",
+   "type": "hand"
+  },
+  {
+   "path": "parts.1.voice.hand",
+   "label": "Swelling hand",
+   "type": "hand"
+  },
+  {
+   "path": "parts.1.renderer.profile",
+   "label": "Swell",
+   "type": "choice",
+   "choices": [
+    "drop",
+    "press",
+    "lens",
+    "momentum",
+    "turn"
+   ]
+  },
+  {
+   "path": "parts.1.renderer.size",
+   "label": "Head size (mm)",
+   "type": "float",
+   "min": 6.0,
+   "max": 24.0,
+   "step": 0.5
+  },
+  {
+   "path": "arranger.radius",
+   "label": "Hears within (mm)",
+   "type": "float",
+   "min": 4.0,
+   "max": 40.0,
+   "step": 0.5
+  },
+  {
+   "path": "parts.1.renderer.dots",
+   "label": "Occasional dots",
+   "type": "choice"
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

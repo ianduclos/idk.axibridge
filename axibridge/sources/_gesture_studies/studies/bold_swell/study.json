@@ -1,0 +1,132 @@
+{
+ "id": "bold_swell",
+ "label": "Bold swell",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "swell round 11: tools/gesture/results/swell-bold.recipe.json (a: shikasta, one drop)",
+ "engine": "kit",
+ "notes": "One hand at a third of its usual length fills the sheet; it swells smoothly into round heads at its loudest stresses (the slow part of the swell stays a line, only the head blooms). Ian, round 11: \"very nice, very promising\". Controls: the hand, the swell's profile (drop, press, lens, momentum, turn; the sheet's (c) is meander69 + press, (d) marden + turn), head size, tail length, how long the line is, the seed — and occasional dots, off by default. Ian on round 11's dots: \"I like 3 7\" (counted 1, 2, 3; the line winding into dots at its turns) and \"not crazy about split and wound. others can be useful from time to time\": count slides each group just past its mass; turns places dots on the quiet stretches. Split is not offered.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7601,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "shikasta",
+     "length": 0.9,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "prosody",
+      "rhythm": "event",
+      "listen": "switch,corner,kappa,inflection,token,tempo",
+      "contrast": 0.5,
+      "density": 0.4,
+      "gap": 60.0,
+      "unit": "pulse",
+      "span": 8.0,
+      "lead": 0.0,
+      "primary": 0.5,
+      "quiet": 0.5,
+      "metre": 2,
+      "phrase_min": 120.0,
+      "r_max": 2.0,
+      "W": 2.5,
+      "M": 7.0
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "swell",
+   "profile": "drop",
+   "at": "peak",
+   "line": "wire",
+   "pen": 0.6,
+   "thr": 0.15,
+   "size": 22.0,
+   "length_gain": 0.25,
+   "length": 1.0,
+   "k_head": 0.8,
+   "tail": 55.0,
+   "tail_w": 2.6,
+   "carry": 0.45,
+   "sag": 0.7,
+   "lobes": 3,
+   "pitch": 0.85
+  },
+  "label": "a  one gesture, the sheet: shikasta, two loud stresses, drop (head 22 mm), pen 0.6"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hand",
+   "label": "Hand",
+   "type": "hand"
+  },
+  {
+   "path": "renderer.profile",
+   "label": "Swell",
+   "type": "choice",
+   "choices": [
+    "drop",
+    "press",
+    "lens",
+    "momentum",
+    "turn"
+   ]
+  },
+  {
+   "path": "renderer.size",
+   "label": "Head size (mm)",
+   "type": "float",
+   "min": 8.0,
+   "max": 30.0,
+   "step": 0.5
+  },
+  {
+   "path": "renderer.tail",
+   "label": "Tail (mm)",
+   "type": "float",
+   "min": 10.0,
+   "max": 100.0,
+   "step": 1.0
+  },
+  {
+   "path": "parts.0.voice.length",
+   "label": "Line length",
+   "type": "float",
+   "min": 0.5,
+   "max": 1.2,
+   "step": 0.05
+  },
+  {
+   "path": "renderer.dots",
+   "label": "Occasional dots",
+   "type": "choice"
+  },
+  {
+   "path": "renderer.dot_shape",
+   "label": "Dot shape",
+   "type": "choice"
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

@@ -254,7 +254,9 @@ def hand_drift_spec(path: str) -> Spec:
 def sampler_spec(path: str) -> Spec:
     if path == "seed":
         return Spec("int", 0, SEED_MAX)
-    raise StudyError(f"control path {path!r}: a sampler study's only control is its seed")
+    if path == "clean":                     # round 12: tidy the combination (kit/sampler.tidy)
+        return Spec("bool")
+    raise StudyError(f"control path {path!r}: a sampler study's controls are its seed and clean")
 
 
 def spec_at(study: Study, recipe: dict, path: str) -> Spec:
@@ -299,10 +301,15 @@ def _kit_recipe(recipe: dict, lib: FL.FrozenLibrary) -> dict:
 
 
 def _sampler_recipe(recipe: dict) -> dict:
-    """A sampler study's recipe: {"frame": [W, H], "seed": n} and nothing else."""
-    extra = sorted(set(recipe) - {"frame", "seed"})
+    """A sampler study's recipe: {"frame": [W, H], "seed": n} and, optionally,
+    "clean": bool (round 12: the combination tidied, `kit/sampler.tidy`). A
+    recipe without "clean" normalizes without it, so what older kept layers
+    were sampled from (`sample_key`) never changes."""
+    extra = sorted(set(recipe) - {"frame", "seed", "clean"})
     if extra:
-        raise StudyError(f"recipe: a sampler recipe is frame + seed, not {extra}")
+        raise StudyError(f"recipe: a sampler recipe is frame + seed (+ clean), not {extra}")
+    if "clean" in recipe and not isinstance(recipe["clean"], bool):
+        raise StudyError("recipe: clean must be true or false")
     frame, seed = recipe.get("frame", [267.0, 180.0]), recipe.get("seed", 0)
     if (not isinstance(frame, list) or len(frame) != 2
             or not all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in frame)
@@ -310,7 +317,10 @@ def _sampler_recipe(recipe: dict) -> dict:
         raise StudyError(f"recipe: frame must be [W, H] with sides {FRAME_MM[0]:g}–{FRAME_MM[1]:g} mm")
     if isinstance(seed, bool) or not isinstance(seed, int) or not 0 <= seed <= SEED_MAX:
         raise StudyError(f"recipe: seed must be an int in [0, {SEED_MAX}]")
-    return {"frame": [float(frame[0]), float(frame[1])], "seed": int(seed)}
+    out = {"frame": [float(frame[0]), float(frame[1])], "seed": int(seed)}
+    if "clean" in recipe:
+        out["clean"] = recipe["clean"]
+    return out
 
 
 def validate_recipe(study: Study, recipe: dict, lib: FL.FrozenLibrary) -> dict:
@@ -388,8 +398,11 @@ def _check_control(study: Study, recipe: dict, c: Control) -> None:
 # ---------------------------------------------------------------------------
 
 def sample_key(recipe: dict) -> str:
-    """What a sampled recipe was sampled FROM (frame + seed), canonical."""
-    return json.dumps(recipe, sort_keys=True, separators=(",", ":"))
+    """What a sampled recipe was sampled FROM (frame + seed [+ clean]),
+    canonical. `clean: false` samples exactly what a recipe without it does,
+    so it is left out: a layer kept before the option existed still matches."""
+    r = {k: v for k, v in recipe.items() if not (k == "clean" and v is False)}
+    return json.dumps(r, sort_keys=True, separators=(",", ":"))
 
 
 def run_recipe(study: Study, recipe: dict, lib: FL.FrozenLibrary, sampled: dict | None = None) -> dict:
@@ -405,7 +418,8 @@ def run_recipe(study: Study, recipe: dict, lib: FL.FrozenLibrary, sampled: dict 
     from .kit import sampler  # noqa: PLC0415
     _kit()
     try:
-        out = sampler.sample(recipe["seed"], library=lib, frame=tuple(recipe["frame"]))
+        out = sampler.sample(recipe["seed"], library=lib, frame=tuple(recipe["frame"]),
+                             clean=bool(recipe.get("clean", False)))
     except (_kit().RecipeError, KeyError, StopIteration, ValueError) as e:
         raise StudyError(f"sampler: {e}") from None
     return _kit_recipe(out, lib)

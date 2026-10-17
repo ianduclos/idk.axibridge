@@ -1,0 +1,96 @@
+{
+ "id": "brood_gallery",
+ "label": "Brood gallery",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "hands_trails round 11: tools/gesture/results/hands_trails-brood.recipe.json (tiles 4 and 5)",
+ "engine": "kit",
+ "notes": "A bark-beetle brood gallery as a voice: one hand draws the mother gallery, another the larval galleries branching off it, each widening into its round pupal chamber. The branching extraction could not keep as a grammar survives here as structure. Ian, round 11: \"these are super nice, especially 4 and 5\". The default is tile 4 (mother trail_grazer, 14 larvae by dancer_cristel, seed 7303); tile 5 is mother trail_tracks, larvae fly_fru, 12 larvae, seed 7304. Controls: the two hands, how many larvae, how far the end ones lean, how long they grow, the seed.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   180.0,
+   130.0
+  ],
+  "seed": 7303,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "trail_brood",
+     "mother": "trail_grazer",
+     "larvae": "dancer_cristel",
+     "mother_length": 0.8,
+     "larva_length": 0.3,
+     "count": 14,
+     "fan": 40.0,
+     "straighten": 0.85
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "trail_gallery",
+   "pen": 0.3,
+   "w0": 0.3,
+   "w1": 1.6,
+   "grow": 1.6,
+   "chamber": 2.0,
+   "ramp": 1.5,
+   "fill": "chamber",
+   "solid_from": 0.85,
+   "frass": "line",
+   "mother_w": 1.2,
+   "pitch": 0.85
+  },
+  "label": "brood gallery: mother trail_grazer, 14 larvae dancer_cristel (seed 7303)"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.mother",
+   "label": "Mother gallery hand",
+   "type": "hand"
+  },
+  {
+   "path": "parts.0.voice.larvae",
+   "label": "Larvae hand",
+   "type": "hand"
+  },
+  {
+   "path": "parts.0.voice.count",
+   "label": "Larvae",
+   "type": "int",
+   "min": 4,
+   "max": 30,
+   "step": 1
+  },
+  {
+   "path": "parts.0.voice.fan",
+   "label": "Fan (degrees)",
+   "type": "float",
+   "min": 0.0,
+   "max": 80.0,
+   "step": 1.0
+  },
+  {
+   "path": "parts.0.voice.larva_length",
+   "label": "Larva length",
+   "type": "float",
+   "min": 0.1,
+   "max": 1.0,
+   "step": 0.01
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

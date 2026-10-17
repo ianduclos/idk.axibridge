@@ -1,0 +1,92 @@
+{
+ "id": "leaf_miner",
+ "label": "Leaf miner gallery",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "hands_trails round 11: tools/gesture/results/hands_trails-miner.recipe.json (gallery-0)",
+ "engine": "kit",
+ "notes": "The leaf-miner hand inked as a mine: the gallery widens as the larva grows and swells smoothly into a round pupal chamber, a frass line running down it. The mass comes from the source, so the line becomes a bead with no snap. Ian, round 11: \"these are super good keep\". Controls: the miner's hand (any frozen hand; trail_miner is the source), how long the mine runs, how wide the grown larva is, the chamber, the frass and the seed. Fill stays `chamber`: `late` turns the mine into a solid bar, the capsule Ian dislikes (round 11's tile 3, kept out on purpose). The sheet's other tiles: seeds 7201-7203 with widths 4.0 / 5.0 mm and frass wander / none.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   180.0,
+   130.0
+  ],
+  "seed": 7200,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_miner",
+     "length": 3.5,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "trail_gallery",
+   "pen": 0.3,
+   "w0": 0.3,
+   "w1": 3.2,
+   "grow": 1.8,
+   "chamber": 2.2,
+   "ramp": 1.5,
+   "fill": "chamber",
+   "solid_from": 0.85,
+   "frass": "line",
+   "mother_w": 1.2,
+   "pitch": 0.85
+  },
+  "label": "trail_miner as a mine: widens with age to 3.2 mm, frass line, fill chamber, chamber 2.2x (seed 7200)"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hand",
+   "label": "Miner's hand",
+   "type": "hand"
+  },
+  {
+   "path": "parts.0.voice.length",
+   "label": "Length of the mine",
+   "type": "float",
+   "min": 1.0,
+   "max": 6.0,
+   "step": 0.1
+  },
+  {
+   "path": "renderer.w1",
+   "label": "Grown width (mm)",
+   "type": "float",
+   "min": 1.0,
+   "max": 8.0,
+   "step": 0.1
+  },
+  {
+   "path": "renderer.chamber",
+   "label": "Chamber (x grown width)",
+   "type": "float",
+   "min": 0.0,
+   "max": 3.5,
+   "step": 0.1
+  },
+  {
+   "path": "renderer.frass",
+   "label": "Frass",
+   "type": "choice"
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

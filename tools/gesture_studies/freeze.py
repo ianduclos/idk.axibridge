@@ -81,7 +81,10 @@ KIT_MODULES = ("__init__", "core", "library", "arrangers_base", "modulators_base
                # Studies v2 (2026-10-17): measurement pairs, the chorus and the sampler (its sample
                # space reaches prosody, restatement and coils, so those come too)
                "measure_pairs", "prosody_voices", "prosody_modulators", "prosody_renderers",
-               "prosody_arrangers", "dev_beads", "dev_chorus", "sampler")
+               "prosody_arrangers", "dev_beads", "dev_chorus", "sampler",
+               # round 12 keeps (2026-10-17): the leaf miner and brood galleries, the measurement
+               # versions (cuts, plates, taxonomy, re-chain, triptych) and the swells
+               "voices_trails", "measure_next", "swell_ink")
 # research modules (tools/gesture/gesture/<name>.py) they import, transitively
 RESEARCH_MODULES = ("core", "curvature", "clothoid", "grammar", "hybrid", "regime", "penrender",
                     "regime_field", "gesture_timing", "broadnib")
@@ -276,9 +279,10 @@ def parity_fixtures(src_root: Path, commit: str) -> None:
             # sampler over the HEAD research library and the frozen sampler over
             # the frozen library must pick the very same recipe
             r = study["recipe"]
-            recipe = research_sampler.sample(int(r["seed"]), library=lib, frame=tuple(r["frame"]))
+            clean = bool(r.get("clean", False))
+            recipe = research_sampler.sample(int(r["seed"]), library=lib, frame=tuple(r["frame"]), clean=clean)
             mine_r = frozen_sampler.sample(int(r["seed"]), library=frozen_lib.FrozenLibrary(),
-                                           frame=tuple(r["frame"]))
+                                           frame=tuple(r["frame"]), clean=clean)
             if json.dumps(recipe, sort_keys=True) != json.dumps(mine_r, sort_keys=True):
                 raise SystemExit(f"{sid}: the frozen sampler does not pick the research sampler's recipe")
             sampled = recipe

@@ -33,7 +33,10 @@ HD = get_source("hand_drift")
 ORDER = ["hand_drift", "danced_chain", "two_voices", "drawing_and_measure", "shape_atlas", "conversation",
          "annotated_page", "three_voices",
          # Studies v2 (2026-10-17)
-         "numbered_atlas", "dance_atlas", "margin_chart", "merged_shadow", "chorus", "sampler", "ledger_straight"]
+         "numbered_atlas", "dance_atlas", "margin_chart", "merged_shadow", "chorus", "sampler", "ledger_straight",
+         # round 12 keeps (2026-10-17)
+         "leaf_miner", "brood_gallery", "specimen_plate", "river_taxonomy", "rechain", "dance_triptych",
+         "bold_swell", "swell_answer", "swell_sentence"]
 KIT_STUDIES = ORDER[1:]                        # the sampler draws through the kit too
 # Studies whose ink depends on GEOS's offset/buffer details: nib "c" lanes come out
 # slightly differently under GEOS 3.13 (app venv) and 3.14 (research venv). The
@@ -92,7 +95,7 @@ def test_builtin_studies_load_in_order_with_few_bounded_controls():
         if s.engine == "kit":
             assert 3 <= len(s.controls) <= 8, s.id
         if s.engine == "sampler":                      # the seed IS the piece: it picks the combination
-            assert [c.key for c in s.controls] == ["seed"]
+            assert [c.key for c in s.controls] == ["seed", "clean"]   # (+ round 12: tidy it)
         for c in s.controls:
             if c.type in ("int", "float"):
                 assert c.min is not None and c.max is not None and c.min < c.max
@@ -583,8 +586,33 @@ def test_sampler_save_and_validate_api():
     assert r.status_code == 200, r.text
     saved = r.json()
     assert saved["engine"] == "kit" and saved["recipe"] == body["run_recipe"]   # it keeps what it found
-    assert saved["parent"] == {"id": "sampler", "version": 1}
+    assert saved["parent"] == {"id": "sampler", "version": 2}
+    assert [ctl["path"] for ctl in saved["controls"]] == ["seed"]                 # clean is a sampler option
     assert c.delete(f"/api/gesture-studies/{saved['id']}").status_code == 200
+    r = c.post("/api/gesture-studies", json={"label": "Clean find", "study": st,
+                                              "values": {"seed": 19, "clean": True}})
+    assert r.status_code == 200, r.text
+    assert c.delete(f"/api/gesture-studies/{r.json()['id']}").status_code == 200
+
+
+def test_sampler_clean_tidies_and_never_moves_a_layer_kept_before_it():
+    from axibridge.sources._gesture_studies.kit import sampler as frozen_sampler
+
+    lib = FL.FrozenLibrary()
+    raw = SRC.Params(**params("sampler", {"seed": 19})).run_recipe
+    tidy = SRC.Params(**params("sampler", {"seed": 19, "clean": True})).run_recipe
+    assert tidy == ST._kit_recipe(frozen_sampler.sample(19, library=lib, clean=True), lib)
+    assert all(p["voice"]["id"] != "machine" or p["voice"]["grammar"] not in frozen_sampler.STRAIGHT_MACHINES
+               for p in tidy["parts"])
+    assert raw == SRC.Params(**params("sampler", {"seed": 19, "clean": False})).run_recipe
+    # a layer kept from the version-1 study (no clean in its recipe) keeps its key and its combination
+    v1 = ST.builtin("sampler").model_dump(mode="json")
+    v1["version"] = 1
+    v1["recipe"].pop("clean")
+    v1["controls"] = [ctl for ctl in v1["controls"] if ctl["path"] == "seed"]
+    kept = SRC.complete_params({"study": v1, "values": {"seed": 19}})
+    assert kept["sampled"]["of"] == ST.sample_key({"frame": [267.0, 180.0], "seed": 19, "clean": False})
+    assert SRC.Params(**kept).run_recipe == raw
 
 
 def test_chorus_voices_resolve_one_at_a_time_and_add_up_to_the_chorus():

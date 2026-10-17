@@ -1,12 +1,12 @@
 {
  "id": "ledger_straight",
  "label": "Ledger, straight rules",
- "version": 1,
+ "version": 2,
  "parent": null,
  "created": "2026-10-17",
  "source": "measure_pairs round 10: tools/gesture/results/measure_pairs-pair_ledger.recipe.json + straight lines",
  "engine": "kit",
- "notes": "mime_roadrunner's hand beside its ledger (a stat table drawn with rules), the ledger drawn by Matisse, deciles numbered on the line. Ian, round 10: \"an option to keep some of the lines in the graph straight.\" Straight lines: none (the round-10 piece), rules (table rules and bars stay machine-straight, the lettering is drawn), text (the lettering stays machine, the rules are drawn) or both; a further share of lines chosen from the seed can stay straight too. Also the drawing hand, the ledger's hand and how much turning it owns. Cost: ~15-25 s with a drawing hand.",
+ "notes": "mime_roadrunner's hand beside its ledger (a stat table drawn with rules), the ledger drawn by Matisse, deciles numbered on the line. Ian, round 10: \"an option to keep some of the lines in the graph straight.\" Version 2 (round 12), Ian on version 1: \"i like it, but tbh keep the lines inside stylized. top and bottom straight (as option) is good\" and on the text option \"good, like the normal text tbh\". So the default is now `text` (the lettering plain, every rule drawn by the hand); `frame+text` keeps the ledger's top and bottom rules straight too (the rules as wide as the table), `frame` only those, `none` is the round-10 piece. A further share of lines chosen from the seed can stay straight. Also the drawing hand, the ledger's hand and how much turning it owns. Cost: ~15-25 s with a drawing hand.",
  "recipe": {
   "kit": 1,
   "frame": [
@@ -42,7 +42,7 @@
       "drawn_by": "matisse",
       "amount": 1.5,
       "keep": 0.006,
-      "straight": "rules",
+      "straight": "text",
       "straight_share": 0.0
      }
     ]
@@ -72,7 +72,13 @@
   {
    "path": "parts.0.modulators.0.straight",
    "label": "Straight lines",
-   "type": "choice"
+   "type": "choice",
+   "choices": [
+    "text",
+    "frame+text",
+    "frame",
+    "none"
+   ]
   },
   {
    "path": "parts.0.modulators.0.straight_share",

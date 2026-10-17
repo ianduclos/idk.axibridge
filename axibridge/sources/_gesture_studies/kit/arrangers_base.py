@@ -1,4 +1,4 @@
-# FROZEN from research commit 6332b35: tools/gesture/gesture/kit/arrangers_base.py
+# FROZEN from research commit 529a195: tools/gesture/gesture/kit/arrangers_base.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Seed arrangers — compose a sheet from parts.
 

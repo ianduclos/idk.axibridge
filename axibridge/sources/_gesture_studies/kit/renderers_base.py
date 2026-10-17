@@ -1,4 +1,4 @@
-# FROZEN from research commit 6332b35: tools/gesture/gesture/kit/renderers_base.py
+# FROZEN from research commit 529a195: tools/gesture/gesture/kit/renderers_base.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Seed renderers — marks → plotter polylines (Ink).
 

@@ -1,0 +1,118 @@
+{
+ "id": "dance_triptych",
+ "label": "Dance, atlas, one line",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "measure_next round 11: tools/gesture/results/measure_next-triptych_dance.recipe.json",
+ "engine": "kit",
+ "notes": "The mantis dance cut at the dancer's own pauses, its atlas in the middle, and its gestures re-chained into ONE continuous line on the right, numbered with the same specimen numbers. Ian, round 11: \"cool. id allow to disable the labels on the very drawing\" — the Numbers control: on both drawings (the round-11 piece), the dance only, the re-chained line only, or none (only the atlas is labelled). Also the dance, how long it runs, where it is cut, the re-chain order and the seed.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7100,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "dance",
+     "trail": "mantis",
+     "effectors": "all",
+     "t0": 0.0,
+     "seconds": 20.0,
+     "cut": "phrase"
+    },
+    "modulators": [
+     {
+      "id": "measure_next",
+      "cut": "pause",
+      "grain": 0.01,
+      "plate": "grid",
+      "order": "time",
+      "norm": "chord",
+      "cells": 30,
+      "families": 5,
+      "group": "shape",
+      "trace": false,
+      "hist": "none",
+      "hist_style": "steps",
+      "page": "triptych",
+      "split": 0.34,
+      "rechain": "match",
+      "mirror": false,
+      "blend": 0.0,
+      "shadow": "none",
+      "shadow_gain": 5.0,
+      "degrees": true,
+      "explode": 0.6,
+      "cap": 2.5,
+      "label_h": 1.8,
+      "index_h": 1.7,
+      "avoid": true,
+      "drawn_by": null,
+      "straight": "rules+labels",
+      "amount": 1.5,
+      "keep": 0.006
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "dance + atlas v2: the mantis dance | its atlas | its gestures re-chained into one line"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.trail",
+   "label": "Dance",
+   "type": "trail"
+  },
+  {
+   "path": "parts.0.modulators.0.numbers",
+   "label": "Numbers on the drawings",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.voice.seconds",
+   "label": "Seconds of dance",
+   "type": "float",
+   "min": 8.0,
+   "max": 30.0,
+   "step": 0.5
+  },
+  {
+   "path": "parts.0.modulators.0.cut",
+   "label": "Cut at",
+   "type": "choice",
+   "choices": [
+    "pause",
+    "inflection",
+    "turning",
+    "crossing",
+    "approach"
+   ]
+  },
+  {
+   "path": "parts.0.modulators.0.rechain",
+   "label": "Re-chain order",
+   "type": "choice"
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

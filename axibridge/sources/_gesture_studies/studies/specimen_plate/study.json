@@ -1,0 +1,127 @@
+{
+ "id": "specimen_plate",
+ "label": "Drawing and its specimen plate",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-17",
+ "source": "measure_next round 11: tools/gesture/results/measure_next-{taxonomy,cuts,exploded,frieze,norm_trace,plate_big}.recipe.json",
+ "engine": "kit",
+ "notes": "A drift beside its specimen plate: the line cut into specimens, each numbered on the drawing and laid out on the plate. One study for the round-11 versions Ian kept — cuts, exploded, frieze \"love\"; normalised traces, big plate \"very nice\"; taxonomy \"love this but im not convinced with the graph at the bottom. perhaps its the execution, feels detached\". The graph is reworked as `strip` (the default): the drawing's own line laid straight under the plate, specimen after specimen in the order they were drawn, cut and labelled exactly as the plate, so it is drawn by the same line and tied to both. The old histograms stay choices. Round-11 images: cuts = plate grid + the cut; exploded = plate exploded, split 0.5; frieze = plate frieze, split 0.45; normalised traces = grid, norm axis+size, traces on; big plate = taxonomy, traces on, split 0.72; taxonomy = this, graph length.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 7003,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "matisse",
+      "shikasta",
+      "lichtenberg"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 6.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next",
+      "cut": "inflection",
+      "grain": 0.012,
+      "plate": "taxonomy",
+      "order": "time",
+      "norm": "chord",
+      "cells": 40,
+      "families": 5,
+      "group": "shape",
+      "trace": false,
+      "hist": "strip",
+      "hist_style": "steps",
+      "page": "diptych",
+      "split": 0.4,
+      "rechain": "sign",
+      "mirror": false,
+      "blend": 0.0,
+      "shadow": "none",
+      "shadow_gain": 5.0,
+      "degrees": true,
+      "explode": 0.6,
+      "cap": 2.5,
+      "label_h": 2.0,
+      "index_h": 2.0,
+      "avoid": true,
+      "drawn_by": null,
+      "straight": "rules+labels",
+      "amount": 1.5,
+      "keep": 0.006
+     }
+    ]
+   }
+  ],
+  "renderer": {
+   "id": "measure_wire",
+   "pen": 0.4,
+   "chart_pen": 0.25
+  },
+  "label": "numbered atlas v3: a taxonomy plate, the line laid straight under it"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.hands",
+   "label": "Route",
+   "type": "hands",
+   "min_len": 2,
+   "max_len": 4
+  },
+  {
+   "path": "parts.0.modulators.0.cut",
+   "label": "Cut at",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.plate",
+   "label": "Plate",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.norm",
+   "label": "Specimens as",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.trace",
+   "label": "Turning trace under each",
+   "type": "bool"
+  },
+  {
+   "path": "parts.0.modulators.0.hist",
+   "label": "Graph under the plate",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.modulators.0.split",
+   "label": "Plate share",
+   "type": "float",
+   "min": 0.25,
+   "max": 0.75,
+   "step": 0.01
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

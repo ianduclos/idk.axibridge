@@ -104,6 +104,7 @@ def save_study(body: SaveStudy) -> dict[str, Any]:
             # a sampler keeps the combination it found: a kit study of that
             # recipe, its seed still a control (now the drawing's seed only)
             engine, recipe = "kit", _run_info(body, base)["run_recipe"]
+            controls = [c for c in controls if c.get("path") == "seed"]   # clean is a sampler option
         study = gesture_study_store.save(
             label=body.label, engine=engine, recipe=recipe, controls=controls,
             notes=base.notes if body.notes is None else body.notes,
