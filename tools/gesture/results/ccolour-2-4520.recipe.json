@@ -1,0 +1,133 @@
+{
+ "kit": 1,
+ "frame": [
+  300.0,
+  200.0
+ ],
+ "seed": 4520,
+ "margin": 5.0,
+ "arranger": {
+  "id": "ccolour",
+  "density": -1.0,
+  "pens": 0,
+  "mode": "auto",
+  "colouring": "composed",
+  "acts": "core,traverse,counter,container,intruder"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "dance_thrusting",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "river_bend",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "trail_miner",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "dancer_madeline",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "mime_mantis",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "fly_fru",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "meander69",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "hokusai",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "dance_staccato",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "mime_roadrunner",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "river_belt",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "trail_slime",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "oehlen_found_ink",
+  "pen": 0.4
+ },
+ "label": "ccolour",
+ "notes": "frame 300\u00d7200: landscape: a core and a reserved blank side by side"
+}
