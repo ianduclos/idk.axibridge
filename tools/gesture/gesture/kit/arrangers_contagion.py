@@ -293,9 +293,15 @@ def _join(pieces, ramp, step):
 def contagion_walk(M, grounds: dict, grammars: dict, rng: np.random.Generator, *, step, capture, align, listen,
                    ignore, ride, ride_sd, min_ride, ride_gap, return_mm, ramp, max_offset, catches, full, decay,
                    tick_linger, own_mm, rule_tol, snap, tick_pitch, immune_mm, omega_max=130.0, rule_shared=9.0,
-                   regimes=REGIMES, carry=True):
+                   regimes=REGIMES, carry=True, gate=None):
     """M (sheet mm) walked against the found regimes. Returns (points, catch codes, log). carry=False is
-    the control: the same contacts and rides, nothing caught."""
+    the control: the same contacts and rides, nothing caught.
+
+    Beyond the river and the plate, a regime may be any key of `grounds` whose grammar has a `gen`
+    (rng, length_mm) -> valley-frame xy (x along the own path, starting at an axis crossing, as
+    `gen_meander`): it is carried like the river, in whole bends, with per-point code `code` and ride
+    code `ride_code`. `gate(i, regime, j, i0, cos)` (optional) may refuse a contact candidate at own
+    index i (e.g. only a curving stretch listens)."""
     M = resample(np.asarray(M, float), step)
     tM = tangents(M, max(int(2.0 / step), 2))
     n = len(M)
@@ -322,7 +328,7 @@ def contagion_walk(M, grounds: dict, grammars: dict, rng: np.random.Generator, *
     i = 0
     cool = 0
     n_contacts = 0
-    last_end = {r: -1e9 for r in REGIMES}
+    last_end = {r: -1e9 for r in (*REGIMES, *regimes)}
     contacts = []
 
     def disp(ii):
@@ -350,6 +356,8 @@ def contagion_walk(M, grounds: dict, grammars: dict, rng: np.random.Generator, *
                     j, ii = G.ids[k]
                     c = float(np.dot(G.tan[j][ii], tM[i]))
                     if abs(c) < align:
+                        continue
+                    if gate is not None and not gate(i, reg, int(j), int(ii), c):
                         continue
                     dist = float(np.linalg.norm(G.pts[k] - p))
                     sc = dist - 2.0 * abs(c)
@@ -395,6 +403,9 @@ def contagion_walk(M, grounds: dict, grammars: dict, rng: np.random.Generator, *
     for f in infections:
         if f.regime == "river":
             f.xy = gen_meander(rng, grammars["river"], (f.end - f.on) * step + 5.0, omega_max=omega_max)
+            f.bends = bends(f.xy)
+        elif "gen" in grammars.get(f.regime, {}):
+            f.xy = grammars[f.regime]["gen"](rng, (f.end - f.on) * step + 5.0)
             f.bends = bends(f.xy)
 
     # ---- phase B: the carrier segments between rides, element by element
@@ -525,11 +536,12 @@ def contagion_walk(M, grounds: dict, grammars: dict, rng: np.random.Generator, *
                         return b0, b1, f.on + f.xy[b0, 0] / step, f.on + f.xy[b1, 0] / step
                 return None
 
-            rivers = [f for f in act if f.regime == "river"]
-            if pick[0] == "river" or (pick[0] == "own" and rivers and len(act) == 1):
+            rivers = [f for f in act if f.xy is not None]          # bend-carried regimes (the river, a `gen`)
+            bent = pick[2] is not None and pick[2].xy is not None
+            if bent or (pick[0] == "own" and rivers and len(act) == 1):
                 # elements of a river infection are whole bends: a bend is drawn, or shed whole (the own
                 # path runs through its span), never shrunk
-                f = pick[2] if pick[0] == "river" else rivers[0]
+                f = pick[2] if bent else rivers[0]
                 nb = next_bend(f)
                 if nb is not None and nb[3] <= b:
                     b0, b1, s0, s1 = nb
@@ -541,13 +553,13 @@ def contagion_walk(M, grounds: dict, grammars: dict, rng: np.random.Generator, *
                     hd = np.unwrap(np.arctan2(C.t[ka:kb + 1, 1], C.t[ka:kb + 1, 0]))
                     curv = float(np.sum(np.abs(np.diff(hd)))) / max((kb - ka) * step, 1e-6) if kb - ka > 2 else 0.0
                     tight = curv * amp > 0.35
-                    if pick[0] == "river" and not tight:
+                    if bent and not tight:
                         if s0 > i + 0.5:
                             pieces.append(own_piece(i, s0, tick_w))
                         q = C.map(f.on, f.xy[b0:b1 + 1])
                         q[0] = C.at(np.array([s0]))[0][0]
                         q[-1] = C.at(np.array([s1]))[0][0]
-                        pieces.append((q, np.full(len(q), RIVER, float)))
+                        pieces.append((q, np.full(len(q), grammars.get(f.regime, {}).get("code", RIVER), float)))
                         counts["river_bends"] += 1
                     else:
                         pieces.append(own_piece(i, s1, tick_w))
@@ -577,7 +589,8 @@ def contagion_walk(M, grounds: dict, grammars: dict, rng: np.random.Generator, *
         top.append((seg_pts, seg_c))
         r = ride_at.get(b)
         if r is not None:
-            top.append((r[2], np.full(len(r[2]), RIDE_RIVER if r[3] == "river" else RIDE_PLATE, float)))
+            rc = grammars.get(r[3], {}).get("ride_code", RIDE_RIVER if r[3] == "river" else RIDE_PLATE)
+            top.append((r[2], np.full(len(r[2]), rc, float)))
     pts, codes = _join(top, ramp, step)
 
     def where(fi):
