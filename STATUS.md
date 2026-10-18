@@ -3,14 +3,14 @@ project: idk.axibridge
 state: active
 updated: 2026-10-18
 machine: mac+pi
-summary: The gesture bank now runs as a working loop (parallel research rounds, a review page Ian annotates, kept work saved as Gesture Studies in the app with a kit and library behind them); MCP/live-sync and the 8 October integration still await Ian's native acceptance.
+summary: The gesture bank has found its direction (interlocking regimes, from the round-12 Oehlen found-ground thread) and keeps work as 28 Gesture Studies in the app; MCP/live-sync and the 8 October integration still await Ian's native acceptance.
 next:
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
   - Check recovery close/relaunch, nested groups, Assets and Mosca 2 in the native app
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank: annotate the round 12 review page (https://claude.ai/artifact/XXNSKSXYdbYptmZFnpYhpE), then review record + keeps + round 13 plan
+  - Gesture bank round 13 in a fresh session: docs/superpowers/plans/2026-10-18-round13-plan.md (interlocking regimes + lines that change hands)
 handoff_for: Codex
 ---
 
@@ -21,7 +21,10 @@ handoff_for: Codex
 drivers, a seven-sheet series, mass from stains, a Codex outsider, round 7
 revisited) and Ian's seed ran deep (Oehlen works on paper: research, 30
 approved references, found ground / conduction / intuition). Summary:
-`tools/gesture/results/round12-2026-10-18.md`; review page awaiting notes.
+`tools/gesture/results/round12-2026-10-18.md`. Ian's review: found ground is
+"absolute gold" — interlocking regimes is the direction (round 13 plan);
+drivers and stains rejected. Studies now 28 (found_ground, limb_signs,
+morphing_belt added).
 
 **Gesture bank, 17 October:** the research became a workflow, documented in
 `docs/GESTURE-BANK-PROCESS.md`. In the app: the Hand Drift bench, then
