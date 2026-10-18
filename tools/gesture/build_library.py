@@ -105,8 +105,6 @@ CORPORA = {
     "animal": ("round11-harvest.csv", ("group", "animal"), "round11-harvest.md", "generative",
                "Movement tracks: LifeTrack white stork and tropicbird GPS (Movebank, CC0), GeoLife (zipped). "
                "Used as drivers (round 12), not as hands."),
-    "fabric": ("round11-harvest.csv", ("group", "fabric"), "round11-harvest.md", "generative",
-               "Fabric Stain Dataset (466 photos + annotations): a mass-edge corpus (wicking fronts, tide lines)."),
 }
 
 
