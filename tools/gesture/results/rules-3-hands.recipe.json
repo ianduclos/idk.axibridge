@@ -1,0 +1,320 @@
+{
+ "panels": [
+  {
+   "label": "rules: trail_miner + dancer_madeline",
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 1346,
+   "margin": 4.0,
+   "arranger": {
+    "id": "rules",
+    "found": 2,
+    "found_boxes": [
+     0.33,
+     0.33,
+     0.48,
+     0.42,
+     -3.0,
+     0.42,
+     0.7,
+     0.6,
+     0.11,
+     -7.0
+    ],
+    "made_boxes": [
+     0.4,
+     0.5,
+     0.55,
+     0.75,
+     0.55,
+     0.5,
+     0.5,
+     0.7
+    ],
+    "cover_after": 1,
+    "cover_wh": [
+     24.0,
+     72.0
+    ],
+    "cover_edge": "drawn"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "diagram",
+      "chart": "kappa",
+      "hands": [
+       "trail_miner"
+      ]
+     }
+    },
+    {
+     "voice": {
+      "id": "oehlen_found_river",
+      "span_w": 2400,
+      "angle": 0.0,
+      "start": 0.0
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink"
+   }
+  },
+  {
+   "label": "rules: lichtenberg + trail_grazer",
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 1343,
+   "margin": 4.0,
+   "arranger": {
+    "id": "rules",
+    "found": 2,
+    "found_boxes": [
+     0.33,
+     0.33,
+     0.48,
+     0.42,
+     -3.0,
+     0.42,
+     0.7,
+     0.6,
+     0.11,
+     -7.0
+    ],
+    "made_boxes": [
+     0.4,
+     0.5,
+     0.55,
+     0.75,
+     0.55,
+     0.5,
+     0.5,
+     0.7
+    ],
+    "cover_after": 1,
+    "cover_wh": [
+     24.0,
+     72.0
+    ],
+    "cover_edge": "drawn"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "diagram",
+      "chart": "kappa",
+      "hands": [
+       "trail_miner"
+      ]
+     }
+    },
+    {
+     "voice": {
+      "id": "oehlen_found_river",
+      "span_w": 2400,
+      "angle": 0.0,
+      "start": 0.0
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "lichtenberg",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_grazer",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink"
+   }
+  },
+  {
+   "label": "rules: marden + dance_levitation",
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 1342,
+   "margin": 4.0,
+   "arranger": {
+    "id": "rules",
+    "found": 2,
+    "found_boxes": [
+     0.33,
+     0.33,
+     0.48,
+     0.42,
+     -3.0,
+     0.42,
+     0.7,
+     0.6,
+     0.11,
+     -7.0
+    ],
+    "made_boxes": [
+     0.4,
+     0.5,
+     0.55,
+     0.75,
+     0.55,
+     0.5,
+     0.5,
+     0.7
+    ],
+    "cover_after": 1,
+    "cover_wh": [
+     24.0,
+     72.0
+    ],
+    "cover_edge": "drawn"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "diagram",
+      "chart": "kappa",
+      "hands": [
+       "trail_miner"
+      ]
+     }
+    },
+    {
+     "voice": {
+      "id": "oehlen_found_river",
+      "span_w": 2400,
+      "angle": 0.0,
+      "start": 0.0
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "marden",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_levitation",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink"
+   }
+  },
+  {
+   "label": "rules: mime_mantis + fly_fru",
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 1347,
+   "margin": 4.0,
+   "arranger": {
+    "id": "rules",
+    "found": 2,
+    "found_boxes": [
+     0.33,
+     0.33,
+     0.48,
+     0.42,
+     -3.0,
+     0.42,
+     0.7,
+     0.6,
+     0.11,
+     -7.0
+    ],
+    "made_boxes": [
+     0.4,
+     0.5,
+     0.55,
+     0.75,
+     0.55,
+     0.5,
+     0.5,
+     0.7
+    ],
+    "cover_after": 1,
+    "cover_wh": [
+     24.0,
+     72.0
+    ],
+    "cover_edge": "drawn"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "diagram",
+      "chart": "kappa",
+      "hands": [
+       "trail_miner"
+      ]
+     }
+    },
+    {
+     "voice": {
+      "id": "oehlen_found_river",
+      "span_w": 2400,
+      "angle": 0.0,
+      "start": 0.0
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink"
+   }
+  }
+ ]
+}

@@ -1,0 +1,246 @@
+{
+ "panels": [
+  {
+   "label": "rules: no rule yet",
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 1317,
+   "margin": 4.0,
+   "arranger": {
+    "id": "rules",
+    "found": 2,
+    "found_boxes": [
+     0.33,
+     0.33,
+     0.48,
+     0.42,
+     -3.0,
+     0.42,
+     0.7,
+     0.6,
+     0.11,
+     -7.0
+    ],
+    "made_boxes": [
+     0.4,
+     0.5,
+     0.55,
+     0.75,
+     0.55,
+     0.5,
+     0.5,
+     0.7
+    ],
+    "cover_after": 1,
+    "cover_wh": [
+     24.0,
+     72.0
+    ],
+    "cover_edge": "drawn",
+    "rules": "",
+    "bold_pen": 0.25,
+    "hair_pen": 0.25
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "diagram",
+      "chart": "kappa",
+      "hands": [
+       "trail_miner"
+      ]
+     }
+    },
+    {
+     "voice": {
+      "id": "oehlen_found_river",
+      "span_w": 2400,
+      "angle": 0.0,
+      "start": 0.0
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink"
+   }
+  },
+  {
+   "label": "rules: rulebook (no breaks)",
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 1317,
+   "margin": 4.0,
+   "arranger": {
+    "id": "rules",
+    "found": 2,
+    "found_boxes": [
+     0.33,
+     0.33,
+     0.48,
+     0.42,
+     -3.0,
+     0.42,
+     0.7,
+     0.6,
+     0.11,
+     -7.0
+    ],
+    "made_boxes": [
+     0.4,
+     0.5,
+     0.55,
+     0.75,
+     0.55,
+     0.5,
+     0.5,
+     0.7
+    ],
+    "cover_after": 1,
+    "cover_wh": [
+     24.0,
+     72.0
+    ],
+    "cover_edge": "drawn",
+    "breaks": false
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "diagram",
+      "chart": "kappa",
+      "hands": [
+       "trail_miner"
+      ]
+     }
+    },
+    {
+     "voice": {
+      "id": "oehlen_found_river",
+      "span_w": 2400,
+      "angle": 0.0,
+      "start": 0.0
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink"
+   }
+  },
+  {
+   "label": "rules: piece",
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 1317,
+   "margin": 4.0,
+   "arranger": {
+    "id": "rules",
+    "found": 2,
+    "found_boxes": [
+     0.33,
+     0.33,
+     0.48,
+     0.42,
+     -3.0,
+     0.42,
+     0.7,
+     0.6,
+     0.11,
+     -7.0
+    ],
+    "made_boxes": [
+     0.4,
+     0.5,
+     0.55,
+     0.75,
+     0.55,
+     0.5,
+     0.5,
+     0.7
+    ],
+    "cover_after": 1,
+    "cover_wh": [
+     24.0,
+     72.0
+    ],
+    "cover_edge": "drawn"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "diagram",
+      "chart": "kappa",
+      "hands": [
+       "trail_miner"
+      ]
+     }
+    },
+    {
+     "voice": {
+      "id": "oehlen_found_river",
+      "span_w": 2400,
+      "angle": 0.0,
+      "start": 0.0
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     }
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink"
+   }
+  },
+  "log of panel 3"
+ ]
+}

@@ -1,0 +1,139 @@
+{
+ "kit": 1,
+ "frame": [
+  300.0,
+  200.0
+ ],
+ "seed": 1317,
+ "margin": 4.0,
+ "arranger": {
+  "id": "rules",
+  "found": 2,
+  "found_boxes": [
+   0.33,
+   0.33,
+   0.48,
+   0.42,
+   -3.0,
+   0.42,
+   0.7,
+   0.6,
+   0.11,
+   -7.0
+  ],
+  "made_boxes": [
+   0.4,
+   0.5,
+   0.55,
+   0.75,
+   0.55,
+   0.5,
+   0.5,
+   0.7
+  ],
+  "rules": "R1,R2,R3,R4,R5",
+  "breaks": true,
+  "step": 0.4,
+  "capture": 5.0,
+  "align": 0.6,
+  "listen_k": 0.05,
+  "straight_k": 0.012,
+  "listen_win": 4.0,
+  "ride": 30.0,
+  "ride_sd": 0.5,
+  "min_ride": 10.0,
+  "max_rides": 4,
+  "max_offset": 18.0,
+  "return_mm": 35.0,
+  "ramp": 2.5,
+  "ride_gap": 0.9,
+  "min_run": 14.0,
+  "carry_min": 28.0,
+  "carry_k": 1.0,
+  "region": "ink",
+  "region_pad": 6.0,
+  "exit_pad": 10.0,
+  "motif_len": 70.0,
+  "lead": 10.0,
+  "sigma": 1.0,
+  "motif_scale": 1.5,
+  "loops_r": 2.2,
+  "loops_p": 5.5,
+  "inset": 4.0,
+  "grow_reach": 22.0,
+  "cover_after": 1,
+  "cover_wh": [
+   24.0,
+   72.0
+  ],
+  "cover_tilt": 8.0,
+  "cover_margin": 14.0,
+  "made_share": 0.45,
+  "cover_edge": "drawn",
+  "min_stub": 4.0,
+  "found_ink": "blue",
+  "found_pen": 0.3,
+  "made_ink": "black",
+  "bold_pen": 0.9,
+  "hair_pen": 0.3
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "kappa",
+    "rows": 4,
+    "label_h": 2.2,
+    "drawn_by": null,
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "trail_miner"
+    ],
+    "length": 6.0,
+    "joins": "smooth",
+    "of_part": null,
+    "machine_a": "none",
+    "machine_b": "none",
+    "share": 0.35,
+    "aspect": null
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "oehlen_found_river",
+    "tile": "SB19",
+    "rank": 0,
+    "start": 0.0,
+    "span_w": 2400,
+    "angle": 0.0,
+    "stems": "grwl_far_sb19"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "dance_thrusting",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "river_bend",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "oehlen_found_ink",
+  "pen": 0.4
+ },
+ "label": "rules: piece"
+}
