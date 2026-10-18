@@ -1,0 +1,50 @@
+{
+ "kit": 1,
+ "frame": [
+  300.0,
+  160.0
+ ],
+ "seed": 6207,
+ "margin": 10.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "river_approach",
+    "stems": "grwl_far_sb19",
+    "tile": "SB19",
+    "rank": 0,
+    "start": 0.0,
+    "length_w": 7000,
+    "approaches": 4,
+    "peak": 40.0,
+    "width": 0.8,
+    "skew": 0.55,
+    "vary": 0.7,
+    "handover": "ladder",
+    "hands": [
+     "river_belt",
+     "river_meander",
+     "river_bend"
+    ],
+    "share": 0.5,
+    "simple": true,
+    "persist": 0.5,
+    "event": "neck",
+    "events": 1,
+    "loops": "river_cutoffs",
+    "far_mm": 1.0,
+    "plan": 10,
+    "angle": 0.0
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "wire",
+  "pen": 0.35
+ },
+ "label": "rnear"
+}

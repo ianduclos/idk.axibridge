@@ -1,0 +1,628 @@
+[
+ {
+  "name": "A carrier only: the magnified stem, no hands, no event",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    160.0
+   ],
+   "seed": 7101,
+   "margin": 10.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_approach",
+      "stems": "grwl_far_sb19",
+      "tile": "SB19",
+      "rank": 0,
+      "start": 0.0,
+      "length_w": 7000,
+      "approaches": 4,
+      "peak": 40.0,
+      "width": 0.8,
+      "skew": 0.55,
+      "vary": 0.7,
+      "handover": "none",
+      "hands": [
+       "river_belt",
+       "river_meander",
+       "river_bend"
+      ],
+      "share": 0.5,
+      "simple": true,
+      "persist": 0.5,
+      "event": "none",
+      "events": 1,
+      "loops": "river_cutoffs",
+      "far_mm": 1.0,
+      "plan": 10,
+      "angle": 0.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.35
+   },
+   "label": "rnear"
+  },
+  "describe": {
+   "plan_pick": 6,
+   "bends": 164,
+   "handed": 0,
+   "by_hand": [],
+   "events": [],
+   "resid_deg": 0.0,
+   "U": [
+    0,
+    2267
+   ],
+   "peaks": [
+    11.2,
+    6.7,
+    9.0,
+    40.0
+   ],
+   "fit": 0.298,
+   "points": 9161
+  }
+ },
+ {
+  "name": "B ladder 0.5: hands take bends in their zoom band",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    160.0
+   ],
+   "seed": 7102,
+   "margin": 10.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_approach",
+      "stems": "grwl_far_sb19",
+      "tile": "SB19",
+      "rank": 0,
+      "start": 0.0,
+      "length_w": 7000,
+      "approaches": 4,
+      "peak": 40.0,
+      "width": 0.8,
+      "skew": 0.55,
+      "vary": 0.7,
+      "handover": "ladder",
+      "hands": [
+       "river_belt",
+       "river_meander",
+       "river_bend"
+      ],
+      "share": 0.5,
+      "simple": true,
+      "persist": 0.5,
+      "event": "none",
+      "events": 1,
+      "loops": "river_cutoffs",
+      "far_mm": 1.0,
+      "plan": 10,
+      "angle": 0.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.35
+   },
+   "label": "rnear"
+  },
+  "describe": {
+   "plan_pick": 2,
+   "bends": 164,
+   "handed": 2,
+   "by_hand": [
+    1,
+    1,
+    0
+   ],
+   "events": [],
+   "resid_deg": 9.2,
+   "U": [
+    0,
+    2267
+   ],
+   "peaks": [
+    8.4,
+    15.9,
+    12.9,
+    40.0
+   ],
+   "fit": 0.241,
+   "points": 7318
+  }
+ },
+ {
+  "name": "C ladder 0.95: the hands own the middle zooms",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    160.0
+   ],
+   "seed": 7103,
+   "margin": 10.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_approach",
+      "stems": "grwl_far_sb19",
+      "tile": "SB19",
+      "rank": 0,
+      "start": 0.0,
+      "length_w": 7000,
+      "approaches": 4,
+      "peak": 40.0,
+      "width": 0.8,
+      "skew": 0.55,
+      "vary": 0.7,
+      "handover": "ladder",
+      "hands": [
+       "river_belt",
+       "river_meander",
+       "river_bend"
+      ],
+      "share": 0.95,
+      "simple": true,
+      "persist": 0.5,
+      "event": "none",
+      "events": 1,
+      "loops": "river_cutoffs",
+      "far_mm": 1.0,
+      "plan": 10,
+      "angle": 0.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.35
+   },
+   "label": "rnear"
+  },
+  "describe": {
+   "plan_pick": 5,
+   "bends": 164,
+   "handed": 5,
+   "by_hand": [
+    2,
+    2,
+    1
+   ],
+   "events": [],
+   "resid_deg": -9.7,
+   "U": [
+    0,
+    2267
+   ],
+   "peaks": [
+    18.8,
+    40.0,
+    10.3,
+    10.0
+   ],
+   "fit": 0.238,
+   "points": 7444
+  }
+ },
+ {
+  "name": "D peak only: river_bend near each peak",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    160.0
+   ],
+   "seed": 7104,
+   "margin": 10.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_approach",
+      "stems": "grwl_far_sb19",
+      "tile": "SB19",
+      "rank": 0,
+      "start": 0.0,
+      "length_w": 7000,
+      "approaches": 4,
+      "peak": 40.0,
+      "width": 0.8,
+      "skew": 0.55,
+      "vary": 0.7,
+      "handover": "peak",
+      "hands": [
+       "river_bend"
+      ],
+      "share": 0.5,
+      "simple": true,
+      "persist": 0.5,
+      "event": "none",
+      "events": 1,
+      "loops": "river_cutoffs",
+      "far_mm": 1.0,
+      "plan": 10,
+      "angle": 0.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.35
+   },
+   "label": "rnear"
+  },
+  "describe": {
+   "plan_pick": 0,
+   "bends": 164,
+   "handed": 2,
+   "by_hand": [
+    2,
+    0,
+    0
+   ],
+   "events": [],
+   "resid_deg": -36.0,
+   "U": [
+    0,
+    2267
+   ],
+   "peaks": [
+    40.0,
+    20.8,
+    14.8,
+    14.2
+   ],
+   "fit": 0.234,
+   "points": 7220
+  }
+ },
+ {
+  "name": "E ladder + a cut-off bend at the nearest approach",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    160.0
+   ],
+   "seed": 7105,
+   "margin": 10.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_approach",
+      "stems": "grwl_far_sb19",
+      "tile": "SB19",
+      "rank": 0,
+      "start": 0.0,
+      "length_w": 7000,
+      "approaches": 4,
+      "peak": 40.0,
+      "width": 0.8,
+      "skew": 0.55,
+      "vary": 0.7,
+      "handover": "ladder",
+      "hands": [
+       "river_belt",
+       "river_meander",
+       "river_bend"
+      ],
+      "share": 0.5,
+      "simple": true,
+      "persist": 0.5,
+      "event": "neck",
+      "events": 1,
+      "loops": "river_cutoffs",
+      "far_mm": 1.0,
+      "plan": 10,
+      "angle": 0.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.35
+   },
+   "label": "rnear"
+  },
+  "describe": {
+   "plan_pick": 0,
+   "bends": 164,
+   "handed": 5,
+   "by_hand": [
+    4,
+    0,
+    1
+   ],
+   "events": [
+    [
+     "neck",
+     3.2
+    ]
+   ],
+   "resid_deg": 9.0,
+   "U": [
+    0,
+    2267
+   ],
+   "peaks": [
+    40.0,
+    7.4,
+    11.1,
+    6.8
+   ],
+   "fit": 0.275,
+   "points": 8810
+  }
+ },
+ {
+  "name": "F one approach, slow in, quick out",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    160.0
+   ],
+   "seed": 7106,
+   "margin": 10.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_approach",
+      "stems": "grwl_far_sb19",
+      "tile": "SB19",
+      "rank": 0,
+      "start": 0.0,
+      "length_w": 7000,
+      "approaches": 1,
+      "peak": 40.0,
+      "width": 0.7,
+      "skew": 0.85,
+      "vary": 0.7,
+      "handover": "ladder",
+      "hands": [
+       "river_belt",
+       "river_meander",
+       "river_bend"
+      ],
+      "share": 0.5,
+      "simple": true,
+      "persist": 0.5,
+      "event": "neck",
+      "events": 1,
+      "loops": "river_cutoffs",
+      "far_mm": 1.0,
+      "plan": 10,
+      "angle": 0.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.35
+   },
+   "label": "rnear"
+  },
+  "describe": {
+   "plan_pick": 1,
+   "bends": 164,
+   "handed": 4,
+   "by_hand": [
+    3,
+    1,
+    0
+   ],
+   "events": [
+    [
+     "neck",
+     25.0
+    ]
+   ],
+   "resid_deg": -6.2,
+   "U": [
+    0,
+    2267
+   ],
+   "peaks": [
+    40.0
+   ],
+   "fit": 0.26,
+   "points": 7638
+  }
+ },
+ {
+  "name": "G three approaches, quick in, slow out",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    160.0
+   ],
+   "seed": 7107,
+   "margin": 10.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_approach",
+      "stems": "grwl_far_sb19",
+      "tile": "SB19",
+      "rank": 0,
+      "start": 0.0,
+      "length_w": 7000,
+      "approaches": 3,
+      "peak": 40.0,
+      "width": 0.8,
+      "skew": -0.6,
+      "vary": 0.7,
+      "handover": "ladder",
+      "hands": [
+       "river_belt",
+       "river_meander",
+       "river_bend"
+      ],
+      "share": 0.5,
+      "simple": true,
+      "persist": 0.5,
+      "event": "neck",
+      "events": 1,
+      "loops": "river_cutoffs",
+      "far_mm": 1.0,
+      "plan": 10,
+      "angle": 0.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.35
+   },
+   "label": "rnear"
+  },
+  "describe": {
+   "plan_pick": 1,
+   "bends": 164,
+   "handed": 6,
+   "by_hand": [
+    3,
+    2,
+    1
+   ],
+   "events": [
+    [
+     "neck",
+     2.7
+    ]
+   ],
+   "resid_deg": 32.0,
+   "U": [
+    0,
+    2267
+   ],
+   "peaks": [
+    9.4,
+    19.6,
+    40.0
+   ],
+   "fit": 0.255,
+   "points": 7892
+  }
+ },
+ {
+  "name": "H never close: four shallow approaches (peak 10)",
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    160.0
+   ],
+   "seed": 7108,
+   "margin": 10.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_approach",
+      "stems": "grwl_far_sb19",
+      "tile": "SB19",
+      "rank": 0,
+      "start": 0.0,
+      "length_w": 7000,
+      "approaches": 4,
+      "peak": 10.0,
+      "width": 0.8,
+      "skew": 0.55,
+      "vary": 0.7,
+      "handover": "ladder",
+      "hands": [
+       "river_belt",
+       "river_meander",
+       "river_bend"
+      ],
+      "share": 0.5,
+      "simple": true,
+      "persist": 0.5,
+      "event": "neck",
+      "events": 1,
+      "loops": "river_cutoffs",
+      "far_mm": 1.0,
+      "plan": 10,
+      "angle": 0.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "wire",
+    "pen": 0.35
+   },
+   "label": "rnear"
+  },
+  "describe": {
+   "plan_pick": 6,
+   "bends": 164,
+   "handed": 9,
+   "by_hand": [
+    9,
+    0,
+    0
+   ],
+   "events": [
+    [
+     "neck",
+     10.0
+    ]
+   ],
+   "resid_deg": -3.5,
+   "U": [
+    0,
+    2267
+   ],
+   "peaks": [
+    3.7,
+    6.2,
+    3.4,
+    10.0
+   ],
+   "fit": 0.305,
+   "points": 8426
+  }
+ }
+]
