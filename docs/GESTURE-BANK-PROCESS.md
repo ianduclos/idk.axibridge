@@ -248,6 +248,14 @@ library".
   new hands measured as distinct yet read to Ian as "a bit meh". When a pathway
   keeps passing the numbers and stops moving him, change the pathway, not the
   parameters (see §8).
+- A sound statistic is not a taste signal (round 12). Drivers passed a clean
+  control test, but to Ian they read as "the aesthetic we already achieved". What he
+  had been asking for all along turned out to be **regimes that interact**: a
+  line captured by another regime, becoming it, ignoring it, and going on
+  (Oehlen found ground, "absolute gold"). Rank by the relation between regimes.
+- An artist seed done as research → his approval of references → several
+  directions plus one free session found the round's best work. The free
+  "intuition" session was bold but thin. The procedure-reading threads paid off.
 
 ---
 
