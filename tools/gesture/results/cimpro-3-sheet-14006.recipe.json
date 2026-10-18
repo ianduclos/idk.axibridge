@@ -1,0 +1,41 @@
+{
+ "kit": 1,
+ "frame": [
+  300.0,
+  200.0
+ ],
+ "seed": 14006,
+ "margin": 0.0,
+ "arranger": {
+  "id": "cimpro",
+  "upto": 0,
+  "moves_max": 60,
+  "min_moves": 4,
+  "appetite": null,
+  "cell": 4.0,
+  "hands_k": 3,
+  "step": 0.35,
+  "inset": 7.0,
+  "heavy": [
+   1.6,
+   2.8
+  ],
+  "allow": ""
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "river_bend",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "oehlen_found_ink",
+  "pen": 0.4
+ },
+ "label": "cimpro 14006"
+}

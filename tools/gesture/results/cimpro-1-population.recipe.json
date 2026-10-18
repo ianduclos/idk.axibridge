@@ -1,0 +1,494 @@
+[
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14001,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14001"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14002,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14002"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14003,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14003"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14004,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14004"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14005,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14005"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14006,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14006"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14007,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14007"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14008,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14008"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14009,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14009"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14010,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14010"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14011,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14011"
+ },
+ {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 14012,
+  "margin": 0.0,
+  "arranger": {
+   "id": "cimpro",
+   "upto": 0,
+   "moves_max": 60,
+   "min_moves": 4,
+   "appetite": null,
+   "cell": 4.0,
+   "hands_k": 3,
+   "step": 0.35,
+   "inset": 7.0,
+   "heavy": [
+    1.6,
+    2.8
+   ],
+   "allow": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "cimpro 14012"
+ }
+]
