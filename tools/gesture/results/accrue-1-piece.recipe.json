@@ -1,0 +1,76 @@
+{
+ "kit": 1,
+ "frame": [
+  297.0,
+  105.0
+ ],
+ "seed": 3944,
+ "margin": 6.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "accrue_walk",
+    "hand": "river_belt",
+    "length": 9.0,
+    "scale": 0.45,
+    "K": 8,
+    "step": 0.3,
+    "chunk": 0.06,
+    "clear": 2.0,
+    "h0": 0.3,
+    "h_len": 0.25,
+    "h_use": 1.5,
+    "lam": 0.08,
+    "c_max": 32.0,
+    "habit": "loops",
+    "c0": 3.0,
+    "grow": 0.45,
+    "learn": 1.0,
+    "relapse": 0.5,
+    "knot_len": 14.0,
+    "relapse_turn": 3.1416,
+    "c_rate": 1.0,
+    "keep": 0.0,
+    "transfer": 4.0,
+    "spin_half": 35.0,
+    "release": 40.0,
+    "release_damp": 0.35,
+    "press_r": 3.0,
+    "press_on": 0.45,
+    "press_hold": 30.0,
+    "tire": 0.35,
+    "exhaust": 2,
+    "recall": 6.0,
+    "recall_gap": 150.0,
+    "mix": 0.8,
+    "stereo": 0.6,
+    "route": "ltr",
+    "pull": 6.0,
+    "look": 15.0,
+    "edge_k": 40.0
+   },
+   "modulators": [
+    {
+     "id": "accrue_ink",
+     "curl_on": 0.35,
+     "curl_r": 1.0,
+     "spin_floor": 0.04,
+     "spin_full": 0.15,
+     "W": 2.2,
+     "M": 4.0,
+     "phi0": 35.0,
+     "smooth": 6.0
+    }
+   ]
+  }
+ ],
+ "renderer": {
+  "id": "nib",
+  "style": "e",
+  "pen": 0.4
+ },
+ "label": "accrue: one line whose own loops form a habit, harden, break into a knot and hand their spin to the nib"
+}
