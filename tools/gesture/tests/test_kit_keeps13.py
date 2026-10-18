@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib.util
+from collections import Counter
 import json
 import sys
 from pathlib import Path
@@ -107,3 +108,35 @@ def test_belt_kappa_of_a_circle():
     t = np.linspace(0, 2 * np.pi, 2000)
     k = vb.kappa_of(np.c_[10 * np.cos(t), 10 * np.sin(t)], 0.25)
     assert abs(float(np.median(k)) - 0.1) < 1e-3
+
+
+def _piece(**arr):
+    r = json.loads((RESULTS / "oehlen_found-1-piece.recipe.json").read_text())
+    r["arranger"].update(arr)
+    return r
+
+
+def _roles(sheet):
+    return Counter((i.meta.get("role"), i.meta.get("colour")) for i in sheet.inks)
+
+
+def test_found_on_leaves_one_found_part_out_and_keeps_the_rest():
+    full = kit.run(_piece())
+    plate = kit.run(_piece(found_on="first"))
+    river = kit.run(_piece(found_on="second"))
+    nf = lambda s: sum(1 for i in s.inks if i.meta.get("role") == "found")       # noqa: E731
+    assert nf(plate) + nf(river) >= nf(full) - 2          # (a cut may split / drop stubs differently)
+    assert nf(river) < 5 < nf(plate)                     # the river is a line or two; the plate is many marks
+    lates = [i for i in river.inks if i.meta.get("role") == "late"]
+    assert len(lates) == 1
+
+
+def test_cover_use_filters_or_forces_the_composed_covers():
+    full = _roles(kit.run(_piece()))
+    none = _roles(kit.run(_piece(cover_use="none")))
+    cut = _roles(kit.run(_piece(cover_use="cut")))
+    tint = _roles(kit.run(_piece(cover_use="all-tint")))
+    assert full[("found", "green-400")] > 0 and none[("found", "green-400")] == 0
+    assert cut[("found", "green-400")] == 0                 # only the torn cut strip is left
+    assert tint[("found", "green-400")] > full[("found", "green-400")]
+    assert sum(none.values()) < sum(full.values())

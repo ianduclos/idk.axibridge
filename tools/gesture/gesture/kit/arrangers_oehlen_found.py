@@ -597,6 +597,9 @@ def _mk(points, role, ink, pen, part, extra_meta=None, neg=None):
       "lets a part keep its index, and so its seed, when others are added)"),
     P("found_boxes", "floats", [0.5, 0.5, 0.9, 0.9, 0.0],
       "per found part: cx, cy, w, h (shares of the frame) and angle (deg) of its pasted rectangle"),
+    P("found_on", "choice", "all", "which found parts are pasted: all | first | second (only that one; the "
+      "others are left out, and every part keeps its index, seed and pasted box)",
+      choices=("all", "first", "second")),
     P("crop", "float", 1.0, "found content is grown to fill its rectangle ÷ crop, then cut to the rectangle "
       "(< 1 keeps a margin, > 1 cuts through the content)", min=0.6, max=2.5),
     P("made_box", "floats", [], "made parts' box: cx, cy, w, h shares (empty = the sheet box)"),
@@ -629,6 +632,9 @@ def _mk(points, role, ink, pen, part, extra_meta=None, neg=None):
     P("cover_boxes", "floats", [], "explicit covers (composed, not searched): per cover cx, cy, w, h (shares of "
       "the frame), angle (deg), shape (0 cut, 1–4 torn top/right/bottom/left edge, 5 sheet), mode (0 cut, "
       "1 tint); empty = search"),
+    P("cover_use", "choice", "all", "explicit covers: all (as composed) | cut / tint (only the covers of that "
+      "mode) | none | all-cut / all-tint (every cover, in that mode)",
+      choices=("all", "cut", "tint", "none", "all-cut", "all-tint")),
     P("cover_w", "floats", [0.28, 0.42], "cover size range, share of the frame's short side"),
     P("cover_aspect", "floats", [0.5, 1.6], "cover w/h range"),
     P("cover_tilt", "float", 14.0, "cover tilt range ±deg", min=0.0, max=90.0),
@@ -653,9 +659,9 @@ def _mk(points, role, ink, pen, part, extra_meta=None, neg=None):
     P("edge_pen", "float", 0.25, "drawn cover edge pen, mm", min=0.05, max=3.0),
 ], doc="D1 + D2 after Oehlen's works on paper: found layers pasted and cut, made lines that grow from / ride / "
         "ignore them, cover cuts, a late line across the covers")
-def oehlen_found(ctx, parts, *, found, late, roles, found_boxes, crop, made_box, late_box, step, capture, align, ride,
+def oehlen_found(ctx, parts, *, found, late, roles, found_on, found_boxes, crop, made_box, late_box, step, capture, align, ride,
                  ride_sd, min_ride, listen, ignore, return_mm, ramp, grow, grow_reach, max_rides, ride_gap, max_offset, covers, cover_boxes,
-                 cover_mode, cover_shape, cover_w, cover_aspect, cover_tilt, cover_margin, cover_cuts, cover_edge,
+                 cover_mode, cover_shape, cover_use, cover_w, cover_aspect, cover_tilt, cover_margin, cover_cuts, cover_edge,
                  late_borrow, late_grow, grow_flip, late_capture, min_stub, found_ink, found_pen, made_ink, made_pen, late_ink, late_pen, tint_ink, tint_found_ink,
                  edge_pen):
     for nm in (found_ink, made_ink, late_ink, tint_ink, tint_found_ink):
@@ -680,6 +686,8 @@ def oehlen_found(ctx, parts, *, found, late, roles, found_boxes, crop, made_box,
     # 1. found layers, pasted and cut to their rectangles
     found_lines = []        # (part index, points, mark meta)
     for k, p in enumerate(f_parts):
+        if found_on != "all" and k != ("first", "second").index(found_on):
+            continue                                # left out: its index (seed, box) stays reserved
         cx, cy, bw, bh, ang = boxes[min(k, len(boxes) - 1)] if boxes else (0.5, 0.5, 0.9, 0.9, 0.0)
         cx, cy, bw, bh = cx * W, cy * H, bw * W, bh * H
         inner =(cx - (bw * crop) / 2, cy - (bh * crop) / 2, bw * crop, bh * crop)
@@ -736,6 +744,12 @@ def oehlen_found(ctx, parts, *, found, late, roles, found_boxes, crop, made_box,
             polys.append(cover_polygon(rng, (cx * W, cy * H), bw * W, bh * H, shp, 0.0,
                                        edge=(code - 1) if shp == "torn" else None, angle=ang))
             meta_log["covers"].append({"explicit": True, "polygon": np.round(polys[-1], 2).tolist()})
+        if cover_use != "all":
+            # every polygon was drawn first (the rng runs as composed), then the use is applied
+            keep = [cover_use in ("all-cut", "all-tint") or md == cover_use for md in modes]
+            polys = [q for q, k in zip(polys, keep) if k]
+            meta_log["covers"] = [c for c, k in zip(meta_log["covers"], keep) if k]
+            modes = [cover_use[4:] if cover_use.startswith("all-") else md for md, k in zip(modes, keep) if k]
     elif covers and late_raw:
         from shapely.geometry import LineString, Polygon  # noqa: PLC0415
         rng = ctx.rng("covers")
