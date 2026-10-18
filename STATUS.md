@@ -10,7 +10,7 @@ next:
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank round 14 in a fresh session: docs/superpowers/plans/2026-10-18-round14-plan.md (Oehlen composition study, then full dynamic compositions and a zooming line)
+  - Gesture bank round 14 in a fresh session: docs/superpowers/plans/2026-10-18-round14-plan.md (Oehlen composition study, then full dynamic compositions and the Amazon river zooming in and out along itself)
 handoff_for: Codex
 ---
 
@@ -23,7 +23,7 @@ answers) and `passage` (one line through six real hands, features whole,
 opening with accrue's free hand) — by Sol 6.1 agents. Ian: they work but are
 not dynamic enough; not frozen into the app. Next is round 14 (Oehlen
 composition study → full compositions different every time; a line that
-zooms in and out). Records: `tools/gesture/results/round13-*.md`.
+zooms in and out — the Amazon river line itself, to freshen it). Records: `tools/gesture/results/round13-*.md`.
 
 **Gesture bank, 18 October (round 12, new pathways):** keeps from round 11 are
 24 built-in Gesture Studies; six threads broke calcified defaults (sources as

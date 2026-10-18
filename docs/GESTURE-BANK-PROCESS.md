@@ -214,8 +214,9 @@ library".
   vocabularies more malleable." (round 13 review)
 - "Would have thought they were more dynamic though … Grabbing the techniques
   that work and making full compositions which are different every time." /
-  The Amazon river: "love it, but it's starting to be overused." (round 13
-  phase 2)
+  The Amazon river: "love it, but it's starting to be overused", and the fix
+  he wants on that same line: "zooming in and out, so you get the small dense
+  twists, and gradually they get larger, and smaller." (round 13 phase 2)
 
 ---
 
