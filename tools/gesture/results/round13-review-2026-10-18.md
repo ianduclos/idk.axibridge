@@ -106,3 +106,21 @@ The plate has six panels in two columns.
   other in a line … make the vocabularies more malleable", schedules "more
   erratic … blends of many, yet aware". Rules are a keeper. The ribbon is out
   for this context.
+
+## Ian's decision at the gate (2026-10-18)
+
+- **The studies are split by axis.**
+  - **Study A (Axis I).** The rules played over found ground, with contagion's
+    catches and mutual's dense call-and-response. Soup is allowed; density is
+    a quality.
+  - **Study B (Axis II).** One line passing through many real hands. It uses
+    gmorph's schedule across hands, made erratic and asymmetric ("blends of
+    many, yet aware"), plus handover's feature-by-feature stages and accrue's
+    free hand (seed 3966). No ribbon.
+- **Specimen "5" is "waves"**, read row by row: B's bends with A's handedness.
+  So 1/2/4 are the Cohen key, the bowed key and the coiled key, "promising to
+  add onto compositions".
+- Caution for B: Ian says "blending", meaning many sources passing into one
+  another. The handover dud shows that numeric averaging collapses a grammar
+  into a softened key. Hand over features whole, and let the schedule mix many
+  sources.
