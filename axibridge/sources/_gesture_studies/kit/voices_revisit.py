@@ -1,4 +1,4 @@
-# FROZEN from research commit efce219: tools/gesture/gesture/kit/voices_revisit.py
+# FROZEN from research commit 9c3844a: tools/gesture/gesture/kit/voices_revisit.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Where one limb stops, the line writes what the rest of the body did
 (round 12, thread `revisit`, 2026-10-17).

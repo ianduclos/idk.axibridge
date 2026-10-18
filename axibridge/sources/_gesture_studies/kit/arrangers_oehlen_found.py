@@ -1,4 +1,4 @@
-# FROZEN from research commit efce219: tools/gesture/gesture/kit/arrangers_oehlen_found.py
+# FROZEN from research commit 9c3844a: tools/gesture/gesture/kit/arrangers_oehlen_found.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Round 12, thread `oehlen_found` — D1 found ground, negotiated line + D2 cover cuts.
 
@@ -67,7 +67,7 @@ channel_kind("neg", "nearest")
 # polyline helpers
 # ---------------------------------------------------------------------------
 
-def _arclen(p: np.ndarray) -> np.ndarray:
+def arclen(p: np.ndarray) -> np.ndarray:
     if len(p) < 2:
         return np.zeros(len(p))
     return np.r_[0.0, np.cumsum(np.linalg.norm(np.diff(p, axis=0), axis=1))]
@@ -75,7 +75,7 @@ def _arclen(p: np.ndarray) -> np.ndarray:
 
 def resample(p: np.ndarray, step: float) -> np.ndarray:
     p = np.asarray(p, float)
-    s = _arclen(p)
+    s = arclen(p)
     if len(p) < 2 or s[-1] <= 0:
         return p.copy()
     n = max(int(round(s[-1] / step)), 1)
@@ -94,13 +94,13 @@ def tangents(p: np.ndarray, k: int = 4) -> np.ndarray:
     return d / np.maximum(L, 1e-9)
 
 
-def _rot(p: np.ndarray, c: np.ndarray, deg: float) -> np.ndarray:
+def rotate(p: np.ndarray, c: np.ndarray, deg: float) -> np.ndarray:
     a = math.radians(deg)
     R = np.array([[math.cos(a), -math.sin(a)], [math.sin(a), math.cos(a)]])
     return (np.asarray(p, float) - c) @ R.T + c
 
 
-def _bridge(a_end, ta, b_start, tb, step: float) -> np.ndarray:
+def bridge(a_end, ta, b_start, tb, step: float) -> np.ndarray:
     """Cubic Bézier from a_end (heading ta) to b_start (heading tb)."""
     d = float(np.linalg.norm(b_start - a_end))
     if d < 1e-6:
@@ -132,7 +132,7 @@ def join(pieces: list[tuple[np.ndarray, int]], ramp: float, step: float) -> tupl
     for (pa, ta), (pb, tb) in zip(trimmed[:-1], trimmed[1:]):
         hA = tangents(pa, 3)[-1]
         hB = tangents(pb, 3)[0]
-        br = _bridge(pa[-1], hA, pb[0], hB, step)
+        br = bridge(pa[-1], hA, pb[0], hB, step)
         pts += [br, pb]
         tags += [np.full(len(br), min(ta, tb), float), np.full(len(pb), tb, float)]
     return np.vstack(pts), np.concatenate(tags)
@@ -147,7 +147,7 @@ class Ground:
 
     def __init__(self, lines: list[np.ndarray], step: float, tag: int = 1):
         from scipy.spatial import cKDTree  # noqa: PLC0415
-        self.lines = [resample(l, step) for l in lines if len(l) >= 2 and _arclen(np.asarray(l))[-1] > 4 * step]
+        self.lines = [resample(l, step) for l in lines if len(l) >= 2 and arclen(np.asarray(l))[-1] > 4 * step]
         self.tan = [tangents(l, max(int(2.0 / step), 2)) for l in self.lines]
         self.tag = tag
         if self.lines:
@@ -163,7 +163,7 @@ class Ground:
         return self.tree.query_ball_point(p, r)
 
 
-def _ride(G: Ground, j: int, i0: int, direction: int, length: float, step: float):
+def ride_along(G: Ground, j: int, i0: int, direction: int, length: float, step: float):
     line = G.lines[j]
     n = int(round(length / step))
     if direction > 0:
@@ -243,7 +243,7 @@ def negotiate(M: np.ndarray, grounds: list[Ground], rng: np.random.Generator, *,
         L = min(L, avail * step)
         if L < min_ride:
             return None
-        seg = _ride(G, j, i0, direc, L, step)
+        seg = ride_along(G, j, i0, direc, L, step)
         # leave where the own line is nearest (a tangent exit back toward its own path), never beyond max_offset
         jj = np.minimum(ii + np.arange(len(seg)), n - 1)
         off = np.linalg.norm(seg - M[jj], axis=1)
@@ -296,7 +296,7 @@ def negotiate(M: np.ndarray, grounds: list[Ground], rng: np.random.Generator, *,
                     if move > grow_reach:
                         continue
                     for sc in (1.0, 0.9, 0.8):
-                        Mt = (_rot(M, M[0], rot) - M[0]) * sc + e
+                        Mt = (rotate(M, M[0], rot) - M[0]) * sc + e
                         lo, hi = Mt.min(axis=0), Mt.max(axis=0)
                         if lo[0] < x0 or lo[1] < y0 or hi[0] > x1 or hi[1] > y1:
                             continue
@@ -335,7 +335,7 @@ def negotiate(M: np.ndarray, grounds: list[Ground], rng: np.random.Generator, *,
         if best is not None:
             _, G, j, end, rot, e, sc = best
             m0 = M[0].copy()
-            M = resample((_rot(M, M[0], rot) - M[0]) * sc + e, step)
+            M = resample((rotate(M, M[0], rot) - M[0]) * sc + e, step)
             n = len(M)
             tM = tangents(M, max(int(2.0 / step), 2))
             line = G.lines[j]
@@ -404,16 +404,67 @@ def cover_polygon(rng, c, w, h, shape: str, tilt: float, edge: int | None = None
             poly = np.vstack([q[: e + 1], edge[1:-1], q[e + 1:]]) if e < 3 else np.vstack([q, edge[1:-1]])
         else:
             poly = q
-    poly = _rot(poly, np.zeros(2), ang) + np.asarray(c)
+    poly = rotate(poly, np.zeros(2), ang) + np.asarray(c)
     return np.vstack([poly, poly[:1]])
 
 
-def _split(lines, polys, min_stub: float, modes):
+def boundary_runs(l, boundary, classify):
+    """Cut a polyline ONLY where it meets `boundary` (a shapely linear geometry) → [(run, class)], with
+    `classify(xy) → int array` naming each run by a point inside it (closed polygons, as shapely: a run
+    lying ON the boundary counts as inside); neighbouring runs of one class (a
+    touch, not a crossing) are joined. Each crossing is found on its own segment, so a long segment
+    through a thin polygon is cut too. Unlike shapely's LineString ∩ / − Polygon, which also nodes a line
+    at its OWN crossings, a self-crossing line stays one run wherever no boundary cuts it (2026-10-18)."""
+    import shapely  # noqa: PLC0415
+    p = np.asarray(l, float)
+    n = len(p)
+    if n < 2:
+        return []
+    a, b = p[:-1], p[1:]
+    segs = shapely.linestrings(np.stack([a, b], axis=1))
+    shapely.prepare(boundary)
+    hit = np.flatnonzero(shapely.intersects(segs, boundary))
+    vcut = np.zeros(n, bool)
+    ins_s, ins_xy = np.zeros(0), np.zeros((0, 2))
+    if len(hit):
+        xy, k = shapely.get_coordinates(shapely.intersection(segs[hit], boundary), return_index=True)
+        i = hit[k]
+        d = b[i] - a[i]
+        t = np.clip(np.einsum("ij,ij->i", xy - a[i], d) / np.maximum(np.einsum("ij,ij->i", d, d), 1e-300), 0, 1)
+        eps = 1e-9
+        vcut[i[t <= eps]] = True
+        vcut[i[t >= 1 - eps] + 1] = True
+        mid = (t > eps) & (t < 1 - eps)
+        ins_s, first = np.unique(i[mid] + t[mid], return_index=True)
+        ins_xy = (a[i] + d * t[:, None])[mid][first]
+    S = np.r_[np.arange(n, dtype=float), ins_s]
+    order = np.argsort(S, kind="stable")
+    Q = np.vstack([p, ins_xy])[order]
+    cut = np.r_[vcut, np.ones(len(ins_s), bool)][order]
+    cut[0] = cut[-1] = True
+    ends = np.flatnonzero(cut)
+    runs = [Q[e0:e1 + 1] for e0, e1 in zip(ends[:-1], ends[1:])]
+    probe = []
+    for r in runs:                                     # the midpoint of a run's longest segment is off the boundary
+        j = int(np.argmax(np.linalg.norm(np.diff(r, axis=0), axis=1)))
+        probe.append((r[j] + r[j + 1]) / 2)
+    cls = classify(np.asarray(probe))
+    out = []
+    for r, c in zip(runs, cls):
+        if out and out[-1][1] == int(c):
+            out[-1] = (np.vstack([out[-1][0], r[1:]]), int(c))
+        else:
+            out.append((r, int(c)))
+    return out
+
+
+def split_by_covers(lines, polys, min_stub: float, modes):
     """Cut polylines by the cover polygons → [(line index, piece, tinted)].
     `cut` covers remove what is under them; `tint` covers keep it, flagged
     tinted (re-inked). A piece shortened by the cut and left under
     min_stub mm is dropped."""
-    from shapely.geometry import LineString, MultiLineString, Polygon  # noqa: PLC0415
+    import shapely  # noqa: PLC0415
+    from shapely.geometry import LineString, Polygon  # noqa: PLC0415
     from shapely.ops import unary_union  # noqa: PLC0415
     if not polys:
         return [(i, l, False) for i, l in enumerate(lines)]
@@ -421,33 +472,30 @@ def _split(lines, polys, min_stub: float, modes):
     U = unary_union([Polygon(p) for p in polys])
     tints = [Polygon(p) for p, m in zip(polys, modes) if m == "tint"]
     UT = unary_union(tints) if tints else None
+    edge = U.boundary if UT is None else shapely.union_all([U.boundary, UT.boundary])
+
+    def classify(xy):                                  # 0 outside every cover, 1 under a cut, 2 under a tint
+        c = shapely.intersects_xy(U, xy[:, 0], xy[:, 1]).astype(int)
+        if UT is not None:
+            c[shapely.intersects_xy(UT, xy[:, 0], xy[:, 1])] = 2
+        return c
+
     out = []
-
-    def parts(g):
-        if g.is_empty:
-            return []
-        if isinstance(g, LineString):
-            return [np.asarray(g.coords)]
-        if isinstance(g, MultiLineString):
-            return [np.asarray(x.coords) for x in g.geoms]
-        return [np.asarray(x.coords) for x in getattr(g, "geoms", []) if isinstance(x, LineString)]
-
     for li, l in enumerate(lines):
         if len(l) < 2:
             continue
-        L0 = float(_arclen(l)[-1])
-        ls = LineString(l)
-        if not ls.intersects(U):
+        L0 = float(arclen(l)[-1])
+        if not LineString(l).intersects(U):
             out.append((li, l, False))
             continue
-        for q in parts(ls.difference(U)):
-            Lq = float(_arclen(q)[-1])
-            if Lq >= min_stub or Lq >= L0 - 1e-6:
+        runs = boundary_runs(l, edge, classify)
+        for q, c in runs:
+            Lq = float(arclen(q)[-1])
+            if c == 0 and (Lq >= min_stub or Lq >= L0 - 1e-6):
                 out.append((li, q, False))
-        if UT is not None:
-            for q in parts(ls.intersection(UT)):
-                if float(_arclen(q)[-1]) >= min_stub:
-                    out.append((li, q, True))
+        for q, c in runs:
+            if c == 2 and float(arclen(q)[-1]) >= min_stub:
+                out.append((li, q, True))
     return out
 
 
@@ -545,7 +593,7 @@ def oehlen_found_river(ctx, *, tile, rank, start, span_w, angle, stems):
     p = q[a:a + n]
     c = p.mean(axis=0)
     ev = np.linalg.eigh(np.cov((p - c).T))[1][:, -1]          # principal axis → horizontal, then `angle`
-    p = _rot(p, c, angle - math.degrees(math.atan2(ev[1], ev[0])))
+    p = rotate(p, c, angle - math.degrees(math.atan2(ev[1], ev[0])))
     return fitted([p], ctx.box, metas=[{"found": f"grwl:{tile}:seg{seg}@{a}+{n}", "channel_w_m": wm,
                                         "rights": "GRWL V01.01, Allen & Pavelsky 2018, CC BY 4.0"}])
 
@@ -554,7 +602,7 @@ def oehlen_found_river(ctx, *, tile, rank, start, span_w, angle, stems):
 # the arranger
 # ---------------------------------------------------------------------------
 
-def _frac_boxes(v, frame, k):
+def frac_boxes(v, frame, k):
     v = list(v or [])
     out = []
     for i in range(0, len(v) - k + 1, k):
@@ -562,34 +610,44 @@ def _frac_boxes(v, frame, k):
     return out
 
 
-def _clip_rect(lines, rect_poly, min_stub):
-    from shapely.geometry import LineString, Polygon  # noqa: PLC0415
+def clip_rect(lines, rect_poly, min_stub):
+    """The pieces of each polyline inside the polygon, cut only at its edge (see `boundary_runs`); a
+    piece the edge shortened below min_stub mm is dropped."""
+    import shapely  # noqa: PLC0415
+    from shapely.geometry import Polygon  # noqa: PLC0415
     R = Polygon(rect_poly)
+
+    def inside(xy):
+        return shapely.intersects_xy(R, xy[:, 0], xy[:, 1]).astype(int)
+
     out = []
     for l in lines:
         if len(l) < 2:
             continue
-        L0 = float(_arclen(l)[-1])
-        g = LineString(l).intersection(R)
-        geoms = [g] if isinstance(g, LineString) else list(getattr(g, "geoms", []))
-        for x in geoms:
-            if isinstance(x, LineString) and not x.is_empty:
-                q = np.asarray(x.coords)
-                Lq = float(_arclen(q)[-1])
-                if Lq >= min_stub or Lq >= L0 - 1e-6:
-                    out.append(q)
+        L0 = float(arclen(l)[-1])
+        for q, c in boundary_runs(l, R.boundary, inside):
+            Lq = float(arclen(q)[-1])
+            if c and (Lq >= min_stub or Lq >= L0 - 1e-6):
+                out.append(q)
     return out
 
 
-def _rect(cx, cy, w, h, ang):
+def rect_polygon(cx, cy, w, h, ang):
     q = np.array([[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2], [-w / 2, -h / 2]])
-    return _rot(q + [cx, cy], np.array([cx, cy]), ang)
+    return rotate(q + [cx, cy], np.array([cx, cy]), ang)
 
 
-def _mk(points, role, ink, pen, part, extra_meta=None, neg=None):
+def make_mark(points, role, ink, pen, part, extra_meta=None, neg=None):
     ch = {} if neg is None else {"neg": neg}
     md = {"part": part, "of_role": role, "ink": ink, "pen": pen, **(extra_meta or {})}
     return Mark(points, ch, md)
+
+
+# The helpers above are public (2026-10-18): `rules`, `contagion` and the Gesture
+# Studies build on them, so their names and signatures are a contract. The old
+# private names stay as aliases for the round-12/13 experiments and tests.
+_arclen, _rot, _bridge, _ride = arclen, rotate, bridge, ride_along
+_split, _frac_boxes, _clip_rect, _rect, _mk = split_by_covers, frac_boxes, clip_rect, rect_polygon, make_mark
 
 
 @arranger("oehlen_found", params=[
@@ -681,7 +739,7 @@ def oehlen_found(ctx, parts, *, found, late, roles, found_on, found_boxes, crop,
         f_parts = [p for p, x in zip(parts, rl) if x == "found"]
         m_parts = [p for p, x in zip(parts, rl) if x == "made"]
         l_parts = [p for p, x in zip(parts, rl) if x == "late"]
-    boxes = _frac_boxes(found_boxes, ctx.frame, 5)
+    boxes = frac_boxes(found_boxes, ctx.frame, 5)
     out: list[Mark] = []
     meta_log = {"rides": [], "covers": []}
 
@@ -694,10 +752,10 @@ def oehlen_found(ctx, parts, *, found, late, roles, found_on, found_boxes, crop,
         cx, cy, bw, bh = cx * W, cy * H, bw * W, bh * H
         inner =(cx - (bw * crop) / 2, cy - (bh * crop) / 2, bw * crop, bh * crop)
         ms = p.run(inner)
-        rect = _rect(cx, cy, bw, bh, ang)
+        rect = rect_polygon(cx, cy, bw, bh, ang)
         for m in ms:
-            q = _rot(m.points, np.array([cx, cy]), ang)
-            for piece in _clip_rect([q], rect, min_stub):
+            q = rotate(m.points, np.array([cx, cy]), ang)
+            for piece in clip_rect([q], rect, min_stub):
                 found_lines.append((p.index, piece, {kk: m.meta[kk] for kk in ("plate_role", "measure_role", "found")
                                                      if kk in m.meta}))
 
@@ -796,11 +854,11 @@ def oehlen_found(ctx, parts, *, found, late, roles, found_on, found_boxes, crop,
     def emit(lines_tagged, role, ink, pen, cuts):
         for pi, l, extra in lines_tagged:
             if cuts and polys:
-                for _, q, inside in _split([l], polys, min_stub, modes):
-                    out.append(_mk(q, role, tint_found_ink if inside else ink, pen, pi,
+                for _, q, inside in split_by_covers([l], polys, min_stub, modes):
+                    out.append(make_mark(q, role, tint_found_ink if inside else ink, pen, pi,
                                    {**extra, "under_cover": bool(inside)}))
             else:
-                out.append(_mk(l, role, ink, pen, pi, extra))
+                out.append(make_mark(l, role, ink, pen, pi, extra))
 
     def is_text(md):
         return md.get("plate_role") == "label" or md.get("measure_role") == "index"
@@ -837,7 +895,7 @@ def oehlen_found(ctx, parts, *, found, late, roles, found_on, found_boxes, crop,
             tinted = any(P.contains(Point(c)) for P in tintP)
             for a in g:
                 pi, l, extra = text[a]
-                out.append(_mk(l, "found", tint_found_ink if tinted else found_ink, found_pen, pi,
+                out.append(make_mark(l, "found", tint_found_ink if tinted else found_ink, found_pen, pi,
                                {**extra, "under_cover": tinted}))
     else:
         emit(text, "found", found_ink, found_pen, False)
@@ -845,13 +903,13 @@ def oehlen_found(ctx, parts, *, found, late, roles, found_on, found_boxes, crop,
         if cover_cuts in ("all", "made") and polys:
             from scipy.spatial import cKDTree  # noqa: PLC0415
             tree = cKDTree(l)
-            for _, q, inside in _split([l], polys, min_stub, modes):
+            for _, q, inside in split_by_covers([l], polys, min_stub, modes):
                 q = resample(q, step)
                 neg = tags[tree.query(q)[1]]
-                out.append(_mk(q, "made", tint_ink if inside else made_ink, made_pen, pi,
+                out.append(make_mark(q, "made", tint_ink if inside else made_ink, made_pen, pi,
                                {"under_cover": bool(inside)}, neg=neg))
         else:
-            out.append(_mk(l, "made", made_ink, made_pen, pi, None, neg=tags))
+            out.append(make_mark(l, "made", made_ink, made_pen, pi, None, neg=tags))
 
     # 6. late lines: drawn over everything; may ride the covers' edges
     grounds = []
@@ -873,7 +931,7 @@ def oehlen_found(ctx, parts, *, found, late, roles, found_on, found_boxes, crop,
             meta_log["rides"].append({"part": pi, "late": True, "rides": log})
         else:
             pts, tags = l, np.zeros(len(l))
-        out.append(_mk(pts, "late", late_ink, late_pen, pi, None, neg=tags))
+        out.append(make_mark(pts, "late", late_ink, late_pen, pi, None, neg=tags))
 
     if polys:
         from shapely.geometry import LineString, Polygon  # noqa: PLC0415
@@ -883,7 +941,7 @@ def oehlen_found(ctx, parts, *, found, late, roles, found_on, found_boxes, crop,
             c["mode"] = md
     for poly in polys:
         if cover_edge == "drawn":
-            out.append(_mk(poly, "edge", found_ink, edge_pen, parts[-1].index))
+            out.append(make_mark(poly, "edge", found_ink, edge_pen, parts[-1].index))
     if out:
         out[0] = out[0].evolve(meta={"oehlen_found": meta_log})
     return out
