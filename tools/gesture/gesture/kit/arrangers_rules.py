@@ -53,8 +53,8 @@ import math
 
 import numpy as np
 
-from .arrangers_oehlen_found import (FLEXOKI, Ground, _arclen, _bridge, _clip_rect, _rect, _rot, _split,
-                                     cover_polygon, join, resample, tangents)
+from .arrangers_oehlen_found import (FLEXOKI, Ground, arclen, bridge, clip_rect, cover_polygon, join, rect_polygon,
+                                     resample, rotate, split_by_covers, tangents)
 from .core import Mark, P, arranger, channel_kind
 
 channel_kind("bold", "nearest")
@@ -213,7 +213,7 @@ def walk(M, G: Ground, owner: list[int], rng, *, found_kind=None, step, capture,
                             pieces.append((np.array(cur), 0))
                         tag = 1 if kind == "fire" else 4
                         pieces.append((seg, tag))
-                        L_done = float(_arclen(seg)[-1])
+                        L_done = float(arclen(seg)[-1])
                         rides.append({"ground_line": int(j), "found_part": int(owner[j]), "len": L_done, "tag": tag,
                                       "end_index": int(min(i0 + (len(seg) - 1) * direc, len(line) - 1))
                                       if direc > 0 else int(max(i0 - (len(seg) - 1), 0))})
@@ -281,7 +281,7 @@ def entry(M, G, owner, found_kind, rng, *, frame, box, step, inset, grow_reach, 
                         "xy": [round(float(tail[0][0]), 1), round(float(tail[0][1]), 1)], "s_mm": 0.0,
                         "why": BREAKS["R3"] + f" of {_name(found_kind, owner[j])} ({best[0]:.0f} mm away)",
                         "found_part": owner[j]})
-            br = _bridge(tail[-1], tangents(tail, 3)[-1], M[0], tangents(resample(M, step), 3)[0], step)
+            br = bridge(tail[-1], tangents(tail, 3)[-1], M[0], tangents(resample(M, step), 3)[0], step)
             tail = np.vstack([tail, br, M[:1]]) if len(br) else np.vstack([tail, M[:1]])
             return [(tail, 1)], M, {"grown_from": owner[j]}
     E, nrm, _ = _edge_point(M[0], frame, inset)
@@ -299,7 +299,7 @@ def entry(M, G, owner, found_kind, rng, *, frame, box, step, inset, grow_reach, 
             M = Mt
             break
     st = np.vstack([resample(np.array([stair[q], stair[q + 1]]), step)[:-1] for q in range(3)] + [s_end[None]])
-    br = _bridge(s_end, nrm, M[0], tangents(resample(M, step), 3)[0], step)
+    br = bridge(s_end, nrm, M[0], tangents(resample(M, step), 3)[0], step)
     st = np.vstack([st, br, M[:1]]) if len(br) else np.vstack([st, M[:1]])
     log.append({"rule": "R3", "event": "fire", "line": line_id,
                 "xy": [round(float(E[0]), 1), round(float(E[1]), 1)], "s_mm": 0.0,
@@ -375,7 +375,7 @@ def exit_motif(pts, tags, inside, region_of, G, owner, found_kind, rides, rng, *
     contour's own wiggle into the blank over motif_len, then stops."""
     n = len(pts)
     exits = [i for i in range(1, n) if inside[i - 1] and not inside[i]]
-    s = _arclen(pts)
+    s = arclen(pts)
     src_part, src_line, src_idx = None, None, None
     if rides:
         rd = rides[-1]
@@ -507,7 +507,7 @@ def finish_line(d, *, on, G, owner, found_kind, r1_region, r2_region, rng, step,
                         "s_mm": round(a * step, 1),
                         "why": "heavy over the found" if v else "a hairline into the blank"})
         if breaks:
-            s = _arclen(pts)
+            s = arclen(pts)
             for a, b, v in _runs(riding):
                 if not v:
                     continue
@@ -544,7 +544,7 @@ def _emit(ctx, found_lines, made, covers, min_stub, step, found_ink, found_pen, 
                     continue
                 pieces = [l]
             else:
-                pieces = [q for _, q, _ in _split([l], polys, min_stub, "cut")]
+                pieces = [q for _, q, _ in split_by_covers([l], polys, min_stub, "cut")]
         else:
             pieces = [l]
         for q in pieces:
@@ -563,7 +563,7 @@ def _emit(ctx, found_lines, made, covers, min_stub, step, found_ink, found_pen, 
             if cut_polys:
                 tree = cKDTree(q)
                 subs = []
-                for _, r, _ in _split([q], cut_polys, min_stub, "cut"):
+                for _, r, _ in split_by_covers([q], cut_polys, min_stub, "cut"):
                     r = resample(r, step)
                     subs.append((r, qt[tree.query(r)[1]]))
             for r, rt in subs:
@@ -574,7 +574,7 @@ def _emit(ctx, found_lines, made, covers, min_stub, step, found_ink, found_pen, 
                                  "pen": bold_pen if v else hair_pen, "bold": bool(v), "line": d["line"]}))
     meta = {"log": log, "rules": sorted(on), "breaks": bool(breaks),
             "covers": [{"polygon": np.round(c, 2).tolist(), "cuts_made": bool(cm)} for c, cm in covers],
-            "lines": [{"line": d["line"], "part": d["part"], "len_mm": round(float(_arclen(d["pts"])[-1]), 1),
+            "lines": [{"line": d["line"], "part": d["part"], "len_mm": round(float(arclen(d["pts"])[-1]), 1),
                        "rides": [{k: (round(v, 1) if isinstance(v, float) else v) for k, v in r.items()}
                                  for r in d["rides"]],
                        "motif": d.get("motif"), "entry": d.get("info")}
@@ -683,12 +683,12 @@ def rules_arranger(ctx, parts, *, found, found_boxes, made_boxes, rules, breaks,
     for k, p in enumerate(f_parts):
         cx, cy, bw, bh, ang = fb[min(k, len(fb) - 1)]
         cx, cy, bw, bh = cx * W, cy * H, bw * W, bh * H
-        rect = _rect(cx, cy, bw, bh, ang)
+        rect = rect_polygon(cx, cy, bw, bh, ang)
         rects.append((p.index, rect))
         kinds[p.index] = _kind_of(p)
         for m in p.run((cx - bw / 2, cy - bh / 2, bw, bh)):
-            q = _rot(m.points, np.array([cx, cy]), ang)
-            for piece in _clip_rect([q], rect, min_stub):
+            q = rotate(m.points, np.array([cx, cy]), ang)
+            for piece in clip_rect([q], rect, min_stub):
                 ext = float(np.linalg.norm(piece.max(axis=0) - piece.min(axis=0)))
                 found_lines.append((p.index, piece, ext < 5.0))      # short marks are lettering: never ridden
     ridable = [(pi, l) for pi, l, txt in found_lines if not txt]
@@ -696,7 +696,7 @@ def rules_arranger(ctx, parts, *, found, found_boxes, made_boxes, rules, breaks,
     # Ground drops lines shorter than 4 steps: rebuild the owner list on what it kept
     owner = []
     for pi, l in ridable:
-        if len(l) >= 2 and _arclen(np.asarray(l))[-1] > 4 * step:
+        if len(l) >= 2 and arclen(np.asarray(l))[-1] > 4 * step:
             owner.append(pi)
     from shapely.geometry import MultiLineString  # noqa: PLC0415
     rect_pads = [(pi, Polygon(r).buffer(2.0)) for pi, r in rects]

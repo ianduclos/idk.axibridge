@@ -50,8 +50,8 @@ import math
 
 import numpy as np
 
-from .arrangers_oehlen_found import (FLEXOKI, Ground, _arclen, _clip_rect, _frac_boxes, _mk, _rect, _ride, _rot,
-                                     resample, tangents)
+from .arrangers_oehlen_found import (FLEXOKI, Ground, arclen, clip_rect, frac_boxes, make_mark, rect_polygon,
+                                     resample, ride_along, rotate, tangents)
 from .core import Mark, P, arranger, channel_kind
 
 channel_kind("catch", "nearest")
@@ -269,7 +269,7 @@ def _cat(pieces):
 
 def _join(pieces, ramp, step):
     """found ground's tangent join (`arrangers_oehlen_found.join`), carrying per-point codes."""
-    from .arrangers_oehlen_found import _bridge  # noqa: PLC0415
+    from .arrangers_oehlen_found import bridge  # noqa: PLC0415
     pieces = [(np.asarray(p, float), np.asarray(c, float)) for p, c in pieces if len(p) >= 2]
     if not pieces:
         return np.empty((0, 2)), np.empty(0)
@@ -284,7 +284,7 @@ def _join(pieces, ramp, step):
         tr.append((p[a:b], c[a:b]))
     pts, cs = [tr[0][0]], [tr[0][1]]
     for (pa, ca), (pb, cb) in zip(tr[:-1], tr[1:]):
-        br = _bridge(pa[-1], tangents(pa, 3)[-1], pb[0], tangents(pb, 3)[0], step)
+        br = bridge(pa[-1], tangents(pa, 3)[-1], pb[0], tangents(pb, 3)[0], step)
         pts += [br, pb]
         cs += [np.full(len(br), OWN, float), cb]
     return np.vstack(pts), np.concatenate(cs)
@@ -359,7 +359,7 @@ def contagion_walk(M, grounds: dict, grammars: dict, rng: np.random.Generator, *
                 _, reg, G, j, i0, direc = best
                 avail = (len(G.lines[j]) - 1 - i0) if direc > 0 else i0
                 L = min(_lognorm(rng, ride, ride_sd), avail * step)
-                seg = _ride(G, j, i0, direc, L, step) if L >= min_ride else None
+                seg = ride_along(G, j, i0, direc, L, step) if L >= min_ride else None
                 if seg is not None and len(seg) >= 3:
                     jj = np.minimum(i + np.arange(len(seg)), n - 1)
                     off = np.linalg.norm(seg - M[jj], axis=1)
@@ -661,21 +661,21 @@ def contagion(ctx, parts, *, found, found_boxes, crop, late_box, regimes, catch,
     W, H = ctx.frame
     found = min(found, len(parts))
     f_parts, l_parts = parts[:found], parts[found:]
-    boxes = _frac_boxes(found_boxes, ctx.frame, 5)
+    boxes = frac_boxes(found_boxes, ctx.frame, 5)
     out: list[Mark] = []
     found_lines = []
     for k, p in enumerate(f_parts):
         cx, cy, bw, bh, ang = boxes[min(k, len(boxes) - 1)] if boxes else (0.5, 0.5, 0.9, 0.9, 0.0)
         cx, cy, bw, bh = cx * W, cy * H, bw * W, bh * H
         ms = p.run((cx - bw * crop / 2, cy - bh * crop / 2, bw * crop, bh * crop))
-        rect = _rect(cx, cy, bw, bh, ang)
+        rect = rect_polygon(cx, cy, bw, bh, ang)
         for m in ms:
-            q = _rot(m.points, np.array([cx, cy]), ang)
+            q = rotate(m.points, np.array([cx, cy]), ang)
             md = {kk: m.meta[kk] for kk in ("plate_role", "measure_role", "found") if kk in m.meta}
-            for piece in _clip_rect([q], rect, 4.0):
+            for piece in clip_rect([q], rect, 4.0):
                 found_lines.append((p.index, piece, md))
     for pi, l, md in found_lines:
-        out.append(_mk(l, "found", found_ink, found_pen, pi, md))
+        out.append(make_mark(l, "found", found_ink, found_pen, pi, md))
 
     by = {r: [l for _, l, md in found_lines if _regime_of(md) == r] for r in REGIMES}
     grammars = {}
