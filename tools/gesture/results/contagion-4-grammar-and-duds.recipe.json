@@ -1,0 +1,143 @@
+{
+ "piece": {
+  "kit": 1,
+  "frame": [
+   205.0,
+   297.0
+  ],
+  "seed": 5302,
+  "margin": 10.0,
+  "arranger": {
+   "id": "contagion",
+   "found": 2,
+   "found_boxes": [
+    0.5,
+    0.27,
+    0.9,
+    0.44,
+    -2.5,
+    0.5,
+    0.55,
+    0.95,
+    0.13,
+    -8.0
+   ],
+   "crop": 1.0,
+   "late_box": [
+    0.5,
+    0.55,
+    0.9,
+    0.82
+   ],
+   "regimes": "both",
+   "catch": "catch",
+   "step": 0.3,
+   "capture": 4.0,
+   "align": 0.5,
+   "listen": 60.0,
+   "ignore": 60.0,
+   "ride": 14.0,
+   "ride_sd": 0.4,
+   "min_ride": 6.0,
+   "ride_gap": 0.9,
+   "return_mm": 30.0,
+   "ramp": 2.0,
+   "max_offset": 18.0,
+   "catches": 3,
+   "full_river": 45.0,
+   "decay_river": 80.0,
+   "full_plate": 35.0,
+   "decay_plate": 40.0,
+   "tick_linger": 2.0,
+   "immune_mm": 60.0,
+   "own_mm": 6.0,
+   "rule_tol": 3.5,
+   "snap": 20.0,
+   "rule_shared": 9.0,
+   "tick_pitch": 6.3,
+   "omega_max": 120.0,
+   "river_axis": 10.0,
+   "found_ink": "blue",
+   "found_pen": 0.3,
+   "late_ink": "black",
+   "late_pen": 0.7
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "hokusai",
+     "length": 4.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next",
+      "cut": "inflection",
+      "grain": 0.012,
+      "plate": "taxonomy",
+      "order": "time",
+      "norm": "chord",
+      "cells": 24,
+      "families": 5,
+      "group": "shape",
+      "trace": false,
+      "hist": "none",
+      "hist_style": "steps",
+      "page": "diptych",
+      "split": 0.6,
+      "rechain": "sign",
+      "mirror": false,
+      "blend": 0.0,
+      "shadow": "none",
+      "shadow_gain": 5.0,
+      "degrees": true,
+      "explode": 0.6,
+      "cap": 2.5,
+      "label_h": 2.0,
+      "index_h": 2.0,
+      "avoid": true,
+      "numbers": "all",
+      "drawn_by": null,
+      "straight": "rules+labels",
+      "amount": 1.5,
+      "keep": 0.006
+     }
+    ]
+   },
+   {
+    "voice": {
+     "id": "oehlen_found_river",
+     "tile": "SB19",
+     "rank": 0,
+     "start": 0.0,
+     "span_w": 2400,
+     "angle": 0.0,
+     "stems": "grwl_far_sb19"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_thrusting",
+     "length": 4.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "contagion"
+ },
+ "seeds": {
+  "carried": 5302,
+  "way_out": 5303,
+  "ar_dud": 5304,
+  "plate_walk": 5305
+ },
+ "rebuild": "tools/gesture/experiments/contagion.py final (grammar_image)"
+}
