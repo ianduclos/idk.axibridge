@@ -185,6 +185,7 @@ library".
 | Studies v2 | Seven studies from the round-10 review (numbered atlas, dance atlas, margin chart, merged shadow, chorus kept as a pen-per-voice group, sampler, ledger with straight lines); edits stay pinned; exact clothoid memos (~1.45×) | [studies spec](superpowers/specs/2026-10-17-gesture-studies.md) "Studies v2" |
 | Round 11 | Emphasis on hands: 20 new hands (rivers at three zooms + a braid voice; leaf-miner, beetle, slime, borer, oak-net, grazer and particle-track trails; two fly hands from mosca-draw's simulated walks; six per-dancer hands, barely distinguishable); smooth swelling into round mass (drop/press/lens), deliberate dot shapes, bold single gestures; solid abstract script (joining decides it; weight window 0.25–0.42 band cover); measurement versions (taxonomy plate, specimens re-chained into a second drawing); refreeze to 44 hands; ten new corpora approved for download | `round11-2026-10-17.md`, review page in `HANDOFF.md` |
 
+| Round 13 | Interlocking regimes (rules, mutual, contagion) and lines that change hands (gmorph, handover, accrue, stages); Ian kept rules, liked the dense "duds"; phase 2 built two studies as kit techniques (`found_play`, `passage`) with Sol 6.1 agents. Ian: correct "but more dynamic", so not frozen; next is full compositions | `round13-2026-10-18.md`, `round13-review-2026-10-18.md`, `round13-phase2-2026-10-18.md` |
 | Round 12 | New pathways against calcification: sources as drivers (stork/mosquito steering a river line), a seven-sheet series, mass from fabric stains, a Codex-run outsider thread, round 7 revisited; Ian's seed "Oehlen works on paper, go deep" as research → approved downloads → found ground, conduction and an intuition-steered session; ≤ 5 images per thread; keeps → 24 studies | `round12-2026-10-18.md`, review page in `HANDOFF.md` |
 
 ### Turns in direction (Ian's words)
@@ -209,6 +210,12 @@ library".
 - "Albert Oehlen works on paper, go deep." / "Some radical alternative approach,
   session self steered by intuition." / Rivers as found material only "like a
   far away view of the river, tight zigzag curves." (round 12 seed)
+- "The real sources blending into each other in a line … make the
+  vocabularies more malleable." (round 13 review)
+- "Would have thought they were more dynamic though … Grabbing the techniques
+  that work and making full compositions which are different every time." /
+  The Amazon river: "love it, but it's starting to be overused." (round 13
+  phase 2)
 
 ---
 
@@ -258,6 +265,13 @@ library".
   as duds; Ian liked those and called the rules thread a keeper. He rewards richness of
   interaction, many relations at once and a line passing through several real sources,
   over one readable relation. Show the "too much" versions as candidates, not as duds.
+- A fixed composition with a varying line collapses into a template (round 13
+  phase 2). Both studies did what they were built to do, and Ian found them not
+  dynamic. Density of events inside one layout is not dynamics. The
+  composition itself (frame, layers, scale contrasts, blank) has to vary
+  and decide, so the test is a population of compositions, not one piece.
+  A diagnostic can be a picture: the colour map of what each line was doing was
+  the one image he commented on as a drawing.
 - An artist seed done as research → his approval of references → several
   directions plus one free session found the round's best work. The free
   "intuition" session was bold but thin. The procedure-reading threads paid off.
@@ -280,6 +294,10 @@ calcifying. Written at the end of rounds 8–11 (2026-10-17).
   specs) and the records (round summaries, review records, this file).
 - **Exploration agents** (Opus, background) each own one idea, one risk and
   only their own files. App builds are a separate agent that freezes from HEAD.
+- **Study builds** (making a kept technique into a study, building it, freezing
+  it) go to **Sol 6.1 (Codex) agents** (Ian, 2026-10-18: "for the study builds
+  use sol 6.1 subagents"). Each gets a self-contained brief naming the files it
+  owns. The lead reviews the diff and images and commits.
 - **Sessions**: one long session per run, then a wrap-up and a plan; the next
   run starts fresh from `HANDOFF.md` and the plan file (stale context is the
   main failure source in long sessions).

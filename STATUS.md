@@ -3,18 +3,27 @@ project: idk.axibridge
 state: active
 updated: 2026-10-18
 machine: mac+pi
-summary: The gesture bank has found its direction (interlocking regimes, from the round-12 Oehlen found-ground thread) and keeps work as 28 Gesture Studies in the app; MCP/live-sync and the 8 October integration still await Ian's native acceptance.
+summary: The gesture bank closed round 13 (interlocking regimes and lines through many hands, now kit techniques) and moves to full dynamic compositions in round 14; MCP/live-sync and the 8 October integration still await Ian's native acceptance.
 next:
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
   - Check recovery close/relaunch, nested groups, Assets and Mosca 2 in the native app
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank round 13 in a fresh session: docs/superpowers/plans/2026-10-18-round13-plan.md (interlocking regimes + lines that change hands)
+  - Gesture bank round 14 in a fresh session: docs/superpowers/plans/2026-10-18-round14-plan.md (Oehlen composition study, then full dynamic compositions and a zooming line)
 handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Gesture bank, 18 October (round 13 closed):** seven approaches on two axes
+(interlocking regimes; a line that changes hands), then two studies built as
+kit techniques — `found_play` (rules over found ground with catches and
+answers) and `passage` (one line through six real hands, features whole,
+opening with accrue's free hand) — by Sol 6.1 agents. Ian: they work but are
+not dynamic enough; not frozen into the app. Next is round 14 (Oehlen
+composition study → full compositions different every time; a line that
+zooms in and out). Records: `tools/gesture/results/round13-*.md`.
 
 **Gesture bank, 18 October (round 12, new pathways):** keeps from round 11 are
 24 built-in Gesture Studies; six threads broke calcified defaults (sources as
