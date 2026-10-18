@@ -1,0 +1,471 @@
+{
+ "kit": 1,
+ "frame": [
+  220.0,
+  300.0
+ ],
+ "seed": 1464,
+ "margin": 6.0,
+ "arranger": {
+  "id": "cgram",
+  "sentence": "paste src=chart x=0.917 y=0.412 w=0.66 h=0.35 rot=5.8 chart=atlas ; traverse p=waves x=0.775 y=0.451 ang=113 len=8.4 pen=0.16 play=catch lat=0.37 ; repeat of=@0 x=0.28 y=0.29 s=0.64 rot=49.4 ; repeat of=@0 x=0.45 y=0.75 s=2.01 ; seed p=loops x=0.652 y=0.363 r=0.6 n=5 len=1.1 pen=0.16 play=catch ; repeat of=@4 x=0.25 y=0.16 s=0.44 rot=74.9 ; morph p=belt x=0.39 y=0.83 w=0.85 h=0.15 rot=31.4 len=8.7 pen=0.75 ; seed p=belt x=0.804 y=0.422 r=0.6 n=3 len=4.3 pen=0.84 play=catch ; traverse p=waves x=0.675 y=0.322 ang=-13.1 len=6.4 pen=0.99 play=catch lat=0.37 ; traverse p=mantis x=0.729 y=0.377 ang=89.7 len=5.8 pen=0.69 play=catch lat=0.17 ; soup x=0.741 y=0.321 w=0.58 h=0.31 T=153 ; paste src=chart x=0.629 y=0.234 w=0.47 h=0.15 rot=0.3 chart=route ; traverse p=belt x=0.621 y=0.3 ang=-20.9 len=4.6 pen=0.84 play=catch lat=0.33 ; seed p=waves x=0.759 y=0.39 r=0.229 n=4 len=2 pen=0.74 play=ride ; answer to=@4 p=belt len=3 pen=1.01 reach=0.25 ; repeat of=@10 x=0.56 y=0.76 s=1.05 ; contaminate on=@8 with=rule at=0.53 len=59.3 ; seed p=coiled x=0.616 y=0.321 r=0.6 n=6 len=5.6 pen=0.17 play=catch ; contaminate on=@17 with=stair at=0.43 len=23.7 q=5 ; trail on=@7 len=2.4 ; contaminate on=@7 with=rule at=0.66 len=18.9 ; zoom of=@17 at=0.61 len=52 s=0.54 x=0.28 y=0.65 rot=51.6 ; counter of=@17 s=0.45 pen=0.2 play=catch p=waves ; contaminate on=@22 with=coil at=0.64 len=52.8 q=3 per=3.2 ; contaminate on=@22 with=coil at=0.67 len=20.7 q=2 per=3 ; stop on=@22 at=0.49 ; counter of=@13 s=0.38 pen=0.93 play=none p=mantis ; contaminate on=@26 with=coil at=0.33 len=28 q=2.7 per=1.6 ; cover x=0.62 y=0.49 w=0.24 h=0.31 rot=8.9 shape=cut mode=cut ; counter of=@26 s=0.65 pen=0.73 play=catch p=waves ; repeat of=@17 x=0.5 y=0.36 s=0.69 ; repeat of=@17 x=0.82 y=0.67 s=0.62 rot=-30 ; morph p=coiled x=0.36 y=0.54 w=0.85 h=0.4 rot=1.2 len=7 pen=0.91 ; zoom of=@32 at=0 len=145.7 s=0.58 x=0.36 y=0.8 rot=-76.3 ; seed p=coiled x=0.716 y=0.345 r=0.6 n=7 len=1.4 pen=0.73 play=catch ; paste src=chart x=0.642 y=0.699 w=0.6 h=0.13 rot=0.5 chart=route ; morph p=coiled x=0.4 y=0.21 w=0.76 h=0.36 rot=20.4 len=5.3 pen=0.87 ; counter of=@34 s=0.65 pen=0.45 play=none p=mantis",
+  "step": 0.4,
+  "min_stub": 6.0,
+  "found_ink": "blue",
+  "chart_ink": "red",
+  "made_ink": "black",
+  "tint_ink": "green",
+  "tint_found_ink": "green-400"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "oehlen_found_river",
+    "tile": "SB19",
+    "rank": 0,
+    "start": 0.0,
+    "span_w": 1600,
+    "angle": 0.0,
+    "stems": "grwl_far_sb19"
+   },
+   "modulators": [],
+   "label": "river"
+  },
+  {
+   "voice": {
+    "id": "diagram",
+    "chart": "kappa",
+    "rows": 4,
+    "label_h": 2.2,
+    "drawn_by": null,
+    "amount": 1.5,
+    "keep": 0.006,
+    "hands": [
+     "trail_miner"
+    ],
+    "length": 6.0,
+    "joins": "smooth",
+    "of_part": null,
+    "machine_a": "none",
+    "machine_b": "none",
+    "share": 0.35,
+    "aspect": null
+   },
+   "modulators": [],
+   "label": "chart"
+  },
+  {
+   "voice": {
+    "id": "morph_handover",
+    "hands": [
+     "meander69",
+     "fly_open"
+    ],
+    "order": "bend,turn,corner",
+    "windows": [
+     2.0,
+     2.0,
+     2.0,
+     2.0,
+     2.0,
+     2.0
+    ],
+    "ease": 1.3,
+    "run": 4.0,
+    "R_mm": 85.0,
+    "rows": 1,
+    "route": [],
+    "ahead": 25.0,
+    "band": 14.0,
+    "chunk": 8,
+    "K": 10,
+    "pull": 3.0,
+    "clear": 1.2,
+    "step": 0.3,
+    "max_mm": 900.0,
+    "mode": "features"
+   },
+   "modulators": [],
+   "label": "key"
+  },
+  {
+   "voice": {
+    "id": "morph_handover",
+    "hands": [
+     "meander69",
+     "fly_open"
+    ],
+    "order": "bend,turn,corner",
+    "windows": [
+     -1.0,
+     -1.0,
+     2.0,
+     2.0,
+     -1.0,
+     -1.0
+    ],
+    "ease": 1.3,
+    "run": 4.0,
+    "R_mm": 85.0,
+    "rows": 1,
+    "route": [],
+    "ahead": 25.0,
+    "band": 14.0,
+    "chunk": 8,
+    "K": 10,
+    "pull": 3.0,
+    "clear": 1.2,
+    "step": 0.3,
+    "max_mm": 900.0,
+    "mode": "features"
+   },
+   "modulators": [],
+   "label": "waves"
+  },
+  {
+   "voice": {
+    "id": "morph_handover",
+    "hands": [
+     "meander69",
+     "fly_open"
+    ],
+    "order": "bend,turn,corner",
+    "windows": [
+     -1.0,
+     -1.0,
+     -1.0,
+     -1.0,
+     2.0,
+     2.0
+    ],
+    "ease": 1.3,
+    "run": 4.0,
+    "R_mm": 85.0,
+    "rows": 1,
+    "route": [],
+    "ahead": 25.0,
+    "band": 14.0,
+    "chunk": 8,
+    "K": 10,
+    "pull": 3.0,
+    "clear": 1.2,
+    "step": 0.3,
+    "max_mm": 900.0,
+    "mode": "features"
+   },
+   "modulators": [],
+   "label": "coiled"
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "dance_thrusting",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": [],
+   "label": "thrusting"
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "river_bend",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": [],
+   "label": "bend"
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "trail_miner",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": [],
+   "label": "miner"
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "mime_mantis",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": [],
+   "label": "mantis"
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "fly_fru",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": [],
+   "label": "fly"
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "hokusai",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": [],
+   "label": "hokusai"
+  },
+  {
+   "voice": {
+    "id": "hand",
+    "hand": "dancer_madeline",
+    "length": 3.0,
+    "joins": "smooth"
+   },
+   "modulators": [],
+   "label": "madeline"
+  },
+  {
+   "voice": {
+    "id": "cgram_free",
+    "free_seed": 3966
+   },
+   "modulators": [],
+   "label": "free"
+  },
+  {
+   "voice": {
+    "id": "passage",
+    "hands": [
+     "meander69",
+     "fly_open",
+     "river_belt",
+     "hokusai",
+     "dance_staccato",
+     "mime_roadrunner"
+    ],
+    "opening": "none",
+    "free_seed": 3966,
+    "erratic": 0.35,
+    "many": 0.35,
+    "specimen": 0.35,
+    "section_length": 24.0,
+    "asym": 0.7,
+    "aware": 0.8,
+    "recall": 6.0,
+    "recall_gap": 150.0,
+    "malleable": 0.2,
+    "R_mm": 100.0,
+    "rows": 1,
+    "K": 8,
+    "chunk": 5,
+    "step": 0.3,
+    "band": 18.0,
+    "ahead": 23.0,
+    "pull": 4.0,
+    "clear": 1.2,
+    "max_mm": 900.0
+   },
+   "modulators": [],
+   "label": "passage"
+  },
+  {
+   "voice": {
+    "id": "gmorph",
+    "hand": "river_belt",
+    "length": 6.0,
+    "span": null,
+    "turn": [
+     0.0,
+     0.2,
+     0.5,
+     0.9,
+     1.0,
+     0.3
+    ],
+    "corners": null,
+    "sharp": null,
+    "sign": null,
+    "gain": [
+     0.0,
+     1.0,
+     0.6,
+     2.6,
+     1.0,
+     1.2
+    ],
+    "pull": null,
+    "r": null,
+    "loop_rad": 7.0,
+    "pull0": 0.12,
+    "hold": 0.02,
+    "focus": 0.14,
+    "knn": 40,
+    "scale_mm": 100.0,
+    "step": 0.25
+   },
+   "modulators": [],
+   "label": "gmorph"
+  },
+  {
+   "voice": {
+    "id": "belt",
+    "hand": "river_belt",
+    "length": 6.0,
+    "joins": "smooth",
+    "gain": 1.2,
+    "gain_end": 3.2,
+    "pull": 0.25,
+    "drift_mm": 40.0,
+    "step": 0.25,
+    "read_box": [
+     0.175,
+     0.175,
+     129.65,
+     99.65
+    ]
+   },
+   "modulators": [],
+   "label": "belt"
+  },
+  {
+   "voice": {
+    "id": "revisit_glyph",
+    "trail": "particles",
+    "host": "rfoot",
+    "with_": "none",
+    "layout": "body",
+    "row_gap": 0.25,
+    "t0": 0.0,
+    "seconds": 40.0,
+    "still": 0.15,
+    "min_hold_s": 0.35,
+    "merge_s": 0.3,
+    "pad_s": 0.5,
+    "draw": "figures",
+    "pick": "path",
+    "limbs": "loudest",
+    "max_fig_s": 1.6,
+    "size": "fit",
+    "spread": 0.4,
+    "scale": 0.35,
+    "fig": 0.07,
+    "close": "excursion",
+    "max_glyphs": 12,
+    "r_glyph": 1.15,
+    "slow_mass": 0.6,
+    "slow_at": 0.35,
+    "ramp": 0.15,
+    "nib_mm": 0.9,
+    "mass_mm": 1.6,
+    "nib_deg": 40.0
+   },
+   "modulators": [],
+   "label": "signs"
+  },
+  {
+   "voice": {
+    "id": "river_loops",
+    "loops": "river_cutoffs",
+    "family": "oxbow",
+    "mode": "knot",
+    "host": "river_meander",
+    "length": 5.0,
+    "n": 5,
+    "size": 0.8,
+    "size_sd": 0.35,
+    "gap": 0.12,
+    "jitter": 0.15,
+    "loop_r": 0.0
+   },
+   "modulators": [],
+   "label": "loops"
+  },
+  {
+   "voice": {
+    "id": "mutual",
+    "T": 150,
+    "upto": 0,
+    "river_scale": 1.5,
+    "river_sigma": 9.0,
+    "river_start": [
+     0.0,
+     0.62
+    ],
+    "river_heading": 0.0,
+    "river_speed": 1.8,
+    "river_kmax": 0.07,
+    "river_nat": 1.0,
+    "river_rush": 2.3,
+    "river_flow": 0.08,
+    "wrap_r": 13.0,
+    "wrap_deg": 160.0,
+    "graph_band": [
+     0.05,
+     0.95,
+     0.12
+    ],
+    "graph_amp": 9.0,
+    "graph_noise": 0.5,
+    "burst_ticks": 7,
+    "refractory": 6,
+    "lift_max": 4,
+    "quakes": "tohoku2011,maule2010,sumatra2004,nepal2015",
+    "bold_hand": "dance_thrusting",
+    "bold_k": 0.21,
+    "bold_len": 1.0,
+    "bold_speed": 7.0,
+    "ride_mm": 45.0,
+    "ride_gap": 0.9,
+    "turn_deg": 80.0,
+    "turn_gap": 60.0,
+    "knot_mm": 2.2,
+    "patience": 50,
+    "appetite_cost": 0.35,
+    "appetite_gain": 0.012,
+    "refuse_below": 0.25,
+    "bold_start": 4,
+    "bold_entries": [],
+    "invite": 1.0,
+    "wire_hand": "trail_slime",
+    "wire_k": 0.12,
+    "wire_len": 1.2,
+    "wire_speed": 3.0,
+    "wire_awake": 9.0,
+    "refuse_r": 5.0,
+    "wire_gap": 1.1,
+    "wire_start": [
+     0.08,
+     1.0
+    ],
+    "wire_heading": -60.0,
+    "wire_start_tick": 0,
+    "wire_curious": true,
+    "wake_max": 2,
+    "blank": [
+     0.8,
+     0.8,
+     0.17
+    ],
+    "n_cand": 6,
+    "step": 0.4,
+    "pens": [
+     0.3,
+     0.3,
+     1.0,
+     0.25
+    ],
+    "inks": "red,blue,black,black"
+   },
+   "modulators": [],
+   "label": "soup"
+  }
+ ],
+ "renderer": {
+  "id": "oehlen_found_ink",
+  "pen": 0.4
+ },
+ "label": "cgram 1464 (n38 d0.73 habit0.79)",
+ "notes": "temperament: blank=[0.22, 0.8, 0.315, 0.291], core=[0.713, 0.382], hair=0.16, heavy=1.09, intruder=False, n=38"
+}
