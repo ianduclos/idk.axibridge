@@ -1,0 +1,28 @@
+{
+ "kit": 1,
+ "frame": [
+  300.0,
+  200.0
+ ],
+ "seed": 60101,
+ "margin": 4.0,
+ "arranger": {
+  "id": "cproc",
+  "frame_name": "landscape",
+  "density": null
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "cproc_score"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "cproc_ink",
+  "pen": 0.4
+ },
+ "label": "cproc 60101",
+ "notes": "frame: landscape \u2014 the full bed: room for a decided blank"
+}

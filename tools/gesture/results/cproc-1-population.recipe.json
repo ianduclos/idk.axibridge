@@ -1,0 +1,542 @@
+[
+ {
+  "seed": 50011,
+  "decisions": {
+   "seed": 50011,
+   "frame": "portrait 200\u00d7290",
+   "density": "dense 0.87",
+   "core": "(38,178) r111",
+   "blank": "island",
+   "dominant": "hand",
+   "crosses": [
+    true
+   ],
+   "order": "hand:catch \u2192 hand:answer \u2192 hand:answer \u2192 hand:passage \u2192 hand:negotiate \u2192 found:chart* \u2192 trave:arc \u2192 hand:answer \u2192 hand:negotiate \u2192 hand:negotiate \u2192 hand:negotiate \u2192 hand:catch \u2192 struc:specimens \u2192 trail:hand \u2192 rever:band \u2192 cross:hand \u2192 heavy:gesture",
+   "intruder": "gesture 1.99",
+   "reversal": "band at blank_edge (0.125 of sheet, cut 160.1 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    200.0,
+    290.0
+   ],
+   "seed": 50011,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "portrait",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 50011",
+   "notes": "frame: portrait \u2014 portrait: a high core and a lower blank, or the reverse"
+  }
+ },
+ {
+  "seed": 51013,
+  "decisions": {
+   "seed": 51013,
+   "frame": "strip 300\u00d780",
+   "density": "all-over 0.956",
+   "core": "(230,13) r233",
+   "blank": "island",
+   "dominant": "found",
+   "crosses": [
+    true
+   ],
+   "order": "found:loops \u2192 hand:answer \u2192 found:trail* \u2192 trave:river \u2192 hand:negotiate \u2192 hand:catch \u2192 hand:free \u2192 rever:cover \u2192 cross:hand \u2192 hand:soup \u2192 hand:catch \u2192 heavy:reink",
+   "intruder": "reink 2.02",
+   "reversal": "cover at core_edge (0.122 of sheet, cut 330.0 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    80.0
+   ],
+   "seed": 51013,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "strip",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 51013",
+   "notes": "frame: strip \u2014 a strip: the traverse is longer than the eye takes in at once"
+  }
+ },
+ {
+  "seed": 52027,
+  "decisions": {
+   "seed": 52027,
+   "frame": "portrait 200\u00d7290",
+   "density": "dense 0.672",
+   "core": "(57,122) r102 + (53,246) r58",
+   "blank": "band",
+   "dominant": "hand",
+   "crosses": [
+    true
+   ],
+   "order": "found:chart \u2192 found:river \u2192 found:loops \u2192 hand:negotiate \u2192 hand:negotiate \u2192 hand:answer \u2192 trave:arc \u2192 hand:catch \u2192 hand:answer \u2192 count:cluster \u2192 hand:passage \u2192 rever:cover \u2192 cross:hand \u2192 trail:hand \u2192 heavy:gesture",
+   "intruder": "gesture 2.23",
+   "reversal": "cover at core (0.065 of sheet, cut 1164.6 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    200.0,
+    290.0
+   ],
+   "seed": 52027,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "portrait",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 52027",
+   "notes": "frame: portrait \u2014 portrait: a high core and a lower blank, or the reverse"
+  }
+ },
+ {
+  "seed": 53039,
+  "decisions": {
+   "seed": 53039,
+   "frame": "portrait 200\u00d7290",
+   "density": "all-over 0.967",
+   "core": "(92,53) r264 + (161,180) r118",
+   "blank": "band",
+   "dominant": "soup",
+   "crosses": [
+    true
+   ],
+   "order": "hand:catch \u2192 hand:negotiate \u2192 found:trail* \u2192 found:chart* \u2192 trave:river \u2192 hand:catch \u2192 struc:specimens \u2192 hand:soup \u2192 count:cluster \u2192 hand:negotiate \u2192 found:loops* \u2192 hand:free \u2192 hand:limb \u2192 hand:passage \u2192 trail:hand \u2192 hand:catch \u2192 hand:negotiate \u2192 heavy:reink \u2192 rever:tint \u2192 cross:hand",
+   "intruder": "reink 1.47",
+   "reversal": "tint at core (0.091 of sheet, cut 0.0 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    200.0,
+    290.0
+   ],
+   "seed": 53039,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "portrait",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 53039",
+   "notes": "frame: portrait \u2014 portrait: a high core and a lower blank, or the reverse"
+  }
+ },
+ {
+  "seed": 54049,
+  "decisions": {
+   "seed": 54049,
+   "frame": "band 300\u00d7140",
+   "density": "sparse 0.06",
+   "core": "(88,57) r28 + (212,20) r14",
+   "blank": "corner",
+   "dominant": "structure",
+   "crosses": [
+    true
+   ],
+   "order": "found:trail \u2192 struc:chart \u2192 trail:hand \u2192 hand:limb \u2192 rever:cover \u2192 cross:hand \u2192 count:cluster \u2192 trave:belt",
+   "intruder": "none",
+   "reversal": "cover at anywhere (0.057 of sheet, cut 36.1 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    140.0
+   ],
+   "seed": 54049,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "band",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 54049",
+   "notes": "frame: band \u2014 a low band: wide, but short enough that density meets both edges"
+  }
+ },
+ {
+  "seed": 55057,
+  "decisions": {
+   "seed": 55057,
+   "frame": "portrait 200\u00d7290",
+   "density": "dense 0.641",
+   "core": "(118,192) r81 + (60,58) r29",
+   "blank": "island",
+   "dominant": "soup",
+   "crosses": [
+    true
+   ],
+   "order": "found:loops \u2192 found:chart \u2192 found:trail \u2192 hand:soup \u2192 struc:specimens \u2192 hand:negotiate \u2192 hand:catch \u2192 hand:catch \u2192 hand:answer \u2192 count:cluster \u2192 trail:hand \u2192 trave:belt \u2192 rever:band \u2192 cross:hand \u2192 heavy:gesture \u2192 hand:catch",
+   "intruder": "gesture 2.18",
+   "reversal": "band at blank_edge (0.058 of sheet, cut 889.9 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    200.0,
+    290.0
+   ],
+   "seed": 55057,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "portrait",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 55057",
+   "notes": "frame: portrait \u2014 portrait: a high core and a lower blank, or the reverse"
+  }
+ },
+ {
+  "seed": 56069,
+  "decisions": {
+   "seed": 56069,
+   "frame": "column 105\u00d7290",
+   "density": "sparse 0.016",
+   "core": "(68,119) r17",
+   "blank": "side",
+   "dominant": "hand",
+   "crosses": [
+    true
+   ],
+   "order": "struc:chart \u2192 hand:catch \u2192 found:trail* \u2192 trave:belt \u2192 hand:catch \u2192 rever:band \u2192 cross:hand \u2192 hand:negotiate \u2192 trail:hand \u2192 heavy:limb",
+   "intruder": "limb 2.0",
+   "reversal": "band at core_edge (0.15 of sheet, cut 312.6 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    105.0,
+    290.0
+   ],
+   "seed": 56069,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "column",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 56069",
+   "notes": "frame: column \u2014 a column: the traverse falls, the scales stack"
+  }
+ },
+ {
+  "seed": 57077,
+  "decisions": {
+   "seed": 57077,
+   "frame": "portrait 200\u00d7290",
+   "density": "sparse 0.062",
+   "core": "(37,212) r34",
+   "blank": "side",
+   "dominant": "structure",
+   "crosses": [
+    true
+   ],
+   "order": "trave:passage \u2192 found:river* \u2192 struc:specimens \u2192 heavy:reink \u2192 hand:catch \u2192 rever:cover \u2192 cross:hand",
+   "intruder": "reink 1.87",
+   "reversal": "cover at core_edge (0.131 of sheet, cut 1175.4 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    200.0,
+    290.0
+   ],
+   "seed": 57077,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "portrait",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 57077",
+   "notes": "frame: portrait \u2014 portrait: a high core and a lower blank, or the reverse"
+  }
+ },
+ {
+  "seed": 58089,
+  "decisions": {
+   "seed": 58089,
+   "frame": "strip 300\u00d780",
+   "density": "open 0.267",
+   "core": "(62,46) r23 + (110,51) r8",
+   "blank": "corner",
+   "dominant": "found",
+   "crosses": [
+    true
+   ],
+   "order": "found:river \u2192 found:loops \u2192 count:cluster \u2192 hand:negotiate \u2192 rever:cover \u2192 cross:hand \u2192 trave:belt",
+   "intruder": "none",
+   "reversal": "cover at blank_edge (0.014 of sheet, cut 0.0 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    80.0
+   ],
+   "seed": 58089,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "strip",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 58089",
+   "notes": "frame: strip \u2014 a strip: the traverse is longer than the eye takes in at once"
+  }
+ },
+ {
+  "seed": 59093,
+  "decisions": {
+   "seed": 59093,
+   "frame": "small 150\u00d7105",
+   "density": "open 0.337",
+   "core": "(85,27) r30 + (129,74) r14",
+   "blank": "band",
+   "dominant": "structure",
+   "crosses": [
+    true
+   ],
+   "order": "found:loops \u2192 count:cluster \u2192 hand:passage \u2192 struc:specimens \u2192 trave:waves \u2192 found:braid \u2192 rever:cover \u2192 cross:hand \u2192 hand:answer \u2192 hand:passage",
+   "intruder": "none",
+   "reversal": "cover at blank_edge (0.101 of sheet, cut 116.1 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    150.0,
+    105.0
+   ],
+   "seed": 59093,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "small",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 59093",
+   "notes": "frame: small \u2014 a small sheet: density compresses, every scale is near"
+  }
+ },
+ {
+  "seed": 60101,
+  "decisions": {
+   "seed": 60101,
+   "frame": "landscape 300\u00d7200",
+   "density": "sparse 0.01",
+   "core": "(79,65) r38",
+   "blank": "corner",
+   "dominant": "traverse",
+   "crosses": [
+    true
+   ],
+   "order": "hand:negotiate \u2192 trave:arc \u2192 trave:passage \u2192 rever:tint \u2192 cross:hand \u2192 heavy:gesture",
+   "intruder": "gesture 1.43",
+   "reversal": "tint at core (0.049 of sheet, cut 0.0 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 60101,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "landscape",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 60101",
+   "notes": "frame: landscape \u2014 the full bed: room for a decided blank"
+  }
+ },
+ {
+  "seed": 61109,
+  "decisions": {
+   "seed": 61109,
+   "frame": "strip 300\u00d780",
+   "density": "dense 0.491",
+   "core": "(137,59) r24 + (105,36) r13",
+   "blank": "side",
+   "dominant": "structure",
+   "crosses": [
+    true
+   ],
+   "order": "found:braid \u2192 found:river \u2192 trail:hand \u2192 hand:limb \u2192 count:cluster \u2192 hand:negotiate \u2192 trave:waves \u2192 struc:specimens \u2192 hand:passage \u2192 rever:band \u2192 cross:hand",
+   "intruder": "none",
+   "reversal": "band at core_edge (0.234 of sheet, cut 517.4 mm)"
+  },
+  "recipe": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    80.0
+   ],
+   "seed": 61109,
+   "margin": 4.0,
+   "arranger": {
+    "id": "cproc",
+    "frame_name": "strip",
+    "density": null
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "cproc_score"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "cproc_ink",
+    "pen": 0.4
+   },
+   "label": "cproc 61109",
+   "notes": "frame: strip \u2014 a strip: the traverse is longer than the eye takes in at once"
+  }
+ }
+]

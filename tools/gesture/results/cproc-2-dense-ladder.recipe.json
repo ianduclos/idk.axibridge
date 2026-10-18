@@ -1,0 +1,28 @@
+{
+ "kit": 1,
+ "frame": [
+  200.0,
+  290.0
+ ],
+ "seed": 50011,
+ "margin": 4.0,
+ "arranger": {
+  "id": "cproc",
+  "frame_name": "portrait",
+  "density": null
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "cproc_score"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "cproc_ink",
+  "pen": 0.4
+ },
+ "label": "cproc 50011",
+ "notes": "frame: portrait \u2014 portrait: a high core and a lower blank, or the reverse"
+}
