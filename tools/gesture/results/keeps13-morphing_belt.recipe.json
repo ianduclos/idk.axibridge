@@ -1,0 +1,64 @@
+{
+ "default": {
+  "kit": 1,
+  "frame": [
+   280.0,
+   60.0
+  ],
+  "seed": 12407,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "belt",
+     "hand": "river_belt",
+     "length": 8.0,
+     "joins": "smooth",
+     "gain": 1.8,
+     "gain_end": 1.8,
+     "pull": 0.25
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "River belt, tighter (a line that morphs)"
+ },
+ "morph": {
+  "kit": 1,
+  "frame": [
+   280.0,
+   60.0
+  ],
+  "seed": 12407,
+  "margin": null,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "belt",
+     "hand": "river_belt",
+     "length": 8.0,
+     "joins": "smooth",
+     "gain": 1.0,
+     "gain_end": 2.6,
+     "pull": 0.25
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.35
+  },
+  "label": "River belt, tighter (a line that morphs)"
+ }
+}

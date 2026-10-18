@@ -1,0 +1,336 @@
+{
+ "default": {
+  "kit": 1,
+  "frame": [
+   205.0,
+   297.0
+  ],
+  "seed": 4441,
+  "margin": 10.0,
+  "arranger": {
+   "id": "oehlen_found",
+   "found": 2,
+   "late": 1,
+   "roles": "",
+   "found_boxes": [
+    0.5,
+    0.4,
+    0.9,
+    0.66,
+    -2.5,
+    0.5,
+    0.6,
+    0.95,
+    0.15,
+    -10.0
+   ],
+   "crop": 1.0,
+   "made_box": [],
+   "late_box": [
+    0.5,
+    0.55,
+    0.9,
+    0.7
+   ],
+   "step": 0.4,
+   "capture": 3.0,
+   "align": 0.5,
+   "ride": 35.0,
+   "ride_sd": 0.6,
+   "min_ride": 12.0,
+   "listen": 60.0,
+   "ignore": 50.0,
+   "return_mm": 35.0,
+   "ramp": 2.5,
+   "grow": true,
+   "grow_reach": 120.0,
+   "max_rides": 6,
+   "ride_gap": 0.9,
+   "max_offset": 18.0,
+   "covers": 2,
+   "cover_mode": "cut",
+   "cover_shape": "torn",
+   "cover_boxes": [
+    0.66,
+    0.55,
+    0.09,
+    0.36,
+    12.0,
+    4.0,
+    0.0,
+    0.3,
+    0.4,
+    0.42,
+    0.22,
+    -5.0,
+    5.0,
+    1.0
+   ],
+   "cover_w": [
+    0.28,
+    0.42
+   ],
+   "cover_aspect": [
+    0.5,
+    1.6
+   ],
+   "cover_tilt": 14.0,
+   "cover_margin": 12.0,
+   "cover_cuts": "all",
+   "cover_edge": "none",
+   "late_borrow": "all",
+   "late_grow": false,
+   "grow_flip": true,
+   "late_capture": 6.0,
+   "min_stub": 4.0,
+   "found_ink": "blue",
+   "found_pen": 0.3,
+   "made_ink": "black",
+   "made_pen": 0.4,
+   "late_ink": "black",
+   "late_pen": 0.9,
+   "tint_ink": "green",
+   "tint_found_ink": "green-400",
+   "edge_pen": 0.25,
+   "found_on": "all",
+   "cover_use": "all"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "hokusai",
+     "length": 4.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next",
+      "cut": "inflection",
+      "grain": 0.012,
+      "plate": "taxonomy",
+      "order": "time",
+      "norm": "chord",
+      "cells": 24,
+      "families": 5,
+      "group": "shape",
+      "trace": false,
+      "hist": "none",
+      "hist_style": "steps",
+      "page": "diptych",
+      "split": 0.6,
+      "rechain": "sign",
+      "mirror": false,
+      "blend": 0.0,
+      "shadow": "none",
+      "shadow_gain": 5.0,
+      "degrees": true,
+      "explode": 0.6,
+      "cap": 2.5,
+      "label_h": 2.0,
+      "index_h": 2.0,
+      "avoid": true,
+      "numbers": "all",
+      "drawn_by": null,
+      "straight": "rules+labels",
+      "amount": 1.5,
+      "keep": 0.006
+     }
+    ]
+   },
+   {
+    "voice": {
+     "id": "oehlen_found_river",
+     "tile": "SB19",
+     "rank": 0,
+     "start": 0.0,
+     "span_w": 2400,
+     "angle": 0.0,
+     "stems": "grwl_far_sb19"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_thrusting",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "Found ground (after Oehlen)"
+ },
+ "river_only": {
+  "kit": 1,
+  "frame": [
+   205.0,
+   297.0
+  ],
+  "seed": 4441,
+  "margin": 10.0,
+  "arranger": {
+   "id": "oehlen_found",
+   "found": 2,
+   "late": 1,
+   "roles": "",
+   "found_boxes": [
+    0.5,
+    0.4,
+    0.9,
+    0.66,
+    -2.5,
+    0.5,
+    0.6,
+    0.95,
+    0.15,
+    -10.0
+   ],
+   "crop": 1.0,
+   "made_box": [],
+   "late_box": [
+    0.5,
+    0.55,
+    0.9,
+    0.7
+   ],
+   "step": 0.4,
+   "capture": 3.0,
+   "align": 0.5,
+   "ride": 35.0,
+   "ride_sd": 0.6,
+   "min_ride": 12.0,
+   "listen": 60.0,
+   "ignore": 50.0,
+   "return_mm": 35.0,
+   "ramp": 2.5,
+   "grow": true,
+   "grow_reach": 120.0,
+   "max_rides": 6,
+   "ride_gap": 0.9,
+   "max_offset": 18.0,
+   "covers": 2,
+   "cover_mode": "cut",
+   "cover_shape": "torn",
+   "cover_boxes": [
+    0.66,
+    0.55,
+    0.09,
+    0.36,
+    12.0,
+    4.0,
+    0.0,
+    0.3,
+    0.4,
+    0.42,
+    0.22,
+    -5.0,
+    5.0,
+    1.0
+   ],
+   "cover_w": [
+    0.28,
+    0.42
+   ],
+   "cover_aspect": [
+    0.5,
+    1.6
+   ],
+   "cover_tilt": 14.0,
+   "cover_margin": 12.0,
+   "cover_cuts": "all",
+   "cover_edge": "none",
+   "late_borrow": "all",
+   "late_grow": false,
+   "grow_flip": true,
+   "late_capture": 6.0,
+   "min_stub": 4.0,
+   "found_ink": "blue",
+   "found_pen": 0.3,
+   "made_ink": "black",
+   "made_pen": 0.4,
+   "late_ink": "black",
+   "late_pen": 0.9,
+   "tint_ink": "green",
+   "tint_found_ink": "green-400",
+   "edge_pen": 0.25,
+   "found_on": "second",
+   "cover_use": "all"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "hokusai",
+     "length": 4.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next",
+      "cut": "inflection",
+      "grain": 0.012,
+      "plate": "taxonomy",
+      "order": "time",
+      "norm": "chord",
+      "cells": 24,
+      "families": 5,
+      "group": "shape",
+      "trace": false,
+      "hist": "none",
+      "hist_style": "steps",
+      "page": "diptych",
+      "split": 0.6,
+      "rechain": "sign",
+      "mirror": false,
+      "blend": 0.0,
+      "shadow": "none",
+      "shadow_gain": 5.0,
+      "degrees": true,
+      "explode": 0.6,
+      "cap": 2.5,
+      "label_h": 2.0,
+      "index_h": 2.0,
+      "avoid": true,
+      "numbers": "all",
+      "drawn_by": null,
+      "straight": "rules+labels",
+      "amount": 1.5,
+      "keep": 0.006
+     }
+    ]
+   },
+   {
+    "voice": {
+     "id": "oehlen_found_river",
+     "tile": "SB19",
+     "rank": 0,
+     "start": 0.0,
+     "span_w": 2400,
+     "angle": 0.0,
+     "stems": "grwl_far_sb19"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_thrusting",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "Found ground (after Oehlen)"
+ }
+}

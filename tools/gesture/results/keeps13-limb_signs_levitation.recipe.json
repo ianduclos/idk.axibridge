@@ -1,0 +1,55 @@
+{
+ "kit": 1,
+ "frame": [
+  240.0,
+  180.0
+ ],
+ "seed": 1201,
+ "margin": 10.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "revisit_glyph",
+    "trail": "levitation",
+    "host": "lhand",
+    "with_": "lfoot",
+    "layout": "body",
+    "row_gap": 0.25,
+    "t0": 0.0,
+    "seconds": 60.0,
+    "still": 0.2,
+    "min_hold_s": 0.25,
+    "merge_s": 0.3,
+    "pad_s": 0.5,
+    "draw": "figures",
+    "pick": "path",
+    "limbs": "loudest",
+    "max_fig_s": 1.6,
+    "size": "fit",
+    "spread": 1.0,
+    "scale": 0.35,
+    "fig": 0.07,
+    "close": "excursion",
+    "max_glyphs": 5,
+    "r_glyph": 1.15,
+    "slow_mass": 0.6,
+    "slow_at": 0.35,
+    "ramp": 0.15,
+    "nib_mm": 0.9,
+    "mass_mm": 1.6,
+    "nib_deg": 40.0
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "revisit_nib",
+  "style": "c+e",
+  "pen": 0.35,
+  "inks": "black,red"
+ },
+ "label": "Where a limb stops, it writes (levitation)"
+}
