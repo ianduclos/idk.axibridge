@@ -1,0 +1,256 @@
+{
+ "panels": [
+  {
+   "kit": 1,
+   "frame": [
+    190.0,
+    270.0
+   ],
+   "seed": 1461,
+   "margin": 8.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_zoom",
+      "mode": "magnify",
+      "schedule": "push",
+      "recur": 4,
+      "zoom": 32.0,
+      "start": 0.05,
+      "river": 1.0,
+      "pace": 0.6,
+      "max_mm": 9000.0,
+      "far_mm_per_km": 0.8,
+      "course": "steer",
+      "angle": 90.0,
+      "smooth_w": 0.0,
+      "valley_w": 100.0,
+      "turn_mm": 45.0,
+      "frames": 5,
+      "span_w": 1600.0,
+      "pan": 0.0,
+      "heading": "step",
+      "tile": "SB19",
+      "rank": 0,
+      "stems": "grwl_far_sb19"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "rzoom_ink",
+    "pens": [
+     0.25,
+     0.35,
+     0.5,
+     0.7
+    ],
+    "inks": "blue,blue,black,black",
+    "min_run": 4.0
+   },
+   "closeup": {
+    "u_km": 154.84891284637044,
+    "crop_mm": [
+     16.01524053601284,
+     121.8392013665538,
+     36.0,
+     24.0
+    ],
+    "px_per_mm": 30,
+    "pen": 0.3
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    190.0,
+    270.0
+   ],
+   "seed": 1461,
+   "margin": 8.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_zoom",
+      "mode": "magnify",
+      "schedule": "push",
+      "recur": 4,
+      "zoom": 32.0,
+      "start": 0.05,
+      "river": 1.0,
+      "pace": 0.6,
+      "max_mm": 9000.0,
+      "far_mm_per_km": 0.8,
+      "course": "steer",
+      "angle": 90.0,
+      "smooth_w": 0.0,
+      "valley_w": 100.0,
+      "turn_mm": 45.0,
+      "frames": 5,
+      "span_w": 1600.0,
+      "pan": 0.0,
+      "heading": "linear",
+      "tile": "SB19",
+      "rank": 0,
+      "stems": "grwl_far_sb19"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "rzoom_ink",
+    "pens": [
+     0.25,
+     0.35,
+     0.5,
+     0.7
+    ],
+    "inks": "blue,blue,black,black",
+    "min_run": 4.0
+   },
+   "closeup": {
+    "u_km": 154.84891284637044,
+    "crop_mm": [
+     15.942869177774242,
+     121.89543323856486,
+     36.0,
+     24.0
+    ],
+    "px_per_mm": 30,
+    "pen": 0.3
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    190.0,
+    270.0
+   ],
+   "seed": 1461,
+   "margin": 8.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_zoom",
+      "mode": "magnify",
+      "schedule": "push",
+      "recur": 4,
+      "zoom": 80.0,
+      "start": 0.05,
+      "river": 1.0,
+      "pace": 0.6,
+      "max_mm": 9000.0,
+      "far_mm_per_km": 0.8,
+      "course": "steer",
+      "angle": 90.0,
+      "smooth_w": 0.0,
+      "valley_w": 100.0,
+      "turn_mm": 45.0,
+      "frames": 5,
+      "span_w": 1600.0,
+      "pan": 0.0,
+      "heading": "step",
+      "tile": "SB19",
+      "rank": 0,
+      "stems": "grwl_far_sb19"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "rzoom_ink",
+    "pens": [
+     0.25,
+     0.35,
+     0.5,
+     0.7
+    ],
+    "inks": "blue,blue,black,black",
+    "min_run": 4.0
+   },
+   "closeup": {
+    "u_km": 162.26697440277414,
+    "crop_mm": [
+     138.87805325221612,
+     33.43917160300277,
+     36.0,
+     24.0
+    ],
+    "px_per_mm": 30,
+    "pen": 0.3
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    190.0,
+    270.0
+   ],
+   "seed": 1461,
+   "margin": 8.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "river_zoom",
+      "mode": "magnify",
+      "schedule": "push",
+      "recur": 4,
+      "zoom": 80.0,
+      "start": 0.05,
+      "river": 1.0,
+      "pace": 0.6,
+      "max_mm": 9000.0,
+      "far_mm_per_km": 0.8,
+      "course": "steer",
+      "angle": 90.0,
+      "smooth_w": 0.0,
+      "valley_w": 100.0,
+      "turn_mm": 45.0,
+      "frames": 5,
+      "span_w": 1600.0,
+      "pan": 0.0,
+      "heading": "linear",
+      "tile": "SB19",
+      "rank": 0,
+      "stems": "grwl_far_sb19"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "rzoom_ink",
+    "pens": [
+     0.25,
+     0.35,
+     0.5,
+     0.7
+    ],
+    "inks": "blue,blue,black,black",
+    "min_run": 4.0
+   },
+   "closeup": {
+    "u_km": 162.26697440277414,
+    "crop_mm": [
+     138.84420968678904,
+     33.19017157313795,
+     36.0,
+     24.0
+    ],
+    "px_per_mm": 30,
+    "pen": 0.3
+   }
+  }
+ ]
+}

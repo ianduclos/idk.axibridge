@@ -1,0 +1,53 @@
+{
+ "kit": 1,
+ "frame": [
+  190.0,
+  270.0
+ ],
+ "seed": 1461,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "river_zoom",
+    "mode": "magnify",
+    "schedule": "push",
+    "recur": 4,
+    "zoom": 32.0,
+    "start": 0.05,
+    "river": 1.0,
+    "pace": 0.6,
+    "max_mm": 9000.0,
+    "far_mm_per_km": 0.8,
+    "course": "steer",
+    "angle": 90.0,
+    "smooth_w": 0.0,
+    "valley_w": 100.0,
+    "turn_mm": 45.0,
+    "frames": 5,
+    "span_w": 1600.0,
+    "pan": 0.0,
+    "heading": "linear",
+    "tile": "SB19",
+    "rank": 0,
+    "stems": "grwl_far_sb19"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "rzoom_ink",
+  "pens": [
+   0.2,
+   0.3,
+   0.45,
+   0.6,
+   0.8
+  ],
+  "inks": "black",
+  "min_run": 4.0
+ }
+}
