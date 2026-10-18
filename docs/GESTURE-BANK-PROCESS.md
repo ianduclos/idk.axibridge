@@ -253,6 +253,11 @@ library".
   had been asking for all along turned out to be **regimes that interact**: a
   line captured by another regime, becoming it, ignoring it, and going on
   (Oehlen found ground, "absolute gold"). Rank by the relation between regimes.
+- Legibility is a proxy too (round 13). The lead ranked tidy single-cause proofs first
+  and showed the dense versions (mutual's soup, accrue's runaway, rules' crowded sheet)
+  as duds; Ian liked those and called the rules thread a keeper. He rewards richness of
+  interaction, many relations at once and a line passing through several real sources,
+  over one readable relation. Show the "too much" versions as candidates, not as duds.
 - An artist seed done as research → his approval of references → several
   directions plus one free session found the round's best work. The free
   "intuition" session was bold but thin. The procedure-reading threads paid off.
