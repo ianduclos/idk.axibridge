@@ -29,6 +29,14 @@ white smear, the 2022 plastic sheet). Procedures, never his forms.
                   covers' (undrawn) edges — the edge shows only where the
                   late line rides it
 
+The river's stems are FROZEN in the library (kind `river_stems`, entry
+`grwl_far_sb19`: GRWL SB19's longest main stem, the one every recipe of the
+thread draws), so the voice draws without the local corpus and the app can
+run it (round-12 keeps, 2026-10-18). A tile/rank the entry does not hold is
+still read from `.local/gesture/corpus/earth/grwl-vec-<tile>` (research
+only); `stems: null` always reads the corpus. Same stem ⇒ same points either
+way (`experiments/keeps13_river_stems.py` checks it before saving).
+
 Channels written: `neg` on made/late marks (0 own, 1 riding a found
 contour, 2 riding a cover edge). Mark meta: `of_role` (found / made / late
 / edge), `ink` (Flexoki name), `pen` (mm). `oehlen_found_ink` inks them;
@@ -42,6 +50,7 @@ from pathlib import Path
 
 import numpy as np
 
+from . import library as L
 from .core import INK, PAPER, Ink, Mark, P, arranger, channel_kind, fitted, renderer, voice
 from .dev_chorus import FLEXOKI as _FX
 
@@ -488,6 +497,35 @@ def _stems(tile: str) -> tuple:
     return tuple(out)
 
 
+FAR_STEMS = "grwl_far_sb19"          # library river_stems entry (experiments/keeps13_river_stems.py)
+
+
+@L.loader("river_stems")
+def _load_river_stems(entry: dict, folder: Path) -> dict:
+    """{"n": {tile: stem count}, "stems": {(tile, rank): (segment, channel width m, points)}}."""
+    z = L.read_npz(folder / entry["files"]["stems"])
+    meta = entry["stems"]
+    return {"n": {t: int(k) for t, k in meta["n_stems"].items()},
+            "stems": {(s["tile"], int(s["rank"])): (int(s["segment"]), float(s["channel_w_m"]), z[s["array"]])
+                      for s in meta["frozen"]}}
+
+
+def stem(ctx, stems, tile: str, rank: int) -> tuple:
+    """(segment, channel width m, points) of stem `rank` of `tile` (clamped to
+    the tile's stem count, as `_stems` indexing does): from the frozen library
+    entry when it holds it, else from the local GRWL corpus."""
+    if stems is not None:
+        fz = ctx.use("river_stems", stems)
+        n = fz["n"].get(tile)
+        if n is not None and (tile, min(rank, n - 1)) in fz["stems"]:
+            return fz["stems"][(tile, min(rank, n - 1))]
+    try:
+        st = _stems(tile)
+    except ImportError as e:                       # the app freezes the entry, never the corpus reader
+        raise ValueError(f"oehlen_found_river: stem {tile}#{rank} is not frozen in river_stems/{stems}") from e
+    return st[min(rank, len(st) - 1)]
+
+
 @voice("oehlen_found_river", params=[
     P("tile", "choice", "SB19", "GRWL tile (Amazon main stems)", choices=STEM_TILES),
     P("rank", "int", 0, "which stem, longest first", min=0, max=20),
@@ -495,10 +533,11 @@ def _stems(tile: str) -> tuple:
     P("span_w", "int", 1600, "stretch length in channel widths (far view: ≥ 1000 reads as a tight zigzag band)",
       min=100, max=4000),
     P("angle", "float", 0.0, "turn the stretch, degrees from horizontal (its principal axis), before fitting", min=-180.0, max=180.0),
+    P("stems", "ref", FAR_STEMS, "frozen far-view stems (library kind river_stems); a tile/rank it does not hold, "
+      "or null, reads the local GRWL corpus (research only)", kind="river_stems", optional=True),
 ], doc="found river: a far view of a real meandering stem, a tight zigzag band (Ian 2026-10-17: far views only)")
-def oehlen_found_river(ctx, *, tile, rank, start, span_w, angle):
-    st = _stems(tile)
-    seg, wm, q = st[min(rank, len(st) - 1)]
+def oehlen_found_river(ctx, *, tile, rank, start, span_w, angle, stems):
+    seg, wm, q = stem(ctx, stems, tile, rank)
     n = min(4 * span_w, len(q))
     a = int(start * max(len(q) - n, 0))
     p = q[a:a + n]
