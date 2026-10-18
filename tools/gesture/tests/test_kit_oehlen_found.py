@@ -130,3 +130,93 @@ def test_found_river_is_a_far_view_band():
     assert (hi - lo)[0] > 3 * (hi - lo)[1]               # principal axis laid horizontal: a band
     s = of._arclen(p)[-1]
     assert s > 2.0 * (hi - lo)[0]                         # tight meanders: far longer than its span
+
+
+# --- the clip cuts only where a line crosses the polygon's boundary (2026-10-18) -------------------------
+# shapely's LineString ∩ / − Polygon nodes a line at its OWN crossings too: a knot wholly inside the sheet
+# came back as ~100 pieces, and those under min_stub were dropped (lost ink, extra pen lifts).
+
+def _knot(cx=150.0, cy=100.0):
+    t = np.linspace(0, 12 * np.pi, 3000)
+    return np.c_[cx - 70 + 20 * np.cos(t) + 4 * t, cy + 20 * np.sin(1.3 * t)]
+
+
+def _box(x0, y0, x1, y1):
+    return np.array([[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]], float)
+
+
+def _len(p):
+    return float(of.arclen(np.asarray(p))[-1])
+
+
+def test_clip_keeps_a_self_crossing_line_inside_whole():
+    k = _knot()
+    out = of.clip_rect([k], _box(0, 0, 300, 218), 4.0)
+    assert len(out) == 1
+    assert np.allclose(out[0], k)
+
+
+def _runs(mask):
+    """How many runs of True: the pieces a boundary-only cut must give (the knot's step is fine enough
+    that no segment crosses an edge twice)."""
+    m = np.r_[False, np.asarray(mask, bool), False].astype(int)
+    return int((np.diff(m) == 1).sum())
+
+
+def test_clip_cuts_only_at_the_rect_edge():
+    from shapely.geometry import LineString, Polygon
+    k = _knot()
+    R = Polygon(_box(120, 0, 300, 218))
+    out = of.clip_rect([k], _box(120, 0, 300, 218), 0.0)
+    assert len(out) == _runs(k[:, 0] >= 120) == 2
+    for q in out:
+        assert R.buffer(1e-6).contains(LineString(q))
+        for e in (q[0], q[-1]):                                       # every cut end lies on the edge
+            assert abs(e[0] - 120) < 1e-9 or np.allclose(e, k[-1])
+    assert sum(_len(q) for q in out) == pytest.approx(LineString(k).intersection(R).length, rel=1e-9)
+
+
+def test_clip_cuts_a_long_segment_through_a_thin_rect():
+    line = np.array([[0.0, 50.0], [300.0, 50.0]])                     # both ends outside, one segment
+    out = of.clip_rect([line], _box(100, 0, 110, 218), 0.0)
+    assert len(out) == 1 and np.allclose(out[0], [[100, 50], [110, 50]])
+
+
+def test_split_cuts_only_at_the_cover_edge():
+    k = _knot()
+    cover = _box(0, 0, 95, 218)                                       # takes a bite out of the knot's first loop
+    out = of.split_by_covers([k], [cover], 0.0, ["cut"])
+    assert len(out) == _runs(k[:, 0] > 95) == 2 and not any(t for _, _, t in out)
+    assert out[0][1][-1][0] == pytest.approx(95.0) and out[1][1][0][0] == pytest.approx(95.0)
+    assert np.allclose(out[1][1][1:], k[k[:, 0] > 95][-(len(out[1][1]) - 1):])   # the rest is the knot, untouched
+    stub = _len(out[0][1])
+    assert len(of.split_by_covers([k], [cover], stub + 0.1, ["cut"])) == 1          # only the cut's stub is dropped
+
+
+def test_split_tint_keeps_the_knot_under_it_as_one_tinted_piece():
+    k = _knot()
+    cover = _box(0, 0, 300, 218)
+    out = of.split_by_covers([k], [cover], 4.0, ["tint"])
+    assert len(out) == 1 and out[0][2] and np.allclose(out[0][1], k)
+
+
+def test_split_conserves_length_and_classifies_by_region():
+    from shapely.geometry import LineString, Polygon
+    from shapely.ops import unary_union
+    k = _knot()
+    covers = [_box(90, 70, 140, 130), _box(160, 60, 200, 110), _box(180, 90, 230, 140)]
+    modes = ["cut", "tint", "cut"]
+    out = of.split_by_covers([k], covers, 0.0, modes)
+    U = unary_union([Polygon(c) for c in covers])
+    T = Polygon(covers[1])
+    ls = LineString(k)
+    assert sum(_len(q) for _, q, t in out if not t) == pytest.approx(ls.difference(U).length, rel=1e-9)
+    assert sum(_len(q) for _, q, t in out if t) == pytest.approx(ls.intersection(T).length, rel=1e-9)
+    # fewer pieces than shapely, which also cuts at every self-crossing
+    assert len(out) < len(list(ls.difference(U).geoms)) + len(list(ls.intersection(T).geoms))
+
+
+def test_clip_keeps_a_line_lying_on_the_edge_like_shapely():
+    on = np.array([[120.0, 20.0], [120.0, 80.0]])                     # the polygon is closed: its edge is inside
+    assert len(of.clip_rect([on], _box(120, 0, 300, 218), 0.0)) == 1
+    assert of.split_by_covers([on], [_box(120, 0, 300, 218)], 0.0, ["cut"]) == []

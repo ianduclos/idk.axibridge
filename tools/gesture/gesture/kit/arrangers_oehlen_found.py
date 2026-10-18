@@ -406,12 +406,63 @@ def cover_polygon(rng, c, w, h, shape: str, tilt: float, edge: int | None = None
     return np.vstack([poly, poly[:1]])
 
 
+def boundary_runs(l, boundary, classify):
+    """Cut a polyline ONLY where it meets `boundary` (a shapely linear geometry) → [(run, class)], with
+    `classify(xy) → int array` naming each run by a point inside it (closed polygons, as shapely: a run
+    lying ON the boundary counts as inside); neighbouring runs of one class (a
+    touch, not a crossing) are joined. Each crossing is found on its own segment, so a long segment
+    through a thin polygon is cut too. Unlike shapely's LineString ∩ / − Polygon, which also nodes a line
+    at its OWN crossings, a self-crossing line stays one run wherever no boundary cuts it (2026-10-18)."""
+    import shapely  # noqa: PLC0415
+    p = np.asarray(l, float)
+    n = len(p)
+    if n < 2:
+        return []
+    a, b = p[:-1], p[1:]
+    segs = shapely.linestrings(np.stack([a, b], axis=1))
+    shapely.prepare(boundary)
+    hit = np.flatnonzero(shapely.intersects(segs, boundary))
+    vcut = np.zeros(n, bool)
+    ins_s, ins_xy = np.zeros(0), np.zeros((0, 2))
+    if len(hit):
+        xy, k = shapely.get_coordinates(shapely.intersection(segs[hit], boundary), return_index=True)
+        i = hit[k]
+        d = b[i] - a[i]
+        t = np.clip(np.einsum("ij,ij->i", xy - a[i], d) / np.maximum(np.einsum("ij,ij->i", d, d), 1e-300), 0, 1)
+        eps = 1e-9
+        vcut[i[t <= eps]] = True
+        vcut[i[t >= 1 - eps] + 1] = True
+        mid = (t > eps) & (t < 1 - eps)
+        ins_s, first = np.unique(i[mid] + t[mid], return_index=True)
+        ins_xy = (a[i] + d * t[:, None])[mid][first]
+    S = np.r_[np.arange(n, dtype=float), ins_s]
+    order = np.argsort(S, kind="stable")
+    Q = np.vstack([p, ins_xy])[order]
+    cut = np.r_[vcut, np.ones(len(ins_s), bool)][order]
+    cut[0] = cut[-1] = True
+    ends = np.flatnonzero(cut)
+    runs = [Q[e0:e1 + 1] for e0, e1 in zip(ends[:-1], ends[1:])]
+    probe = []
+    for r in runs:                                     # the midpoint of a run's longest segment is off the boundary
+        j = int(np.argmax(np.linalg.norm(np.diff(r, axis=0), axis=1)))
+        probe.append((r[j] + r[j + 1]) / 2)
+    cls = classify(np.asarray(probe))
+    out = []
+    for r, c in zip(runs, cls):
+        if out and out[-1][1] == int(c):
+            out[-1] = (np.vstack([out[-1][0], r[1:]]), int(c))
+        else:
+            out.append((r, int(c)))
+    return out
+
+
 def split_by_covers(lines, polys, min_stub: float, modes):
     """Cut polylines by the cover polygons → [(line index, piece, tinted)].
     `cut` covers remove what is under them; `tint` covers keep it, flagged
     tinted (re-inked). A piece shortened by the cut and left under
     min_stub mm is dropped."""
-    from shapely.geometry import LineString, MultiLineString, Polygon  # noqa: PLC0415
+    import shapely  # noqa: PLC0415
+    from shapely.geometry import LineString, Polygon  # noqa: PLC0415
     from shapely.ops import unary_union  # noqa: PLC0415
     if not polys:
         return [(i, l, False) for i, l in enumerate(lines)]
@@ -419,33 +470,30 @@ def split_by_covers(lines, polys, min_stub: float, modes):
     U = unary_union([Polygon(p) for p in polys])
     tints = [Polygon(p) for p, m in zip(polys, modes) if m == "tint"]
     UT = unary_union(tints) if tints else None
+    edge = U.boundary if UT is None else shapely.union_all([U.boundary, UT.boundary])
+
+    def classify(xy):                                  # 0 outside every cover, 1 under a cut, 2 under a tint
+        c = shapely.intersects_xy(U, xy[:, 0], xy[:, 1]).astype(int)
+        if UT is not None:
+            c[shapely.intersects_xy(UT, xy[:, 0], xy[:, 1])] = 2
+        return c
+
     out = []
-
-    def parts(g):
-        if g.is_empty:
-            return []
-        if isinstance(g, LineString):
-            return [np.asarray(g.coords)]
-        if isinstance(g, MultiLineString):
-            return [np.asarray(x.coords) for x in g.geoms]
-        return [np.asarray(x.coords) for x in getattr(g, "geoms", []) if isinstance(x, LineString)]
-
     for li, l in enumerate(lines):
         if len(l) < 2:
             continue
         L0 = float(arclen(l)[-1])
-        ls = LineString(l)
-        if not ls.intersects(U):
+        if not LineString(l).intersects(U):
             out.append((li, l, False))
             continue
-        for q in parts(ls.difference(U)):
+        runs = boundary_runs(l, edge, classify)
+        for q, c in runs:
             Lq = float(arclen(q)[-1])
-            if Lq >= min_stub or Lq >= L0 - 1e-6:
+            if c == 0 and (Lq >= min_stub or Lq >= L0 - 1e-6):
                 out.append((li, q, False))
-        if UT is not None:
-            for q in parts(ls.intersection(UT)):
-                if float(arclen(q)[-1]) >= min_stub:
-                    out.append((li, q, True))
+        for q, c in runs:
+            if c == 2 and float(arclen(q)[-1]) >= min_stub:
+                out.append((li, q, True))
     return out
 
 
@@ -561,21 +609,24 @@ def frac_boxes(v, frame, k):
 
 
 def clip_rect(lines, rect_poly, min_stub):
-    from shapely.geometry import LineString, Polygon  # noqa: PLC0415
+    """The pieces of each polyline inside the polygon, cut only at its edge (see `boundary_runs`); a
+    piece the edge shortened below min_stub mm is dropped."""
+    import shapely  # noqa: PLC0415
+    from shapely.geometry import Polygon  # noqa: PLC0415
     R = Polygon(rect_poly)
+
+    def inside(xy):
+        return shapely.intersects_xy(R, xy[:, 0], xy[:, 1]).astype(int)
+
     out = []
     for l in lines:
         if len(l) < 2:
             continue
         L0 = float(arclen(l)[-1])
-        g = LineString(l).intersection(R)
-        geoms = [g] if isinstance(g, LineString) else list(getattr(g, "geoms", []))
-        for x in geoms:
-            if isinstance(x, LineString) and not x.is_empty:
-                q = np.asarray(x.coords)
-                Lq = float(arclen(q)[-1])
-                if Lq >= min_stub or Lq >= L0 - 1e-6:
-                    out.append(q)
+        for q, c in boundary_runs(l, R.boundary, inside):
+            Lq = float(arclen(q)[-1])
+            if c and (Lq >= min_stub or Lq >= L0 - 1e-6):
+                out.append(q)
     return out
 
 

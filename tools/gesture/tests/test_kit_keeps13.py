@@ -46,7 +46,7 @@ def test_piece_draws_without_the_corpus(monkeypatch):
     monkeypatch.setattr(of, "_stems", boom)
     r = json.loads((RESULTS / "oehlen_found-1-piece.recipe.json").read_text())
     s = kit.run(r)
-    assert len(s.inks) == 241
+    assert len(s.inks) == 225                  # 241 before the 2026-10-18 clip fix (self-crossings no longer cut)
     assert any(i.meta.get("colour") == "blue" for i in s.inks)
 
 
