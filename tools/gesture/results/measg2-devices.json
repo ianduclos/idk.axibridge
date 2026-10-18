@@ -1,0 +1,122 @@
+{
+  "recipe": {
+    "kit": 1,
+    "frame": [
+      267.0,
+      180.0
+    ],
+    "seed": 4243,
+    "margin": null,
+    "arranger": {
+      "id": "single"
+    },
+    "parts": [
+      {
+        "voice": {
+          "id": "drift",
+          "hands": [
+            "hokusai",
+            "meander69"
+          ],
+          "blend": "mixture",
+          "plateau": 0.12,
+          "length": 6.0,
+          "joins": "smooth"
+        },
+        "modulators": []
+      }
+    ],
+    "renderer": {
+      "id": "wire",
+      "pen": 0.4
+    }
+  },
+  "devices": [
+    {
+      "id": "misfit_grid",
+      "place": "under",
+      "pitch": 14.0,
+      "blur": 8.0,
+      "strength": -5.0,
+      "clear": 1.0,
+      "min_stub": 3.0,
+      "pen": 0.15
+    },
+    {
+      "id": "arc_ticks",
+      "place": "over",
+      "which": "longest",
+      "every": 16.0,
+      "major_every": 5,
+      "tick": 1.1,
+      "offset": 0.9,
+      "label_h": 1.6,
+      "pen": 0.18
+    },
+    {
+      "id": "survey_marks",
+      "place": "over",
+      "cross": 1.8,
+      "label_h": 1.5,
+      "principal_axis": true,
+      "dash": 3.0,
+      "gap": 2.0,
+      "pen": 0.18
+    }
+  ],
+  "applied_devices": [
+    {
+      "id": "misfit_grid",
+      "place": "under",
+      "pitch": 14.0,
+      "blur": 8.0,
+      "strength": -5.0,
+      "clear": 1.0,
+      "min_stub": 3.0,
+      "pen": 0.15,
+      "region": [
+        76.96902519503197,
+        0.1999999999999993,
+        113.06194960993605,
+        179.6
+      ]
+    },
+    {
+      "id": "arc_ticks",
+      "place": "over",
+      "which": "longest",
+      "every": 16.0,
+      "major_every": 5,
+      "tick": 1.1,
+      "offset": 0.9,
+      "label_h": 1.6,
+      "pen": 0.18,
+      "region": [
+        76.96902519503197,
+        0.1999999999999993,
+        113.06194960993605,
+        179.6
+      ]
+    },
+    {
+      "id": "survey_marks",
+      "place": "over",
+      "cross": 1.8,
+      "label_h": 1.5,
+      "principal_axis": true,
+      "dash": 3.0,
+      "gap": 2.0,
+      "pen": 0.18,
+      "region": [
+        76.96902519503197,
+        0.1999999999999993,
+        113.06194960993605,
+        179.6
+      ]
+    }
+  ],
+  "measurements": {
+    "source_polylines": 1,
+    "device_polylines": 417
+  }
+}
