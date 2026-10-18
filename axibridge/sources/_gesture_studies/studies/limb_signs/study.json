@@ -1,0 +1,119 @@
+{
+ "id": "limb_signs",
+ "label": "Where a limb stops, it writes",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-18",
+ "source": "revisit round 12: tools/gesture/results/revisit-piece.recipe.json (seed 1201)",
+ "engine": "kit",
+ "keep": "voices",
+ "inks": [
+  "black",
+  "red"
+ ],
+ "notes": "One limb's trail through a dance is one contiguous line (black); wherever that limb holds still, the line leaves its path and draws, small, what the other limbs did during the hold, seen from the stopped limb, then closes back onto the stop and goes on. The second limb (red) does the same on the same surface. Each sign is different and none is invented: the signs went from a vocabulary (round 7) to a record. Particles: the right foot's one great lift is a bold arch with the figures on its floor line; the head writes above it. Ian, round 12: \"super nice. keeper\". Keep makes a group: one layer per ink, each on its own pen. Controls: the dance, the two limbs (the second may be none, or all the others), how many seconds of the dance, how many figures per limb, how much more happening makes a figure larger, the seed (it only feeds the nib passes). The round-7 tree Ian saw beside it (\"together they're almost a piece\") is not offered: it is old experiment code (signs_study) and a fitted grammar, not a kit recipe. Frame 150 × 210 portrait: a standing body, head over foot.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   150.0,
+   210.0
+  ],
+  "seed": 1201,
+  "margin": 10.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "revisit_glyph",
+     "trail": "particles",
+     "host": "rfoot",
+     "with_": "head",
+     "layout": "body",
+     "row_gap": 0.25,
+     "t0": 0.0,
+     "seconds": 60.0,
+     "still": 0.2,
+     "min_hold_s": 0.25,
+     "merge_s": 0.3,
+     "pad_s": 0.5,
+     "draw": "figures",
+     "pick": "path",
+     "limbs": "loudest",
+     "max_fig_s": 1.6,
+     "size": "fit",
+     "spread": 1.0,
+     "scale": 0.35,
+     "fig": 0.07,
+     "close": "excursion",
+     "max_glyphs": 5,
+     "r_glyph": 1.15,
+     "slow_mass": 0.6,
+     "slow_at": 0.35,
+     "ramp": 0.15,
+     "nib_mm": 0.9,
+     "mass_mm": 1.6,
+     "nib_deg": 40.0
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "revisit_nib",
+   "style": "c+e",
+   "pen": 0.35,
+   "inks": "black,red"
+  },
+  "label": "Where a limb stops, it writes"
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.trail",
+   "label": "Dance",
+   "type": "trail"
+  },
+  {
+   "path": "parts.0.voice.host",
+   "label": "Limb (black)",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.voice.with_",
+   "label": "Second limb (red)",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.voice.seconds",
+   "label": "Seconds of the dance",
+   "type": "float",
+   "min": 5.0,
+   "max": 60.0,
+   "step": 1.0
+  },
+  {
+   "path": "parts.0.voice.max_glyphs",
+   "label": "Figures per limb",
+   "type": "int",
+   "min": 1,
+   "max": 12
+  },
+  {
+   "path": "parts.0.voice.spread",
+   "label": "Size spread",
+   "type": "float",
+   "min": 0.0,
+   "max": 1.5,
+   "step": 0.05,
+   "help": "0: every figure one size (they line up like letters); 1: bigger motions grow"
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

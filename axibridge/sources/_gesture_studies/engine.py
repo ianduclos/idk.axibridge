@@ -103,14 +103,19 @@ def inks_to_paths(inks) -> list[Path]:
     return [p for _, p in _inks_to_tagged(inks)]
 
 
-def _inks_to_tagged(inks) -> list[tuple[int, Path]]:
-    """(part index, Path) per kept ink (see inks_to_paths)."""
+def ink_name(ink) -> str:
+    """The Flexoki pen a kit ink names: meta "ink", else a "colour" given as a name."""
+    return str(ink.meta.get("ink") or ink.meta.get("colour") or "black")
+
+
+def _inks_to_tagged(inks, tag=None) -> list[tuple[int, Path]]:
+    """(part index — or tag(ink) — , Path) per kept ink (see inks_to_paths)."""
     arrs = _simplify([ink.points for ink in inks])
     out = []
     for ink, a, full in zip(inks, arrs, (ink.points for ink in inks)):
         if len(a) < 2:
             continue
-        part = int(ink.meta.get("part", 0))
+        part = int(ink.meta.get("part", 0)) if tag is None else tag(ink)
         if ink.closed:
             ring = a if len(a) >= 4 else np.asarray(full, dtype=np.float64)
             pts = [(float(x), float(y)) for x, y in ring]
@@ -214,11 +219,19 @@ def run_hand_drift(recipe: dict, lib: FL.FrozenLibrary) -> list[Path]:
     return hd.render_paths(params, load_hand=load_hand, load_timing=load_timing)
 
 
-def render_voices(recipe: dict, lib: FL.FrozenLibrary) -> dict[int, list[Path]]:
-    """A kit recipe → its paths per part (voice), fitted inside the frame as
-    ONE drawing (so voices kept as separate layers stay in register)."""
+def render_voices(recipe: dict, lib: FL.FrozenLibrary, inks: list[str] | None = None) -> dict[int, list[Path]]:
+    """A kit recipe → its paths per part (voice), or per ink name when `inks`
+    names the voices (index in `inks`), fitted inside the frame as ONE drawing
+    (so voices kept as separate layers stay in register)."""
     W, H = frame_of("kit", recipe)
-    tagged = _inks_to_tagged(run_kit(recipe, lib).inks)
+    tag = None
+    if inks:
+        def tag(ink):
+            name = ink_name(ink)
+            if name not in inks:
+                raise ValueError(f"the drawing uses the pen {name!r}, which is not one of this study's inks {inks}")
+            return inks.index(name)
+    tagged = _inks_to_tagged(run_kit(recipe, lib).inks, tag)
     fitted = _fit_inside([p for _, p in tagged], W, H)
     out: dict[int, list[Path]] = {}
     for (part, _), p in zip(tagged, fitted):

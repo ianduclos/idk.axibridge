@@ -1,0 +1,52 @@
+{
+ "id": "animal",
+ "kind": "corpus",
+ "label": "animal corpus (index)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "local_path": ".local/gesture/corpus/animal",
+  "indexed_commit": "d698db8",
+  "manifests": [
+   {
+    "file": "docs/research/gesture-corpus/round11-harvest.csv",
+    "rows": 8,
+    "rows_on_disk": 7,
+    "filter": [
+     "group",
+     "animal"
+    ]
+   }
+  ],
+  "docs": [
+   "docs/research/gesture-corpus/round11-harvest.md"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Movement tracks: LifeTrack white stork and tropicbird GPS (Movebank, CC0), GeoLife (zipped). Used as drivers (round 12), not as hands.",
+ "files": {},
+ "size_bytes": 0,
+ "counts": {
+  "files": 7,
+  "bytes": 335624097,
+  "by_extension": {
+   ".csv": 4,
+   ".txt": 2,
+   ".zip": 1
+  },
+  "subfolders": {
+   "geolife-1-3": {
+    "files": 1,
+    "bytes": 313164406
+   },
+   "movebank-lifetrack-stork-sicily": {
+    "files": 3,
+    "bytes": 22054637
+   },
+   "movebank-tropicbird-santos2019": {
+    "files": 3,
+    "bytes": 405054
+   }
+  }
+ }
+}

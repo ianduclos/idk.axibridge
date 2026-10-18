@@ -1,4 +1,4 @@
-# FROZEN from research commit 529a195: tools/gesture/gesture/kit/voices_machine_diagram.py
+# FROZEN from research commit efce219: tools/gesture/gesture/kit/voices_machine_diagram.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Diagram voices: the system's own measurements drawn as plotter line (round 9).
 

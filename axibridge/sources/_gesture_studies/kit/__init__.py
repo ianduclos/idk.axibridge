@@ -1,4 +1,4 @@
-# FROZEN from research commit 529a195: tools/gesture/gesture/kit/__init__.py
+# FROZEN from research commit efce219: tools/gesture/gesture/kit/__init__.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """The gesture kit: saved grammars + combinable technique modules.
 

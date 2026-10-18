@@ -1,0 +1,69 @@
+{
+ "id": "dance",
+ "kind": "corpus",
+ "label": "dance corpus (index)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "local_path": ".local/gesture/corpus/dance",
+  "indexed_commit": "d698db8",
+  "manifests": [
+   {
+    "file": "docs/research/gesture-corpus/dance-harvest.csv",
+    "rows": 76,
+    "rows_on_disk": 74,
+    "filter": null
+   }
+  ],
+  "docs": [
+   "docs/research/gesture-corpus/dance-gesture.md"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Mocap (BVH/AMC): E2-Create Stocos (CC BY 4.0), CMU (free use), Motion Bank. Tempo entries come from here.",
+ "files": {},
+ "size_bytes": 0,
+ "counts": {
+  "files": 74,
+  "bytes": 486712003,
+  "by_extension": {
+   ".amc": 37,
+   ".asf": 3,
+   ".bvh": 14,
+   ".jpg": 4,
+   ".mp4": 2,
+   ".odt": 13,
+   ".png": 1
+  },
+  "subfolders": {
+   "cmu-05": {
+    "files": 20,
+    "bytes": 14347170
+   },
+   "cmu-49": {
+    "files": 11,
+    "bytes": 8727009
+   },
+   "cmu-55": {
+    "files": 9,
+    "bytes": 37985562
+   },
+   "e2-stocos": {
+    "files": 14,
+    "bytes": 166149582
+   },
+   "e2mb-unusual": {
+    "files": 13,
+    "bytes": 158428203
+   },
+   "mb-hay-front": {
+    "files": 2,
+    "bytes": 100524951
+   },
+   "refs": {
+    "files": 5,
+    "bytes": 549526
+   }
+  }
+ }
+}

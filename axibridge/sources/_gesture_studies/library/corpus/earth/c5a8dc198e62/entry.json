@@ -1,0 +1,297 @@
+{
+ "id": "earth",
+ "kind": "corpus",
+ "label": "earth corpus (index)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "local_path": ".local/gesture/corpus/earth",
+  "indexed_commit": "d698db8",
+  "manifests": [
+   {
+    "file": "docs/research/gesture-corpus/earth-physics-harvest.csv",
+    "rows": 132,
+    "rows_on_disk": 132,
+    "filter": null
+   }
+  ],
+  "docs": [
+   "docs/research/gesture-corpus/earth-physics-lines.md"
+  ]
+ },
+ "policy": "generative",
+ "notes": "Bubble-chamber prints, Lichtenberg figures, rivers (GRWL), cloud-chamber tracks.",
+ "files": {},
+ "size_bytes": 0,
+ "counts": {
+  "files": 169,
+  "bytes": 1072933897,
+  "by_extension": {
+   ".cpg": 6,
+   ".dbf": 6,
+   ".h5": 2,
+   ".jpeg": 3,
+   ".jpg": 68,
+   ".json": 1,
+   ".md": 1,
+   ".mseed": 5,
+   ".npz": 5,
+   ".pdf": 1,
+   ".prj": 6,
+   ".shp": 6,
+   ".shx": 6,
+   ".tfw": 6,
+   ".tif": 20,
+   ".txt": 5,
+   ".xlsx": 1,
+   ".xml": 18,
+   ".zip": 3
+  },
+  "subfolders": {
+   "bc-01": {
+    "files": 1,
+    "bytes": 460582
+   },
+   "bc-02": {
+    "files": 1,
+    "bytes": 295047
+   },
+   "bc-03": {
+    "files": 1,
+    "bytes": 514495
+   },
+   "bc-04": {
+    "files": 1,
+    "bytes": 723128
+   },
+   "bc-05": {
+    "files": 1,
+    "bytes": 978018
+   },
+   "bc-06": {
+    "files": 1,
+    "bytes": 869024
+   },
+   "bc-07": {
+    "files": 1,
+    "bytes": 406225
+   },
+   "bc-10": {
+    "files": 1,
+    "bytes": 387916
+   },
+   "bc-11": {
+    "files": 1,
+    "bytes": 1893800
+   },
+   "bc-14": {
+    "files": 1,
+    "bytes": 4071853
+   },
+   "bc-15": {
+    "files": 1,
+    "bytes": 764479
+   },
+   "bc-16": {
+    "files": 1,
+    "bytes": 2463425
+   },
+   "bc-17": {
+    "files": 1,
+    "bytes": 1998144
+   },
+   "bc-19": {
+    "files": 1,
+    "bytes": 735131
+   },
+   "cc-positron-1932": {
+    "files": 1,
+    "bytes": 1998934
+   },
+   "dente-amazon-centerlines": {
+    "files": 1,
+    "bytes": 29137030
+   },
+   "eo-145819": {
+    "files": 1,
+    "bytes": 7036939
+   },
+   "eo-84833-1985": {
+    "files": 1,
+    "bytes": 4833924
+   },
+   "eo-84833-2014": {
+    "files": 1,
+    "bytes": 4339274
+   },
+   "eo-92370": {
+    "files": 1,
+    "bytes": 2553239
+   },
+   "fdsn-particle-motion": {
+    "files": 15,
+    "bytes": 1431895
+   },
+   "greenberg-ganti-single-rivers": {
+    "files": 2,
+    "bytes": 21011475
+   },
+   "grwl-mask-amazon": {
+    "files": 24,
+    "bytes": 31066489
+   },
+   "grwl-vec-SA20": {
+    "files": 6,
+    "bytes": 91464568
+   },
+   "grwl-vec-SB18": {
+    "files": 6,
+    "bytes": 82940574
+   },
+   "grwl-vec-SB19": {
+    "files": 6,
+    "bytes": 78827199
+   },
+   "grwl-vec-SB20": {
+    "files": 6,
+    "bytes": 88521249
+   },
+   "grwl-vec-SC18": {
+    "files": 6,
+    "bytes": 63443424
+   },
+   "grwl-vec-SC20": {
+    "files": 6,
+    "bytes": 51383602
+   },
+   "iceland-analog-seismograms": {
+    "files": 32,
+    "bytes": 107877633
+   },
+   "insect-01": {
+    "files": 1,
+    "bytes": 6914190
+   },
+   "insect-02": {
+    "files": 1,
+    "bytes": 5838146
+   },
+   "insect-03": {
+    "files": 1,
+    "bytes": 12140336
+   },
+   "insect-04": {
+    "files": 1,
+    "bytes": 4059716
+   },
+   "insect-05": {
+    "files": 1,
+    "bytes": 3882766
+   },
+   "insect-06": {
+    "files": 1,
+    "bytes": 4261563
+   },
+   "insect-08": {
+    "files": 1,
+    "bytes": 10152693
+   },
+   "jrc-gsw-transitions-70W_0N": {
+    "files": 1,
+    "bytes": 26298670
+   },
+   "jrc-gsw-transitions-80W_0N": {
+    "files": 1,
+    "bytes": 21802060
+   },
+   "leaf-eaten-white-oak": {
+    "files": 1,
+    "bytes": 7444979
+   },
+   "li-amazon-cutoffs": {
+    "files": 1,
+    "bytes": 441641
+   },
+   "lichtenberg-01": {
+    "files": 1,
+    "bytes": 2032748
+   },
+   "lichtenberg-02": {
+    "files": 1,
+    "bytes": 7982879
+   },
+   "lichtenberg-03": {
+    "files": 1,
+    "bytes": 7992120
+   },
+   "lichtenberg-05": {
+    "files": 1,
+    "bytes": 2503134
+   },
+   "lightning-01": {
+    "files": 1,
+    "bytes": 2406162
+   },
+   "lightning-02": {
+    "files": 1,
+    "bytes": 3725427
+   },
+   "lightning-06": {
+    "files": 1,
+    "bytes": 1079282
+   },
+   "lightning-07": {
+    "files": 1,
+    "bytes": 943132
+   },
+   "meanderpy": {
+    "files": 1,
+    "bytes": 8303790
+   },
+   "osm-oxbows-amazon": {
+    "files": 1,
+    "bytes": 15969702
+   },
+   "s2-18LWR-20200828": {
+    "files": 3,
+    "bytes": 30548784
+   },
+   "s2-18MUC-20240731-pastaza": {
+    "files": 3,
+    "bytes": 28784559
+   },
+   "s2-19MDN-20210802": {
+    "files": 3,
+    "bytes": 29177632
+   },
+   "s2-20MQC-20200729": {
+    "files": 3,
+    "bytes": 27348087
+   },
+   "slime-trails-forty-years": {
+    "files": 1,
+    "bytes": 1983561
+   },
+   "trace-helminthoida-carnero": {
+    "files": 1,
+    "bytes": 10424254
+   },
+   "trace-nereites-cymru": {
+    "files": 1,
+    "bytes": 2719619
+   },
+   "trace-paleodictyon-I01": {
+    "files": 1,
+    "bytes": 5285006
+   },
+   "usgs-pp422h-langbein-leopold": {
+    "files": 1,
+    "bytes": 666120
+   },
+   "zenodo-5017751-fly": {
+    "files": 2,
+    "bytes": 95392424
+   }
+  }
+ }
+}

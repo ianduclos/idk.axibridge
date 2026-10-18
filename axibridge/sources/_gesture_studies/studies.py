@@ -19,6 +19,12 @@ several places, e.g. both charts of the atlas) and declares a type:
   learned later appear in every study after a refreeze. `allow_none` +
   `none_value` (+ `none_label`) add a "none" choice where the param allows it.
 
+A voices study (`keep: "voices"`) keeps as a group, one layer per voice on its
+own pen: by part (the chorus: dev_chorus inks), or, when the study lists
+`inks`, by the Flexoki pen each kit ink names (the Oehlen found ground: blue
+found layer, green tint, black gesture). An ink the drawing does not use this
+time is an empty voice and is not kept.
+
 The default of a control is the value at its path in the recipe; everything
 not under a control is fixed. `resolve(study, values, library)` writes the
 values into a copy of the recipe and validates the result with the engine
@@ -123,6 +129,12 @@ class Study(BaseModel):
     source: str = Field(default="", max_length=400)
     engine: Literal["kit", "hand_drift", "sampler"] = "kit"
     keep: Literal["layer", "voices"] = "layer"
+    #: a voices study whose pens are its INKS, not its parts (round-12 keeps, 2026-10-18): the kit
+    #: names each ink's Flexoki pen (`Ink.meta` "ink", else "colour"), e.g. the Oehlen found ground's
+    #: blue found layer, black late line and green tint. One voice per name, in this order; a name the
+    #: drawing does not use this time is simply an empty voice (not kept).
+    inks: list[typing.Annotated[str, Field(pattern=r"^[a-z]+(-[0-9]{3})?$")]] | None = Field(
+        default=None, min_length=1, max_length=8)
     notes: str = Field(default="", max_length=4000)
     recipe: dict[str, Any]
     controls: list[Control] = Field(min_length=1, max_length=32)
@@ -136,6 +148,14 @@ class Study(BaseModel):
             raise ValueError(f"recipe larger than {RECIPE_MAX_BYTES} bytes")
         if self.keep == "voices" and self.engine != "kit":
             raise ValueError("only a kit study can keep its voices as a group of layers")
+        if self.inks is not None:
+            if self.keep != "voices":
+                raise ValueError("inks name the voices of a voices study (keep: voices)")
+            if len(set(self.inks)) != len(self.inks):
+                raise ValueError("inks must be distinct")
+            bad = [x for x in self.inks if x not in flexoki()]
+            if bad:
+                raise ValueError(f"inks {bad} are not Flexoki pens ({sorted(flexoki())})")
         return self
 
 
@@ -436,11 +456,22 @@ def summary_of(study: Study, kit_recipe: dict) -> str:
         return ""
 
 
+def flexoki() -> dict[str, str]:
+    """Flexoki pen name -> hex: the 600 accents + black (dev_chorus) and the
+    400 accents (the Oehlen found ground's tint)."""
+    from .kit import arrangers_oehlen_found  # noqa: PLC0415
+    return dict(arrangers_oehlen_found.FLEXOKI)
+
+
 def voices_of(study: Study, kit_recipe: dict) -> list[dict]:
     """A voices study (`keep: "voices"`): one entry per sung voice — index,
-    ink name and colour (the dev_chorus arranger's Flexoki inks), label."""
+    ink name and colour (the dev_chorus arranger's Flexoki inks, or the
+    study's own `inks`), label."""
     if study.keep != "voices":
         return []
+    if study.inks:
+        fx = flexoki()
+        return [{"index": i, "ink": n, "color": fx[n], "label": n} for i, n in enumerate(study.inks)]
     from .kit import dev_chorus  # noqa: PLC0415
     arr = kit_recipe["arranger"]
     n = len(kit_recipe["parts"])

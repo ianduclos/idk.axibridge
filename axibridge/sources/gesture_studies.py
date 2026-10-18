@@ -164,7 +164,7 @@ class GestureStudiesSource(SourceModule):
             paths = engine.render(eng, recipe, lib)
             return PathDocument(layers=[Layer(id=1, name=st.label, color=_INK, paths=paths)] if paths else [],
                                 width=W, height=H, source=tag)
-        by_voice = engine.render_voices(recipe, lib)
+        by_voice = engine.render_voices(recipe, lib, st.inks)
         want = [v for v in voices if params.voice is None or v["index"] == params.voice]
         layers = [Layer(id=v["index"] + 1, name=f"{st.label} · {v['ink']}", color=v["color"],
                         paths=by_voice.get(v["index"], [])) for v in want]

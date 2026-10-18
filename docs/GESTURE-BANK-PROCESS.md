@@ -58,7 +58,7 @@ Images are the medium of judgement. Nothing is plotted unless Ian asks.
 | Kit | saved library + combinable techniques + recipes | `tools/gesture/gesture/kit/` ([contract](../tools/gesture/gesture/kit/README.md), [spec](superpowers/specs/2026-10-17-gesture-kit.md)) |
 | Library | every learned hand, tempo, dance trail, shape set, corpus index, with provenance and policy | `tools/gesture/library/<kind>/<id>/` |
 | Hand Drift bench | the first app bench: one line drifting through hands | `axibridge/sources/hand_drift.py` ([plan](superpowers/plans/2026-10-17-hand-drift-bench.md)) |
-| Gesture Studies | saved pieces with their own controls, one bench with its own dropdown (15 built-in; forks in a machine-level store) | `axibridge/sources/gesture_studies.py`, `_gesture_studies/`, `gesture_studies_store.py`, `gesture_studies_api.py` ([spec](superpowers/specs/2026-10-17-gesture-studies.md)) |
+| Gesture Studies | saved pieces with their own controls, one bench with its own dropdown (28 built-in; forks in a machine-level store) | `axibridge/sources/gesture_studies.py`, `_gesture_studies/`, `gesture_studies_store.py`, `gesture_studies_api.py` ([spec](superpowers/specs/2026-10-17-gesture-studies.md)) |
 
 ### The kit in one paragraph
 

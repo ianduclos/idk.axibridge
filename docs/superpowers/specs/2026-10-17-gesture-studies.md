@@ -147,3 +147,21 @@ them) and each piece's column list — plus cheaper cache keys give ~1.45× on a
 first fit; a per-process fit memo makes a refit of the same polylines free (a
 chart redrawn through another hand or another amount). Bit-identical on the
 453 recorded chart strokes and on every parity fixture.
+
+## Round 12 keeps, second set (2026-10-18)
+
+Four more built-ins (`tools/gesture/results/keeps13-2026-10-18.md`):
+`found_ground` (Oehlen found ground: "absolute gold"), `limb_signs` and
+`limb_signs_levitation` (revisit: signs as line events, "keeper" / "love
+this") and `morphing_belt` (the river belt, tighter: "line that morphs gesture
+type"). Two format additions, both additive:
+
+- **Voices by ink.** A study may list `inks` (Flexoki pen names) with
+  `keep: "voices"`: its voices are then the pens the kit inks name
+  (`Ink.meta` "ink", else "colour"), not its parts — a drawing whose pens
+  change by region (the plastic-sheet tint) or by mark (two limbs) keeps as a
+  group with one layer per pen. An ink unused this time is not kept.
+- **Library data kinds.** `freeze.py` also freezes `DATA_KINDS`
+  (`river_stems`: the found river's far-view GRWL stem), data a technique reads
+  by default with no control picking it; pinned through the snapshot like
+  everything else.

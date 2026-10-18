@@ -1,4 +1,4 @@
-# FROZEN from research commit 529a195: tools/gesture/gesture/kit/prosody_renderers.py
+# FROZEN from research commit efce219: tools/gesture/gesture/kit/prosody_renderers.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Accumulation thread (round 9): mass built from visible line.
 

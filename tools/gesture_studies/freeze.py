@@ -84,11 +84,18 @@ KIT_MODULES = ("__init__", "core", "library", "arrangers_base", "modulators_base
                "prosody_arrangers", "dev_beads", "dev_chorus", "sampler",
                # round 12 keeps (2026-10-17): the leaf miner and brood galleries, the measurement
                # versions (cuts, plates, taxonomy, re-chain, triptych) and the swells
-               "voices_trails", "measure_next", "swell_ink")
+               "voices_trails", "measure_next", "swell_ink",
+               # round 12 keeps, second set (2026-10-18): Oehlen found ground, the limb signs (revisit)
+               # and the morphing river belt
+               "arrangers_oehlen_found", "voices_revisit", "modulators_revisit", "renderers_revisit",
+               "voices_belt")
 # research modules (tools/gesture/gesture/<name>.py) they import, transitively
 RESEARCH_MODULES = ("core", "curvature", "clothoid", "grammar", "hybrid", "regime", "penrender",
-                    "regime_field", "gesture_timing", "broadnib")
+                    "regime_field", "gesture_timing", "broadnib",
+                    "signs")                       # round 7's sign operators (renderers_revisit)
 GENERATIVE_KINDS = ("hand", "tempo", "dance_trail")   # kinds a study control can pick
+DATA_KINDS = ("river_stems",)                         # data a technique reads by default (no control picks it):
+                                                      # frozen like the generative kinds, policy gate included
 META_KINDS = ("corpus",)                              # index entries the policy gate reads
 SAMPLE_POINTS = 800                                   # strided parity sample per study
 
@@ -208,12 +215,12 @@ def freeze_library(src_root: Path, commit: str) -> dict:
     index = json.loads(index_path.read_text()) if index_path.exists() else {"history": [], "withdrawn": []}
     snapshot: dict[str, dict[str, str]] = {}
     skipped, withdrawn = [], set(index.get("withdrawn", []))
-    for kind in (*META_KINDS, *GENERATIVE_KINDS):
+    for kind in (*META_KINDS, *GENERATIVE_KINDS, *DATA_KINDS):
         snapshot[kind] = {}
         for eid in lib.ids(kind):
             entry = lib.entry(kind, eid)
             folder = lib.folder(kind, eid)
-            if kind in GENERATIVE_KINDS:
+            if kind in GENERATIVE_KINDS or kind in DATA_KINDS:
                 try:
                     lib.check(entry, "generate")          # the research policy gate, incl. corpus allow-lists
                     lib.load(kind, eid)                     # and it decodes

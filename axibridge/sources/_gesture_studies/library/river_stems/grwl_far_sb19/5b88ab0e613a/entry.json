@@ -1,0 +1,42 @@
+{
+ "id": "grwl_far_sb19",
+ "kind": "river_stems",
+ "label": "Far-view river stem (GRWL SB19, Amazon)",
+ "version": 1,
+ "created": "2026-10-18",
+ "provenance": {
+  "corpus": "earth",
+  "corpus_ids": [
+   "grwl-vec-SB19"
+  ],
+  "training_sheets": [
+   "grwl-vec-SB19"
+  ],
+  "rights": "GRWL V01.01, Allen & Pavelsky 2018 (Science 361:585), CC BY 4.0",
+  "local_path": ".local/gesture/corpus/earth/grwl-vec-SB19",
+  "extraction": "kit/arrangers_oehlen_found._stems: single-channel main stems (median width 150-700 m, nchannels <= 1, lakes dropped), local equirectangular metres, resampled at w/4, gaussian-smoothed at sigma 6 samples (1.5 w), longest first; rank 0 kept whole",
+  "research_commit": "ab38b75",
+  "experiment": "tools/gesture/experiments/keeps13_river_stems.py"
+ },
+ "policy": "generative",
+ "notes": "The found river of the Oehlen found-ground piece (round 12): read by the oehlen_found_river voice in place of the local corpus. Far views only (Ian 2026-10-17). Points in metres; the voice takes a stretch, turns its principal axis horizontal and fits it to the pasted box.",
+ "files": {
+  "stems": "stems.npz"
+ },
+ "size_bytes": 142713,
+ "stems": {
+  "n_stems": {
+   "SB19": 25
+  },
+  "frozen": [
+   {
+    "tile": "SB19",
+    "rank": 0,
+    "segment": 1,
+    "channel_w_m": 254.0,
+    "array": "SB19_0",
+    "points": 9684
+   }
+  ]
+ }
+}

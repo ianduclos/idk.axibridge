@@ -36,7 +36,9 @@ ORDER = ["hand_drift", "danced_chain", "two_voices", "drawing_and_measure", "sha
          "numbered_atlas", "dance_atlas", "margin_chart", "merged_shadow", "chorus", "sampler", "ledger_straight",
          # round 12 keeps (2026-10-17)
          "leaf_miner", "brood_gallery", "specimen_plate", "river_taxonomy", "rechain", "dance_triptych",
-         "bold_swell", "swell_answer", "swell_sentence"]
+         "bold_swell", "swell_answer", "swell_sentence",
+         # round 12 keeps, second set (2026-10-18): voices by ink
+         "found_ground", "limb_signs", "limb_signs_levitation", "morphing_belt"]
 KIT_STUDIES = ORDER[1:]                        # the sampler draws through the kit too
 # Studies whose ink depends on GEOS's offset/buffer details: nib "c" lanes come out
 # slightly differently under GEOS 3.13 (app venv) and 3.14 (research venv). The
@@ -44,7 +46,8 @@ KIT_STUDIES = ORDER[1:]                        # the sampler draws through the k
 # research interpreter; here they must still agree structurally.
 # The sampler's default combination changes when a refreeze adds hands; it may
 # then be inked in nib "c" lanes, so it is held to the structural check too.
-GEOS_SENSITIVE = {"two_voices", "sampler"}
+# The limb signs (2026-10-18) ink their figures with the nib renderer's c+e lanes too.
+GEOS_SENSITIVE = {"two_voices", "sampler", "limb_signs", "limb_signs_levitation"}
 
 _SHEETS: dict = {}
 
@@ -684,3 +687,64 @@ def _keep_endpoint(c):
     layers = r.json()["layers"]
     assert [x["color"] for x in layers] == ["#100F0F", "#AF3029", "#205EA6", "#24837B"]
     assert sum(x["paths"] for x in layers) == len(r.json()["lines"])
+
+
+# ---------------------------------------------------------------------------
+# voices by ink (round 12 keeps, 2026-10-18): Oehlen found ground, limb signs
+# ---------------------------------------------------------------------------
+
+def test_ink_voices_split_the_drawing_by_pen_and_add_up():
+    full = gen(params("found_ground"))
+    doc = SRC.generate(SRC.Params(**params("found_ground")))
+    assert [layer.name.split(" · ")[1] for layer in doc.layers] == ["blue", "green-400", "black"]  # no made line
+    assert [layer.color for layer in doc.layers] == ["#205EA6", "#879A39", "#100F0F"]
+    voices = [gen(params("found_ground", voice=i)) for i in range(3)]
+    assert fingerprint([q for v in voices for q in v]) == fingerprint(full) or \
+        sorted(fingerprint([q for v in voices for q in v])) == sorted(fingerprint(full))
+    assert gen(params("found_ground", voice=3)) == []                        # green: no made line is tinted
+    signs = SRC.generate(SRC.Params(**params("limb_signs")))
+    assert [layer.color for layer in signs.layers] == ["#100F0F", "#AF3029"]
+
+
+def test_ink_study_controls_reach_the_drawing():
+    base = fingerprint(gen(params("found_ground")))
+    none = SRC.generate(SRC.Params(**params("found_ground", {"arranger.cover_use": "none"})))
+    assert [layer.name.split(" · ")[1] for layer in none.layers] == ["blue", "black"]   # no tint, no green
+    river = gen(params("found_ground", {"arranger.found_on": "second"}))
+    assert fingerprint(river) != base and len(river) < 10
+    a = gen(params("morphing_belt"))
+    b = gen(params("morphing_belt", {"parts.0.voice.gain": 1.0, "parts.0.voice.gain_end": 2.6}))
+    assert len(a) == len(b) == 1 and a[0].points != b[0].points
+
+
+def test_study_inks_are_validated():
+    st = ST.builtin("limb_signs").model_dump()
+    with pytest.raises(ValidationError):
+        ST.Study(**{**st, "inks": ["black", "mauve"]})
+    with pytest.raises(ValidationError):
+        ST.Study(**{**st, "inks": ["black", "black"]})
+    with pytest.raises(ValidationError):
+        ST.Study(**{**st, "keep": "layer"})                  # inks name the voices of a voices study
+    with pytest.raises(ValueError, match="not one of this study's inks"):
+        engine.render_voices(ST.resolve(ST.builtin("limb_signs"), {}, FL.FrozenLibrary()), FL.FrozenLibrary(),
+                             ["black"])
+
+
+def test_keep_ink_study_skips_unused_inks():
+    from axibridge.session import session
+
+    group, layers = session.keep_gesture_study_voices(params("found_ground"))
+    try:
+        assert group.name == "Found ground (after Oehlen)"
+        assert [layer.source.params["voice"] for layer in layers] == [0, 1, 2]
+        assert [layer.name.split(" · ")[1] for layer in layers] == ["blue", "green-400", "black"]
+        assert len({layer.pen_id for layer in layers}) == 3
+    finally:
+        session.undo()
+
+
+def test_found_ground_needs_no_corpus():
+    """The river is the frozen library stem (river_stems/grwl_far_sb19), never .local."""
+    lib = FL.FrozenLibrary()
+    assert lib.ids("river_stems") == ["grwl_far_sb19"]
+    assert ST.builtin("found_ground").recipe["parts"][1]["voice"]["stems"] == "grwl_far_sb19"

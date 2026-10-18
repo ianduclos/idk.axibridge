@@ -1,4 +1,4 @@
-# FROZEN from research commit 529a195: tools/gesture/gesture/calligraphy.py
+# FROZEN from research commit efce219: tools/gesture/gesture/calligraphy.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """app: the research `calligraphy` module reduced to the one name the kit
 library imports. The full module needs PIL and reads the scans; the app only

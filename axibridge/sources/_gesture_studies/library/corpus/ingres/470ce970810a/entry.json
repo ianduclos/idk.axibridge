@@ -1,0 +1,40 @@
+{
+ "id": "ingres",
+ "kind": "corpus",
+ "label": "ingres corpus (index)",
+ "version": 1,
+ "created": "2026-10-17",
+ "provenance": {
+  "local_path": ".local/gesture/corpus/ingres",
+  "indexed_commit": "d698db8",
+  "manifests": [
+   {
+    "file": "docs/research/gesture-corpus/comparison-met.csv",
+    "rows": 34,
+    "rows_on_disk": 34,
+    "filter": [
+     "artist",
+     "ingres"
+    ]
+   }
+  ],
+  "docs": []
+ },
+ "policy": "generative",
+ "notes": "Met Open Access (CC0) drawings.",
+ "files": {},
+ "size_bytes": 0,
+ "counts": {
+  "files": 34,
+  "bytes": 51371267,
+  "by_extension": {
+   ".jpg": 34
+  },
+  "subfolders": {
+   ".": {
+    "files": 34,
+    "bytes": 51371267
+   }
+  }
+ }
+}

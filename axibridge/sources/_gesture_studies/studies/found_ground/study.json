@@ -1,0 +1,242 @@
+{
+ "id": "found_ground",
+ "label": "Found ground (after Oehlen)",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-18",
+ "source": "oehlen_found round 12: tools/gesture/results/oehlen_found-1-piece.recipe.json (v10, seed 4441)",
+ "engine": "kit",
+ "keep": "voices",
+ "inks": [
+  "blue",
+  "green-400",
+  "black",
+  "green"
+ ],
+ "notes": "Found printed matter pasted first in a thin blue pen: the project's own measurement plate (a hokusai line's taxonomy) and a far view of a real Amazon stem (GRWL SB19, frozen in the library). A torn cut strip stops what is beneath it; a plastic sheet re-inks the plate's drawing green. Then one bold late gesture (dance_thrusting) crosses everything: while it listens it rides the river, the plate's contours and the torn edge 0.9 mm beside them and leaves at a tangent; while it ignores it crosses them. Ian, round 12: \"absolute gold. We have to follow this path … the way one regime can be, or not, influenced by another. the way the line in front becomes the river, and becomes the above graph, and then does some other thing by itself in another place … It really seems like the interlocking regimes are aware of one another, the way an improvisatory painter like oehlen would approach stuff. Keep this.\" Keep makes a group with one layer per ink (blue found layer, green-400 tinted found layer, black gesture; green appears only if a made line is tinted), each on its own pen; the piece used a 0.3 mm blue and a 0.9 mm black. Controls: the gesture's hand, the plate kind, which found ground is pasted (plate + river, plate, river), the covers (as composed, only the cut or the tint, none, or all in one mode), how long the line listens and how long it ignores (mean mm of line), how far a ride carries it, the seed.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   205.0,
+   297.0
+  ],
+  "seed": 4441,
+  "margin": 10.0,
+  "arranger": {
+   "id": "oehlen_found",
+   "found": 2,
+   "late": 1,
+   "roles": "",
+   "found_boxes": [
+    0.5,
+    0.4,
+    0.9,
+    0.66,
+    -2.5,
+    0.5,
+    0.6,
+    0.95,
+    0.15,
+    -10.0
+   ],
+   "crop": 1.0,
+   "made_box": [],
+   "late_box": [
+    0.5,
+    0.55,
+    0.9,
+    0.7
+   ],
+   "step": 0.4,
+   "capture": 3.0,
+   "align": 0.5,
+   "ride": 35.0,
+   "ride_sd": 0.6,
+   "min_ride": 12.0,
+   "listen": 60.0,
+   "ignore": 50.0,
+   "return_mm": 35.0,
+   "ramp": 2.5,
+   "grow": true,
+   "grow_reach": 120.0,
+   "max_rides": 6,
+   "ride_gap": 0.9,
+   "max_offset": 18.0,
+   "covers": 2,
+   "cover_mode": "cut",
+   "cover_shape": "torn",
+   "cover_boxes": [
+    0.66,
+    0.55,
+    0.09,
+    0.36,
+    12.0,
+    4.0,
+    0.0,
+    0.3,
+    0.4,
+    0.42,
+    0.22,
+    -5.0,
+    5.0,
+    1.0
+   ],
+   "cover_w": [
+    0.28,
+    0.42
+   ],
+   "cover_aspect": [
+    0.5,
+    1.6
+   ],
+   "cover_tilt": 14.0,
+   "cover_margin": 12.0,
+   "cover_cuts": "all",
+   "cover_edge": "none",
+   "late_borrow": "all",
+   "late_grow": false,
+   "grow_flip": true,
+   "late_capture": 6.0,
+   "min_stub": 4.0,
+   "found_ink": "blue",
+   "found_pen": 0.3,
+   "made_ink": "black",
+   "made_pen": 0.4,
+   "late_ink": "black",
+   "late_pen": 0.9,
+   "tint_ink": "green",
+   "tint_found_ink": "green-400",
+   "edge_pen": 0.25,
+   "found_on": "all",
+   "cover_use": "all"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "hokusai",
+     "length": 4.0,
+     "joins": "smooth"
+    },
+    "modulators": [
+     {
+      "id": "measure_next",
+      "cut": "inflection",
+      "grain": 0.012,
+      "plate": "taxonomy",
+      "order": "time",
+      "norm": "chord",
+      "cells": 24,
+      "families": 5,
+      "group": "shape",
+      "trace": false,
+      "hist": "none",
+      "hist_style": "steps",
+      "page": "diptych",
+      "split": 0.6,
+      "rechain": "sign",
+      "mirror": false,
+      "blend": 0.0,
+      "shadow": "none",
+      "shadow_gain": 5.0,
+      "degrees": true,
+      "explode": 0.6,
+      "cap": 2.5,
+      "label_h": 2.0,
+      "index_h": 2.0,
+      "avoid": true,
+      "numbers": "all",
+      "drawn_by": null,
+      "straight": "rules+labels",
+      "amount": 1.5,
+      "keep": 0.006
+     }
+    ]
+   },
+   {
+    "voice": {
+     "id": "oehlen_found_river",
+     "tile": "SB19",
+     "rank": 0,
+     "start": 0.0,
+     "span_w": 2400,
+     "angle": 0.0,
+     "stems": "grwl_far_sb19"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_thrusting",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "Found ground (after Oehlen)"
+ },
+ "controls": [
+  {
+   "path": "parts.2.voice.hand",
+   "label": "The gesture's hand",
+   "type": "hand"
+  },
+  {
+   "path": "parts.0.modulators.0.plate",
+   "label": "Plate",
+   "type": "choice"
+  },
+  {
+   "path": "arranger.found_on",
+   "label": "Found ground",
+   "type": "choice",
+   "help": "all: the plate and the river; first: the plate only; second: the river only"
+  },
+  {
+   "path": "arranger.cover_use",
+   "label": "Covers",
+   "type": "choice",
+   "help": "all: the torn cut strip and the plastic tint sheet as composed; cut / tint: only that one; none; all-cut / all-tint: both covers in that mode"
+  },
+  {
+   "path": "arranger.listen",
+   "label": "Listens (mm)",
+   "type": "float",
+   "min": 10.0,
+   "max": 200.0,
+   "step": 1.0,
+   "help": "mean length of a listening window, mm of line: a near, aligned found contour may take the line"
+  },
+  {
+   "path": "arranger.ignore",
+   "label": "Ignores (mm)",
+   "type": "float",
+   "min": 0.0,
+   "max": 300.0,
+   "step": 1.0,
+   "help": "mean length of an ignoring window: the line crosses whatever is there"
+  },
+  {
+   "path": "arranger.ride",
+   "label": "Ride (mm)",
+   "type": "float",
+   "min": 12.0,
+   "max": 90.0,
+   "step": 1.0
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

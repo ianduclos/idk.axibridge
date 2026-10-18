@@ -69,7 +69,12 @@ class GestureStudiesSessionMixin:
         for v in voices:
             vp = {**base, "voice": v["index"]}
             doc = gencache.generate_cached(src, vp)
-            made.append((v, vp, doc, [q for layer in doc.layers for q in layer.paths]))
+            paths = [q for layer in doc.layers for q in layer.paths]
+            if paths:                       # an ink this drawing does not use is no layer (e.g. no tint cover)
+                made.append((v, vp, doc, paths))
+        if not made:
+            raise ValueError(f"{p.study.label} drew nothing to keep")
+        voices = [v for v, *_ in made]
         all_paths = [q for *_, paths in made for q in paths]
         transform = self._placement_transform(SOURCE, made[0][1], made[0][2], all_paths)
         pens = voice_pens(voices)
