@@ -1,0 +1,97 @@
+{
+ "kit": 1,
+ "frame": [
+  300.0,
+  200.0
+ ],
+ "seed": 1313,
+ "margin": 10.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "mutual",
+    "T": 150,
+    "upto": 0,
+    "river_scale": 1.6,
+    "river_sigma": 9.0,
+    "river_start": [
+     0.0,
+     0.62
+    ],
+    "river_heading": 0.0,
+    "river_speed": 2.0,
+    "river_kmax": 0.07,
+    "river_nat": 1.0,
+    "river_rush": 3.0,
+    "river_flow": 0.08,
+    "wrap_r": 9.0,
+    "wrap_deg": 160.0,
+    "graph_band": [
+     0.05,
+     0.95,
+     0.12
+    ],
+    "graph_amp": 9.0,
+    "graph_noise": 0.5,
+    "burst_ticks": 3,
+    "refractory": 0,
+    "lift_max": 2,
+    "quakes": "tohoku2011,maule2010,sumatra2004,nepal2015",
+    "bold_hand": "dance_thrusting",
+    "bold_k": 0.21,
+    "bold_len": 0.35,
+    "bold_speed": 7.0,
+    "ride_mm": 45.0,
+    "ride_gap": 0.9,
+    "turn_deg": 55.0,
+    "turn_gap": 12.0,
+    "knot_mm": 2.2,
+    "patience": 8,
+    "appetite_cost": 0.05,
+    "appetite_gain": 0.004,
+    "refuse_below": 0.0,
+    "bold_start": 4,
+    "bold_entries": [],
+    "invite": 2.0,
+    "wire_hand": "trail_slime",
+    "wire_k": 0.12,
+    "wire_len": 1.2,
+    "wire_speed": 3.0,
+    "wire_awake": 14.0,
+    "refuse_r": 5.0,
+    "wire_gap": 1.1,
+    "wire_start": [
+     0.08,
+     1.0
+    ],
+    "wire_heading": -60.0,
+    "wire_start_tick": 0,
+    "wire_curious": true,
+    "wake_max": 20,
+    "blank": [
+     0.85,
+     0.58,
+     0.22
+    ],
+    "n_cand": 6,
+    "step": 0.4,
+    "pens": [
+     0.3,
+     0.3,
+     1.0,
+     0.25
+    ],
+    "inks": "red,blue,black,black"
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "oehlen_found_ink",
+  "pen": 0.4
+ },
+ "label": "mutual"
+}
