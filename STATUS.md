@@ -1,7 +1,7 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-10-17
+updated: 2026-10-18
 machine: mac+pi
 summary: The gesture bank now runs as a working loop (parallel research rounds, a review page Ian annotates, kept work saved as Gesture Studies in the app with a kit and library behind them); MCP/live-sync and the 8 October integration still await Ian's native acceptance.
 next:
@@ -10,11 +10,18 @@ next:
   - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
   - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
   - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank: round 11 keeps + round 12 new pathways in a fresh session (docs/superpowers/plans/2026-10-17-round12-plan.md)
+  - Gesture bank: annotate the round 12 review page (https://claude.ai/artifact/XXNSKSXYdbYptmZFnpYhpE), then review record + keeps + round 13 plan
 handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Gesture bank, 18 October (round 12, new pathways):** keeps from round 11 are
+24 built-in Gesture Studies; six threads broke calcified defaults (sources as
+drivers, a seven-sheet series, mass from stains, a Codex outsider, round 7
+revisited) and Ian's seed ran deep (Oehlen works on paper: research, 30
+approved references, found ground / conduction / intuition). Summary:
+`tools/gesture/results/round12-2026-10-18.md`; review page awaiting notes.
 
 **Gesture bank, 17 October:** the research became a workflow, documented in
 `docs/GESTURE-BANK-PROCESS.md`. In the app: the Hand Drift bench, then

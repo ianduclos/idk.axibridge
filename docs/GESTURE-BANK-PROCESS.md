@@ -185,6 +185,8 @@ library".
 | Studies v2 | Seven studies from the round-10 review (numbered atlas, dance atlas, margin chart, merged shadow, chorus kept as a pen-per-voice group, sampler, ledger with straight lines); edits stay pinned; exact clothoid memos (~1.45×) | [studies spec](superpowers/specs/2026-10-17-gesture-studies.md) "Studies v2" |
 | Round 11 | Emphasis on hands: 20 new hands (rivers at three zooms + a braid voice; leaf-miner, beetle, slime, borer, oak-net, grazer and particle-track trails; two fly hands from mosca-draw's simulated walks; six per-dancer hands, barely distinguishable); smooth swelling into round mass (drop/press/lens), deliberate dot shapes, bold single gestures; solid abstract script (joining decides it; weight window 0.25–0.42 band cover); measurement versions (taxonomy plate, specimens re-chained into a second drawing); refreeze to 44 hands; ten new corpora approved for download | `round11-2026-10-17.md`, review page in `HANDOFF.md` |
 
+| Round 12 | New pathways against calcification: sources as drivers (stork/mosquito steering a river line), a seven-sheet series, mass from fabric stains, a Codex-run outsider thread, round 7 revisited; Ian's seed "Oehlen works on paper, go deep" as research → approved downloads → found ground, conduction and an intuition-steered session; ≤ 5 images per thread; keeps → 24 studies | `round12-2026-10-18.md`, review page in `HANDOFF.md` |
+
 ### Turns in direction (Ian's words)
 
 - "Contiguous lines … def not hatching. Think Oehlen's trees or some of the
@@ -204,6 +206,9 @@ library".
 - "Perhaps the new hands are a bit meh … more interested in using these
   kinematics to drive other stuff." / Abstract script: "too similar to real …
   keep it a separate thing." (round 11 review)
+- "Albert Oehlen works on paper, go deep." / "Some radical alternative approach,
+  session self steered by intuition." / Rivers as found material only "like a
+  far away view of the river, tight zigzag curves." (round 12 seed)
 
 ---
 

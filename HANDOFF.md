@@ -1,15 +1,15 @@
 ---
 project: idk.axibridge
-updated: 2026-10-17
+updated: 2026-10-18
 entries: 31
 ---
 
-### Gesture bank: round 11 keeps + round 12 "new pathways" (planned) — opened 2026-10-16, owner: claude (next session)
+### Gesture bank: round 12 awaiting Ian's notes — opened 2026-10-16, owner: ian (notes), then claude
 
-- done: Rounds 8–11 with review pages and review records (latest: `tools/gesture/results/round11-review-2026-10-17.md` — measurement versions and the multi-pen chorus keep winning; new hands "a bit meh", sources better as drivers; abstract script parked as its own thing). Studies v2 in the app (15 studies, 44 hands). Development method written up: `docs/GESTURE-BANK-PROCESS.md` §8 (roles, cadence, calcification checklist, ways to break it). Frontend rebuilt so a restart shows Studies v2.
-- next: In a fresh session, run `docs/superpowers/plans/2026-10-17-round12-plan.md`: A) keeps into studies (leaf miner, brood 4/5, measurement versions incl. taxonomy graph rework and triptych label toggle, bold swells, ledger inner lines stylised, sampler pollution filter); B) round 12 new pathways — sources as drivers not hands, change the unit (series, frieze, tiled, timeline), mass from real stains, a second model's taste (Codex/Gemini agent), an Ian-seeded thread (ask him for a seed first), optionally revisit old ideas. Retire the old defaults (route, seed 7000, single A4 frame).
-- blockers: none. Open: Shape atlas ~50 s; one pre-existing UI test failure (`test_failed_pen_commit_keeps_draft_for_retry`) needs chromium to re-verify; native window not checked; Pi clone not synced; de Kooning/Polke need a manual browser download if still wanted.
-- context: [plan](docs/superpowers/plans/2026-10-17-round12-plan.md), [process + method](docs/GESTURE-BANK-PROCESS.md), [round 11](tools/gesture/results/round11-2026-10-17.md), [studies spec](docs/superpowers/specs/2026-10-17-gesture-studies.md), review pages: r11 https://claude.ai/artifact/RKPordy71hTdUzttTgmjNj, r10 https://claude.ai/artifact/2HcJTktg4ZFLu3Megpjc6w, r9 https://claude.ai/artifact/4Z61rcGvWnEAsEuczdNmLv, r8 https://claude.ai/artifact/WCLDwLNuFnCrmMx7ZtZpuY.
+- done: Round 12 "new pathways" ran (2026-10-17/18): keeps → 9 new studies + ledger v2 + sampler v2 (24 built-ins, frozen from 529a195, snapshot d45bd0c9e632 unchanged); threads drivers, series, stains, Codex outsider, revisit, and Ian's seed (Oehlen works on paper: research → 30 approved downloads → found ground / conduction / intuition). Summary + lead's read: `tools/gesture/results/round12-2026-10-18.md`. Review page (33 images, notes db): https://claude.ai/artifact/XXNSKSXYdbYptmZFnpYhpE. Corpus index now covers animal + fabric (kit suite green).
+- next: When Ian has annotated, read `notes` back with ArtifactData, write `results/round12-review-*.md` comparing his notes with the lead's read FIRST, then keeps → studies, update GESTURE-BANK-PROCESS §6/§8, plan round 13.
+- blockers: none. Open: images containing Oehlen thumbnails live in `.local/gesture/out/round12-refs/`, but `oehlen_conduct-process.jpg` is in local unpushed history at fbcfcde (untracked again in f0acd92) — ask Ian before any push whether to rewrite. Oehlen #10 attribution unverified (quarantined). `oehlen_found` river voice reads the local GRWL corpus at run time (freeze before any study). Shape atlas ~50 s; `test_failed_pen_commit_keeps_draft_for_retry` needs chromium; Pi not synced.
+- context: [round 12 summary](tools/gesture/results/round12-2026-10-18.md), [common brief](tools/gesture/results/round12-brief-2026-10-17.md), [plan](docs/superpowers/plans/2026-10-17-round12-plan.md), [process + method](docs/GESTURE-BANK-PROCESS.md), review pages: r12 https://claude.ai/artifact/XXNSKSXYdbYptmZFnpYhpE, r11 https://claude.ai/artifact/RKPordy71hTdUzttTgmjNj, r10 https://claude.ai/artifact/2HcJTktg4ZFLu3Megpjc6w.
 
 ### MCP server + live sync: native acceptance and follow-ups — opened 2026-10-13, owner: ian
 
