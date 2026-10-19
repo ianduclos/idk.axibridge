@@ -15,9 +15,6 @@ selected bend. No clipping/refitting, ribbon or extra marks are involved.
 """
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 import numpy as np
 from scipy.spatial import cKDTree
 
@@ -46,26 +43,68 @@ def compose(sources: list[dict], assignment: dict) -> dict:
             "k1": bend["k1"] * ratio * flip, "sgn": sg}
 
 
+# The artist's kept accrue free hand (river_belt, seed 3966): entry [2] of
+# results/accrue-3-variants.recipe.json, voice params minus id/hand, copied
+# verbatim so the opening never reads results/ at run time.
+FREE_RECIPE = "tools/gesture/results/accrue-3-variants.recipe.json"
+FREE_VOICE = {
+    'length': 9.0,
+    'scale': 0.45,
+    'K': 8,
+    'step': 0.3,
+    'chunk': 0.06,
+    'clear': 2.0,
+    'h0': 0.3,
+    'h_len': 0.25,
+    'h_use': 1.5,
+    'lam': 0.08,
+    'c_max': 32.0,
+    'habit': 'loops',
+    'c0': 3.0,
+    'grow': 0.45,
+    'learn': 1.0,
+    'relapse': 0.5,
+    'knot_len': 14.0,
+    'relapse_turn': 3.1416,
+    'c_rate': 1.0,
+    'keep': 0.0,
+    'transfer': 4.0,
+    'spin_half': 35.0,
+    'release': 40.0,
+    'release_damp': 0.35,
+    'press_r': 3.0,
+    'press_on': 0.45,
+    'press_hold': 30.0,
+    'tire': 0.35,
+    'exhaust': 2,
+    'recall': 6.0,
+    'recall_gap': 150.0,
+    'mix': 0.8,
+    'stereo': 0.6,
+    'route': 'ltr',
+    'pull': 6.0,
+    'look': 15.0,
+    'edge_k': 40.0,
+}
+
+
 def free_opening(g, box, free_seed: int = 3966):
     """Exact half-A4 accrue recipe, evaluated at origin then translated only.
 
     A smaller box is refused rather than silently rescaling Ian's chosen line.
-    All parameters come from the recorded row, including its fixed sample step.
+    All parameters come from the recorded row (FREE_VOICE), including its fixed
+    sample step.
     """
     x0, y0, w, h = box
     if w < 285 - 1e-8 or h <= 93:
         raise ValueError("passage: opening=free needs a box at least 285 mm wide and over 93 mm high")
-    path = Path(__file__).resolve().parents[2] / "results/accrue-3-variants.recipe.json"
-    rec = json.loads(path.read_text())[2]["recipe"]
-    kw = dict(rec["parts"][0]["voice"])
-    kw.pop("id")
-    kw.pop("hand")
+    kw = dict(FREE_VOICE)
     R = kw.pop("scale") * 0.95 * float(np.hypot(285, 93))
     pts, _channels, events = va.walk(g, np.random.default_rng([int(free_seed), 0xACC0E]),
                                     R=R, box=(0, 0, 285, 93), **kw)
     return pts + [x0, y0], {"kind": "free", "seed": int(free_seed), "hand": "river_belt",
                             "points": len(pts), "length_mm": events["length_mm"], "R_mm": R,
-                            "offset": [float(x0), float(y0)], "recipe": str(path.relative_to(path.parents[3]))}
+                            "offset": [float(x0), float(y0)], "recipe": FREE_RECIPE}
 
 
 def character_distances(grammars, tables):
