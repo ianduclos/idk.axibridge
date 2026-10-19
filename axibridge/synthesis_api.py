@@ -198,6 +198,11 @@ def recompose(body: Recompose) -> dict[str, Any]:
         locked = [i for i in body.locked if i in mine]
         out = EN.recompose(score, lib=lib, locked=locked, seed=body.seed, writer_index=body.writer_index,
                            params=body.params)
+        for k in ("label", "notes"):             # the writer names a fresh score; a recomposed one keeps its name
+            if score.get(k) and not out.get(k):
+                out[k] = score[k]
+        if (score["decisions"].get("bench") or {}) and not out["decisions"].get("bench"):
+            out["decisions"]["bench"] = copy.deepcopy(score["decisions"]["bench"])
         keep = {R["id"]: R for R in score["relations"] if R["id"] in set(body.locked_relations)}
         dropped = []
         if keep:

@@ -35,7 +35,7 @@
 .sy-arc-heading .sy-note { flex:1; }
 .sy-arc-heading button { flex:none; font-size:11px !important; }
 .sy-arc-scroll { overflow:auto; }
-#sy-arcs { height:165px; width:100%; display:block; touch-action:none; }
+#sy-arcs { height:190px; width:100%; display:block; touch-action:none; }
 .sy-baseline { stroke:var(--flexoki-800); stroke-width:1; }
 .sy-arc-line { fill:none; stroke:var(--flexoki-cyan-400); pointer-events:none; }
 .sy-arc-hit { stroke:transparent; stroke-width:12; fill:none; cursor:pointer; }
@@ -64,7 +64,8 @@
 .sy-hand { grid-column:1/-1; display:flex; align-items:end; gap:5px; }
 .sy-hand > label { flex:1; }
 .sy-pen { display:flex; align-items:center; gap:4px; }
-.sy-pen select { flex:1; width:40px; }
+.sy-layer-controls > .sy-label:has(.sy-pen) { grid-column:1/-1; }
+.sy-pen select { flex:1; min-width:90px; }
 .sy-swatch { width:12px; height:12px; border:1px solid var(--flexoki-600); border-radius:50%; flex:none; }
 .sy-technique { align-self:end; font-size:11px; color:var(--flexoki-500); padding:5px; }
 .sy-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
@@ -102,7 +103,8 @@
 .sy-card-sheet img { width:100%; height:100%; object-fit:contain; }
 .sy-card > p { padding:0 12px; max-height:48px; overflow:hidden; }
 .sy-card > details { margin:8px 12px; }
-@media (max-height:800px) { #sy-arcs { height:135px; } .sy-toolbar { padding:7px 12px; } .sy-arc-heading .sy-note { font-size:10px; } }
+@media (max-height:800px) { #sy-arcs { height:150px; } .sy-toolbar { padding:7px 12px; } .sy-arc-heading .sy-note { font-size:10px; } }
 @media (max-width:1100px) { #sy-editors { grid-template-columns:minmax(0,1fr) 310px; } .sy-title .sy-note { display:none; } .sy-arc-heading { flex-wrap:wrap; gap:4px; } .sy-arc-heading .sy-note { order:3; flex-basis:100%; } .sy-save-label input { width:110px; } }
 .sy-dormant { opacity:.65; }
 .sy-dormant:focus-within, .sy-dormant:hover { opacity:1; }
+#process-synthesis .sy-control-lock .tool-icon { width:13px; height:13px; opacity:.75; }

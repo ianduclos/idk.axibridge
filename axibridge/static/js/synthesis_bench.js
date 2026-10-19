@@ -13,6 +13,9 @@ const ICON = {
   die: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M8 8h.01', 'M16 8h.01', 'M12 12h.01', 'M8 16h.01', 'M16 16h.01'],
   lock: ['M5 11h14v10H5z', 'M7 11V7a5 5 0 0 1 10 0v4'],
   open: ['M5 11h14v10H5z', 'M7 11V7a5 5 0 0 1 9.9-1'],
+  // control locks (Shuffle leaves the control) are pins, so they never read as a layer's geometry lock
+  pin: ['M12 17v5', 'M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z'],
+  unpin: ['M12 17v5', 'M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89', 'm2 2 20 20', 'M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11'],
 };
 const icon = name => `<svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON[name].map(d => `<path d="${d}"/>`).join('')}</svg>`;
 let active = null;
@@ -225,7 +228,8 @@ function toggleControl(key) {
 }
 function controlLock(key, label) {
   const locked = lockedControls(active.draft.score).includes(key);
-  const b = button(`${locked ? 'Unlock' : 'Lock'} control ${label}`, () => toggleControl(key), locked ? 'lock' : 'open');
+  const b = button(`${locked ? 'Unlock' : 'Lock'} control ${label}`, () => toggleControl(key), locked ? 'pin' : 'unpin');
+  b.classList.add('sy-control-lock'); b.title = locked ? `${label}: Shuffle leaves it` : `${label}: hold through Shuffle`;
   b.setAttribute('aria-pressed', String(locked)); return b;
 }
 function layerEdit(id, apply) { return change(score => apply(score.layers.find(l => l.id === id)), id); }
@@ -281,8 +285,10 @@ function renderStack() {
 function renderArcs() {
   const host = $('sy-arcs'); host.replaceChildren();
   const score = active.draft.score, count = score.layers.length;
-  const width = Math.max(640, (count + 1) * 72), y = 124;
-  host.setAttribute('viewBox', `0 0 ${width} 260`); host.style.minWidth = `${Math.min(width, 1800)}px`;
+  const box = host.parentElement.getBoundingClientRect();
+  const aspect = box.width > 0 && host.clientHeight > 0 ? box.width / host.clientHeight : 640 / 260;
+  const width = Math.max(260 * aspect, (count + 1) * 72), y = 124;
+  host.setAttribute('viewBox', `0 0 ${width} 260`); host.style.minWidth = `${Math.min((count + 1) * 72 * host.clientHeight / 260 || 0, 1800)}px`;
   const x = id => id === '*' ? width - 34 : 38 + score.layers.findIndex(l => l.id === id) * (width - 110) / Math.max(1, count - 1);
   host.append(svg('line', { x1: 30, y1: y, x2: width - 25, y2: y, class: 'sy-baseline' }));
   score.relations.forEach((r, i) => {
@@ -514,7 +520,7 @@ function render() {
   const s = active.draft.score;
   if (!s.layers.some(l => l.id === active.selected)) active.selected = null;
   $('sy-name').textContent = s.label || 'Synthesis'; $('sy-seed').value = s.seed;
-  $('sy-sheet-lock').innerHTML = icon(lockedControls(s).includes('sheet:seed') ? 'lock' : 'open');
+  $('sy-sheet-lock').innerHTML = icon(lockedControls(s).includes('sheet:seed') ? 'pin' : 'unpin');
   $('sy-sheet-lock').setAttribute('aria-pressed', String(lockedControls(s).includes('sheet:seed')));
   const ripple = bench(s).ripple || 'all';
   document.querySelectorAll('#sy-ripple-buttons button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === ripple)));
@@ -660,7 +666,7 @@ export function initSynthesisBench() {
       <button id="sy-gallery-open">Gallery</button>
       <label class="sy-seed-label">Sheet seed <input id="sy-seed" aria-label="Sheet seed" type="number" min="0" max="2147483647" step="1"></label>
       <button id="sy-sheet-die" aria-label="Roll sheet seed" title="Roll sheet seed">${icon('die')}</button>
-      <button id="sy-sheet-lock" aria-label="Lock control Sheet seed" title="Keep sheet seed through Shuffle">${icon('open')}</button>
+      <button id="sy-sheet-lock" aria-label="Lock control Sheet seed" title="Keep sheet seed through Shuffle">${icon('unpin')}</button>
       <button id="sy-shuffle">Shuffle</button><button id="sy-recompose">Recompose</button>
       <div class="sy-ripple"><span>Ripple</span><div id="sy-ripple-buttons" role="group" aria-label="Ripple">
         <button data-value="all" aria-pressed="true" title="Let all layers follow edits">all</button><button data-value="direct" aria-pressed="false" title="Only direct listeners follow">direct</button><button data-value="none" aria-pressed="false" title="Hold every other layer">none</button></div>

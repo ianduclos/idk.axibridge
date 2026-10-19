@@ -32,7 +32,8 @@ def fixture(name: str) -> dict:
 @pytest.fixture(scope="module")
 def client():
     from axibridge.app import create_app
-    return TestClient(create_app())
+    with TestClient(create_app()) as c:            # keep mutates the project: run the app's lifespan (events)
+        yield c
 
 
 @pytest.fixture(scope="module")
@@ -270,6 +271,7 @@ def test_recompose_keeps_the_lock_and_builds_the_palette_around_it(client, liste
     assert kept.get("lock") and kept.get("pin") and kept["pen"] == lock["pen"]
     assert lock["pen"] in out["decisions"]["writers"][-1]["decisions"]["palette"]
     assert keep_rel in {R["id"] for R in out["relations"]} or keep_rel in r.json()["dropped"]
+    assert out.get("label") == listen.get("label") == "listen"
     assert out["seed"] == 15201                   # the first writer on a sheet sets its seed; the lock keeps its own
     assert kept["seed"] == lock.get("seed", kept["seed"])
 
