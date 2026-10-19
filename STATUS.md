@@ -3,17 +3,32 @@ project: idk.axibridge
 state: active
 updated: 2026-10-19
 machine: mac+pi
-summary: The synthesis bench's research core is built — the score contract's gaps are closed (round 16 still replays bit-identically), and listen, ccolour and arch now write scores the executor plays, with follow, locks and recompose; the S2 review page awaits Ian's notes, then S4 builds the app bench.
+summary: The synthesis bench is built (S4) — a writer proposes a score of layers and relations, Ian edits it in a layer stack and an arc-diagram editor, locks, recomposes and keeps it as a group — tests green, ready for Ian's check in the relaunched app.
 next:
-  - Ian — notes on the S2 review page (https://claude.ai/artifact/NtcsSUmoqrurwjYM4HSutR), incl. recompose palette and how far one edit should ripple
-  - S4 app bench in a fresh session (plan docs/superpowers/plans/2026-10-19-synthesis-bench-build.md; see HANDOFF)
-  - Relaunch AxiBridge.app and try Gesture Studies bench v3, the Measure layer and river_zoom's relay mode — Ian
+  - Ian — relaunch AxiBridge.app and try Compose → Synthesis → Bench (see HANDOFF "Synthesis bench: S4 built")
+  - Ian — notes on the S2 review page (https://claude.ai/artifact/NtcsSUmoqrurwjYM4HSutR), then the S2 review record
+  - Decide whether Gesture Studies' swell studies also stop drawing the line through the swell (line outside)
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
   - Sync the idkpi clone with main
-handoff_for: claude
+handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+**Synthesis bench, 19 October (S4):** the app bench is built. Ian's answers at
+the start: palettes around locked pens, a ripple setting (all / direct /
+none), S0″ first (side wildcard filters, budget groups, a relation seed).
+Testing holds found that a lock changed the sheet; a pin now holds a layer
+as grown plus its final lines, so locking alone changes nothing and ripple
+`none` moves only the edited layer. A separate frozen kit
+(`tools/synthesis/freeze.py`, shared hand library), the `synthesis`
+generator (param = the score), keep as a group / replace, `/api/synthesis/*`,
+the `synthesis` MCP tool, and the bench UI (Codex Sol 6.1, lead-reviewed).
+Ian's mid-session ask: the swell's line no longer runs through its middle
+(`line: outside`, used by arch's swell in the writer). Full suite 2245
+passed before the last fixes (4 failures, all fixed and rerun: 130 + 37
+passed); goldens unchanged except arch 15045's swell. Contract:
+`docs/SYNTHESIS.md`. Not pushed.
 
 **Synthesis bench, 19 October (S0′ + S2):** the score contract's ten gaps
 are closed, all opt-in (the 72 round-16 scores replay bit-identically,

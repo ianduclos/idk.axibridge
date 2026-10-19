@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/topology.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/topology.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """The composition / topology layer: how lines relate to each other.
 

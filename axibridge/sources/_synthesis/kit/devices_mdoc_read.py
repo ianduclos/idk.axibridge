@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/devices_mdoc_read.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/devices_mdoc_read.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 16 thread D (`mdoc`): the shared reader for the process documents.
 It registers no device; the `devices_mdoc_*.py` files do.

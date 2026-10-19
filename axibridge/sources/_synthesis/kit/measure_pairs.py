@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/measure_pairs.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/measure_pairs.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """A drawing and its measurement (round 10, exploration `measure_pairs`).
 

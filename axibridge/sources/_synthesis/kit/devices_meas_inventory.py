@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/devices_meas_inventory.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/devices_meas_inventory.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `meas_inventory` (round 15, thread D `meas`): the numbered atlas,
 third version. Round 10 cut ONE line into specimens at its inflections; a

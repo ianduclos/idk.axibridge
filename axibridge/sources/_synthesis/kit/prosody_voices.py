@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/prosody_voices.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/prosody_voices.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Prosody thread (round 9): `drift_tokens`, the seed `drift` voice plus the
 grammar's own syllables.

@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/relations_ccolour.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/relations_ccolour.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """S2b (synthesis bench, 2026-10-19): the relations `ccolour` and `arch` kept inside themselves, as
 registered relations a v2 score names (`writers_ccolour.py` writes the scores).

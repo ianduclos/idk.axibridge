@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/prosody_modulators.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/prosody_modulators.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Prosody thread (round 9): weight as stress, decided by the line's own events.
 

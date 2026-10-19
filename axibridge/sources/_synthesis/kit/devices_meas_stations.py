@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/devices_meas_stations.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/devices_meas_stations.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `meas_stations` (round 15, thread D `meas`): the source's own clock
 read off the line. A river_zoom line carries `u_km` (km of real river under

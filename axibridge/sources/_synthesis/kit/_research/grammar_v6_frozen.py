@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/grammar_v6_frozen.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/grammar_v6_frozen.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 # FROZEN COPY of gesture/grammar.py at commit 6e744ae (grammar v6), for research
 # modules that must not break while grammar.py is being rewritten. Do not edit.

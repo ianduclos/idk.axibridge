@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/devices_meas_turning.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/devices_meas_turning.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `meas_turning` (round 15, thread D `meas`): a new version of the
 κ(s) chart, which Ian likes separate but which has become a cliché inside

@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/curvature.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/curvature.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """The one curvature implementation (see ../README.md, "Curvature").
 

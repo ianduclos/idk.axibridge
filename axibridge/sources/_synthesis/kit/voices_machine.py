@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/voices_machine.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/voices_machine.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Machine voices: deliberate, self-consistent machine grammars (round 9).
 

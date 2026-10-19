@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/voices_trails.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/voices_trails.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Trails and bodies (research round 11, exploration hands_trails, 2026-10-17).
 

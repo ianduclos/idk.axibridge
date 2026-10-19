@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/devices_mdoc_provenance.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/devices_mdoc_provenance.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `mdoc_provenance` (round 16, thread D `mdoc`): which hand, corpus
 and source every line descends from.

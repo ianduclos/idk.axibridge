@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/swell_ink.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/swell_ink.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 11, exploration 2 — swelling into mass (thread `swell`).
 
@@ -313,8 +313,9 @@ SWELL_PARAMS = [
     P("profile", "choice", "drop", " | ".join(PROFILES), choices=PROFILES),
     P("at", "choice", "peak", "where the head sits in the stressed stretch (peak = where dev_beads puts its bead)",
       choices=AT),
-    P("line", "choice", "wire", "wire: the line is drawn through its swells | none: a ghost, only the masses",
-      choices=("wire", "none")),
+    P("line", "choice", "wire", "wire: the line is drawn through its swells | none: a ghost, only the masses | "
+      "outside: the line stops at each mass's outline (no line through the middle; Ian, 2026-10-19)",
+      choices=("wire", "none", "outside")),
     P("pen", "float", 0.4, "pen width mm", min=0.05, max=3.0),
     P("thr", "float", 0.15, "emphasis above which a stretch swells", min=0.0, max=0.99),
     P("size", "float", 7.0, "head diameter at a loud stress, mm (dev_beads' bead size)", min=0.5, max=40.0),
@@ -419,7 +420,7 @@ def swell(ctx, marks, **prm):
             continue
         vid = m.meta.get("voice_id")
         li = None
-        if prm["line"] == "wire":
+        if prm["line"] in ("wire", "outside"):
             li = len(out)
             out.append(Ink_(m.points, prm["pen"], {"voice": vid, "role": "line"}))
         g, _ = swell_geometry(m, prm)
@@ -428,11 +429,22 @@ def swell(ctx, marks, **prm):
             line_ink, dots = _swell_dot_inks(ctx, mi, m, prm, out[li] if li is not None else None, g)
             if li is not None:
                 out[li] = line_ink
+        if li is not None and prm["line"] == "outside" and g is not None:
+            out[li:li + 1] = _outside(out[li], g)
         if g is not None:
             for p, closed, filled in line_fill(g, prm["pen"], prm["pitch"]):
                 out.append(Ink_(p, prm["pen"], {"voice": vid, "role": f"swell:{prm['profile']}"}, closed, filled))
         out += dots
     return out
+
+
+def _outside(ink, g) -> list:
+    """The line's ink cut where it runs inside the swelled masses: its pieces outside, each ending on the
+    mass's edge (the outline ring sits half a pen inside it, so the ink edges meet)."""
+    import shapely  # noqa: PLC0415
+    rest = shapely.LineString(np.asarray(ink.points)).difference(g)
+    parts = [q for q in getattr(rest, "geoms", [rest]) if q.geom_type == "LineString" and not q.is_empty]
+    return [Ink_(np.asarray(q.coords), ink.pen, dict(ink.meta)) for q in parts if len(q.coords) >= 2]
 
 
 def Ink_(p, pen, meta, closed=False, filled=False):

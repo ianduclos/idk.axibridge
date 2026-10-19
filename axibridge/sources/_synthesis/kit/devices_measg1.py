@@ -1,4 +1,4 @@
-# FROZEN from research commit a66c6a5: tools/gesture/gesture/kit/devices_measg1.py
+# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/devices_measg1.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Three geometric readings, in sheet mm, for the measuring-device layer.
 
