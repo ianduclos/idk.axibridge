@@ -1,0 +1,503 @@
+{
+ "panels": [
+  {
+   "kit": 1,
+   "frame": [
+    480.0,
+    120.0
+   ],
+   "seed": 1491,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hdist_zoom",
+      "source": "hand",
+      "hand": "trail_borer",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "schedule": "push",
+      "recur": 3,
+      "calib": "R",
+      "R_mm": 160.0,
+      "peak_fine_mm": 4.0,
+      "fine_mm": 0.8,
+      "top_mm": 50.0,
+      "far_min_mm": 2.2,
+      "far_max_mm": 8.0,
+      "zoom_max": 24.0,
+      "zoom": 1.0,
+      "far_turn_mm": 0.0,
+      "res_mm": 0.45,
+      "reveal": 1.0,
+      "valley": 6.0,
+      "valley_R": 1.0,
+      "pace": 0.5,
+      "angle": 0.0,
+      "drawn_mm": 1500.0,
+      "span": 0.8,
+      "fill": 1.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.45,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    480.0,
+    120.0
+   ],
+   "seed": 1491,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hdist_zoom",
+      "source": "hand",
+      "hand": "dance_staccato",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "schedule": "push",
+      "recur": 3,
+      "calib": "R",
+      "R_mm": 40.0,
+      "peak_fine_mm": 4.0,
+      "fine_mm": 0.8,
+      "top_mm": 50.0,
+      "far_min_mm": 2.2,
+      "far_max_mm": 8.0,
+      "zoom_max": 24.0,
+      "zoom": 1.0,
+      "far_turn_mm": 0.0,
+      "res_mm": 0.45,
+      "reveal": 1.0,
+      "valley": 6.0,
+      "valley_R": 1.0,
+      "pace": 0.5,
+      "angle": 0.0,
+      "drawn_mm": 1500.0,
+      "span": 0.8,
+      "fill": 1.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.45,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    480.0,
+    120.0
+   ],
+   "seed": 1491,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hdist_zoom",
+      "source": "hand",
+      "hand": "mime_penguin",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "schedule": "push",
+      "recur": 3,
+      "calib": "R",
+      "R_mm": 40.0,
+      "peak_fine_mm": 4.0,
+      "fine_mm": 0.8,
+      "top_mm": 50.0,
+      "far_min_mm": 2.2,
+      "far_max_mm": 8.0,
+      "zoom_max": 24.0,
+      "zoom": 1.0,
+      "far_turn_mm": 0.0,
+      "res_mm": 0.45,
+      "reveal": 1.0,
+      "valley": 6.0,
+      "valley_R": 1.0,
+      "pace": 0.5,
+      "angle": 0.0,
+      "drawn_mm": 1500.0,
+      "span": 0.8,
+      "fill": 1.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.45,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    480.0,
+    120.0
+   ],
+   "seed": 1491,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hdist_zoom",
+      "source": "hand",
+      "hand": "fly_fru",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "schedule": "push",
+      "recur": 3,
+      "calib": "R",
+      "R_mm": 40.0,
+      "peak_fine_mm": 4.0,
+      "fine_mm": 0.8,
+      "top_mm": 50.0,
+      "far_min_mm": 2.2,
+      "far_max_mm": 8.0,
+      "zoom_max": 24.0,
+      "zoom": 1.0,
+      "far_turn_mm": 0.0,
+      "res_mm": 0.45,
+      "reveal": 1.0,
+      "valley": 6.0,
+      "valley_R": 1.0,
+      "pace": 0.5,
+      "angle": 0.0,
+      "drawn_mm": 1500.0,
+      "span": 0.8,
+      "fill": 1.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.45,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    480.0,
+    120.0
+   ],
+   "seed": 1491,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hdist_zoom",
+      "source": "hand",
+      "hand": "river_bend",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "schedule": "push",
+      "recur": 3,
+      "calib": "R",
+      "R_mm": 160.0,
+      "peak_fine_mm": 4.0,
+      "fine_mm": 0.8,
+      "top_mm": 50.0,
+      "far_min_mm": 2.2,
+      "far_max_mm": 8.0,
+      "zoom_max": 24.0,
+      "zoom": 1.0,
+      "far_turn_mm": 0.0,
+      "res_mm": 0.45,
+      "reveal": 1.0,
+      "valley": 6.0,
+      "valley_R": 1.0,
+      "pace": 0.5,
+      "angle": 0.0,
+      "drawn_mm": 1500.0,
+      "span": 0.8,
+      "fill": 1.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.45,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    480.0,
+    120.0
+   ],
+   "seed": 1491,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hdist_zoom",
+      "source": "hand",
+      "hand": "shikasta",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "schedule": "push",
+      "recur": 3,
+      "calib": "R",
+      "R_mm": 40.0,
+      "peak_fine_mm": 4.0,
+      "fine_mm": 0.8,
+      "top_mm": 50.0,
+      "far_min_mm": 2.2,
+      "far_max_mm": 8.0,
+      "zoom_max": 24.0,
+      "zoom": 1.0,
+      "far_turn_mm": 0.0,
+      "res_mm": 0.45,
+      "reveal": 1.0,
+      "valley": 6.0,
+      "valley_R": 1.0,
+      "pace": 0.5,
+      "angle": 0.0,
+      "drawn_mm": 1500.0,
+      "span": 0.8,
+      "fill": 1.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.45,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    480.0,
+    120.0
+   ],
+   "seed": 1491,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hdist_zoom",
+      "source": "hand",
+      "hand": "meander69",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "schedule": "push",
+      "recur": 3,
+      "calib": "R",
+      "R_mm": 160.0,
+      "peak_fine_mm": 4.0,
+      "fine_mm": 0.8,
+      "top_mm": 50.0,
+      "far_min_mm": 2.2,
+      "far_max_mm": 8.0,
+      "zoom_max": 24.0,
+      "zoom": 1.0,
+      "far_turn_mm": 0.0,
+      "res_mm": 0.45,
+      "reveal": 1.0,
+      "valley": 6.0,
+      "valley_R": 1.0,
+      "pace": 0.5,
+      "angle": 0.0,
+      "drawn_mm": 1500.0,
+      "span": 0.8,
+      "fill": 1.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.45,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    480.0,
+    120.0
+   ],
+   "seed": 1491,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hdist_zoom",
+      "source": "hand",
+      "hand": "polygon_walk",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "schedule": "push",
+      "recur": 3,
+      "calib": "R",
+      "R_mm": 80.0,
+      "peak_fine_mm": 4.0,
+      "fine_mm": 0.8,
+      "top_mm": 50.0,
+      "far_min_mm": 2.2,
+      "far_max_mm": 8.0,
+      "zoom_max": 24.0,
+      "zoom": 1.0,
+      "far_turn_mm": 0.0,
+      "res_mm": 0.45,
+      "reveal": 1.0,
+      "valley": 6.0,
+      "valley_R": 1.0,
+      "pace": 0.5,
+      "angle": 0.0,
+      "drawn_mm": 1500.0,
+      "span": 0.8,
+      "fill": 1.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.45,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  }
+ ],
+ "rows": [
+  [
+   "trail_borer",
+   "x2",
+   1.871,
+   1.075,
+   0.667,
+   "trail_grazer@x2"
+  ],
+  [
+   "dance_staccato",
+   "x0.5",
+   1.646,
+   0.432,
+   0.5,
+   "mime_prairiedog@x0.5"
+  ],
+  [
+   "mime_penguin",
+   "x0.5",
+   1.583,
+   0.432,
+   0.667,
+   "aaron@x0.5"
+  ],
+  [
+   "fly_fru",
+   "x0.5",
+   1.52,
+   0.572,
+   0.667,
+   "river_threads@x1"
+  ],
+  [
+   "river_bend",
+   "x2",
+   1.484,
+   1.217,
+   0.667,
+   "trail_oaknet@x2"
+  ],
+  [
+   "shikasta",
+   "x0.5",
+   1.393,
+   0.432,
+   0.5,
+   "river_oxbow@x0.5"
+  ],
+  [
+   "meander69",
+   "x2",
+   1.185,
+   0.568,
+   0.667,
+   "trail_beetle@x0.5"
+  ],
+  [
+   "polygon_walk",
+   "x1",
+   1.024,
+   0.838,
+   0.833,
+   "dancer_cristel@x1"
+  ]
+ ],
+ "rule": "The n hands with the largest eye-space distinctness at their best band, among those whose lines\nat that band are self-consistent (fidelity >= min_fid: half or more of its lines sit nearest its own\nhand), skipping a hand whose nearest other is already on the plate (twins score high together)."
+}

@@ -1,0 +1,1176 @@
+{
+ "scores": [
+  {
+   "version": 2,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 16201,
+   "margin": 6.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "speaker",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      6.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "river_bend",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L1",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      33.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "trail_borer",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L2",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      60.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "shikasta",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L3",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      87.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "polygon_walk",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L4",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      114.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "fly_fru",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "yield",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "gap": 0.8,
+      "pen": 0.35,
+      "min_sep": 0.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "hdist: five distinct hands, overlapping lanes, the later line yields"
+  },
+  {
+   "version": 2,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 16202,
+   "margin": 6.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "speaker",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      6.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "river_bend",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L1",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      33.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "trail_borer",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L2",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      60.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "shikasta",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L3",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      87.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "polygon_walk",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L4",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      114.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "fly_fru",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "yield",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "gap": 0.8,
+      "pen": 0.35,
+      "min_sep": 0.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "hdist: five distinct hands, overlapping lanes, the later line yields"
+  },
+  {
+   "version": 2,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 16203,
+   "margin": 6.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "speaker",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      6.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "river_bend",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L1",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      33.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "trail_borer",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L2",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      60.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "shikasta",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L3",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      87.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "polygon_walk",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L4",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      114.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "fly_fru",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "yield",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "gap": 0.8,
+      "pen": 0.35,
+      "min_sep": 0.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "hdist: five distinct hands, overlapping lanes, the later line yields"
+  },
+  {
+   "version": 2,
+   "frame": [
+    267.0,
+    180.0
+   ],
+   "seed": 16204,
+   "margin": 6.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "speaker",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      6.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "river_bend",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L1",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      33.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "trail_borer",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L2",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      60.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "shikasta",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L3",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      87.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "polygon_walk",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    },
+    {
+     "id": "L4",
+     "role": "listener",
+     "pen": "black",
+     "label": "",
+     "region": [
+      12.0,
+      114.0,
+      243.0,
+      60.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hdist_zoom",
+       "source": "hand",
+       "hand": "fly_fru",
+       "hands": [
+        "hokusai",
+        "matisse"
+       ],
+       "schedule": "push",
+       "recur": 3,
+       "calib": "R",
+       "R_mm": 80.0,
+       "peak_fine_mm": 4.0,
+       "fine_mm": 0.8,
+       "top_mm": 50.0,
+       "far_min_mm": 2.2,
+       "far_max_mm": 8.0,
+       "zoom_max": 24.0,
+       "zoom": 0.0,
+       "far_turn_mm": 0.0,
+       "res_mm": 0.45,
+       "reveal": 1.0,
+       "valley": 6.0,
+       "valley_R": 1.0,
+       "pace": 0.5,
+       "angle": 0.0,
+       "drawn_mm": 1500.0,
+       "span": 0.8,
+       "fill": 1.0
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "lcorp_ink",
+       "pen": 0.35,
+       "by": "none",
+       "inks": "black,blue,red,green",
+       "min_run": 3.0
+      }
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "yield",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "gap": 0.8,
+      "pen": 0.35,
+      "min_sep": 0.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "hdist: five distinct hands, overlapping lanes, the later line yields"
+  }
+ ]
+}
