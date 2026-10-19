@@ -1,0 +1,151 @@
+{
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 15010,
+  "margin": 5.0,
+  "arranger": {
+   "id": "arch",
+   "families": "danced,swell,flicker,passer",
+   "density": -1.0,
+   "pens": 0,
+   "mode": "auto",
+   "duet": 0.25,
+   "acts": "container,counter"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_thrusting",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_miner",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dancer_madeline",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_mantis",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "fly_fru",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "meander69",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "hokusai",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_staccato",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_roadrunner",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_belt",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_slime",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "arch_ink",
+   "pen": 0.4,
+   "nib_style": "e"
+  },
+  "label": "arch",
+  "notes": "frame 300\u00d7200: landscape: a core and a reserved blank side by side"
+ },
+ "devices": [
+  {
+   "id": "mdoc_provenance",
+   "place": "beside",
+   "size": 120,
+   "region": [
+    300.0,
+    0.0,
+    120.0,
+    200.0
+   ]
+  }
+ ],
+ "label": "arch15010"
+}

@@ -1,0 +1,150 @@
+{
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   250.0,
+   175.0
+  ],
+  "seed": 15102,
+  "margin": 5.0,
+  "arranger": {
+   "id": "listen",
+   "density": 0.5,
+   "mask_p": 0.25,
+   "river_p": 0.3,
+   "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+   "pens": 0
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_thrusting",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_miner",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dancer_madeline",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_mantis",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "fly_fru",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "hokusai",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_staccato",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_roadrunner",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_belt",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_slime",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "listen",
+  "notes": "frame 250\u00d7175: small landscape: the same vocabulary, denser per area"
+ },
+ "devices": [
+  {
+   "id": "mdoc_census",
+   "place": "over",
+   "region": [
+    7.0,
+    7.626780333443364,
+    236.0,
+    159.40891869160697
+   ]
+  },
+  {
+   "id": "mdoc_ledger",
+   "place": "beside",
+   "size": 125,
+   "region": [
+    250.0,
+    0.0,
+    125.0,
+    175.0
+   ]
+  }
+ ],
+ "label": "listen15102"
+}

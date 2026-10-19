@@ -1,0 +1,365 @@
+{
+ "version": 2,
+ "layers": [
+  {
+   "id": "A",
+   "role": "speaker",
+   "technique": "hand",
+   "part": 0,
+   "pen": "black",
+   "params": {},
+   "label": ""
+  },
+  {
+   "id": "B",
+   "role": "listener",
+   "technique": "hand",
+   "part": 1,
+   "pen": "blue",
+   "params": {},
+   "label": ""
+  },
+  {
+   "id": "C",
+   "role": "listener",
+   "technique": "hand",
+   "part": 2,
+   "pen": "red",
+   "params": {},
+   "label": ""
+  }
+ ],
+ "relations": [
+  {
+   "kind": "mdoc_outcomes",
+   "src": "A",
+   "dst": "B",
+   "relation": "R0",
+   "outcomes": {
+    "sympathy": 7,
+    "cross": 1
+   },
+   "s": [
+    -6.68,
+    17.32
+   ],
+   "at": [
+    102.5,
+    73.33
+   ],
+   "note": "8 event(s): cross 1, sympathy 7"
+  },
+  {
+   "kind": "yield",
+   "src": "A",
+   "dst": "C",
+   "relation": "R1",
+   "outcomes": {
+    "gap_under": 6
+   },
+   "s": [
+    63.22,
+    65.97
+   ],
+   "at": [
+    91.54,
+    87.06
+   ],
+   "note": "6 event(s): gap_under 6"
+  }
+ ],
+ "log": [
+  {
+   "relation": "R0",
+   "kind": "mdoc_outcomes",
+   "src": "A",
+   "dst": "B",
+   "step": 1,
+   "outcome": "sympathy",
+   "at": [
+    108.51,
+    154.83
+   ],
+   "s": [
+    -6.68,
+    17.32
+   ],
+   "s_src": [
+    649.02,
+    649.02
+   ],
+   "mark": 0,
+   "max_mm": 1.094
+  },
+  {
+   "relation": "R0",
+   "kind": "mdoc_outcomes",
+   "src": "A",
+   "dst": "B",
+   "step": 1,
+   "outcome": "cross",
+   "at": [
+    101.17,
+    78.54
+   ],
+   "s": [
+    83.42,
+    83.42
+   ],
+   "s_src": [
+    395.95,
+    395.95
+   ],
+   "mark": 0
+  },
+  {
+   "relation": "R0",
+   "kind": "mdoc_outcomes",
+   "src": "A",
+   "dst": "B",
+   "step": 1,
+   "outcome": "sympathy",
+   "at": [
+    87.46,
+    68.51
+   ],
+   "s": [
+    88.63,
+    112.63
+   ],
+   "s_src": [
+    413.08,
+    413.08
+   ],
+   "mark": 0,
+   "max_mm": 0.755
+  },
+  {
+   "relation": "R0",
+   "kind": "mdoc_outcomes",
+   "src": "A",
+   "dst": "B",
+   "step": 1,
+   "outcome": "sympathy",
+   "at": [
+    68.97,
+    70.96
+   ],
+   "s": [
+    107.95,
+    131.95
+   ],
+   "s_src": [
+    480.45,
+    480.45
+   ],
+   "mark": 0,
+   "max_mm": 1.381
+  },
+  {
+   "relation": "R0",
+   "kind": "mdoc_outcomes",
+   "src": "A",
+   "dst": "B",
+   "step": 1,
+   "outcome": "sympathy",
+   "at": [
+    91.99,
+    103.91
+   ],
+   "s": [
+    172.6,
+    196.6
+   ],
+   "s_src": [
+    587.41,
+    587.41
+   ],
+   "mark": 0,
+   "max_mm": 1.368
+  },
+  {
+   "relation": "R0",
+   "kind": "mdoc_outcomes",
+   "src": "A",
+   "dst": "B",
+   "step": 1,
+   "outcome": "sympathy",
+   "at": [
+    95.75,
+    75.7
+   ],
+   "s": [
+    203.92,
+    227.92
+   ],
+   "s_src": [
+    402.1,
+    402.1
+   ],
+   "mark": 0,
+   "max_mm": 0.792
+  },
+  {
+   "relation": "R0",
+   "kind": "mdoc_outcomes",
+   "src": "A",
+   "dst": "B",
+   "step": 1,
+   "outcome": "sympathy",
+   "at": [
+    123.68,
+    19.18
+   ],
+   "s": [
+    278.51,
+    302.51
+   ],
+   "s_src": [
+    11.39,
+    11.39
+   ],
+   "mark": 0,
+   "max_mm": 1.381
+  },
+  {
+   "relation": "R0",
+   "kind": "mdoc_outcomes",
+   "src": "A",
+   "dst": "B",
+   "step": 1,
+   "outcome": "sympathy",
+   "at": [
+    142.5,
+    15.0
+   ],
+   "s": [
+    297.92,
+    321.92
+   ],
+   "s_src": [
+    48.11,
+    48.11
+   ],
+   "mark": 0,
+   "max_mm": 0.954
+  },
+  {
+   "relation": "R1",
+   "kind": "yield",
+   "src": "A",
+   "dst": "C",
+   "step": 2,
+   "outcome": "gap_under",
+   "at": [
+    82.19,
+    88.53
+   ],
+   "s": [
+    63.22,
+    65.97
+   ],
+   "mark": 0
+  },
+  {
+   "relation": "R1",
+   "kind": "yield",
+   "src": "A",
+   "dst": "C",
+   "step": 2,
+   "outcome": "gap_under",
+   "at": [
+    82.04,
+    87.38
+   ],
+   "s": [
+    64.38,
+    67.13
+   ],
+   "mark": 0
+  },
+  {
+   "relation": "R1",
+   "kind": "yield",
+   "src": "A",
+   "dst": "C",
+   "step": 2,
+   "outcome": "gap_under",
+   "at": [
+    81.66,
+    84.91
+   ],
+   "s": [
+    66.87,
+    69.62
+   ],
+   "mark": 0
+  },
+  {
+   "relation": "R1",
+   "kind": "yield",
+   "src": "A",
+   "dst": "C",
+   "step": 2,
+   "outcome": "gap_under",
+   "at": [
+    73.83,
+    58.31
+   ],
+   "s": [
+    94.68,
+    97.43
+   ],
+   "mark": 0
+  },
+  {
+   "relation": "R1",
+   "kind": "yield",
+   "src": "A",
+   "dst": "C",
+   "step": 2,
+   "outcome": "gap_under",
+   "at": [
+    102.4,
+    149.89
+   ],
+   "s": [
+    271.0,
+    273.75
+   ],
+   "mark": 0
+  },
+  {
+   "relation": "R1",
+   "kind": "yield",
+   "src": "A",
+   "dst": "C",
+   "step": 2,
+   "outcome": "gap_under",
+   "at": [
+    127.1,
+    53.37
+   ],
+   "s": [
+    652.81,
+    655.56
+   ],
+   "mark": 0
+  },
+  {
+   "relation": "R2",
+   "kind": "mdoc_outcomes",
+   "src": "B",
+   "dst": "C",
+   "step": 2,
+   "outcome": "silent"
+  }
+ ],
+ "decisions": {
+  "order": [
+   "A",
+   "B",
+   "C"
+  ]
+ }
+}

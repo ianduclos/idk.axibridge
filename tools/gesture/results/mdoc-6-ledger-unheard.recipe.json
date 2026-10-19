@@ -1,0 +1,276 @@
+{
+ "score": {
+  "version": 2,
+  "frame": [
+   250.0,
+   175.0
+  ],
+  "seed": 16301,
+  "margin": 5.0,
+  "renderer": {
+   "id": "wire",
+   "pen": 0.4
+  },
+  "layers": [
+   {
+    "id": "S",
+    "role": "sealed",
+    "pen": "black",
+    "label": "",
+    "region": [
+     5.0,
+     5.0,
+     165.0,
+     165.0
+    ],
+    "composer": {
+     "arranger": {
+      "id": "listen",
+      "density": 0.5,
+      "mask_p": 0.25,
+      "river_p": 0.3,
+      "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+      "pens": 0
+     },
+     "parts": [
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "dance_thrusting",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      },
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "river_bend",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      },
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "trail_miner",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      },
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "dancer_madeline",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      },
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "mime_mantis",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      },
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "fly_fru",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      },
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "hokusai",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      },
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "dance_staccato",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      },
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "mime_roadrunner",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      },
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "river_belt",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      },
+      {
+       "voice": {
+        "id": "hand",
+        "hand": "trail_slime",
+        "length": 3.0,
+        "joins": "smooth"
+       },
+       "modulators": []
+      }
+     ],
+     "renderer": {
+      "id": "oehlen_found_ink",
+      "pen": 0.4
+     },
+     "label": "listen",
+     "notes": "frame 250\u00d7175: small landscape: the same vocabulary, denser per area"
+    }
+   },
+   {
+    "id": "H1",
+    "role": "listener",
+    "pen": "green",
+    "label": "",
+    "region": [
+     60.0,
+     20.0,
+     180.0,
+     130.0
+    ],
+    "part": {
+     "voice": {
+      "id": "hand",
+      "hand": "river_meander",
+      "length": 2.4,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   },
+   {
+    "id": "H2",
+    "role": "listener",
+    "pen": "purple",
+    "label": "",
+    "region": [
+     100.0,
+     40.0,
+     140.0,
+     125.0
+    ],
+    "part": {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 2.2,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   }
+  ],
+  "relations": [
+   {
+    "id": "R0",
+    "kind": "mdoc_outcomes",
+    "src": "S",
+    "dst": "H1",
+    "p": 1.0,
+    "params": {
+     "w_under": 0.3,
+     "w_over": 0.2,
+     "w_cross": 0.15,
+     "w_stop": 0.1,
+     "w_sympathy": 0.3,
+     "streak": 0.45,
+     "gap": 1.2,
+     "pen": 0.35,
+     "stop_mm": 5.0,
+     "reach": 9.0,
+     "gain": 0.35,
+     "min_sep": 3.0
+    },
+    "note": ""
+   },
+   {
+    "id": "R1",
+    "kind": "mdoc_outcomes",
+    "src": "S",
+    "dst": "H2",
+    "p": 0.5,
+    "params": {
+     "w_under": 0.3,
+     "w_over": 0.2,
+     "w_cross": 0.15,
+     "w_stop": 0.1,
+     "w_sympathy": 0.3,
+     "streak": 0.45,
+     "gap": 1.2,
+     "pen": 0.35,
+     "stop_mm": 5.0,
+     "reach": 9.0,
+     "gain": 0.35,
+     "min_sep": 3.0
+    },
+    "note": ""
+   },
+   {
+    "id": "R2",
+    "kind": "yield",
+    "src": "H1",
+    "dst": "H2",
+    "p": 1.0,
+    "params": {
+     "gap": 1.2,
+     "pen": 0.35,
+     "min_sep": 0.0
+    },
+    "note": ""
+   }
+  ],
+  "devices": [],
+  "decisions": {},
+  "label": "listen 15102 sealed + two hands"
+ },
+ "devices": [
+  {
+   "id": "mdoc_ledger",
+   "place": "beside",
+   "size": 120,
+   "region": [
+    250.0,
+    0.0,
+    120.0,
+    175.0
+   ]
+  },
+  {
+   "id": "mdoc_unheard",
+   "place": "beside",
+   "side": "bottom",
+   "size": 120,
+   "region": [
+    0.0,
+    175.0,
+    370.0,
+    120.0
+   ]
+  }
+ ],
+ "label": "ledger-unheard"
+}
