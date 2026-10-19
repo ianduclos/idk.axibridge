@@ -1,0 +1,5195 @@
+{
+ "rebuild": "experiments/aware_bridge.py: score(seed, [{kind, params} for each relation]) (named-pair relations of a sheet with a void collapse to one spec per kind)",
+ "panels": [
+  {
+   "seed": 15102,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "relations": [
+    {
+     "id": "R0_sympathy-L0-L1",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L1",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L2",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L2",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L3",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L3",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L3",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L3_b",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L3_b",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L3_b",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L3_b",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L5",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L5",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L5",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L5",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L5",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L5_b",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L5_b",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L5_b",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L5_b",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L5_b",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L5_b",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L6",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L6",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L6",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L6",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L6",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L6",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L6",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L6_b",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L6_b",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L6_b",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L6_b",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L6_b",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L6_b",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L6_b",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6-L6_b",
+     "kind": "sympathy",
+     "src": "L6",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L7",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L7",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L7",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L7",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L7",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L7",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L7",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6-L7",
+     "kind": "sympathy",
+     "src": "L6",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6_b-L7",
+     "kind": "sympathy",
+     "src": "L6_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L7_b",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L7_b",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L7_b",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L7_b",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L7_b",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L7_b",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L7_b",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6-L7_b",
+     "kind": "sympathy",
+     "src": "L6",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6_b-L7_b",
+     "kind": "sympathy",
+     "src": "L6_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L7-L7_b",
+     "kind": "sympathy",
+     "src": "L7",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L8",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L8",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L8",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L8",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L8",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L8",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L8",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6-L8",
+     "kind": "sympathy",
+     "src": "L6",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6_b-L8",
+     "kind": "sympathy",
+     "src": "L6_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L7-L8",
+     "kind": "sympathy",
+     "src": "L7",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L7_b-L8",
+     "kind": "sympathy",
+     "src": "L7_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L9",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L9",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L9",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L9",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L9",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L9",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L9",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6-L9",
+     "kind": "sympathy",
+     "src": "L6",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6_b-L9",
+     "kind": "sympathy",
+     "src": "L6_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L7-L9",
+     "kind": "sympathy",
+     "src": "L7",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L7_b-L9",
+     "kind": "sympathy",
+     "src": "L7_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L8-L9",
+     "kind": "sympathy",
+     "src": "L8",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L1",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L1",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L2",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L2",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L3",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L3",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L2-L3",
+     "kind": "crossing",
+     "src": "L2",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L3_b",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L3_b",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L2-L3_b",
+     "kind": "crossing",
+     "src": "L2",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3-L3_b",
+     "kind": "crossing",
+     "src": "L3",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L5",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L5",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L2-L5",
+     "kind": "crossing",
+     "src": "L2",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3-L5",
+     "kind": "crossing",
+     "src": "L3",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3_b-L5",
+     "kind": "crossing",
+     "src": "L3_b",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L5_b",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L5_b",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L2-L5_b",
+     "kind": "crossing",
+     "src": "L2",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3-L5_b",
+     "kind": "crossing",
+     "src": "L3",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3_b-L5_b",
+     "kind": "crossing",
+     "src": "L3_b",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5-L5_b",
+     "kind": "crossing",
+     "src": "L5",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L6",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L6",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L2-L6",
+     "kind": "crossing",
+     "src": "L2",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3-L6",
+     "kind": "crossing",
+     "src": "L3",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3_b-L6",
+     "kind": "crossing",
+     "src": "L3_b",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5-L6",
+     "kind": "crossing",
+     "src": "L5",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5_b-L6",
+     "kind": "crossing",
+     "src": "L5_b",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L6_b",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L6_b",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L2-L6_b",
+     "kind": "crossing",
+     "src": "L2",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3-L6_b",
+     "kind": "crossing",
+     "src": "L3",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3_b-L6_b",
+     "kind": "crossing",
+     "src": "L3_b",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5-L6_b",
+     "kind": "crossing",
+     "src": "L5",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5_b-L6_b",
+     "kind": "crossing",
+     "src": "L5_b",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L6-L6_b",
+     "kind": "crossing",
+     "src": "L6",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L7",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L7",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L2-L7",
+     "kind": "crossing",
+     "src": "L2",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3-L7",
+     "kind": "crossing",
+     "src": "L3",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3_b-L7",
+     "kind": "crossing",
+     "src": "L3_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5-L7",
+     "kind": "crossing",
+     "src": "L5",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5_b-L7",
+     "kind": "crossing",
+     "src": "L5_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L6-L7",
+     "kind": "crossing",
+     "src": "L6",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L6_b-L7",
+     "kind": "crossing",
+     "src": "L6_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L7_b",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L7_b",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L2-L7_b",
+     "kind": "crossing",
+     "src": "L2",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3-L7_b",
+     "kind": "crossing",
+     "src": "L3",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3_b-L7_b",
+     "kind": "crossing",
+     "src": "L3_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5-L7_b",
+     "kind": "crossing",
+     "src": "L5",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5_b-L7_b",
+     "kind": "crossing",
+     "src": "L5_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L6-L7_b",
+     "kind": "crossing",
+     "src": "L6",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L6_b-L7_b",
+     "kind": "crossing",
+     "src": "L6_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L7-L7_b",
+     "kind": "crossing",
+     "src": "L7",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L8",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L8",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L2-L8",
+     "kind": "crossing",
+     "src": "L2",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3-L8",
+     "kind": "crossing",
+     "src": "L3",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3_b-L8",
+     "kind": "crossing",
+     "src": "L3_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5-L8",
+     "kind": "crossing",
+     "src": "L5",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5_b-L8",
+     "kind": "crossing",
+     "src": "L5_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L6-L8",
+     "kind": "crossing",
+     "src": "L6",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L6_b-L8",
+     "kind": "crossing",
+     "src": "L6_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L7-L8",
+     "kind": "crossing",
+     "src": "L7",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L7_b-L8",
+     "kind": "crossing",
+     "src": "L7_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L0-L9",
+     "kind": "crossing",
+     "src": "L0",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L1-L9",
+     "kind": "crossing",
+     "src": "L1",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L2-L9",
+     "kind": "crossing",
+     "src": "L2",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3-L9",
+     "kind": "crossing",
+     "src": "L3",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L3_b-L9",
+     "kind": "crossing",
+     "src": "L3_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5-L9",
+     "kind": "crossing",
+     "src": "L5",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L5_b-L9",
+     "kind": "crossing",
+     "src": "L5_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L6-L9",
+     "kind": "crossing",
+     "src": "L6",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L6_b-L9",
+     "kind": "crossing",
+     "src": "L6_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L7-L9",
+     "kind": "crossing",
+     "src": "L7",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L7_b-L9",
+     "kind": "crossing",
+     "src": "L7_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing-L8-L9",
+     "kind": "crossing",
+     "src": "L8",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    }
+   ],
+   "decisions": {
+    "source": {
+     "arranger": {
+      "id": "listen",
+      "density": 0.5,
+      "mask_p": 0.25,
+      "river_p": 0.3,
+      "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+      "pens": 0
+     },
+     "seed": 15102
+    }
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "found",
+     "pen": "orange-400",
+     "label": "the river, zoomed (constant width)",
+     "lines": 3,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L1",
+     "role": "speaker",
+     "pen": "blue",
+     "label": "river_bend speaks",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.6
+     }
+    },
+    {
+     "id": "L2",
+     "role": "speaker",
+     "pen": "black",
+     "label": "dancer_madeline speaks",
+     "lines": 4,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.45
+     }
+    },
+    {
+     "id": "L3",
+     "role": "listener",
+     "pen": "orange",
+     "label": "dancer_madeline exaggerates L1",
+     "lines": 5,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.5
+     }
+    },
+    {
+     "id": "L3_b",
+     "role": "listener",
+     "pen": "blue",
+     "label": "dancer_madeline exaggerates L1 (blue)",
+     "lines": 3,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.5
+     }
+    },
+    {
+     "id": "L4",
+     "role": "mask",
+     "pen": "black",
+     "label": "the void",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L5",
+     "role": "listener",
+     "pen": "blue",
+     "label": "mime_roadrunner refuses L3",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L5_b",
+     "role": "listener",
+     "pen": "orange",
+     "label": "mime_roadrunner refuses L3 (orange)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L6",
+     "role": "listener",
+     "pen": "black",
+     "label": "river_belt translates L5",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L6_b",
+     "role": "listener",
+     "pen": "blue",
+     "label": "river_belt translates L5 (blue)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L7",
+     "role": "listener",
+     "pen": "blue",
+     "label": "river_belt imitates L0",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L7_b",
+     "role": "listener",
+     "pen": "orange-400",
+     "label": "river_belt imitates L0 (orange-400)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L8",
+     "role": "echo",
+     "pen": "blue-400",
+     "label": "echo of L1",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L9",
+     "role": "nest",
+     "pen": "black",
+     "label": "nests in L2",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    }
+   ]
+  },
+  {
+   "seed": 15106,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "relations": [
+    {
+     "id": "R0_sympathy",
+     "kind": "sympathy",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R1_crossing",
+     "kind": "crossing",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "w_gap_under": 0.26,
+      "w_gap_over": 0.22,
+      "w_cross": 0.3,
+      "w_stop": 0.1,
+      "w_sympathy": 0.12,
+      "streak": 0.45,
+      "gap": 1.75,
+      "pen": 0.4,
+      "jitter": 0.3,
+      "stop_max": 25.0,
+      "min_left": 12.0,
+      "reach": 5.0,
+      "lean": 0.8,
+      "min_sep": 0.0,
+      "min_piece": 2.5,
+      "min_dash": 8.0,
+      "tangle": 4.0
+     },
+     "note": ""
+    }
+   ],
+   "decisions": {
+    "source": {
+     "arranger": {
+      "id": "listen",
+      "density": 0.5,
+      "mask_p": 0.25,
+      "river_p": 0.3,
+      "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+      "pens": 0
+     },
+     "seed": 15106
+    }
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "found",
+     "pen": "purple-400",
+     "label": "the river, zoomed (constant width)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L1",
+     "role": "speaker",
+     "pen": "red",
+     "label": "trail_miner speaks",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.6
+     }
+    },
+    {
+     "id": "L2",
+     "role": "speaker",
+     "pen": "black",
+     "label": "mime_roadrunner speaks",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.45
+     }
+    },
+    {
+     "id": "L3",
+     "role": "listener",
+     "pen": "purple",
+     "label": "river_belt imitates L2",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L3_b",
+     "role": "listener",
+     "pen": "black",
+     "label": "river_belt imitates L2 (black)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L4",
+     "role": "listener",
+     "pen": "purple",
+     "label": "mime_mantis imitates L2",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L4_b",
+     "role": "listener",
+     "pen": "black",
+     "label": "mime_mantis imitates L2 (black)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L5",
+     "role": "listener",
+     "pen": "red",
+     "label": "hokusai translates L4",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L5_b",
+     "role": "listener",
+     "pen": "purple",
+     "label": "hokusai translates L4 (purple)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L6",
+     "role": "listener",
+     "pen": "black",
+     "label": "trail_miner refuses L5",
+     "lines": 5,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L6_b",
+     "role": "listener",
+     "pen": "red",
+     "label": "trail_miner refuses L5 (red)",
+     "lines": 4,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L7",
+     "role": "listener",
+     "pen": "purple",
+     "label": "hokusai translates L2",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L7_b",
+     "role": "listener",
+     "pen": "black",
+     "label": "hokusai translates L2 (black)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L8",
+     "role": "bind",
+     "pen": "red",
+     "label": "binds L5 into L4",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L8_b",
+     "role": "bind",
+     "pen": "purple",
+     "label": "binds L5 into L4 (purple)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    }
+   ]
+  },
+  {
+   "seed": 15102,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "relations": [
+    {
+     "id": "R0_sympathy-L0-L1",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L1",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L2",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L2",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L3",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L3",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L3",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L3_b",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L3_b",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L3_b",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L3_b",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L5",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L5",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L5",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L5",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L5",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L5_b",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L5_b",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L5_b",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L5_b",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L5_b",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L5_b",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L6",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L6",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L6",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L6",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L6",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L6",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L6",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L6_b",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L6_b",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L6_b",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L6_b",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L6_b",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L6_b",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L6_b",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6-L6_b",
+     "kind": "sympathy",
+     "src": "L6",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L7",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L7",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L7",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L7",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L7",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L7",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L7",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6-L7",
+     "kind": "sympathy",
+     "src": "L6",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6_b-L7",
+     "kind": "sympathy",
+     "src": "L6_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L7_b",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L7_b",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L7_b",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L7_b",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L7_b",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L7_b",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L7_b",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6-L7_b",
+     "kind": "sympathy",
+     "src": "L6",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6_b-L7_b",
+     "kind": "sympathy",
+     "src": "L6_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L7-L7_b",
+     "kind": "sympathy",
+     "src": "L7",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L8",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L8",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L8",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L8",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L8",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L8",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L8",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6-L8",
+     "kind": "sympathy",
+     "src": "L6",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6_b-L8",
+     "kind": "sympathy",
+     "src": "L6_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L7-L8",
+     "kind": "sympathy",
+     "src": "L7",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L7_b-L8",
+     "kind": "sympathy",
+     "src": "L7_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L0-L9",
+     "kind": "sympathy",
+     "src": "L0",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L1-L9",
+     "kind": "sympathy",
+     "src": "L1",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L2-L9",
+     "kind": "sympathy",
+     "src": "L2",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3-L9",
+     "kind": "sympathy",
+     "src": "L3",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L3_b-L9",
+     "kind": "sympathy",
+     "src": "L3_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5-L9",
+     "kind": "sympathy",
+     "src": "L5",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L5_b-L9",
+     "kind": "sympathy",
+     "src": "L5_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6-L9",
+     "kind": "sympathy",
+     "src": "L6",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L6_b-L9",
+     "kind": "sympathy",
+     "src": "L6_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L7-L9",
+     "kind": "sympathy",
+     "src": "L7",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L7_b-L9",
+     "kind": "sympathy",
+     "src": "L7_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_sympathy-L8-L9",
+     "kind": "sympathy",
+     "src": "L8",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "reach": 4.0,
+      "gain": 0.8,
+      "sigma": 3.0,
+      "bends": "later",
+      "smooth": 0.8,
+      "join": 4.0
+     },
+     "note": ""
+    }
+   ],
+   "decisions": {
+    "source": {
+     "arranger": {
+      "id": "listen",
+      "density": 0.5,
+      "mask_p": 0.25,
+      "river_p": 0.3,
+      "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+      "pens": 0
+     },
+     "seed": 15102
+    }
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "found",
+     "pen": "orange-400",
+     "label": "the river, zoomed (constant width)",
+     "lines": 3,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L1",
+     "role": "speaker",
+     "pen": "blue",
+     "label": "river_bend speaks",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.6
+     }
+    },
+    {
+     "id": "L2",
+     "role": "speaker",
+     "pen": "black",
+     "label": "dancer_madeline speaks",
+     "lines": 4,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.45
+     }
+    },
+    {
+     "id": "L3",
+     "role": "listener",
+     "pen": "orange",
+     "label": "dancer_madeline exaggerates L1",
+     "lines": 5,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.5
+     }
+    },
+    {
+     "id": "L3_b",
+     "role": "listener",
+     "pen": "blue",
+     "label": "dancer_madeline exaggerates L1 (blue)",
+     "lines": 3,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.5
+     }
+    },
+    {
+     "id": "L4",
+     "role": "mask",
+     "pen": "black",
+     "label": "the void",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L5",
+     "role": "listener",
+     "pen": "blue",
+     "label": "mime_roadrunner refuses L3",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L5_b",
+     "role": "listener",
+     "pen": "orange",
+     "label": "mime_roadrunner refuses L3 (orange)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L6",
+     "role": "listener",
+     "pen": "black",
+     "label": "river_belt translates L5",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L6_b",
+     "role": "listener",
+     "pen": "blue",
+     "label": "river_belt translates L5 (blue)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L7",
+     "role": "listener",
+     "pen": "blue",
+     "label": "river_belt imitates L0",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L7_b",
+     "role": "listener",
+     "pen": "orange-400",
+     "label": "river_belt imitates L0 (orange-400)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L8",
+     "role": "echo",
+     "pen": "blue-400",
+     "label": "echo of L1",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L9",
+     "role": "nest",
+     "pen": "black",
+     "label": "nests in L2",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    }
+   ]
+  }
+ ]
+}

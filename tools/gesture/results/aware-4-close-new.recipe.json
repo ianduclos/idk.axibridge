@@ -1,0 +1,1664 @@
+{
+ "rebuild": "experiments/aware_bridge.py: score(seed, [{kind, params} for each relation]) (named-pair relations of a sheet with a void collapse to one spec per kind)",
+ "panels": [
+  {
+   "seed": 15106,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "relations": [
+    {
+     "id": "R0_hesitate",
+     "kind": "hesitate",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "reach": 3.0,
+      "amp": 0.16,
+      "wave": 1.3,
+      "before": 6.0,
+      "after": 2.5,
+      "join": 4.0
+     },
+     "note": ""
+    }
+   ],
+   "decisions": {
+    "source": {
+     "arranger": {
+      "id": "listen",
+      "density": 0.5,
+      "mask_p": 0.25,
+      "river_p": 0.3,
+      "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+      "pens": 0
+     },
+     "seed": 15106
+    }
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "found",
+     "pen": "purple-400",
+     "label": "the river, zoomed (constant width)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L1",
+     "role": "speaker",
+     "pen": "red",
+     "label": "trail_miner speaks",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.6
+     }
+    },
+    {
+     "id": "L2",
+     "role": "speaker",
+     "pen": "black",
+     "label": "mime_roadrunner speaks",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.45
+     }
+    },
+    {
+     "id": "L3",
+     "role": "listener",
+     "pen": "purple",
+     "label": "river_belt imitates L2",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L3_b",
+     "role": "listener",
+     "pen": "black",
+     "label": "river_belt imitates L2 (black)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L4",
+     "role": "listener",
+     "pen": "purple",
+     "label": "mime_mantis imitates L2",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L4_b",
+     "role": "listener",
+     "pen": "black",
+     "label": "mime_mantis imitates L2 (black)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L5",
+     "role": "listener",
+     "pen": "red",
+     "label": "hokusai translates L4",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L5_b",
+     "role": "listener",
+     "pen": "purple",
+     "label": "hokusai translates L4 (purple)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L6",
+     "role": "listener",
+     "pen": "black",
+     "label": "trail_miner refuses L5",
+     "lines": 5,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L6_b",
+     "role": "listener",
+     "pen": "red",
+     "label": "trail_miner refuses L5 (red)",
+     "lines": 4,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L7",
+     "role": "listener",
+     "pen": "purple",
+     "label": "hokusai translates L2",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L7_b",
+     "role": "listener",
+     "pen": "black",
+     "label": "hokusai translates L2 (black)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L8",
+     "role": "bind",
+     "pen": "red",
+     "label": "binds L5 into L4",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L8_b",
+     "role": "bind",
+     "pen": "purple",
+     "label": "binds L5 into L4 (purple)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    }
+   ]
+  },
+  {
+   "seed": 15103,
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "relations": [
+    {
+     "id": "R0_accompany",
+     "kind": "accompany",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "reach": 6.0,
+      "angle": 25.0,
+      "hold": 22.0,
+      "hold_var": 0.5,
+      "ease": 5.0,
+      "chance": 0.7,
+      "join": 4.0
+     },
+     "note": ""
+    }
+   ],
+   "decisions": {
+    "source": {
+     "arranger": {
+      "id": "listen",
+      "density": 0.5,
+      "mask_p": 0.25,
+      "river_p": 0.3,
+      "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+      "pens": 0
+     },
+     "seed": 15103
+    }
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "found",
+     "pen": "magenta-400",
+     "label": "the river, zoomed (constant width)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L1",
+     "role": "speaker",
+     "pen": "black",
+     "label": "mime_mantis speaks",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L2",
+     "role": "speaker",
+     "pen": "magenta",
+     "label": "river_belt speaks",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.45
+     }
+    },
+    {
+     "id": "L3",
+     "role": "listener",
+     "pen": "black",
+     "label": "mime_roadrunner imitates L2",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L3_b",
+     "role": "listener",
+     "pen": "magenta",
+     "label": "mime_roadrunner imitates L2 (magenta)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L4",
+     "role": "listener",
+     "pen": "magenta",
+     "label": "trail_slime refuses L3",
+     "lines": 5,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L4_b",
+     "role": "listener",
+     "pen": "black",
+     "label": "trail_slime refuses L3 (black)",
+     "lines": 4,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L5",
+     "role": "listener",
+     "pen": "black",
+     "label": "mime_mantis imitates L2",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L5_b",
+     "role": "listener",
+     "pen": "magenta",
+     "label": "mime_mantis imitates L2 (magenta)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L6",
+     "role": "listener",
+     "pen": "magenta",
+     "label": "dance_thrusting exaggerates L1",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.8
+     }
+    },
+    {
+     "id": "L6_b",
+     "role": "listener",
+     "pen": "black",
+     "label": "dance_thrusting exaggerates L1 (black)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.8
+     }
+    },
+    {
+     "id": "L7",
+     "role": "echo",
+     "pen": "magenta-400",
+     "label": "echo of L0",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L8",
+     "role": "calm",
+     "pen": "magenta",
+     "label": "calm under L2",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    }
+   ]
+  },
+  {
+   "seed": 15102,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "relations": [
+    {
+     "id": "R0_make_room-L0-L1",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L1",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L2",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L2",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L3",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L3",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L2-L3",
+     "kind": "make_room",
+     "src": "L2",
+     "dst": "L3",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L3_b",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L3_b",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L2-L3_b",
+     "kind": "make_room",
+     "src": "L2",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3-L3_b",
+     "kind": "make_room",
+     "src": "L3",
+     "dst": "L3_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L5",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L5",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L2-L5",
+     "kind": "make_room",
+     "src": "L2",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3-L5",
+     "kind": "make_room",
+     "src": "L3",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3_b-L5",
+     "kind": "make_room",
+     "src": "L3_b",
+     "dst": "L5",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L5_b",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L5_b",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L2-L5_b",
+     "kind": "make_room",
+     "src": "L2",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3-L5_b",
+     "kind": "make_room",
+     "src": "L3",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3_b-L5_b",
+     "kind": "make_room",
+     "src": "L3_b",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5-L5_b",
+     "kind": "make_room",
+     "src": "L5",
+     "dst": "L5_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L6",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L6",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L2-L6",
+     "kind": "make_room",
+     "src": "L2",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3-L6",
+     "kind": "make_room",
+     "src": "L3",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3_b-L6",
+     "kind": "make_room",
+     "src": "L3_b",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5-L6",
+     "kind": "make_room",
+     "src": "L5",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5_b-L6",
+     "kind": "make_room",
+     "src": "L5_b",
+     "dst": "L6",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L6_b",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L6_b",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L2-L6_b",
+     "kind": "make_room",
+     "src": "L2",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3-L6_b",
+     "kind": "make_room",
+     "src": "L3",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3_b-L6_b",
+     "kind": "make_room",
+     "src": "L3_b",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5-L6_b",
+     "kind": "make_room",
+     "src": "L5",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5_b-L6_b",
+     "kind": "make_room",
+     "src": "L5_b",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L6-L6_b",
+     "kind": "make_room",
+     "src": "L6",
+     "dst": "L6_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L7",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L7",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L2-L7",
+     "kind": "make_room",
+     "src": "L2",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3-L7",
+     "kind": "make_room",
+     "src": "L3",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3_b-L7",
+     "kind": "make_room",
+     "src": "L3_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5-L7",
+     "kind": "make_room",
+     "src": "L5",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5_b-L7",
+     "kind": "make_room",
+     "src": "L5_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L6-L7",
+     "kind": "make_room",
+     "src": "L6",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L6_b-L7",
+     "kind": "make_room",
+     "src": "L6_b",
+     "dst": "L7",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L7_b",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L7_b",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L2-L7_b",
+     "kind": "make_room",
+     "src": "L2",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3-L7_b",
+     "kind": "make_room",
+     "src": "L3",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3_b-L7_b",
+     "kind": "make_room",
+     "src": "L3_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5-L7_b",
+     "kind": "make_room",
+     "src": "L5",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5_b-L7_b",
+     "kind": "make_room",
+     "src": "L5_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L6-L7_b",
+     "kind": "make_room",
+     "src": "L6",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L6_b-L7_b",
+     "kind": "make_room",
+     "src": "L6_b",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L7-L7_b",
+     "kind": "make_room",
+     "src": "L7",
+     "dst": "L7_b",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L8",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L8",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L2-L8",
+     "kind": "make_room",
+     "src": "L2",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3-L8",
+     "kind": "make_room",
+     "src": "L3",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3_b-L8",
+     "kind": "make_room",
+     "src": "L3_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5-L8",
+     "kind": "make_room",
+     "src": "L5",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5_b-L8",
+     "kind": "make_room",
+     "src": "L5_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L6-L8",
+     "kind": "make_room",
+     "src": "L6",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L6_b-L8",
+     "kind": "make_room",
+     "src": "L6_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L7-L8",
+     "kind": "make_room",
+     "src": "L7",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L7_b-L8",
+     "kind": "make_room",
+     "src": "L7_b",
+     "dst": "L8",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L0-L9",
+     "kind": "make_room",
+     "src": "L0",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L1-L9",
+     "kind": "make_room",
+     "src": "L1",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L2-L9",
+     "kind": "make_room",
+     "src": "L2",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3-L9",
+     "kind": "make_room",
+     "src": "L3",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L3_b-L9",
+     "kind": "make_room",
+     "src": "L3_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5-L9",
+     "kind": "make_room",
+     "src": "L5",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L5_b-L9",
+     "kind": "make_room",
+     "src": "L5_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L6-L9",
+     "kind": "make_room",
+     "src": "L6",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L6_b-L9",
+     "kind": "make_room",
+     "src": "L6_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L7-L9",
+     "kind": "make_room",
+     "src": "L7",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L7_b-L9",
+     "kind": "make_room",
+     "src": "L7_b",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R0_make_room-L8-L9",
+     "kind": "make_room",
+     "src": "L8",
+     "dst": "L9",
+     "p": 1.0,
+     "params": {
+      "room": 2.0,
+      "strength": 0.6,
+      "clear": 5.0,
+      "join": 4.0
+     },
+     "note": ""
+    }
+   ],
+   "decisions": {
+    "source": {
+     "arranger": {
+      "id": "listen",
+      "density": 0.5,
+      "mask_p": 0.25,
+      "river_p": 0.3,
+      "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+      "pens": 0
+     },
+     "seed": 15102
+    }
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "found",
+     "pen": "orange-400",
+     "label": "the river, zoomed (constant width)",
+     "lines": 3,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L1",
+     "role": "speaker",
+     "pen": "blue",
+     "label": "river_bend speaks",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.6
+     }
+    },
+    {
+     "id": "L2",
+     "role": "speaker",
+     "pen": "black",
+     "label": "dancer_madeline speaks",
+     "lines": 4,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.45
+     }
+    },
+    {
+     "id": "L3",
+     "role": "listener",
+     "pen": "orange",
+     "label": "dancer_madeline exaggerates L1",
+     "lines": 5,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.5
+     }
+    },
+    {
+     "id": "L3_b",
+     "role": "listener",
+     "pen": "blue",
+     "label": "dancer_madeline exaggerates L1 (blue)",
+     "lines": 3,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.5
+     }
+    },
+    {
+     "id": "L4",
+     "role": "mask",
+     "pen": "black",
+     "label": "the void",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L5",
+     "role": "listener",
+     "pen": "blue",
+     "label": "mime_roadrunner refuses L3",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L5_b",
+     "role": "listener",
+     "pen": "orange",
+     "label": "mime_roadrunner refuses L3 (orange)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    },
+    {
+     "id": "L6",
+     "role": "listener",
+     "pen": "black",
+     "label": "river_belt translates L5",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L6_b",
+     "role": "listener",
+     "pen": "blue",
+     "label": "river_belt translates L5 (blue)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L7",
+     "role": "listener",
+     "pen": "blue",
+     "label": "river_belt imitates L0",
+     "lines": 2,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L7_b",
+     "role": "listener",
+     "pen": "orange-400",
+     "label": "river_belt imitates L0 (orange-400)",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L8",
+     "role": "echo",
+     "pen": "blue-400",
+     "label": "echo of L1",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.35
+     }
+    },
+    {
+     "id": "L9",
+     "role": "nest",
+     "pen": "black",
+     "label": "nests in L2",
+     "lines": 1,
+     "renderer": {
+      "id": "wire",
+      "pen": 0.3
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,10307 @@
+{
+ "version": 2,
+ "layers": [
+  {
+   "id": "L0",
+   "role": "found",
+   "technique": "lines",
+   "part": 0,
+   "pen": "purple-400",
+   "params": {},
+   "label": "the river, zoomed (constant width)"
+  },
+  {
+   "id": "L1",
+   "role": "speaker",
+   "technique": "lines",
+   "part": 1,
+   "pen": "red",
+   "params": {},
+   "label": "trail_miner speaks"
+  },
+  {
+   "id": "L2",
+   "role": "speaker",
+   "technique": "lines",
+   "part": 2,
+   "pen": "black",
+   "params": {},
+   "label": "mime_roadrunner speaks"
+  },
+  {
+   "id": "L3",
+   "role": "listener",
+   "technique": "lines",
+   "part": 3,
+   "pen": "purple",
+   "params": {},
+   "label": "river_belt imitates L2"
+  },
+  {
+   "id": "L3_b",
+   "role": "listener",
+   "technique": "lines",
+   "part": 4,
+   "pen": "black",
+   "params": {},
+   "label": "river_belt imitates L2 (black)"
+  },
+  {
+   "id": "L4",
+   "role": "listener",
+   "technique": "lines",
+   "part": 5,
+   "pen": "purple",
+   "params": {},
+   "label": "mime_mantis imitates L2"
+  },
+  {
+   "id": "L4_b",
+   "role": "listener",
+   "technique": "lines",
+   "part": 6,
+   "pen": "black",
+   "params": {},
+   "label": "mime_mantis imitates L2 (black)"
+  },
+  {
+   "id": "L5",
+   "role": "listener",
+   "technique": "lines",
+   "part": 7,
+   "pen": "red",
+   "params": {},
+   "label": "hokusai translates L4"
+  },
+  {
+   "id": "L5_b",
+   "role": "listener",
+   "technique": "lines",
+   "part": 8,
+   "pen": "purple",
+   "params": {},
+   "label": "hokusai translates L4 (purple)"
+  },
+  {
+   "id": "L6",
+   "role": "listener",
+   "technique": "lines",
+   "part": 9,
+   "pen": "black",
+   "params": {},
+   "label": "trail_miner refuses L5"
+  },
+  {
+   "id": "L6_b",
+   "role": "listener",
+   "technique": "lines",
+   "part": 10,
+   "pen": "red",
+   "params": {},
+   "label": "trail_miner refuses L5 (red)"
+  },
+  {
+   "id": "L7",
+   "role": "listener",
+   "technique": "lines",
+   "part": 11,
+   "pen": "purple",
+   "params": {},
+   "label": "hokusai translates L2"
+  },
+  {
+   "id": "L7_b",
+   "role": "listener",
+   "technique": "lines",
+   "part": 12,
+   "pen": "black",
+   "params": {},
+   "label": "hokusai translates L2 (black)"
+  },
+  {
+   "id": "L8",
+   "role": "bind",
+   "technique": "lines",
+   "part": 13,
+   "pen": "red",
+   "params": {},
+   "label": "binds L5 into L4"
+  },
+  {
+   "id": "L8_b",
+   "role": "bind",
+   "technique": "lines",
+   "part": 14,
+   "pen": "purple",
+   "params": {},
+   "label": "binds L5 into L4 (purple)"
+  }
+ ],
+ "relations": [
+  {
+   "kind": "make_room",
+   "src": "L0",
+   "dst": "L1",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 1
+   },
+   "s": null,
+   "at": [
+    116.76,
+    57.21
+   ],
+   "note": "1 event(s): make_room 1"
+  },
+  {
+   "kind": "accompany",
+   "src": "L0",
+   "dst": "L1",
+   "relation": "R1_accompany",
+   "outcomes": {
+    "accompany": 1
+   },
+   "s": [
+    105.98,
+    118.97
+   ],
+   "at": [
+    139.01,
+    54.43
+   ],
+   "note": "1 event(s): accompany 1"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L1",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 1
+   },
+   "s": [
+    162.93,
+    167.93
+   ],
+   "at": [
+    116.93,
+    57.54
+   ],
+   "note": "1 event(s): sympathy 1"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L0",
+   "dst": "L1",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 2
+   },
+   "s": [
+    117.75,
+    126.33
+   ],
+   "at": [
+    146.97,
+    52.86
+   ],
+   "note": "2 event(s): hesitate 2"
+  },
+  {
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L1",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_over": 1,
+    "cross": 1
+   },
+   "s": [
+    124.22,
+    124.22
+   ],
+   "at": [
+    146.83,
+    52.89
+   ],
+   "note": "2 event(s): cross 1, gap_over 1"
+  },
+  {
+   "kind": "make_room",
+   "src": "L0",
+   "dst": "L2",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 4
+   },
+   "s": null,
+   "at": [
+    168.49,
+    81.53
+   ],
+   "note": "4 event(s): make_room 4"
+  },
+  {
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L2",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 4
+   },
+   "s": null,
+   "at": [
+    125.67,
+    81.58
+   ],
+   "note": "4 event(s): make_room 4"
+  },
+  {
+   "kind": "accompany",
+   "src": "L1",
+   "dst": "L2",
+   "relation": "R1_accompany",
+   "outcomes": {
+    "accompany": 1
+   },
+   "s": [
+    220.33,
+    232.33
+   ],
+   "at": [
+    115.22,
+    83.27
+   ],
+   "note": "1 event(s): accompany 1"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 10
+   },
+   "s": [
+    289.51,
+    294.01
+   ],
+   "at": [
+    165.81,
+    76.32
+   ],
+   "note": "10 event(s): sympathy 10"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L2",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 8
+   },
+   "s": [
+    216.03,
+    220.03
+   ],
+   "at": [
+    97.58,
+    90.43
+   ],
+   "note": "8 event(s): sympathy 8"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L0",
+   "dst": "L2",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 4
+   },
+   "s": [
+    298.21,
+    302.11
+   ],
+   "at": [
+    169.76,
+    73.33
+   ],
+   "note": "4 event(s): hesitate 4"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L2",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 9
+   },
+   "s": [
+    208.38,
+    215.66
+   ],
+   "at": [
+    94.96,
+    87.63
+   ],
+   "note": "9 event(s): hesitate 9"
+  },
+  {
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L2",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "cross": 7,
+    "gap_over": 1,
+    "sympathy": 1
+   },
+   "s": [
+    301.38,
+    301.38
+   ],
+   "at": [
+    172.9,
+    74.44
+   ],
+   "note": "9 event(s): cross 7, gap_over 1, sympathy 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_under": 3,
+    "cross": 7,
+    "gap_over": 1
+   },
+   "s": [
+    214.05,
+    215.43
+   ],
+   "at": [
+    94.61,
+    85.79
+   ],
+   "note": "11 event(s): cross 7, gap_over 1, gap_under 3"
+  },
+  {
+   "kind": "make_room",
+   "src": "L0",
+   "dst": "L3",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 1
+   },
+   "s": null,
+   "at": [
+    188.42,
+    106.46
+   ],
+   "note": "1 event(s): make_room 1"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L3",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 2
+   },
+   "s": null,
+   "at": [
+    187.58,
+    120.62
+   ],
+   "note": "2 event(s): make_room 2"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L3",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 3
+   },
+   "s": [
+    10.0,
+    12.0
+   ],
+   "at": [
+    188.84,
+    106.78
+   ],
+   "note": "3 event(s): sympathy 3"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 3
+   },
+   "s": [
+    163.85,
+    166.46
+   ],
+   "at": [
+    194.28,
+    124.55
+   ],
+   "note": "3 event(s): sympathy 3"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L0",
+   "dst": "L3",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 1
+   },
+   "s": [
+    8.32,
+    12.48
+   ],
+   "at": [
+    188.25,
+    107.18
+   ],
+   "note": "1 event(s): hesitate 1"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 6
+   },
+   "s": [
+    127.17,
+    138.86
+   ],
+   "at": [
+    199.92,
+    138.49
+   ],
+   "note": "6 event(s): hesitate 6"
+  },
+  {
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_over": 2,
+    "cross": 8
+   },
+   "s": [
+    133.95,
+    133.95
+   ],
+   "at": [
+    199.79,
+    140.77
+   ],
+   "note": "10 event(s): cross 8, gap_over 2"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L3_b",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 5
+   },
+   "s": null,
+   "at": [
+    201.56,
+    147.77
+   ],
+   "note": "5 event(s): make_room 5"
+  },
+  {
+   "kind": "accompany",
+   "src": "L2",
+   "dst": "L3_b",
+   "relation": "R1_accompany",
+   "outcomes": {
+    "accompany": 1
+   },
+   "s": [
+    39.0,
+    60.0
+   ],
+   "at": [
+    193.5,
+    157.59
+   ],
+   "note": "1 event(s): accompany 1"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 10
+   },
+   "s": [
+    0.0,
+    3.5
+   ],
+   "at": [
+    202.56,
+    146.73
+   ],
+   "note": "10 event(s): sympathy 10"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L3",
+   "dst": "L3_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 5
+   },
+   "s": [
+    15.0,
+    18.5
+   ],
+   "at": [
+    202.96,
+    140.44
+   ],
+   "note": "5 event(s): sympathy 5"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 4
+   },
+   "s": [
+    28.35,
+    33.04
+   ],
+   "at": [
+    203.0,
+    148.18
+   ],
+   "note": "4 event(s): hesitate 4"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L3",
+   "dst": "L3_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 3
+   },
+   "s": [
+    2.34,
+    23.91
+   ],
+   "at": [
+    204.37,
+    144.01
+   ],
+   "note": "3 event(s): hesitate 3"
+  },
+  {
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3_b",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_under": 3
+   },
+   "s": [
+    32.21,
+    33.77
+   ],
+   "at": [
+    203.38,
+    147.4
+   ],
+   "note": "3 event(s): gap_under 3"
+  },
+  {
+   "kind": "crossing",
+   "src": "L3",
+   "dst": "L3_b",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_over": 2,
+    "cross": 5
+   },
+   "s": [
+    8.72,
+    8.72
+   ],
+   "at": [
+    203.06,
+    147.19
+   ],
+   "note": "7 event(s): cross 5, gap_over 2"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 4
+   },
+   "s": null,
+   "at": [
+    129.03,
+    112.68
+   ],
+   "note": "4 event(s): make_room 4"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 3
+   },
+   "s": [
+    97.65,
+    107.8
+   ],
+   "at": [
+    130.22,
+    112.51
+   ],
+   "note": "3 event(s): sympathy 3"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L4",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 2
+   },
+   "s": [
+    93.38,
+    107.95
+   ],
+   "at": [
+    132.94,
+    119.05
+   ],
+   "note": "2 event(s): hesitate 2"
+  },
+  {
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_over": 1,
+    "cross": 4
+   },
+   "s": [
+    99.82,
+    99.82
+   ],
+   "at": [
+    132.07,
+    115.07
+   ],
+   "note": "5 event(s): cross 4, gap_over 1"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4_b",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 5
+   },
+   "s": null,
+   "at": [
+    141.34,
+    106.09
+   ],
+   "note": "5 event(s): make_room 5"
+  },
+  {
+   "kind": "accompany",
+   "src": "L2",
+   "dst": "L4_b",
+   "relation": "R1_accompany",
+   "outcomes": {
+    "accompany": 2
+   },
+   "s": [
+    1.5,
+    14.0
+   ],
+   "at": [
+    139.0,
+    112.86
+   ],
+   "note": "2 event(s): accompany 2"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 8
+   },
+   "s": [
+    2.0,
+    4.49
+   ],
+   "at": [
+    141.71,
+    117.75
+   ],
+   "note": "8 event(s): sympathy 8"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L4_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 1
+   },
+   "s": [
+    43.47,
+    45.47
+   ],
+   "at": [
+    140.58,
+    120.3
+   ],
+   "note": "1 event(s): sympathy 1"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L4_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 2
+   },
+   "s": [
+    14.3,
+    28.24
+   ],
+   "at": [
+    140.43,
+    112.16
+   ],
+   "note": "2 event(s): hesitate 2"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L4_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 1
+   },
+   "s": [
+    38.69,
+    46.49
+   ],
+   "at": [
+    140.42,
+    119.82
+   ],
+   "note": "1 event(s): hesitate 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4_b",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_under": 1,
+    "gap_over": 2,
+    "cross": 1
+   },
+   "s": [
+    18.31,
+    20.64
+   ],
+   "at": [
+    142.35,
+    109.34
+   ],
+   "note": "4 event(s): cross 1, gap_over 2, gap_under 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L4_b",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_over": 1
+   },
+   "s": [
+    24.23,
+    24.23
+   ],
+   "at": [
+    140.6,
+    120.7
+   ],
+   "note": "1 event(s): gap_over 1"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L5",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 3
+   },
+   "s": null,
+   "at": [
+    126.58,
+    110.99
+   ],
+   "note": "3 event(s): make_room 3"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L5",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 4
+   },
+   "s": [
+    0.0,
+    3.5
+   ],
+   "at": [
+    123.84,
+    111.99
+   ],
+   "note": "4 event(s): sympathy 4"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 5
+   },
+   "s": [
+    11.88,
+    14.38
+   ],
+   "at": [
+    120.02,
+    116.15
+   ],
+   "note": "5 event(s): sympathy 5"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L5",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 2
+   },
+   "s": [
+    13.22,
+    22.56
+   ],
+   "at": [
+    123.55,
+    112.76
+   ],
+   "note": "2 event(s): hesitate 2"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L5",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 4
+   },
+   "s": [
+    16.37,
+    23.63
+   ],
+   "at": [
+    113.86,
+    125.14
+   ],
+   "note": "4 event(s): hesitate 4"
+  },
+  {
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L5",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "cross": 5
+   },
+   "s": [
+    20.37,
+    20.37
+   ],
+   "at": [
+    123.64,
+    110.74
+   ],
+   "note": "5 event(s): cross 5"
+  },
+  {
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "sympathy": 4,
+    "gap_over": 1,
+    "cross": 1
+   },
+   "s": [
+    17.4,
+    27.4
+   ],
+   "at": [
+    112.53,
+    128.73
+   ],
+   "note": "6 event(s): cross 1, gap_over 1, sympathy 4"
+  },
+  {
+   "kind": "make_room",
+   "src": "L4",
+   "dst": "L5_b",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 2
+   },
+   "s": null,
+   "at": [
+    108.35,
+    131.97
+   ],
+   "note": "2 event(s): make_room 2"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 5
+   },
+   "s": [
+    18.0,
+    18.5
+   ],
+   "at": [
+    110.83,
+    139.53
+   ],
+   "note": "5 event(s): sympathy 5"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L5",
+   "dst": "L5_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 1
+   },
+   "s": [
+    13.0,
+    18.51
+   ],
+   "at": [
+    106.08,
+    125.57
+   ],
+   "note": "1 event(s): sympathy 1"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L5_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 4
+   },
+   "s": [
+    18.5,
+    27.0
+   ],
+   "at": [
+    111.51,
+    149.58
+   ],
+   "note": "4 event(s): hesitate 4"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L5",
+   "dst": "L5_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 1
+   },
+   "s": [
+    8.47,
+    16.78
+   ],
+   "at": [
+    104.35,
+    125.5
+   ],
+   "note": "1 event(s): hesitate 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5_b",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_under": 1,
+    "cross": 3
+   },
+   "s": [
+    23.84,
+    26.04
+   ],
+   "at": [
+    111.83,
+    149.69
+   ],
+   "note": "4 event(s): cross 3, gap_under 1"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L6",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 4
+   },
+   "s": null,
+   "at": [
+    117.21,
+    103.26
+   ],
+   "note": "4 event(s): make_room 4"
+  },
+  {
+   "kind": "make_room",
+   "src": "L4",
+   "dst": "L6",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 1
+   },
+   "s": null,
+   "at": [
+    121.27,
+    155.32
+   ],
+   "note": "1 event(s): make_room 1"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 5
+   },
+   "s": [
+    28.01,
+    29.01
+   ],
+   "at": [
+    121.14,
+    103.72
+   ],
+   "note": "5 event(s): sympathy 5"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 6
+   },
+   "s": [
+    10.01,
+    10.51
+   ],
+   "at": [
+    138.62,
+    127.9
+   ],
+   "note": "6 event(s): sympathy 6"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L4_b",
+   "dst": "L6",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 2
+   },
+   "s": [
+    31.44,
+    33.44
+   ],
+   "at": [
+    139.17,
+    123.75
+   ],
+   "note": "2 event(s): sympathy 2"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L6",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 2
+   },
+   "s": [
+    10.67,
+    19.26
+   ],
+   "at": [
+    110.51,
+    92.18
+   ],
+   "note": "2 event(s): hesitate 2"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 6
+   },
+   "s": [
+    0.0,
+    2.86
+   ],
+   "at": [
+    126.49,
+    101.31
+   ],
+   "note": "6 event(s): hesitate 6"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L6",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 2
+   },
+   "s": [
+    4.16,
+    17.68
+   ],
+   "at": [
+    149.38,
+    113.62
+   ],
+   "note": "2 event(s): hesitate 2"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L4_b",
+   "dst": "L6",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 1
+   },
+   "s": [
+    26.96,
+    38.65
+   ],
+   "at": [
+    142.83,
+    124.72
+   ],
+   "note": "1 event(s): hesitate 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L6",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "stop": 2
+   },
+   "s": [
+    17.36,
+    17.36
+   ],
+   "at": [
+    110.35,
+    92.39
+   ],
+   "note": "2 event(s): stop 2"
+  },
+  {
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L6",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "stop": 1,
+    "cross": 2
+   },
+   "s": [
+    1.47,
+    1.47
+   ],
+   "at": [
+    147.72,
+    114.76
+   ],
+   "note": "3 event(s): cross 2, stop 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_under": 2,
+    "cross": 3
+   },
+   "s": [
+    8.53,
+    10.76
+   ],
+   "at": [
+    150.94,
+    110.86
+   ],
+   "note": "5 event(s): cross 3, gap_under 2"
+  },
+  {
+   "kind": "crossing",
+   "src": "L4_b",
+   "dst": "L6",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_over": 1,
+    "cross": 1
+   },
+   "s": [
+    3.08,
+    3.08
+   ],
+   "at": [
+    141.28,
+    126.75
+   ],
+   "note": "2 event(s): cross 1, gap_over 1"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L6_b",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 4
+   },
+   "s": null,
+   "at": [
+    128.1,
+    109.67
+   ],
+   "note": "4 event(s): make_room 4"
+  },
+  {
+   "kind": "accompany",
+   "src": "L5",
+   "dst": "L6_b",
+   "relation": "R1_accompany",
+   "outcomes": {
+    "accompany": 2
+   },
+   "s": [
+    0.0,
+    28.51
+   ],
+   "at": [
+    129.4,
+    111.13
+   ],
+   "note": "2 event(s): accompany 2"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 5
+   },
+   "s": [
+    5.02,
+    13.04
+   ],
+   "at": [
+    128.95,
+    108.7
+   ],
+   "note": "5 event(s): sympathy 5"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 3
+   },
+   "s": [
+    0.0,
+    1.98
+   ],
+   "at": [
+    134.88,
+    118.79
+   ],
+   "note": "3 event(s): sympathy 3"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L4_b",
+   "dst": "L6_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 2
+   },
+   "s": [
+    10.97,
+    13.46
+   ],
+   "at": [
+    132.16,
+    112.88
+   ],
+   "note": "2 event(s): sympathy 2"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 3
+   },
+   "s": [
+    2.34,
+    10.15
+   ],
+   "at": [
+    132.22,
+    109.07
+   ],
+   "note": "3 event(s): hesitate 3"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L6_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 4
+   },
+   "s": [
+    0.0,
+    4.92
+   ],
+   "at": [
+    132.06,
+    111.69
+   ],
+   "note": "4 event(s): hesitate 4"
+  },
+  {
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L6_b",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_under": 1,
+    "cross": 3
+   },
+   "s": [
+    8.69,
+    10.11
+   ],
+   "at": [
+    132.67,
+    109.67
+   ],
+   "note": "4 event(s): cross 3, gap_under 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6_b",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "cross": 4,
+    "gap_under": 2
+   },
+   "s": [
+    3.1,
+    3.1
+   ],
+   "at": [
+    133.01,
+    113.92
+   ],
+   "note": "6 event(s): cross 4, gap_under 2"
+  },
+  {
+   "kind": "crossing",
+   "src": "L6",
+   "dst": "L6_b",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "cross": 1
+   },
+   "s": [
+    18.92,
+    18.92
+   ],
+   "at": [
+    133.51,
+    122.16
+   ],
+   "note": "1 event(s): cross 1"
+  },
+  {
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L7",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 2
+   },
+   "s": null,
+   "at": [
+    72.49,
+    105.34
+   ],
+   "note": "2 event(s): make_room 2"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L7",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 6
+   },
+   "s": null,
+   "at": [
+    94.05,
+    100.75
+   ],
+   "note": "6 event(s): make_room 6"
+  },
+  {
+   "kind": "make_room",
+   "src": "L6",
+   "dst": "L7",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 1
+   },
+   "s": null,
+   "at": [
+    109.56,
+    87.76
+   ],
+   "note": "1 event(s): make_room 1"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 6
+   },
+   "s": [
+    0.0,
+    1.5
+   ],
+   "at": [
+    69.14,
+    104.31
+   ],
+   "note": "6 event(s): sympathy 6"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 19
+   },
+   "s": [
+    0.5,
+    3.5
+   ],
+   "at": [
+    86.34,
+    103.77
+   ],
+   "note": "19 event(s): sympathy 19"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L6",
+   "dst": "L7",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 2
+   },
+   "s": [
+    26.79,
+    35.26
+   ],
+   "at": [
+    108.41,
+    89.88
+   ],
+   "note": "2 event(s): sympathy 2"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L7",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 2
+   },
+   "s": [
+    33.4,
+    40.89
+   ],
+   "at": [
+    93.02,
+    98.56
+   ],
+   "note": "2 event(s): hesitate 2"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 9
+   },
+   "s": [
+    1.82,
+    9.09
+   ],
+   "at": [
+    80.06,
+    107.67
+   ],
+   "note": "9 event(s): hesitate 9"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L6",
+   "dst": "L7",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 1
+   },
+   "s": [
+    24.93,
+    32.97
+   ],
+   "at": [
+    106.3,
+    87.26
+   ],
+   "note": "1 event(s): hesitate 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L7",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_under": 1,
+    "cross": 1
+   },
+   "s": [
+    37.93,
+    40.19
+   ],
+   "at": [
+    92.3,
+    99.26
+   ],
+   "note": "2 event(s): cross 1, gap_under 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "cross": 15,
+    "gap_over": 3,
+    "gap_under": 2,
+    "stop": 1
+   },
+   "s": [
+    0.13,
+    0.13
+   ],
+   "at": [
+    81.29,
+    107.63
+   ],
+   "note": "21 event(s): cross 15, gap_over 3, gap_under 2, stop 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L6",
+   "dst": "L7",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "cross": 1
+   },
+   "s": [
+    31.08,
+    31.08
+   ],
+   "at": [
+    106.96,
+    87.22
+   ],
+   "note": "1 event(s): cross 1"
+  },
+  {
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L7_b",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 2
+   },
+   "s": null,
+   "at": [
+    80.8,
+    104.63
+   ],
+   "note": "2 event(s): make_room 2"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L7_b",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 2
+   },
+   "s": null,
+   "at": [
+    86.58,
+    99.71
+   ],
+   "note": "2 event(s): make_room 2"
+  },
+  {
+   "kind": "make_room",
+   "src": "L7",
+   "dst": "L7_b",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 2
+   },
+   "s": null,
+   "at": [
+    78.75,
+    103.12
+   ],
+   "note": "2 event(s): make_room 2"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 4
+   },
+   "s": [
+    4.0,
+    7.0
+   ],
+   "at": [
+    82.36,
+    102.93
+   ],
+   "note": "4 event(s): sympathy 4"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 2
+   },
+   "s": [
+    21.99,
+    29.99
+   ],
+   "at": [
+    84.81,
+    98.91
+   ],
+   "note": "2 event(s): sympathy 2"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L7",
+   "dst": "L7_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 3
+   },
+   "s": [
+    52.27,
+    55.26
+   ],
+   "at": [
+    78.21,
+    101.79
+   ],
+   "note": "3 event(s): sympathy 3"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L7_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 1
+   },
+   "s": [
+    0.0,
+    6.23
+   ],
+   "at": [
+    96.19,
+    103.32
+   ],
+   "note": "1 event(s): hesitate 1"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 2
+   },
+   "s": [
+    15.58,
+    24.94
+   ],
+   "at": [
+    85.08,
+    96.62
+   ],
+   "note": "2 event(s): hesitate 2"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L7",
+   "dst": "L7_b",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 2
+   },
+   "s": [
+    53.77,
+    58.96
+   ],
+   "at": [
+    76.51,
+    101.97
+   ],
+   "note": "2 event(s): hesitate 2"
+  },
+  {
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L7_b",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "cross": 1
+   },
+   "s": [
+    4.08,
+    4.08
+   ],
+   "at": [
+    95.7,
+    102.87
+   ],
+   "note": "1 event(s): cross 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7_b",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_over": 1
+   },
+   "s": [
+    63.3,
+    63.3
+   ],
+   "at": [
+    74.31,
+    101.35
+   ],
+   "note": "1 event(s): gap_over 1"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L8",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 1
+   },
+   "s": null,
+   "at": [
+    122.95,
+    110.61
+   ],
+   "note": "1 event(s): make_room 1"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L8",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 1
+   },
+   "s": [
+    3.94,
+    16.9
+   ],
+   "at": [
+    122.33,
+    112.06
+   ],
+   "note": "1 event(s): sympathy 1"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L8",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 1
+   },
+   "s": [
+    6.96,
+    7.96
+   ],
+   "at": [
+    125.32,
+    112.06
+   ],
+   "note": "1 event(s): sympathy 1"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L5",
+   "dst": "L8",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 3
+   },
+   "s": [
+    3.48,
+    6.47
+   ],
+   "at": [
+    123.18,
+    112.32
+   ],
+   "note": "3 event(s): sympathy 3"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L8",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 2
+   },
+   "s": [
+    1.31,
+    7.79
+   ],
+   "at": [
+    122.25,
+    112.45
+   ],
+   "note": "2 event(s): hesitate 2"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L8",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 1
+   },
+   "s": [
+    1.31,
+    9.41
+   ],
+   "at": [
+    125.95,
+    112.04
+   ],
+   "note": "1 event(s): hesitate 1"
+  },
+  {
+   "kind": "hesitate",
+   "src": "L5",
+   "dst": "L8",
+   "relation": "R3_hesitate",
+   "outcomes": {
+    "hesitate": 1
+   },
+   "s": [
+    5.66,
+    14.17
+   ],
+   "at": [
+    121.45,
+    112.08
+   ],
+   "note": "1 event(s): hesitate 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L8",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "cross": 2
+   },
+   "s": [
+    6.2,
+    6.2
+   ],
+   "at": [
+    121.5,
+    112.44
+   ],
+   "note": "2 event(s): cross 2"
+  },
+  {
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L8",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "stop": 1
+   },
+   "s": [
+    7.69,
+    7.69
+   ],
+   "at": [
+    125.09,
+    112.08
+   ],
+   "note": "1 event(s): stop 1"
+  },
+  {
+   "kind": "crossing",
+   "src": "L5",
+   "dst": "L8",
+   "relation": "R4_crossing",
+   "outcomes": {
+    "gap_over": 1,
+    "cross": 1,
+    "stop": 1
+   },
+   "s": [
+    0.62,
+    0.62
+   ],
+   "at": [
+    126.25,
+    112.67
+   ],
+   "note": "3 event(s): cross 1, gap_over 1, stop 1"
+  },
+  {
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L8_b",
+   "relation": "R0_make_room",
+   "outcomes": {
+    "make_room": 1
+   },
+   "s": null,
+   "at": [
+    116.23,
+    112.51
+   ],
+   "note": "1 event(s): make_room 1"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L5",
+   "dst": "L8_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 1
+   },
+   "s": [
+    0.0,
+    4.49
+   ],
+   "at": [
+    113.41,
+    112.97
+   ],
+   "note": "1 event(s): sympathy 1"
+  },
+  {
+   "kind": "sympathy",
+   "src": "L5_b",
+   "dst": "L8_b",
+   "relation": "R2_sympathy",
+   "outcomes": {
+    "sympathy": 1
+   },
+   "s": [
+    15.41,
+    16.41
+   ],
+   "at": [
+    103.2,
+    115.91
+   ],
+   "note": "1 event(s): sympathy 1"
+  }
+ ],
+ "log": [
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L0",
+   "dst": "L1",
+   "step": 1,
+   "outcome": "make_room",
+   "at": [
+    116.76,
+    57.21
+   ],
+   "s_src": [
+    25.51,
+    28.97
+   ],
+   "mark_src": 0,
+   "push_mm": 0.481
+  },
+  {
+   "relation": "R1_accompany",
+   "kind": "accompany",
+   "src": "L0",
+   "dst": "L1",
+   "step": 1,
+   "outcome": "accompany",
+   "at": [
+    139.01,
+    54.43
+   ],
+   "s": [
+    105.98,
+    118.97
+   ],
+   "mark": 0,
+   "dist_mm": 4.33,
+   "hold_mm": 12.9
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L1",
+   "step": 1,
+   "outcome": "sympathy",
+   "at": [
+    116.93,
+    57.54
+   ],
+   "s": [
+    162.93,
+    167.93
+   ],
+   "bends": "dst",
+   "peak_mm": 0.684,
+   "mark": 0
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L0",
+   "dst": "L1",
+   "step": 1,
+   "outcome": "hesitate",
+   "at": [
+    148.87,
+    50.32
+   ],
+   "s": [
+    117.75,
+    126.33
+   ],
+   "mark": 0,
+   "peak_mm": 0.056
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L0",
+   "dst": "L1",
+   "step": 1,
+   "outcome": "hesitate",
+   "at": [
+    145.06,
+    55.39
+   ],
+   "s": [
+    130.23,
+    138.78
+   ],
+   "mark": 0,
+   "peak_mm": 0.053
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L1",
+   "step": 1,
+   "outcome": "gap_over",
+   "at": [
+    149.38,
+    50.75
+   ],
+   "s": [
+    124.22,
+    124.22
+   ],
+   "s_src": [
+    97.25,
+    99.18
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 1.924
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L1",
+   "step": 1,
+   "outcome": "cross",
+   "at": [
+    144.29,
+    55.02
+   ],
+   "s": [
+    136.92,
+    136.92
+   ],
+   "s_src": [
+    104.89,
+    104.89
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "make_room",
+   "at": [
+    152.19,
+    63.68
+   ],
+   "s_src": [
+    24.5,
+    29.32
+   ],
+   "mark_src": 1,
+   "push_mm": 0.658
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "make_room",
+   "at": [
+    176.35,
+    77.35
+   ],
+   "s_src": [
+    85.2,
+    90.7
+   ],
+   "mark_src": 1,
+   "push_mm": 0.351
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "make_room",
+   "at": [
+    179.14,
+    82.66
+   ],
+   "s_src": [
+    92.7,
+    95.71
+   ],
+   "mark_src": 1,
+   "push_mm": 0.177
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "make_room",
+   "at": [
+    166.28,
+    102.43
+   ],
+   "s_src": [
+    141.71,
+    145.71
+   ],
+   "mark_src": 1,
+   "push_mm": 0.28
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "make_room",
+   "at": [
+    140.24,
+    87.51
+   ],
+   "s_src": [
+    73.56,
+    75.12
+   ],
+   "mark_src": 0,
+   "push_mm": 0.102
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "make_room",
+   "at": [
+    137.23,
+    58.97
+   ],
+   "s_src": [
+    105.28,
+    107.88
+   ],
+   "mark_src": 0,
+   "push_mm": 0.158
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "make_room",
+   "at": [
+    114.28,
+    87.93
+   ],
+   "s_src": [
+    271.51,
+    276.45
+   ],
+   "mark_src": 0,
+   "push_mm": 0.242
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "make_room",
+   "at": [
+    110.92,
+    91.9
+   ],
+   "s_src": [
+    278.53,
+    280.09
+   ],
+   "mark_src": 0,
+   "push_mm": 0.105
+  },
+  {
+   "relation": "R1_accompany",
+   "kind": "accompany",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "accompany",
+   "at": [
+    115.22,
+    83.27
+   ],
+   "s": [
+    220.33,
+    232.33
+   ],
+   "mark": 0,
+   "dist_mm": 1.37,
+   "hold_mm": 14.6
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    142.29,
+    63.43
+   ],
+   "s": [
+    289.51,
+    294.01
+   ],
+   "bends": "dst",
+   "peak_mm": 0.267,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    150.72,
+    64.17
+   ],
+   "s": [
+    298.51,
+    302.51
+   ],
+   "bends": "dst",
+   "peak_mm": 0.224,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    154.21,
+    63.86
+   ],
+   "s": [
+    303.51,
+    304.51
+   ],
+   "bends": "dst",
+   "peak_mm": 0.103,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    157.7,
+    63.55
+   ],
+   "s": [
+    307.01,
+    308.01
+   ],
+   "bends": "dst",
+   "peak_mm": 0.055,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    169.44,
+    65.29
+   ],
+   "s": [
+    316.01,
+    322.51
+   ],
+   "bends": "dst",
+   "peak_mm": 0.452,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    176.05,
+    72.47
+   ],
+   "s": [
+    323.51,
+    335.51
+   ],
+   "bends": "dst",
+   "peak_mm": 0.273,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    178.9,
+    84.62
+   ],
+   "s": [
+    337.01,
+    347.01
+   ],
+   "bends": "dst",
+   "peak_mm": 0.371,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    184.31,
+    96.17
+   ],
+   "s": [
+    353.01,
+    357.01
+   ],
+   "bends": "dst",
+   "peak_mm": 0.299,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    179.35,
+    86.34
+   ],
+   "s": [
+    375.49,
+    380.18
+   ],
+   "bends": "dst",
+   "peak_mm": 0.377,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    165.1,
+    103.32
+   ],
+   "s": [
+    687.72,
+    695.22
+   ],
+   "bends": "dst",
+   "peak_mm": 0.394,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    112.83,
+    88.17
+   ],
+   "s": [
+    216.03,
+    220.03
+   ],
+   "bends": "dst",
+   "peak_mm": 0.081,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    116.95,
+    82.59
+   ],
+   "s": [
+    221.53,
+    228.03
+   ],
+   "bends": "dst",
+   "peak_mm": 0.175,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    126.75,
+    53.95
+   ],
+   "s": [
+    259.14,
+    261.14
+   ],
+   "bends": "dst",
+   "peak_mm": 0.062,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    139.96,
+    89.26
+   ],
+   "s": [
+    713.54,
+    721.54
+   ],
+   "bends": "dst",
+   "peak_mm": 0.21,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    104.68,
+    97.27
+   ],
+   "s": [
+    753.55,
+    756.05
+   ],
+   "bends": "dst",
+   "peak_mm": 0.048,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    60.66,
+    104.48
+   ],
+   "s": [
+    845.92,
+    848.42
+   ],
+   "bends": "dst",
+   "peak_mm": 0.046,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    58.89,
+    103.46
+   ],
+   "s": [
+    865.31,
+    867.31
+   ],
+   "bends": "dst",
+   "peak_mm": 0.051,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    59.88,
+    104.24
+   ],
+   "s": [
+    872.69,
+    875.69
+   ],
+   "bends": "dst",
+   "peak_mm": 0.058,
+   "mark": 0
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    153.51,
+    63.87
+   ],
+   "s": [
+    298.21,
+    302.11
+   ],
+   "mark": 0,
+   "peak_mm": 0.034
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    166.71,
+    64.14
+   ],
+   "s": [
+    307.83,
+    316.93
+   ],
+   "mark": 0,
+   "peak_mm": 0.057
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    177.78,
+    79.03
+   ],
+   "s": [
+    330.44,
+    335.64
+   ],
+   "mark": 0,
+   "peak_mm": 0.032
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    181.06,
+    86.28
+   ],
+   "s": [
+    367.09,
+    376.39
+   ],
+   "mark": 0,
+   "peak_mm": 0.057
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    112.02,
+    91.7
+   ],
+   "s": [
+    208.38,
+    215.66
+   ],
+   "mark": 0,
+   "peak_mm": 0.044
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    126.77,
+    68.54
+   ],
+   "s": [
+    235.41,
+    243.99
+   ],
+   "mark": 0,
+   "peak_mm": 0.053
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    126.26,
+    53.83
+   ],
+   "s": [
+    250.75,
+    260.24
+   ],
+   "mark": 0,
+   "peak_mm": 0.07
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    135.96,
+    61.01
+   ],
+   "s": [
+    275.79,
+    284.37
+   ],
+   "mark": 0,
+   "peak_mm": 0.061
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    105.88,
+    97.52
+   ],
+   "s": [
+    745.44,
+    752.98
+   ],
+   "mark": 0,
+   "peak_mm": 0.05
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    54.8,
+    101.88
+   ],
+   "s": [
+    823.38,
+    831.96
+   ],
+   "mark": 0,
+   "peak_mm": 0.06
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    60.34,
+    104.77
+   ],
+   "s": [
+    838.69,
+    846.23
+   ],
+   "mark": 0,
+   "peak_mm": 0.048
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    59.55,
+    104.56
+   ],
+   "s": [
+    857.11,
+    872.34
+   ],
+   "mark": 0,
+   "peak_mm": 0.056
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "hesitate",
+   "at": [
+    73.04,
+    104.89
+   ],
+   "s": [
+    892.03,
+    900.61
+   ],
+   "mark": 0,
+   "peak_mm": 0.063
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    154.62,
+    63.74
+   ],
+   "s": [
+    301.38,
+    301.38
+   ],
+   "s_src": [
+    30.85,
+    30.85
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    167.43,
+    64.3
+   ],
+   "s": [
+    314.32,
+    314.32
+   ],
+   "s_src": [
+    64.43,
+    64.43
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    169.29,
+    64.99
+   ],
+   "s": [
+    316.35,
+    316.35
+   ],
+   "s_src": [
+    67.21,
+    67.21
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    171.7,
+    66.97
+   ],
+   "s": [
+    319.52,
+    319.52
+   ],
+   "s_src": [
+    70.65,
+    70.65
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    173.86,
+    68.57
+   ],
+   "s": [
+    322.33,
+    322.33
+   ],
+   "s_src": [
+    77.39,
+    77.39
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "gap_over",
+   "at": [
+    178.17,
+    80.54
+   ],
+   "s": [
+    335.16,
+    335.16
+   ],
+   "s_src": [
+    89.88,
+    92.02
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": false,
+   "gap_mm": 2.135
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "sympathy",
+   "at": [
+    180.11,
+    88.55
+   ],
+   "s": [
+    338.43,
+    348.43
+   ],
+   "s_src": [
+    99.56,
+    99.56
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": false,
+   "lean_mm": 0.798
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    180.49,
+    86.34
+   ],
+   "s": [
+    373.74,
+    373.74
+   ],
+   "s_src": [
+    97.24,
+    97.24
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    180.44,
+    85.97
+   ],
+   "s": [
+    375.42,
+    375.42
+   ],
+   "s_src": [
+    96.88,
+    96.88
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "gap_under",
+   "at": [
+    112.31,
+    90.35
+   ],
+   "s": [
+    214.05,
+    215.43
+   ],
+   "s_src": [
+    277.24,
+    277.24
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 1.378
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "gap_under",
+   "at": [
+    127.05,
+    67.94
+   ],
+   "s": [
+    240.79,
+    243.01
+   ],
+   "s_src": [
+    200.33,
+    200.33
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true,
+   "gap_mm": 2.221
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "gap_under",
+   "at": [
+    126.03,
+    53.54
+   ],
+   "s": [
+    256.9,
+    258.81
+   ],
+   "s_src": [
+    155.55,
+    155.55
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true,
+   "gap_mm": 1.91
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    126.28,
+    53.48
+   ],
+   "s": [
+    258.59,
+    258.59
+   ],
+   "s_src": [
+    155.29,
+    155.29
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    136.54,
+    61.36
+   ],
+   "s": [
+    282.69,
+    282.69
+   ],
+   "s_src": [
+    104.06,
+    104.06
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    104.96,
+    97.4
+   ],
+   "s": [
+    752.35,
+    752.35
+   ],
+   "s_src": [
+    287.45,
+    287.45
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    54.55,
+    102.34
+   ],
+   "s": [
+    830.75,
+    830.75
+   ],
+   "s_src": [
+    340.11,
+    340.11
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    61.21,
+    104.12
+   ],
+   "s": [
+    845.67,
+    845.67
+   ],
+   "s_src": [
+    333.19,
+    333.19
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    58.75,
+    103.71
+   ],
+   "s": [
+    864.1,
+    864.1
+   ],
+   "s_src": [
+    335.68,
+    335.68
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "cross",
+   "at": [
+    60.27,
+    103.98
+   ],
+   "s": [
+    872.05,
+    872.05
+   ],
+   "s_src": [
+    334.13,
+    334.13
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "gap_over",
+   "at": [
+    72.78,
+    105.5
+   ],
+   "s": [
+    899.61,
+    899.61
+   ],
+   "s_src": [
+    320.56,
+    322.51
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 1.949
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L0",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "make_room",
+   "at": [
+    188.42,
+    106.46
+   ],
+   "s_src": [
+    78.31,
+    81.7
+   ],
+   "mark_src": 2,
+   "push_mm": 0.472
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "make_room",
+   "at": [
+    189.9,
+    122.3
+   ],
+   "s_src": [
+    395.59,
+    396.63
+   ],
+   "mark_src": 3,
+   "push_mm": 0.093
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "make_room",
+   "at": [
+    185.26,
+    118.95
+   ],
+   "s_src": [
+    398.71,
+    404.95
+   ],
+   "mark_src": 3,
+   "push_mm": 0.435
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "sympathy",
+   "at": [
+    187.92,
+    107.12
+   ],
+   "s": [
+    10.0,
+    12.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.263,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "sympathy",
+   "at": [
+    190.5,
+    105.65
+   ],
+   "s": [
+    13.0,
+    14.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.174,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L0",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "sympathy",
+   "at": [
+    188.09,
+    107.56
+   ],
+   "s": [
+    15.5,
+    19.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.39,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "sympathy",
+   "at": [
+    208.05,
+    133.41
+   ],
+   "s": [
+    163.85,
+    166.46
+   ],
+   "bends": "dst",
+   "peak_mm": 0.298,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "sympathy",
+   "at": [
+    186.07,
+    118.32
+   ],
+   "s": [
+    28.73,
+    32.73
+   ],
+   "bends": "dst",
+   "peak_mm": 0.112,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "sympathy",
+   "at": [
+    188.71,
+    121.93
+   ],
+   "s": [
+    34.73,
+    35.73
+   ],
+   "bends": "dst",
+   "peak_mm": 0.041,
+   "mark": 1
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L0",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "hesitate",
+   "at": [
+    188.25,
+    107.18
+   ],
+   "s": [
+    8.32,
+    12.48
+   ],
+   "mark": 1,
+   "peak_mm": 0.037
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "hesitate",
+   "at": [
+    202.93,
+    150.78
+   ],
+   "s": [
+    127.17,
+    138.86
+   ],
+   "mark": 0,
+   "peak_mm": 0.053
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "hesitate",
+   "at": [
+    207.88,
+    132.68
+   ],
+   "s": [
+    149.77,
+    166.14
+   ],
+   "mark": 0,
+   "peak_mm": 0.06
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "hesitate",
+   "at": [
+    187.54,
+    120.09
+   ],
+   "s": [
+    30.37,
+    34.27
+   ],
+   "mark": 1,
+   "peak_mm": 0.026
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "hesitate",
+   "at": [
+    200.85,
+    157.66
+   ],
+   "s": [
+    71.53,
+    88.94
+   ],
+   "mark": 1,
+   "peak_mm": 0.064
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "hesitate",
+   "at": [
+    204.42,
+    142.48
+   ],
+   "s": [
+    145.7,
+    154.53
+   ],
+   "mark": 1,
+   "peak_mm": 0.071
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "hesitate",
+   "at": [
+    195.9,
+    127.25
+   ],
+   "s": [
+    167.52,
+    176.35
+   ],
+   "mark": 1,
+   "peak_mm": 0.059
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "gap_over",
+   "at": [
+    202.31,
+    150.34
+   ],
+   "s": [
+    133.95,
+    133.95
+   ],
+   "s_src": [
+    314.99,
+    316.55
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "streak": false,
+   "gap_mm": 1.557
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "cross",
+   "at": [
+    199.46,
+    147.8
+   ],
+   "s": [
+    137.79,
+    137.79
+   ],
+   "s_src": [
+    361.58,
+    361.58
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "cross",
+   "at": [
+    201.72,
+    130.93
+   ],
+   "s": [
+    156.43,
+    156.43
+   ],
+   "s_src": [
+    381.47,
+    381.47
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "cross",
+   "at": [
+    207.82,
+    133.5
+   ],
+   "s": [
+    165.36,
+    165.36
+   ],
+   "s_src": [
+    297.71,
+    297.71
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "cross",
+   "at": [
+    188.37,
+    121.23
+   ],
+   "s": [
+    34.4,
+    34.4
+   ],
+   "s_src": [
+    397.99,
+    397.99
+   ],
+   "mark": 1,
+   "mark_src": 3,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "cross",
+   "at": [
+    193.32,
+    155.19
+   ],
+   "s": [
+    78.09,
+    78.09
+   ],
+   "s_src": [
+    351.97,
+    351.97
+   ],
+   "mark": 1,
+   "mark_src": 3,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "cross",
+   "at": [
+    201.38,
+    157.55
+   ],
+   "s": [
+    87.05,
+    87.05
+   ],
+   "s_src": [
+    323.04,
+    323.04
+   ],
+   "mark": 1,
+   "mark_src": 3,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "cross",
+   "at": [
+    203.73,
+    142.32
+   ],
+   "s": [
+    152.69,
+    152.69
+   ],
+   "s_src": [
+    368.53,
+    368.53
+   ],
+   "mark": 1,
+   "mark_src": 3,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "cross",
+   "at": [
+    203.59,
+    142.25
+   ],
+   "s": [
+    152.85,
+    152.85
+   ],
+   "s_src": [
+    307.57,
+    307.57
+   ],
+   "mark": 1,
+   "mark_src": 3,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3",
+   "step": 3,
+   "outcome": "gap_over",
+   "at": [
+    196.19,
+    126.58
+   ],
+   "s": [
+    174.66,
+    174.66
+   ],
+   "s_src": [
+    387.6,
+    389.43
+   ],
+   "mark": 1,
+   "mark_src": 3,
+   "streak": false,
+   "gap_mm": 1.838
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "make_room",
+   "at": [
+    205.49,
+    136.76
+   ],
+   "s_src": [
+    298.88,
+    307.73
+   ],
+   "mark_src": 3,
+   "push_mm": 0.277
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "make_room",
+   "at": [
+    202.95,
+    145.46
+   ],
+   "s_src": [
+    309.81,
+    311.63
+   ],
+   "mark_src": 3,
+   "push_mm": 0.115
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "make_room",
+   "at": [
+    200.56,
+    161.39
+   ],
+   "s_src": [
+    6.78,
+    13.02
+   ],
+   "mark_src": 4,
+   "push_mm": 0.234
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "make_room",
+   "at": [
+    195.34,
+    152.52
+   ],
+   "s_src": [
+    31.22,
+    43.96
+   ],
+   "mark_src": 4,
+   "push_mm": 0.92
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "make_room",
+   "at": [
+    203.47,
+    142.73
+   ],
+   "s_src": [
+    47.34,
+    59.04
+   ],
+   "mark_src": 4,
+   "push_mm": 0.936
+  },
+  {
+   "relation": "R1_accompany",
+   "kind": "accompany",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "accompany",
+   "at": [
+    193.5,
+    157.59
+   ],
+   "s": [
+    39.0,
+    60.0
+   ],
+   "mark": 0,
+   "dist_mm": 3.01,
+   "hold_mm": 12.2
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    207.09,
+    136.41
+   ],
+   "s": [
+    0.0,
+    3.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.282,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    206.02,
+    140.26
+   ],
+   "s": [
+    4.5,
+    7.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.181,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    201.21,
+    163.13
+   ],
+   "s": [
+    22.5,
+    36.01
+   ],
+   "bends": "dst",
+   "peak_mm": 0.382,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    193.53,
+    160.54
+   ],
+   "s": [
+    38.51,
+    43.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.064,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    196.67,
+    154.3
+   ],
+   "s": [
+    47.51,
+    48.51
+   ],
+   "bends": "dst",
+   "peak_mm": 0.031,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    200.73,
+    150.62
+   ],
+   "s": [
+    52.51,
+    54.51
+   ],
+   "bends": "dst",
+   "peak_mm": 0.078,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    201.91,
+    146.42
+   ],
+   "s": [
+    55.5,
+    60.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.146,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    203.97,
+    142.56
+   ],
+   "s": [
+    61.5,
+    63.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.072,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    206.57,
+    138.9
+   ],
+   "s": [
+    64.0,
+    69.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.192,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    207.9,
+    134.15
+   ],
+   "s": [
+    70.5,
+    73.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.16,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    204.45,
+    151.1
+   ],
+   "s": [
+    15.0,
+    18.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.169,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    203.37,
+    157.51
+   ],
+   "s": [
+    22.5,
+    24.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.061,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    204.59,
+    141.76
+   ],
+   "s": [
+    63.49,
+    63.99
+   ],
+   "bends": "dst",
+   "peak_mm": 0.034,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    205.83,
+    129.69
+   ],
+   "s": [
+    74.49,
+    80.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.669,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "sympathy",
+   "at": [
+    196.55,
+    122.12
+   ],
+   "s": [
+    87.0,
+    91.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.259,
+   "mark": 0
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "hesitate",
+   "at": [
+    200.1,
+    164.64
+   ],
+   "s": [
+    28.35,
+    33.04
+   ],
+   "mark": 0,
+   "peak_mm": 0.038
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "hesitate",
+   "at": [
+    201.37,
+    149.71
+   ],
+   "s": [
+    53.06,
+    56.18
+   ],
+   "mark": 0,
+   "peak_mm": 0.035
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "hesitate",
+   "at": [
+    202.78,
+    143.99
+   ],
+   "s": [
+    60.08,
+    61.9
+   ],
+   "mark": 0,
+   "peak_mm": 0.023
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "hesitate",
+   "at": [
+    207.75,
+    134.38
+   ],
+   "s": [
+    67.36,
+    74.65
+   ],
+   "mark": 0,
+   "peak_mm": 0.066
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "hesitate",
+   "at": [
+    204.65,
+    150.75
+   ],
+   "s": [
+    2.34,
+    23.91
+   ],
+   "mark": 0,
+   "peak_mm": 0.075
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "hesitate",
+   "at": [
+    201.18,
+    150.02
+   ],
+   "s": [
+    39.23,
+    65.19
+   ],
+   "mark": 0,
+   "peak_mm": 0.073
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "hesitate",
+   "at": [
+    207.27,
+    131.27
+   ],
+   "s": [
+    70.12,
+    78.16
+   ],
+   "mark": 0,
+   "peak_mm": 0.063
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "gap_under",
+   "at": [
+    199.08,
+    165.32
+   ],
+   "s": [
+    32.21,
+    33.77
+   ],
+   "s_src": [
+    14.6,
+    14.6
+   ],
+   "mark": 0,
+   "mark_src": 4,
+   "streak": false,
+   "gap_mm": 1.561
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "gap_under",
+   "at": [
+    203.35,
+    143.31
+   ],
+   "s": [
+    61.58,
+    63.31
+   ],
+   "s_src": [
+    308.79,
+    308.79
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "streak": true,
+   "gap_mm": 1.734
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "gap_under",
+   "at": [
+    207.71,
+    133.56
+   ],
+   "s": [
+    73.05,
+    74.34
+   ],
+   "s_src": [
+    297.84,
+    297.84
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "streak": false,
+   "gap_mm": 1.287
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "gap_over",
+   "at": [
+    205.57,
+    142.8
+   ],
+   "s": [
+    8.72,
+    8.72
+   ],
+   "s_src": [
+    149.62,
+    151.83
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": false,
+   "gap_mm": 2.208
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "gap_over",
+   "at": [
+    204.51,
+    151.44
+   ],
+   "s": [
+    17.55,
+    17.55
+   ],
+   "s_src": [
+    130.7,
+    132.19
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true,
+   "gap_mm": 1.49
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "cross",
+   "at": [
+    203.6,
+    156.45
+   ],
+   "s": [
+    22.68,
+    22.68
+   ],
+   "s_src": [
+    89.54,
+    89.54
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "cross",
+   "at": [
+    195.2,
+    156.75
+   ],
+   "s": [
+    12.21,
+    12.21
+   ],
+   "s_src": [
+    80.59,
+    80.59
+   ],
+   "mark": 1,
+   "mark_src": 1,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "cross",
+   "at": [
+    201.5,
+    149.57
+   ],
+   "s": [
+    21.93,
+    21.93
+   ],
+   "s_src": [
+    135.1,
+    135.1
+   ],
+   "mark": 1,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "cross",
+   "at": [
+    203.91,
+    142.42
+   ],
+   "s": [
+    0.21,
+    0.21
+   ],
+   "s_src": [
+    152.48,
+    152.48
+   ],
+   "mark": 2,
+   "mark_src": 1,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L3",
+   "dst": "L3_b",
+   "step": 4,
+   "outcome": "cross",
+   "at": [
+    207.13,
+    130.88
+   ],
+   "s": [
+    2.18,
+    2.18
+   ],
+   "s_src": [
+    162.49,
+    162.49
+   ],
+   "mark": 3,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "make_room",
+   "at": [
+    129.36,
+    107.33
+   ],
+   "s_src": [
+    1.3,
+    6.24
+   ],
+   "mark_src": 0,
+   "push_mm": 0.306
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "make_room",
+   "at": [
+    138.11,
+    118.36
+   ],
+   "s_src": [
+    120.48,
+    122.3
+   ],
+   "mark_src": 0,
+   "push_mm": 0.112
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "make_room",
+   "at": [
+    124.28,
+    110.01
+   ],
+   "s_src": [
+    152.18,
+    155.3
+   ],
+   "mark_src": 0,
+   "push_mm": 0.211
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "make_room",
+   "at": [
+    124.35,
+    115.01
+   ],
+   "s_src": [
+    169.33,
+    170.89
+   ],
+   "mark_src": 0,
+   "push_mm": 0.096
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "sympathy",
+   "at": [
+    124.05,
+    112.86
+   ],
+   "s": [
+    97.65,
+    107.8
+   ],
+   "bends": "dst",
+   "peak_mm": 0.464,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "sympathy",
+   "at": [
+    129.17,
+    105.33
+   ],
+   "s": [
+    108.5,
+    115.15
+   ],
+   "bends": "dst",
+   "peak_mm": 0.168,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "sympathy",
+   "at": [
+    137.44,
+    119.34
+   ],
+   "s": [
+    10.0,
+    13.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.057,
+   "mark": 1
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "hesitate",
+   "at": [
+    121.93,
+    116.33
+   ],
+   "s": [
+    93.38,
+    107.95
+   ],
+   "mark": 0,
+   "peak_mm": 0.049
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "hesitate",
+   "at": [
+    143.95,
+    121.77
+   ],
+   "s": [
+    8.05,
+    20.78
+   ],
+   "mark": 1,
+   "peak_mm": 0.039
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "gap_over",
+   "at": [
+    122.55,
+    115.66
+   ],
+   "s": [
+    99.82,
+    99.82
+   ],
+   "s_src": [
+    170.89,
+    172.47
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 1.581
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "cross",
+   "at": [
+    126.46,
+    109.85
+   ],
+   "s": [
+    106.88,
+    106.88
+   ],
+   "s_src": [
+    163.6,
+    163.6
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "cross",
+   "at": [
+    127.42,
+    107.71
+   ],
+   "s": [
+    109.24,
+    109.24
+   ],
+   "s_src": [
+    136.48,
+    136.48
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "cross",
+   "at": [
+    139.24,
+    120.16
+   ],
+   "s": [
+    13.52,
+    13.52
+   ],
+   "s_src": [
+    119.01,
+    119.01
+   ],
+   "mark": 1,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4",
+   "step": 5,
+   "outcome": "cross",
+   "at": [
+    144.67,
+    121.97
+   ],
+   "s": [
+    19.28,
+    19.28
+   ],
+   "s_src": [
+    72.32,
+    72.32
+   ],
+   "mark": 1,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "make_room",
+   "at": [
+    138.89,
+    97.23
+   ],
+   "s_src": [
+    31.21,
+    33.03
+   ],
+   "mark_src": 0,
+   "push_mm": 0.112
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "make_room",
+   "at": [
+    142.16,
+    93.88
+   ],
+   "s_src": [
+    35.37,
+    37.71
+   ],
+   "mark_src": 0,
+   "push_mm": 0.135
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "make_room",
+   "at": [
+    143.93,
+    128.21
+   ],
+   "s_src": [
+    103.19,
+    113.59
+   ],
+   "mark_src": 0,
+   "push_mm": 0.574
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "make_room",
+   "at": [
+    139.7,
+    121.04
+   ],
+   "s_src": [
+    114.89,
+    121.14
+   ],
+   "mark_src": 0,
+   "push_mm": 0.417
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "make_room",
+   "at": [
+    142.03,
+    90.08
+   ],
+   "s_src": [
+    63.95,
+    65.77
+   ],
+   "mark_src": 6,
+   "push_mm": 0.122
+  },
+  {
+   "relation": "R1_accompany",
+   "kind": "accompany",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "accompany",
+   "at": [
+    135.13,
+    97.78
+   ],
+   "s": [
+    1.5,
+    14.0
+   ],
+   "mark": 0,
+   "dist_mm": 3.05,
+   "hold_mm": 16.1
+  },
+  {
+   "relation": "R1_accompany",
+   "kind": "accompany",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "accompany",
+   "at": [
+    142.88,
+    127.94
+   ],
+   "s": [
+    47.5,
+    68.0
+   ],
+   "mark": 0,
+   "dist_mm": 0.43,
+   "hold_mm": 24.2
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "sympathy",
+   "at": [
+    132.99,
+    99.9
+   ],
+   "s": [
+    2.0,
+    4.49
+   ],
+   "bends": "dst",
+   "peak_mm": 0.049,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "sympathy",
+   "at": [
+    141.14,
+    92.87
+   ],
+   "s": [
+    15.43,
+    17.72
+   ],
+   "bends": "dst",
+   "peak_mm": 0.061,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "sympathy",
+   "at": [
+    139.41,
+    102.68
+   ],
+   "s": [
+    24.7,
+    28.2
+   ],
+   "bends": "dst",
+   "peak_mm": 0.304,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "sympathy",
+   "at": [
+    141.14,
+    122.45
+   ],
+   "s": [
+    45.15,
+    48.15
+   ],
+   "bends": "dst",
+   "peak_mm": 0.103,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "sympathy",
+   "at": [
+    144.73,
+    127.69
+   ],
+   "s": [
+    50.64,
+    55.62
+   ],
+   "bends": "dst",
+   "peak_mm": 0.14,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "sympathy",
+   "at": [
+    147.97,
+    133.88
+   ],
+   "s": [
+    57.62,
+    62.61
+   ],
+   "bends": "dst",
+   "peak_mm": 0.06,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "sympathy",
+   "at": [
+    149.41,
+    139.95
+   ],
+   "s": [
+    64.6,
+    68.59
+   ],
+   "bends": "dst",
+   "peak_mm": 0.13,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "sympathy",
+   "at": [
+    136.86,
+    122.59
+   ],
+   "s": [
+    92.43,
+    93.93
+   ],
+   "bends": "dst",
+   "peak_mm": 0.035,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "sympathy",
+   "at": [
+    140.58,
+    120.3
+   ],
+   "s": [
+    43.47,
+    45.47
+   ],
+   "bends": "dst",
+   "peak_mm": 0.052,
+   "mark": 0
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "hesitate",
+   "at": [
+    139.7,
+    101.47
+   ],
+   "s": [
+    14.3,
+    28.24
+   ],
+   "mark": 0,
+   "peak_mm": 0.05
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "hesitate",
+   "at": [
+    141.15,
+    122.84
+   ],
+   "s": [
+    43.33,
+    48.79
+   ],
+   "mark": 0,
+   "peak_mm": 0.034
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "hesitate",
+   "at": [
+    140.42,
+    119.82
+   ],
+   "s": [
+    38.69,
+    46.49
+   ],
+   "mark": 0,
+   "peak_mm": 0.042
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "gap_under",
+   "at": [
+    140.41,
+    95.65
+   ],
+   "s": [
+    18.31,
+    20.64
+   ],
+   "s_src": [
+    34.21,
+    34.21
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 2.326
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "gap_over",
+   "at": [
+    139.7,
+    101.89
+   ],
+   "s": [
+    25.83,
+    25.83
+   ],
+   "s_src": [
+    17.65,
+    19.0
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 1.353
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "cross",
+   "at": [
+    139.71,
+    102.66
+   ],
+   "s": [
+    26.6,
+    26.6
+   ],
+   "s_src": [
+    15.27,
+    15.27
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "gap_over",
+   "at": [
+    149.57,
+    137.16
+   ],
+   "s": [
+    63.93,
+    63.93
+   ],
+   "s_src": [
+    98.34,
+    99.97
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 1.633
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L4_b",
+   "step": 6,
+   "outcome": "gap_over",
+   "at": [
+    140.6,
+    120.7
+   ],
+   "s": [
+    24.23,
+    24.23
+   ],
+   "s_src": [
+    14.18,
+    15.79
+   ],
+   "mark": 1,
+   "mark_src": 1,
+   "streak": false,
+   "gap_mm": 1.604
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "make_room",
+   "at": [
+    127.42,
+    107.71
+   ],
+   "s_src": [
+    34.84,
+    38.22
+   ],
+   "mark_src": 2,
+   "push_mm": 0.236
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "make_room",
+   "at": [
+    126.73,
+    111.19
+   ],
+   "s_src": [
+    64.63,
+    65.96
+   ],
+   "mark_src": 2,
+   "push_mm": 0.094
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "make_room",
+   "at": [
+    125.6,
+    114.08
+   ],
+   "s_src": [
+    67.01,
+    69.65
+   ],
+   "mark_src": 2,
+   "push_mm": 0.129
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    127.17,
+    114.82
+   ],
+   "s": [
+    0.0,
+    3.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.189,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    127.23,
+    109.39
+   ],
+   "s": [
+    20.0,
+    24.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.197,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    122.95,
+    109.47
+   ],
+   "s": [
+    25.0,
+    27.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.335,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    118.01,
+    114.28
+   ],
+   "s": [
+    31.5,
+    36.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.324,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    130.85,
+    116.86
+   ],
+   "s": [
+    11.88,
+    14.38
+   ],
+   "bends": "dst",
+   "peak_mm": 0.114,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    127.28,
+    109.76
+   ],
+   "s": [
+    20.89,
+    21.39
+   ],
+   "bends": "dst",
+   "peak_mm": 0.033,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    125.33,
+    109.09
+   ],
+   "s": [
+    23.34,
+    24.34
+   ],
+   "bends": "dst",
+   "peak_mm": 0.051,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    108.77,
+    121.39
+   ],
+   "s": [
+    43.33,
+    48.85
+   ],
+   "bends": "dst",
+   "peak_mm": 0.118,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    107.89,
+    123.63
+   ],
+   "s": [
+    64.78,
+    72.79
+   ],
+   "bends": "dst",
+   "peak_mm": 0.162,
+   "mark": 0
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "hesitate",
+   "at": [
+    128.05,
+    111.08
+   ],
+   "s": [
+    13.22,
+    22.56
+   ],
+   "mark": 0,
+   "peak_mm": 0.069
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "hesitate",
+   "at": [
+    119.05,
+    114.44
+   ],
+   "s": [
+    26.99,
+    35.3
+   ],
+   "mark": 0,
+   "peak_mm": 0.053
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "hesitate",
+   "at": [
+    127.35,
+    109.78
+   ],
+   "s": [
+    16.37,
+    23.63
+   ],
+   "mark": 0,
+   "peak_mm": 0.04
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "hesitate",
+   "at": [
+    109.7,
+    120.1
+   ],
+   "s": [
+    39.47,
+    47.02
+   ],
+   "mark": 0,
+   "peak_mm": 0.048
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "hesitate",
+   "at": [
+    109.5,
+    123.53
+   ],
+   "s": [
+    51.44,
+    67.56
+   ],
+   "mark": 0,
+   "peak_mm": 0.075
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "hesitate",
+   "at": [
+    108.9,
+    147.15
+   ],
+   "s": [
+    29.3,
+    37.92
+   ],
+   "mark": 1,
+   "peak_mm": 0.051
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "cross",
+   "at": [
+    127.79,
+    110.64
+   ],
+   "s": [
+    20.37,
+    20.37
+   ],
+   "s_src": [
+    0.17,
+    0.17
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "cross",
+   "at": [
+    126.0,
+    108.99
+   ],
+   "s": [
+    23.16,
+    23.16
+   ],
+   "s_src": [
+    63.09,
+    63.09
+   ],
+   "mark": 0,
+   "mark_src": 2,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "cross",
+   "at": [
+    124.33,
+    109.51
+   ],
+   "s": [
+    24.92,
+    24.92
+   ],
+   "s_src": [
+    53.28,
+    53.28
+   ],
+   "mark": 0,
+   "mark_src": 2,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "cross",
+   "at": [
+    121.87,
+    109.98
+   ],
+   "s": [
+    27.47,
+    27.47
+   ],
+   "s_src": [
+    56.47,
+    56.47
+   ],
+   "mark": 0,
+   "mark_src": 2,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "cross",
+   "at": [
+    118.21,
+    114.58
+   ],
+   "s": [
+    33.72,
+    33.72
+   ],
+   "s_src": [
+    3.79,
+    3.79
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    126.75,
+    109.01
+   ],
+   "s": [
+    17.4,
+    27.4
+   ],
+   "s_src": [
+    107.77,
+    107.77
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "lean_mm": 0.754
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    109.29,
+    120.82
+   ],
+   "s": [
+    40.62,
+    50.62
+   ],
+   "s_src": [
+    8.4,
+    8.4
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true,
+   "lean_mm": 0.79
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    110.19,
+    123.57
+   ],
+   "s": [
+    53.36,
+    63.36
+   ],
+   "s_src": [
+    11.3,
+    11.3
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true,
+   "lean_mm": 0.682
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "sympathy",
+   "at": [
+    110.18,
+    125.81
+   ],
+   "s": [
+    60.69,
+    70.69
+   ],
+   "s_src": [
+    13.56,
+    13.56
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": true,
+   "lean_mm": 0.614
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "gap_over",
+   "at": [
+    109.44,
+    146.86
+   ],
+   "s": [
+    35.61,
+    35.61
+   ],
+   "s_src": [
+    34.33,
+    35.87
+   ],
+   "mark": 1,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 1.535
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5",
+   "step": 7,
+   "outcome": "cross",
+   "at": [
+    109.32,
+    146.29
+   ],
+   "s": [
+    37.63,
+    37.63
+   ],
+   "s_src": [
+    34.52,
+    34.52
+   ],
+   "mark": 1,
+   "mark_src": 0,
+   "tangle": true
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "make_room",
+   "at": [
+    108.89,
+    129.17
+   ],
+   "s_src": [
+    15.86,
+    18.72
+   ],
+   "mark_src": 0,
+   "push_mm": 0.153
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "make_room",
+   "at": [
+    107.82,
+    134.77
+   ],
+   "s_src": [
+    21.84,
+    23.92
+   ],
+   "mark_src": 0,
+   "push_mm": 0.119
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "sympathy",
+   "at": [
+    107.47,
+    127.51
+   ],
+   "s": [
+    18.0,
+    18.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.037,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "sympathy",
+   "at": [
+    106.59,
+    130.27
+   ],
+   "s": [
+    20.5,
+    22.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.046,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "sympathy",
+   "at": [
+    108.45,
+    133.32
+   ],
+   "s": [
+    24.0,
+    28.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.167,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "sympathy",
+   "at": [
+    116.81,
+    147.49
+   ],
+   "s": [
+    46.5,
+    48.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.034,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "sympathy",
+   "at": [
+    114.82,
+    159.04
+   ],
+   "s": [
+    66.0,
+    80.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.376,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L5",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "sympathy",
+   "at": [
+    106.08,
+    125.57
+   ],
+   "s": [
+    13.0,
+    18.51
+   ],
+   "bends": "dst",
+   "peak_mm": 0.91,
+   "mark": 0
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "hesitate",
+   "at": [
+    107.46,
+    132.08
+   ],
+   "s": [
+    18.5,
+    27.0
+   ],
+   "mark": 0,
+   "peak_mm": 0.061
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "hesitate",
+   "at": [
+    112.59,
+    153.1
+   ],
+   "s": [
+    49.84,
+    58.66
+   ],
+   "mark": 0,
+   "peak_mm": 0.076
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "hesitate",
+   "at": [
+    111.19,
+    154.52
+   ],
+   "s": [
+    64.84,
+    67.44
+   ],
+   "mark": 0,
+   "peak_mm": 0.03
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "hesitate",
+   "at": [
+    114.8,
+    158.6
+   ],
+   "s": [
+    69.51,
+    75.66
+   ],
+   "mark": 0,
+   "peak_mm": 0.053
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L5",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "hesitate",
+   "at": [
+    104.35,
+    125.5
+   ],
+   "s": [
+    8.47,
+    16.78
+   ],
+   "mark": 0,
+   "peak_mm": 0.054
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "gap_under",
+   "at": [
+    107.98,
+    132.74
+   ],
+   "s": [
+    23.84,
+    26.04
+   ],
+   "s_src": [
+    20.84,
+    20.84
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 2.2
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "cross",
+   "at": [
+    112.02,
+    153.55
+   ],
+   "s": [
+    56.54,
+    56.54
+   ],
+   "s_src": [
+    6.44,
+    6.44
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "cross",
+   "at": [
+    114.62,
+    157.84
+   ],
+   "s": [
+    74.46,
+    74.46
+   ],
+   "s_src": [
+    11.45,
+    11.45
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L5_b",
+   "step": 8,
+   "outcome": "cross",
+   "at": [
+    112.69,
+    154.65
+   ],
+   "s": [
+    78.32,
+    78.32
+   ],
+   "s_src": [
+    7.73,
+    7.73
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "tangle": true
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "make_room",
+   "at": [
+    120.32,
+    106.4
+   ],
+   "s_src": [
+    43.23,
+    44.79
+   ],
+   "mark_src": 2,
+   "push_mm": 0.142
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "make_room",
+   "at": [
+    120.04,
+    106.4
+   ],
+   "s_src": [
+    45.81,
+    48.15
+   ],
+   "mark_src": 2,
+   "push_mm": 0.186
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "make_room",
+   "at": [
+    115.59,
+    98.87
+   ],
+   "s_src": [
+    23.1,
+    25.44
+   ],
+   "mark_src": 3,
+   "push_mm": 0.129
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "make_room",
+   "at": [
+    112.89,
+    101.38
+   ],
+   "s_src": [
+    26.74,
+    35.31
+   ],
+   "mark_src": 3,
+   "push_mm": 0.916
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "make_room",
+   "at": [
+    121.27,
+    155.32
+   ],
+   "s_src": [
+    19.25,
+    23.15
+   ],
+   "mark_src": 1,
+   "push_mm": 0.347
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    145.06,
+    121.59
+   ],
+   "s": [
+    28.01,
+    29.01
+   ],
+   "bends": "dst",
+   "peak_mm": 0.035,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    117.29,
+    98.35
+   ],
+   "s": [
+    4.0,
+    11.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.384,
+   "mark": 2
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    112.56,
+    90.2
+   ],
+   "s": [
+    14.51,
+    19.01
+   ],
+   "bends": "dst",
+   "peak_mm": 0.22,
+   "mark": 2
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    112.58,
+    101.4
+   ],
+   "s": [
+    33.87,
+    45.87
+   ],
+   "bends": "dst",
+   "peak_mm": 0.452,
+   "mark": 2
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    118.21,
+    107.08
+   ],
+   "s": [
+    47.37,
+    48.25
+   ],
+   "bends": "dst",
+   "peak_mm": 0.47,
+   "mark": 2
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    153.63,
+    105.8
+   ],
+   "s": [
+    10.01,
+    10.51
+   ],
+   "bends": "dst",
+   "peak_mm": 0.039,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    152.49,
+    108.58
+   ],
+   "s": [
+    11.51,
+    15.51
+   ],
+   "bends": "dst",
+   "peak_mm": 0.45,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    144.47,
+    122.4
+   ],
+   "s": [
+    28.01,
+    31.01
+   ],
+   "bends": "dst",
+   "peak_mm": 0.112,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    122.68,
+    154.41
+   ],
+   "s": [
+    0.5,
+    2.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.095,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    122.93,
+    153.64
+   ],
+   "s": [
+    3.31,
+    4.81
+   ],
+   "bends": "dst",
+   "peak_mm": 0.086,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    135.52,
+    122.58
+   ],
+   "s": [
+    37.32,
+    38.21
+   ],
+   "bends": "dst",
+   "peak_mm": 0.047,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4_b",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    142.85,
+    124.75
+   ],
+   "s": [
+    31.44,
+    33.44
+   ],
+   "bends": "dst",
+   "peak_mm": 0.065,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4_b",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "sympathy",
+   "at": [
+    135.49,
+    122.75
+   ],
+   "s": [
+    36.66,
+    38.53
+   ],
+   "bends": "dst",
+   "peak_mm": 0.072,
+   "mark": 1
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    113.03,
+    90.41
+   ],
+   "s": [
+    10.67,
+    19.26
+   ],
+   "mark": 2,
+   "peak_mm": 0.044
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    107.99,
+    93.95
+   ],
+   "s": [
+    25.76,
+    33.83
+   ],
+   "mark": 2,
+   "peak_mm": 0.046
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    156.2,
+    96.44
+   ],
+   "s": [
+    0.0,
+    2.86
+   ],
+   "mark": 0,
+   "peak_mm": 0.035
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    145.16,
+    121.31
+   ],
+   "s": [
+    22.84,
+    34.26
+   ],
+   "mark": 0,
+   "peak_mm": 0.055
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    116.83,
+    96.29
+   ],
+   "s": [
+    4.43,
+    12.24
+   ],
+   "mark": 2,
+   "peak_mm": 0.054
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    113.07,
+    90.39
+   ],
+   "s": [
+    13.02,
+    18.74
+   ],
+   "mark": 2,
+   "peak_mm": 0.041
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    109.32,
+    96.96
+   ],
+   "s": [
+    29.13,
+    37.45
+   ],
+   "mark": 2,
+   "peak_mm": 0.043
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    118.35,
+    106.5
+   ],
+   "s": [
+    39.01,
+    48.37
+   ],
+   "mark": 2,
+   "peak_mm": 0.055
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    153.61,
+    105.94
+   ],
+   "s": [
+    4.16,
+    17.68
+   ],
+   "mark": 0,
+   "peak_mm": 0.065
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    145.16,
+    121.3
+   ],
+   "s": [
+    22.62,
+    31.2
+   ],
+   "mark": 0,
+   "peak_mm": 0.044
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4_b",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "hesitate",
+   "at": [
+    142.83,
+    124.72
+   ],
+   "s": [
+    26.96,
+    38.65
+   ],
+   "mark": 0,
+   "peak_mm": 0.072
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "stop",
+   "at": [
+    112.51,
+    90.16
+   ],
+   "s": [
+    17.36,
+    17.36
+   ],
+   "s_src": [
+    276.97,
+    276.97
+   ],
+   "mark": 2,
+   "mark_src": 0,
+   "streak": false,
+   "who": "dst",
+   "tail_mm": 17.36
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "stop",
+   "at": [
+    108.19,
+    94.63
+   ],
+   "s": [
+    32.13,
+    32.13
+   ],
+   "s_src": [
+    283.19,
+    283.19
+   ],
+   "mark": 2,
+   "mark_src": 0,
+   "streak": true,
+   "who": "dst",
+   "tail_mm": 16.51
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "stop",
+   "at": [
+    156.12,
+    97.11
+   ],
+   "s": [
+    1.47,
+    1.47
+   ],
+   "s_src": [
+    48.94,
+    48.94
+   ],
+   "mark": 0,
+   "mark_src": 8,
+   "streak": false,
+   "who": "dst",
+   "tail_mm": 1.47
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "cross",
+   "at": [
+    144.66,
+    121.96
+   ],
+   "s": [
+    29.37,
+    29.37
+   ],
+   "s_src": [
+    53.35,
+    53.35
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "cross",
+   "at": [
+    142.38,
+    125.2
+   ],
+   "s": [
+    33.44,
+    33.44
+   ],
+   "s_src": [
+    13.18,
+    13.18
+   ],
+   "mark": 0,
+   "mark_src": 2,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "gap_under",
+   "at": [
+    153.43,
+    106.28
+   ],
+   "s": [
+    8.53,
+    10.76
+   ],
+   "s_src": [
+    60.64,
+    60.64
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "streak": false,
+   "gap_mm": 2.233
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "cross",
+   "at": [
+    152.87,
+    107.22
+   ],
+   "s": [
+    10.75,
+    10.75
+   ],
+   "s_src": [
+    71.12,
+    71.12
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "cross",
+   "at": [
+    152.52,
+    107.61
+   ],
+   "s": [
+    11.27,
+    11.27
+   ],
+   "s_src": [
+    77.27,
+    77.27
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "cross",
+   "at": [
+    151.24,
+    111.2
+   ],
+   "s": [
+    15.12,
+    15.12
+   ],
+   "s_src": [
+    43.71,
+    43.71
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "gap_under",
+   "at": [
+    144.65,
+    121.97
+   ],
+   "s": [
+    27.0,
+    28.84
+   ],
+   "s_src": [
+    3.46,
+    3.46
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "streak": true,
+   "gap_mm": 1.842
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4_b",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "gap_over",
+   "at": [
+    142.41,
+    125.16
+   ],
+   "s": [
+    3.08,
+    3.08
+   ],
+   "s_src": [
+    28.12,
+    30.12
+   ],
+   "mark": 2,
+   "mark_src": 1,
+   "streak": false,
+   "gap_mm": 1.992
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4_b",
+   "dst": "L6",
+   "step": 9,
+   "outcome": "cross",
+   "at": [
+    140.15,
+    128.33
+   ],
+   "s": [
+    7.08,
+    7.08
+   ],
+   "s_src": [
+    66.09,
+    66.09
+   ],
+   "mark": 2,
+   "mark_src": 1,
+   "tangle": true
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "make_room",
+   "at": [
+    136.24,
+    115.55
+   ],
+   "s_src": [
+    22.88,
+    26.52
+   ],
+   "mark_src": 2,
+   "push_mm": 0.206
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "make_room",
+   "at": [
+    131.4,
+    110.14
+   ],
+   "s_src": [
+    29.64,
+    34.06
+   ],
+   "mark_src": 2,
+   "push_mm": 0.285
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "make_room",
+   "at": [
+    122.65,
+    106.48
+   ],
+   "s_src": [
+    39.85,
+    43.48
+   ],
+   "mark_src": 2,
+   "push_mm": 0.198
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "make_room",
+   "at": [
+    122.11,
+    106.49
+   ],
+   "s_src": [
+    47.7,
+    50.29
+   ],
+   "mark_src": 2,
+   "push_mm": 0.145
+  },
+  {
+   "relation": "R1_accompany",
+   "kind": "accompany",
+   "src": "L5",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "accompany",
+   "at": [
+    135.28,
+    117.3
+   ],
+   "s": [
+    0.0,
+    28.51
+   ],
+   "mark": 1,
+   "dist_mm": 4.43,
+   "hold_mm": 24.6
+  },
+  {
+   "relation": "R1_accompany",
+   "kind": "accompany",
+   "src": "L5",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "accompany",
+   "at": [
+    123.51,
+    104.96
+   ],
+   "s": [
+    0.0,
+    25.35
+   ],
+   "mark": 2,
+   "dist_mm": 4.51,
+   "hold_mm": 15.4
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "sympathy",
+   "at": [
+    134.34,
+    113.35
+   ],
+   "s": [
+    5.02,
+    13.04
+   ],
+   "bends": "dst",
+   "peak_mm": 0.129,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "sympathy",
+   "at": [
+    131.15,
+    106.54
+   ],
+   "s": [
+    16.05,
+    16.55
+   ],
+   "bends": "dst",
+   "peak_mm": 0.036,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "sympathy",
+   "at": [
+    123.18,
+    104.8
+   ],
+   "s": [
+    22.57,
+    28.59
+   ],
+   "bends": "dst",
+   "peak_mm": 0.163,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "sympathy",
+   "at": [
+    121.58,
+    105.26
+   ],
+   "s": [
+    0.0,
+    7.04
+   ],
+   "bends": "dst",
+   "peak_mm": 0.581,
+   "mark": 2
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "sympathy",
+   "at": [
+    134.51,
+    113.56
+   ],
+   "s": [
+    18.09,
+    26.13
+   ],
+   "bends": "dst",
+   "peak_mm": 0.129,
+   "mark": 2
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "sympathy",
+   "at": [
+    134.23,
+    121.12
+   ],
+   "s": [
+    0.0,
+    1.98
+   ],
+   "bends": "dst",
+   "peak_mm": 0.143,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "sympathy",
+   "at": [
+    135.21,
+    116.82
+   ],
+   "s": [
+    2.98,
+    7.44
+   ],
+   "bends": "dst",
+   "peak_mm": 0.523,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "sympathy",
+   "at": [
+    135.2,
+    118.43
+   ],
+   "s": [
+    23.45,
+    31.44
+   ],
+   "bends": "dst",
+   "peak_mm": 0.544,
+   "mark": 2
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4_b",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "sympathy",
+   "at": [
+    129.75,
+    104.91
+   ],
+   "s": [
+    10.97,
+    13.46
+   ],
+   "bends": "dst",
+   "peak_mm": 0.141,
+   "mark": 2
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4_b",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "sympathy",
+   "at": [
+    134.56,
+    120.86
+   ],
+   "s": [
+    28.91,
+    30.9
+   ],
+   "bends": "dst",
+   "peak_mm": 0.07,
+   "mark": 2
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "hesitate",
+   "at": [
+    134.92,
+    114.78
+   ],
+   "s": [
+    2.34,
+    10.15
+   ],
+   "mark": 1,
+   "peak_mm": 0.036
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "hesitate",
+   "at": [
+    131.23,
+    106.76
+   ],
+   "s": [
+    11.45,
+    19.0
+   ],
+   "mark": 1,
+   "peak_mm": 0.064
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "hesitate",
+   "at": [
+    130.51,
+    105.68
+   ],
+   "s": [
+    7.53,
+    21.81
+   ],
+   "mark": 2,
+   "peak_mm": 0.063
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "hesitate",
+   "at": [
+    134.74,
+    120.21
+   ],
+   "s": [
+    0.0,
+    4.92
+   ],
+   "mark": 1,
+   "peak_mm": 0.054
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "hesitate",
+   "at": [
+    129.87,
+    105.12
+   ],
+   "s": [
+    12.94,
+    21.47
+   ],
+   "mark": 1,
+   "peak_mm": 0.058
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "hesitate",
+   "at": [
+    128.84,
+    104.46
+   ],
+   "s": [
+    5.73,
+    14.32
+   ],
+   "mark": 2,
+   "peak_mm": 0.068
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "hesitate",
+   "at": [
+    134.79,
+    116.99
+   ],
+   "s": [
+    20.3,
+    28.9
+   ],
+   "mark": 2,
+   "peak_mm": 0.052
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "gap_under",
+   "at": [
+    134.35,
+    113.07
+   ],
+   "s": [
+    8.69,
+    10.11
+   ],
+   "s_src": [
+    27.84,
+    27.84
+   ],
+   "mark": 1,
+   "mark_src": 2,
+   "streak": false,
+   "gap_mm": 1.428
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "cross",
+   "at": [
+    130.89,
+    106.17
+   ],
+   "s": [
+    17.22,
+    17.22
+   ],
+   "s_src": [
+    5.7,
+    5.7
+   ],
+   "mark": 1,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "cross",
+   "at": [
+    130.89,
+    106.17
+   ],
+   "s": [
+    14.24,
+    14.24
+   ],
+   "s_src": [
+    5.71,
+    5.71
+   ],
+   "mark": 2,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "cross",
+   "at": [
+    134.54,
+    113.27
+   ],
+   "s": [
+    22.29,
+    22.29
+   ],
+   "s_src": [
+    27.56,
+    27.56
+   ],
+   "mark": 2,
+   "mark_src": 2,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "cross",
+   "at": [
+    134.87,
+    119.22
+   ],
+   "s": [
+    3.1,
+    3.1
+   ],
+   "s_src": [
+    3.42,
+    3.42
+   ],
+   "mark": 1,
+   "mark_src": 2,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "cross",
+   "at": [
+    134.73,
+    117.67
+   ],
+   "s": [
+    4.66,
+    4.66
+   ],
+   "s_src": [
+    8.35,
+    8.35
+   ],
+   "mark": 1,
+   "mark_src": 2,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "gap_under",
+   "at": [
+    129.36,
+    104.79
+   ],
+   "s": [
+    8.3,
+    10.21
+   ],
+   "s_src": [
+    76.7,
+    76.7
+   ],
+   "mark": 2,
+   "mark_src": 1,
+   "streak": false,
+   "gap_mm": 1.917
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "gap_under",
+   "at": [
+    129.34,
+    104.81
+   ],
+   "s": [
+    11.47,
+    12.78
+   ],
+   "s_src": [
+    76.68,
+    76.68
+   ],
+   "mark": 3,
+   "mark_src": 1,
+   "streak": true,
+   "gap_mm": 1.314
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "cross",
+   "at": [
+    134.84,
+    117.75
+   ],
+   "s": [
+    26.89,
+    26.89
+   ],
+   "s_src": [
+    8.48,
+    8.48
+   ],
+   "mark": 3,
+   "mark_src": 2,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "cross",
+   "at": [
+    134.93,
+    119.31
+   ],
+   "s": [
+    28.46,
+    28.46
+   ],
+   "s_src": [
+    3.3,
+    3.3
+   ],
+   "mark": 3,
+   "mark_src": 2,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L6",
+   "dst": "L6_b",
+   "step": 10,
+   "outcome": "cross",
+   "at": [
+    133.51,
+    122.16
+   ],
+   "s": [
+    18.92,
+    18.92
+   ],
+   "s_src": [
+    39.72,
+    39.72
+   ],
+   "mark": 5,
+   "mark_src": 3,
+   "streak": false
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "make_room",
+   "at": [
+    77.8,
+    105.79
+   ],
+   "s_src": [
+    314.94,
+    317.8
+   ],
+   "mark_src": 0,
+   "push_mm": 0.163
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "make_room",
+   "at": [
+    67.18,
+    104.9
+   ],
+   "s_src": [
+    1.27,
+    7.51
+   ],
+   "mark_src": 1,
+   "push_mm": 0.699
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "make_room",
+   "at": [
+    115.37,
+    98.35
+   ],
+   "s_src": [
+    19.66,
+    22.0
+   ],
+   "mark_src": 3,
+   "push_mm": 0.254
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "make_room",
+   "at": [
+    115.36,
+    98.38
+   ],
+   "s_src": [
+    22.54,
+    24.67
+   ],
+   "mark_src": 3,
+   "push_mm": 0.202
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "make_room",
+   "at": [
+    101.89,
+    96.39
+   ],
+   "s_src": [
+    105.09,
+    110.3
+   ],
+   "mark_src": 8,
+   "push_mm": 0.431
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "make_room",
+   "at": [
+    93.81,
+    87.91
+   ],
+   "s_src": [
+    118.88,
+    120.69
+   ],
+   "mark_src": 8,
+   "push_mm": 0.107
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "make_room",
+   "at": [
+    70.88,
+    110.19
+   ],
+   "s_src": [
+    251.05,
+    261.48
+   ],
+   "mark_src": 8,
+   "push_mm": 0.785
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "make_room",
+   "at": [
+    67.0,
+    113.31
+   ],
+   "s_src": [
+    304.6,
+    308.22
+   ],
+   "mark_src": 8,
+   "push_mm": 0.34
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L6",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "make_room",
+   "at": [
+    109.56,
+    87.76
+   ],
+   "s_src": [
+    1.22,
+    6.67
+   ],
+   "mark_src": 4,
+   "push_mm": 0.447
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    67.22,
+    104.36
+   ],
+   "s": [
+    0.0,
+    1.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.15,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    69.21,
+    104.13
+   ],
+   "s": [
+    2.5,
+    7.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.177,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    74.14,
+    103.3
+   ],
+   "s": [
+    9.0,
+    10.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.056,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    77.68,
+    104.56
+   ],
+   "s": [
+    19.0,
+    19.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.036,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    74.5,
+    106.0
+   ],
+   "s": [
+    21.0,
+    24.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.303,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    52.06,
+    103.5
+   ],
+   "s": [
+    314.0,
+    316.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.069,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    92.56,
+    85.98
+   ],
+   "s": [
+    0.5,
+    3.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.174,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    98.32,
+    86.64
+   ],
+   "s": [
+    6.0,
+    12.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.312,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    101.08,
+    94.11
+   ],
+   "s": [
+    16.0,
+    21.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.146,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    109.82,
+    89.7
+   ],
+   "s": [
+    34.5,
+    35.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.052,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    109.95,
+    93.05
+   ],
+   "s": [
+    37.0,
+    40.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.076,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    115.41,
+    96.64
+   ],
+   "s": [
+    42.0,
+    49.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.133,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    119.86,
+    92.49
+   ],
+   "s": [
+    61.5,
+    62.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.036,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    114.98,
+    97.06
+   ],
+   "s": [
+    70.0,
+    71.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.092,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    111.94,
+    100.38
+   ],
+   "s": [
+    74.5,
+    75.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.035,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    73.09,
+    103.43
+   ],
+   "s": [
+    7.93,
+    9.93
+   ],
+   "bends": "dst",
+   "peak_mm": 0.061,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    74.05,
+    105.99
+   ],
+   "s": [
+    22.36,
+    24.36
+   ],
+   "bends": "dst",
+   "peak_mm": 0.061,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    72.28,
+    108.98
+   ],
+   "s": [
+    25.86,
+    27.85
+   ],
+   "bends": "dst",
+   "peak_mm": 0.088,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    71.06,
+    111.69
+   ],
+   "s": [
+    28.85,
+    30.85
+   ],
+   "bends": "dst",
+   "peak_mm": 0.231,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    65.0,
+    129.95
+   ],
+   "s": [
+    113.21,
+    116.21
+   ],
+   "bends": "dst",
+   "peak_mm": 0.321,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    65.79,
+    128.35
+   ],
+   "s": [
+    134.88,
+    140.37
+   ],
+   "bends": "dst",
+   "peak_mm": 0.417,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    64.42,
+    116.78
+   ],
+   "s": [
+    210.12,
+    211.12
+   ],
+   "bends": "dst",
+   "peak_mm": 0.048,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    64.43,
+    113.24
+   ],
+   "s": [
+    212.62,
+    219.47
+   ],
+   "bends": "dst",
+   "peak_mm": 0.469,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    54.2,
+    106.87
+   ],
+   "s": [
+    314.34,
+    320.84
+   ],
+   "bends": "dst",
+   "peak_mm": 0.576,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    62.22,
+    110.33
+   ],
+   "s": [
+    330.84,
+    331.34
+   ],
+   "bends": "dst",
+   "peak_mm": 0.031,
+   "mark": 1
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L6",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    107.13,
+    87.65
+   ],
+   "s": [
+    26.79,
+    35.26
+   ],
+   "bends": "dst",
+   "peak_mm": 0.387,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L6",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "sympathy",
+   "at": [
+    109.7,
+    92.11
+   ],
+   "s": [
+    36.26,
+    39.26
+   ],
+   "bends": "dst",
+   "peak_mm": 0.07,
+   "mark": 0
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    109.63,
+    92.07
+   ],
+   "s": [
+    33.4,
+    40.89
+   ],
+   "mark": 0,
+   "peak_mm": 0.037
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    76.4,
+    105.04
+   ],
+   "s": [
+    17.2,
+    22.39
+   ],
+   "mark": 1,
+   "peak_mm": 0.027
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    95.82,
+    84.98
+   ],
+   "s": [
+    1.82,
+    9.09
+   ],
+   "mark": 0,
+   "peak_mm": 0.052
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    111.0,
+    94.7
+   ],
+   "s": [
+    36.74,
+    45.04
+   ],
+   "mark": 0,
+   "peak_mm": 0.045
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    121.94,
+    93.36
+   ],
+   "s": [
+    54.4,
+    74.88
+   ],
+   "mark": 0,
+   "peak_mm": 0.057
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    72.9,
+    103.54
+   ],
+   "s": [
+    2.92,
+    10.99
+   ],
+   "mark": 1,
+   "peak_mm": 0.047
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    71.62,
+    109.97
+   ],
+   "s": [
+    23.65,
+    29.89
+   ],
+   "mark": 1,
+   "peak_mm": 0.046
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    64.42,
+    130.19
+   ],
+   "s": [
+    107.63,
+    116.47
+   ],
+   "mark": 1,
+   "peak_mm": 0.062
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    66.03,
+    129.36
+   ],
+   "s": [
+    131.01,
+    139.07
+   ],
+   "mark": 1,
+   "peak_mm": 0.067
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    63.81,
+    117.35
+   ],
+   "s": [
+    203.02,
+    215.23
+   ],
+   "mark": 1,
+   "peak_mm": 0.067
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    52.97,
+    105.6
+   ],
+   "s": [
+    311.06,
+    317.8
+   ],
+   "mark": 1,
+   "peak_mm": 0.053
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L6",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "hesitate",
+   "at": [
+    106.3,
+    87.26
+   ],
+   "s": [
+    24.93,
+    32.97
+   ],
+   "mark": 0,
+   "peak_mm": 0.073
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "gap_under",
+   "at": [
+    109.93,
+    92.86
+   ],
+   "s": [
+    37.93,
+    40.19
+   ],
+   "s_src": [
+    280.7,
+    280.7
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 2.253
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    74.66,
+    105.66
+   ],
+   "s": [
+    22.24,
+    22.24
+   ],
+   "s_src": [
+    319.66,
+    319.66
+   ],
+   "mark": 1,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    92.16,
+    87.81
+   ],
+   "s": [
+    0.13,
+    0.13
+   ],
+   "s_src": [
+    139.79,
+    139.79
+   ],
+   "mark": 0,
+   "mark_src": 8,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    97.23,
+    85.46
+   ],
+   "s": [
+    8.0,
+    8.0
+   ],
+   "s_src": [
+    124.11,
+    124.11
+   ],
+   "mark": 0,
+   "mark_src": 8,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    99.1,
+    87.05
+   ],
+   "s": [
+    10.47,
+    10.47
+   ],
+   "s_src": [
+    132.81,
+    132.81
+   ],
+   "mark": 0,
+   "mark_src": 8,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    111.79,
+    95.5
+   ],
+   "s": [
+    2.16,
+    2.16
+   ],
+   "s_src": [
+    35.5,
+    35.5
+   ],
+   "mark": 1,
+   "mark_src": 3,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "gap_over",
+   "at": [
+    114.4,
+    96.72
+   ],
+   "s": [
+    5.14,
+    5.14
+   ],
+   "s_src": [
+    93.96,
+    95.23
+   ],
+   "mark": 1,
+   "mark_src": 8,
+   "streak": false,
+   "gap_mm": 1.268
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    121.31,
+    93.05
+   ],
+   "s": [
+    20.94,
+    20.94
+   ],
+   "s_src": [
+    86.75,
+    86.75
+   ],
+   "mark": 1,
+   "mark_src": 8,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "gap_under",
+   "at": [
+    115.02,
+    96.47
+   ],
+   "s": [
+    29.63,
+    31.18
+   ],
+   "s_src": [
+    93.93,
+    93.93
+   ],
+   "mark": 1,
+   "mark_src": 8,
+   "streak": false,
+   "gap_mm": 1.548
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    112.81,
+    99.49
+   ],
+   "s": [
+    34.23,
+    34.23
+   ],
+   "s_src": [
+    31.32,
+    31.32
+   ],
+   "mark": 1,
+   "mark_src": 3,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "stop",
+   "at": [
+    73.54,
+    103.38
+   ],
+   "s": [
+    9.06,
+    9.06
+   ],
+   "s_src": [
+    249.23,
+    249.23
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "streak": false,
+   "who": "dst",
+   "tail_mm": 9.06
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    71.48,
+    110.43
+   ],
+   "s": [
+    28.1,
+    28.1
+   ],
+   "s_src": [
+    317.11,
+    317.11
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    70.92,
+    113.02
+   ],
+   "s": [
+    30.77,
+    30.77
+   ],
+   "s_src": [
+    311.14,
+    311.14
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "gap_under",
+   "at": [
+    64.98,
+    130.27
+   ],
+   "s": [
+    113.53,
+    115.16
+   ],
+   "s_src": [
+    279.5,
+    279.5
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "streak": false,
+   "gap_mm": 1.633
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    65.24,
+    130.21
+   ],
+   "s": [
+    114.62,
+    114.62
+   ],
+   "s_src": [
+    277.64,
+    277.64
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "gap_over",
+   "at": [
+    65.34,
+    128.49
+   ],
+   "s": [
+    137.6,
+    137.6
+   ],
+   "s_src": [
+    274.78,
+    277.08
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "streak": false,
+   "gap_mm": 2.304
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    64.66,
+    128.21
+   ],
+   "s": [
+    138.35,
+    138.35
+   ],
+   "s_src": [
+    281.58,
+    281.58
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    64.25,
+    116.96
+   ],
+   "s": [
+    209.71,
+    209.71
+   ],
+   "s_src": [
+    329.5,
+    329.5
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    64.44,
+    116.65
+   ],
+   "s": [
+    210.07,
+    210.07
+   ],
+   "s_src": [
+    293.18,
+    293.18
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    65.4,
+    112.84
+   ],
+   "s": [
+    214.56,
+    214.56
+   ],
+   "s_src": [
+    297.14,
+    297.14
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    64.68,
+    112.69
+   ],
+   "s": [
+    215.34,
+    215.34
+   ],
+   "s_src": [
+    325.14,
+    325.14
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "gap_over",
+   "at": [
+    53.7,
+    107.07
+   ],
+   "s": [
+    317.58,
+    317.58
+   ],
+   "s_src": [
+    186.83,
+    188.09
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "streak": false,
+   "gap_mm": 1.26
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    54.69,
+    108.38
+   ],
+   "s": [
+    319.23,
+    319.23
+   ],
+   "s_src": [
+    189.74,
+    189.74
+   ],
+   "mark": 2,
+   "mark_src": 8,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L6",
+   "dst": "L7",
+   "step": 11,
+   "outcome": "cross",
+   "at": [
+    106.96,
+    87.22
+   ],
+   "s": [
+    31.08,
+    31.08
+   ],
+   "s_src": [
+    7.48,
+    7.48
+   ],
+   "mark": 0,
+   "mark_src": 4,
+   "streak": false
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "make_room",
+   "at": [
+    93.44,
+    103.7
+   ],
+   "s_src": [
+    299.34,
+    301.94
+   ],
+   "mark_src": 0,
+   "push_mm": 0.15
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L1",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "make_room",
+   "at": [
+    68.15,
+    105.57
+   ],
+   "s_src": [
+    2.6,
+    4.46
+   ],
+   "mark_src": 1,
+   "push_mm": 0.117
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "make_room",
+   "at": [
+    99.72,
+    95.48
+   ],
+   "s_src": [
+    13.36,
+    16.52
+   ],
+   "mark_src": 9,
+   "push_mm": 0.191
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "make_room",
+   "at": [
+    73.44,
+    103.93
+   ],
+   "s_src": [
+    59.86,
+    63.87
+   ],
+   "mark_src": 10,
+   "push_mm": 0.27
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L7",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "make_room",
+   "at": [
+    78.28,
+    102.6
+   ],
+   "s_src": [
+    1.69,
+    6.58
+   ],
+   "mark_src": 3,
+   "push_mm": 0.764
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L7",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "make_room",
+   "at": [
+    79.23,
+    103.65
+   ],
+   "s_src": [
+    7.34,
+    9.42
+   ],
+   "mark_src": 3,
+   "push_mm": 0.188
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "sympathy",
+   "at": [
+    94.33,
+    102.53
+   ],
+   "s": [
+    4.0,
+    7.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.102,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "sympathy",
+   "at": [
+    94.47,
+    101.59
+   ],
+   "s": [
+    37.0,
+    38.0
+   ],
+   "bends": "dst",
+   "peak_mm": 0.038,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "sympathy",
+   "at": [
+    72.05,
+    103.79
+   ],
+   "s": [
+    66.5,
+    68.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.059,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L1",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "sympathy",
+   "at": [
+    68.6,
+    103.79
+   ],
+   "s": [
+    70.5,
+    71.5
+   ],
+   "bends": "dst",
+   "peak_mm": 0.111,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "sympathy",
+   "at": [
+    96.36,
+    94.97
+   ],
+   "s": [
+    21.99,
+    29.99
+   ],
+   "bends": "dst",
+   "peak_mm": 0.2,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "sympathy",
+   "at": [
+    73.26,
+    102.85
+   ],
+   "s": [
+    64.32,
+    67.31
+   ],
+   "bends": "dst",
+   "peak_mm": 0.154,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L7",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "sympathy",
+   "at": [
+    82.14,
+    100.79
+   ],
+   "s": [
+    52.27,
+    55.26
+   ],
+   "bends": "dst",
+   "peak_mm": 0.128,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L7",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "sympathy",
+   "at": [
+    78.91,
+    102.0
+   ],
+   "s": [
+    56.76,
+    59.75
+   ],
+   "bends": "dst",
+   "peak_mm": 0.261,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L7",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "sympathy",
+   "at": [
+    73.59,
+    102.59
+   ],
+   "s": [
+    62.74,
+    66.23
+   ],
+   "bends": "dst",
+   "peak_mm": 0.12,
+   "mark": 0
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L1",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "hesitate",
+   "at": [
+    96.19,
+    103.32
+   ],
+   "s": [
+    0.0,
+    6.23
+   ],
+   "mark": 0,
+   "peak_mm": 0.059
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "hesitate",
+   "at": [
+    95.18,
+    92.12
+   ],
+   "s": [
+    15.58,
+    24.94
+   ],
+   "mark": 0,
+   "peak_mm": 0.059
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "hesitate",
+   "at": [
+    74.97,
+    101.12
+   ],
+   "s": [
+    56.29,
+    65.65
+   ],
+   "mark": 0,
+   "peak_mm": 0.048
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L7",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "hesitate",
+   "at": [
+    79.54,
+    101.48
+   ],
+   "s": [
+    53.77,
+    58.96
+   ],
+   "mark": 0,
+   "peak_mm": 0.027
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L7",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "hesitate",
+   "at": [
+    73.48,
+    102.47
+   ],
+   "s": [
+    62.07,
+    66.23
+   ],
+   "mark": 0,
+   "peak_mm": 0.025
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L1",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "cross",
+   "at": [
+    95.7,
+    102.87
+   ],
+   "s": [
+    4.08,
+    4.08
+   ],
+   "s_src": [
+    298.23,
+    298.23
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L7_b",
+   "step": 12,
+   "outcome": "gap_over",
+   "at": [
+    74.31,
+    101.35
+   ],
+   "s": [
+    63.3,
+    63.3
+   ],
+   "s_src": [
+    58.04,
+    59.86
+   ],
+   "mark": 0,
+   "mark_src": 10,
+   "streak": false,
+   "gap_mm": 1.821
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "make_room",
+   "at": [
+    122.95,
+    110.61
+   ],
+   "s_src": [
+    53.67,
+    56.38
+   ],
+   "mark_src": 2,
+   "push_mm": 0.192
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L2",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "sympathy",
+   "at": [
+    122.33,
+    112.06
+   ],
+   "s": [
+    3.94,
+    16.9
+   ],
+   "bends": "dst",
+   "peak_mm": 0.288,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L4",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "sympathy",
+   "at": [
+    125.32,
+    112.06
+   ],
+   "s": [
+    6.96,
+    7.96
+   ],
+   "bends": "dst",
+   "peak_mm": 0.037,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L5",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "sympathy",
+   "at": [
+    127.8,
+    112.14
+   ],
+   "s": [
+    3.48,
+    6.47
+   ],
+   "bends": "dst",
+   "peak_mm": 0.096,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L5",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "sympathy",
+   "at": [
+    123.35,
+    112.3
+   ],
+   "s": [
+    7.46,
+    11.46
+   ],
+   "bends": "dst",
+   "peak_mm": 0.128,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L5",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "sympathy",
+   "at": [
+    118.38,
+    112.53
+   ],
+   "s": [
+    12.45,
+    15.94
+   ],
+   "bends": "dst",
+   "peak_mm": 0.296,
+   "mark": 0
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "hesitate",
+   "at": [
+    127.3,
+    112.06
+   ],
+   "s": [
+    1.31,
+    7.79
+   ],
+   "mark": 0,
+   "peak_mm": 0.031
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L2",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "hesitate",
+   "at": [
+    117.21,
+    112.84
+   ],
+   "s": [
+    10.15,
+    16.94
+   ],
+   "mark": 0,
+   "peak_mm": 0.045
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L4",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "hesitate",
+   "at": [
+    125.95,
+    112.04
+   ],
+   "s": [
+    1.31,
+    9.41
+   ],
+   "mark": 0,
+   "peak_mm": 0.048
+  },
+  {
+   "relation": "R3_hesitate",
+   "kind": "hesitate",
+   "src": "L5",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "hesitate",
+   "at": [
+    121.45,
+    112.08
+   ],
+   "s": [
+    5.66,
+    14.17
+   ],
+   "mark": 0,
+   "peak_mm": 0.07
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "cross",
+   "at": [
+    126.57,
+    112.08
+   ],
+   "s": [
+    6.2,
+    6.2
+   ],
+   "s_src": [
+    65.9,
+    65.9
+   ],
+   "mark": 0,
+   "mark_src": 2,
+   "streak": false
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L2",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "cross",
+   "at": [
+    116.43,
+    112.8
+   ],
+   "s": [
+    16.55,
+    16.55
+   ],
+   "s_src": [
+    6.32,
+    6.32
+   ],
+   "mark": 0,
+   "mark_src": 3,
+   "streak": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L4",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "stop",
+   "at": [
+    125.09,
+    112.08
+   ],
+   "s": [
+    7.69,
+    7.69
+   ],
+   "s_src": [
+    68.19,
+    68.19
+   ],
+   "mark": 0,
+   "mark_src": 1,
+   "streak": false,
+   "who": "src",
+   "tail_mm": 11.1
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L5",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "gap_over",
+   "at": [
+    129.54,
+    113.71
+   ],
+   "s": [
+    0.62,
+    0.62
+   ],
+   "s_src": [
+    15.66,
+    17.78
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "gap_mm": 2.118
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L5",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "cross",
+   "at": [
+    128.78,
+    111.98
+   ],
+   "s": [
+    3.95,
+    3.95
+   ],
+   "s_src": [
+    18.65,
+    18.65
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "tangle": true
+  },
+  {
+   "relation": "R4_crossing",
+   "kind": "crossing",
+   "src": "L5",
+   "dst": "L8",
+   "step": 13,
+   "outcome": "stop",
+   "at": [
+    120.43,
+    112.33
+   ],
+   "s": [
+    12.44,
+    12.44
+   ],
+   "s_src": [
+    31.19,
+    31.19
+   ],
+   "mark": 0,
+   "mark_src": 0,
+   "streak": false,
+   "who": "dst",
+   "tail_mm": 4.63
+  },
+  {
+   "relation": "R0_make_room",
+   "kind": "make_room",
+   "src": "L2",
+   "dst": "L8_b",
+   "step": 14,
+   "outcome": "make_room",
+   "at": [
+    116.23,
+    112.51
+   ],
+   "s_src": [
+    4.85,
+    8.75
+   ],
+   "mark_src": 3,
+   "push_mm": 0.402
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L5",
+   "dst": "L8_b",
+   "step": 14,
+   "outcome": "sympathy",
+   "at": [
+    113.41,
+    112.97
+   ],
+   "s": [
+    0.0,
+    4.49
+   ],
+   "bends": "dst",
+   "peak_mm": 0.143,
+   "mark": 0
+  },
+  {
+   "relation": "R2_sympathy",
+   "kind": "sympathy",
+   "src": "L5_b",
+   "dst": "L8_b",
+   "step": 14,
+   "outcome": "sympathy",
+   "at": [
+    103.2,
+    115.91
+   ],
+   "s": [
+    15.41,
+    16.41
+   ],
+   "bends": "dst",
+   "peak_mm": 0.171,
+   "mark": 0
+  }
+ ],
+ "decisions": {
+  "source": {
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "seed": 15106
+  },
+  "listen_relations": [
+   {
+    "kind": "imitate",
+    "src": "L2",
+    "dst": "L3",
+    "at": [
+     195.46,
+     153.02
+    ]
+   },
+   {
+    "kind": "imitate",
+    "src": "L2",
+    "dst": "L4",
+    "at": [
+     141.08,
+     122.22
+    ]
+   },
+   {
+    "kind": "translate",
+    "src": "L4",
+    "dst": "L5",
+    "at": [
+     113.25,
+     142.8
+    ]
+   },
+   {
+    "kind": "refuse",
+    "src": "L5",
+    "dst": "L6",
+    "at": [
+     123.94,
+     151.76
+    ]
+   },
+   {
+    "kind": "refuse",
+    "src": "L5",
+    "dst": "L6",
+    "at": [
+     131.81,
+     108.61
+    ]
+   },
+   {
+    "kind": "refuse",
+    "src": "L5",
+    "dst": "L6",
+    "at": [
+     132.28,
+     109.49
+    ]
+   },
+   {
+    "kind": "refuse",
+    "src": "L5",
+    "dst": "L6",
+    "at": [
+     130.63,
+     148.49
+    ]
+   },
+   {
+    "kind": "translate",
+    "src": "L2",
+    "dst": "L7",
+    "at": [
+     95.23,
+     99.92
+    ]
+   },
+   {
+    "kind": "bind",
+    "src": "L5",
+    "dst": "L4",
+    "at": [
+     115.88,
+     112.66
+    ]
+   }
+  ],
+  "order": [
+   "L0",
+   "L1",
+   "L2",
+   "L3",
+   "L3_b",
+   "L4",
+   "L4_b",
+   "L5",
+   "L5_b",
+   "L6",
+   "L6_b",
+   "L7",
+   "L7_b",
+   "L8",
+   "L8_b"
+  ]
+ }
+}
