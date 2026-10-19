@@ -34,6 +34,7 @@ import { openMosca2Bench, closeMosca2Bench } from "./mosca2_bench.js";
 import { initMagneticBench, openMagneticBench, closeMagneticBench } from "./magnetic_bench.js";
 import { initHandDriftBench, openHandDriftBench, closeHandDriftBench } from "./hand_drift_bench.js";
 import { initGestureStudiesBench, openGestureStudiesBench, closeGestureStudiesBench } from "./gesture_studies_bench.js";
+import { initSynthesisBench, openSynthesisBench, closeSynthesisBench } from "./synthesis_bench.js";
 import { renderForm } from "./forms.js";
 import { openGallerySave } from "./gallery.js";
 import { createPresetControls } from "./module_library.js";
@@ -113,6 +114,7 @@ export function initProcessPopup() {
   initMagneticBench();
   initHandDriftBench();
   initGestureStudiesBench();
+  initSynthesisBench();
   initSecondReadingBench();
   initBenchHost();
   $("process-trace").onchange = drawTelemetry;
@@ -185,6 +187,7 @@ export async function openProcessPopup(id) {
   closeMagneticBench(false);
   closeHandDriftBench(false);
   closeGestureStudiesBench(false);
+  closeSynthesisBench(false);
   closeSecondReadingBench(false);
   stop();
   const layer = (S.state?.project?.layers || []).find((l) => l.id === id);
@@ -213,6 +216,7 @@ export function openProcessLayerBench(id) {
   closeMagneticBench(false);
   closeHandDriftBench(false);
   closeGestureStudiesBench(false);
+  closeSynthesisBench(false);
   closeSecondReadingBench(false);
   stop();
   renderSerial++;
@@ -252,6 +256,7 @@ export async function openProcessBench(entry) {
   closeMagneticBench(false);
   closeHandDriftBench(false);
   closeGestureStudiesBench(false);
+  closeSynthesisBench(false);
   const adapter = benchAdapter(entry.mod, 'new');
   if (!adapter) {
     $('process-title').textContent = entry.mod.label;
@@ -275,6 +280,7 @@ async function openGenericBench({ mod, params, onCreate, onReroll, onClose }) {
   closeMagneticBench(false);
   closeHandDriftBench(false);
   closeGestureStudiesBench(false);
+  closeSynthesisBench(false);
   closeSecondReadingBench(false);
   axis = moduleAxis(mod);
   layerId = null;
@@ -320,12 +326,14 @@ registerBenchAdapter('magnetic-field', 1, { open: ({ mod, params, contextKey, on
   closeSecondReadingBench(false);
   closeHandDriftBench(false);
   closeGestureStudiesBench(false);
+  closeSynthesisBench(false);
   openMagneticBench({ mod, params, contextKey: contextKey || `new:${mod.id}`, onKeep: onCreate, onClose });
 } });
 registerBenchAdapter('hand-drift', 1, { open: ({ mod, params, contextKey, onCreate, onClose }) => {
   closeSecondReadingBench(false);
   closeMagneticBench(false);
   closeGestureStudiesBench(false);
+  closeSynthesisBench(false);
   openHandDriftBench({ mod, params, contextKey: contextKey || `new:${mod.id}`, onKeep: onCreate, onClose });
 } });
 registerBenchAdapter('gesture-studies', 1, { open: ({ mod, params, contextKey, onCreate, onClose }) => {
@@ -333,6 +341,19 @@ registerBenchAdapter('gesture-studies', 1, { open: ({ mod, params, contextKey, o
   closeMagneticBench(false);
   closeHandDriftBench(false);
   openGestureStudiesBench({ mod, params, contextKey: contextKey || `new:${mod.id}`, onKeep: onCreate, onClose });
+} });
+
+
+registerBenchAdapter('synthesis', 1, { open: ({ mod, params, contextKey, onCreate, onClose }) => {
+  closeLinedrawBench(false);
+  closeMoscaBench(false);
+  closeTerritoryBench(false);
+  closeMosca2Bench(false);
+  closeSecondReadingBench(false);
+  closeMagneticBench(false);
+  closeHandDriftBench(false);
+  closeGestureStudiesBench(false);
+  openSynthesisBench({ mod, params, contextKey: contextKey || `new:${mod.id}`, onKeep: onCreate, onClose });
 } });
 
 function setBenchChrome(on) {

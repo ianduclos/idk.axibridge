@@ -84,6 +84,7 @@ Every tool takes `target`:
 | Look | `state`, `see`, `see_ui` |
 | Modules & tuning | `modules`, `module_schema`, `try_generator`, `try_effects` |
 | Compose | `add_layer`, `edit_layer`, `delete_layers`, `reorder_layers`, `undo`, `redo`, `project`, `save_project` |
+| Synthesis | `synthesis` (scores: catalogue, start, compose, recompose, lock, unlock, validate, keep; default target sandbox; docs/SYNTHESIS.md) |
 | Machine | `estimate`, `plot`*, `pen`*, `jog`*, `go_home`*, `stop`, `pause` |
 | Dev | `logs`, `diagnose`, `sandbox` |
 | Escape hatch | `call_api` |

@@ -243,11 +243,12 @@ def _interrupt_preview(method):
 
 from .group_session import GroupSessionMixin
 from .gesture_studies_session import GestureStudiesSessionMixin
+from .synthesis_session import SynthesisSessionMixin
 from .recovery_state import RecoveryStateMixin
 from .groups import tween_frames, validate_hierarchy, placed_project, world, inverse, chain, descendants
 
 
-class Session(GroupSessionMixin, GestureStudiesSessionMixin, RecoveryStateMixin):
+class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMixin, RecoveryStateMixin):
     def __init__(self) -> None:
         self._lock = threading.RLock()
         self.render_work = RenderWork()

@@ -14,7 +14,7 @@ from mcp.client.stdio import StdioServerParameters
 ROSTER = {"state", "see", "see_ui", "modules", "module_schema", "try_generator", "try_effects",
           "add_layer", "edit_layer", "delete_layers", "reorder_layers", "undo", "redo",
           "project", "save_project", "estimate", "plot", "pen", "jog", "go_home", "stop",
-          "pause", "logs", "diagnose", "sandbox", "call_api"}
+          "pause", "logs", "diagnose", "sandbox", "call_api", "synthesis"}
 
 
 def params(axb):
