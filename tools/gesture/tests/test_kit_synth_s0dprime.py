@@ -137,3 +137,22 @@ def test_relation_seed_rerolls_that_relation():
     assert outcomes([{**r1, "seed": s["seed"]}, r2]) == a       # its own seed = the sheet's: unchanged
     with pytest.raises(RecipeError, match="seed"):
         synth.validate(dict(s, relations=[{**r1, "seed": -1}]))
+
+
+# locks change nothing by themselves (S4) -----------------------------------------------------------------
+
+def _inks(sheet):
+    return [(i.meta.get("score_layer"), i.points.tobytes()) for i in sheet.inks]
+
+
+@pytest.mark.parametrize("w,seed", [("listen", 15102), ("ccolour", 4545)])
+def test_locking_any_layer_leaves_the_sheet_unchanged(w, seed):
+    """A pin holds a layer as grown (part + grow relations) at full precision, and its contact
+    relations still play at its step: what it cut in earlier layers stays cut."""
+    s = compose(w, frame=[250, 175], seed=seed)
+    base = _inks(synth.run(s, cache=False))
+    for L in s["layers"]:
+        if L["role"] == "unseen":
+            continue
+        assert _inks(synth.run(synth.pin(s, [L["id"]]), cache=False)) == base, L["id"]
+        assert _inks(synth.run(synth.pin(s, [L["id"]]))) == base, L["id"]      # through the cache too

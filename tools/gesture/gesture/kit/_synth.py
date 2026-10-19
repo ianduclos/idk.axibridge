@@ -346,8 +346,10 @@ def _valid_pin(pin, where) -> dict:
             b = np.asarray(v, float)
             if b.shape != (len(a),) or not np.all(np.isfinite(b)):
                 raise RecipeError(f"{where}: pin mark {j} channel {name!r} must have one finite value per point")
-            ch[str(name)] = [round(float(x), 5) for x in b]
-        marks.append({"points": [[round(float(x), 4), round(float(y), 4)] for x, y in a], "channels": ch,
+            ch[str(name)] = [float(x) for x in b]
+        # full precision (S4): a rounded pin moves arclengths by ~0.01 mm on a long line, enough to flip
+        # a later relation's choice, so locking a layer would change the sheet
+        marks.append({"points": [[float(x), float(y)] for x, y in a], "channels": ch,
                       "meta": json.loads(json.dumps(dict(m.get("meta") or {}), default=float))})
     return {"marks": marks}
 
@@ -462,16 +464,20 @@ def _pinned(rec, L, k) -> list[Mark]:
 
 
 def _mark_json(m: Mark) -> dict:
-    return {"points": [[round(float(x), 4), round(float(y), 4)] for x, y in m.points],
-            "channels": {a: [round(float(x), 5) for x in b] for a, b in m.channels.items()},
+    return {"points": [[float(x), float(y)] for x, y in m.points],
+            "channels": {a: [float(x) for x in b] for a, b in m.channels.items()},
             "meta": json.loads(json.dumps(core._jsonable(dict(m.meta)), default=float))}
 
 
 def pin(score: Mapping, ids, *, library=None) -> dict:
     """Lock layers in place: each layer in `ids` gets `lock`, its own `seed` frozen, and (unless it is a
-    sealed composer, which hears nobody) a `pin` holding its marks as they stand at the end of its own
-    step (its part grown, its own relations played). A pinned layer no longer regrows, so edits upstream
-    don't move it; later layers still meet it. Unpin by removing `pin`."""
+    sealed composer, which hears nobody) a `pin` holding its marks as they stand once it has GROWN (its
+    part drawn, its grow relations played: where it was placed and what it heard). A pinned layer no
+    longer regrows, so edits upstream don't move it; its contact relations still play at its step and
+    later layers still meet it, so locking alone changes nothing on the sheet, and an upstream edit only
+    reaches a locked line where a crossing or an awareness relation touches it (S4, 2026-10-19; before,
+    the pin held the end of its step and skipped its contact relations, which dropped the cuts it made
+    in earlier layers). Unpin by removing `pin`."""
     rec = validate(score, library=library)
     rec.pop("parts", None)
     ids = list(ids)
@@ -488,7 +494,7 @@ def pin(score: Mapping, ids, *, library=None) -> dict:
         L["lock"], L["seed"] = True, _layer_seed(rec, L, k)
         if "composer" not in L:
             # a sealed composer hears nobody: its frozen seed already holds its drawing still (and keeps its
-            # own inks); every other layer keeps its geometry as it stands at the end of its step
+            # own inks); every other layer keeps its geometry as it stands once grown
             L["pin"] = {"marks": [_mark_json(m) for m in cap[L["id"]]]}
     return validate(rec, library=library)
 
@@ -647,7 +653,8 @@ def _lib_key(lib) -> list:
 
 def run(score: Mapping, *, library=None, cache: bool = True, capture=()) -> Sheet:
     """Play a v2 score → Sheet (deterministic in the score alone). `capture`: layer ids whose marks,
-    as they stand at the end of their own step, go to `sheet.meta["captured"]` (what `pin` stores)."""
+    as they stand once grown (before their step's contact relations), go to `sheet.meta["captured"]`
+    (what `pin` stores)."""
     from . import library as _lib  # noqa: PLC0415
     from ._devices import apply_devices  # noqa: PLC0415
     t0 = time.perf_counter()
@@ -672,36 +679,35 @@ def run(score: Mapping, *, library=None, cache: bool = True, capture=()) -> Shee
                   or (get_relation(R["kind"]).phase == "contact" and _pairs(R, k, layers, pos))]
         key = _h(key, L, acting)
         if cache and key in _CACHE:
-            g, lg, used, sl, sp = _CACHE[key]
+            g, lg, used, sl, sp, grown = _CACHE[key]
             _CACHE.move_to_end(key)
             ground, log, sealed, spent = dict(g), list(lg), dict(sl), dict(sp)
             state.used = dict(used)
             hits += 1
             if capture and L["id"] in capture:
-                captured[L["id"]] = list(ground[L["id"]])
+                captured[L["id"]] = list(grown)
             continue
-        if "pin" in L:                  # locked: its geometry as pinned; its own step's relations already played
+        if "pin" in L:                  # locked: its grown geometry as pinned (part + grow relations, S4)
             ground[L["id"]] = _pinned(rec, L, k)
-            if capture and L["id"] in capture:
-                captured[L["id"]] = list(ground[L["id"]])
-            if cache:
-                _CACHE[key] = (dict(ground), list(log), dict(state.used), dict(sealed), dict(spent))
-            continue
-        ground[L["id"]] = _tag(_grow_layer(rec, L, k, state, lib, sealed), L, k, rec, sealed)
-        if L["id"] in sealed:
-            sealed[L["id"]]["marks0"] = tuple(ground[L["id"]])
-        for R in acting:
-            if get_relation(R["kind"]).phase == "grow":
-                s_id = "+".join(R["src"]) if isinstance(R["src"], list) else R["src"]
-                _apply(rec, R, s_id, L["id"], k, ground, state, log, unseen, ltags, spent)
+        else:
+            ground[L["id"]] = _tag(_grow_layer(rec, L, k, state, lib, sealed), L, k, rec, sealed)
+            if L["id"] in sealed:
+                sealed[L["id"]]["marks0"] = tuple(ground[L["id"]])
+            for R in acting:
+                if get_relation(R["kind"]).phase == "grow":
+                    s_id = "+".join(R["src"]) if isinstance(R["src"], list) else R["src"]
+                    _apply(rec, R, s_id, L["id"], k, ground, state, log, unseen, ltags, spent)
+        grown = tuple(ground[L["id"]])          # the layer once grown: what a pin holds (cached with the step)
+        if capture and L["id"] in capture:
+            captured[L["id"]] = list(grown)
+        # contact relations play at every step, a pinned layer's too: what it does to the layers before it
+        # (a crossing that cuts them) stays, so locking a layer changes nothing by itself
         for R in acting:
             if get_relation(R["kind"]).phase == "contact":
                 for s_id, d_id in _pairs(R, k, layers, pos):
                     _apply(rec, R, s_id, d_id, k, ground, state, log, unseen, ltags, spent)
-        if capture and L["id"] in capture:
-            captured[L["id"]] = list(ground[L["id"]])
         if cache:
-            _CACHE[key] = (dict(ground), list(log), dict(state.used), dict(sealed), dict(spent))
+            _CACHE[key] = (dict(ground), list(log), dict(state.used), dict(sealed), dict(spent), grown)
             while len(_CACHE) > _CACHE_MAX:
                 _CACHE.popitem(last=False)
     t1 = time.perf_counter()
