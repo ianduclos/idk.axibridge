@@ -1,0 +1,521 @@
+{
+ "version": 1,
+ "layers": [
+  {
+   "id": "L0",
+   "role": "found",
+   "technique": "river_zoom",
+   "part": 460,
+   "pen": {
+    "ink": "purple-400",
+    "mm": 0.3
+   },
+   "params": {
+    "id": "river_zoom",
+    "mode": "magnify",
+    "schedule": "push",
+    "course": "free",
+    "zoom": 18.6,
+    "recur": 2,
+    "start": 0.573,
+    "pace": 0.5,
+    "max_mm": 497.0
+   },
+   "label": "the river, zoomed (constant width)"
+  },
+  {
+   "id": "L1",
+   "role": "speaker",
+   "technique": "hand",
+   "part": 401,
+   "pen": {
+    "ink": "red",
+    "mm": 0.6
+   },
+   "params": {
+    "hand": "trail_miner",
+    "box_wh": [
+     180.0,
+     130.7
+    ],
+    "turn_deg": -96.0,
+    "centre": [
+     94.3,
+     72.5
+    ]
+   },
+   "label": "trail_miner speaks"
+  },
+  {
+   "id": "L2",
+   "role": "speaker",
+   "technique": "hand",
+   "part": 402,
+   "pen": {
+    "ink": "black",
+    "mm": 0.45
+   },
+   "params": {
+    "hand": "mime_roadrunner",
+    "box_wh": [
+     222.7,
+     121.8
+    ],
+    "turn_deg": 173.9,
+    "centre": [
+     144.2,
+     103.4
+    ]
+   },
+   "label": "mime_roadrunner speaks"
+  },
+  {
+   "id": "L3",
+   "role": "listener",
+   "technique": "listen.imitate",
+   "part": 404,
+   "pen": {
+    "ink": "purple",
+    "mm": 0.3
+   },
+   "params": {
+    "hand": "river_belt",
+    "splice_at_mm": 287.0,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     574.0,
+     672.5
+    ]
+   },
+   "label": "river_belt imitates L2"
+  },
+  {
+   "id": "L4",
+   "role": "listener",
+   "technique": "listen.imitate",
+   "part": 408,
+   "pen": {
+    "ink": "purple",
+    "mm": 0.35
+   },
+   "params": {
+    "hand": "mime_mantis",
+    "splice_at_mm": 164.5,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     27.5,
+     121.0
+    ]
+   },
+   "label": "mime_mantis imitates L2"
+  },
+  {
+   "id": "L5",
+   "role": "listener",
+   "technique": "listen.translate",
+   "part": 409,
+   "pen": {
+    "ink": "red",
+    "mm": 0.3
+   },
+   "params": {
+    "hand": "hokusai",
+    "splice_at_mm": 73.0,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     19.5,
+     102.5
+    ],
+    "style": "hand"
+   },
+   "label": "hokusai translates L4"
+  },
+  {
+   "id": "L6",
+   "role": "listener",
+   "technique": "listen.refuse",
+   "part": 412,
+   "pen": {
+    "ink": "black",
+    "mm": 0.35
+   },
+   "params": {
+    "hand": "trail_miner",
+    "halo_mm": 4.4,
+    "detours": 4
+   },
+   "label": "trail_miner refuses L5"
+  },
+  {
+   "id": "L7",
+   "role": "listener",
+   "technique": "listen.translate",
+   "part": 416,
+   "pen": {
+    "ink": "purple",
+    "mm": 0.35
+   },
+   "params": {
+    "hand": "hokusai",
+    "splice_at_mm": 90.5,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     763.0,
+     834.5
+    ],
+    "style": "meander"
+   },
+   "label": "hokusai translates L2"
+  },
+  {
+   "id": "L8",
+   "role": "bind",
+   "technique": "listen.bind",
+   "part": null,
+   "pen": {
+    "ink": "red",
+    "mm": 0.35
+   },
+   "params": {
+    "from": "L5",
+    "to": "L4"
+   },
+   "label": "binds L5 into L4"
+  }
+ ],
+ "relations": [
+  {
+   "kind": "imitate",
+   "src": "L2",
+   "dst": "L3",
+   "at": [
+    195.46,
+    153.02
+   ],
+   "s": [
+    287.0,
+    385.5
+   ],
+   "note": "the gesture in unison beside the source, then the line parts, the heard stretch in black; heard at 574\u2013672 mm of L2"
+  },
+  {
+   "kind": "imitate",
+   "src": "L2",
+   "dst": "L4",
+   "at": [
+    141.08,
+    122.22
+   ],
+   "s": [
+    164.5,
+    258.0
+   ],
+   "note": "the gesture in unison beside the source, then the line parts, the heard stretch in black; heard at 28\u2013121 mm of L2"
+  },
+  {
+   "kind": "translate",
+   "src": "L4",
+   "dst": "L5",
+   "at": [
+    113.25,
+    142.8
+   ],
+   "s": [
+    73.0,
+    156.0
+   ],
+   "note": "the same move in another line style (hand), the heard stretch in purple; heard at 20\u2013102 mm of L4"
+  },
+  {
+   "kind": "refuse",
+   "src": "L5",
+   "dst": "L6",
+   "at": [
+    123.94,
+    151.76
+   ],
+   "s": [
+    63.98,
+    66.47
+   ],
+   "note": "walks L5's halo at 4.4 mm instead of meeting it"
+  },
+  {
+   "kind": "refuse",
+   "src": "L5",
+   "dst": "L6",
+   "at": [
+    131.81,
+    108.61
+   ],
+   "s": [
+    107.11,
+    136.59
+   ],
+   "note": "walks L5's halo at 4.4 mm instead of meeting it"
+  },
+  {
+   "kind": "refuse",
+   "src": "L5",
+   "dst": "L6",
+   "at": [
+    132.28,
+    109.49
+   ],
+   "s": [
+    185.02,
+    218.5
+   ],
+   "note": "walks L5's halo at 4.4 mm instead of meeting it"
+  },
+  {
+   "kind": "refuse",
+   "src": "L5",
+   "dst": "L6",
+   "at": [
+    130.63,
+    148.49
+   ],
+   "s": [
+    243.99,
+    247.99
+   ],
+   "note": "walks L5's halo at 4.4 mm instead of meeting it"
+  },
+  {
+   "kind": "translate",
+   "src": "L2",
+   "dst": "L7",
+   "at": [
+    95.23,
+    99.92
+   ],
+   "s": [
+    90.5,
+    162.0
+   ],
+   "note": "the same move in another line style (meander), the heard stretch in black; heard at 763\u2013834 mm of L2"
+  },
+  {
+   "kind": "bind",
+   "src": "L5",
+   "dst": "L4",
+   "at": [
+    115.88,
+    112.66
+   ],
+   "s": null,
+   "note": "a ligature (L8) from L5's end into L4's start; the pen hands over halfway"
+  },
+  {
+   "kind": "weave",
+   "src": "L0",
+   "dst": "L1",
+   "at": [
+    146.82,
+    52.89
+   ],
+   "s": null,
+   "note": "2 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "yield",
+   "src": "L0",
+   "dst": "L2",
+   "at": [
+    172.88,
+    74.45
+   ],
+   "s": null,
+   "note": "9 crossing(s); L2 gives way each time"
+  },
+  {
+   "kind": "yield",
+   "src": "L1",
+   "dst": "L2",
+   "at": [
+    94.6,
+    85.79
+   ],
+   "s": null,
+   "note": "11 crossing(s); L2 gives way each time"
+  },
+  {
+   "kind": "yield",
+   "src": "L1",
+   "dst": "L6",
+   "at": [
+    110.37,
+    92.36
+   ],
+   "s": null,
+   "note": "2 crossing(s); L6 gives way each time"
+  },
+  {
+   "kind": "weave",
+   "src": "L1",
+   "dst": "L7",
+   "at": [
+    93.57,
+    100.49
+   ],
+   "s": null,
+   "note": "3 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "weave",
+   "src": "L2",
+   "dst": "L3",
+   "at": [
+    200.55,
+    142.92
+   ],
+   "s": null,
+   "note": "15 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "weave",
+   "src": "L2",
+   "dst": "L4",
+   "at": [
+    135.65,
+    111.07
+   ],
+   "s": null,
+   "note": "9 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "yield",
+   "src": "L2",
+   "dst": "L5",
+   "at": [
+    123.63,
+    110.61
+   ],
+   "s": null,
+   "note": "5 crossing(s); L5 gives way each time"
+  },
+  {
+   "kind": "yield",
+   "src": "L2",
+   "dst": "L6",
+   "at": [
+    127.94,
+    106.39
+   ],
+   "s": null,
+   "note": "13 crossing(s); L6 gives way each time"
+  },
+  {
+   "kind": "yield",
+   "src": "L2",
+   "dst": "L7",
+   "at": [
+    80.81,
+    106.72
+   ],
+   "s": null,
+   "note": "26 crossing(s); L7 gives way each time"
+  },
+  {
+   "kind": "yield",
+   "src": "L2",
+   "dst": "L8",
+   "at": [
+    121.44,
+    112.26
+   ],
+   "s": null,
+   "note": "2 crossing(s); L8 gives way each time"
+  },
+  {
+   "kind": "weave",
+   "src": "L4",
+   "dst": "L5",
+   "at": [
+    112.26,
+    137.11
+   ],
+   "s": null,
+   "note": "10 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "weave",
+   "src": "L4",
+   "dst": "L6",
+   "at": [
+    141.29,
+    114.9
+   ],
+   "s": null,
+   "note": "13 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "yield",
+   "src": "L4",
+   "dst": "L8",
+   "at": [
+    114.19,
+    113.94
+   ],
+   "s": null,
+   "note": "2 crossing(s); L8 gives way each time"
+  },
+  {
+   "kind": "weave",
+   "src": "L5",
+   "dst": "L8",
+   "at": [
+    126.91,
+    112.95
+   ],
+   "s": null,
+   "note": "4 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "yield",
+   "src": "L6",
+   "dst": "L7",
+   "at": [
+    112.76,
+    94.79
+   ],
+   "s": null,
+   "note": "4 crossing(s); L7 gives way each time"
+  }
+ ],
+ "decisions": {
+  "frame": [
+   250.0,
+   175.0
+  ],
+  "palette": [
+   "red",
+   "black",
+   "purple"
+  ],
+  "colour_mode": "pair",
+  "bold_mm": 0.6,
+  "density": {
+   "dial": 0.5,
+   "band_mm_per_cm2": [
+    11.0,
+    16.0
+   ],
+   "achieved": 7.7
+  },
+  "mask": null,
+  "flow_deg": 31.3,
+  "order": [
+   "L0",
+   "L1",
+   "L2",
+   "L3",
+   "L4",
+   "L5",
+   "L6",
+   "L7",
+   "L8"
+  ]
+ }
+}

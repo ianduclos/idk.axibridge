@@ -1,0 +1,1492 @@
+{
+ "panels": [
+  {
+   "kit": 1,
+   "frame": [
+    160.0,
+    215.0
+   ],
+   "seed": 15101,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 160\u00d7215: portrait: strata stacked, the core high and the blank below"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 15102,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 250\u00d7175: small landscape: the same vocabulary, denser per area"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 15103,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 300\u00d7200: landscape: a core and a reserved blank side by side"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 15104,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 250\u00d7175: small landscape: the same vocabulary, denser per area"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    300.0,
+    125.0
+   ],
+   "seed": 15105,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 300\u00d7125: strip: the traverse leads, the scale ladder laid out along it"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 15106,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 250\u00d7175: small landscape: the same vocabulary, denser per area"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 15107,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 300\u00d7200: landscape: a core and a reserved blank side by side"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    300.0,
+    125.0
+   ],
+   "seed": 15108,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 300\u00d7125: strip: the traverse leads, the scale ladder laid out along it"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 15109,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 300\u00d7200: landscape: a core and a reserved blank side by side"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    160.0,
+    215.0
+   ],
+   "seed": 15110,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 160\u00d7215: portrait: strata stacked, the core high and the blank below"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 15111,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 250\u00d7175: small landscape: the same vocabulary, denser per area"
+  },
+  {
+   "kit": 1,
+   "frame": [
+    300.0,
+    125.0
+   ],
+   "seed": 15112,
+   "margin": 5.0,
+   "arranger": {
+    "id": "listen",
+    "density": 0.5,
+    "mask_p": 0.25,
+    "river_p": 0.3,
+    "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "pens": 0
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "oehlen_found_ink",
+    "pen": 0.4
+   },
+   "label": "listen",
+   "notes": "frame 300\u00d7125: strip: the traverse leads, the scale ladder laid out along it"
+  }
+ ]
+}

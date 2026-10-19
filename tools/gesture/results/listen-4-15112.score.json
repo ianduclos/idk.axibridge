@@ -1,0 +1,377 @@
+{
+ "version": 1,
+ "layers": [
+  {
+   "id": "L0",
+   "role": "speaker",
+   "technique": "hand",
+   "part": 400,
+   "pen": {
+    "ink": "green",
+    "mm": 1.0
+   },
+   "params": {
+    "hand": "trail_slime",
+    "box_wh": [
+     254.9,
+     111.4
+    ],
+    "turn_deg": -153.9,
+    "centre": [
+     80.5,
+     59.2
+    ]
+   },
+   "label": "trail_slime speaks"
+  },
+  {
+   "id": "L1",
+   "role": "listener",
+   "technique": "listen.exaggerate",
+   "part": 402,
+   "pen": {
+    "ink": "red",
+    "mm": 0.5
+   },
+   "params": {
+    "hand": "mime_mantis",
+    "splice_at_mm": 58.5,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     456.0,
+     501.0
+    ],
+    "gain": 2.5,
+    "scale": 1.35
+   },
+   "label": "mime_mantis exaggerates L0"
+  },
+  {
+   "id": "L2",
+   "role": "listener",
+   "technique": "listen.refuse",
+   "part": 404,
+   "pen": {
+    "ink": "green",
+    "mm": 0.3
+   },
+   "params": {
+    "hand": "mime_roadrunner",
+    "halo_mm": 2.9,
+    "detours": 3
+   },
+   "label": "mime_roadrunner refuses L1"
+  },
+  {
+   "id": "L3",
+   "role": "listener",
+   "technique": "listen.imitate",
+   "part": 405,
+   "pen": {
+    "ink": "red",
+    "mm": 0.3
+   },
+   "params": {
+    "hand": "hokusai",
+    "splice_at_mm": 273.5,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     150.5,
+     221.5
+    ]
+   },
+   "label": "hokusai imitates L2"
+  },
+  {
+   "id": "L4",
+   "role": "listener",
+   "technique": "listen.translate",
+   "part": 410,
+   "pen": {
+    "ink": "red",
+    "mm": 0.3
+   },
+   "params": {
+    "hand": "river_belt",
+    "splice_at_mm": 301.0,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     189.5,
+     306.5
+    ],
+    "style": "hand"
+   },
+   "label": "river_belt translates L0"
+  },
+  {
+   "id": "L5",
+   "role": "listener",
+   "technique": "listen.translate",
+   "part": 411,
+   "pen": {
+    "ink": "green",
+    "mm": 0.3
+   },
+   "params": {
+    "hand": "dancer_madeline",
+    "splice_at_mm": 74.0,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     87.0,
+     166.0
+    ],
+    "style": "meander"
+   },
+   "label": "dancer_madeline translates L3"
+  },
+  {
+   "id": "L6",
+   "role": "nest",
+   "technique": "listen.nest",
+   "part": null,
+   "pen": {
+    "ink": "red",
+    "mm": 0.5
+   },
+   "params": {
+    "radius_mm": 10.3,
+    "scale": 0.38
+   },
+   "label": "nests in L3"
+  }
+ ],
+ "relations": [
+  {
+   "kind": "exaggerate",
+   "src": "L0",
+   "dst": "L1",
+   "at": [
+    134.71,
+    63.06
+   ],
+   "s": [
+    58.5,
+    159.0
+   ],
+   "note": "pushed \u00d72.5 sideways, \u00d71.35 scale, centred on the source gesture, the heard stretch in green; heard at 456\u2013501 mm of L0"
+  },
+  {
+   "kind": "refuse",
+   "src": "L1",
+   "dst": "L2",
+   "at": [
+    131.27,
+    39.13
+   ],
+   "s": [
+    112.59,
+    146.57
+   ],
+   "note": "walks L1's halo at 2.9 mm instead of meeting it"
+  },
+  {
+   "kind": "refuse",
+   "src": "L1",
+   "dst": "L2",
+   "at": [
+    137.03,
+    52.39
+   ],
+   "s": [
+    148.4,
+    148.9
+   ],
+   "note": "walks L1's halo at 2.9 mm instead of meeting it"
+  },
+  {
+   "kind": "refuse",
+   "src": "L1",
+   "dst": "L2",
+   "at": [
+    130.83,
+    39.37
+   ],
+   "s": [
+    157.32,
+    196.8
+   ],
+   "note": "walks L1's halo at 2.9 mm instead of meeting it"
+  },
+  {
+   "kind": "imitate",
+   "src": "L2",
+   "dst": "L3",
+   "at": [
+    129.14,
+    51.32
+   ],
+   "s": [
+    273.5,
+    344.5
+   ],
+   "note": "the gesture in unison beside the source, then the line parts, the heard stretch in green; heard at 150\u2013222 mm of L2"
+  },
+  {
+   "kind": "translate",
+   "src": "L0",
+   "dst": "L4",
+   "at": [
+    52.62,
+    65.91
+   ],
+   "s": [
+    301.0,
+    418.0
+   ],
+   "note": "the same move in another line style (hand), the heard stretch in green; heard at 190\u2013306 mm of L0"
+  },
+  {
+   "kind": "translate",
+   "src": "L3",
+   "dst": "L5",
+   "at": [
+    153.16,
+    87.71
+   ],
+   "s": [
+    74.0,
+    153.0
+   ],
+   "note": "the same move in another line style (meander), the heard stretch in red; heard at 87\u2013166 mm of L3"
+  },
+  {
+   "kind": "nest",
+   "src": "L3",
+   "dst": "L6",
+   "at": [
+    114.5,
+    73.5
+   ],
+   "s": [
+    0.0,
+    15.97
+   ],
+   "note": "L3's own gesture \u00d70.38, in a crook of L3 10 mm across"
+  },
+  {
+   "kind": "weave",
+   "src": "L0",
+   "dst": "L1",
+   "at": [
+    121.85,
+    73.08
+   ],
+   "s": null,
+   "note": "10 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "yield",
+   "src": "L0",
+   "dst": "L2",
+   "at": [
+    99.93,
+    17.98
+   ],
+   "s": null,
+   "note": "1 crossing(s); L2 gives way each time"
+  },
+  {
+   "kind": "weave",
+   "src": "L0",
+   "dst": "L3",
+   "at": [
+    110.68,
+    67.54
+   ],
+   "s": null,
+   "note": "11 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "weave",
+   "src": "L0",
+   "dst": "L4",
+   "at": [
+    71.91,
+    56.31
+   ],
+   "s": null,
+   "note": "5 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "yield",
+   "src": "L0",
+   "dst": "L6",
+   "at": [
+    112.92,
+    71.34
+   ],
+   "s": null,
+   "note": "2 crossing(s); L6 gives way each time"
+  },
+  {
+   "kind": "yield",
+   "src": "L1",
+   "dst": "L3",
+   "at": [
+    118.1,
+    70.5
+   ],
+   "s": null,
+   "note": "11 crossing(s); L3 gives way each time"
+  },
+  {
+   "kind": "weave",
+   "src": "L2",
+   "dst": "L3",
+   "at": [
+    129.16,
+    54.15
+   ],
+   "s": null,
+   "note": "4 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "yield",
+   "src": "L3",
+   "dst": "L5",
+   "at": [
+    162.4,
+    82.19
+   ],
+   "s": null,
+   "note": "4 crossing(s); L5 gives way each time"
+  }
+ ],
+ "decisions": {
+  "frame": [
+   300.0,
+   125.0
+  ],
+  "palette": [
+   "green",
+   "red",
+   "blue"
+  ],
+  "colour_mode": "pair",
+  "bold_mm": 1.0,
+  "density": {
+   "dial": 0.5,
+   "band_mm_per_cm2": [
+    11.0,
+    16.0
+   ],
+   "achieved": 5.9
+  },
+  "mask": null,
+  "flow_deg": 7.8,
+  "order": [
+   "L0",
+   "L1",
+   "L2",
+   "L3",
+   "L4",
+   "L5",
+   "L6"
+  ]
+ }
+}

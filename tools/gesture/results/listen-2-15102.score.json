@@ -1,0 +1,946 @@
+{
+ "version": 1,
+ "layers": [
+  {
+   "id": "L0",
+   "role": "found",
+   "technique": "river_zoom",
+   "part": 460,
+   "pen": {
+    "ink": "orange-400",
+    "mm": 0.3
+   },
+   "params": {
+    "id": "river_zoom",
+    "mode": "magnify",
+    "schedule": "push",
+    "course": "free",
+    "zoom": 24.5,
+    "recur": 3,
+    "start": 0.207,
+    "pace": 0.5,
+    "max_mm": 640.0
+   },
+   "label": "the river, zoomed (constant width)"
+  },
+  {
+   "id": "L1",
+   "role": "speaker",
+   "technique": "hand",
+   "part": 401,
+   "pen": {
+    "ink": "blue",
+    "mm": 0.6
+   },
+   "params": {
+    "hand": "river_bend",
+    "box_wh": [
+     235.0,
+     119.1
+    ],
+    "turn_deg": -44.5,
+    "centre": [
+     174.6,
+     107.0
+    ]
+   },
+   "label": "river_bend speaks"
+  },
+  {
+   "id": "L2",
+   "role": "speaker",
+   "technique": "hand",
+   "part": 402,
+   "pen": {
+    "ink": "black",
+    "mm": 0.45
+   },
+   "params": {
+    "hand": "dancer_madeline",
+    "box_wh": [
+     202.5,
+     166.0
+    ],
+    "turn_deg": -154.2,
+    "centre": [
+     83.1,
+     81.1
+    ]
+   },
+   "label": "dancer_madeline speaks"
+  },
+  {
+   "id": "L3",
+   "role": "listener",
+   "technique": "listen.exaggerate",
+   "part": 404,
+   "pen": {
+    "ink": "orange",
+    "mm": 0.5
+   },
+   "params": {
+    "hand": "dancer_madeline",
+    "splice_at_mm": 142.0,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     469.0,
+     528.5
+    ],
+    "gain": 2.24,
+    "scale": 1.23
+   },
+   "label": "dancer_madeline exaggerates L1"
+  },
+  {
+   "id": "L4",
+   "role": "mask",
+   "technique": "listen.mask",
+   "part": null,
+   "pen": {
+    "ink": "black",
+    "mm": 0.3
+   },
+   "params": {
+    "polygon": [
+     [
+      100.1,
+      43.3
+     ],
+     [
+      136.3,
+      44.1
+     ],
+     [
+      138.4,
+      122.4
+     ],
+     [
+      97.4,
+      117.9
+     ],
+     [
+      97.4,
+      117.1
+     ],
+     [
+      97.9,
+      116.3
+     ],
+     [
+      98.1,
+      115.5
+     ],
+     [
+      97.8,
+      114.6
+     ],
+     [
+      98.7,
+      113.9
+     ],
+     [
+      98.3,
+      113.0
+     ],
+     [
+      99.4,
+      112.3
+     ],
+     [
+      99.1,
+      111.4
+     ],
+     [
+      99.2,
+      110.6
+     ],
+     [
+      99.2,
+      109.8
+     ],
+     [
+      99.1,
+      109.0
+     ],
+     [
+      98.8,
+      108.2
+     ],
+     [
+      99.1,
+      107.4
+     ],
+     [
+      99.1,
+      106.6
+     ],
+     [
+      98.6,
+      105.7
+     ],
+     [
+      98.0,
+      104.9
+     ],
+     [
+      98.3,
+      104.1
+     ],
+     [
+      98.1,
+      103.3
+     ],
+     [
+      97.5,
+      102.5
+     ],
+     [
+      97.8,
+      101.7
+     ],
+     [
+      97.8,
+      100.8
+     ],
+     [
+      97.3,
+      100.0
+     ],
+     [
+      96.9,
+      99.2
+     ],
+     [
+      97.1,
+      98.4
+     ],
+     [
+      97.3,
+      97.6
+     ],
+     [
+      97.1,
+      96.8
+     ],
+     [
+      97.5,
+      96.0
+     ],
+     [
+      97.6,
+      95.2
+     ],
+     [
+      97.6,
+      94.3
+     ],
+     [
+      97.2,
+      93.5
+     ],
+     [
+      97.0,
+      92.7
+     ],
+     [
+      96.7,
+      91.9
+     ],
+     [
+      96.4,
+      91.0
+     ],
+     [
+      96.9,
+      90.3
+     ],
+     [
+      97.3,
+      89.5
+     ],
+     [
+      96.4,
+      88.6
+     ],
+     [
+      97.7,
+      87.8
+     ],
+     [
+      96.7,
+      87.0
+     ],
+     [
+      96.4,
+      86.2
+     ],
+     [
+      97.1,
+      85.4
+     ],
+     [
+      96.5,
+      84.6
+     ],
+     [
+      95.8,
+      83.7
+     ],
+     [
+      96.4,
+      82.9
+     ],
+     [
+      96.3,
+      82.1
+     ],
+     [
+      95.9,
+      81.3
+     ],
+     [
+      95.8,
+      80.5
+     ],
+     [
+      95.8,
+      79.7
+     ],
+     [
+      95.8,
+      78.8
+     ],
+     [
+      95.5,
+      78.0
+     ],
+     [
+      95.8,
+      77.2
+     ],
+     [
+      95.5,
+      76.4
+     ],
+     [
+      94.8,
+      75.6
+     ],
+     [
+      95.2,
+      74.8
+     ],
+     [
+      95.6,
+      74.0
+     ],
+     [
+      96.2,
+      73.2
+     ],
+     [
+      96.0,
+      72.4
+     ],
+     [
+      96.5,
+      71.6
+     ],
+     [
+      97.0,
+      70.8
+     ],
+     [
+      96.3,
+      69.9
+     ],
+     [
+      96.8,
+      69.1
+     ],
+     [
+      96.4,
+      68.3
+     ],
+     [
+      96.5,
+      67.5
+     ],
+     [
+      96.5,
+      66.7
+     ],
+     [
+      97.0,
+      65.9
+     ],
+     [
+      96.9,
+      65.1
+     ],
+     [
+      97.5,
+      64.3
+     ],
+     [
+      98.5,
+      63.5
+     ],
+     [
+      97.5,
+      62.7
+     ],
+     [
+      97.4,
+      61.9
+     ],
+     [
+      97.6,
+      61.1
+     ],
+     [
+      97.8,
+      60.2
+     ],
+     [
+      96.8,
+      59.4
+     ],
+     [
+      97.3,
+      58.6
+     ],
+     [
+      97.1,
+      57.8
+     ],
+     [
+      97.3,
+      57.0
+     ],
+     [
+      98.1,
+      56.2
+     ],
+     [
+      98.4,
+      55.4
+     ],
+     [
+      97.9,
+      54.6
+     ],
+     [
+      98.3,
+      53.8
+     ],
+     [
+      98.8,
+      53.0
+     ],
+     [
+      98.1,
+      52.1
+     ],
+     [
+      99.0,
+      51.4
+     ],
+     [
+      98.8,
+      50.5
+     ],
+     [
+      98.9,
+      49.7
+     ],
+     [
+      98.7,
+      48.9
+     ],
+     [
+      98.6,
+      48.1
+     ],
+     [
+      98.9,
+      47.3
+     ],
+     [
+      99.4,
+      46.5
+     ],
+     [
+      99.7,
+      45.7
+     ],
+     [
+      99.9,
+      44.9
+     ],
+     [
+      99.9,
+      44.1
+     ],
+     [
+      100.1,
+      43.3
+     ]
+    ],
+    "edge_runs": 1
+   },
+   "label": "the void"
+  },
+  {
+   "id": "L5",
+   "role": "listener",
+   "technique": "listen.refuse",
+   "part": 407,
+   "pen": {
+    "ink": "blue",
+    "mm": 0.3
+   },
+   "params": {
+    "hand": "mime_roadrunner",
+    "halo_mm": 4.4,
+    "detours": 1
+   },
+   "label": "mime_roadrunner refuses L3"
+  },
+  {
+   "id": "L6",
+   "role": "listener",
+   "technique": "listen.translate",
+   "part": 410,
+   "pen": {
+    "ink": "black",
+    "mm": 0.35
+   },
+   "params": {
+    "hand": "river_belt",
+    "splice_at_mm": 105.5,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     59.5,
+     147.0
+    ],
+    "style": "meander"
+   },
+   "label": "river_belt translates L5"
+  },
+  {
+   "id": "L7",
+   "role": "listener",
+   "technique": "listen.imitate",
+   "part": 413,
+   "pen": {
+    "ink": "blue",
+    "mm": 0.35
+   },
+   "params": {
+    "hand": "river_belt",
+    "splice_at_mm": 276.0,
+    "carries_pen": true,
+    "gesture_src_mm": [
+     13.5,
+     69.0
+    ]
+   },
+   "label": "river_belt imitates L0"
+  },
+  {
+   "id": "L8",
+   "role": "echo",
+   "technique": "listen.echo",
+   "part": null,
+   "pen": {
+    "ink": "blue-400",
+    "mm": 0.35
+   },
+   "params": {
+    "scale": 0.93,
+    "repeats": 1,
+    "turn_deg": 10.3
+   },
+   "label": "echo of L1"
+  },
+  {
+   "id": "L9",
+   "role": "nest",
+   "technique": "listen.nest",
+   "part": null,
+   "pen": {
+    "ink": "black",
+    "mm": 0.3
+   },
+   "params": {
+    "radius_mm": 17.8,
+    "scale": 0.948
+   },
+   "label": "nests in L2"
+  }
+ ],
+ "relations": [
+  {
+   "kind": "exaggerate",
+   "src": "L1",
+   "dst": "L3",
+   "at": [
+    104.44,
+    125.06
+   ],
+   "s": [
+    142.0,
+    254.5
+   ],
+   "note": "pushed \u00d72.2 sideways, \u00d71.23 scale, centred on the source gesture, the heard stretch in blue; heard at 469\u2013528 mm of L1"
+  },
+  {
+   "kind": "refuse",
+   "src": "L3",
+   "dst": "L5",
+   "at": [
+    64.27,
+    75.02
+   ],
+   "s": [
+    267.8,
+    275.79
+   ],
+   "note": "walks L3's halo at 4.4 mm instead of meeting it"
+  },
+  {
+   "kind": "translate",
+   "src": "L5",
+   "dst": "L6",
+   "at": [
+    28.99,
+    73.61
+   ],
+   "s": [
+    105.5,
+    193.0
+   ],
+   "note": "the same move in another line style (meander), the heard stretch in blue; heard at 60\u2013147 mm of L5"
+  },
+  {
+   "kind": "imitate",
+   "src": "L0",
+   "dst": "L7",
+   "at": [
+    141.07,
+    73.43
+   ],
+   "s": [
+    276.0,
+    331.5
+   ],
+   "note": "the gesture in unison beside the source, then the line parts, the heard stretch in orange-400; heard at 14\u201369 mm of L0"
+  },
+  {
+   "kind": "echo",
+   "src": "L1",
+   "dst": "L8",
+   "at": [
+    221.0,
+    131.0
+   ],
+   "s": [
+    0.0,
+    47.81
+   ],
+   "note": "1 repeat(s) from 340\u2013392 mm of L1, \u00d70.93 and decaying; heard at 191,62"
+  },
+  {
+   "kind": "nest",
+   "src": "L2",
+   "dst": "L9",
+   "at": [
+    107.5,
+    88.5
+   ],
+   "s": [
+    0.0,
+    30.29
+   ],
+   "note": "L2's own gesture \u00d70.95, in a crook of L2 18 mm across"
+  },
+  {
+   "kind": "mask",
+   "src": "L4",
+   "dst": "L0",
+   "at": [
+    122.13,
+    84.6
+   ],
+   "s": null,
+   "note": "drawn before the void: cut by it"
+  },
+  {
+   "kind": "mask",
+   "src": "L4",
+   "dst": "L1",
+   "at": [
+    116.36,
+    97.76
+   ],
+   "s": null,
+   "note": "drawn before the void: cut by it"
+  },
+  {
+   "kind": "mask",
+   "src": "L4",
+   "dst": "L2",
+   "at": [
+    113.19,
+    53.9
+   ],
+   "s": null,
+   "note": "drawn before the void: cut by it"
+  },
+  {
+   "kind": "mask",
+   "src": "L4",
+   "dst": "L3",
+   "at": [
+    114.09,
+    90.3
+   ],
+   "s": null,
+   "note": "drawn before the void: cut by it"
+  },
+  {
+   "kind": "ignore",
+   "src": "L4",
+   "dst": "L5",
+   "at": [
+    97.74,
+    82.52
+   ],
+   "s": null,
+   "note": "drawn after the void: crosses it"
+  },
+  {
+   "kind": "mask",
+   "src": "L4",
+   "dst": "L7",
+   "at": [
+    134.57,
+    96.13
+   ],
+   "s": null,
+   "note": "drawn after the void: cut by it (an exception, so the order stays ambiguous)"
+  },
+  {
+   "kind": "ignore",
+   "src": "L4",
+   "dst": "L9",
+   "at": [
+    107.5,
+    88.5
+   ],
+   "s": null,
+   "note": "drawn after the void: crosses it"
+  },
+  {
+   "kind": "weave",
+   "src": "L0",
+   "dst": "L1",
+   "at": [
+    145.91,
+    65.94
+   ],
+   "s": null,
+   "note": "3 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "weave",
+   "src": "L0",
+   "dst": "L2",
+   "at": [
+    74.87,
+    79.46
+   ],
+   "s": null,
+   "note": "6 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "yield",
+   "src": "L0",
+   "dst": "L3",
+   "at": [
+    59.47,
+    86.76
+   ],
+   "s": null,
+   "note": "1 crossing(s); L3 gives way each time"
+  },
+  {
+   "kind": "yield",
+   "src": "L0",
+   "dst": "L5",
+   "at": [
+    72.52,
+    77.95
+   ],
+   "s": null,
+   "note": "6 crossing(s); L5 gives way each time"
+  },
+  {
+   "kind": "yield",
+   "src": "L0",
+   "dst": "L7",
+   "at": [
+    147.14,
+    64.72
+   ],
+   "s": null,
+   "note": "2 crossing(s); L7 gives way each time"
+  },
+  {
+   "kind": "yield",
+   "src": "L1",
+   "dst": "L2",
+   "at": [
+    172.22,
+    99.37
+   ],
+   "s": null,
+   "note": "7 crossing(s); L2 gives way each time"
+  },
+  {
+   "kind": "weave",
+   "src": "L1",
+   "dst": "L3",
+   "at": [
+    158.44,
+    126.52
+   ],
+   "s": null,
+   "note": "4 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "yield",
+   "src": "L1",
+   "dst": "L7",
+   "at": [
+    170.0,
+    82.21
+   ],
+   "s": null,
+   "note": "6 crossing(s); L7 gives way each time"
+  },
+  {
+   "kind": "yield",
+   "src": "L1",
+   "dst": "L8",
+   "at": [
+    206.09,
+    122.43
+   ],
+   "s": null,
+   "note": "1 crossing(s); L8 gives way each time"
+  },
+  {
+   "kind": "weave",
+   "src": "L2",
+   "dst": "L3",
+   "at": [
+    89.37,
+    84.48
+   ],
+   "s": null,
+   "note": "11 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "weave",
+   "src": "L2",
+   "dst": "L5",
+   "at": [
+    41.18,
+    75.81
+   ],
+   "s": null,
+   "note": "16 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "weave",
+   "src": "L2",
+   "dst": "L6",
+   "at": [
+    28.52,
+    72.76
+   ],
+   "s": null,
+   "note": "25 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "weave",
+   "src": "L2",
+   "dst": "L7",
+   "at": [
+    152.52,
+    74.19
+   ],
+   "s": null,
+   "note": "4 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "weave",
+   "src": "L3",
+   "dst": "L7",
+   "at": [
+    122.41,
+    26.82
+   ],
+   "s": null,
+   "note": "2 crossing(s); they alternate which passes under"
+  },
+  {
+   "kind": "weave",
+   "src": "L5",
+   "dst": "L6",
+   "at": [
+    40.67,
+    62.03
+   ],
+   "s": null,
+   "note": "10 crossing(s); they alternate which passes under"
+  }
+ ],
+ "decisions": {
+  "frame": [
+   250.0,
+   175.0
+  ],
+  "palette": [
+   "blue",
+   "black",
+   "orange"
+  ],
+  "colour_mode": "pair",
+  "bold_mm": 0.6,
+  "density": {
+   "dial": 0.5,
+   "band_mm_per_cm2": [
+    11.0,
+    16.0
+   ],
+   "achieved": 7.2
+  },
+  "mask": "L4",
+  "flow_deg": 187.4,
+  "order": [
+   "L0",
+   "L1",
+   "L2",
+   "L3",
+   "L4",
+   "L5",
+   "L6",
+   "L7",
+   "L8",
+   "L9"
+  ]
+ }
+}
