@@ -3,17 +3,28 @@ project: idk.axibridge
 state: active
 updated: 2026-10-19
 machine: mac+pi
-summary: The gesture bank closed its research rounds with round 15 (listening relations, revived keeps, measuring devices) and the Gesture Studies bench is now v3 with 31 studies and an optional Measure layer; next is the synthesis-bench design and round 16 (awareness first).
+summary: The synthesis bench is designed (with Ian's decisions) and its score-v2 executor exists; round 16 built and reviewed its first parts (awareness relations, distinct hands, documents), and listen already runs with distinct-hand voices and a balance dial; next is building the bench itself.
 next:
-  - Relaunch AxiBridge.app and try Gesture Studies bench v3 (gallery, dice/Shuffle/locks, history, Measure layer) — Ian
-  - Synthesis-bench design notes from docs/synthesis-bench/inventory-2026-10-19.md in a fresh session (see HANDOFF)
-  - Gesture bank round 16, awareness first, then distinct hands, archaeology, device documents
+  - Synthesis bench in a fresh session — S0′ contract gaps, S2 listen as a score writer, then the app bench (see HANDOFF)
+  - Relaunch AxiBridge.app and try Gesture Studies bench v3, the Measure layer and river_zoom's relay mode — Ian
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
-  - Sync the idkpi clone with main (Pi reachable again)
-handoff_for: Codex
+  - Sync the idkpi clone with main
+handoff_for: claude
 ---
 
 # idk.axibridge — status
+
+**Gesture bank, 19 October (synthesis-bench design + round 16):** the
+synthesis bench is designed with Ian's four decisions
+(`docs/synthesis-bench/design-2026-10-19.md`) and its core exists: a score v2
+executor and relation registry in the kit (`_synth.py`, `_relations.py`).
+Round 16 built the first parts on it: awareness relations (varied crossings,
+sympathy between any layers, accompany, make_room), distinct hands (each at
+its own scale; d′ 0.40 → 0.90), process documents (staff, unheard,
+provenance). Reviewed: awareness and distinct hands kept, archaeology dropped.
+listen now runs with distinct-hand voices and all awareness, with a balance
+dial (none/one/speakers/all). river_zoom has a relay-of-hands line source.
+Records: `tools/gesture/results/round16-*.md`, `integ16-2026-10-19.md`.
 
 **Gesture bank, 19 October (round 15 + study bench v3):** round 15 (listening
 relations between layers, the zoom on any line + style transfer, past keeps in
