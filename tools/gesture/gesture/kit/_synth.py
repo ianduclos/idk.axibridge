@@ -88,7 +88,7 @@ _TOP = ("version", "label", "notes", "frame", "seed", "margin", "base", "layers"
         "decisions", "renderer", "parts")      # "parts" is derived on output, ignored on input
 _LAYER = ("id", "role", "pen", "label", "region", "part", "lines", "composer", "lock", "renderer", "seed", "pin")
 _REL = ("id", "kind", "src", "dst", "p", "params", "note", "except", "roles", "not_roles", "budget")
-NEUTRAL = ("silent", "spent", "cross")      # outcomes that change nothing: not counted against a budget
+NEUTRAL = ("silent", "spent", "cross", "unplaced")   # outcomes that change nothing: not counted against a budget
 UNSEEN = "unseen"
 DEFAULT_MARGIN = 5.0
 DEFAULT_RENDERER = {"id": "wire"}
@@ -209,7 +209,10 @@ def validate(score: Mapping, *, library=None) -> dict:
                     raise RecipeError(f"{where} ({lid}): a composer layer's frame and seed come from the score")
             if "arranger" not in c:
                 raise RecipeError(f"{where} ({lid}): composer needs an arranger")
-            core.validate({**c, "frame": [10.0, 10.0], "seed": 0}, library=library)     # ids + params
+            # ids + params, in the frame the composer will really get (its region, or the margin box)
+            probe = out.get("region") or [margin, margin, W - 2 * margin, H - 2 * margin]
+            core.validate({**c, "frame": [max(float(probe[2]), 10.0), max(float(probe[3]), 10.0)], "seed": 0},
+                          library=library)
             out["composer"] = copy.deepcopy(c)
         layers.append(out)
 
@@ -274,7 +277,7 @@ def validate(score: Mapping, *, library=None) -> dict:
             rout["budget"] = int(b)
         relations.append(rout)
     for L in layers:
-        if not any(k in L for k in ("part", "lines", "composer")) and not any(
+        if not any(k in L for k in ("part", "lines", "composer", "pin")) and not any(
                 R["dst"] == L["id"] and get_relation(R["kind"]).phase == "grow" for R in relations):
             raise RecipeError(f"layer {L['id']!r}: has no part / lines / composer, so a grow relation must draw it")
 
