@@ -135,12 +135,15 @@ def test_composed_studies_keep_one_layer_per_used_ink(sid):
 
 
 def test_arch_default_is_the_15002_sheet():
-    # Ian on 15002: "absolutely excellent". The default is that recipe, unchanged.
+    # Ian on 15002: "absolutely excellent". The default is that recipe, with one change Ian made on
+    # 2026-10-19 (version 2): the line no longer runs through the middle of the swell.
     st = ST.builtin("arch")
     research = json.loads((Path(__file__).resolve().parents[1]
                            / "tools/gesture/results/arch-2-15002.recipe.json").read_text())
     strip = lambda r: {k: v for k, v in r.items() if k not in ("label", "notes")}  # noqa: E731
-    assert strip(st.recipe) == strip(research)
+    mine = strip(st.recipe)
+    assert mine["renderer"].pop("swell_line") == "outside" and st.version == 2
+    assert mine == strip(research)
     assert st.recipe["seed"] == 15002
     assert st.recipe["arranger"]["families"] == "danced,swell,flicker,passer"   # the passer needs free3966
 

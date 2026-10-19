@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/library.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/library.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """The gesture library: everything learned, saved with provenance — and the
 single POLICY GATE.

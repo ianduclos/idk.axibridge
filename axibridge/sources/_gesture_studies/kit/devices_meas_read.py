@@ -1,4 +1,4 @@
-# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/devices_meas_read.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/devices_meas_read.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Process-correlated measuring devices, round 15 thread D (`meas`): the
 shared reader. It registers no device; the `devices_meas_*.py` files do.

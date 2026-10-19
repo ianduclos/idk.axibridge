@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/devices_mdoc_unheard.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/devices_mdoc_unheard.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `mdoc_unheard` (round 16, thread D `mdoc`, its own): the drawing
 as it would have been had no line listened.

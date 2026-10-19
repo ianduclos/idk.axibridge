@@ -1,4 +1,4 @@
-# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/arrangers_found_play.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/arrangers_found_play.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Round 13 phase 2, Study A `found_play`: the rules played over found ground,
 with contagion's catch and mutual's call and response between the hands.

@@ -1,4 +1,4 @@
-# FROZEN from research commit f59eac4: tools/gesture/gesture/broadnib.py
+# FROZEN from research commit c712045: tools/gesture/gesture/broadnib.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Broad-nib width model: a centreline swept by a flat nib (calligraphy).
 

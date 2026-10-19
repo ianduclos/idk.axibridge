@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/modulators_revisit.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/modulators_revisit.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Notation: the body's events written as signs grown from its own line
 (round 12, thread `revisit`, 2026-10-17).

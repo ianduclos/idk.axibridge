@@ -1,7 +1,7 @@
 {
  "id": "arch",
  "label": "Revived keeps, composed",
- "version": 1,
+ "version": 2,
  "parent": null,
  "created": "2026-10-19",
  "source": "Round 15 arch: tools/gesture/results/arch-2-15002.recipe.json; tools/gesture/results/arch-2026-10-19.md (15002; also kept 15010)",
@@ -25,7 +25,7 @@
   "orange-400",
   "yellow-400"
  ],
- "notes": "The 15002 sheet: past keeps return in new roles over ccolour / found_play. A danced chain traverses the sheet, a round swell intrudes at the core, limb figures flicker from made lines, and a passer changes its hand inside a container. Ian: \"bah amazing keep this. all are excellent\"; 15002: \"absolutely excellent\"; 15010: \"great stuff. love it\". Keep as a group, one layer per ink. The seed composes the sheet; density adjusts the core, pens and ownership change the pen plan, and duet is the chance of a second swell answering the first.",
+ "notes": "The 15002 sheet: past keeps return in new roles over ccolour / found_play. A danced chain traverses the sheet, a round swell intrudes at the core, limb figures flicker from made lines, and a passer changes its hand inside a container. Ian: \"bah amazing keep this. all are excellent\"; 15002: \"absolutely excellent\"; 15010: \"great stuff. love it\". Keep as a group, one layer per ink. The seed composes the sheet; density adjusts the core, pens and ownership change the pen plan, and duet is the chance of a second swell answering the first. Version 2 (2026-10-19, Ian): the line no longer runs through the middle of a swell; it stops at the mass's edge.",
  "recipe": {
   "kit": 1,
   "frame": [
@@ -156,7 +156,8 @@
   "renderer": {
    "id": "arch_ink",
    "pen": 0.4,
-   "nib_style": "e"
+   "nib_style": "e",
+   "swell_line": "outside"
   },
   "label": "arch",
   "notes": "frame 300\u00d7200: landscape: a core and a reserved blank side by side"

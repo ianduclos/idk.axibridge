@@ -1,4 +1,4 @@
-# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/modulators_lcorp.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/modulators_lcorp.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Round 15, thread B (`lcorp`): the zoom as a modulator, applied style, and
 aware overlaps.

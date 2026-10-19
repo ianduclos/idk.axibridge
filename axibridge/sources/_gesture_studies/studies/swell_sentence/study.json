@@ -1,12 +1,12 @@
 {
  "id": "swell_sentence",
  "label": "Swell sentence",
- "version": 1,
+ "version": 2,
  "parent": null,
  "created": "2026-10-17",
  "source": "swell round 11: tools/gesture/results/swell-combo.recipe.json (last row, c3-sentence)",
  "engine": "kit",
- "notes": "A drift written in phrases: each phrase ends in a full stop (a ring), the pen lifts and the line resumes; inside the phrases it swells into drops. Ian, round 11: \"first and last row are very good\" (this is the last; the first is Dry line, swelling answer). Controls: the route, the full stop's shape (split is not offered: \"not crazy about split and wound\"), the pen-up gap after it, the swell's profile and size, the seed.",
+ "notes": "A drift written in phrases: each phrase ends in a full stop (a ring), the pen lifts and the line resumes; inside the phrases it swells into drops. Ian, round 11: \"first and last row are very good\" (this is the last; the first is Dry line, swelling answer). Controls: the route, the full stop's shape (split is not offered: \"not crazy about split and wound\"), the pen-up gap after it, the swell's profile and size, the seed. Version 2 (2026-10-19, Ian): the line no longer runs through the middle of a swell; it stops at the mass's edge.",
  "family": "Swell",
  "recipe": {
   "kit": 1,
@@ -78,7 +78,8 @@
    "thr": 0.15,
    "hole": 0.45,
    "pitch": 0.85,
-   "wobble": 0.05
+   "wobble": 0.05,
+   "swell_line": "outside"
   },
   "label": "c  a sentence: the drift writes in phrases ended by full stops (ring), and swells (drop) inside them"
  },

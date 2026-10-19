@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/voices_accrue.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/voices_accrue.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 13, thread II-c `accrue` — morph by accumulation.
 

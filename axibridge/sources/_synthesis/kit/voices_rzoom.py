@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/voices_rzoom.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/voices_rzoom.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 14, thread c1 (`rzoom`): the far Amazon stem zooming in and out along itself.
 

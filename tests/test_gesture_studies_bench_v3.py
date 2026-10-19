@@ -65,7 +65,7 @@ def test_thumbnails_draw_in_the_background_and_are_served():
     c = TestClient(create_app())
     st = ST.check_study(ST.builtin("bold_swell"))
     key = key_of(st)
-    assert KEY_RE.fullmatch(key) and key.startswith("bold_swell-v1-")
+    assert KEY_RE.fullmatch(key) and key.startswith("bold_swell-v2-")
     status = c.get("/api/gesture-studies/thumbnails").json()["thumbnails"]
     assert set(ST.builtin_ids()) <= set(status)
     r = c.post("/api/gesture-studies/thumbnails", json={"ids": ["bold_swell", "no_such_study"]}).json()["thumbnails"]
@@ -85,7 +85,7 @@ def test_thumbnails_draw_in_the_background_and_are_served():
     import os
     assert str(thumbnails.root).startswith(os.environ["AXIBRIDGE_CONFIG_DIR"])
     assert c.get("/api/gesture-studies/thumbnail/../../etc").status_code == 404
-    assert c.get("/api/gesture-studies/thumbnail/bold_swell-v1-000000000000").status_code == 404
+    assert c.get("/api/gesture-studies/thumbnail/bold_swell-v2-000000000000").status_code == 404
     # a study that draws differently is a different thumbnail
     moved = st.model_copy(update={"recipe": {**st.recipe, "seed": 1}})
     assert key_of(moved) != key

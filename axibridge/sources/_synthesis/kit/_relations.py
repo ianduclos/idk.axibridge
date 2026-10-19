@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/_relations.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/_relations.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Relations (round 16 contract, lead-owned): what one layer of a score does
 because of another. The synthesis bench's substructure is a list of layers

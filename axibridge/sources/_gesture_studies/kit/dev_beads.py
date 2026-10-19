@@ -1,4 +1,4 @@
-# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/dev_beads.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/dev_beads.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Developments (round 10): beads, not sausages.
 

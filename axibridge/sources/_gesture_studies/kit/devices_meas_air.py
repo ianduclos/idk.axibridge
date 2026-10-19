@@ -1,4 +1,4 @@
-# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/devices_meas_air.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/devices_meas_air.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Device `meas_air` (round 15, thread D `meas`): the pen's travel through
 the air. Between one line and the next the plotter lifts and moves; that

@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/arrangers_oehlen_found.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/arrangers_oehlen_found.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 12, thread `oehlen_found` — D1 found ground, negotiated line + D2 cover cuts.
 

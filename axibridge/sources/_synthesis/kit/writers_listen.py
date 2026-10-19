@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/writers_listen.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/writers_listen.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Synthesis bench S2a: `listen` as a score writer (`_writers.writer`).
 

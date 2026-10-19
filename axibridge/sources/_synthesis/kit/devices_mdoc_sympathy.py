@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/devices_mdoc_sympathy.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/devices_mdoc_sympathy.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `mdoc_sympathy` (round 16, thread D `mdoc`): the displacement a
 line took from another, drawn beside it.

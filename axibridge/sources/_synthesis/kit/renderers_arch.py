@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/renderers_arch.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/renderers_arch.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 15 thread C `arch`: one renderer for a composed sheet whose marks need different inks.
 
@@ -17,8 +17,10 @@ from .core import Ink, P, get, renderer
     P("pen", "float", 0.4, "pen for marks that carry none, mm", min=0.05, max=3.0),
     P("nib_style", "choice", "e", "nib style for marks drawn as nib (unless the mark names one)",
       choices=("a", "b", "b+", "c", "e", "c+e")),
+    P("swell_line", "choice", "wire", "marks drawn as swell: the line runs through the swell (wire) | stops at "
+      "its outline (outside: no line through the middle; Ian, 2026-10-19)", choices=("wire", "outside")),
 ], doc="per mark: wire | nib | swell (meta['draw']), each in its pen colour (meta['ink'])", reach=lambda p: 0.5)
-def arch_ink(ctx, marks, *, pen, nib_style):
+def arch_ink(ctx, marks, *, pen, nib_style, swell_line):
     from .renderers_base import nib  # noqa: PLC0415
     from .swell_ink import swell  # noqa: PLC0415
     sw = get("renderer", "swell")
@@ -33,7 +35,8 @@ def arch_ink(ctx, marks, *, pen, nib_style):
         if how == "nib":
             inks = nib(ctx, [m], style=m.meta.get("nib_style", nib_style), pen=p)
         elif how == "swell":
-            prm = sw.validate({"id": "swell", **m.meta.get("swell", {})})
+            prm = sw.validate({"id": "swell", **m.meta.get("swell", {}),
+                               **({"line": "outside"} if swell_line == "outside" else {})})
             prm.pop("id")
             inks = swell(ctx, [m], **prm)
         else:

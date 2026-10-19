@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/clothoid.py
+# FROZEN from research commit c712045: tools/gesture/gesture/clothoid.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Piecewise-linear κ(s) fit: a stroke as lines, arcs and clothoids.
 

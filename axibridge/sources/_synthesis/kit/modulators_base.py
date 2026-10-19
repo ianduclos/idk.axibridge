@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/modulators_base.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/modulators_base.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Seed modulators — they write channels on placed marks (sheet mm).
 

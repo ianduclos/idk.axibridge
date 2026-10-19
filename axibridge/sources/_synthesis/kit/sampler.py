@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/sampler.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/sampler.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """The combination sampler (round 10 `combo_search`, moved into the kit for the
 app's Sampler study, 2026-10-17).

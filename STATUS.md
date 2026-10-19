@@ -7,7 +7,6 @@ summary: The synthesis bench is built (S4) — a writer proposes a score of laye
 next:
   - Ian — relaunch AxiBridge.app and try Compose → Synthesis → Bench (see HANDOFF "Synthesis bench: S4 built")
   - Ian — notes on the S2 review page (https://claude.ai/artifact/NtcsSUmoqrurwjYM4HSutR), then the S2 review record
-  - Decide whether Gesture Studies' swell studies also stop drawing the line through the swell (line outside)
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
   - Sync the idkpi clone with main
 handoff_for: ian
@@ -25,7 +24,7 @@ as grown plus its final lines, so locking alone changes nothing and ripple
 generator (param = the score), keep as a group / replace, `/api/synthesis/*`,
 the `synthesis` MCP tool, and the bench UI (Codex Sol 6.1, lead-reviewed).
 Ian's mid-session ask: the swell's line no longer runs through its middle
-(`line: outside`, used by arch's swell in the writer). Full suite 2245
+(`line: outside`); Ian approved it for every swell, so bold_swell, swell_answer, swell_sentence and arch are now version 2 (Gesture Studies refrozen; only those four studies' fixtures moved, kept layers unchanged). Full suite 2245
 passed before the last fixes (4 failures, all fixed and rerun: 130 + 37
 passed); goldens unchanged except arch 15045's swell. Contract:
 `docs/SYNTHESIS.md`. Not pushed.

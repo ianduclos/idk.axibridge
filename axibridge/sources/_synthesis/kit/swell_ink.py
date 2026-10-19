@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/swell_ink.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/swell_ink.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 11, exploration 2 — swelling into mass (thread `swell`).
 
@@ -682,6 +682,8 @@ def _dots_reach(p):
       choices=("wire", "none", "swell")),
     P("swell_profile", "choice", "drop", "line = swell: the profile", choices=PROFILES),
     P("swell_size", "float", 9.0, "line = swell: head diameter, mm", min=0.5, max=40.0),
+    P("swell_line", "choice", "through", "line = swell: the line runs through its swells | stops at their outline "
+      "(outside: no line through the middle; Ian, 2026-10-19)", choices=("through", "outside")),
     P("pen", "float", 0.4, "pen width mm", min=0.05, max=3.0),
     P("size", "float", 6.0, "large dot diameter, mm", min=0.5, max=30.0),
     P("medium", "float", 0.68, "medium dot / large", min=0.1, max=1.0),
@@ -700,8 +702,8 @@ def _dots_reach(p):
     P("pitch", "float", 0.85, "fill: spiral spacing in pens", min=0.4, max=4.0),
     P("wobble", "float", 0.05, "hand-made roundness irregularity", min=0.0, max=0.4),
 ], reach=_dots_reach, doc="dots placed by a rule you can see, in a small vocabulary of sizes and shapes")
-def swell_dots(ctx, marks, *, rule, sizes, shape_L, shape_s, line, swell_profile, swell_size, pen, size, medium,
-               small, gap, scale, period, phrase, space, decel_n, decel_q, thr, hole, pitch, wobble):
+def swell_dots(ctx, marks, *, rule, sizes, shape_L, shape_s, line, swell_profile, swell_size, swell_line, pen, size,
+               medium, small, gap, scale, period, phrase, space, decel_n, decel_q, thr, hole, pitch, wobble):
     prm = dict(rule=rule, sizes=sizes, gap=gap, scale=scale, period=period, phrase=phrase, decel_n=decel_n,
                decel_q=decel_q, thr=thr, size=size)
     frac = {"L": 1.0, "m": medium, "s": small}
@@ -740,6 +742,7 @@ def swell_dots(ctx, marks, *, rule, sizes, shape_L, shape_s, line, swell_profile
             segs.append((a, x0))
             a = x1
         segs.append((a, float(s[-1])))
+        first_line = len(out)
         for a, b in segs:
             if b - a < 0.5:
                 continue
@@ -754,6 +757,9 @@ def swell_dots(ctx, marks, *, rule, sizes, shape_L, shape_s, line, swell_profile
             sprm = {**{p_.name: p_.default for p_ in SWELL_PARAMS}, "profile": swell_profile, "size": swell_size,
                     "pen": pen, "pitch": pitch}
             g, _ = swell_geometry(m, sprm)
+            if g is not None and swell_line == "outside":
+                out[first_line:] = [q for ink in out[first_line:] for q in
+                                    (_outside(ink, g) if ink.meta.get("role") == "line" else [ink])]
             if g is not None:
                 for p, closed, filled in line_fill(g, pen, pitch):
                     out.append(Ink_(p, pen, {"voice": vid, "role": f"swell:{swell_profile}"}, closed, filled))

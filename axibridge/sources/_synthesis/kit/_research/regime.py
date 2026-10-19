@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/regime.py
+# FROZEN from research commit c712045: tools/gesture/gesture/regime.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Regime metamorphosis along one stroke: line → nib → shape (mass) and back.
 

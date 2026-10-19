@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/core.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/core.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Gesture kit core: Marks, Inks, Sheets, the module registry, recipes, seeds.
 

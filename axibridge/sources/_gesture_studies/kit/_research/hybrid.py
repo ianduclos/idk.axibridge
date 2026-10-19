@@ -1,4 +1,4 @@
-# FROZEN from research commit f59eac4: tools/gesture/gesture/hybrid.py
+# FROZEN from research commit c712045: tools/gesture/gesture/hybrid.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Hybrid hands: two (or more) learned grammars made into one hand.
 

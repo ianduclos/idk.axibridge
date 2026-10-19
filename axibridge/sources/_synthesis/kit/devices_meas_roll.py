@@ -1,4 +1,4 @@
-# FROZEN from research commit 071aea1: tools/gesture/gesture/kit/devices_meas_roll.py
+# FROZEN from research commit c712045: tools/gesture/gesture/kit/devices_meas_roll.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `meas_roll` (round 15, thread D `meas`): the drawing transcribed
 as a roll, the way a player-piano roll transcribes a performance. Left to
