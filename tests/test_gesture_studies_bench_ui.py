@@ -417,3 +417,62 @@ def test_measure_devices_preview_and_keep_as_a_group(ui, server):
     assert [layer['source']['params']['show'] for layer in layers] == ['drawing', 'measure']
     shot(ui, 'measure-kept')
     assert not ui.errors
+
+
+def test_river_zoom_line_source_swaps_recipe_and_controls(ui, server):
+    """Study modes (2026-10-19): river_zoom's Line source picks river (the study as
+    it was kept) or relay of hands (round 16 hdist); each shows its own controls."""
+    open_bench(ui)
+    ui.select_option('#gs-study', 'river_zoom')
+    ready(ui)
+    switch = ui.locator('#process-gesture-studies [data-mode-key="line_source"]')
+    assert switch.locator('button').all_text_contents() == ['river', 'relay of hands']
+    assert switch.locator('button[aria-pressed=true]').text_content() == 'river'
+    assert control(ui, 'parts.0.voice.zoom').is_visible() and not control(ui, 'parts.0.voice.hands').count()
+    assert 'line_source' not in recipe(ui)['values']
+    river = ink(ui)
+
+    switch.locator('button', has_text='relay of hands').click()
+    ready(ui)
+    assert recipe(ui)['values'] == {'line_source': 'relay'}
+    keys = ui.eval_on_selector_all('#process-gesture-studies [data-control-key]',
+                                   'els => els.map(e => e.dataset.controlKey)')
+    assert set(keys) == {'parts.0.voice.hands', 'parts.0.voice.R_mm', 'parts.0.voice.peak_fine_mm', 'seed'}
+    route = control(ui, 'parts.0.voice.hands').locator('select')
+    assert [route.nth(i).input_value() for i in range(4)] == ['river_bend', 'shikasta', 'trail_borer', 'fly_fru']
+    assert ui.locator('#gs-seed-input').input_value() == '3001'
+    relay = ink(ui)
+    assert relay and relay != river
+    colours = ui.eval_on_selector_all('#process-canvas .gesture-studies-ink g.gs-ink',
+                                      'els => [...new Set(els.map(e => e.style.getPropertyValue("--gs-ink")))]')
+    assert len(colours) == 4                                  # an ink per hand
+    shot(ui, 'river-zoom-relay')
+
+    # a relay value, then back to river (its own values) and undo returns to the relay
+    control(ui, 'seed').locator('.gs-next-seed').click()
+    ready(ui)
+    assert recipe(ui)['values'] == {'line_source': 'relay', 'seed': 3002}
+    switch = ui.locator('#process-gesture-studies [data-mode-key="line_source"]')
+    switch.locator('button', has_text='river').click()
+    ready(ui)
+    assert recipe(ui)['values'] == {} and ink(ui) == river and control(ui, 'parts.0.voice.zoom').is_visible()
+    switch = ui.locator('#process-gesture-studies [data-mode-key="line_source"]')
+    switch.locator('button', has_text='relay of hands').click()
+    ready(ui)
+    assert recipe(ui)['values'] == {'line_source': 'relay', 'seed': 3002}    # each mode remembers its values
+    ui.click('#gesture-studies-undo')
+    ready(ui)
+    assert recipe(ui)['values'] == {}
+
+    # Keep: one layer carrying the moded study, its values and the relay's hands pinned
+    switch = ui.locator('#process-gesture-studies [data-mode-key="line_source"]')
+    switch.locator('button', has_text='relay of hands').click()
+    ready(ui)
+    ui.click('#gesture-studies-keep')
+    ui.wait_for_function("() => document.querySelector('#gesture-studies-kept').textContent.includes('Kept')")
+    layers = _get(f'{server}/api/project')['layers']
+    assert len(layers) == 1
+    kept = layers[0]['source']['params']
+    assert kept['values']['line_source'] == 'relay' and kept['study']['modes']['key'] == 'line_source'
+    assert {p['id'] for p in kept['pins']} == {'river_bend', 'shikasta', 'trail_borer', 'fly_fru'}
+    assert not ui.errors

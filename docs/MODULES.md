@@ -453,6 +453,25 @@ study dropdown inside; each study shows only its own controls.
   default is the value at its path. `check_study` validates the recipe with
   its engine and every control against the param it points at; `resolve`
   writes values in and validates again.
+- **Modes** (2026-10-19; first user: river_zoom's "Line source", river |
+  relay of hands). A control can't swap a voice, so a study may carry
+  `modes: {"key", "label", "help", "choices": [{"id", "label"}, {"id",
+  "label", "recipe", "controls"}, …]}`: one choice picks which recipe draws
+  and which controls show. The first choice IS the study's own recipe and
+  controls (it carries neither); the chosen id is a value under `key`
+  (missing = the first). `ST.active(study, values)` turns it into a plain
+  study of the chosen mode, and `resolve` / `named_entries` / `acts` go
+  through it, so the first mode resolves exactly as the study did before it
+  had modes (`tests/test_gesture_studies_modes.py` checks river_zoom against
+  `tests/fixtures/gesture_studies/before_modes/`). Values are strict per mode
+  (another mode's keys are refused); the bench keeps each mode's values in the
+  draft when you switch. A study without modes dumps without the key, so
+  every other study, kept layer and fork is byte-for-byte as before. Keep
+  stays the study's own (`keep`/`inks` are study-level: a relay keeps as one
+  layer, its inks coloured in the preview only). "Save as new study" and the
+  Edit recipe drawer work on the chosen mode alone: the fork is a plain study
+  of that mode. freeze.py writes a parity fixture per extra mode,
+  `<study>@<mode>.json`.
 - **Engines.** `kit`: the frozen gesture kit (`_gesture_studies/kit/`, research
   commit in `kit/FROZEN.json` and every file header; `kit/_research/` holds the
   research modules it imports; calligraphy is a `PolicyError` stub). `hand_drift`
@@ -513,7 +532,7 @@ study dropdown inside; each study shows only its own controls.
   busy study) and the misfit grid (1–15 s); the rest under 0.25 s.
 - **Cost** (app venv, default values): Hand Drift 0.4 s, Drawing and its
   measure 0.3 s, Three voices 0.8 s, Conversation 1.6 s, Danced chain 4 s,
-  Annotated page 4 s, Two voices 10 s, Shape atlas ~60 s (drawn by a hand;
+  Annotated page 4 s, Amazon zooming's relay of hands 8 s, Two voices 10 s, Shape atlas ~60 s (drawn by a hand;
   ~0.6 s machine-drawn).
 
  adapters call

@@ -1,4 +1,4 @@
-# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/arrangers_ccolour.py
+# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/arrangers_ccolour.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Round 14 b4 `ccolour`: colour as structure — a composer whose pens carry what each line is doing.
 

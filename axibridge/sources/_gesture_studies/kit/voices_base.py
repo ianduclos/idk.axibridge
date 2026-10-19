@@ -1,4 +1,4 @@
-# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/voices_base.py
+# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/voices_base.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Seed voices: `hand` (one grammar speaks the whole line) and `drift` (a
 line whose hand drifts along a route of grammars) — the research

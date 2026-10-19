@@ -1,4 +1,4 @@
-# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/renderers_arch.py
+# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/renderers_arch.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Round 15 thread C `arch`: one renderer for a composed sheet whose marks need different inks.
 

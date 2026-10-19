@@ -1,4 +1,4 @@
-# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/devices_meas_arcs.py
+# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/devices_meas_arcs.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Device `meas_arcs` (round 15, thread D `meas`): which relations fired.
 It reads the score (`notes["score"]`) the composer wrote, or, for a

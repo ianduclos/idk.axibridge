@@ -129,7 +129,10 @@ make a recipe a built-in study: add `axibridge/sources/_gesture_studies/studies/
 (the recipe, 3–8 bounded controls, notes on why), rerun
 `tools/gesture_studies/freeze.py` with the research venv (it freezes the kit
 from HEAD and every generative library entry, and checks parity), run
-`tests/test_gesture_studies.py`.
+`tests/test_gesture_studies.py`. To give an existing study a second way of
+drawing (another voice, not just other values), add a mode to it instead
+(`modes` in study.json, docs/MODULES.md "Gesture Studies bench"): river_zoom's
+"relay of hands" is the example.
 
 **Bring new hands into the app.** Learn and save them in the library, commit,
 rerun `tools/gesture_studies/freeze.py`: every study's hand controls list them,

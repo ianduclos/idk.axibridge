@@ -37,7 +37,8 @@ into the app. It writes:
 
 3. `tests/fixtures/gesture_studies/<study>.json` — the parity fixture: each
    built-in kit study's recipe (a sampler study: the recipe its seed samples,
-   recorded as `sampled`, after checking the frozen sampler picks the same one)
+   recorded as `sampled`, after checking the frozen sampler picks the same one;
+   a study with modes: each other mode's recipe too, as `<study>@<mode>.json`)
    run through the HEAD research kit with the HEAD
    research library (this interpreter), summarised per ink (point count,
    closed/filled, pen, end points, coordinate moments) plus a strided sample of
@@ -101,6 +102,9 @@ KIT_MODULES = ("__init__", "core", "library", "arrangers_base", "modulators_base
                "arrangers_listen", "voices_rzoom", "renderers_rzoom",
                # the same zoom callable on other hands, or as a modulator over any voice
                "voices_lcorp", "modulators_lcorp",
+               # round 16 hdist (2026-10-19): river_zoom's "relay of hands" mode, a relay of hands each at
+               # its own scales, coloured by the hand speaking
+               "voices_hdist", "renderers_lcorp",
                # round 15 measuring devices (study bench v3 move G, 2026-10-19): the device contract
                # (`_devices`, over the `_score` above), the process reader and the 13 devices
                "_devices", "devices_meas_read", "devices_meas_air", "devices_meas_arcs",
@@ -321,20 +325,25 @@ def parity_fixtures(src_root: Path, commit: str) -> None:
             continue
         else:
             recipe = study["recipe"]
-        sheet = kit.run(recipe, library=lib)
-        out = {"study": sid, "version": study["version"], "research_commit": commit,
-               "numpy": np.__version__, "geos": shapely.geos_version_string, **_summary(sheet)}
-        if sampled is not None:
-            out["sampled"] = sampled
-        # the frozen copy, run by THIS interpreter, must reproduce the research exactly
-        mine = frozen_kit.run(recipe, library=frozen_lib.FrozenLibrary())
-        if _summary(mine) != {k: out[k] for k in ("inks", "stride", "sample", "n_points")}:
-            raise SystemExit(f"{sid}: the frozen kit does not reproduce the research kit")
-        (FIXTURES / f"{sid}.json").write_text(json.dumps(out, separators=(",", ":")) + "\n")
-        print(f"fixture {sid:<22} {len(out['inks']):5d} inks {out['n_points']:7d} points "
-              f"({sheet.meta['seconds']['marks'] + sheet.meta['seconds']['inks']:.1f} s)")
-        if sid in set(DEVICE_BASES.values()):
-            bases[sid] = (recipe, sheet, mine)
+        # a study with modes (river_zoom's line source): every other mode's recipe gets its own
+        # fixture, `<study>@<mode>.json`
+        runs = [(sid, recipe, sampled)] + [(f"{sid}@{m['id']}", m["recipe"], None)
+                                           for m in (study.get("modes") or {}).get("choices", [])[1:]]
+        for name, rec, smp in runs:
+            sheet = kit.run(rec, library=lib)
+            out = {"study": sid, "version": study["version"], "research_commit": commit,
+                   "numpy": np.__version__, "geos": shapely.geos_version_string, **_summary(sheet)}
+            if smp is not None:
+                out["sampled"] = smp
+            # the frozen copy, run by THIS interpreter, must reproduce the research exactly
+            mine = frozen_kit.run(rec, library=frozen_lib.FrozenLibrary())
+            if _summary(mine) != {k: out[k] for k in ("inks", "stride", "sample", "n_points")}:
+                raise SystemExit(f"{name}: the frozen kit does not reproduce the research kit")
+            (FIXTURES / f"{name}.json").write_text(json.dumps(out, separators=(",", ":")) + "\n")
+            print(f"fixture {name:<22} {len(out['inks']):5d} inks {out['n_points']:7d} points "
+                  f"({sheet.meta['seconds']['marks'] + sheet.meta['seconds']['inks']:.1f} s)")
+            if name in set(DEVICE_BASES.values()):
+                bases[name] = (rec, sheet, mine)
     device_fixtures(commit, bases, lib)
 
 

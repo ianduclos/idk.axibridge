@@ -1,4 +1,4 @@
-# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/voices_belt.py
+# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/voices_belt.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """A hand's own bends strung along a valley: the river belt, tighter (round-12 keeps, 2026-10-18).
 

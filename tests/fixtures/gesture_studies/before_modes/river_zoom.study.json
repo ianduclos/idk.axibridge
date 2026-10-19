@@ -1,0 +1,113 @@
+{
+ "id": "river_zoom",
+ "label": "Amazon, zooming",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-19",
+ "source": "Round 14 rzoom: tools/gesture/results/rzoom-4-ornament.recipe.json, panels[0] (1491); any-line resource: tools/gesture/results/lcorp-2026-10-19.md",
+ "engine": "kit",
+ "keep": "layer",
+ "notes": "The favourite top-row strip: three uneven pushes into the real Amazon stem, each pulled quickly back out, on a free course. Every heading is the river\u2019s own. Adapted from 600 \u00d7 150 to a plottable 300 \u00d7 110 mm frame; a single constant 0.3 mm wire replaces the research recipe\u2019s variable-width bands. Ian: \"amazing\"; wants this \"as a tool/gesture/resource to be called\", on other hands too. The frozen lcorp_zoom voice and lcorp_zoom_mod modulator generalise this operation to hand chains, relays, trails or any voice. The sibling hand.recipe.json is a callable dancer_cristel example for the recipe editor; the study keeps the exact river mechanism. Controls: schedule, number of pushes, magnification, start and share along the stem, schedule pace and seed. Course is fixed free; width stays constant.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   300.0,
+   110.0
+  ],
+  "seed": 1491,
+  "margin": 8.0,
+  "arranger": {
+   "id": "single"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_zoom",
+     "mode": "magnify",
+     "schedule": "push",
+     "recur": 3,
+     "zoom": 24.0,
+     "start": 0.05,
+     "river": 1.0,
+     "pace": 0.5,
+     "max_mm": 9000.0,
+     "far_mm_per_km": 0.8,
+     "course": "free",
+     "angle": 0.0,
+     "smooth_w": 0.0,
+     "valley_w": 100.0,
+     "turn_mm": 45.0,
+     "frames": 5,
+     "span_w": 1600.0,
+     "pan": 0.0,
+     "heading": "linear",
+     "tile": "SB19",
+     "rank": 0,
+     "stems": "grwl_far_sb19"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.3
+  }
+ },
+ "controls": [
+  {
+   "path": "parts.0.voice.schedule",
+   "label": "Zoom schedule",
+   "type": "choice"
+  },
+  {
+   "path": "parts.0.voice.recur",
+   "label": "Pushes / repetitions",
+   "type": "int",
+   "min": 1,
+   "max": 8,
+   "step": 1,
+   "help": "Acts for push, pulses, drift, steps and breath; other schedules have one fixed event."
+  },
+  {
+   "path": "parts.0.voice.zoom",
+   "label": "Largest magnification",
+   "type": "float",
+   "min": 1.0,
+   "max": 64.0,
+   "step": 1.0
+  },
+  {
+   "path": "parts.0.voice.start",
+   "label": "Stem start",
+   "type": "float",
+   "min": 0.0,
+   "max": 0.95,
+   "step": 0.01
+  },
+  {
+   "path": "parts.0.voice.river",
+   "label": "Stem share",
+   "type": "float",
+   "min": 0.02,
+   "max": 1.0,
+   "step": 0.01
+  },
+  {
+   "path": "parts.0.voice.pace",
+   "label": "Schedule pace",
+   "type": "float",
+   "min": 0.0,
+   "max": 1.0,
+   "step": 0.05,
+   "help": "0 keys zoom to the drawn line; 1 keys it to the river."
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

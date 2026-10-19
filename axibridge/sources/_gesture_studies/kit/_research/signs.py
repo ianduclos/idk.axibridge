@@ -1,4 +1,4 @@
-# FROZEN from research commit 9ab70ac: tools/gesture/gesture/signs.py
+# FROZEN from research commit f59eac4: tools/gesture/gesture/signs.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Sign-like shapes and how they relate to lines (research; see
 results/signs-2026-10-16.md and docs/IDEAS-gesture-bank.md, "Direction:

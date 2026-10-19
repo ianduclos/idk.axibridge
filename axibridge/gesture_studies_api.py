@@ -78,10 +78,13 @@ def _library(body: StudyValues) -> FL.FrozenLibrary:
 
 
 def _resolved(body: StudyValues) -> ST.Study:
-    """The study with the control values written into its recipe (validated)."""
+    """The study with the control values written into its recipe (validated).
+    A study with modes: the chosen mode as a study of its own (its recipe and
+    controls, no modes) — what a fork saves and the Edit recipe drawer edits."""
     lib = _library(body)
     study = ST.check_study(ST.Study(**body.study), lib)
-    return ST.check_study(study.model_copy(update={"recipe": ST.resolve(study, body.values, lib)}), lib)
+    one, values = ST.active(study, body.values)
+    return ST.check_study(one.model_copy(update={"recipe": ST.resolve(one, values, lib)}), lib)
 
 
 def _run_info(body: StudyValues, study: ST.Study) -> dict[str, Any]:

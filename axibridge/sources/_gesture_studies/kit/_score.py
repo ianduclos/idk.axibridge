@@ -1,4 +1,4 @@
-# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/_score.py
+# FROZEN from research commit f59eac4: tools/gesture/gesture/kit/_score.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """The composition score (round 15 contract, lead-owned): the substructure a
 future composition bench will let Ian edit.

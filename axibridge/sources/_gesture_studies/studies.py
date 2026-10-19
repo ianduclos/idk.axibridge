@@ -37,6 +37,17 @@ own pen: by part (the chorus: dev_chorus inks), or, when the study lists
 found layer, green tint, black gesture). An ink the drawing does not use this
 time is an empty voice and is not kept.
 
+`modes` (2026-10-19, river_zoom's line source: river | relay of hands) give a
+study alternate recipes picked by ONE choice: `{"key", "label", "choices":
+[{"id", "label"}, {"id", "label", "recipe", "controls"}, ...]}`. The first
+choice is the study's own recipe and controls; each other one carries its own
+(a control cannot swap a voice). The chosen id is a value under `key`
+(missing = the first). `active(study, values)` is the study as the chosen mode
+draws it — no modes — and everything that resolves goes through it, so a study
+in its first mode resolves exactly as one that never had modes. A study
+without modes dumps without the key. A fork ("Save as new study") saves the
+chosen mode alone.
+
 The default of a control is the value at its path in the recipe; everything
 not under a control is fixed. `resolve(study, values, library)` writes the
 values into a copy of the recipe and validates the result with the engine
@@ -53,7 +64,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 from . import frozen_library as FL
 
@@ -206,6 +217,46 @@ class Parent(BaseModel):
     version: int = Field(ge=1, le=100_000)
 
 
+class Mode(BaseModel):
+    """One choice of a study's mode switch. The first choice is the study's own
+    recipe and controls and carries neither; every other one carries both."""
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=ID_RE)
+    label: str = Field(min_length=1, max_length=60)
+    recipe: dict[str, Any] | None = None
+    controls: list[Control] | None = Field(default=None, min_length=1, max_length=32)
+
+
+class Modes(BaseModel):
+    """A study's mode switch (river_zoom's line source, 2026-10-19): one choice
+    control (`key`, `label`) that picks which recipe draws and which controls
+    show. The value is a choice id, stored under `key` in the layer's values
+    like any control's; missing = the first choice (the study as it was)."""
+    model_config = ConfigDict(extra="forbid")
+
+    key: str = Field(default="mode", pattern=KEY_RE)
+    label: str = Field(min_length=1, max_length=80)
+    help: str = Field(default="", max_length=400)
+    choices: list[Mode] = Field(min_length=2, max_length=8)
+
+    @model_validator(mode="after")
+    def _shape(self):
+        ids = [m.id for m in self.choices]
+        if len(set(ids)) != len(ids):
+            raise ValueError("mode ids must be unique")
+        first, *others = self.choices
+        if first.recipe is not None or first.controls is not None:
+            raise ValueError(f"mode {first.id!r} is the study's own recipe and controls: it carries neither")
+        for m in others:
+            if m.recipe is None or m.controls is None:
+                raise ValueError(f"mode {m.id!r} needs its own recipe and controls")
+            keys = [c.key for c in m.controls]
+            if len(set(keys)) != len(keys):
+                raise ValueError(f"mode {m.id!r}: control keys must be unique")
+        return self
+
+
 class Study(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -228,6 +279,16 @@ class Study(BaseModel):
     family: str = Field(default="", max_length=60)
     recipe: dict[str, Any]
     controls: list[Control] = Field(min_length=1, max_length=32)
+    #: alternate recipes picked by one choice (see `Modes`); a study without is dumped without the key
+    modes: Modes | None = None
+
+    @model_serializer(mode="wrap")
+    def _dump(self, handler):
+        # a study without modes dumps exactly as it did before modes existed
+        out = handler(self)
+        if isinstance(out, dict) and out.get("modes") is None:
+            out.pop("modes", None)
+        return out
 
     @model_validator(mode="after")
     def _keys(self):
@@ -236,6 +297,12 @@ class Study(BaseModel):
             raise ValueError("control keys must be unique")
         if len(json.dumps(self.recipe)) > RECIPE_MAX_BYTES:
             raise ValueError(f"recipe larger than {RECIPE_MAX_BYTES} bytes")
+        if self.modes is not None:
+            every = keys + [c.key for m in self.modes.choices for c in (m.controls or [])]
+            if self.modes.key in every:
+                raise ValueError(f"the mode switch's key {self.modes.key!r} is also a control's key")
+            if len(json.dumps([m.recipe for m in self.modes.choices])) > RECIPE_MAX_BYTES:
+                raise ValueError(f"mode recipes larger than {RECIPE_MAX_BYTES} bytes")
         if self.keep == "voices" and self.engine != "kit":
             raise ValueError("only a kit study can keep its voices as a group of layers")
         if self.inks is not None:
@@ -661,10 +728,52 @@ def coerce(study: Study, recipe: dict, c: Control, v, lib: FL.FrozenLibrary):
     return v
 
 
+# ---------------------------------------------------------------------------
+# modes: one choice picks the recipe and controls (river_zoom's line source)
+# ---------------------------------------------------------------------------
+
+def mode_of(study: Study, values: dict[str, Any]) -> str | None:
+    """The mode these values choose (None: the study has no modes)."""
+    if study.modes is None:
+        return None
+    ids = [m.id for m in study.modes.choices]
+    v = values.get(study.modes.key, ids[0])
+    if v not in ids:
+        raise StudyError(f"{study.modes.label} ({study.modes.key}): {v!r} is not one of {ids}")
+    return v
+
+
+def active(study: Study, values: dict[str, Any]) -> tuple[Study, dict[str, Any]]:
+    """The study as the chosen mode draws it — its recipe and controls, no
+    modes — and the values without the mode switch. A study without modes, or
+    in its first mode, is itself (minus `modes`), so it resolves exactly as a
+    study that never had modes."""
+    m = mode_of(study, values)
+    if m is None:
+        return study, values
+    vals = {k: v for k, v in values.items() if k != study.modes.key}
+    mode = next(x for x in study.modes.choices if x.id == m)
+    if mode.recipe is None:
+        return study.model_copy(update={"modes": None}), vals
+    return study.model_copy(update={"modes": None, "recipe": mode.recipe, "controls": mode.controls}), vals
+
+
 def check_study(study: Study, lib: FL.FrozenLibrary | None = None) -> Study:
     """Semantic validation (recipe through its engine, every control against
-    the params it points at, every default value against its control)."""
+    the params it points at, every default value against its control); a study
+    with modes: every mode's recipe and controls the same way."""
     lib = lib or FL.FrozenLibrary()
+    if study.modes is None:
+        return _check_one(study, lib)
+    base = _check_one(study.model_copy(update={"modes": None}), lib)
+    choices = [study.modes.choices[0]]
+    for m in study.modes.choices[1:]:
+        one = _check_one(study.model_copy(update={"modes": None, "recipe": m.recipe, "controls": m.controls}), lib)
+        choices.append(m.model_copy(update={"recipe": one.recipe, "controls": one.controls}))
+    return base.model_copy(update={"modes": study.modes.model_copy(update={"choices": choices})})
+
+
+def _check_one(study: Study, lib: FL.FrozenLibrary) -> Study:
     recipe = validate_recipe(study, study.recipe, lib)
     controls = []
     for c in study.controls:
@@ -698,17 +807,23 @@ def _check_when(study: Study, recipe: dict, c: Control, w, by_key: dict, lib: FL
 
 def acts(study: Study, values: dict[str, Any], c: Control) -> bool:
     """Does control c act with these values (its `when` holds)? Values not
-    given are the recipe's own."""
+    given are the recipe's own. A control of a mode not chosen never acts."""
+    study, values = active(study, values)
     by_key = {x.key: x for x in study.controls}
+    if c.key not in by_key:
+        return False
     return when_holds(c.when, lambda k: values[k] if k in values else get_at(study.recipe, by_key[k].targets[0]))
 
 
 def defaults(study: Study) -> dict[str, Any]:
+    """The values of the study as it opens: its own recipe's (the first mode's)."""
     return {c.key: copy.deepcopy(get_at(study.recipe, c.targets[0])) for c in study.controls}
 
 
 def resolve(study: Study, values: dict[str, Any], lib: FL.FrozenLibrary) -> dict:
-    """The recipe with the control values written in (validated)."""
+    """The recipe with the control values written in (validated); a study with
+    modes: the chosen mode's recipe with its controls' values."""
+    study, values = active(study, values)
     keys = {c.key for c in study.controls}
     extra = sorted(k for k in values if k not in keys)
     if extra:
@@ -724,7 +839,8 @@ def resolve(study: Study, values: dict[str, Any], lib: FL.FrozenLibrary) -> dict
 
 def named_entries(study: Study, values: dict[str, Any], lib: FL.FrozenLibrary) -> list[tuple[str, str]]:
     """(kind, id) of every library entry the study's library controls name
-    (the entries a kept layer pins explicitly)."""
+    (the entries a kept layer pins explicitly; with modes: the chosen mode's)."""
+    study, values = active(study, values)
     out = []
     for c in study.controls:
         if c.type not in LIBRARY_TYPES:

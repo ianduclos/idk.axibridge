@@ -7,7 +7,7 @@
  "source": "Round 14 rzoom: tools/gesture/results/rzoom-4-ornament.recipe.json, panels[0] (1491); any-line resource: tools/gesture/results/lcorp-2026-10-19.md",
  "engine": "kit",
  "keep": "layer",
- "notes": "The favourite top-row strip: three uneven pushes into the real Amazon stem, each pulled quickly back out, on a free course. Every heading is the river\u2019s own. Adapted from 600 \u00d7 150 to a plottable 300 \u00d7 110 mm frame; a single constant 0.3 mm wire replaces the research recipe\u2019s variable-width bands. Ian: \"amazing\"; wants this \"as a tool/gesture/resource to be called\", on other hands too. The frozen lcorp_zoom voice and lcorp_zoom_mod modulator generalise this operation to hand chains, relays, trails or any voice. The sibling hand.recipe.json is a callable dancer_cristel example for the recipe editor; the study keeps the exact river mechanism. Controls: schedule, number of pushes, magnification, start and share along the stem, schedule pace and seed. Course is fixed free; width stays constant.",
+ "notes": "The favourite top-row strip: three uneven pushes into the real Amazon stem, each pulled quickly back out, on a free course. Every heading is the river\u2019s own. Adapted from 600 \u00d7 150 to a plottable 300 \u00d7 110 mm frame; a single constant 0.3 mm wire replaces the research recipe\u2019s variable-width bands. Ian: \"amazing\"; wants this \"as a tool/gesture/resource to be called\", on other hands too. The frozen lcorp_zoom voice and lcorp_zoom_mod modulator generalise this operation to hand chains, relays, trails or any voice. The sibling hand.recipe.json is a callable dancer_cristel example for the recipe editor; the study keeps the exact river mechanism. Controls: schedule, number of pushes, magnification, start and share along the stem, schedule pace and seed. Course is fixed free; width stays constant. Line source (2026-10-19): river is everything above, unchanged; relay of hands is round 16's distinct-hands relay (hdist-4-relay, panel 0, seed 3001): hands in turn, river_bend > shikasta > trail_borer > fly_fru, each drawn whole and zoomed at its own scales (far scale, zoom and camera from the hand's own scale ladder, one push per hand, every handover where both hands are far), coloured by the hand speaking (black, blue, red, green) and kept as one layer. Ian on it: \"yess thats whats up\", and to commit it to this study. Relay controls: the hands in turn (1-6), hand size (each hand's reference length), zoom depth (where each push stops) and seed. Same 300 x 110 mm frame as the river (the research sheet was 600 x 150).",
  "recipe": {
   "kit": 1,
   "frame": [
@@ -109,5 +109,112 @@
    "max": 2147483647,
    "step": 1
   }
- ]
+ ],
+ "modes": {
+  "key": "line_source",
+  "label": "Line source",
+  "help": "river: the Amazon stem, as this study was kept. relay of hands: hands in turn, each whole and at its own scales (round 16 hdist).",
+  "choices": [
+   {
+    "id": "river",
+    "label": "river"
+   },
+   {
+    "id": "relay",
+    "label": "relay of hands",
+    "recipe": {
+     "kit": 1,
+     "frame": [
+      300.0,
+      110.0
+     ],
+     "seed": 3001,
+     "margin": 8.0,
+     "arranger": {
+      "id": "single"
+     },
+     "parts": [
+      {
+       "voice": {
+        "id": "hdist_zoom",
+        "source": "relay",
+        "hand": "hokusai",
+        "hands": [
+         "river_bend",
+         "shikasta",
+         "trail_borer",
+         "fly_fru"
+        ],
+        "schedule": "push",
+        "recur": 3,
+        "calib": "R",
+        "R_mm": 80.0,
+        "peak_fine_mm": 4.0,
+        "fine_mm": 0.8,
+        "top_mm": 50.0,
+        "far_min_mm": 2.2,
+        "far_max_mm": 8.0,
+        "zoom_max": 24.0,
+        "zoom": 0.0,
+        "far_turn_mm": 0.0,
+        "res_mm": 0.45,
+        "reveal": 1.0,
+        "valley": 6.0,
+        "valley_R": 1.0,
+        "pace": 0.5,
+        "angle": 0.0,
+        "drawn_mm": 1800.0,
+        "span": 0.8,
+        "fill": 1.0
+       },
+       "modulators": []
+      }
+     ],
+     "renderer": {
+      "id": "lcorp_ink",
+      "pen": 0.3,
+      "by": "voice",
+      "inks": "black,blue,red,green",
+      "min_run": 3.0
+     }
+    },
+    "controls": [
+     {
+      "path": "parts.0.voice.hands",
+      "label": "Relay hands",
+      "type": "hands",
+      "min_len": 1,
+      "max_len": 6,
+      "help": "The hands in turn, in this order; each draws whole, at its own scales, in its own ink."
+     },
+     {
+      "path": "parts.0.voice.R_mm",
+      "label": "Hand size",
+      "type": "float",
+      "min": 20.0,
+      "max": 200.0,
+      "step": 5.0,
+      "help": "One reference length of each hand on the drawn line, mm, before the fit: larger hands, fewer bends per hand."
+     },
+     {
+      "path": "parts.0.voice.peak_fine_mm",
+      "label": "Zoom depth",
+      "type": "float",
+      "min": 1.0,
+      "max": 16.0,
+      "step": 0.5,
+      "help": "The push stops when the hand's finest band reaches this size, mm: deeper zooms open each hand further."
+     },
+     {
+      "path": "seed",
+      "label": "Seed",
+      "type": "int",
+      "min": 0,
+      "max": 2147483647,
+      "step": 1
+     }
+    ]
+   }
+  ]
+ }
 }

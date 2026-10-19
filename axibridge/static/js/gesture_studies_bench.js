@@ -123,12 +123,62 @@ function getAt(obj, path) {
 function targets(c) { return c.path ? [c.path] : c.paths; }
 function keyOf(c) { return c.key || targets(c)[0]; }
 function valueOf(params, c) {
-  return Object.prototype.hasOwnProperty.call(params.values, keyOf(c)) ? params.values[keyOf(c)] : getAt(params.study.recipe, targets(c)[0]);
+  return Object.prototype.hasOwnProperty.call(params.values, keyOf(c)) ? params.values[keyOf(c)] : getAt(activeStudy(params).recipe, targets(c)[0]);
+}
+// ---------------------------------------------------------------- modes: one choice picks the recipe and controls
+// (river_zoom's line source). The value lives under modes.key in the values; missing = the first choice,
+// which is the study's own recipe and controls.
+function modeOf(params) {
+  const m = params.study?.modes;
+  if (!m) return null;
+  const v = params.values?.[m.key];
+  return m.choices.some(x => x.id === v) ? v : m.choices[0].id;
+}
+// The study as the chosen mode draws it: that mode's recipe and controls, no modes.
+function activeStudy(params, study = params.study) {
+  const m = study?.modes;
+  if (!m) return study;
+  const { modes, ...rest } = study; // eslint-disable-line no-unused-vars
+  const mode = m.choices.find(x => x.id === modeOf(params)) || m.choices[0];
+  return mode.recipe ? { ...rest, recipe: mode.recipe, controls: mode.controls } : rest;
 }
 // the controls the bench shows (a resumed snapshot may predate the server spelling out choices)
 function shownControls() {
-  const st = active.draft.params.study;
-  return (catalogueEntry(st) || st).controls;
+  const params = active.draft.params;
+  return activeStudy(params, catalogueEntry(params.study) || params.study).controls;
+}
+function modeControl(m, current) {
+  const group = document.createElement('div');
+  group.className = 'gs-switch'; group.setAttribute('role', 'group'); group.setAttribute('aria-label', m.label);
+  for (const choice of m.choices) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.value = JSON.stringify(choice.id); b.textContent = choice.label;
+    b.setAttribute('aria-pressed', String(choice.id === current));
+    b.onclick = () => chooseMode(choice.id);
+    group.append(b);
+  }
+  const wrap = document.createElement('div');
+  wrap.className = 'gs-field gs-mode-field'; wrap.dataset.modeKey = m.key;
+  const head = document.createElement('div'); head.className = 'gs-field-head';
+  const label = document.createElement('label'); label.textContent = m.label;
+  label.addEventListener('click', () => group.querySelector('button')?.focus());
+  head.append(label);
+  wrap.append(head, group);
+  if (m.help) wrap.title = m.help;
+  return wrap;
+}
+// Switching mode swaps the controls: each mode remembers its own values in the draft.
+function chooseMode(id) {
+  if (!active) return;
+  const params = active.draft.params, m = params.study.modes;
+  if (!m || modeOf(params) === id) return;
+  const memory = active.draft.memory, at = mode => `${params.study.id}#${mode}`;
+  memory[at(modeOf(params))] = copy(params.values);
+  change(p => {
+    p.values = copy(memory[at(id)] || {});
+    // the first mode is the study as it always was: no mode value at all
+    if (id === m.choices[0].id) delete p.values[m.key]; else p.values[m.key] = id;
+  }, { rebuild: true });
 }
 function penWidth(study) {
   const r = study.recipe || {};
@@ -535,6 +585,7 @@ function buildControls() {
   const seedHost = $('gs-seed-host'), host = $('gs-controls');
   seedHost.replaceChildren(); host.replaceChildren();
   const groups = new Map();
+  if (st.modes) host.append(modeControl(st.modes, modeOf(params)));
   for (const c of shownControls()) {
     if (keyOf(c) === 'seed') { seedHost.append(controlEl(c, valueOf(params, c))); continue; }
     const g = c.group || '';
@@ -887,7 +938,7 @@ function addHistory(params, output) {
   // a preview already in the strip keeps its place (going back to it does not reorder the strip)
   if (h.some(x => x.key === k)) return;
   h.push({ key: k, params: copy(params), svg: thumbOf(output), label: params.study.label,
-           seed: params.values.seed ?? params.study.recipe?.seed });
+           seed: params.values.seed ?? activeStudy(params).recipe?.seed });
   while (h.length > HISTORY) h.shift();
 }
 function renderHistory() {
@@ -1223,7 +1274,7 @@ function draw(output, exact, expected) {
   for (const [k, v] of Object.entries({ x: 0, y: 0, width: W, height: H })) frame.setAttribute(k, String(v));
   const ink = document.createElementNS(NS, 'g');
   ink.classList.add('gesture-studies-ink');
-  ink.style.strokeWidth = String(penWidth(exact.study));   // drawn at the pen's width
+  ink.style.strokeWidth = String(penWidth(activeStudy(exact)));   // drawn at the pen's width
   // a chorus comes back as consecutive runs of lines, one per voice, each in its ink;
   // within (and outside) them, runs of one ink colour and pen width
   const voices = output.layers?.length ? output.layers : [{ paths: output.lines.length, color: null }];
@@ -1409,7 +1460,8 @@ async function applyRecipe() {
     $('gs-recipe-error').textContent = `Not valid JSON: ${error.message}`; $('gs-recipe-error').hidden = false; return;
   }
   try {
-    const st = owner.draft.params.study;
+    // a study with modes: the recipe edited is the chosen mode's, so the result is that mode as a study of its own
+    const st = activeStudy(owner.draft.params);
     const study = isSampler(st) ? { ...st, engine: 'kit', recipe } : { ...st, recipe };
     const res = await api.post('/api/gesture-studies/validate', { ...infoBody(owner.draft.params), study, values: {}, sampled: null });
     if (active !== owner) return;
