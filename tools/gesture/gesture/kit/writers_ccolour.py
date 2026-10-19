@@ -450,7 +450,8 @@ def _swell(sc, plan, own, o, base):
     pros = {"id": "prosody", "density": 0.4, "gap": round(t["size"] * 3.0, 1), "span": round(t["size"] * 0.4, 1),
             "primary": 0.5, "W": 2.5, "M": 7.0}
     rnd = {"id": "swell", "profile": t["profile"], "size": float(t["size"]), "tail": float(t["tail"]),
-           "pen": float(t["pen"]), "k_head": 0.8, "tail_w": 2.0}
+           "pen": float(t["pen"]), "k_head": 0.8, "tail_w": 2.0,
+           "line": "outside"}          # Ian, 2026-10-19: no line through the middle of the swell
     ids = [sc.layer("X0", role="intruder", pen=own.get("intruder", "black"), region=box,
                     part={"voice": {"id": "hand", "hand": t["hand"], "length": float(t["length"]), "joins": "smooth"},
                           "modulators": [pros], "renderer": rnd},
