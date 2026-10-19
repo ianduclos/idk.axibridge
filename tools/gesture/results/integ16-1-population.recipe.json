@@ -1,0 +1,13 @@
+{
+ "note": "written v2 scores per panel; rebuild exactly with experiments/integ16.py score(seed)",
+ "seeds": [
+  15101,
+  15102,
+  15103,
+  15104,
+  15105,
+  15106,
+  15107,
+  15108
+ ]
+}
