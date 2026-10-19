@@ -36,22 +36,15 @@ import numpy as np
 
 sys.path.insert(0, "tools/gesture")
 
+# the shared "measure a line against the library" helper (S0′): one implementation, kit/_measure.py
+from gesture.kit._measure import (  # noqa: E402,F401
+    LIB_GEN, PEN, PX, REAL, SHAPE_GROUPS, SIGMA_FRAC, WINDOWS, Z, library_centroids, line_drawing, line_features,
+    projector)
+
 OUT = Path(".local/gesture/out/hdist")
 FEAT = OUT / "feat3"
-LIB_GEN = Path(".local/gesture/out/hands_trails/panel_gen.json")      # read only
-REAL = Path(".local/gesture/out/hybrid_hands/panel_real.json")        # read only
 SEEDS = (1491, 1492, 1493, 1494, 1495, 1496)
-WINDOWS = 6
 CELL = (480, 120)          # the specimen cell, as lcorp-1
-PEN = 0.45
-PX = 10.0                  # px per mm for the panel drawing
-# the line's shape only: curvature, extrema, inflections, turning, clothoid segments. Stroke counts,
-# lengths, gaps and widths (len_, rel_, w_, end_) read the FORMAT (one cut line vs a page of strokes),
-# not the hand, so they are left out of every distance.
-SHAPE_GROUPS = ("k", "ext", "infl", "turn", "cl")
-# σ = the standard floor, 7 pen widths (3.15 mm at 0.45 mm): the finest scale the pen can show a shape at.
-# The default 0.01·ref (≈ 5 mm on a 480 mm cell) reads past the corners and curls that make a hand.
-SIGMA_FRAC = 0.0
 
 
 def hands() -> list[str]:
@@ -130,26 +123,6 @@ def recipe_for(variant: str, hand: str, seed: int) -> dict:
 # ---------------------------------------------------------------------------
 # the panel reading of one line
 # ---------------------------------------------------------------------------
-
-def line_drawing(points_mm, pen: float = PEN, windows: int = WINDOWS):
-    from gesture.core import Drawing, Stroke
-    p = np.asarray(points_mm, float) * PX
-    s = np.r_[0.0, np.cumsum(np.linalg.norm(np.diff(p, axis=0), axis=1))]
-    cuts = np.searchsorted(s, np.linspace(0, s[-1], windows + 1))
-    cuts[-1] = len(p) - 1
-    st = [Stroke(p[a:b + 1], np.full(b + 1 - a, pen * PX)) for a, b in zip(cuts[:-1], cuts[1:]) if b - a >= 3]
-    hi = p.max(axis=0)
-    return Drawing(st, "hdist", (int(hi[0]) + 10, int(hi[1]) + 10), {})
-
-
-def line_features(points_mm, pen: float = PEN, windows: int = WINDOWS) -> dict:
-    from gesture import medium, panel
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        f, _ = panel.features_with_info(line_drawing(points_mm, pen, windows), sigma_frac=SIGMA_FRAC,
-                                        sigma_min_w=medium.SIGMA_MIN_W)
-    return f
-
 
 EYE = ("corner_share", "straight_share", "loops_per_m", "log_qt_mm", "fine_share", "infl_per_m")
 
@@ -238,34 +211,6 @@ def features_for(variant: str, hs=None, seeds=SEEDS, jobs: int = 10) -> dict:
 # ---------------------------------------------------------------------------
 # the readings
 # ---------------------------------------------------------------------------
-
-_PROJ = {}
-
-
-def projector():
-    if "tf" not in _PROJ:
-        from gesture import hybrid as hy
-        real = json.loads(REAL.read_text())
-        tf, names, _, _ = hy.projector(real)
-        lib = json.loads(LIB_GEN.read_text())
-        _PROJ.update(tf=tf, names=names, lib=lib)
-    return _PROJ["tf"], _PROJ["names"], _PROJ["lib"]
-
-
-def Z(feats: dict) -> tuple[list[str], np.ndarray]:
-    tf, names, _ = projector()
-    keys = sorted(k for k in feats if feats[k])
-    X = np.array([[feats[k].get(n, np.nan) for n in names] for k in keys], float)
-    cols = [i for i, n in enumerate(names) if n.split("_", 1)[0] in SHAPE_GROUPS]
-    return keys, tf(X)[:, cols]
-
-
-def library_centroids(hs) -> dict:
-    _, _, lib = projector()
-    k, z = Z({k: v for k, v in lib.items() if k.split("|")[0] in hs})
-    g = np.array([x.split("|")[0] for x in k])
-    return {h: z[g == h].mean(0) for h in hs if (g == h).any()}
-
 
 def _readings(keys, z) -> dict:
     """Distinctness of the hands in one space: per hand, the distance from its centroid to the nearest

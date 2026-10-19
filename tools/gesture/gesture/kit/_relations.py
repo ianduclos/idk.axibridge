@@ -35,6 +35,17 @@ when `p` didn't fire). Other relations name their own outcomes.
 Relations register in files named `relations_<prefix>.py` (discovered with
 the rest of the kit). Ids are global; `relation_list()` shows them.
 
+Wildcards, budgets, several sources (S0′, 2026-10-19): a relation's "*" side can
+be narrowed with `except` (layer ids) and `roles` / `not_roles`; `budget` caps its
+firings (non-neutral outcomes) across all pairs, read with `rctx.remaining()`; a
+grow relation may hear a list of earlier layers (`"src": ["L1", "L2"]`, marks
+merged in that order, each tagged `score_layer` so the relation can split them).
+Every mark the executor grows carries a stable `mid` and `mid_s0`, and `pen_mm`
+(its renderer's pen width). A relation may add marks with their own pen:
+`meta["own_pen"] = {"colour": "red", "renderer": {"id": "wire", "pen": 0.3}}`.
+Events that name a `mark` / `mark_src` gain `mid` / `mid_src` and the stretch on
+the uncut line (`s_uncut` / `s_src_uncut`), written by the executor.
+
 Determinism: draw only from `rctx.rng(*tags)` — seeded from (sheet seed,
 relation instance id, src id, dst id, tags) — and order crossings by arc
 length (`crossings` does), never by set or hash order. Editing one relation
@@ -95,6 +106,14 @@ class RCtx:
     step: int
     run: Any = field(repr=False, compare=False)
     ground: Mapping[str, list] = field(repr=False, compare=False, default_factory=dict)
+    left: int | None = None             # firings this relation may still make (its `budget`); None = no budget
+
+    def remaining(self) -> int | None:
+        """How many more changes this relation may make across the whole sheet (the score's `budget`
+        key, counted over every pair by the executor), or None when it has no budget. A relation
+        that honours it stops changing lines once this reaches 0 in one application; the executor
+        skips further applications by itself."""
+        return self.left
 
     def rng(self, *tags) -> np.random.Generator:
         return np.random.default_rng([tag(self.sheet_seed), tag("relation"), tag(self.rid), tag(self.src),
@@ -230,7 +249,9 @@ def cut(mark: Mark, intervals, *, min_piece: float = 1.0) -> list[Mark]:
             continue
         inner = s[(s > a) & (s < b)]
         sn = np.concatenate([[a], inner, [b]])
-        out.append(mark.remap(sn))
+        # a stable mark id (`mid`, from the executor) survives the cut; `mid_s0` moves to where this piece starts
+        meta = {"mid_s0": float(mark.meta.get("mid_s0", 0.0)) + float(a)} if "mid" in mark.meta else None
+        out.append(mark.remap(sn, meta=meta))
     return out
 
 

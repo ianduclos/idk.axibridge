@@ -322,15 +322,30 @@ def _interp_vec(s_q, s, v):
       min=0.0, max=40.0),
     P("tangle", "float", 4.0, "crossings of the same two marks closer than this along the dst are one tangle: "
       "one outcome, at its first crossing (the rest run through), mm", min=0.0, max=30.0),
+    P("weights", "weights", None, "all five outcome weights as one dict (overrides the w_ floats when given)",
+      choices=OUTCOMES, min=0.0, max=1.0, optional=True),
+    P("pen_from", "choice", "param", "the over line's width for gaps: `pen` (param) or each mark's own pen "
+      "width (marks: `pen_mm`, tagged by the executor from its layer's renderer)", choices=("param", "marks")),
 ], doc="every crossing gets its own outcome (under, over, through, stop, sympathy), drawn from weights; "
        "a streak lets an outcome repeat so it reads as behaviour")
 def crossing(rctx, src, dst, *, w_gap_under, w_gap_over, w_cross, w_stop, w_sympathy, streak, gap, pen,
-             jitter, stop_max, min_left, reach, lean, min_sep, min_piece, min_dash, tangle):
+             jitter, stop_max, min_left, reach, lean, min_sep, min_piece, min_dash, tangle, weights=None,
+             pen_from="param"):
     xs = crossings(src, dst, min_sep=min_sep)
     if not xs:
         return RelOut()
-    weights = {"gap_under": w_gap_under, "gap_over": w_gap_over, "cross": w_cross, "stop": w_stop,
-               "sympathy": w_sympathy}
+    if weights is None:
+        weights = {"gap_under": w_gap_under, "gap_over": w_gap_over, "cross": w_cross, "stop": w_stop,
+                   "sympathy": w_sympathy}
+    left = rctx.remaining() if hasattr(rctx, "remaining") else None
+
+    def over_pen(c, who):
+        """The width of the line that stays whole at a gap (the src for gap_under, the dst for gap_over)."""
+        if pen_from != "marks":
+            return pen
+        m = src[c.i_src] if who == "gap_under" else dst[c.i_dst]
+        v = m.meta.get("pen_mm")
+        return float(v) if isinstance(v, (int, float)) and v > 0 else pen
     on_dst: dict[int, list[float]] = {}
     on_src: dict[int, list[float]] = {}
     for c in xs:
@@ -373,21 +388,31 @@ def crossing(rctx, src, dst, *, w_gap_under, w_gap_over, w_cross, w_stop, w_symp
         opts = stop_options(c)
         if not opts:
             elig["stop"] = 0.0
-        h = pen * (0.5 + gap) * (1.0 + jitter * (2.0 * u_size - 1.0))
-        if not _room(cuts_d.get(c.i_dst, ()), keep_d[c.i_dst], c.s_dst, h, min_dash):
+        h = pen * (0.5 + gap) * (1.0 + jitter * (2.0 * u_size - 1.0))       # this exact float order (golden)
+        h_u, h_o = h, h
+        if pen_from == "marks":
+            h_u = over_pen(c, "gap_under") * (0.5 + gap) * (1.0 + jitter * (2.0 * u_size - 1.0))
+            h_o = over_pen(c, "gap_over") * (0.5 + gap) * (1.0 + jitter * (2.0 * u_size - 1.0))
+        if not _room(cuts_d.get(c.i_dst, ()), keep_d[c.i_dst], c.s_dst, h_u, min_dash):
             elig["gap_under"] = 0.0
-        if not _room(cuts_s.get(c.i_src, ()), keep_s[c.i_src], c.s_src, h, min_dash):
+        if not _room(cuts_s.get(c.i_src, ()), keep_s[c.i_src], c.s_src, h_o, min_dash):
             elig["gap_over"] = 0.0
+        if left is not None and left <= 0:              # the sheet-wide budget is spent: lines just cross
+            elig = {"cross": 1.0}
         near = [s for s in on_dst[c.i_dst] if s != c.s_dst and abs(s - c.s_dst) < reach]
         if near or c.s_dst < reach * 0.5 or Ld[c.i_dst] - c.s_dst < reach * 0.5:
             elig["sympathy"] = 0.0                 # a bend must not move a neighbouring crossing's gap
         repeat = prev is not None and u_streak < streak and elig.get(prev, 0.0) > 0
         out = prev if repeat else _draw(elig, u_pick)
         ev = {"outcome": out, "at": list(c.at), "mark": c.i_dst, "mark_src": c.i_src, "streak": bool(repeat)}
+        if left is not None and out != "cross":
+            left -= 1
         if out == "gap_under":
+            h = h_u
             cuts_d.setdefault(c.i_dst, []).append((c.s_dst - h, c.s_dst + h))
             ev.update({"s": [c.s_dst - h, c.s_dst + h], "s_src": [c.s_src, c.s_src], "gap_mm": round(2 * h, 3)})
         elif out == "gap_over":
+            h = h_o
             cuts_s.setdefault(c.i_src, []).append((c.s_src - h, c.s_src + h))
             ev.update({"s": [c.s_dst, c.s_dst], "s_src": [c.s_src - h, c.s_src + h], "gap_mm": round(2 * h, 3)})
         elif out == "stop":

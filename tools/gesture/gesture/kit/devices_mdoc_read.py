@@ -52,20 +52,11 @@ def written(sheet) -> dict | None:
 
 
 def replay(sheet, *, drop: set[str] | frozenset = frozenset(), keep_only_kinds=None):
-    """The sheet's score played again through the public executor with the
-    relations in `drop` (relation ids) taken out — or, with
-    `keep_only_kinds`, only relations of those kinds kept. No devices.
-    None when the sheet has no written v2 score."""
+    """The sheet's score played again with the relations in `drop` (relation ids) taken out — or,
+    with `keep_only_kinds`, only relations of those kinds kept. No devices. None when the sheet has
+    no written v2 score. (Now `_synth.replay`, S0′.)"""
     from . import _synth  # noqa: PLC0415
-    w = written(sheet)
-    if w is None:
-        return None
-    rels = [r for r in w.get("relations", []) if r["id"] not in drop]
-    if keep_only_kinds is not None:
-        rels = [r for r in rels if r["kind"] in keep_only_kinds]
-    w["relations"] = rels
-    w["devices"] = []
-    return _synth.run(w)
+    return _synth.replay(sheet, drop=drop, keep_only_kinds=keep_only_kinds)
 
 
 # ---------------------------------------------------------------------------

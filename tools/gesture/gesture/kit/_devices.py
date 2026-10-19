@@ -27,7 +27,10 @@ Placement (`place`), decided by `apply_devices`, never by the device:
 - "under":  same region; device inks come first, so pens draw them first.
 - "margin": a strip along one side inside the frame (`side` top|bottom|left|right, `size` mm).
 - "beside": the frame grows by a panel (`side` right|bottom, `size` mm); the
-            region is that panel. This is the round-10 pairing.
+            region is that panel. This is the round-10 pairing. With
+            `"stack": true`, every stacked beside device on the same side
+            shares ONE panel (the largest `size` among them), split evenly
+            along it in list order (S0′: two documents, one compact panel).
 Every device ink carries meta {"layer": "device", "device": id}.
 
 Devices register in files named `devices_<prefix>_*.py` that import this
@@ -121,6 +124,11 @@ def apply_devices(sheet: Sheet, specs: list[dict]) -> Sheet:
     inks_over: list[Ink] = []
     applied = []
     seed = int(sheet.meta["recipe"]["seed"])
+    stacks: dict[str, list[int]] = {}
+    for i, spec in enumerate(specs):
+        if spec.get("place", "over") == "beside" and spec.get("stack"):
+            stacks.setdefault(spec.get("side", "right"), []).append(i)
+    panels: dict[str, tuple] = {}
     for i, spec in enumerate(specs):
         if spec["id"] not in _DEVICES:
             raise KitError(f"unknown device {spec['id']!r}; known: {sorted(_DEVICES)}")
@@ -134,6 +142,18 @@ def apply_devices(sheet: Sheet, specs: list[dict]) -> Sheet:
         elif place == "margin":
             region = {"top": (0.0, 0.0, W, size), "bottom": (0.0, H - size, W, size),
                       "left": (0.0, 0.0, size, H), "right": (W - size, 0.0, size, H)}[side]
+        elif place == "beside" and spec.get("stack"):
+            group = stacks[side]
+            if side not in panels:
+                size = max(float(specs[j].get("size", 60.0)) for j in group)
+                panels[side] = (W, 0.0, size, H) if side == "right" else (0.0, H, W, size)
+                if side == "right":
+                    W = W + size
+                else:
+                    H = H + size
+            px, py, pw, ph = panels[side]
+            n, at = len(group), group.index(i)
+            region = (px, py + ph * at / n, pw, ph / n) if side == "right" else (px + pw * at / n, py, pw / n, ph)
         elif place == "beside":
             if side == "right":
                 region = (W, 0.0, size, H)

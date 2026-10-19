@@ -309,15 +309,17 @@ def _jsonable(o):
 # params
 # ---------------------------------------------------------------------------
 
-PARAM_TYPES = ("int", "float", "bool", "str", "choice", "ref", "refs", "floats")
+PARAM_TYPES = ("int", "float", "bool", "str", "choice", "ref", "refs", "floats", "weights")
 
 
 @dataclass(frozen=True)
 class Param:
     """One module parameter. type: int | float | bool | str | choice
     (one of `choices`) | ref (a library id of `kind`) | refs (a list of
-    them, min_len..max_len) | floats (a list of floats). min/max bound
-    numbers (and list items for floats). optional=True allows None."""
+    them, min_len..max_len) | floats (a list of floats) | weights (a dict
+    from names in `choices` to floats; keys left out are 0). min/max bound
+    numbers (and list items for floats, values for weights). optional=True
+    allows None."""
 
     name: str
     type: str
@@ -336,8 +338,10 @@ class Param:
             raise RegistrationError(f"param {self.name!r}: unknown type {self.type!r} ({PARAM_TYPES})")
         if self.type in ("ref", "refs") and not self.kind:
             raise RegistrationError(f"param {self.name!r}: ref params need kind=")
-        if self.type == "choice" and not self.choices:
-            raise RegistrationError(f"param {self.name!r}: choice params need choices=")
+        if self.type in ("choice", "weights") and not self.choices:
+            raise RegistrationError(f"param {self.name!r}: {self.type} params need choices=")
+        if self.type == "weights" and (self.min is None or self.max is None):
+            raise RegistrationError(f"param {self.name!r}: weights must be bounded (min=, max=)")
         if self.type in ("int", "float") and (self.min is None or self.max is None):
             raise RegistrationError(f"param {self.name!r}: numeric params must be bounded (min=, max=)")
         if self.default is not None or not self.optional:
@@ -376,6 +380,21 @@ class Param:
             if v not in self.choices:
                 raise RecipeError(f"{where}: {self.name}={v!r} not one of {list(self.choices)}")
             return v
+        if t == "weights":
+            if not isinstance(v, Mapping):
+                raise RecipeError(f"{where}: {self.name} must be a dict of name → weight, got {v!r}")
+            bad = sorted(str(k) for k in v if k not in self.choices)
+            if bad:
+                raise RecipeError(f"{where}: {self.name} has unknown key(s) {bad}; known: {list(self.choices)}")
+            out = {}
+            for k in self.choices:
+                x = v.get(k, 0.0)
+                if isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(float(x)):
+                    raise RecipeError(f"{where}: {self.name}[{k}] must be a finite number")
+                if x < self.min or x > self.max:
+                    raise RecipeError(f"{where}: {self.name}[{k}]={x} outside [{self.min}, {self.max}]")
+                out[k] = float(x)
+            return out
         if t in ("refs", "floats"):
             if isinstance(v, (str, bytes)) or not isinstance(v, (list, tuple)):
                 raise RecipeError(f"{where}: {self.name} must be a list, got {v!r}")

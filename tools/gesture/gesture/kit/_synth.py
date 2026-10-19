@@ -46,6 +46,22 @@ Every mark of layer k carries meta {"layer", "score_layer": id, "part": k,
 "of_role": role, "colour": pen}; every ink the same, so `devices_meas_read`
 maps layers to marks without help.
 
+S0′ (2026-10-19), all opt-in — a score that uses none of it plays exactly as before:
+- a layer with none of part / lines / composer starts empty and is drawn by
+  its grow relations (it may give a layer-level `renderer`);
+- relation keys `except` [ids], `roles` / `not_roles` [role names] narrow a
+  "*" side; `budget` (int) caps the relation's non-neutral firings across all
+  its pairs (`rctx.remaining()`; once spent, applications log "spent");
+- a grow relation's `src` may be a list of earlier layer ids (marks merged in
+  that order; events log `src` = the first, `srcs` = all);
+- marks also carry `pen_mm` (their renderer's pen width) and a stable `mid`
+  with `mid_s0`; events naming a mark gain `mid` / `s_uncut` (and
+  `mid_src` / `s_src_uncut`);
+- a mark with meta `own_pen` {"colour", "renderer"} is inked with that pen,
+  after its layer's own marks;
+- `replay(score_or_sheet, drop=…, keep_only=…, drop_kinds=…, keep_only_kinds=…)`
+  plays counterfactuals.
+
 Cache: the executor's state after each layer is cached by a hash of
 everything that led to it, so editing a late layer or a relation that acts
 late re-runs only from there (the bench's live preview). `run(..., cache=False)`
@@ -71,7 +87,8 @@ SCORE_VERSION = 2
 _TOP = ("version", "label", "notes", "frame", "seed", "margin", "base", "layers", "relations", "devices",
         "decisions", "renderer", "parts")      # "parts" is derived on output, ignored on input
 _LAYER = ("id", "role", "pen", "label", "region", "part", "lines", "composer", "lock", "renderer")
-_REL = ("id", "kind", "src", "dst", "p", "params", "note")
+_REL = ("id", "kind", "src", "dst", "p", "params", "note", "except", "roles", "not_roles", "budget")
+NEUTRAL = ("silent", "spent", "cross")      # outcomes that change nothing: not counted against a budget
 UNSEEN = "unseen"
 DEFAULT_MARGIN = 5.0
 DEFAULT_RENDERER = {"id": "wire"}
@@ -135,8 +152,9 @@ def validate(score: Mapping, *, library=None) -> dict:
             raise RecipeError(f"{where}: duplicate id {lid!r}")
         ids.append(lid)
         kinds = [x for x in ("part", "lines", "composer") if L.get(x) is not None]
-        if len(kinds) != 1:
-            raise RecipeError(f"{where} ({lid}): give exactly one of part / lines / composer")
+        if len(kinds) > 1:
+            raise RecipeError(f"{where} ({lid}): give at most one of part / lines / composer")
+        kinds = kinds or ["relations"]          # none: the layer starts empty, grown only by its relations
         out = {"id": lid, "role": str(L.get("role") or "line"), "pen": str(L.get("pen") or "black"),
                "label": str(L.get("label") or "")}
         reg = L.get("region")
@@ -149,8 +167,11 @@ def validate(score: Mapping, *, library=None) -> dict:
             out["region"] = [float(v) for v in reg]
         if L.get("lock"):
             out["lock"] = True
-        if L.get("renderer") is not None and kinds[0] != "lines":
-            raise RecipeError(f"{where} ({lid}): a layer-level renderer is for lines layers (a part has its own)")
+        if L.get("renderer") is not None and kinds[0] not in ("lines", "relations"):
+            raise RecipeError(f"{where} ({lid}): a layer-level renderer is for lines layers and relation-grown ones "
+                              "(a part has its own)")
+        if kinds[0] == "relations" and L.get("renderer") is not None:
+            out["renderer"] = core._module_spec("renderer", L["renderer"], where, library)
         if kinds[0] == "part":
             p = L["part"]
             if not isinstance(p, Mapping) or "voice" not in p:
@@ -171,7 +192,7 @@ def validate(score: Mapping, *, library=None) -> dict:
             out["lines"] = lines
             if L.get("renderer") is not None:
                 out["renderer"] = core._module_spec("renderer", L["renderer"], where, library)
-        else:
+        elif kinds[0] == "composer":
             c = dict(L["composer"])
             for k2 in ("frame", "seed"):
                 if k2 in c:
@@ -196,23 +217,56 @@ def validate(score: Mapping, *, library=None) -> dict:
             raise RecipeError(f"{where}: duplicate id {rid!r}")
         rids.append(rid)
         rel = get_relation(str(R.get("kind", "")))
-        src, dst = str(R.get("src", "*")), str(R.get("dst", "*"))
-        for side, v in (("src", src), ("dst", dst)):
+        raw_src = R.get("src", "*")
+        srcs = None
+        if isinstance(raw_src, (list, tuple)):                       # a grow relation hearing several layers
+            if rel.phase != "grow" or not 2 <= len(raw_src) <= 8:
+                raise RecipeError(f"{where} ({rid}): a list src (2–8 layers) is for grow relations")
+            srcs = [str(v) for v in raw_src]
+            if len(set(srcs)) != len(srcs):
+                raise RecipeError(f"{where} ({rid}): src lists a layer twice")
+        src, dst = ("+".join(srcs) if srcs else str(raw_src)), str(R.get("dst", "*"))
+        for side, v in [*(("src", s) for s in (srcs or [src])), ("dst", dst)]:
             if v != "*" and v not in pos:
                 raise RecipeError(f"{where} ({rid}): {side} {v!r} is not a layer; have {ids}")
-        if src != "*" and src == dst:
+        if any(s != "*" and s == dst for s in (srcs or [src])):
             raise RecipeError(f"{where} ({rid}): src and dst are the same layer")
         if rel.phase == "grow":
             if dst == "*":
                 raise RecipeError(f"{where} ({rid}): a grow relation needs one dst layer")
-            if src != "*" and pos[src] >= pos[dst]:
-                raise RecipeError(f"{where} ({rid}): a grow relation hears an EARLIER layer ({src} is not before {dst})")
+            for s in (srcs or [src]):
+                if s != "*" and pos[s] >= pos[dst]:
+                    raise RecipeError(f"{where} ({rid}): a grow relation hears an EARLIER layer ({s} is not before {dst})")
         p = R.get("p", 1.0)
         if isinstance(p, bool) or not isinstance(p, (int, float)) or not 0 <= p <= 1:
             raise RecipeError(f"{where} ({rid}): p must be in [0, 1]")
-        relations.append({"id": rid, "kind": rel.id, "src": src, "dst": dst, "p": float(p),
-                          "params": rel.validate(R.get("params"), where=f"{where} ({rid})"),
-                          "note": str(R.get("note") or "")})
+        rout = {"id": rid, "kind": rel.id, "src": srcs or src, "dst": dst, "p": float(p),
+                "params": rel.validate(R.get("params"), where=f"{where} ({rid})"),
+                "note": str(R.get("note") or "")}
+        # wildcard filters: which layers a "*" side may stand for (opt-in; absent = every visible layer)
+        if any(R.get(k) is not None for k in ("except", "roles", "not_roles")) and "*" not in (src, dst):
+            raise RecipeError(f"{where} ({rid}): except / roles / not_roles filter a \"*\" side; this relation has none")
+        if R.get("except") is not None:
+            ex = R["except"]
+            if isinstance(ex, str) or not isinstance(ex, (list, tuple)) or not all(v in pos for v in ex):
+                raise RecipeError(f"{where} ({rid}): except is a list of layer ids; have {ids}")
+            rout["except"] = [str(v) for v in ex]
+        for k2 in ("roles", "not_roles"):
+            if R.get(k2) is not None:
+                v = R[k2]
+                if isinstance(v, str) or not isinstance(v, (list, tuple)) or not all(isinstance(x, str) for x in v):
+                    raise RecipeError(f"{where} ({rid}): {k2} is a list of role names")
+                rout[k2] = [str(x) for x in v]
+        if R.get("budget") is not None:
+            b = R["budget"]
+            if isinstance(b, bool) or not isinstance(b, int) or not 0 <= b <= 100_000:
+                raise RecipeError(f"{where} ({rid}): budget is an int in [0, 100000] (firings across all pairs)")
+            rout["budget"] = int(b)
+        relations.append(rout)
+    for L in layers:
+        if not any(k in L for k in ("part", "lines", "composer")) and not any(
+                R["dst"] == L["id"] and get_relation(R["kind"]).phase == "grow" for R in relations):
+            raise RecipeError(f"layer {L['id']!r}: has no part / lines / composer, so a grow relation must draw it")
 
     devices = list(score.get("devices") or [])
     out = {"version": SCORE_VERSION, "frame": [W, H], "seed": int(seed), "margin": margin,
@@ -240,8 +294,14 @@ def _h(*objs) -> str:
     return hashlib.sha1(json.dumps(objs, sort_keys=True, default=str).encode()).hexdigest()
 
 
-def _visible(layers, k) -> list[str]:
-    return [L["id"] for L in layers[:k] if L["role"] != UNSEEN]
+def _wild_ok(R, L) -> bool:
+    """May a "*" side of R stand for layer L (the opt-in except / roles / not_roles filters)?"""
+    return (L["id"] not in R.get("except", ()) and ("roles" not in R or L["role"] in R["roles"])
+            and L["role"] not in R.get("not_roles", ()))
+
+
+def _visible(layers, k, R=None) -> list[str]:
+    return [L["id"] for L in layers[:k] if L["role"] != UNSEEN and (R is None or _wild_ok(R, L))]
 
 
 def _pairs(R, k, layers, pos) -> list[tuple[str, str]]:
@@ -250,21 +310,57 @@ def _pairs(R, k, layers, pos) -> list[tuple[str, str]]:
     vis_cur = layers[k]["role"] != UNSEEN
     S, D = R["src"], R["dst"]
     if S == "*" and D == "*":
-        return [(i, cur) for i in _visible(layers, k)] if vis_cur else []
+        return [(i, cur) for i in _visible(layers, k, R)] if vis_cur and _wild_ok(R, layers[k]) else []
     if S == "*":
         if D == cur:
-            return [(i, D) for i in _visible(layers, k)]
-        return [(cur, D)] if vis_cur and pos[D] < k else []
+            return [(i, D) for i in _visible(layers, k, R)]
+        return [(cur, D)] if vis_cur and pos[D] < k and _wild_ok(R, layers[k]) else []
     if D == "*":
         if S == cur:
-            return [(S, j) for j in _visible(layers, k)]
-        return [(S, cur)] if vis_cur and pos[S] < k else []
+            return [(S, j) for j in _visible(layers, k, R)]
+        return [(S, cur)] if vis_cur and pos[S] < k and _wild_ok(R, layers[k]) else []
     return [(S, D)] if max(pos[S], pos[D]) == k else []
 
 
-def _tag(marks, L, k) -> list[Mark]:
-    return [m.evolve(meta={"layer": L["id"], "score_layer": L["id"], "part": k, "of_role": L["role"],
-                           "colour": L["pen"]}) for m in marks]
+def _renderer_of(rec, L) -> dict:
+    if "part" in L:
+        return L["part"].get("renderer", rec["renderer"])
+    return L.get("renderer", rec["renderer"])
+
+
+def _pen_mm(spec) -> float | None:
+    v = (spec or {}).get("pen")
+    return round(float(v), 4) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+
+
+def _layer_tags(rec, L, k) -> dict:
+    """The tags every mark of layer k carries (`pen_mm`: its renderer's pen width, for relations that
+    size gaps or bends by the line's real weight)."""
+    t = {"layer": L["id"], "score_layer": L["id"], "part": k, "of_role": L["role"], "colour": L["pen"]}
+    if "composer" not in L:
+        pm = _pen_mm(_renderer_of(rec, L))
+        if pm is not None:
+            t["pen_mm"] = pm
+    return t
+
+
+def _tag(marks, L, k, rec=None, sealed=None) -> list[Mark]:
+    """Layer tags, plus a stable mark id (`mid`, with `mid_s0` = where the mark starts on the line it
+    was grown as; `_relations.cut` keeps both, so an event can name a stretch whatever cuts came later)."""
+    t = _layer_tags(rec, L, k) if rec is not None else {"layer": L["id"], "score_layer": L["id"], "part": k,
+                                                         "of_role": L["role"], "colour": L["pen"]}
+    sub = (sealed or {}).get(L["id"], {}).get("recipe")
+    out = []
+    for i, m in enumerate(marks):
+        meta = {**t, "mid": f"{L['id']}:{i}", "mid_s0": 0.0}
+        if sub is not None:
+            j = int(m.meta.get("inner_part", 0) or 0)
+            parts = sub.get("parts") or []
+            pm = _pen_mm(parts[j].get("renderer", sub.get("renderer")) if j < len(parts) else sub.get("renderer"))
+            if pm is not None:
+                meta["pen_mm"] = pm
+        out.append(m.evolve(meta=meta))
+    return out
 
 
 def _region(rec, L) -> tuple:
@@ -283,6 +379,8 @@ def _grow_layer(rec, L, k, state, lib, sealed) -> list[Mark]:
         return p.run(box)
     if "lines" in L:
         return [Mark(np.asarray(line, float), {}, {"lines": True}) for line in L["lines"]]
+    if "composer" not in L:
+        return []                       # grown only by its relations
     x0, y0, w, h = box
     sub = {**copy.deepcopy(L["composer"]), "frame": [w, h], "seed": core.part_seed(rec["seed"], k)}
     sh = core.run(sub, library=lib)
@@ -320,16 +418,40 @@ def _r(v):
     return [round(float(x), 2) for x in v]
 
 
-def _apply(rec, R, src_id, dst_id, k, ground, state, log, unseen):
+def _mark_ref(marks, i, s, s0_key="mid_s0"):
+    """(mid, s on the uncut line) for index i into `marks` (as the relation saw them), or Nones."""
+    if not isinstance(i, int) or isinstance(i, bool) or not 0 <= i < len(marks):
+        return None, None
+    md = marks[i].meta
+    if "mid" not in md:
+        return None, None
+    s_u = None if s is None else [round(float(v) + float(md.get(s0_key, 0.0)), 2) for v in s]
+    return md["mid"], s_u
+
+
+def _apply(rec, R, src_id, dst_id, k, ground, state, log, unseen, ltags, spent):
+    """One application of relation R to (src, dst). `ltags`: layer id → its mark tags; `spent`:
+    relation id → firings so far (for `budget`)."""
     rel = get_relation(R["kind"])
-    rctx = RCtx(tuple(rec["frame"]), rec["seed"], R["id"], R["kind"], src_id, dst_id, k, state, ground)
+    budget = R.get("budget")
+    left = None if budget is None else max(int(budget) - spent.get(R["id"], 0), 0)
+    rctx = RCtx(tuple(rec["frame"]), rec["seed"], R["id"], R["kind"], src_id, dst_id, k, state, ground, left)
+    srcs = src_id.split("+") if isinstance(R["src"], list) else None
+    base = {"relation": R["id"], "kind": R["kind"], "src": srcs[0] if srcs else src_id, "dst": dst_id, "step": k}
+    if srcs:
+        base["srcs"] = list(srcs)
     if R["p"] < 1.0 and rctx.rng("p").random() >= R["p"]:
-        log.append({"relation": R["id"], "kind": R["kind"], "src": src_id, "dst": dst_id, "step": k,
-                    "outcome": "silent"})
+        log.append({**base, "outcome": "silent"})
         return
-    if src_id == "*":
+    if left == 0:
+        log.append({**base, "outcome": "spent"})
+        return
+    if srcs:
+        src = [m for lid in srcs for m in ground[lid]]
+    elif src_id == "*":
         order = list(ground)
-        src = [m for lid in order[:order.index(dst_id)] if lid not in unseen for m in ground[lid]]
+        src = [m for lid in order[:order.index(dst_id)] if lid not in unseen and _wild_ok(R, ltags[lid]["_L"])
+               for m in ground[lid]]
     else:
         src = list(ground[src_id])
     dst = list(ground[dst_id])
@@ -338,28 +460,42 @@ def _apply(rec, R, src_id, dst_id, k, ground, state, log, unseen):
     out = rel.fn(rctx, src, dst, **copy.deepcopy(R["params"]))
     out = _check_out(out, f"relation {R['id']!r} ({R['kind']})", rel.phase, need)
     if out.dst is not None:
-        ground[dst_id] = _keep_meta(out.dst, ground[dst_id])
-    if out.src is not None and src_id != "*":
-        ground[src_id] = _keep_meta(out.src, ground[src_id])
+        ground[dst_id] = _keep_meta(out.dst, ltags[dst_id])
+    if out.src is not None and src_id != "*" and not srcs:
+        ground[src_id] = _keep_meta(out.src, ltags[src_id])
     for e in out.events or ():
         e = dict(e)
-        ev = {"relation": R["id"], "kind": R["kind"], "src": src_id, "dst": dst_id, "step": k,
-              "outcome": str(e.pop("outcome", "fired"))}
+        ev = {**base, "outcome": str(e.pop("outcome", "fired"))}
         for key in ("at", "s", "s_src"):
             if key in e:
                 ev[key] = _r(e.pop(key))
         ev.update(json.loads(json.dumps(e, default=float)))
+        # stable refs (S0′): the mark ids and the stretches on the uncut lines, beside the old fields
+        mid, s_u = _mark_ref(dst, ev.get("mark"), ev.get("s"))
+        if mid is not None:
+            ev["mid"] = mid
+            if s_u is not None:
+                ev["s_uncut"] = s_u
+        mid, s_u = _mark_ref(src, ev.get("mark_src", ev.get("src_mark")), ev.get("s_src"))
+        if mid is not None:
+            ev["mid_src"] = mid
+            if s_u is not None:
+                ev["s_src_uncut"] = s_u
         log.append(ev)
+        if ev["outcome"] not in NEUTRAL:
+            spent[R["id"]] = spent.get(R["id"], 0) + 1
 
 
-def _keep_meta(new, old) -> list[Mark]:
-    """Marks a relation returned keep their layer's tags (a relation may build
-    fresh Marks)."""
-    if not old:
-        return list(new)
-    keys = ("layer", "score_layer", "part", "of_role", "colour")
-    tags = {k: old[0].meta.get(k) for k in keys}
-    return [m if all(m.meta.get(k) == v for k, v in tags.items()) else m.evolve(meta=tags) for m in new]
+def _keep_meta(new, tags) -> list[Mark]:
+    """Marks a relation returned keep their layer's tags (a relation may build fresh Marks). A mark
+    with `own_pen` keeps its own colour; a mark that already has a `pen_mm` keeps it."""
+    t = {a: b for a, b in tags.items() if a != "_L"}
+    out = []
+    for m in new:
+        want = {a: b for a, b in t.items()
+                if not (a == "colour" and m.meta.get("own_pen")) and not (a == "pen_mm" and "pen_mm" in m.meta)}
+        out.append(m if all(m.meta.get(a) == b for a, b in want.items()) else m.evolve(meta=want))
+    return out
 
 
 def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
@@ -376,6 +512,8 @@ def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
     ground: dict[str, list[Mark]] = {}
     log: list[dict] = []
     sealed: dict[str, dict] = {}
+    spent: dict[str, int] = {}
+    ltags = {L["id"]: {**_layer_tags(rec, L, k), "_L": L} for k, L in enumerate(layers)}
     key = _h("synth", core.KIT_VERSION, rec["frame"], rec["seed"], rec["margin"], rec["renderer"])
     hits = 0
     for k, L in enumerate(layers):
@@ -384,24 +522,25 @@ def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
                   or (get_relation(R["kind"]).phase == "contact" and _pairs(R, k, layers, pos))]
         key = _h(key, L, acting)
         if cache and key in _CACHE:
-            g, lg, used, sl = _CACHE[key]
+            g, lg, used, sl, sp = _CACHE[key]
             _CACHE.move_to_end(key)
-            ground, log, sealed = dict(g), list(lg), dict(sl)
+            ground, log, sealed, spent = dict(g), list(lg), dict(sl), dict(sp)
             state.used = dict(used)
             hits += 1
             continue
-        ground[L["id"]] = _tag(_grow_layer(rec, L, k, state, lib, sealed), L, k)
+        ground[L["id"]] = _tag(_grow_layer(rec, L, k, state, lib, sealed), L, k, rec, sealed)
         if L["id"] in sealed:
             sealed[L["id"]]["marks0"] = tuple(ground[L["id"]])
         for R in acting:
             if get_relation(R["kind"]).phase == "grow":
-                _apply(rec, R, R["src"], L["id"], k, ground, state, log, unseen)
+                s_id = "+".join(R["src"]) if isinstance(R["src"], list) else R["src"]
+                _apply(rec, R, s_id, L["id"], k, ground, state, log, unseen, ltags, spent)
         for R in acting:
             if get_relation(R["kind"]).phase == "contact":
                 for s_id, d_id in _pairs(R, k, layers, pos):
-                    _apply(rec, R, s_id, d_id, k, ground, state, log, unseen)
+                    _apply(rec, R, s_id, d_id, k, ground, state, log, unseen, ltags, spent)
         if cache:
-            _CACHE[key] = (dict(ground), list(log), dict(state.used), dict(sealed))
+            _CACHE[key] = (dict(ground), list(log), dict(state.used), dict(sealed), dict(spent))
             while len(_CACHE) > _CACHE_MAX:
                 _CACHE.popitem(last=False)
     t1 = time.perf_counter()
@@ -427,7 +566,10 @@ def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
             jobs = [(sub["parts"][i].get("renderer", sub["renderer"]), ms) for i, ms in sorted(groups.items())]
         else:
             jobs = [(L["part"].get("renderer", rec["renderer"]) if "part" in L else L.get("renderer", rec["renderer"]), mine)]
-        for spec, ms in jobs:
+        jobs = [(spec, ms, None) for spec, ms in jobs]
+        if any(m.meta.get("own_pen") for m in mine):
+            jobs = _own_pen_jobs(jobs, lib)
+        for spec, ms, own_colour in jobs:
             rnd = core.get("renderer", spec["id"])
             rctx = core.Ctx((W, H), _region(rec, L), core.part_seed(rec["seed"], k), rec["seed"], k,
                             "renderer", rnd.id, state)
@@ -435,7 +577,8 @@ def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
                 if not isinstance(i, Ink):
                     raise core.ChannelError(f"renderer {rnd.id!r} returned a {type(i).__name__}")
                 inks.append(Ink(i.points, i.closed, i.filled, i.pen,
-                                {**i.meta, **tags, "colour": (i.meta or {}).get("colour") or L["pen"]}))
+                                {**i.meta, **tags,
+                                 "colour": own_colour or (i.meta or {}).get("colour") or L["pen"]}))
     t2 = time.perf_counter()
 
     played = played_score(rec, log, sealed)
@@ -452,11 +595,37 @@ def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
     return sheet
 
 
+def _own_pen_jobs(jobs, lib) -> list[tuple]:
+    """Split render jobs by `own_pen` (S0′): marks a relation added with their own pen
+    ({"colour": Flexoki name, "renderer": spec}) render with that renderer and colour, after the
+    layer's own marks. Groups keep first-appearance order; empty groups are dropped."""
+    out = []
+    for spec, ms, colour in jobs:
+        groups: "OrderedDict[str, tuple]" = OrderedDict()
+        groups[""] = (spec, [], colour)
+        for m in ms:
+            op = m.meta.get("own_pen")
+            if not op:
+                groups[""][1].append(m)
+                continue
+            if not isinstance(op, Mapping):
+                raise RecipeError(f"own_pen must be {{colour, renderer}}, got {op!r}")
+            rs = core._module_spec("renderer", op.get("renderer") or spec, "own_pen", lib)
+            key = _h(op.get("colour"), rs)
+            if key not in groups:
+                groups[key] = (rs, [], op.get("colour") or colour)
+            groups[key][1].append(m)
+        out += [g for g in groups.values() if g[1]]
+    return out
+
+
 def _technique(L) -> str:
     if "part" in L:
         return L["part"]["voice"]["id"]
     if "lines" in L:
         return "lines"
+    if "composer" not in L:
+        return "relations"
     return L["composer"]["arranger"]["id"] if isinstance(L["composer"]["arranger"], Mapping) \
         else str(L["composer"]["arranger"])
 
@@ -481,7 +650,7 @@ def played_score(rec: dict, log: list[dict], sealed: dict | None = None) -> dict
         layers.append(e)
     agg: "OrderedDict[tuple, dict]" = OrderedDict()
     for ev in log:
-        if ev["outcome"] == "silent":
+        if ev["outcome"] in ("silent", "spent"):
             continue
         a = agg.setdefault((ev["relation"], ev["src"], ev["dst"]),
                            {"kind": ev["kind"], "src": ev["src"], "dst": ev["dst"], "relation": ev["relation"],
@@ -503,6 +672,34 @@ def played_score(rec: dict, log: list[dict], sealed: dict | None = None) -> dict
 
 def played(sheet: Sheet) -> dict | None:
     return (sheet.meta.get("notes") or {}).get("score")
+
+
+def written(score_or_sheet) -> dict | None:
+    """The written score: a copy of a score dict, or the one a played sheet carries (None for a v1 sheet)."""
+    if isinstance(score_or_sheet, Sheet):
+        pl = played(score_or_sheet)
+        return copy.deepcopy(pl.get("written")) if pl and pl.get("written") else None
+    return copy.deepcopy(dict(score_or_sheet))
+
+
+def replay(score_or_sheet, *, drop=(), keep_only=None, drop_kinds=(), keep_only_kinds=None,
+           devices: bool = False, library=None, cache: bool = True) -> Sheet | None:
+    """Counterfactuals (S0′): the score played again with some relations taken out — `drop` /
+    `keep_only` by relation id, `drop_kinds` / `keep_only_kinds` by kind. Devices are left off unless
+    `devices`. Takes a score or a played sheet; None when a sheet has no written v2 score."""
+    w = written(score_or_sheet)
+    if w is None:
+        return None
+    rels = [r for r in w.get("relations", []) if r["id"] not in set(drop) and r["kind"] not in set(drop_kinds)]
+    if keep_only is not None:
+        rels = [r for r in rels if r["id"] in set(keep_only)]
+    if keep_only_kinds is not None:
+        rels = [r for r in rels if r["kind"] in set(keep_only_kinds)]
+    w["relations"] = rels
+    if not devices:
+        w["devices"] = []
+    w.pop("parts", None)
+    return run(w, library=library, cache=cache)
 
 
 # ---------------------------------------------------------------------------
