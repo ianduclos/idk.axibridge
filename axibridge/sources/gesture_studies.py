@@ -38,6 +38,10 @@ seed + line.
 from __future__ import annotations
 
 import json
+import threading
+import time
+import weakref
+from collections import OrderedDict
 from functools import lru_cache
 from pathlib import Path as FsPath
 from typing import Any, Literal
@@ -152,6 +156,24 @@ class GestureStudiesSource(SourceModule):
         return out
 
     def generate(self, params: GestureStudiesParams) -> PathDocument:
+        key = params.model_dump_json()
+        hit = _slow_get(key)
+        if hit is not None:
+            return hit
+        t0 = time.perf_counter()
+        doc, styles = self._generate(params)
+        _remember_styles(doc, styles)
+        if time.perf_counter() - t0 >= SLOW_SECONDS:
+            _slow_put(key, doc)
+        return doc
+
+    def preview_styles(self, doc: PathDocument) -> list[dict] | None:
+        """How the bench draws `doc` (one this source generated): runs of
+        consecutive paths, in the document's path order, each with its ink's
+        colour and pen width (bench v3: "each ink in its pen colour at its width")."""
+        return _STYLES.get(id(doc))
+
+    def _generate(self, params: GestureStudiesParams) -> tuple[PathDocument, list[tuple[str, float]]]:
         from ._gesture_studies import engine  # noqa: PLC0415
         lib = params.frozen_library()
         recipe = params.run_recipe
@@ -161,15 +183,79 @@ class GestureStudiesSource(SourceModule):
         tag = f"gesture_studies {st.id} v{st.version} (kit {frozen_from()}, library {lib.snapshot_id})"
         voices = ST.voices_of(st, recipe)
         if not voices:
-            paths = engine.render(eng, recipe, lib)
-            return PathDocument(layers=[Layer(id=1, name=st.label, color=_INK, paths=paths)] if paths else [],
-                                width=W, height=H, source=tag)
-        by_voice = engine.render_voices(recipe, lib, st.inks)
+            paths, styles = engine.render_styled(eng, recipe, lib)
+            return (PathDocument(layers=[Layer(id=1, name=st.label, color=_INK, paths=paths)] if paths else [],
+                                 width=W, height=H, source=tag), styles)
+        by_voice = engine.render_voices_styled(recipe, lib, st.inks)
         want = [v for v in voices if params.voice is None or v["index"] == params.voice]
         layers = [Layer(id=v["index"] + 1, name=f"{st.label} · {v['ink']}", color=v["color"],
-                        paths=by_voice.get(v["index"], [])) for v in want]
-        return PathDocument(layers=[x for x in layers if x.paths], width=W, height=H,
-                            source=tag + ("" if params.voice is None else f" voice {params.voice}"))
+                        paths=[p for p, _ in by_voice.get(v["index"], [])]) for v in want]
+        # a voice is drawn in its voice's ink (its pen), at each ink's own width
+        styles = [(v["color"], w) for v in want for _, (_, w) in by_voice.get(v["index"], [])]
+        return (PathDocument(layers=[x for x in layers if x.paths], width=W, height=H,
+                             source=tag + ("" if params.voice is None else f" voice {params.voice}")), styles)
+
+
+# ---------------------------------------------------------------------------
+# bench v3: preview styles beside each generated document, and a small memo of
+# slow results (gencache's random eviction may drop a 76 s Shape atlas for a
+# run of 0.3 s previews; this keeps the last few slow ones)
+# ---------------------------------------------------------------------------
+
+SLOW_SECONDS = 2.0
+_STYLES: dict[int, list[dict]] = {}
+_SLOW: "OrderedDict[str, PathDocument]" = OrderedDict()
+_SLOW_LOCK = threading.Lock()
+
+
+def _runs(styles: list[tuple[str, float]]) -> list[dict]:
+    out: list[dict] = []
+    for colour, width in styles:
+        w = round(float(width), 3)
+        if out and out[-1]["color"] == colour and out[-1]["width"] == w:
+            out[-1]["paths"] += 1
+        else:
+            out.append({"color": colour, "width": w, "paths": 1})
+    return out
+
+
+def _remember_styles(doc: PathDocument, styles: list[tuple[str, float]]) -> None:
+    # keyed by the document object (gencache hands the same object back), and
+    # forgotten with it, so the table never outgrows the caches holding documents
+    _STYLES[id(doc)] = _runs(styles)
+    weakref.finalize(doc, _STYLES.pop, id(doc), None)
+
+
+def _slow_limits() -> tuple[int, int]:
+    from ..gencache import cache_budget_multiplier  # noqa: PLC0415
+    k = cache_budget_multiplier()
+    return max(1, int(round(8 * k))), int(1_500_000 * k)
+
+
+def _points(doc: PathDocument) -> int:
+    return sum(len(p.points) for layer in doc.layers for p in layer.paths)
+
+
+def _slow_get(key: str) -> PathDocument | None:
+    with _SLOW_LOCK:
+        doc = _SLOW.get(key)
+        if doc is not None:
+            _SLOW.move_to_end(key)
+        return doc
+
+
+def _slow_put(key: str, doc: PathDocument) -> None:
+    entries, budget = _slow_limits()
+    with _SLOW_LOCK:
+        _SLOW[key] = doc
+        _SLOW.move_to_end(key)
+        while len(_SLOW) > 1 and (len(_SLOW) > entries or sum(map(_points, _SLOW.values())) > budget):
+            _SLOW.popitem(last=False)
+
+
+def clear_slow_cache() -> None:
+    with _SLOW_LOCK:
+        _SLOW.clear()
 
 
 def _engine(p: GestureStudiesParams) -> str:

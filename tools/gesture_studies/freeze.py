@@ -88,7 +88,14 @@ KIT_MODULES = ("__init__", "core", "library", "arrangers_base", "modulators_base
                # round 12 keeps, second set (2026-10-18): Oehlen found ground, the limb signs (revisit)
                # and the morphing river belt
                "arrangers_oehlen_found", "voices_revisit", "modulators_revisit", "renderers_revisit",
-               "voices_belt")
+               "voices_belt",
+               # round 15 keeps: revived roles over ccolour / found_play, including the passers
+               "_score", "arrangers_arch", "renderers_arch", "arrangers_ccolour",
+               "arrangers_found_play", "arrangers_contagion", "arrangers_rules",
+               "voices_passage", "voices_accrue", "voices_gmorph", "voices_handover",
+               "arrangers_listen", "voices_rzoom", "renderers_rzoom",
+               # the same zoom callable on other hands, or as a modulator over any voice
+               "voices_lcorp", "modulators_lcorp")
 # research modules (tools/gesture/gesture/<name>.py) they import, transitively
 RESEARCH_MODULES = ("core", "curvature", "clothoid", "grammar", "hybrid", "regime", "penrender",
                     "regime_field", "gesture_timing", "broadnib",

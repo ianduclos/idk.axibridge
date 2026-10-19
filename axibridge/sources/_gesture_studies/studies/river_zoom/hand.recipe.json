@@ -1,0 +1,34 @@
+{
+ "kit": 1,
+ "frame": [
+  300.0,
+  110.0
+ ],
+ "seed": 1491,
+ "margin": 8.0,
+ "arranger": {
+  "id": "single"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "lcorp_zoom",
+    "source": "hand",
+    "hand": "dancer_cristel",
+    "schedule": "push",
+    "recur": 3,
+    "zoom": 24.0,
+    "pace": 0.5,
+    "lod": 0.8,
+    "reveal": 0.4,
+    "valley": 4.0
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "wire",
+  "pen": 0.3
+ },
+ "label": "The zoom called on dancer_cristel"
+}

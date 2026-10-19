@@ -86,6 +86,8 @@ async def _lifespan(app: FastAPI):
     linedraw_jobs.shutdown()
     from .mosca2.jobs import manager as mosca2_jobs
     mosca2_jobs.shutdown()
+    from .gesture_studies_thumbs import thumbnails as gesture_study_thumbs
+    gesture_study_thumbs.shutdown()
     manager.shutdown()
 
 

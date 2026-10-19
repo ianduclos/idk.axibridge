@@ -7,6 +7,7 @@
  "source": "measure_pairs round 10: tools/gesture/results/measure_pairs-pair_atlas.recipe.json",
  "engine": "kit",
  "notes": "A drift beside its own shape atlas in order of time; each specimen's number sits on the drawing where it came from. Ian, round 10: \"amazing. keep as is. we can make a new version if we do developments on the drawing side or in the specimen side.\" So the recipe is the round-10 one verbatim and only the drawing's route is exposed: which hands, how they mix, how they join, and the seed. Layout, numbering and the specimens are fixed; a development of either side is a new study.",
+ "family": "Measurement",
  "recipe": {
   "kit": 1,
   "frame": [

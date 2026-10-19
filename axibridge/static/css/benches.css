@@ -255,18 +255,46 @@
 .hand-drift-ink .draw-line { stroke-width:inherit; }
 .hand-drift-pending .hand-drift-ink { opacity:.3; }
 
-/* Gesture Studies bench: a study dropdown, then only that study's controls. */
+/* Gesture Studies bench (v3, 2026-10-19): full-screen, canvas first; the column
+   reads study → seed + Shuffle → controls → Measure → Advanced. A control that
+   does nothing right now is dimmed with its reason; each control has a lock. */
 .gesture-studies .bench-transport, .gesture-studies .process-generic-actions { display:none; }
+#process-popup.gesture-studies .bench-layout { grid-template-columns:minmax(0,1fr) clamp(300px,26vw,380px); }
 #gesture-studies-actions { display:flex; gap:var(--space-2); flex-wrap:wrap; align-items:center; padding:var(--space-3); border-top:1px solid var(--bench-edge); }
 #gesture-studies-actions[hidden], #process-gesture-studies[hidden] { display:none; }
 #gesture-studies-keep { margin-left:auto; }
-#process-gesture-studies label.gs-field { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--space-1); margin:var(--space-2) 0; align-items:center; }
-#process-gesture-studies label.gs-field > span { grid-column:1; }
-#process-gesture-studies label.gs-field > output { grid-column:2; grid-row:1; font-variant-numeric:tabular-nums; }
-#process-gesture-studies label.gs-field > select, #process-gesture-studies label.gs-field > input,
-#process-gesture-studies label.gs-field > .gs-switch, #process-gesture-studies label.gs-field > .gs-route,
-#process-gesture-studies label.gs-field > .gs-pool, #process-gesture-studies label.gs-field > .gs-seed { grid-column:1 / -1; width:100%; min-width:0; box-sizing:border-box; }
-#process-gesture-studies .gs-study-field select { font-weight:600; }
+#process-gesture-studies .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+#process-gesture-studies .gs-section { padding:var(--space-2) 0 var(--space-3); border-bottom:1px solid var(--bench-edge); }
+#process-gesture-studies .gs-section[hidden] { display:none; }
+#process-gesture-studies .gs-study-head { display:flex; align-items:flex-start; gap:var(--space-2); }
+#process-gesture-studies .gs-study-title { flex:1; min-width:0; }
+#process-gesture-studies .gs-study-title h3 { margin:0; font-size:var(--type-title, 15px); color:var(--ink-hi); overflow-wrap:anywhere; }
+#process-gesture-studies .gs-study-title p { margin:2px 0 0; font-size:var(--type-note); }
+#gs-gallery-open, #gs-shuffle { display:inline-flex; align-items:center; gap:6px; flex:none; }
+#process-gesture-studies .gs-study-field { display:block; margin:var(--space-2) 0 0; }
+#process-gesture-studies .gs-study-field select { width:100%; min-width:0; }
+#process-gesture-studies .gs-vary { display:grid; gap:var(--space-2); }
+#gs-shuffle { justify-content:center; }
+#process-gesture-studies .gs-field { margin:var(--space-2) 0 var(--space-3); }
+#process-gesture-studies .gs-field-head { display:flex; align-items:center; gap:var(--space-1); min-height:var(--compact-h); }
+#process-gesture-studies .gs-field-head > label { flex:1; min-width:0; }
+#process-gesture-studies .gs-field-head > output { font-variant-numeric:tabular-nums; color:var(--ink-hi); }
+#process-gesture-studies .gs-tools { display:inline-flex; align-items:center; flex:none; }
+#process-gesture-studies .gs-field > select, #process-gesture-studies .gs-field > input,
+#process-gesture-studies .gs-field > .gs-switch, #process-gesture-studies .gs-field > .gs-route,
+#process-gesture-studies .gs-field > .gs-pool { width:100%; min-width:0; box-sizing:border-box; }
+#process-gesture-studies .gs-lock, #process-gesture-studies .gs-die { display:inline-flex; align-items:center; justify-content:center; min-width:var(--compact-h); height:var(--compact-h); padding:0 4px; background:none; border:0; color:var(--ink-soft); }
+#process-gesture-studies .gs-lock { opacity:.55; }
+#process-gesture-studies .gs-lock:hover, #process-gesture-studies .gs-die:hover:not(:disabled) { color:var(--ink-hi); opacity:1; }
+#process-gesture-studies .gs-lock[aria-pressed="true"] { color:var(--live); opacity:1; }
+#process-gesture-studies .gs-lock .tool-icon, #process-gesture-studies .gs-die .tool-icon { width:15px; height:15px; margin:0; }
+#process-gesture-studies .gs-die:disabled { opacity:.3; }
+#process-gesture-studies .gs-why { margin:2px 0 0; font-size:var(--type-note); color:var(--ink-soft); font-style:italic; }
+#process-gesture-studies .gs-why[hidden] { display:none; }
+#process-gesture-studies .gs-inactive > :not(.gs-why):not(.gs-field-head),
+#process-gesture-studies .gs-inactive .gs-field-head > label,
+#process-gesture-studies .gs-inactive .gs-field-head > output { opacity:.42; }
+#process-gesture-studies .gs-group h4, #process-gesture-studies .gs-measure h4 { margin:var(--space-2) 0 0; font-size:var(--type-note); color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; }
 #process-gesture-studies .gs-switch { display:flex; flex-wrap:wrap; gap:2px; }
 #process-gesture-studies .gs-switch button { flex:1 1 auto; min-width:0; padding-inline:var(--space-2); }
 #process-gesture-studies .gs-switch button[aria-pressed="true"] { border-color:var(--live); color:var(--ink-hi); background:var(--bench-edge); }
@@ -274,14 +302,21 @@
 #process-gesture-studies .gs-pool { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2px var(--space-2); max-height:12em; overflow:auto; }
 #process-gesture-studies .gs-seed { display:flex; gap:var(--space-2); align-items:center; }
 #process-gesture-studies .gs-seed input { flex:1; min-width:0; }
+#process-gesture-studies .gs-seed .gs-die { width:auto; gap:4px; padding:0 var(--space-2); border:1px solid var(--bench-edge); border-radius:4px; color:var(--ink); }
 #process-gesture-studies .gs-check { display:flex; align-items:center; gap:var(--space-2); margin:var(--space-1) 0; font-size:var(--type-note); }
+#process-gesture-studies .gs-bool .gs-field-head > .gs-check { flex:1; margin:0; font-size:inherit; }
 #process-gesture-studies .gs-row { display:flex; gap:var(--space-2); flex-wrap:wrap; margin:var(--space-2) 0; }
+#process-gesture-studies .gs-text { display:grid; gap:var(--space-1); margin:var(--space-2) 0; }
 #process-gesture-studies textarea { width:100%; box-sizing:border-box; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:11px; }
 #process-gesture-studies .gs-error { color:var(--rust); font-size:var(--type-note); white-space:pre-wrap; }
 #process-gesture-studies .gs-error[hidden] { display:none; }
+#process-gesture-studies .gs-advanced { border-bottom:0; }
+#process-gesture-studies .gs-advanced > summary { color:var(--ink-soft); }
+#process-gesture-studies .gs-advanced .module-preset-controls { margin:var(--space-2) 0; }
 .gesture-studies-frame { fill:none; stroke:var(--bench-edge); stroke-width:.4; stroke-dasharray:2 2; }
 .gesture-studies-ink .draw-line { stroke-width:inherit; }
 .gesture-studies-ink .gs-voice .draw-line { stroke:var(--gs-voice); }
+.gesture-studies-ink .gs-ink .draw-line { stroke:var(--gs-ink); }
 #process-gesture-studies .gs-pinned { margin:var(--space-2) 0; padding:var(--space-2); border:1px solid var(--bench-edge); border-radius:4px; font-size:var(--type-note); }
 #process-gesture-studies .gs-pinned[hidden], #process-gesture-studies .gs-summary[hidden] { display:none; }
 #process-gesture-studies .gs-pinned button { margin-top:var(--space-1); }
@@ -289,4 +324,32 @@
 #process-gesture-studies .gs-voices { display:flex; flex-wrap:wrap; gap:var(--space-1) var(--space-3); margin:0; padding:0; list-style:none; }
 #process-gesture-studies .gs-voices li { display:flex; align-items:center; gap:var(--space-1); }
 #process-gesture-studies .gs-swatch { width:.9em; height:.9em; border-radius:50%; background:var(--gs-voice); flex:none; }
-.gesture-studies-pending .gesture-studies-ink { opacity:.3; }
+/* the previous drawing stays, dimmed, while the next one draws */
+.gesture-studies-pending .gesture-studies-ink { opacity:.3; transition:opacity .2s; }
+/* history strip: the last 12 previews, newest first */
+.gs-history { flex:none; display:flex; gap:var(--space-2); padding:var(--space-2) var(--space-3); overflow-x:auto; border-top:1px solid var(--bench-edge); }
+.gs-history[hidden] { display:none; }
+#process-popup:not(.gesture-studies) .gs-history { display:none; }
+.gs-history-item { flex:none; width:76px; height:56px; padding:3px; display:flex; align-items:center; justify-content:center; background:none; border:1px solid var(--bench-edge); border-radius:4px; cursor:pointer; }
+.gs-history-item svg { max-width:100%; max-height:100%; color:var(--sheet-ink); }
+.gs-history-item .gs-history-sheet { fill:var(--sheet); }
+.gs-history-item:hover { border-color:var(--ink-soft); }
+.gs-history-item[aria-current="true"] { border-color:var(--live); box-shadow:0 0 0 1px var(--live); }
+/* the study gallery: the whole panel, every study as a thumbnail, by family */
+.gs-gallery { grid-column:1 / -1; grid-row:1 / -1; min-height:0; overflow:auto; padding:var(--space-3) var(--space-4) var(--space-4); }
+.gs-gallery[hidden], #process-popup:not(.gesture-studies) .gs-gallery { display:none; }
+#process-popup.gs-gallery-open .bench-layout > :not(.gs-gallery) { display:none; }
+.gs-gallery-head { display:flex; align-items:baseline; gap:var(--space-3); flex-wrap:wrap; }
+.gs-gallery-head h3 { margin:0; }
+.gs-gallery-head p { flex:1; margin:0; }
+.gs-family h3 { margin:var(--space-4) 0 var(--space-2); font-size:var(--type-note); color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; }
+.gs-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:var(--space-3); }
+.gs-card { display:flex; flex-direction:column; align-items:stretch; gap:4px; padding:var(--space-2); text-align:left; background:var(--bench-deep, transparent); border:1px solid var(--bench-edge); border-radius:6px; cursor:pointer; font:inherit; color:inherit; }
+.gs-card:hover, .gs-card:focus-visible { border-color:var(--ink-soft); }
+.gs-card[aria-current="true"] { border-color:var(--live); }
+.gs-card-sheet { aspect-ratio:3 / 2; display:flex; align-items:center; justify-content:center; background:var(--sheet); border-radius:3px; overflow:hidden; }
+.gs-card-sheet img { width:100%; height:100%; object-fit:contain; display:block; }
+.gs-card-wait { color:color-mix(in srgb, var(--sheet-ink) 45%, var(--sheet)); font-size:var(--type-note); }
+.gs-card-name { color:var(--ink-hi); font-weight:600; display:flex; align-items:baseline; gap:var(--space-2); flex-wrap:wrap; }
+.gs-card-words { color:var(--ink-soft); font-size:var(--type-note); min-height:1.2em; }
+.gs-badge { font-weight:400; font-size:var(--type-note); color:var(--rust); border:1px solid currentColor; border-radius:999px; padding:0 6px; }

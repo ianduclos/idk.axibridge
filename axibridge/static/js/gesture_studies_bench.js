@@ -1,11 +1,10 @@
 // Gesture Studies bench: saved pieces from the gesture research, each with its
 // own few controls (spec: docs/superpowers/specs/2026-10-17-gesture-studies.md).
-// A study dropdown; only the chosen study's controls; live preview through the
-// registered `gesture_studies` source and the existing preview endpoint; Keep
-// creates a new layer through the normal creation path (the server pins the
-// frozen library then). Save as new study / delete / recipe validation use
-// /api/gesture-studies. Hand / tempo / dance controls list every entry of the
-// frozen library the server reports, never a hard-coded list.
+// Live preview through the registered `gesture_studies` source and the existing
+// preview endpoint; Keep creates a new layer through the normal creation path
+// (the server pins the frozen library then). Save as new study / delete / recipe
+// validation use /api/gesture-studies. Hand / tempo / dance controls list every
+// entry of the frozen library the server reports, never a hard-coded list.
 //
 // Studies v2 (2026-10-17):
 // - a resumed layer STAYS PINNED to its library snapshot through every edit
@@ -14,6 +13,21 @@
 // - a voices study (the chorus) previews each voice in its ink and Keep makes
 //   a group with one layer per voice, each on its own pen (/api/gesture-studies/keep);
 // - the Sampler shows the combination its seed picked (the sampler's summary).
+//
+// Bench v3 (2026-10-19, docs/superpowers/specs/2026-10-19-study-bench-v3.md):
+// - opens full-screen, canvas first; the column reads study → seed + Shuffle →
+//   the study's controls → Measure (empty for now) → Advanced (collapsed);
+// - a control that does nothing right now is dimmed and says why (`when`);
+// - a die on the seed and on every hand control, Shuffle varies every unlocked
+//   control within its bounds, a lock on each control; all of it is undoable,
+//   locks included (they are part of the draft);
+// - the last 12 previews as thumbnails under the canvas, from the previews
+//   already drawn (no server call); clicking one restores it (one undo step);
+// - every ink in its pen colour at its width (the preview's `styles`); the
+//   previous drawing stays, dimmed, while the next draws, with an elapsed
+//   timer after 1 s; previews are cached by their params (history and undo
+//   are instant); studies that drew in under ~1 s preview while dragging;
+// - a gallery of every study as a thumbnail, grouped by family.
 import { api } from './api.js';
 import { actions } from './main.js';
 import { benchProjectEpoch, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from './bench_host.js';
@@ -24,13 +38,31 @@ const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const copy = value => JSON.parse(JSON.stringify(value));
 const KIND_OF = { hand: 'hand', hands: 'hand', tempo: 'tempo', trail: 'dance_trail' };
+const LIBRARY_TYPES = new Set(['hand', 'hands', 'tempo', 'trail']);
 const DRAFT = '__draft__';
+const HISTORY = 12;
+const LIVE_MS = 1000;            // a study that drew faster than this previews while a slider drags
+const LIVE_EVERY_MS = 180;       // … at most this often
+const FAMILIES = ['Hands and drift', 'Measurement', 'Several voices', 'Swell', 'After Oehlen', 'Rivers', 'Composers'];
+// Lucide (ISC): dices, lock, lock-open, shuffle, layout-grid
+const ICON = {
+  die: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M16 8h.01', 'M8 8h.01', 'M8 16h.01', 'M16 16h.01', 'M12 12h.01'],
+  lock: ['M5 11h14v10H5z', 'M7 11V7a5 5 0 0 1 10 0v4'],
+  open: ['M5 11h14v10H5z', 'M7 11V7a5 5 0 0 1 9.9-1'],
+  shuffle: ['m18 14 4 4-4 4', 'm18 2 4 4-4 4', 'M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22', 'M2 6h1.972a4 4 0 0 1 3.6 2.2', 'M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45'],
+  grid: ['M3 3h7v7H3z', 'M14 3h7v7h-7z', 'M14 14h7v7h-7z', 'M3 14h7v7H3z'],
+};
+const svgIcon = paths => `<svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true">${paths.map(d => `<path d="${d}"/>`).join('')}</svg>`;
+
 const drafts = new Map();
 let active = null;
 let wired = false;
 let presetControls = null;
 let catalogue = null;
 const snapshots = new Map();   // pinned snapshot id -> {hand, tempo, dance_trail} options
+// preview results by canonical params: history clicks and undo redraw without the server
+const previews = new Map();
+const PREVIEW_CACHE = 24;
 
 // A study as the source takes it (the catalogue adds display-only fields).
 function studyOf(entry) {
@@ -48,6 +80,13 @@ function canon(v) {
   if (v && typeof v === 'object') return `{${Object.keys(v).sort().map(k => `${JSON.stringify(k)}:${canon(v[k])}`).join(',')}}`;
   return JSON.stringify(v);
 }
+// The params as sent and cached: values in key order, so the same values are the same request.
+function canonParams(p) {
+  const out = copy(p);
+  out.values = Object.fromEntries(Object.keys(out.values || {}).sort().map(k => [k, out.values[k]]));
+  return out;
+}
+const paramsKey = p => canon(p);
 // The snapshot a resumed layer is pinned to, when it is not the current one.
 function pinnedSnapshot() {
   const sid = active?.draft.params.library;
@@ -73,16 +112,65 @@ function getAt(obj, path) {
   return path.split('.').reduce((cur, step) => (cur == null ? undefined : cur[/^\d+$/.test(step) ? Number(step) : step]), obj);
 }
 function targets(c) { return c.path ? [c.path] : c.paths; }
+function keyOf(c) { return c.key || targets(c)[0]; }
 function valueOf(params, c) {
-  return Object.prototype.hasOwnProperty.call(params.values, c.key) ? params.values[c.key] : getAt(params.study.recipe, targets(c)[0]);
+  return Object.prototype.hasOwnProperty.call(params.values, keyOf(c)) ? params.values[keyOf(c)] : getAt(params.study.recipe, targets(c)[0]);
+}
+// the controls the bench shows (a resumed snapshot may predate the server spelling out choices)
+function shownControls() {
+  const st = active.draft.params.study;
+  return (catalogueEntry(st) || st).controls;
 }
 function penWidth(study) {
   const r = study.recipe || {};
   return Number(r.renderer?.pen ?? r.pen ?? 0.4) || 0.4;
 }
 function fmt(v) { return typeof v === 'number' ? String(Math.round(v * 1e6) / 1e6) : String(v); }
+function labelOf(v) {
+  if (v === true) return 'on';
+  if (v === false) return 'off';
+  if (Array.isArray(v)) return v.join(', ');
+  return String(v);
+}
 
-function key() { return JSON.stringify(active?.draft.params); }
+// ---------------------------------------------------------------- `when`: does a control act now?
+function holds(w, read) {
+  if (!w) return true;
+  if (w.all) return w.all.every(x => holds(x, read));
+  if (w.any) return w.any.some(x => holds(x, read));
+  const v = read(w.key);
+  if ('is' in w) return canon(v) === canon(w.is);
+  if ('not' in w) return canon(v) !== canon(w.not);
+  return (w.in || []).some(x => canon(x) === canon(v));
+}
+function reasonOf(w, byKey) {
+  if (w.say) return w.say;
+  const part = x => {
+    if (x.all) return x.all.map(part).join(' and ');
+    if (x.any) return x.any.map(part).join(', or ');
+    const name = byKey.get(x.key)?.label || x.key;
+    if ('is' in x) return `${name} is ${labelOf(x.is)}`;
+    if ('not' in x) return `${name} is not ${labelOf(x.not)}`;
+    return `${name} is ${x.in.map(labelOf).join(' or ')}`;
+  };
+  return `acts when ${part(w)}`;
+}
+function acts(c) {
+  const params = active.draft.params;
+  const byKey = new Map(shownControls().map(x => [keyOf(x), x]));
+  return holds(c.when, k => (byKey.has(k) ? valueOf(params, byKey.get(k)) : undefined));
+}
+
+// ---------------------------------------------------------------- draft state, undo
+// The draft is {params, locks}: locks (per study, by control key) are part of undo.
+const state = () => ({ params: copy(active.draft.params), locks: copy(active.draft.locks) });
+const stateKey = () => JSON.stringify({ p: active?.draft.params, l: active?.draft.locks });
+function key() { return paramsKey(canonParams(active.draft.params)); }
+function locksOf() {
+  const id = active.draft.params.study.id;
+  return active.draft.locks[id] || [];
+}
+const locked = c => locksOf().includes(keyOf(c));
 function remember(before) {
   active.draft.undo.push(before);
   if (active.draft.undo.length > 80) active.draft.undo.shift();
@@ -90,22 +178,28 @@ function remember(before) {
 }
 // An edit keeps a resumed layer's own library snapshot and pins: a control
 // changes only what it controls. Only "Update to current library" re-pins.
-function change(fn) {
+function change(fn, { rebuild = false } = {}) {
   if (!active || active.keeping) return;
-  const before = copy(active.draft.params);
-  fn(active.draft.params);
-  if (JSON.stringify(before) === key()) { renderControls(); return; }
+  endDrag();
+  const before = state(), was = stateKey(), wasKey = key();
+  fn(active.draft.params, active.draft.locks);
+  if (stateKey() === was) { renderControls(); return; }
   remember(before);
-  invalidate();
-  requestPreview();
+  if (rebuild) buildControls();
+  if (key() !== wasKey) { invalidate(); requestPreview(); } else renderControls();
+}
+function restore(snapshot) {
+  active.draft.params = snapshot.params;
+  active.draft.locks = snapshot.locks || {};
 }
 function undo(redo = false) {
   if (!active || active.keeping) return;
+  endDrag();
   const from = redo ? active.draft.redo : active.draft.undo;
   const to = redo ? active.draft.undo : active.draft.redo;
   if (!from.length) return;
-  to.push(copy(active.draft.params));
-  active.draft.params = from.pop();
+  to.push(state());
+  restore(from.pop());
   buildControls(); invalidate(); requestPreview();
 }
 function invalidate() {
@@ -114,7 +208,112 @@ function invalidate() {
   $('process-canvas').classList.add('gesture-studies-pending');
   renderControls();
 }
-function setValue(c, v) { change(p => { p.values[c.key] = v; }); }
+function setValue(c, v) { change(p => { p.values[keyOf(c)] = v; }); }
+function toggleLock(c) {
+  change((p, locks) => {
+    const id = p.study.id, k = keyOf(c);
+    const set = new Set(locks[id] || []);
+    if (set.has(k)) set.delete(k); else set.add(k);
+    locks[id] = [...set];
+  });
+}
+
+// A slider drag is ONE undo step: the state before the drag is remembered on
+// release. Studies that drew in under LIVE_MS preview while dragging (throttled).
+function dragTo(c, v) {
+  if (!active || active.keeping) return;
+  if (!active.drag || active.drag.key !== keyOf(c)) { endDrag(); active.drag = { key: keyOf(c), before: state(), was: key() }; }
+  active.draft.params.values[keyOf(c)] = v;
+  if (!(active.lastMs != null && active.lastMs < LIVE_MS)) return;   // slower studies redraw on release
+  const now = performance.now();
+  if (now - (active.lastLive || 0) < LIVE_EVERY_MS) {
+    clearTimeout(active.liveTimer);
+    active.liveTimer = setTimeout(() => dragPreview(), LIVE_EVERY_MS);
+    return;
+  }
+  dragPreview();
+}
+function dragPreview() {
+  if (!active?.drag) return;
+  active.lastLive = performance.now();
+  invalidate(); requestPreview();
+}
+function endDrag() {
+  const d = active?.drag;
+  if (!d) return;
+  active.drag = null;
+  clearTimeout(active.liveTimer);
+  if (key() !== d.was) remember(d.before);
+}
+function releaseDrag(c, v) {
+  if (!active) return;
+  if (!active.drag) { setValue(c, v); return; }
+  active.draft.params.values[keyOf(c)] = v;
+  endDrag();
+  invalidate(); requestPreview();
+}
+
+// ---------------------------------------------------------------- random values
+const rand = n => Math.floor(Math.random() * n);
+const pick = list => list[rand(list.length)];
+function quantiser(c) {
+  const step = c.step || (c.type === 'int' ? 1 : (c.max - c.min) / 100);
+  return raw => {
+    let q = c.min + Math.round((Number(raw) - c.min) / step) * step;
+    q = Math.min(c.max, Math.max(c.min, q));
+    return c.type === 'int' ? Math.round(q) : Math.round(q * 1e9) / 1e9;
+  };
+}
+function randomSeed(c) { return c.min + rand(Math.min(c.max, c.min + 999999) - c.min + 1); }
+function libraryIds(c) { return libraryList(KIND_OF[c.type]).map(e => e.id); }
+function randomHand(c, current) {
+  const ids = libraryIds(c).filter(x => x !== current);
+  if (c.allow_none && Math.random() < 0.15) return c.none_value ?? '';
+  return ids.length ? pick(ids) : current;
+}
+function randomRoute(c, current) {
+  const ids = libraryIds(c);
+  if (c.join) {                           // a pool: a fresh handful
+    const n = Math.min(ids.length, Math.max(c.min_len ?? 1, 3 + rand(5)));
+    return [...ids].sort(() => Math.random() - 0.5).slice(0, n).join(' ');
+  }
+  const lo = c.min_len ?? 1, hi = c.max_len ?? 4;
+  const n = Array.isArray(current) && current.length ? current.length : lo + rand(hi - lo + 1);
+  const out = [];
+  while (out.length < n && out.length < ids.length) {
+    const h = pick(ids);
+    if (h !== out.at(-1)) out.push(h);
+  }
+  return out;
+}
+// Shuffle: a value anywhere within the control's bounds.
+function shuffled(c, v) {
+  if (c.type === 'int' || c.type === 'float') {
+    if (keyOf(c) === 'seed') return randomSeed(c);
+    return quantiser(c)(c.min + Math.random() * (c.max - c.min));
+  }
+  if (c.type === 'bool') return Math.random() < 0.5;
+  if (c.type === 'choice') return pick(c.choices || [v]);
+  if (c.type === 'toggles') {
+    const lo = c.min_len ?? 0, hi = c.max_len ?? c.choices.length;
+    const n = lo + rand(hi - lo + 1);
+    return [...c.choices].sort(() => Math.random() - 0.5).slice(0, n).join(c.join || ',');
+  }
+  if (c.type === 'hands') return randomRoute(c, v);
+  return randomHand(c, v);
+}
+function shuffle() {
+  if (!active) return;
+  change(p => {
+    for (const c of shownControls()) if (!locked(c)) p.values[keyOf(c)] = shuffled(c, valueOf(p, c));
+  });
+}
+function roll(c) {
+  change(p => {
+    const v = valueOf(p, c);
+    p.values[keyOf(c)] = keyOf(c) === 'seed' ? randomSeed(c) : c.type === 'hands' ? randomRoute(c, v) : randomHand(c, v);
+  });
+}
 
 // ---------------------------------------------------------------- controls
 function libraryOptions(c) {
@@ -127,50 +326,86 @@ function selectEl(options, current) {
   if (current != null && ![...s.options].some(o => o.value === String(current))) s.add(new Option(String(current), String(current)));
   return s;
 }
+function iconButton(cls, icon, label) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = cls; b.innerHTML = svgIcon(icon);
+  b.setAttribute('aria-label', label); b.title = label;
+  return b;
+}
+function lockButton(c) {
+  const b = iconButton('gs-lock', ICON.open, `Lock ${c.label}`);
+  b.setAttribute('aria-pressed', 'false');
+  b.title = 'Lock: Shuffle leaves it alone';
+  b.onclick = e => { e.preventDefault(); toggleLock(c); };
+  return b;
+}
+function dieButton(c) {
+  const b = iconButton('gs-die', ICON.die, keyOf(c) === 'seed' ? 'Random seed' : `Random ${c.label.toLowerCase()}`);
+  b.onclick = e => { e.preventDefault(); roll(c); };
+  return b;
+}
 function field(label, control, c) {
-  const wrap = document.createElement('label');
+  const wrap = document.createElement('div');
   wrap.className = 'gs-field';
-  wrap.dataset.controlKey = c.key;
-  const span = document.createElement('span');
+  wrap.dataset.controlKey = keyOf(c);
+  const head = document.createElement('div'); head.className = 'gs-field-head';
+  const span = document.createElement('label');
   span.textContent = label;
-  wrap.append(span, control);
+  const tools = document.createElement('span'); tools.className = 'gs-tools';
+  if (LIBRARY_TYPES.has(c.type)) tools.append(dieButton(c));
+  tools.append(lockButton(c));
+  head.append(span, tools);
+  const why = document.createElement('p'); why.className = 'gs-why'; why.hidden = true;
+  wrap.append(head, control, why);
+  if (control.matches?.('input,select')) {
+    const id = `gs-c-${keyOf(c).replace(/[^A-Za-z0-9_-]/g, '-')}`;
+    control.id = id; span.htmlFor = id;
+  } else span.addEventListener('click', () => control.querySelector('input,select,button')?.focus());
   if (c.help) wrap.title = c.help;
   return wrap;
+}
+// the app paints a slider's fill on input events only; a value set in code paints here
+function paintFill(input) {
+  input.style.setProperty('--fill', `${Math.max(0, Math.min(100, (+input.value - +input.min) / (+input.max - +input.min) * 100))}%`);
 }
 function numberControl(c, v) {
   const input = document.createElement('input');
   input.type = 'range'; input.min = String(c.min); input.max = String(c.max); input.step = 'any';
-  input.value = String(v);
+  input.value = String(v); paintFill(input);
   const out = document.createElement('output'); out.textContent = fmt(v);
-  const step = c.step || (c.type === 'int' ? 1 : (c.max - c.min) / 100);
-  const quantise = raw => {
-    let q = c.min + Math.round((Number(raw) - c.min) / step) * step;
-    q = Math.min(c.max, Math.max(c.min, q));
-    return c.type === 'int' ? Math.round(q) : Math.round(q * 1e9) / 1e9;
-  };
-  input.oninput = () => { out.textContent = fmt(quantise(input.value)); };
-  input.onchange = () => setValue(c, quantise(input.value));
+  const quantise = quantiser(c);
+  input.oninput = () => { const q = quantise(input.value); out.textContent = fmt(q); dragTo(c, q); };
+  input.onchange = () => releaseDrag(c, quantise(input.value));
   const wrap = field(c.label, input, c);
-  wrap.append(out);
-  if (c.key === 'seed') {
-    const box = document.createElement('div'); box.className = 'gs-seed';
-    const num = document.createElement('input');
-    num.type = 'number'; num.min = String(c.min); num.max = String(c.max); num.step = '1'; num.value = String(v);
-    num.setAttribute('aria-label', c.label);
-    num.onchange = () => { if (num.reportValidity() && num.value !== '') setValue(c, Math.round(Number(num.value))); };
-    const next = document.createElement('button'); next.type = 'button'; next.textContent = 'Next seed'; next.className = 'gs-next-seed';
-    next.onclick = () => setValue(c, Number(valueOf(active.draft.params, c)) >= c.max ? c.min : Number(valueOf(active.draft.params, c)) + 1);
-    input.replaceWith(num); box.append(next);
-    out.remove();
-    wrap.append(box);
-  }
+  wrap.querySelector('.gs-field-head label').after(out);
+  return wrap;
+}
+function seedControl(c, v) {
+  const wrap = document.createElement('div');
+  wrap.className = 'gs-field gs-seed-field'; wrap.dataset.controlKey = keyOf(c);
+  const head = document.createElement('div'); head.className = 'gs-field-head';
+  const label = document.createElement('label'); label.textContent = c.label; label.htmlFor = 'gs-seed-input';
+  const tools = document.createElement('span'); tools.className = 'gs-tools'; tools.append(lockButton(c));
+  head.append(label, tools);
+  const box = document.createElement('div'); box.className = 'gs-seed';
+  const num = document.createElement('input');
+  num.type = 'number'; num.id = 'gs-seed-input'; num.min = String(c.min); num.max = String(c.max); num.step = '1'; num.value = String(v);
+  num.onchange = () => { if (num.reportValidity() && num.value !== '') setValue(c, Math.round(Number(num.value))); };
+  const die = dieButton(c); die.id = 'gs-seed-die';
+  die.innerHTML += '<span>Random</span>';
+  const next = document.createElement('button'); next.type = 'button'; next.textContent = '+1'; next.className = 'gs-next-seed';
+  next.title = 'Next seed'; next.setAttribute('aria-label', 'Next seed');
+  next.onclick = () => setValue(c, Number(valueOf(active.draft.params, c)) >= c.max ? c.min : Number(valueOf(active.draft.params, c)) + 1);
+  box.append(num, die, next);
+  wrap.append(head, box);
+  if (c.help) wrap.title = c.help;
   return wrap;
 }
 function choiceControl(c, v) {
   const choices = c.choices || [v];
   if (choices.length <= 6) {
     const group = document.createElement('div');
-    group.className = 'gs-switch'; group.setAttribute('role', 'group');
+    group.className = 'gs-switch'; group.setAttribute('role', 'group'); group.setAttribute('aria-label', c.label);
     for (const value of choices) {
       const b = document.createElement('button');
       b.type = 'button'; b.dataset.value = JSON.stringify(value); b.textContent = String(value);
@@ -184,6 +419,22 @@ function choiceControl(c, v) {
   s.value = JSON.stringify(v);
   s.onchange = () => setValue(c, JSON.parse(s.value));
   return field(c.label, s, c);
+}
+function togglesControl(c, v) {
+  const sep = c.join || ',';
+  const on = () => String(valueOf(active.draft.params, c) || '').split(sep).map(x => x.trim()).filter(Boolean);
+  const group = document.createElement('div');
+  group.className = 'gs-switch gs-toggles'; group.setAttribute('role', 'group'); group.setAttribute('aria-label', c.label);
+  const now = String(v || '').split(sep).map(x => x.trim());
+  for (const word of c.choices) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.value = word; b.textContent = word;
+    b.setAttribute('aria-pressed', String(now.includes(word)));
+    // toggling keeps the order the words already have; a new one joins at the end
+    b.onclick = () => { const cur = on(); setValue(c, (cur.includes(word) ? cur.filter(x => x !== word) : [...cur, word]).join(sep)); };
+    group.append(b);
+  }
+  return field(c.label, group, c);
 }
 function refControl(c, v) {
   const s = selectEl(libraryOptions(c), v ?? '');
@@ -221,16 +472,21 @@ function poolControl(c, v) {
   return wrap;
 }
 function boolControl(c, v) {
-  const l = document.createElement('label'); l.className = 'gs-check'; l.dataset.controlKey = c.key;
+  const l = document.createElement('label'); l.className = 'gs-check';
   const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!v;
   cb.onchange = () => setValue(c, cb.checked);
   l.append(cb, document.createTextNode(c.label));
-  return l;
+  const wrap = field('', l, c);
+  wrap.classList.add('gs-bool');
+  wrap.querySelector('.gs-field-head label').replaceWith(l);
+  return wrap;
 }
 function controlEl(c, v) {
+  if (keyOf(c) === 'seed') return seedControl(c, v);
   if (c.type === 'int' || c.type === 'float') return numberControl(c, v);
   if (c.type === 'bool') return boolControl(c, v);
   if (c.type === 'choice') return choiceControl(c, v);
+  if (c.type === 'toggles') return togglesControl(c, v);
   if (c.type === 'hands') return c.join ? poolControl(c, v) : routeControl(c, v);
   return refControl(c, v);
 }
@@ -250,6 +506,11 @@ function buildStudySelect() {
     s.add(new Option(`${st.label} (this draft)`, DRAFT), 0);
   }
 }
+// One line of Ian's own words from a study's notes (a quoted phrase), for the card and the header.
+function quoteOf(st) {
+  const m = /Ian[^"“]{0,40}["“]([^"”]{2,90})["”]/.exec(st?.notes || '');
+  return m ? `“${m[1].trim()}”` : '';
+}
 // Full rebuild: the study changed (or undo crossed a study change).
 function buildControls() {
   if (!active) return;
@@ -258,24 +519,27 @@ function buildControls() {
   const entry = catalogueEntry(st);
   buildStudySelect();
   $('gs-study').value = entry ? entry.id : DRAFT;
+  $('gs-study-name').textContent = st.label;
+  $('gs-study-family').textContent = [st.family, quoteOf(st)].filter(Boolean).join(' · ');
   $('gs-notes').textContent = st.notes || '';
   $('gs-source').textContent = [st.source, st.parent ? `forked from ${st.parent.id} v${st.parent.version}` : ''].filter(Boolean).join(' · ');
-  const host = $('gs-controls');
-  host.replaceChildren();
+  const seedHost = $('gs-seed-host'), host = $('gs-controls');
+  seedHost.replaceChildren(); host.replaceChildren();
   const groups = new Map();
-  // a resumed snapshot may predate the server spelling out choices: render the catalogue's controls
-  for (const c of (entry || st).controls) {
+  for (const c of shownControls()) {
+    if (keyOf(c) === 'seed') { seedHost.append(controlEl(c, valueOf(params, c))); continue; }
     const g = c.group || '';
     if (!groups.has(g)) {
-      const d = document.createElement('details'); d.open = true; d.className = 'gs-group';
-      const sum = document.createElement('summary'); sum.textContent = g || 'Controls'; d.append(sum);
+      const d = document.createElement('div'); d.className = 'gs-group';
+      if (g) { const h = document.createElement('h4'); h.textContent = g; d.append(h); }
       groups.set(g, d); host.append(d);
     }
     groups.get(g).append(controlEl(c, valueOf(params, c)));
   }
+  $('gs-no-seed').hidden = shownControls().some(c => keyOf(c) === 'seed');
   $('gs-delete').hidden = !(entry && !entry.builtin);
   $('gs-save-name').value = `${st.label} — variation`;
-  active.builtFor = JSON.stringify(params);
+  active.builtFor = null;
   active.info = null;
   renderPinned(); renderInfo();
   renderControls();
@@ -292,8 +556,7 @@ function renderPinned() {
 }
 function updateLibrary() {
   if (!active || !pinnedSnapshot()) return;
-  change(p => { delete p.library; delete p.pins; delete p.sampled; });
-  buildControls();
+  change(p => { delete p.library; delete p.pins; delete p.sampled; }, { rebuild: true });
 }
 
 // What the resolved study draws: the Sampler's combination, a chorus's voices.
@@ -329,7 +592,7 @@ async function refreshInfo() {
   if (!(isSampler(st) || isVoices(st))) return;
   const expected = key();
   try {
-    const res = await api.post('/api/gesture-studies/validate', infoBody(copy(owner.draft.params)));
+    const res = await api.post('/api/gesture-studies/validate', infoBody(canonParams(owner.draft.params)));
     if (active !== owner || key() !== expected) return;
     owner.info = { summary: res.summary, voices: res.voices, run_recipe: res.run_recipe };
   } catch {
@@ -341,28 +604,47 @@ async function refreshInfo() {
 
 function renderControls() {
   if (!active) return;
-  if (active.builtFor !== JSON.stringify(active.draft.params)) {
+  const params = active.draft.params;
+  const byKey = new Map(shownControls().map(x => [keyOf(x), x]));
+  if (active.builtFor !== stateKey()) {
     // values changed: refresh the displayed values in place (no rebuild, no focus loss)
-    const params = active.draft.params;
-    for (const c of params.study.controls) {
-      const el = $('gs-controls').querySelector(`[data-control-key="${CSS.escape(c.key)}"]`);
+    for (const c of byKey.values()) {
+      const el = document.querySelector(`#process-gesture-studies [data-control-key="${CSS.escape(keyOf(c))}"]`);
       if (!el) continue;
       const v = valueOf(params, c);
-      if (c.type === 'int' || c.type === 'float') {
-        const r = el.querySelector('input'); if (r && document.activeElement !== r) r.value = String(v);
+      if (keyOf(c) === 'seed') {
+        const n = el.querySelector('input'); if (n && document.activeElement !== n) n.value = String(v);
+      } else if (c.type === 'int' || c.type === 'float') {
+        const r = el.querySelector('input'); if (r && document.activeElement !== r) { r.value = String(v); paintFill(r); }
         const out = el.querySelector('output'); if (out) out.textContent = fmt(v);
-      } else if (c.type === 'bool') el.querySelector('input').checked = !!v;
+      } else if (c.type === 'bool') el.querySelector('input[type=checkbox]').checked = !!v;
       else if (c.type === 'choice') {
-        for (const b of el.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.value === JSON.stringify(v)));
+        for (const b of el.querySelectorAll('.gs-switch button')) b.setAttribute('aria-pressed', String(b.dataset.value === JSON.stringify(v)));
         const s = el.querySelector('select'); if (s) s.value = JSON.stringify(v);
+      } else if (c.type === 'toggles') {
+        const on = String(v || '').split(c.join || ',').map(x => x.trim());
+        for (const b of el.querySelectorAll('.gs-switch button')) b.setAttribute('aria-pressed', String(on.includes(b.dataset.value)));
       } else if (c.type === 'hands' && c.join) {
         const chosen = new Set(String(v || '').split(/\s+/));
-        for (const cb of el.querySelectorAll('input')) cb.checked = chosen.has(cb.value);
+        for (const cb of el.querySelectorAll('.gs-pool input')) cb.checked = chosen.has(cb.value);
       } else if (c.type === 'hands') {
-        [...el.querySelectorAll('select')].forEach((s, i) => { s.value = v[i] ?? ''; });
+        [...el.querySelectorAll('.gs-route select')].forEach((s, i) => { s.value = v[i] ?? ''; });
       } else el.querySelector('select').value = v ?? '';
+      // locks and dims
+      const isLocked = locked(c);
+      const lock = el.querySelector('.gs-lock');
+      if (lock) {
+        lock.setAttribute('aria-pressed', String(isLocked));
+        lock.innerHTML = svgIcon(isLocked ? ICON.lock : ICON.open);
+      }
+      const die = el.querySelector('.gs-die'); if (die) die.disabled = isLocked;
+      el.classList.toggle('gs-locked', isLocked);
+      const on = holds(c.when, k => (byKey.has(k) ? valueOf(params, byKey.get(k)) : undefined));
+      el.classList.toggle('gs-inactive', !on);
+      const why = el.querySelector('.gs-why');
+      if (why) { why.hidden = on; why.textContent = on ? '' : reasonOf(c.when, byKey); }
     }
-    active.builtFor = JSON.stringify(params);
+    active.builtFor = stateKey();
   }
   const busy = active.keeping || active.savingGallery || active.inFlight || active.renderedKey !== key();
   $('gesture-studies-undo').disabled = !active.draft.undo.length || active.keeping;
@@ -371,14 +653,181 @@ function renderControls() {
   $('gesture-studies-keep').disabled = busy;
   $('gesture-studies-save-gallery').disabled = busy;
   $('gs-save').disabled = active.saving || active.inFlight;
-  const label = active.draft.params.study.label;
-  const voices = active.output?.layers?.length ? ` · ${active.output.layers.length} voices` : '';
-  $('process-status').textContent = active.error ? 'Preview unavailable — retry below'
-    : active.renderedKey !== key() ? `Drawing ${label}…`
-      : `${label}${voices} · ${active.output.lines.length.toLocaleString()} ink paths · ${active.output.points.toLocaleString()} points${active.output.decimated ? ' · simplified preview' : ''}`;
+  $('gs-shuffle').disabled = active.keeping;
+  renderStatus();
   $('gesture-studies-keep').textContent = active.keeping ? 'Keeping…'
     : isVoices(active.draft.params.study) ? 'Keep as group' : 'Keep as layer';
   renderPinned();
+  renderHistory();
+}
+function renderStatus() {
+  const label = active.draft.params.study.label;
+  const voices = active.output?.layers?.length ? ` · ${active.output.layers.length} voices` : '';
+  let text;
+  if (active.error) text = 'Preview unavailable — retry below';
+  else if (active.renderedKey !== key()) {
+    const s = active.startedAt ? (performance.now() - active.startedAt) / 1000 : 0;
+    text = `Drawing ${label}…${s >= 1 ? ` ${Math.floor(s)} s` : ''}`;
+  } else {
+    const o = active.output;
+    text = `${label}${voices} · ${o.lines.length.toLocaleString()} ink paths · ${o.points.toLocaleString()} points${o.decimated ? ' · simplified preview' : ''}`;
+  }
+  $('process-status').textContent = text;
+}
+
+// ---------------------------------------------------------------- history strip
+// The last previews as small drawings made from the previews already drawn.
+function thumbOf(output) {
+  const W = output.width, H = output.height;
+  const total = output.lines.reduce((n, l) => n + l.length, 0);
+  const stride = Math.max(1, Math.ceil(total / 2500));
+  const style = styleRuns(output);
+  const parts = [];
+  let i = 0;
+  for (const run of style) {
+    const lines = output.lines.slice(i, i + run.paths); i += run.paths;
+    const d = lines.map(line => {
+      const pts = line.filter((_, j) => j % stride === 0 || j === line.length - 1);
+      return pts.length > 1 ? `M${pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L')}` : '';
+    }).join('');
+    if (d) parts.push(`<path d="${d}" stroke="${run.color || 'currentColor'}"/>`);
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><rect class="gs-history-sheet" width="${W}" height="${H}"/>`
+    + `<g fill="none" stroke-width="${Math.max(W, H) / 120}" stroke-linecap="round" stroke-linejoin="round">${parts.join('')}</g></svg>`;
+}
+function addHistory(params, output) {
+  const k = paramsKey(params);
+  const h = active.draft.history;
+  // a preview already in the strip keeps its place (going back to it does not reorder the strip)
+  if (h.some(x => x.key === k)) return;
+  h.push({ key: k, params: copy(params), svg: thumbOf(output), label: params.study.label,
+           seed: params.values.seed ?? params.study.recipe?.seed });
+  while (h.length > HISTORY) h.shift();
+}
+function renderHistory() {
+  const strip = $('gs-history');
+  const h = active.draft.history;
+  strip.hidden = !h.length;
+  const now = key();
+  const sig = h.map(x => x.key).join('|') + '#' + now;
+  if (strip.dataset.sig === sig) return;
+  strip.dataset.sig = sig;
+  strip.replaceChildren();
+  [...h].reverse().forEach((item, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'gs-history-item';
+    b.innerHTML = item.svg;
+    const name = `${item.label}${item.seed != null ? ` · seed ${item.seed}` : ''}`;
+    b.title = i ? `Go back to: ${name}` : `Latest: ${name}`;
+    b.setAttribute('aria-label', `Preview ${h.length - i}: ${name}`);
+    if (item.key === now) b.setAttribute('aria-current', 'true');
+    b.onclick = () => restoreHistory(item);
+    strip.append(b);
+  });
+}
+function restoreHistory(item) {
+  if (!active || item.key === key()) return;
+  const sameStudy = canon(item.params.study) === canon(active.draft.params.study);
+  change(p => {
+    for (const k of Object.keys(p)) delete p[k];
+    Object.assign(p, copy(item.params));
+  }, { rebuild: !sameStudy });
+}
+
+// ---------------------------------------------------------------- gallery
+let thumbPoll = null;
+function galleryGroups() {
+  const byFamily = new Map();
+  for (const st of catalogue.studies) {
+    const fam = st.builtin ? (st.family || 'Other studies') : 'Saved studies';
+    if (!byFamily.has(fam)) byFamily.set(fam, []);
+    byFamily.get(fam).push(st);
+  }
+  const order = [...FAMILIES, ...[...byFamily.keys()].filter(f => !FAMILIES.includes(f) && f !== 'Saved studies').sort(), 'Saved studies'];
+  return order.filter(f => byFamily.has(f)).map(f => [f, byFamily.get(f)]);
+}
+function openGallery() {
+  if (!active || !catalogue) return;
+  const box = $('gs-gallery-grid');
+  box.replaceChildren();
+  const current = catalogueEntry(active.draft.params.study)?.id;
+  for (const [family, list] of galleryGroups()) {
+    const sec = document.createElement('section'); sec.className = 'gs-family';
+    const h = document.createElement('h3'); h.textContent = family; sec.append(h);
+    const grid = document.createElement('div'); grid.className = 'gs-cards';
+    for (const st of list) {
+      const card = document.createElement('button');
+      card.type = 'button'; card.className = 'gs-card'; card.dataset.studyId = st.id;
+      if (st.id === current) card.setAttribute('aria-current', 'true');
+      card.innerHTML = '<span class="gs-card-sheet"><span class="gs-card-wait">Drawing…</span></span>'
+        + '<span class="gs-card-name"></span><span class="gs-card-words"></span>';
+      card.querySelector('.gs-card-name').textContent = st.label;
+      card.querySelector('.gs-card-words').textContent = quoteOf(st);
+      card.title = st.notes || st.label;
+      card.onclick = () => { closeGallery(); chooseStudy(st.id); };
+      grid.append(card);
+    }
+    sec.append(grid); box.append(sec);
+  }
+  $('process-popup').classList.add('gs-gallery-open');
+  $('gs-gallery').hidden = false;
+  $('gs-gallery-close').focus({ preventScroll: true });
+  const ids = galleryGroups().flatMap(([, list]) => list.map(s => s.id));
+  requestThumbnails(ids);
+}
+function closeGallery() {
+  clearTimeout(thumbPoll); thumbPoll = null;
+  $('process-popup').classList.remove('gs-gallery-open');
+  if ($('gs-gallery')) $('gs-gallery').hidden = true;
+}
+function showThumbs(states) {
+  let waiting = false;
+  for (const [id, s] of Object.entries(states || {})) {
+    const card = document.querySelector(`#gs-gallery .gs-card[data-study-id="${CSS.escape(id)}"]`);
+    if (!card) continue;
+    const sheet = card.querySelector('.gs-card-sheet');
+    if (s.state === 'ready') {
+      if (sheet.dataset.key !== s.key) {
+        sheet.dataset.key = s.key;
+        const img = document.createElement('img');
+        img.alt = ''; img.src = `/api/gesture-studies/thumbnail/${encodeURIComponent(s.key)}`; img.decoding = 'async';
+        sheet.replaceChildren(img);
+      }
+      card.classList.toggle('gs-slow', !!s.slow);
+      if (s.slow && !card.querySelector('.gs-badge')) {
+        const b = document.createElement('span'); b.className = 'gs-badge';
+        b.textContent = `slow · ${Math.round(s.seconds)} s`; b.title = 'This study takes a while to draw';
+        card.querySelector('.gs-card-name').append(b);
+      }
+    } else if (s.state === 'failed') {
+      sheet.replaceChildren(Object.assign(document.createElement('span'), { className: 'gs-card-wait', textContent: 'No thumbnail', title: s.error || '' }));
+    } else waiting = true;
+  }
+  return waiting;
+}
+async function requestThumbnails(ids) {
+  let res;
+  try { res = await api.post('/api/gesture-studies/thumbnails', { ids }); } catch { return; }
+  if ($('gs-gallery').hidden) return;
+  if (showThumbs(res.thumbnails)) pollThumbs();
+}
+function pollThumbs() {
+  clearTimeout(thumbPoll);
+  thumbPoll = setTimeout(async () => {
+    if ($('gs-gallery').hidden) return;
+    let res;
+    try { res = await api.get('/api/gesture-studies/thumbnails'); } catch { pollThumbs(); return; }
+    if (!$('gs-gallery').hidden && showThumbs(res.thumbnails)) pollThumbs();
+  }, 1500);
+}
+function chooseStudy(id) {
+  if (!active || id === DRAFT) return;
+  const entry = catalogue.studies.find(s => s.id === id);
+  if (!entry) return;
+  if (catalogueEntry(active.draft.params.study)?.id === id) { buildControls(); return; }
+  const memory = active.draft.memory;
+  memory[active.draft.params.study.id] = copy(active.draft.params.values);
+  change(p => { p.study = studyOf(entry); p.values = copy(memory[entry.id] || {}); }, { rebuild: true });
 }
 
 // ---------------------------------------------------------------- shell
@@ -388,38 +837,61 @@ export function initGestureStudiesBench() {
   const panel = document.createElement('div');
   panel.id = 'process-gesture-studies'; panel.hidden = true;
   panel.innerHTML = `
-    <label class="gs-field gs-study-field"><span>Study</span><select id="gs-study"></select></label>
-    <div id="gs-pinned" class="gs-pinned" hidden><span id="gs-pinned-text"></span><br><button id="gs-update-library" type="button">Update to current library</button></div>
-    <div id="gs-summary" class="gs-summary" aria-live="polite" hidden></div>
-    <details id="gs-about"><summary>About this study</summary><p class="hint" id="gs-notes"></p><p class="hint" id="gs-source"></p></details>
-    <div id="gs-controls"></div>
-    <details id="gs-save-group"><summary>Save as new study</summary>
-      <p class="hint">Saves this study with the current values as its recipe, on this machine (every project sees it). Kept layers never change when a study is edited or deleted.</p>
-      <label class="gs-field"><span>Name</span><input id="gs-save-name" type="text" maxlength="120"></label>
-      <div class="gs-row"><button id="gs-save" type="button">Save as new study</button><button id="gs-delete" type="button" hidden>Delete this saved study</button></div>
-      <p class="hint" id="gs-save-status" aria-live="polite"></p></details>
-    <details id="gs-recipe-group"><summary>Edit recipe</summary>
-      <p class="hint">Advanced: the full recipe with the current values written in. Apply validates it (every module, param and library id); the controls keep pointing into it.</p>
-      <textarea id="gs-recipe" spellcheck="false" rows="14"></textarea>
-      <div class="gs-row"><button id="gs-recipe-apply" type="button">Apply recipe</button><button id="gs-recipe-reload" type="button">Reload</button></div>
-      <p class="gs-error" id="gs-recipe-error" role="alert" hidden></p></details>`;
+    <section class="gs-section gs-study-section" aria-label="Study">
+      <div class="gs-study-head">
+        <div class="gs-study-title"><h3 id="gs-study-name"></h3><p class="hint" id="gs-study-family"></p></div>
+        <button id="gs-gallery-open" type="button" title="Choose a study by eye">${svgIcon(ICON.grid)}<span>Gallery</span></button>
+      </div>
+      <label class="gs-study-field"><span class="sr-only">Study</span><select id="gs-study" aria-label="Study"></select></label>
+      <div id="gs-pinned" class="gs-pinned" hidden><span id="gs-pinned-text"></span><br><button id="gs-update-library" type="button">Update to current library</button></div>
+      <div id="gs-summary" class="gs-summary" aria-live="polite" hidden></div>
+    </section>
+    <section class="gs-section gs-vary" aria-label="Seed and shuffle">
+      <div id="gs-seed-host"></div>
+      <p id="gs-no-seed" class="hint" hidden>This study draws the same every time: it has no seed.</p>
+      <button id="gs-shuffle" type="button" title="Vary every unlocked control within its bounds">${svgIcon(ICON.shuffle)}<span>Shuffle</span></button>
+    </section>
+    <section class="gs-section" aria-label="Controls"><div id="gs-controls"></div></section>
+    <section id="gs-measure" class="gs-section gs-measure" aria-label="Measure" hidden><h4>Measure</h4><div id="gs-measure-devices"></div></section>
+    <details id="gs-advanced" class="gs-advanced"><summary>Advanced</summary>
+      <div id="gs-advanced-body">
+      <details id="gs-about"><summary>About this study</summary><p class="hint" id="gs-notes"></p><p class="hint" id="gs-source"></p></details>
+      <details id="gs-save-group"><summary>Save as new study</summary>
+        <p class="hint">Saves this study with the current values as its recipe, on this machine (every project sees it). Kept layers never change when a study is edited or deleted.</p>
+        <label class="gs-text"><span>Name</span><input id="gs-save-name" type="text" maxlength="120"></label>
+        <div class="gs-row"><button id="gs-save" type="button">Save as new study</button><button id="gs-delete" type="button" hidden>Delete this saved study</button></div>
+        <p class="hint" id="gs-save-status" aria-live="polite"></p></details>
+      <details id="gs-recipe-group"><summary>Edit recipe</summary>
+        <p class="hint">The full recipe with the current values written in. Apply validates it (every module, param and library id); the controls keep pointing into it.</p>
+        <textarea id="gs-recipe" spellcheck="false" rows="14"></textarea>
+        <div class="gs-row"><button id="gs-recipe-apply" type="button">Apply recipe</button><button id="gs-recipe-reload" type="button">Reload</button></div>
+        <p class="gs-error" id="gs-recipe-error" role="alert" hidden></p></details>
+      </div>
+    </details>`;
   $('bench-controls').append(panel);
-  $('gs-study').onchange = () => {
-    const id = $('gs-study').value;
-    if (id === DRAFT || !active) return;
-    const entry = catalogue.studies.find(s => s.id === id);
-    if (!entry) return;
-    const memory = active.draft.memory;
-    memory[active.draft.params.study.id] = copy(active.draft.params.values);
-    change(p => { p.study = studyOf(entry); p.values = copy(memory[entry.id] || {}); });
-    buildControls();
-  };
+  $('gs-study').onchange = () => chooseStudy($('gs-study').value);
+  $('gs-gallery-open').onclick = openGallery;
+  $('gs-shuffle').onclick = shuffle;
   $('gs-recipe-group').addEventListener('toggle', () => { if ($('gs-recipe-group').open) loadRecipe(); });
   $('gs-recipe-reload').onclick = loadRecipe;
   $('gs-recipe-apply').onclick = applyRecipe;
   $('gs-save').onclick = saveStudy;
   $('gs-update-library').onclick = updateLibrary;
   $('gs-delete').onclick = deleteStudy;
+
+  const history = document.createElement('div');
+  history.id = 'gs-history'; history.className = 'gs-history'; history.hidden = true;
+  history.setAttribute('role', 'group'); history.setAttribute('aria-label', 'Recent previews');
+  document.querySelector('.bench-main .process-body').after(history);
+
+  const gallery = document.createElement('div');
+  gallery.id = 'gs-gallery'; gallery.className = 'gs-gallery'; gallery.hidden = true;
+  gallery.setAttribute('role', 'region'); gallery.setAttribute('aria-label', 'Study gallery');
+  gallery.innerHTML = `<div class="gs-gallery-head"><h3>Studies</h3><p class="hint">Each study at its defaults. Choose one to open it.</p>
+    <button id="gs-gallery-close" type="button">Back to the study</button></div><div id="gs-gallery-grid"></div>`;
+  document.querySelector('#process-popup .bench-layout').append(gallery);
+  $('gs-gallery-close').onclick = closeGallery;
+
   const bar = document.createElement('div');
   bar.id = 'gesture-studies-actions'; bar.hidden = true;
   bar.innerHTML = `<button id="gesture-studies-undo">Undo</button><button id="gesture-studies-redo">Redo</button><span id="gesture-studies-kept" class="hint" aria-live="polite"></span><button id="gesture-studies-save-gallery" disabled>Save to gallery</button><button id="gesture-studies-keep" class="primary" disabled>Keep as layer</button>`;
@@ -429,7 +901,11 @@ export function initGestureStudiesBench() {
   $('gesture-studies-keep').onclick = keep;
   $('gesture-studies-save-gallery').onclick = saveToGallery;
   document.addEventListener('keydown', e => {
-    if (!active || e.target.matches('input,textarea,select,[contenteditable="true"]')) return;
+    if (!active) return;
+    if (e.key === 'Escape' && !$('gs-gallery').hidden) {
+      e.preventDefault(); e.stopImmediatePropagation(); closeGallery(); return;
+    }
+    if (e.target.matches('input,textarea,select,[contenteditable="true"]')) return;
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault(); e.stopImmediatePropagation(); undo(e.shiftKey);
     }
@@ -447,11 +923,12 @@ export async function openGestureStudiesBench({ mod, params, contextKey, onKeep,
   const context = `${benchProjectEpoch()}:${contextKey || `new:${mod.id}`}`;
   let draft = drafts.get(context);
   if (!draft || (inputKey !== draft.inputKey && inputKey !== JSON.stringify(draft.params))) {
-    draft = { params: input, inputKey, undo: [], redo: [], memory: {} };
+    draft = { params: input, inputKey, undo: [], redo: [], memory: {}, locks: {}, history: [] };
     drafts.set(context, draft);
   }
   active = { mod, draft, external: params, onKeep, onClose, renderedKey: null, inFlight: false, queued: false,
-             keeping: false, saving: false, savingGallery: false, output: null, error: false, builtFor: null };
+             keeping: false, saving: false, savingGallery: false, output: null, error: false, builtFor: null,
+             lastMs: null, drag: null, startedAt: null };
   const owner = active;
   const popup = $('process-popup');
   popup.classList.remove('second-reading', 'watch-only', 'magnetic-field', 'hand-drift');
@@ -467,10 +944,16 @@ export async function openGestureStudiesBench({ mod, params, contextKey, onKeep,
   $('process-status').hidden = false;
   $('process-status').textContent = 'Loading studies…';
   openBenchShell({ close: () => closeGestureStudiesBench(),
+    cancelGesture: () => { if ($('gs-gallery') && !$('gs-gallery').hidden) { closeGallery(); return true; } return false; },
     reopen: () => openGestureStudiesBench(original),
     origin: contextKey?.startsWith('layer:') ? 'From kept layer · Keep creates a new layer' : 'Working draft · Keep creates a new layer' });
+  // the drawing comes first: the bench opens full-screen (Restore gives the old popup back)
+  popup.classList.add('expanded');
+  $('process-expand').textContent = 'Restore';
+  $('process-expand').setAttribute('aria-pressed', 'true');
   $('process-canvas').replaceChildren();
   delete $('process-canvas').dataset.renderedRecipe;
+  $('gs-history').dataset.sig = '';
   for (const id of ['gesture-studies-keep', 'gesture-studies-save-gallery', 'gesture-studies-undo', 'gesture-studies-redo']) $(id).disabled = true;
   try {
     await loadCatalogue();
@@ -488,6 +971,9 @@ export async function openGestureStudiesBench({ mod, params, contextKey, onKeep,
 export function closeGestureStudiesBench(notify = true) {
   if (!active) return;
   const closing = active;
+  endDrag();
+  clearInterval(closing.timer);
+  closeGallery();
   Object.assign(closing.external, copy(closing.draft.params));
   active = null;
   presetControls?.remove(); presetControls = null;
@@ -495,6 +981,7 @@ export function closeGestureStudiesBench(notify = true) {
   $('process-canvas').classList.remove('gesture-studies-pending');
   $('process-gesture-studies').hidden = true; $('process-gesture-studies').inert = false;
   $('gesture-studies-actions').hidden = true;
+  $('gs-history').hidden = true;
   if (notify) { closeBenchShell(); closing.onClose?.(); }
 }
 
@@ -514,76 +1001,130 @@ function installPresetControls() {
       if (active !== owner || owner.keeping || owner.savingGallery || owner.inFlight) {
         throw new Error('The working bench changed before this preset could be applied.');
       }
-      remember(copy(owner.draft.params));
+      endDrag();
+      remember(state());
       owner.draft.params = { values: {}, ...copy(params) };
       buildControls(); invalidate();
       await requestPreview();
     },
   });
   presetControls.id = 'gesture-studies-module-presets';
-  $('bench-controls')?.prepend(presetControls);
+  const h = document.createElement('h4'); h.textContent = 'Presets';
+  presetControls.prepend(h);
+  $('gs-advanced-body')?.prepend(presetControls);
 }
 
 // ---------------------------------------------------------------- preview
+// One run of consecutive lines per ink: the server's `styles` (colour + pen
+// width), within a chorus's voices (`layers`), else the study's one pen.
+function styleRuns(output) {
+  if (output.styles?.length) return output.styles.map(s => ({ ...s }));
+  if (output.layers?.length) return output.layers.map(l => ({ color: l.color, width: null, paths: l.paths }));
+  return [{ color: null, width: null, paths: output.lines.length }];
+}
+function draw(output, exact, expected) {
+  const svg = $('process-canvas');
+  const W = output.width, H = output.height;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.style.aspectRatio = `${W} / ${H}`;
+  svg.style.setProperty('--process-aspect', String(W / H));
+  svg.replaceChildren();
+  const frame = document.createElementNS(NS, 'rect');
+  frame.setAttribute('class', 'gesture-studies-frame');
+  for (const [k, v] of Object.entries({ x: 0, y: 0, width: W, height: H })) frame.setAttribute(k, String(v));
+  const ink = document.createElementNS(NS, 'g');
+  ink.classList.add('gesture-studies-ink');
+  ink.style.strokeWidth = String(penWidth(exact.study));   // drawn at the pen's width
+  // a chorus comes back as consecutive runs of lines, one per voice, each in its ink;
+  // within (and outside) them, runs of one ink colour and pen width
+  const voices = output.layers?.length ? output.layers : [{ paths: output.lines.length, color: null }];
+  const runs = styleRuns(output);
+  let at = 0, r = 0, left = runs[0]?.paths ?? 0;
+  for (const voice of voices) {
+    const g = document.createElementNS(NS, 'g');
+    if (voice.color) {
+      g.classList.add('gs-voice'); g.style.setProperty('--gs-voice', voice.color);
+      g.dataset.voice = voice.name || '';
+    }
+    let sub = null, subRun = -1;
+    for (const line of output.lines.slice(at, at + voice.paths)) {
+      while (left <= 0 && r < runs.length - 1) { r++; left = runs[r].paths; }
+      if (subRun !== r) {
+        sub = document.createElementNS(NS, 'g'); subRun = r;
+        const run = runs[r];
+        if (run?.color && !voice.color) { sub.classList.add('gs-ink'); sub.style.setProperty('--gs-ink', run.color); }
+        if (run?.width) sub.style.strokeWidth = String(run.width);
+        g.append(sub);
+      }
+      const el = document.createElementNS(NS, 'polyline');
+      el.setAttribute('points', line.map(([x, y]) => `${x},${y}`).join(' '));
+      el.setAttribute('class', 'draw-line');
+      sub.append(el);
+      left--;
+    }
+    at += voice.paths;
+    ink.append(g);
+  }
+  svg.append(frame, ink);
+  svg.dataset.renderedRecipe = JSON.stringify(exact);
+  svg.dataset.renderedKey = expected;
+  svg.classList.remove('gesture-studies-pending');
+}
+function cachePreview(k, output) {
+  previews.delete(k); previews.set(k, output);
+  let points = [...previews.values()].reduce((n, o) => n + (o.points || 0), 0);
+  while (previews.size > PREVIEW_CACHE || (previews.size > 1 && points > 3_000_000)) {
+    const [old, o] = previews.entries().next().value;
+    previews.delete(old); points -= o.points || 0;
+  }
+}
 async function requestPreview() {
   if (!active) return;
   const owner = active;
   if (owner.inFlight) { owner.queued = true; return; }
-  const exact = copy(owner.draft.params), expected = JSON.stringify(exact);
-  owner.inFlight = true; owner.queued = false; owner.error = false;
-  clearBenchError(); renderControls();
+  const exact = canonParams(owner.draft.params), expected = paramsKey(exact);
+  owner.error = false;
+  clearBenchError();
   refreshInfo();
+  const hit = previews.get(expected);
+  if (hit) {                                  // drawn before: history, undo, a lock toggled back
+    owner.output = hit; owner.renderedKey = expected;
+    draw(hit, exact, expected);
+    if (!owner.drag) addHistory(exact, hit);
+    renderControls();
+    return;
+  }
+  owner.inFlight = true; owner.queued = false;
+  owner.startedAt = performance.now();
+  clearInterval(owner.timer);
+  owner.timer = setInterval(() => { if (active === owner && owner.inFlight) renderStatus(); }, 500);
+  renderControls();
   try {
     const output = await api.post('/api/generators/preview', { module: owner.mod.id, params: exact });
-    if (active !== owner || key() !== expected) return;
+    owner.lastMs = performance.now() - owner.startedAt;
+    cachePreview(expected, output);
+    // while a slider drags, the latest finished drawing shows even if the slider has moved on
+    if (active !== owner || (key() !== expected && !owner.drag)) return;
     owner.output = output; owner.renderedKey = expected;
-    const svg = $('process-canvas');
-    const W = output.width, H = output.height;
-    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    svg.style.aspectRatio = `${W} / ${H}`;
-    svg.style.setProperty('--process-aspect', String(W / H));
-    svg.replaceChildren();
-    const frame = document.createElementNS(NS, 'rect');
-    frame.setAttribute('class', 'gesture-studies-frame');
-    for (const [k, v] of Object.entries({ x: 0, y: 0, width: W, height: H })) frame.setAttribute(k, String(v));
-    const ink = document.createElementNS(NS, 'g');
-    ink.classList.add('gesture-studies-ink');
-    ink.style.strokeWidth = String(penWidth(exact.study));   // drawn at the pen's width
-    // a chorus comes back as consecutive runs of lines, one per voice, each in its ink
-    const runs = output.layers?.length ? output.layers : [{ paths: output.lines.length, color: null }];
-    let at = 0;
-    for (const run of runs) {
-      const g = document.createElementNS(NS, 'g');
-      if (run.color) {
-        g.classList.add('gs-voice'); g.style.setProperty('--gs-voice', run.color);
-        g.dataset.voice = run.name || '';
-      }
-      for (const line of output.lines.slice(at, at + run.paths)) {
-        const el = document.createElementNS(NS, 'polyline');
-        el.setAttribute('points', line.map(([x, y]) => `${x},${y}`).join(' '));
-        el.setAttribute('class', 'draw-line');
-        g.append(el);
-      }
-      at += run.paths;
-      ink.append(g);
-    }
-    svg.append(frame, ink);
-    svg.dataset.renderedRecipe = expected;
-    svg.classList.remove('gesture-studies-pending');
+    draw(output, exact, expected);
+    if (!owner.drag) addHistory(exact, output);      // the strip keeps settled previews, not every drag step
   } catch (error) {
     if (active === owner && key() === expected) { owner.error = true; showBenchError(error, requestPreview); }
   } finally {
-    owner.inFlight = false;
+    owner.inFlight = false; owner.startedAt = null;
+    clearInterval(owner.timer);
     if (active === owner) {
       renderControls();
-      if (owner.queued) requestPreview();
+      // the latest values, unless a slow study's slider is still being dragged (it draws on release)
+      const dragging = owner.drag && !(owner.lastMs != null && owner.lastMs < LIVE_MS);
+      if (owner.queued || (owner.renderedKey !== key() && !dragging)) { owner.queued = false; if (!owner.error) requestPreview(); }
     }
   }
 }
 
 async function keep() {
   if (!active || $('gesture-studies-keep').disabled) return;
-  const owner = active, exact = copy(owner.draft.params);
+  const owner = active, exact = canonParams(owner.draft.params);
   owner.keeping = true; clearBenchError(); renderControls();
   try {
     if (isVoices(exact.study)) {
@@ -607,7 +1148,7 @@ async function keep() {
 
 async function saveToGallery() {
   if (!active || $('gesture-studies-save-gallery').disabled) return;
-  const owner = active, exact = copy(owner.draft.params), expected = key();
+  const owner = active, exact = canonParams(owner.draft.params), expected = key();
   owner.savingGallery = true; clearBenchError(); renderControls();
   try {
     await openGallerySave({ kind: 'generator', module: owner.mod.id, params: exact }, exact.study.label);
@@ -631,8 +1172,7 @@ async function saveStudy() {
     await loadCatalogue();
     if (active !== owner) return;
     owner.saving = false;
-    change(q => { q.study = studyOf(saved); q.values = {}; });
-    buildControls();
+    change(q => { q.study = studyOf(saved); q.values = {}; }, { rebuild: true });
     $('gs-save-status').textContent = `Saved · ${saved.label}`;
   } catch (error) {
     if (active === owner) $('gs-save-status').textContent = error.message || String(error);
@@ -661,7 +1201,7 @@ async function loadRecipe() {
   try {
     const res = await api.post('/api/gesture-studies/validate', infoBody(p));
     // a sampler shows the combination it drew; applying it makes a kit study of it
-    if (active && key() === JSON.stringify(p)) $('gs-recipe').value = JSON.stringify(isSampler(p.study) ? res.run_recipe : res.recipe, null, 1);
+    if (active && JSON.stringify(active.draft.params) === JSON.stringify(p)) $('gs-recipe').value = JSON.stringify(isSampler(p.study) ? res.run_recipe : res.recipe, null, 1);
   } catch (error) {
     $('gs-recipe-error').textContent = error.message || String(error); $('gs-recipe-error').hidden = false;
   }
@@ -680,8 +1220,7 @@ async function applyRecipe() {
     const study = isSampler(st) ? { ...st, engine: 'kit', recipe } : { ...st, recipe };
     const res = await api.post('/api/gesture-studies/validate', { ...infoBody(owner.draft.params), study, values: {}, sampled: null });
     if (active !== owner) return;
-    change(q => { q.study = studyOf(res); q.values = {}; });
-    buildControls();
+    change(q => { q.study = studyOf(res); q.values = {}; }, { rebuild: true });
   } catch (error) {
     if (active === owner) { $('gs-recipe-error').textContent = error.message || String(error); $('gs-recipe-error').hidden = false; }
   }

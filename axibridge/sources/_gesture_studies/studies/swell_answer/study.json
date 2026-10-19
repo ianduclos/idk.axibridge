@@ -8,6 +8,7 @@
  "engine": "kit",
  "keep": "voices",
  "notes": "Two hands on one surface in two inks: roadrunner stays a dry line (black); shikasta swells into drops (red) only where roadrunner is silent. Ian, round 11: \"first and last row are very good\" (this is the first; the last is Swell sentence). Keep makes a group with one layer per voice, each on its own pen. Controls: the dry hand, the swelling hand, its profile and head size, how near it hears the dry line, occasional dots on the swelling voice (off by default), the seed.",
+ "family": "Swell",
  "recipe": {
   "kit": 1,
   "frame": [

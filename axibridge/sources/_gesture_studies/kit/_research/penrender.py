@@ -1,4 +1,4 @@
-# FROZEN from research commit 9c3844a: tools/gesture/gesture/penrender.py
+# FROZEN from research commit ecd64f8: tools/gesture/gesture/penrender.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Nib ribbons that read as ink at real pen widths.
 

@@ -38,7 +38,14 @@ def shot(page, name):
 
 
 def control(page, key):
-    return page.locator(f'#gs-controls [data-control-key="{key}"]')
+    return page.locator(f'#process-gesture-studies [data-control-key="{key}"]')
+
+
+def advanced(page, summary):
+    """Presets, Save as new study and Edit recipe live under Advanced (collapsed)."""
+    if not page.locator('#gs-advanced').evaluate('d => d.open'):
+        page.click('#gs-advanced > summary')
+    page.click(f'{summary} summary')
 
 
 def test_study_dropdown_controls_preview_keep_and_save(ui, server):
@@ -84,7 +91,7 @@ def test_study_dropdown_controls_preview_keep_and_save(ui, server):
     assert kept['library'] and {p['id'] for p in kept['pins']} >= {'matisse', 'shikasta', 'lichtenberg'}
 
     # Save as new study appears in the dropdown (and in the store)
-    ui.click('#gs-save-group summary')
+    advanced(ui, '#gs-save-group')
     ui.fill('#gs-save-name', 'Route chart')
     ui.click('#gs-save')
     ui.wait_for_function("() => document.querySelector('#gs-save-status').textContent.startsWith('Saved')")
@@ -113,7 +120,7 @@ def test_edit_recipe_drawer_validates(ui):
     open_bench(ui)
     ui.select_option('#gs-study', 'drawing_and_measure')
     ready(ui)
-    ui.click('#gs-recipe-group summary')
+    advanced(ui, '#gs-recipe-group')
     ui.wait_for_function("() => document.querySelector('#gs-recipe').value.includes('handover')")
     edited = json.loads(ui.locator('#gs-recipe').input_value())
     ui.fill('#gs-recipe', '{ not json')
@@ -146,12 +153,13 @@ def test_new_studies_follow_the_eight(ui):
     # the numbered atlas exposes the drawing's route only, never layout or numbering
     ui.select_option('#gs-study', 'numbered_atlas')
     ready(ui)
-    keys = ui.eval_on_selector_all('#gs-controls [data-control-key]', 'els => els.map(e => e.dataset.controlKey)')
+    keys = ui.eval_on_selector_all('#process-gesture-studies [data-control-key]',
+                                   'els => els.map(e => e.dataset.controlKey)')
     assert set(keys) == {'parts.0.voice.hands', 'parts.0.voice.blend', 'parts.0.voice.joins', 'seed'}
     # the margin chart offers every layout but the wrap
     ui.select_option('#gs-study', 'margin_chart')
     ready(ui)
-    layouts = control(ui, 'parts.0.modulators.0.layout').locator('button').all_text_contents()
+    layouts = control(ui, 'parts.0.modulators.0.layout').locator('.gs-switch button').all_text_contents()
     assert layouts == ['margin', 'diptych', 'under']
     # the sampler names the combination its seed picked, and the next seed picks another
     ui.select_option('#gs-study', 'sampler')
@@ -177,7 +185,7 @@ def test_chorus_keeps_as_a_group_with_one_layer_per_voice_on_its_own_pen(ui, ser
     assert ui.locator('#gesture-studies-keep').text_content() == 'Keep as group'
     shot(ui, 'chorus')
     # three voices: the first three of the four
-    ui.locator('#gs-controls [data-control-key="arranger.voices"] input').evaluate(
+    control(ui, 'arranger.voices').locator('input').evaluate(
         "el => { el.value = '3'; el.dispatchEvent(new Event('change')); }")
     ready(ui)
     ui.wait_for_function("() => document.querySelectorAll('#process-canvas .gs-voice').length === 3")
@@ -254,4 +262,84 @@ def test_a_resumed_layer_stays_pinned_until_updated_on_purpose(ui, server):
             break
         ui.wait_for_timeout(200)
     assert len(layers) == 3 and layers[-1]['source']['params']['library'] == current
+    assert not ui.errors
+
+
+# ---------------------------------------------------------------------------
+# Bench v3 (2026-10-19): gallery, dice, Shuffle, locks, history, dimmed controls
+# ---------------------------------------------------------------------------
+
+def test_gallery_dice_and_history(ui, server):
+    open_bench(ui)
+    # it opens full-screen, the drawing first
+    assert 'expanded' in ui.locator('#process-popup').get_attribute('class')
+    assert ui.locator('#gs-study-name').text_content() == 'Hand Drift'
+    # a control that does nothing right now is dimmed and says why
+    nib = control(ui, 'nib_angle')
+    assert 'gs-inactive' in nib.get_attribute('class')
+    assert 'acts when Regimes is field' in nib.locator('.gs-why').text_content()
+    assert 'gs-inactive' not in control(ui, 'hand_1').get_attribute('class')
+    assert not ui.locator('#gs-measure').is_visible()          # Measure comes later (devices)
+    assert ui.locator('#gs-history .gs-history-item').count() == 1
+
+    # the gallery: every study as a card, grouped by family; a card opens its study
+    ui.click('#gs-gallery-open')
+    assert ui.locator('#gs-gallery').is_visible() and not ui.locator('#process-canvas').is_visible()
+    families = ui.locator('#gs-gallery .gs-family h3').all_text_contents()
+    assert families[:6] == ['Hands and drift', 'Measurement', 'Several voices', 'Swell', 'After Oehlen', 'Rivers']
+    assert ui.locator('#gs-gallery .gs-card').count() >= 28
+    card = ui.locator('#gs-gallery .gs-card[data-study-id="bold_swell"]')
+    assert 'very nice' in card.locator('.gs-card-words').text_content()      # Ian's own words
+    card.locator('img').wait_for(timeout=60000)                               # its thumbnail arrives
+    shot(ui, 'gallery')
+    card.click()
+    assert not ui.locator('#gs-gallery').is_visible()
+    ready(ui)
+    assert recipe(ui)['study']['id'] == 'bold_swell'
+    assert ui.locator('#gs-history .gs-history-item').count() == 2
+    # Dot shape acts only with dots on
+    assert 'gs-inactive' in control(ui, 'renderer.dot_shape').get_attribute('class')
+    control(ui, 'renderer.dots').locator('button', has_text='count').click()
+    ready(ui)
+    assert 'gs-inactive' not in control(ui, 'renderer.dot_shape').get_attribute('class')
+
+    # the seed's die draws a random seed; each preview joins the strip
+    seed = recipe(ui)['values'].get('seed', 7601)
+    ui.click('#gs-seed-die')
+    ready(ui)
+    assert recipe(ui)['values']['seed'] != seed
+    assert ui.locator('#gs-history .gs-history-item').count() == 4
+
+    # a lock keeps a control through Shuffle; Shuffle and the lock are undoable
+    hand = recipe(ui)['values'].get('parts.0.voice.hand', 'shikasta')
+    control(ui, 'parts.0.voice.hand').locator('.gs-lock').click()
+    assert control(ui, 'parts.0.voice.hand').locator('.gs-lock').get_attribute('aria-pressed') == 'true'
+    before = recipe(ui)
+    ui.click('#gs-shuffle')
+    ready(ui)
+    after = recipe(ui)
+    assert after != before and after['values'].get('parts.0.voice.hand', 'shikasta') == hand
+    ui.click('#gesture-studies-undo')
+    ready(ui)
+    assert recipe(ui) == before
+    ui.click('#gesture-studies-undo')
+    assert control(ui, 'parts.0.voice.hand').locator('.gs-lock').get_attribute('aria-pressed') == 'false'
+
+    # a hand's die picks another library hand
+    control(ui, 'parts.0.voice.hand').locator('.gs-die').click()
+    ready(ui)
+    assert recipe(ui)['values']['parts.0.voice.hand'] != hand
+
+    # the strip goes back: the first Bold swell preview, in one step
+    items = ui.locator('#gs-history .gs-history-item')
+    n = items.count()
+    assert 4 <= n <= 12
+    ui.locator('#gs-history .gs-history-item[aria-label*="Bold swell"]').last.click()
+    ready(ui)
+    assert recipe(ui)['study']['id'] == 'bold_swell' and recipe(ui)['values'] == {}
+    assert ui.locator('#gs-history [aria-current="true"]').count() == 1
+    shot(ui, 'history')
+    ui.click('#gesture-studies-undo')
+    ready(ui)
+    assert recipe(ui)['values'].get('parts.0.voice.hand', hand) != hand
     assert not ui.errors

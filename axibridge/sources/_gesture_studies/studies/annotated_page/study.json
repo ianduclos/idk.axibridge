@@ -7,6 +7,7 @@
  "source": "polyphonic_sheets round 9 P2: .local/gesture/out/polyphonic_sheets/page-P2-columns-rtl.recipe.json",
  "engine": "kit",
  "notes": "A page of writing: a chain drift cut into words as the body (two columns, right to left), a hand's glosses in the margin, brackets and underlines by a staccato-danced nib. Controls: the body route, the gloss hand, the annotating hand, direction, columns and the annotation mode. Row count, word cutting and the gloss geometry are fixed.",
+ "family": "Several voices",
  "recipe": {
   "kit": 1,
   "frame": [

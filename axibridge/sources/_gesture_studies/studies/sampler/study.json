@@ -7,6 +7,7 @@
  "source": "combo_search round 10 (sampling only): tools/gesture/gesture/kit/sampler.py",
  "engine": "sampler",
  "notes": "The seed picks a whole combination from the kit, unbred: a heavy voice (a drift, a hand or a dance, with a field, a tempo or prosody for weight, in nib or line-built ink), a dry wire voice, and sometimes a third (its own measurement, or a dance). Ian, round 10: \"some golden ones here\" and \"curiously I dig the unbred ones more\". The sample space is every generative hand, dance and tempo in the frozen library, so hands learned later enter it after a refreeze; a kept layer stores the combination it drew, so a refreeze never changes it. Save as new study keeps the combination as a study of its own. Version 2 (round 12): Keep it clean (off by default, so the seed draws as before). Ian, round 11: seed 19 \"i dont like those staggered barbed straight lines\", seed 30 \"nice drawing, unsure of the pollution to the right\". With it on, the same combination is tidied by rule, with no new draw from the seed: a straight-run machine voice (compass, ruler, stair, koch) speaks its own hand instead, a handover to one is dropped, a measurement laid beside the drawing is dropped (one laid over it stays), a scatter becomes one surface.",
+ "family": "Hands and drift",
  "recipe": {
   "frame": [
    267.0,
@@ -28,7 +29,7 @@
    "path": "clean",
    "label": "Keep it clean",
    "type": "bool",
-   "help": "No straight-run machine voices, no measurement laid beside the drawing, no scatter of small copies: the same combination with the pollution taken out."
+   "help": "Takes the pollution out of this seed's combination, by rule: straight-run machines, measurements laid beside the drawing, a scatter of copies. A combination with none of these draws the same with it on or off."
   }
  ]
 }

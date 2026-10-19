@@ -7,6 +7,7 @@
  "source": "kit demo 2 (round 9): .local/gesture/out/kit/2-chain-staccato-nib-e.recipe.json",
  "engine": "kit",
  "notes": "One drift line with chain joins, danced by a tempo and inked as nib traces (style e). Controls: the route (2-4 hands, any library hand), the tempo that dances it, line length, how heavy the dance lands and the mass width. Chain joins, the nib style and the pen are the study itself and stay fixed.",
+ "family": "Hands and drift",
  "recipe": {
   "kit": 1,
   "frame": [

@@ -38,7 +38,9 @@ ORDER = ["hand_drift", "danced_chain", "two_voices", "drawing_and_measure", "sha
          "leaf_miner", "brood_gallery", "specimen_plate", "river_taxonomy", "rechain", "dance_triptych",
          "bold_swell", "swell_answer", "swell_sentence",
          # round 12 keeps, second set (2026-10-18): voices by ink
-         "found_ground", "limb_signs", "limb_signs_levitation", "morphing_belt"]
+         "found_ground", "limb_signs", "limb_signs_levitation", "morphing_belt",
+         # arch, listen, river_zoom (2026-10-19)
+         "arch", "listen", "river_zoom"]
 KIT_STUDIES = ORDER[1:]                        # the sampler draws through the kit too
 # Studies whose ink depends on GEOS's offset/buffer details: nib "c" lanes come out
 # slightly differently under GEOS 3.13 (app venv) and 3.14 (research venv). The
@@ -47,7 +49,8 @@ KIT_STUDIES = ORDER[1:]                        # the sampler draws through the k
 # The sampler's default combination changes when a refreeze adds hands; it may
 # then be inked in nib "c" lanes, so it is held to the structural check too.
 # The limb signs (2026-10-18) ink their figures with the nib renderer's c+e lanes too.
-GEOS_SENSITIVE = {"two_voices", "sampler", "limb_signs", "limb_signs_levitation"}
+GEOS_SENSITIVE = {"two_voices", "sampler", "limb_signs", "limb_signs_levitation",
+                  "arch"}   # its flicker IS the limb signs (tight cross-GEOS check: test_gesture_studies_new_alive)
 
 _SHEETS: dict = {}
 
@@ -94,7 +97,8 @@ def test_builtin_studies_load_in_order_with_few_bounded_controls():
     for s in studies:
         ST.check_study(s)
         assert s.version >= 1 and s.notes and s.source
-        assert any(c.key == "seed" and c.type == "int" for c in s.controls), s.id
+        # bench v3: a study whose drawing ignores the seed has no seed control (and says so)
+        assert any(c.key == "seed" and c.type == "int" for c in s.controls) or "no seed control" in s.notes, s.id
         if s.engine == "kit":
             assert 3 <= len(s.controls) <= 8, s.id
         if s.engine == "sampler":                      # the seed IS the piece: it picks the combination

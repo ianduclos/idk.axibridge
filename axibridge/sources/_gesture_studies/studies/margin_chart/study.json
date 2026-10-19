@@ -7,6 +7,7 @@
  "source": "measure_pairs round 10: tools/gesture/results/measure_pairs-pair_margin.recipe.json (layouts: measure_pairs-pairs.recipe.json cells 2-7)",
  "engine": "kit",
  "notes": "A meander69 > shikasta drift with chain joins and its curvature rows in the margin below; the seams where the hand changes are numbered on both. Ian, round 10: \"super nice\"; of the layouts sheet, \"every one of them good except for the first\" (the wrap). So the layout switch offers margin, diptych and under (route lanes under the drawing in the same box), never wrap. Also the route, the joins, the rows and what the numbers mark.",
+ "family": "Measurement",
  "recipe": {
   "kit": 1,
   "frame": [

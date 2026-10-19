@@ -1,0 +1,204 @@
+{
+ "id": "arch",
+ "label": "Revived keeps, composed",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-19",
+ "source": "Round 15 arch: tools/gesture/results/arch-2-15002.recipe.json; tools/gesture/results/arch-2026-10-19.md (15002; also kept 15010)",
+ "engine": "kit",
+ "keep": "voices",
+ "inks": [
+  "black",
+  "blue",
+  "red",
+  "green",
+  "purple",
+  "magenta",
+  "cyan",
+  "orange",
+  "blue-400",
+  "red-400",
+  "green-400",
+  "purple-400",
+  "magenta-400",
+  "cyan-400",
+  "orange-400",
+  "yellow-400"
+ ],
+ "notes": "The 15002 sheet: past keeps return in new roles over ccolour / found_play. A danced chain traverses the sheet, a round swell intrudes at the core, limb figures flicker from made lines, and a passer changes its hand inside a container. Ian: \"bah amazing keep this. all are excellent\"; 15002: \"absolutely excellent\"; 15010: \"great stuff. love it\". Keep as a group, one layer per ink. The seed composes the sheet; density adjusts the core, pens and ownership change the pen plan, and duet is the chance of a second swell answering the first.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   300.0,
+   200.0
+  ],
+  "seed": 15002,
+  "margin": 5.0,
+  "arranger": {
+   "id": "arch",
+   "families": "danced,swell,flicker,passer",
+   "density": -1.0,
+   "pens": 0,
+   "mode": "auto",
+   "duet": 0.25,
+   "acts": "container,counter"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_thrusting",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_miner",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dancer_madeline",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_mantis",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "fly_fru",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "meander69",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "hokusai",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_staccato",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_roadrunner",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_belt",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_slime",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "arch_ink",
+   "pen": 0.4,
+   "nib_style": "e"
+  },
+  "label": "arch",
+  "notes": "frame 300\u00d7200: landscape: a core and a reserved blank side by side"
+ },
+ "controls": [
+  {
+   "path": "arranger.density",
+   "label": "Core density",
+   "type": "float",
+   "min": -1.0,
+   "max": 1.0,
+   "step": 0.1,
+   "help": "-1 lets the seed choose 0.2, 0.3 or 0.4; nonnegative values set the dial."
+  },
+  {
+   "path": "arranger.pens",
+   "label": "Pens (0 = composed)",
+   "type": "int",
+   "min": 0,
+   "max": 5,
+   "step": 1
+  },
+  {
+   "path": "arranger.mode",
+   "label": "Pen ownership",
+   "type": "choice"
+  },
+  {
+   "path": "arranger.duet",
+   "label": "Swell duet chance",
+   "type": "float",
+   "min": 0.0,
+   "max": 1.0,
+   "step": 0.05
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

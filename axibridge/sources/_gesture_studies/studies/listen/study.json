@@ -1,0 +1,186 @@
+{
+ "id": "listen",
+ "label": "Lines that listen",
+ "version": 1,
+ "parent": null,
+ "created": "2026-10-19",
+ "source": "Round 15 listen: tools/gesture/results/listen-2-15102.recipe.json; tools/gesture/results/listen-2026-10-19.md (15102)",
+ "engine": "kit",
+ "keep": "voices",
+ "inks": [
+  "black",
+  "blue",
+  "red",
+  "green",
+  "purple",
+  "magenta",
+  "cyan",
+  "orange",
+  "blue-400",
+  "red-400",
+  "green-400",
+  "purple-400",
+  "magenta-400",
+  "cyan-400",
+  "orange-400"
+ ],
+ "notes": "The 15102 sheet: speakers draw first; later lines hear and imitate, exaggerate, translate, refuse, echo, calm, nest or bind an earlier gesture. A rare partial void cuts older layers while later lines cross it; crossings weave or yield. Ian: \"Super nice work \u2026 awareness will be very important down the line. keep\"; 15102: \"very very nice\". Keep as a group, one layer per ink. Void and river controls set probabilities, not continuous amounts: move toward 0 or 1 to cross the seed\u2019s decision threshold. The middle-density setting stays fixed at 0.5: its full 0.2\u20130.8 range did not change the default drawing.",
+ "recipe": {
+  "kit": 1,
+  "frame": [
+   250.0,
+   175.0
+  ],
+  "seed": 15102,
+  "margin": 5.0,
+  "arranger": {
+   "id": "listen",
+   "density": 0.5,
+   "mask_p": 0.25,
+   "river_p": 0.3,
+   "relations": "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+   "pens": 0
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_thrusting",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_miner",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dancer_madeline",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_mantis",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "fly_fru",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "hokusai",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_staccato",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_roadrunner",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_belt",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_slime",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  ],
+  "renderer": {
+   "id": "oehlen_found_ink",
+   "pen": 0.4
+  },
+  "label": "listen",
+  "notes": "frame 250\u00d7175: small landscape: the same vocabulary, denser per area"
+ },
+ "controls": [
+  {
+   "path": "arranger.mask_p",
+   "label": "Void chance",
+   "type": "float",
+   "min": 0.0,
+   "max": 1.0,
+   "step": 0.05
+  },
+  {
+   "path": "arranger.river_p",
+   "label": "Found river chance",
+   "type": "float",
+   "min": 0.0,
+   "max": 1.0,
+   "step": 0.05
+  },
+  {
+   "path": "arranger.pens",
+   "label": "Pens (0 = composed)",
+   "type": "int",
+   "min": 0,
+   "max": 4,
+   "step": 1
+  },
+  {
+   "path": "seed",
+   "label": "Seed",
+   "type": "int",
+   "min": 0,
+   "max": 2147483647,
+   "step": 1
+  }
+ ]
+}

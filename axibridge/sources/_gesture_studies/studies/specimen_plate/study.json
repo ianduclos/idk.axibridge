@@ -7,6 +7,7 @@
  "source": "measure_next round 11: tools/gesture/results/measure_next-{taxonomy,cuts,exploded,frieze,norm_trace,plate_big}.recipe.json",
  "engine": "kit",
  "notes": "A drift beside its specimen plate: the line cut into specimens, each numbered on the drawing and laid out on the plate. One study for the round-11 versions Ian kept — cuts, exploded, frieze \"love\"; normalised traces, big plate \"very nice\"; taxonomy \"love this but im not convinced with the graph at the bottom. perhaps its the execution, feels detached\". The graph is reworked as `strip` (the default): the drawing's own line laid straight under the plate, specimen after specimen in the order they were drawn, cut and labelled exactly as the plate, so it is drawn by the same line and tied to both. The old histograms stay choices. Round-11 images: cuts = plate grid + the cut; exploded = plate exploded, split 0.5; frieze = plate frieze, split 0.45; normalised traces = grid, norm axis+size, traces on; big plate = taxonomy, traces on, split 0.72; taxonomy = this, graph length.",
+ "family": "Measurement",
  "recipe": {
   "kit": 1,
   "frame": [

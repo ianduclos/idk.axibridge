@@ -11,7 +11,8 @@
   "black",
   "red"
  ],
- "notes": "One limb's trail through a dance is one contiguous line (black); wherever that limb holds still, the line leaves its path and draws, small, what the other limbs did during the hold, seen from the stopped limb, then closes back onto the stop and goes on. The second limb (red) does the same on the same surface. Each sign is different and none is invented: the signs went from a vocabulary (round 7) to a record. Particles: the right foot's one great lift is a bold arch with the figures on its floor line; the head writes above it. Ian, round 12: \"super nice. keeper\". Keep makes a group: one layer per ink, each on its own pen. Controls: the dance, the two limbs (the second may be none, or all the others), how many seconds of the dance, how many figures per limb, how much more happening makes a figure larger, the seed (it only feeds the nib passes). The round-7 tree Ian saw beside it (\"together they're almost a piece\") is not offered: it is old experiment code (signs_study) and a fitted grammar, not a kit recipe. Frame 150 × 210 portrait: a standing body, head over foot.",
+ "notes": "One limb's trail through a dance is one contiguous line (black); wherever that limb holds still, the line leaves its path and draws, small, what the other limbs did during the hold, seen from the stopped limb, then closes back onto the stop and goes on. The second limb (red) does the same on the same surface. Each sign is different and none is invented: the signs went from a vocabulary (round 7) to a record. Particles: the right foot's one great lift is a bold arch with the figures on its floor line; the head writes above it. Ian, round 12: \"super nice. keeper\". Keep makes a group: one layer per ink, each on its own pen. Controls: the dance, the two limbs (the second may be none, or all the others), how many seconds of the dance, how many figures per limb, how much more happening makes a figure larger, the seed (it only feeds the nib passes). The round-7 tree Ian saw beside it (\"together they're almost a piece\") is not offered: it is old experiment code (signs_study) and a fitted grammar, not a kit recipe. Frame 150 × 210 portrait: a standing body, head over foot. (Bench v3, 2026-10-19: no seed control. The drawing is the recorded dance itself, read the same way every time; nothing in it is drawn at random, so a seed changed nothing.)",
+ "family": "Hands and drift",
  "recipe": {
   "kit": 1,
   "frame": [
@@ -106,14 +107,6 @@
    "max": 1.5,
    "step": 0.05,
    "help": "0: every figure one size (they line up like letters); 1: bigger motions grow"
-  },
-  {
-   "path": "seed",
-   "label": "Seed",
-   "type": "int",
-   "min": 0,
-   "max": 2147483647,
-   "step": 1
   }
  ]
 }

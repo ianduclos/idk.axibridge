@@ -11,13 +11,25 @@ several places, e.g. both charts of the atlas) and declares a type:
 
 - `int` / `float` — `min`, `max` (required; inside the module param's own
   bounds), optional `step`;
-- `bool`; `choice` — `choices` (a subset of the param's; default: all);
+- `bool`; `choice` — `choices` (a subset of the param's; default: all). A
+  choice may also set a free `str` kit param: its `choices` are then required
+  and are the only values it takes;
+- `toggles` — a set of words joined into one `str` kit param (`choices`
+  required, `join` "," by default; `min_len` / `max_len` bound how many are
+  on), e.g. what a prosody modulator listens to: "switch,corner,kappa";
 - `hand` / `tempo` / `trail` — one library id of that kind; `hands` — a list
   (`min_len`, `max_len`; `join: " "` stores it as a space-separated string,
   the conversation's pool). Their options are NOT listed in the study: every
   generative entry of the kind in the frozen library is offered, so hands
   learned later appear in every study after a refreeze. `allow_none` +
   `none_value` (+ `none_label`) add a "none" choice where the param allows it.
+
+`when` (study bench v3, 2026-10-19) says when a control acts at all, so the
+bench can dim it and say why ("acts when Regimes is on"):
+`{"key": <another control's key>, "is": v}` / `"not": v` / `"in": [v, ...]`,
+or `{"all": [...]}` / `{"any": [...]}` of those, with an optional `"say"`
+(the reason, in words). The values are checked against the named control.
+It is advice for the bench only: the recipe resolves the same either way.
 
 A voices study (`keep: "voices"`) keeps as a group, one layer per voice on its
 own pen: by part (the chorus: dev_chorus inks), or, when the study lists
@@ -53,6 +65,8 @@ RECIPE_MAX_BYTES = 64_000
 FRAME_MM = (20.0, 400.0)
 SEED_MAX = 2_147_483_647
 LIBRARY_TYPES = ("hand", "hands", "tempo", "trail")
+JOINS = (" ", ",", "+", "|")
+WHEN_DEPTH = 4
 Scalar = str | int | float | bool | None
 
 
@@ -68,7 +82,7 @@ class Control(BaseModel):
     paths: list[typing.Annotated[str, Field(pattern=PATH_RE, max_length=200)]] | None = Field(
         default=None, min_length=1, max_length=8)
     label: str = Field(min_length=1, max_length=80)
-    type: Literal["int", "float", "bool", "choice", "hand", "hands", "tempo", "trail"]
+    type: Literal["int", "float", "bool", "choice", "toggles", "hand", "hands", "tempo", "trail"]
     min: float | None = Field(default=None, ge=-1e10, le=1e10)
     max: float | None = Field(default=None, ge=-1e10, le=1e10)
     step: float | None = Field(default=None, gt=0, le=1e9)
@@ -78,9 +92,11 @@ class Control(BaseModel):
     allow_none: bool = False
     none_value: str | None = Field(default=None, max_length=40)
     none_label: str = Field(default="none", max_length=60)
-    join: Literal[" "] | None = None
+    join: Literal[" ", ",", "+", "|"] | None = None
     group: str = Field(default="", max_length=40)
     help: str = Field(default="", max_length=400)
+    #: when the control acts (bench v3): see the module docstring
+    when: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def _shape(self):
@@ -95,10 +111,25 @@ class Control(BaseModel):
                 raise ValueError(f"control {self.label!r}: int bounds must be integers")
         elif self.min is not None or self.max is not None:
             raise ValueError(f"control {self.label!r}: min/max only on numeric controls")
-        if self.choices is not None and self.type != "choice":
-            raise ValueError(f"control {self.label!r}: choices only on choice controls")
-        if self.type != "hands" and (self.min_len is not None or self.max_len is not None or self.join):
-            raise ValueError(f"control {self.label!r}: min_len/max_len/join only on hands controls")
+        if self.choices is not None and self.type not in ("choice", "toggles"):
+            raise ValueError(f"control {self.label!r}: choices only on choice / toggles controls")
+        if self.type == "toggles":
+            if not self.choices or not all(isinstance(x, str) and x for x in self.choices):
+                raise ValueError(f"control {self.label!r}: a toggles control lists its words as choices")
+            if len(set(self.choices)) != len(self.choices):
+                raise ValueError(f"control {self.label!r}: choices must be distinct")
+            self.join = self.join or ","
+            if any(self.join in x or x != x.strip() for x in self.choices):
+                raise ValueError(f"control {self.label!r}: a choice may not contain the join {self.join!r}")
+            if self.max_len is not None and self.max_len > len(self.choices):
+                raise ValueError(f"control {self.label!r}: max_len exceeds the number of choices")
+        elif self.type == "hands":
+            if self.join not in (None, " "):
+                raise ValueError(f"control {self.label!r}: a joined hands control joins with a space")
+        elif self.min_len is not None or self.max_len is not None or self.join:
+            raise ValueError(f"control {self.label!r}: min_len/max_len/join only on hands / toggles controls")
+        if self.when is not None:
+            _when_shape(self.when, self.label)
         if self.allow_none and self.type not in ("hand", "tempo", "trail"):
             raise ValueError(f"control {self.label!r}: allow_none only on hand/tempo/trail controls")
         return self
@@ -110,6 +141,63 @@ class Control(BaseModel):
     @property
     def kind(self) -> str | None:
         return FL.KIND_OF.get(self.type)
+
+
+def _when_shape(w, label: str, depth: int = 0) -> None:
+    """The form of a `when` condition (its keys and values are checked
+    against the study's controls in `check_study`)."""
+    where = f"control {label!r}: when"
+    if depth > WHEN_DEPTH:
+        raise ValueError(f"{where} nests deeper than {WHEN_DEPTH}")
+    if not isinstance(w, dict):
+        raise ValueError(f"{where} must be an object")
+    say = w.get("say")
+    if say is not None and (not isinstance(say, str) or not 0 < len(say) <= 120):
+        raise ValueError(f"{where}: say is a short sentence")
+    ops = [k for k in ("is", "not", "in", "all", "any") if k in w]
+    extra = set(w) - {"key", "is", "not", "in", "all", "any", "say"}
+    if extra or len(ops) != 1:
+        raise ValueError(f"{where} takes key + one of is / not / in, or all / any (got {sorted(w)})")
+    op = ops[0]
+    if op in ("all", "any"):
+        if "key" in w or not isinstance(w[op], list) or not 1 <= len(w[op]) <= 8:
+            raise ValueError(f"{where}: {op} is a list of 1-8 conditions, without a key")
+        for x in w[op]:
+            _when_shape(x, label, depth + 1)
+        return
+    if not isinstance(w.get("key"), str) or not re.fullmatch(KEY_RE, w["key"]):
+        raise ValueError(f"{where}: key names another control")
+    vals = w[op] if op == "in" else [w[op]]
+    if op == "in" and (not isinstance(w[op], list) or not 1 <= len(w[op]) <= 32):
+        raise ValueError(f"{where}: in is a list of 1-32 values")
+    for v in vals:
+        if not isinstance(v, (str, int, float, bool, list)) or (isinstance(v, list) and len(v) > 64):
+            raise ValueError(f"{where}: {v!r} is not a control value")
+
+
+def when_keys(w) -> set[str]:
+    """Every control key a condition reads."""
+    if w is None:
+        return set()
+    if "all" in w or "any" in w:
+        return set().union(*(when_keys(x) for x in w.get("all") or w.get("any")))
+    return {w["key"]}
+
+
+def when_holds(w, value_of) -> bool:
+    """Does condition `w` hold, reading control values through `value_of(key)`?"""
+    if w is None:
+        return True
+    if "all" in w:
+        return all(when_holds(x, value_of) for x in w["all"])
+    if "any" in w:
+        return any(when_holds(x, value_of) for x in w["any"])
+    v = value_of(w["key"])
+    if "is" in w:
+        return v == w["is"]
+    if "not" in w:
+        return v != w["not"]
+    return v in w["in"]
 
 
 class Parent(BaseModel):
@@ -134,8 +222,10 @@ class Study(BaseModel):
     #: blue found layer, black late line and green tint. One voice per name, in this order; a name the
     #: drawing does not use this time is simply an empty voice (not kept).
     inks: list[typing.Annotated[str, Field(pattern=r"^[a-z]+(-[0-9]{3})?$")]] | None = Field(
-        default=None, min_length=1, max_length=8)
+        default=None, min_length=1, max_length=16)
     notes: str = Field(default="", max_length=4000)
+    #: the gallery's grouping (bench v3): "Hands and drift", "Measurement", ...
+    family: str = Field(default="", max_length=60)
     recipe: dict[str, Any]
     controls: list[Control] = Field(min_length=1, max_length=32)
 
@@ -392,11 +482,18 @@ def _check_control(study: Study, recipe: dict, c: Control) -> None:
         elif c.type == "bool":
             if sp.type != "bool":
                 raise StudyError(f"{where}: the param is {sp.type}, not bool")
+        elif c.type == "choice" and sp.type == "str":
+            # a free text param offered as a few words (bench v3): the study names them
+            if not c.choices or not all(isinstance(x, str) for x in c.choices):
+                raise StudyError(f"{where}: a choice over a text param lists its choices (as text)")
         elif c.type == "choice":
             if sp.type != "choice":
                 raise StudyError(f"{where}: the param is {sp.type}, not a choice")
             if c.choices is not None and not set(c.choices) <= set(sp.choices):
                 raise StudyError(f"{where}: choices {c.choices} are not all among {list(sp.choices)}")
+        elif c.type == "toggles":
+            if sp.type != "str":
+                raise StudyError(f"{where}: toggles join their words into a text param, not a {sp.type}")
         elif c.type == "hands" and c.join:
             if sp.type != "str":
                 raise StudyError(f"{where}: a joined hands control needs a string param")
@@ -464,7 +561,14 @@ def flexoki() -> dict[str, str]:
 
 
 def voices_of(study: Study, kit_recipe: dict) -> list[dict]:
-    """A voices study (`keep: "voices"`): one entry per sung voice — index,
+    """`when` (study bench v3, 2026-10-19) says when a control acts at all, so the
+bench can dim it and say why ("acts when Regimes is on"):
+`{"key": <another control's key>, "is": v}` / `"not": v` / `"in": [v, ...]`,
+or `{"all": [...]}` / `{"any": [...]}` of those, with an optional `"say"`
+(the reason, in words). The values are checked against the named control.
+It is advice for the bench only: the recipe resolves the same either way.
+
+A voices study (`keep: "voices"`): one entry per sung voice — index,
     ink name and colour (the dev_chorus arranger's Flexoki inks, or the
     study's own `inks`), label."""
     if study.keep != "voices":
@@ -515,6 +619,23 @@ def coerce(study: Study, recipe: dict, c: Control, v, lib: FL.FrozenLibrary):
         if not isinstance(v, bool):
             raise StudyError(f"{where}: needs true/false, got {v!r}")
         return v
+    if c.type == "toggles":
+        if isinstance(v, str):
+            items = [x.strip() for x in v.split(c.join)] if v.strip() else []
+        elif isinstance(v, list) and all(isinstance(x, str) for x in v):
+            items = list(v)
+        else:
+            raise StudyError(f"{where}: needs a list of words, got {v!r}")
+        bad = [x for x in items if x not in c.choices]
+        if bad:
+            raise StudyError(f"{where}: {bad} are not among {c.choices}")
+        if len(set(items)) != len(items):
+            raise StudyError(f"{where}: a word is on twice")
+        lo = c.min_len if c.min_len is not None else 0
+        hi = c.max_len if c.max_len is not None else len(c.choices)
+        if not lo <= len(items) <= hi:
+            raise StudyError(f"{where}: takes {lo}-{hi} of {c.choices}, got {len(items)}")
+        return c.join.join(items)
     if c.type == "choice":
         allowed = c.choices if c.choices is not None else list(spec_at(study, recipe, c.targets[0]).choices)
         if v not in allowed:
@@ -552,7 +673,34 @@ def check_study(study: Study, lib: FL.FrozenLibrary | None = None) -> Study:
             c = c.model_copy(update={"choices": list(spec_at(study, recipe, c.targets[0]).choices)})
         coerce(study, recipe, c, get_at(recipe, c.targets[0]), lib)
         controls.append(c)
+    by_key = {c.key: c for c in controls}
+    for c in controls:
+        _check_when(study, recipe, c, c.when, by_key, lib)
     return study.model_copy(update={"recipe": recipe, "controls": controls})
+
+
+def _check_when(study: Study, recipe: dict, c: Control, w, by_key: dict, lib: FL.FrozenLibrary) -> None:
+    if w is None:
+        return
+    if "all" in w or "any" in w:
+        for x in w.get("all") or w.get("any"):
+            _check_when(study, recipe, c, x, by_key, lib)
+        return
+    other = by_key.get(w["key"])
+    if other is None or other.key == c.key:
+        raise StudyError(f"control {c.label!r}: when names {w['key']!r}, which is not another control of this study")
+    for v in (w["in"] if "in" in w else [w.get("is", w.get("not"))]):
+        try:
+            coerce(study, recipe, other, copy.deepcopy(v), lib)
+        except StudyError as e:
+            raise StudyError(f"control {c.label!r}: when {w['key']}: {e}") from None
+
+
+def acts(study: Study, values: dict[str, Any], c: Control) -> bool:
+    """Does control c act with these values (its `when` holds)? Values not
+    given are the recipe's own."""
+    by_key = {x.key: x for x in study.controls}
+    return when_holds(c.when, lambda k: values[k] if k in values else get_at(study.recipe, by_key[k].targets[0]))
 
 
 def defaults(study: Study) -> dict[str, Any]:

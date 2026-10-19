@@ -7,6 +7,7 @@
  "source": "kit demo 4 (round 9): .local/gesture/out/kit/4-polyphony.recipe.json",
  "engine": "kit",
  "notes": "Polyphony on one surface: an interpolating drift under a noise field, inked in lanes (nib c), against a dry machine-like hand with chain joins. Controls: the heavy voice's route, the dry voice, how much and how broad the field is, and the dry voice's length. Nib widths, styles and the two-part structure are fixed. Cost: ~10 s (nib c lanes are dense).",
+ "family": "Several voices",
  "recipe": {
   "kit": 1,
   "frame": [

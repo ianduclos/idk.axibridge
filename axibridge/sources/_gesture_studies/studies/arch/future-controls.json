@@ -1,0 +1,51 @@
+{
+ "add": [
+  {
+   "key": "families",
+   "path": "arranger.families",
+   "label": "Revived families",
+   "type": "choice",
+   "choices": [
+    "danced,swell,flicker,passer",
+    "danced,swell",
+    "danced,flicker",
+    "swell,passer",
+    "danced",
+    "swell",
+    "flicker",
+    "passer"
+   ]
+  },
+  {
+   "path": "arranger.acts",
+   "label": "Other acts",
+   "type": "choice",
+   "choices": [
+    "container,counter",
+    "container",
+    "counter",
+    ""
+   ]
+  }
+ ],
+ "replace": [
+  {
+   "path": "arranger.duet",
+   "label": "Swell duet chance",
+   "type": "float",
+   "min": 0.0,
+   "max": 1.0,
+   "step": 0.05,
+   "when": {
+    "key": "families",
+    "in": [
+     "danced,swell,flicker,passer",
+     "danced,swell",
+     "swell,passer",
+     "swell"
+    ],
+    "say": "Acts when the swell family may enter."
+   }
+  }
+ ]
+}

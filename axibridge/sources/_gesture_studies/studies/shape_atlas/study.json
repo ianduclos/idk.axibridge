@@ -7,6 +7,7 @@
  "source": "voices_machine round 9: tools/gesture/results/voices_machine-limb-atlas-ledger.recipe.json",
  "engine": "kit",
  "notes": "The atlas and the ledger of one drift line's shapes, both redrawn through a hand (Matisse in the round-9 sheet). One control drives both charts. Controls: the drawing hand (or none: the machine draws, much faster), the measured route, its length, how much fine turning the hand owns. Cost: ~55 s with a drawing hand (every chart line is refitted through the hand's clothoid grammar); ~0.6 s machine-drawn.",
+ "family": "Measurement",
  "recipe": {
   "kit": 1,
   "frame": [

@@ -1,0 +1,78 @@
+{
+ "replace": [
+  {
+   "path": "parts.0.voice.recur",
+   "label": "Pushes / repetitions",
+   "type": "int",
+   "min": 1,
+   "max": 8,
+   "step": 1,
+   "help": "Acts for push, pulses, drift, steps and breath; other schedules have one fixed event.",
+   "when": {
+    "key": "parts.0.voice.schedule",
+    "in": [
+     "push",
+     "pulses",
+     "drift",
+     "steps",
+     "breath"
+    ],
+    "say": "Repetitions act in push, pulses, drift, steps or breath."
+   }
+  }
+ ],
+ "hand_resource": {
+  "recipe": "hand.recipe.json",
+  "controls": [
+   {
+    "path": "parts.0.voice.source",
+    "label": "Line source",
+    "type": "choice",
+    "choices": [
+     "hand",
+     "relay",
+     "dance",
+     "river"
+    ]
+   },
+   {
+    "path": "parts.0.voice.hand",
+    "label": "Hand",
+    "type": "hand",
+    "when": {
+     "key": "parts.0.voice.source",
+     "is": "hand"
+    }
+   },
+   {
+    "path": "parts.0.voice.hands",
+    "label": "Relay hands",
+    "type": "hands",
+    "min_len": 1,
+    "max_len": 6,
+    "when": {
+     "key": "parts.0.voice.source",
+     "is": "relay"
+    }
+   },
+   {
+    "path": "parts.0.voice.trail",
+    "label": "Dance trail",
+    "type": "trail",
+    "when": {
+     "key": "parts.0.voice.source",
+     "is": "dance"
+    }
+   },
+   {
+    "path": "parts.0.voice.effector",
+    "label": "Body end",
+    "type": "choice",
+    "when": {
+     "key": "parts.0.voice.source",
+     "is": "dance"
+    }
+   }
+  ]
+ }
+}

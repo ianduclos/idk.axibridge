@@ -8,6 +8,7 @@
  "engine": "kit",
  "keep": "voices",
  "notes": "Call and response for up to four voices, each in its own weight and its own ink: a drift in nib masses (black), a restated answer (red), clusters of beads (blue) and a shikasta ghost whose line is never drawn, only its beads (cyan). Each voice speaks where the earlier ones are silent. Ian, round 10: \"very nice actually, and I like these specific ones with multiple pens.\" Keep makes a group named after the study with one layer per voice, each on its own pen, so each plots as its own pass. Controls: how many voices sing (2-4; the first n are exactly those of the full chorus), who listens to whom, by space or by time, how near a voice is heard, the leader's route and the seed.",
+ "family": "Several voices",
  "recipe": {
   "kit": 1,
   "frame": [

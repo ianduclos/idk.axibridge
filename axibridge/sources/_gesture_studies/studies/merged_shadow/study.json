@@ -7,6 +7,7 @@
  "source": "measure_pairs round 10: tools/gesture/results/measure_pairs-shadow_turns.recipe.json (variants: measure_pairs-shadow.recipe.json)",
  "engine": "kit",
  "notes": "The drawing and its shadow merged into one contour: the strip between the line and a shadow offset by its own measurement is unioned and traced as outline rings, pinching to the line where the shadow does. Starts as the shadow on the inner side of every turn (beads at turns). Ian, round 10: \"love all the different options\", so the law (what sets the distance), the side, the shape of the union, the closing radius, the gap and the gain are all controls, with the route and the seed.",
+ "family": "Measurement",
  "recipe": {
   "kit": 1,
   "frame": [

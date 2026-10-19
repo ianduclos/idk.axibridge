@@ -7,6 +7,7 @@
  "source": "swell round 11: tools/gesture/results/swell-combo.recipe.json (last row, c3-sentence)",
  "engine": "kit",
  "notes": "A drift written in phrases: each phrase ends in a full stop (a ring), the pen lifts and the line resumes; inside the phrases it swells into drops. Ian, round 11: \"first and last row are very good\" (this is the last; the first is Dry line, swelling answer). Controls: the route, the full stop's shape (split is not offered: \"not crazy about split and wound\"), the pen-up gap after it, the swell's profile and size, the seed.",
+ "family": "Swell",
  "recipe": {
   "kit": 1,
   "frame": [

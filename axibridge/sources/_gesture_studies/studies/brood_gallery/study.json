@@ -7,6 +7,7 @@
  "source": "hands_trails round 11: tools/gesture/results/hands_trails-brood.recipe.json (tiles 4 and 5)",
  "engine": "kit",
  "notes": "A bark-beetle brood gallery as a voice: one hand draws the mother gallery, another the larval galleries branching off it, each widening into its round pupal chamber. The branching extraction could not keep as a grammar survives here as structure. Ian, round 11: \"these are super nice, especially 4 and 5\". The default is tile 4 (mother trail_grazer, 14 larvae by dancer_cristel, seed 7303); tile 5 is mother trail_tracks, larvae fly_fru, 12 larvae, seed 7304. Controls: the two hands, how many larvae, how far the end ones lean, how long they grow, the seed.",
+ "family": "Hands and drift",
  "recipe": {
   "kit": 1,
   "frame": [

@@ -411,6 +411,11 @@ def preview_generator(body: GenerateBody) -> dict[str, Any]:
         # consecutive run of `lines` each is, so a preview can colour them
         result["layers"] = [{"name": layer.name, "color": layer.color, "paths": len(layer.paths)}
                             for layer in doc.layers]
+    styles = getattr(src, "preview_styles", None)
+    if styles is not None and (runs := styles(doc)):
+        # a source that knows each path's ink (Gesture Studies): runs of
+        # consecutive `lines` with their colour and pen width
+        result["styles"] = runs
     if isinstance(src, ProcessModule):
         params = src.Params(**body.params)
         run = src.trajectory(params)

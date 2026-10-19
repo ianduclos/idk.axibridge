@@ -108,8 +108,28 @@ def ink_name(ink) -> str:
     return str(ink.meta.get("ink") or ink.meta.get("colour") or "black")
 
 
-def _inks_to_tagged(inks, tag=None) -> list[tuple[int, Path]]:
-    """(part index — or tag(ink) — , Path) per kept ink (see inks_to_paths)."""
+INK = "#100f0f"           # Flexoki black: an ink that names no pen
+
+
+@functools.lru_cache(maxsize=1)
+def _flexoki() -> dict[str, str]:
+    from .studies import flexoki  # noqa: PLC0415
+    return flexoki()
+
+
+def ink_style(ink) -> tuple[str, float]:
+    """(colour, pen width mm) an ink is drawn with, for the bench's preview:
+    meta "colour" when it is a hex, else the Flexoki pen its name names."""
+    c = ink.meta.get("colour")
+    if isinstance(c, str) and c.startswith("#"):
+        colour = c
+    else:
+        colour = _flexoki().get(ink_name(ink), INK)
+    return colour, float(ink.pen)
+
+
+def _tagged(inks, tag=None) -> list[tuple[int, Path, object]]:
+    """(part index — or tag(ink) — , Path, ink) per kept ink (see inks_to_paths)."""
     arrs = _simplify([ink.points for ink in inks])
     out = []
     for ink, a, full in zip(inks, arrs, (ink.points for ink in inks)):
@@ -122,10 +142,15 @@ def _inks_to_tagged(inks, tag=None) -> list[tuple[int, Path]]:
             if pts[0] != pts[-1]:
                 pts.append(pts[0])
             pts[-1] = pts[0]
-            out.append((part, Path(points=pts, filled=bool(ink.filled) and len(pts) >= 4)))
+            out.append((part, Path(points=pts, filled=bool(ink.filled) and len(pts) >= 4), ink))
         else:
-            out.append((part, Path(points=[(float(x), float(y)) for x, y in a], filled=False)))
+            out.append((part, Path(points=[(float(x), float(y)) for x, y in a], filled=False), ink))
     return out
+
+
+def _inks_to_tagged(inks, tag=None) -> list[tuple[int, Path]]:
+    """(part index — or tag(ink) — , Path) per kept ink (see inks_to_paths)."""
+    return [(part, p) for part, p, _ in _tagged(inks, tag)]
 
 
 # The last few sheets, by recipe + library: the layers of one chorus resolve
@@ -223,6 +248,12 @@ def render_voices(recipe: dict, lib: FL.FrozenLibrary, inks: list[str] | None = 
     """A kit recipe → its paths per part (voice), or per ink name when `inks`
     names the voices (index in `inks`), fitted inside the frame as ONE drawing
     (so voices kept as separate layers stay in register)."""
+    return {k: [p for p, _ in v] for k, v in render_voices_styled(recipe, lib, inks).items()}
+
+
+def render_voices_styled(recipe: dict, lib: FL.FrozenLibrary,
+                         inks: list[str] | None = None) -> dict[int, list[tuple[Path, tuple[str, float]]]]:
+    """render_voices with each path's (colour, pen width) — what the bench draws it in."""
     W, H = frame_of("kit", recipe)
     tag = None
     if inks:
@@ -231,18 +262,25 @@ def render_voices(recipe: dict, lib: FL.FrozenLibrary, inks: list[str] | None = 
             if name not in inks:
                 raise ValueError(f"the drawing uses the pen {name!r}, which is not one of this study's inks {inks}")
             return inks.index(name)
-    tagged = _inks_to_tagged(run_kit(recipe, lib).inks, tag)
-    fitted = _fit_inside([p for _, p in tagged], W, H)
-    out: dict[int, list[Path]] = {}
-    for (part, _), p in zip(tagged, fitted):
-        out.setdefault(part, []).append(p)
+    tagged = _tagged(run_kit(recipe, lib).inks, tag)
+    fitted = _fit_inside([p for _, p, _ in tagged], W, H)
+    out: dict[int, list[tuple[Path, tuple[str, float]]]] = {}
+    for (part, _, ink), p in zip(tagged, fitted):
+        out.setdefault(part, []).append((p, ink_style(ink)))
     return out
 
 
 def render(engine: str, recipe: dict, lib: FL.FrozenLibrary) -> list[Path]:
     """A resolved, validated recipe → app paths inside its frame."""
+    return render_styled(engine, recipe, lib)[0]
+
+
+def render_styled(engine: str, recipe: dict, lib: FL.FrozenLibrary) -> tuple[list[Path], list[tuple[str, float]]]:
+    """render() and each path's (colour, pen width): the bench draws every ink
+    in its pen colour at its width (bench v3). The paths are render()'s exactly."""
     if engine == "hand_drift":
-        return run_hand_drift(recipe, lib)
+        paths = run_hand_drift(recipe, lib)
+        return paths, [(INK, float(recipe["pen"]))] * len(paths)
     W, H = frame_of(engine, recipe)
-    sheet = run_kit(recipe, lib)
-    return _fit_inside(inks_to_paths(sheet.inks), W, H)
+    tagged = _tagged(run_kit(recipe, lib).inks)
+    return (_fit_inside([p for _, p, _ in tagged], W, H), [ink_style(ink) for _, _, ink in tagged])

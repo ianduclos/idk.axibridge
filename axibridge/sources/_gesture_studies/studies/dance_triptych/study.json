@@ -6,7 +6,8 @@
  "created": "2026-10-17",
  "source": "measure_next round 11: tools/gesture/results/measure_next-triptych_dance.recipe.json",
  "engine": "kit",
- "notes": "The mantis dance cut at the dancer's own pauses, its atlas in the middle, and its gestures re-chained into ONE continuous line on the right, numbered with the same specimen numbers. Ian, round 11: \"cool. id allow to disable the labels on the very drawing\" — the Numbers control: on both drawings (the round-11 piece), the dance only, the re-chained line only, or none (only the atlas is labelled). Also the dance, how long it runs, where it is cut, the re-chain order and the seed.",
+ "notes": "The mantis dance cut at the dancer's own pauses, its atlas in the middle, and its gestures re-chained into ONE continuous line on the right, numbered with the same specimen numbers. Ian, round 11: \"cool. id allow to disable the labels on the very drawing\" — the Numbers control: on both drawings (the round-11 piece), the dance only, the re-chained line only, or none (only the atlas is labelled). Also the dance, how long it runs, where it is cut, the re-chain order and the seed. (Bench v3, 2026-10-19: no seed control. The drawing is the recorded dance itself, read the same way every time; nothing in it is drawn at random, so a seed changed nothing.)",
+ "family": "Measurement",
  "recipe": {
   "kit": 1,
   "frame": [
@@ -105,14 +106,6 @@
    "path": "parts.0.modulators.0.rechain",
    "label": "Re-chain order",
    "type": "choice"
-  },
-  {
-   "path": "seed",
-   "label": "Seed",
-   "type": "int",
-   "min": 0,
-   "max": 2147483647,
-   "step": 1
   }
  ]
 }

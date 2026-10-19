@@ -1,0 +1,19 @@
+{
+ "add": [
+  {
+   "path": "arranger.relations",
+   "label": "Listening relations",
+   "type": "choice",
+   "choices": [
+    "imitate,exaggerate,translate,refuse,echo,calm,nest,bind",
+    "imitate,exaggerate,translate,refuse",
+    "echo,calm,nest,bind",
+    "imitate,translate,echo",
+    "exaggerate,refuse,bind"
+   ]
+  }
+ ],
+ "dropped": [
+  "arranger.density: no geometry change over its full 0.2\u20130.8 range at seed 15102."
+ ]
+}

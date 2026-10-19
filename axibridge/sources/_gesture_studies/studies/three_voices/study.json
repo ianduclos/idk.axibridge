@@ -7,6 +7,7 @@
  "source": "voices_corpus round 9: .local/gesture/out/voices_corpus/sheets/grid__polyphony.recipe.json",
  "engine": "kit",
  "notes": "One surface, three voices: a dance drawing itself (end-effector trails, beads at its own pauses, nib e) against two dry hands. Controls: the dance (every frozen trail), which body ends draw, how many seconds of the dance, the two other voices and the bead width.",
+ "family": "Several voices",
  "recipe": {
   "kit": 1,
   "frame": [

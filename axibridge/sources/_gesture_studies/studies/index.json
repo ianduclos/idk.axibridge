@@ -27,6 +27,9 @@
   "found_ground",
   "limb_signs",
   "limb_signs_levitation",
-  "morphing_belt"
+  "morphing_belt",
+  "arch",
+  "listen",
+  "river_zoom"
  ]
 }

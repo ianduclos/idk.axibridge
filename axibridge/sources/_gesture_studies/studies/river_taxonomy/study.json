@@ -7,6 +7,7 @@
  "source": "measure_next round 11: tools/gesture/results/measure_next-river_taxonomy.recipe.json",
  "engine": "kit",
  "notes": "One hand's line beside a taxonomy plate of its own specimens: families by shape in rows (letters on the drawing), each specimen with its turning trace. Ian, round 11: \"v nice\". The default is the river (river_oxbow); the hand control takes any frozen hand, so a fly, a trail or a dancer can be sorted the same way (\"more interested in using these kinematics to drive other stuff\"). Controls: the hand, the cut, how many families, the traces, the graph under the plate (none, as round 11; `strip` lays the line straight under it, see Drawing and its specimen plate) and the seed.",
+ "family": "Rivers",
  "recipe": {
   "kit": 1,
   "frame": [

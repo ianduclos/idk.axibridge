@@ -7,6 +7,7 @@
  "source": "swell round 11: tools/gesture/results/swell-bold.recipe.json (a: shikasta, one drop)",
  "engine": "kit",
  "notes": "One hand at a third of its usual length fills the sheet; it swells smoothly into round heads at its loudest stresses (the slow part of the swell stays a line, only the head blooms). Ian, round 11: \"very nice, very promising\". Controls: the hand, the swell's profile (drop, press, lens, momentum, turn; the sheet's (c) is meander69 + press, (d) marden + turn), head size, tail length, how long the line is, the seed — and occasional dots, off by default. Ian on round 11's dots: \"I like 3 7\" (counted 1, 2, 3; the line winding into dots at its turns) and \"not crazy about split and wound. others can be useful from time to time\": count slides each group just past its mass; turns places dots on the quiet stretches. Split is not offered.",
+ "family": "Swell",
  "recipe": {
   "kit": 1,
   "frame": [
@@ -118,7 +119,12 @@
   {
    "path": "renderer.dot_shape",
    "label": "Dot shape",
-   "type": "choice"
+   "type": "choice",
+   "when": {
+    "key": "renderer.dots",
+    "not": "none",
+    "say": "acts when Occasional dots is on"
+   }
   },
   {
    "path": "seed",

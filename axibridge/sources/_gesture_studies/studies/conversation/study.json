@@ -6,7 +6,8 @@
  "created": "2026-10-17",
  "source": "polyphonic_sheets round 9: .local/gesture/out/polyphonic_sheets/converse-contrast-9300.recipe.json",
  "engine": "kit",
- "notes": "Scattered units taking turns (Cohen-like): each reply's hand, length, weight and start derive from the previous unit. Controls: number of turns, how a reply answers, the pool of hands a reply may use (every library hand is offered; leave all unticked for every generative hand), unit size and the two opening voices. Weight inversion, memory and gap are fixed.",
+ "notes": "Scattered units taking turns (Cohen-like): each reply's hand, length, weight and start derive from the previous unit. Controls: number of turns, how a reply answers, the pool of hands a reply may use (every library hand is offered; leave all unticked for every generative hand), unit size and the opening voice. Weight inversion, memory and gap are fixed. (Bench v3, 2026-10-19: the second voice's hand control was removed; every later turn is a reply whose hand the reply rule picks from the pool, so that hand was never drawn.)",
+ "family": "Several voices",
  "recipe": {
   "kit": 1,
   "frame": [
@@ -105,11 +106,6 @@
   {
    "path": "parts.0.voice.hand",
    "label": "Opening voice",
-   "type": "hand"
-  },
-  {
-   "path": "parts.1.voice.hand",
-   "label": "Second voice",
    "type": "hand"
   },
   {

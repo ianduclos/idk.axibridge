@@ -7,6 +7,7 @@
  "source": "voices_machine round 9: tools/gesture/results/voices_machine-annotated.recipe.json",
  "engine": "kit",
  "notes": "A drift line that hands stretches to two machine grammars at its seams, with the system's own measurement of it (a curvature seismograph) drawn beside it. Controls: the route, how much of the line the machines take, which two machines, the chart and its rows. Layout (chart on the right) and the chart's label size are fixed.",
+ "family": "Measurement",
  "recipe": {
   "kit": 1,
   "frame": [

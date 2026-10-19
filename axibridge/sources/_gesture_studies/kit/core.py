@@ -1,4 +1,4 @@
-# FROZEN from research commit 9c3844a: tools/gesture/gesture/kit/core.py
+# FROZEN from research commit ecd64f8: tools/gesture/gesture/kit/core.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Gesture kit core: Marks, Inks, Sheets, the module registry, recipes, seeds.
 
@@ -620,6 +620,7 @@ class _Run:
     def __init__(self, library):
         self.library = library
         self.used: dict[tuple[str, str], dict] = {}
+        self.notes: dict = {}
 
     def entry(self, kind: str, id: str) -> dict:
         e = self.library.entry(kind, id)
@@ -659,6 +660,11 @@ class Ctx:
     def entry(self, kind: str, id: str) -> dict:
         """A library entry's metadata (entry.json), recorded as used."""
         return self.run.entry(kind, id)
+
+    def note(self, key: str, value) -> None:
+        """Record JSON-able structure for sheet.meta["notes"][key] (e.g. an
+        arranger's composition score). Absent from meta when nothing is noted."""
+        self.run.notes[str(key)] = copy.deepcopy(value)
 
     def with_box(self, box) -> "Ctx":
         return replace(self, box=tuple(float(v) for v in box))
@@ -855,6 +861,8 @@ def run(recipe: Mapping, *, library=None) -> Sheet:
                        "modulators": [m["id"] for m in p.spec["modulators"]], "renderer": p.renderer["id"],
                        "label": p.label} for p in parts],
             "seconds": {"marks": round(t1 - t0, 3), "inks": round(t2 - t1, 3)}}
+    if state.notes:
+        meta["notes"] = state.notes
     return Sheet((W, H), marks, inks, meta)
 
 

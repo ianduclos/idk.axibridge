@@ -1,4 +1,4 @@
-# FROZEN from research commit 9c3844a: tools/gesture/gesture/kit/poly_converse.py
+# FROZEN from research commit ecd64f8: tools/gesture/gesture/kit/poly_converse.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """poly_converse — conversation as a composition rule (round 9 limb, thread
 polyphonic_sheets; results/polyphonic_sheets-2026-10-17.md).

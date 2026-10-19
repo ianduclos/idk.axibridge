@@ -3,15 +3,18 @@ recipe edit, the library options of an older snapshot, and Keep for a voices
 study (the chorus: a group with one layer per voice). Other geometry never
 travels here — previews and single-layer Keep go through the normal generator
 endpoints with the `gesture_studies` source. None of these routes touches the
-machine (MCP: reviewed, not motion)."""
+machine (MCP: reviewed, not motion). Bench v3 adds the study gallery's
+thumbnails (drawn in the background, kept in the machine-level config dir)."""
 from __future__ import annotations
 
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, ValidationError
 
 from .gesture_studies_store import gesture_study_store
+from .gesture_studies_thumbs import thumbnails
 from .sources._gesture_studies import frozen_library as FL
 from .sources._gesture_studies import studies as ST
 
@@ -138,6 +141,46 @@ def keep_voices(body: KeepVoices) -> dict[str, Any]:
         group, layers = session.keep_gesture_study_voices(body.params)
         return {"group": group.model_dump(), "layers": [layer.model_dump() for layer in layers]}
     return _call(keep)
+
+
+def _all_studies() -> list[ST.Study]:
+    return [ST.check_study(s) for s in ST.builtin_studies()] + gesture_study_store.list()["items"]
+
+
+@router.get("/thumbnails")
+def thumbnail_status() -> dict[str, Any]:
+    """The study gallery's cards (bench v3): each study's thumbnail state
+    (ready / queued / drawing / failed / missing), its key, and how long it
+    took to draw (a slow study is badged). Reading never starts a drawing."""
+    return _call(lambda: {"thumbnails": {s.id: thumbnails.status(s) for s in _all_studies()}})
+
+
+class ThumbnailRequest(BaseModel):
+    ids: list[str] = Field(default_factory=list, max_length=600)
+
+
+@router.post("/thumbnails")
+def request_thumbnails(body: ThumbnailRequest) -> dict[str, Any]:
+    """Draw the missing thumbnails of these studies, in this order, in the
+    background (one niced child process at a time); → their states."""
+    def run():
+        by_id = {s.id: s for s in _all_studies()}
+        want = [by_id[i] for i in dict.fromkeys(body.ids) if i in by_id]
+        return {"thumbnails": thumbnails.request(want)}
+    return _call(run)
+
+
+@router.get("/thumbnail/{key}")
+def thumbnail(key: str) -> FileResponse:
+    """One drawn thumbnail (SVG). The key names its content, so it never changes."""
+    try:
+        path = thumbnails.file(key)
+    except KeyError as exc:
+        raise HTTPException(404, "no such thumbnail") from exc
+    if not path.exists():
+        raise HTTPException(404, "not drawn yet")
+    return FileResponse(path, media_type="image/svg+xml",
+                        headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 
 @router.delete("/{study_id}")

@@ -7,6 +7,7 @@
  "source": "keeps12 side image: tools/gesture/results/keeps12-river_belt_tight.jpg (experiments/keeps12_river_belt.py, seed 12407, row 3: gain 1.8, pull 0.25); now the kit voice `belt`",
  "engine": "kit",
  "notes": "The river_belt hand's own curvature, its slow drift of heading taken out, re-integrated with a gain (tighter bends) and a pull of the heading back to a valley axis, so the hand's bends string along a meander belt. Every bend is the hand's, in its order. Ian, round 12: \"loving this kinda stuff, line that morphs gesture type. I'd love to explore this concept more.\" The default is the image's tighter row (gain 1.8, pull 0.25), exactly. Tightness at the end ramps the gain along the line: set it apart from the start and the line morphs from one gesture type into another (1.0 → 2.6: loose hand bends tightening into a belt). Controls: the hand (any frozen hand), tightness at the start and at the end, the pull to the valley, the line's length, the seed.",
+ "family": "Rivers",
  "recipe": {
   "kit": 1,
   "frame": [

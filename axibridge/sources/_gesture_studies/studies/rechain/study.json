@@ -7,6 +7,7 @@
  "source": "measure_next round 11: tools/gesture/results/measure_next-rechain.recipe.json (cell 3: signs, tangent continued)",
  "engine": "kit",
  "notes": "The drawing redrawn from its own atlas: the drift cut into specimens, which are chained back into one line in a new order, each turned so it continues the chain's tangent. Ian, round 11: \"super nice\". Controls: the route, where it is cut, the new order (time = the original exactly; sign, turning (calm to coiled), match (curvature), shuffle, …), whether specimens are turned to continue the line (off = the collage), mirrored, how much each join is smoothed, the seed. The sheet's six cells are the orders time, sign without turning, sign, turning, match, shuffle.",
+ "family": "Measurement",
  "recipe": {
   "kit": 1,
   "frame": [
@@ -78,7 +79,12 @@
   {
    "path": "parts.0.modulators.0.mirror",
    "label": "Mirror to alternate",
-   "type": "bool"
+   "type": "bool",
+   "when": {
+    "key": "parts.0.modulators.0.order",
+    "not": "sign",
+    "say": "acts when New order is not sign (sign already alternates the turns)"
+   }
   },
   {
    "path": "parts.0.modulators.0.blend",

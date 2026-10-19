@@ -1,4 +1,4 @@
-# FROZEN from research commit 9c3844a: tools/gesture/gesture/kit/swell_ink.py
+# FROZEN from research commit ecd64f8: tools/gesture/gesture/kit/swell_ink.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Round 11, exploration 2 — swelling into mass (thread `swell`).
 

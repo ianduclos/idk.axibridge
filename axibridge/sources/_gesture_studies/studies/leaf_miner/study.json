@@ -7,6 +7,7 @@
  "source": "hands_trails round 11: tools/gesture/results/hands_trails-miner.recipe.json (gallery-0)",
  "engine": "kit",
  "notes": "The leaf-miner hand inked as a mine: the gallery widens as the larva grows and swells smoothly into a round pupal chamber, a frass line running down it. The mass comes from the source, so the line becomes a bead with no snap. Ian, round 11: \"these are super good keep\". Controls: the miner's hand (any frozen hand; trail_miner is the source), how long the mine runs, how wide the grown larva is, the chamber, the frass and the seed. Fill stays `chamber`: `late` turns the mine into a solid bar, the capsule Ian dislikes (round 11's tile 3, kept out on purpose). The sheet's other tiles: seeds 7201-7203 with widths 4.0 / 5.0 mm and frass wander / none.",
+ "family": "Hands and drift",
  "recipe": {
   "kit": 1,
   "frame": [
