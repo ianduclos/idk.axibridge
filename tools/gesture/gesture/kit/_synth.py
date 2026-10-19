@@ -331,11 +331,25 @@ def validate(score: Mapping, *, library=None) -> dict:
 
 
 def _valid_pin(pin, where) -> dict:
-    """A pinned layer's geometry: {"marks": [{"points", "channels"?, "meta"?}]} (not for composer layers)."""
+    """A pinned layer's geometry: {"marks": [mark…], "final"?: [mark…]}, a mark being {"points",
+    "channels"?, "meta"?} (not for composer layers). `marks`: the layer once grown; `final`: its lines
+    when the whole score had played, when those differ."""
     if not isinstance(pin, Mapping) or not isinstance(pin.get("marks"), (list, tuple)):
         raise RecipeError(f"{where}: pin is {{\"marks\": [...]}}")
+    bad = sorted(set(pin) - {"marks", "final"})
+    if bad:
+        raise RecipeError(f"{where}: pin has unknown key(s) {bad}")
+    out = {"marks": _valid_marks(pin["marks"], where)}
+    if pin.get("final") is not None:
+        if not isinstance(pin["final"], (list, tuple)):
+            raise RecipeError(f"{where}: pin final is a list of marks")
+        out["final"] = _valid_marks(pin["final"], f"{where} (final)")
+    return out
+
+
+def _valid_marks(raw, where) -> list:
     marks = []
-    for j, m in enumerate(pin["marks"]):
+    for j, m in enumerate(raw):
         if not isinstance(m, Mapping):
             raise RecipeError(f"{where}: pin mark {j} must be a dict")
         a = np.asarray(m.get("points"), float)
@@ -351,7 +365,7 @@ def _valid_pin(pin, where) -> dict:
         # a later relation's choice, so locking a layer would change the sheet
         marks.append({"points": [[float(x), float(y)] for x, y in a], "channels": ch,
                       "meta": json.loads(json.dumps(dict(m.get("meta") or {}), default=float))})
-    return {"marks": marks}
+    return marks
 
 
 def _layer_seed(rec, L, k) -> int:
@@ -448,11 +462,12 @@ def _tag(marks, L, k, rec=None, sealed=None) -> list[Mark]:
     return out
 
 
-def _pinned(rec, L, k) -> list[Mark]:
-    """A pinned layer's marks, rebuilt from the pin (channels and meta kept), with its layer tags."""
+def _pinned(rec, L, k, which: str = "marks") -> list[Mark]:
+    """A pinned layer's marks (`which`: "marks" as grown, "final" when the score had played), rebuilt from the
+    pin (channels and meta kept), with its layer tags."""
     t = _layer_tags(rec, L, k)
     out = []
-    for i, m in enumerate(L["pin"]["marks"]):
+    for i, m in enumerate(L["pin"][which]):
         meta = {**m.get("meta", {}), **{a: b for a, b in t.items()
                                          if not (a == "colour" and (m.get("meta") or {}).get("own_pen"))
                                          and not (a == "pen_mm" and "pen_mm" in (m.get("meta") or {}))}}
@@ -472,12 +487,13 @@ def _mark_json(m: Mark) -> dict:
 def pin(score: Mapping, ids, *, library=None) -> dict:
     """Lock layers in place: each layer in `ids` gets `lock`, its own `seed` frozen, and (unless it is a
     sealed composer, which hears nobody) a `pin` holding its marks as they stand once it has GROWN (its
-    part drawn, its grow relations played: where it was placed and what it heard). A pinned layer no
-    longer regrows, so edits upstream don't move it; its contact relations still play at its step and
-    later layers still meet it, so locking alone changes nothing on the sheet, and an upstream edit only
-    reaches a locked line where a crossing or an awareness relation touches it (S4, 2026-10-19; before,
-    the pin held the end of its step and skipped its contact relations, which dropped the cuts it made
-    in earlier layers). Unpin by removing `pin`."""
+    part drawn, its grow relations played: where it was placed and what it heard) and, when its contact
+    relations changed it, its FINAL lines (when the whole score had played). A pinned layer no longer
+    regrows: at its step it is laid down as grown and every relation plays as before, so what it does to
+    the other layers stays (a crossing that cuts them); when the score has played, it is reset to its
+    final lines. So locking alone changes nothing on the sheet, and no edit anywhere moves a locked line
+    (S4, 2026-10-19; before, the pin held the end of its step and skipped its contact relations, which
+    dropped the cuts it made in earlier layers). Unpin by removing `pin`."""
     rec = validate(score, library=library)
     rec.pop("parts", None)
     ids = list(ids)
@@ -496,6 +512,9 @@ def pin(score: Mapping, ids, *, library=None) -> dict:
             # a sealed composer hears nobody: its frozen seed already holds its drawing still (and keeps its
             # own inks); every other layer keeps its geometry as it stands once grown
             L["pin"] = {"marks": [_mark_json(m) for m in cap[L["id"]]]}
+            final = [_mark_json(m) for m in sh.meta["captured_final"][L["id"]]]
+            if final != L["pin"]["marks"]:
+                L["pin"]["final"] = final
     return validate(rec, library=library)
 
 
@@ -669,6 +688,7 @@ def run(score: Mapping, *, library=None, cache: bool = True, capture=()) -> Shee
     sealed: dict[str, dict] = {}
     spent: dict[str, int] = {}
     captured: dict[str, list] = {}
+
     ltags = {L["id"]: {**_layer_tags(rec, L, k), "_L": L} for k, L in enumerate(layers)}
     key = _h("synth", core.KIT_VERSION, rec["frame"], rec["seed"], rec["margin"], rec["renderer"], _lib_key(lib),
              rec.get("budget_groups"))
@@ -710,6 +730,9 @@ def run(score: Mapping, *, library=None, cache: bool = True, capture=()) -> Shee
             _CACHE[key] = (dict(ground), list(log), dict(state.used), dict(sealed), dict(spent), grown)
             while len(_CACHE) > _CACHE_MAX:
                 _CACHE.popitem(last=False)
+    for k, L in enumerate(layers):           # held: a pinned layer ends as its final lines, whatever moved
+        if "pin" in L and "final" in L["pin"]:
+            ground[L["id"]] = _pinned(rec, L, k, "final")
     t1 = time.perf_counter()
 
     W, H = rec["frame"]
@@ -758,6 +781,7 @@ def run(score: Mapping, *, library=None, cache: bool = True, capture=()) -> Shee
             "notes": {"score": played}}
     if capture:
         meta["captured"] = captured
+        meta["captured_final"] = {lid: list(ground[lid]) for lid in captured}
     sheet = Sheet((W, H), marks, inks, meta)
     if rec["devices"]:
         sheet = apply_devices(sheet, rec["devices"])

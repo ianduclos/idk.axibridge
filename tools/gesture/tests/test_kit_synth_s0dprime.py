@@ -3,6 +3,7 @@ writers building their palette around locked pens (Ian's answer to the S2 recomp
 
 Opt-in like S0′: round 16 replays bit-identically (`experiments/s0prime_golden.py`) and a plain
 compose of the S2 writers is unchanged (`experiments/s0dprime_golden.py`)."""
+import copy
 import sys
 from pathlib import Path
 
@@ -147,8 +148,8 @@ def _inks(sheet):
 
 @pytest.mark.parametrize("w,seed", [("listen", 15102), ("ccolour", 4545)])
 def test_locking_any_layer_leaves_the_sheet_unchanged(w, seed):
-    """A pin holds a layer as grown (part + grow relations) at full precision, and its contact
-    relations still play at its step: what it cut in earlier layers stays cut."""
+    """A pin holds a layer as grown (part + grow relations) and its final lines, at full precision; every
+    relation still plays, so what it cut in other layers stays cut."""
     s = compose(w, frame=[250, 175], seed=seed)
     base = _inks(synth.run(s, cache=False))
     for L in s["layers"]:
@@ -156,3 +157,21 @@ def test_locking_any_layer_leaves_the_sheet_unchanged(w, seed):
             continue
         assert _inks(synth.run(synth.pin(s, [L["id"]]), cache=False)) == base, L["id"]
         assert _inks(synth.run(synth.pin(s, [L["id"]]))) == base, L["id"]      # through the cache too
+
+
+def test_a_held_sheet_moves_only_the_edited_layer():
+    """Ripple "none": every other layer locked, one hand swapped; only that layer's ink changes."""
+    s = compose("listen", frame=[250, 175], seed=15102)
+    edited = next(L["id"] for L in s["layers"] if L["role"] == "speaker")
+    held = synth.pin(s, [L["id"] for L in s["layers"] if L["id"] != edited and L["role"] != "unseen"])
+    ed = copy.deepcopy(held)
+    v = next(L for L in ed["layers"] if L["id"] == edited)["part"]["voice"]
+    v["hand"] = "hokusai" if v.get("hand") != "hokusai" else "matisse"
+
+    def by_layer(sheet):
+        out = {}
+        for i in sheet.inks:
+            out.setdefault(i.meta.get("score_layer"), []).append(i.points.tobytes())
+        return out
+    a, b = by_layer(synth.run(held, cache=False)), by_layer(synth.run(ed, cache=False))
+    assert {k for k in set(a) | set(b) if a.get(k) != b.get(k)} == {edited}
