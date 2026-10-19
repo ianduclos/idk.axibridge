@@ -1,0 +1,154 @@
+{
+ "version": 2,
+ "frame": [
+  250.0,
+  175.0
+ ],
+ "seed": 16902,
+ "margin": 8.0,
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "layers": [
+  {
+   "id": "ground",
+   "role": "found",
+   "pen": "black",
+   "label": "",
+   "part": {
+    "voice": {
+     "id": "river_zoom",
+     "mode": "magnify",
+     "schedule": "push",
+     "recur": 3,
+     "zoom": 24.0,
+     "start": 0.05,
+     "river": 1.0,
+     "pace": 0.4,
+     "max_mm": 9000.0,
+     "far_mm_per_km": 0.8,
+     "course": "steer",
+     "angle": 0.0,
+     "smooth_w": 0.0,
+     "valley_w": 100.0,
+     "turn_mm": 45.0,
+     "frames": 5,
+     "span_w": 1600.0,
+     "pan": 0.0,
+     "heading": "linear",
+     "tile": "SB19",
+     "rank": 0,
+     "stems": "grwl_far_sb19"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "wire",
+     "pen": 0.35
+    }
+   }
+  },
+  {
+   "id": "fly",
+   "role": "listener",
+   "pen": "blue",
+   "label": "",
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "dancer_cristel",
+     "length": 1.6,
+     "joins": "smooth"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "wire",
+     "pen": 0.5
+    }
+   }
+  },
+  {
+   "id": "bend",
+   "role": "listener",
+   "pen": "red",
+   "label": "",
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "fly_open",
+     "length": 1.2,
+     "joins": "smooth"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "wire",
+     "pen": 0.5
+    }
+   }
+  }
+ ],
+ "relations": [
+  {
+   "id": "S",
+   "kind": "sympathy",
+   "src": "*",
+   "dst": "*",
+   "p": 1.0,
+   "params": {
+    "reach": 6.0,
+    "gain": 1.6,
+    "sigma": 3.0,
+    "bends": "later",
+    "smooth": 0.8,
+    "join": 4.0
+   },
+   "note": ""
+  },
+  {
+   "id": "A",
+   "kind": "accompany",
+   "src": "*",
+   "dst": "*",
+   "p": 1.0,
+   "params": {
+    "reach": 6.0,
+    "angle": 25.0,
+    "hold": 22.0,
+    "hold_var": 0.5,
+    "ease": 5.0,
+    "chance": 0.7,
+    "join": 4.0
+   },
+   "note": ""
+  },
+  {
+   "id": "X",
+   "kind": "crossing",
+   "src": "*",
+   "dst": "*",
+   "p": 1.0,
+   "params": {
+    "w_gap_under": 0.26,
+    "w_gap_over": 0.22,
+    "w_cross": 0.15,
+    "w_stop": 0.1,
+    "w_sympathy": 0.25,
+    "streak": 0.45,
+    "gap": 1.75,
+    "pen": 0.4,
+    "jitter": 0.3,
+    "stop_max": 25.0,
+    "min_left": 12.0,
+    "reach": 5.0,
+    "lean": 0.8,
+    "min_sep": 0.0,
+    "min_piece": 2.5,
+    "min_dash": 8.0,
+    "tangle": 4.0
+   },
+   "note": ""
+  }
+ ],
+ "devices": [],
+ "decisions": {}
+}
