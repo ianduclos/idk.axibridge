@@ -1,0 +1,456 @@
+{
+ "panels": [
+  {
+   "kit": 1,
+   "frame": [
+    600.0,
+    150.0
+   ],
+   "seed": 3001,
+   "margin": 8.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "lcorp_zoom",
+      "source": "relay",
+      "hand": "hokusai",
+      "hands": [
+       "matisse",
+       "lichtenberg",
+       "dancer_cristel",
+       "trail_slime"
+      ],
+      "trail": "mantis",
+      "effector": "rhand",
+      "length_R": 30.0,
+      "river_start": 0.05,
+      "river_share": 1.0,
+      "schedule": "pinch",
+      "recur": 3,
+      "zoom": 24.0,
+      "pace": 0.5,
+      "far_turn_mm": 0.0,
+      "lod": 0.8,
+      "reveal": 0.4,
+      "valley": 4.0,
+      "lead": 0.0,
+      "angle": 0.0,
+      "drawn_mm": 1800.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "voice",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    600.0,
+    150.0
+   ],
+   "seed": 3002,
+   "margin": 8.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "lcorp_zoom",
+      "source": "relay",
+      "hand": "hokusai",
+      "hands": [
+       "matisse",
+       "lichtenberg",
+       "dancer_cristel",
+       "trail_slime"
+      ],
+      "trail": "mantis",
+      "effector": "rhand",
+      "length_R": 30.0,
+      "river_start": 0.05,
+      "river_share": 1.0,
+      "schedule": "pinch",
+      "recur": 3,
+      "zoom": 24.0,
+      "pace": 0.5,
+      "far_turn_mm": 0.0,
+      "lod": 0.8,
+      "reveal": 0.4,
+      "valley": 4.0,
+      "lead": 0.0,
+      "angle": 0.0,
+      "drawn_mm": 1800.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "voice",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    600.0,
+    150.0
+   ],
+   "seed": 3003,
+   "margin": 8.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "lcorp_zoom",
+      "source": "relay",
+      "hand": "hokusai",
+      "hands": [
+       "matisse",
+       "lichtenberg",
+       "dancer_cristel",
+       "trail_slime"
+      ],
+      "trail": "mantis",
+      "effector": "rhand",
+      "length_R": 30.0,
+      "river_start": 0.05,
+      "river_share": 1.0,
+      "schedule": "pinch",
+      "recur": 3,
+      "zoom": 24.0,
+      "pace": 0.5,
+      "far_turn_mm": 0.0,
+      "lod": 0.8,
+      "reveal": 0.4,
+      "valley": 4.0,
+      "lead": 0.0,
+      "angle": 0.0,
+      "drawn_mm": 1800.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "voice",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  }
+ ],
+ "scores": [
+  {
+   "version": 1,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "matisse"
+     },
+     "label": "relay hand 0: matisse"
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "lichtenberg"
+     },
+     "label": "relay hand 1: lichtenberg"
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "dancer_cristel"
+     },
+     "label": "relay hand 2: dancer_cristel"
+    },
+    {
+     "id": "L3",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "trail_slime"
+     },
+     "label": "relay hand 3: trail_slime"
+    }
+   ],
+   "relations": [
+    {
+     "kind": "handover",
+     "src": "L0",
+     "dst": "L1",
+     "at": [
+      93.14,
+      119.58
+     ],
+     "s": [
+      443.98,
+      443.98
+     ],
+     "note": "at z=1.0: the next hand takes over in the far twists, whole"
+    },
+    {
+     "kind": "handover",
+     "src": "L1",
+     "dst": "L2",
+     "at": [
+      153.96,
+      46.15
+     ],
+     "s": [
+      1090.19,
+      1090.19
+     ],
+     "note": "at z=1.0: the next hand takes over in the far twists, whole"
+    },
+    {
+     "kind": "handover",
+     "src": "L2",
+     "dst": "L3",
+     "at": [
+      326.23,
+      71.27
+     ],
+     "s": [
+      1575.13,
+      1575.13
+     ],
+     "note": "at z=1.0: the next hand takes over in the far twists, whole"
+    }
+   ],
+   "decisions": {
+    "schedule": "pinch",
+    "zoom": 24.0,
+    "reveal": 0.4,
+    "density": "one line"
+   }
+  },
+  {
+   "version": 1,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "matisse"
+     },
+     "label": "relay hand 0: matisse"
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "lichtenberg"
+     },
+     "label": "relay hand 1: lichtenberg"
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "dancer_cristel"
+     },
+     "label": "relay hand 2: dancer_cristel"
+    },
+    {
+     "id": "L3",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "trail_slime"
+     },
+     "label": "relay hand 3: trail_slime"
+    }
+   ],
+   "relations": [
+    {
+     "kind": "handover",
+     "src": "L0",
+     "dst": "L1",
+     "at": [
+      165.46,
+      69.03
+     ],
+     "s": [
+      345.25,
+      345.25
+     ],
+     "note": "at z=1.0: the next hand takes over in the far twists, whole"
+    },
+    {
+     "kind": "handover",
+     "src": "L1",
+     "dst": "L2",
+     "at": [
+      339.6,
+      24.21
+     ],
+     "s": [
+      765.46,
+      765.46
+     ],
+     "note": "at z=1.0: the next hand takes over in the far twists, whole"
+    },
+    {
+     "kind": "handover",
+     "src": "L2",
+     "dst": "L3",
+     "at": [
+      381.31,
+      35.32
+     ],
+     "s": [
+      1133.43,
+      1133.43
+     ],
+     "note": "at z=1.0: the next hand takes over in the far twists, whole"
+    }
+   ],
+   "decisions": {
+    "schedule": "pinch",
+    "zoom": 24.0,
+    "reveal": 0.4,
+    "density": "one line"
+   }
+  },
+  {
+   "version": 1,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "matisse"
+     },
+     "label": "relay hand 0: matisse"
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "lichtenberg"
+     },
+     "label": "relay hand 1: lichtenberg"
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "dancer_cristel"
+     },
+     "label": "relay hand 2: dancer_cristel"
+    },
+    {
+     "id": "L3",
+     "role": "line",
+     "technique": "lcorp_zoom",
+     "part": 0,
+     "pen": null,
+     "params": {
+      "hand": "trail_slime"
+     },
+     "label": "relay hand 3: trail_slime"
+    }
+   ],
+   "relations": [
+    {
+     "kind": "handover",
+     "src": "L0",
+     "dst": "L1",
+     "at": [
+      471.34,
+      58.73
+     ],
+     "s": [
+      318.81,
+      318.81
+     ],
+     "note": "at z=1.0: the next hand takes over in the far twists, whole"
+    },
+    {
+     "kind": "handover",
+     "src": "L1",
+     "dst": "L2",
+     "at": [
+      294.99,
+      56.65
+     ],
+     "s": [
+      798.35,
+      798.35
+     ],
+     "note": "at z=1.0: the next hand takes over in the far twists, whole"
+    },
+    {
+     "kind": "handover",
+     "src": "L2",
+     "dst": "L3",
+     "at": [
+      176.39,
+      74.6
+     ],
+     "s": [
+      1117.96,
+      1117.96
+     ],
+     "note": "at z=1.0: the next hand takes over in the far twists, whole"
+    }
+   ],
+   "decisions": {
+    "schedule": "pinch",
+    "zoom": 24.0,
+    "reveal": 0.4,
+    "density": "one line"
+   }
+  }
+ ]
+}

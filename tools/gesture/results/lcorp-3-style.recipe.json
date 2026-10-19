@@ -1,0 +1,522 @@
+{
+ "panels": [
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "lcorp_zoom",
+      "source": "river",
+      "hand": "hokusai",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "trail": "mantis",
+      "effector": "rhand",
+      "length_R": 30.0,
+      "river_start": 0.05,
+      "river_share": 0.6,
+      "schedule": "push",
+      "recur": 3,
+      "zoom": 1.0,
+      "pace": 0.5,
+      "far_turn_mm": 0.0,
+      "lod": 0.8,
+      "reveal": 0.4,
+      "valley": 4.0,
+      "lead": 0.0,
+      "angle": 0.0,
+      "drawn_mm": 1500.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 6.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "lcorp_zoom",
+      "source": "river",
+      "hand": "hokusai",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "trail": "mantis",
+      "effector": "rhand",
+      "length_R": 30.0,
+      "river_start": 0.05,
+      "river_share": 0.6,
+      "schedule": "push",
+      "recur": 3,
+      "zoom": 1.0,
+      "pace": 0.5,
+      "far_turn_mm": 0.0,
+      "lod": 0.8,
+      "reveal": 0.4,
+      "valley": 4.0,
+      "lead": 0.0,
+      "angle": 0.0,
+      "drawn_mm": 1500.0
+     },
+     "modulators": [
+      {
+       "id": "lcorp_style",
+       "source": "hand",
+       "hand": "hokusai",
+       "split_mm": 12.0,
+       "style_turn_mm": 2.2,
+       "amount": 1.0,
+       "lod_mm": 0.4
+      }
+     ]
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "dance",
+      "trail": "mantis",
+      "effectors": "rhand",
+      "t0": 0.0,
+      "seconds": 25.0,
+      "cut": "none"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "lcorp_zoom",
+      "source": "river",
+      "hand": "hokusai",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "trail": "mantis",
+      "effector": "rhand",
+      "length_R": 30.0,
+      "river_start": 0.3,
+      "river_share": 0.12,
+      "schedule": "push",
+      "recur": 3,
+      "zoom": 1.0,
+      "pace": 0.5,
+      "far_turn_mm": 0.0,
+      "lod": 0.8,
+      "reveal": 0.4,
+      "valley": 4.0,
+      "lead": 0.0,
+      "angle": 0.0,
+      "drawn_mm": 1500.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "dance",
+      "trail": "mantis",
+      "effectors": "rhand",
+      "t0": 0.0,
+      "seconds": 25.0,
+      "cut": "none"
+     },
+     "modulators": [
+      {
+       "id": "lcorp_style",
+       "source": "river",
+       "hand": "hokusai",
+       "split_mm": 12.0,
+       "style_turn_mm": 2.2,
+       "amount": 1.0,
+       "lod_mm": 0.4
+      }
+     ]
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 6.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "lcorp_zoom",
+      "source": "river",
+      "hand": "hokusai",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "trail": "mantis",
+      "effector": "rhand",
+      "length_R": 30.0,
+      "river_start": 0.3,
+      "river_share": 0.12,
+      "schedule": "push",
+      "recur": 3,
+      "zoom": 1.0,
+      "pace": 0.5,
+      "far_turn_mm": 0.0,
+      "lod": 0.8,
+      "reveal": 0.4,
+      "valley": 4.0,
+      "lead": 0.0,
+      "angle": 0.0,
+      "drawn_mm": 1500.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 6.0,
+      "joins": "smooth"
+     },
+     "modulators": [
+      {
+       "id": "lcorp_style",
+       "source": "river",
+       "hand": "hokusai",
+       "split_mm": 12.0,
+       "style_turn_mm": 2.2,
+       "amount": 1.0,
+       "lod_mm": 0.4
+      }
+     ]
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "lcorp_zoom",
+      "source": "river",
+      "hand": "hokusai",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "trail": "mantis",
+      "effector": "rhand",
+      "length_R": 30.0,
+      "river_start": 0.05,
+      "river_share": 0.6,
+      "schedule": "push",
+      "recur": 3,
+      "zoom": 1.0,
+      "pace": 0.5,
+      "far_turn_mm": 0.0,
+      "lod": 0.8,
+      "reveal": 0.4,
+      "valley": 4.0,
+      "lead": 0.0,
+      "angle": 0.0,
+      "drawn_mm": 1500.0
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "lichtenberg",
+      "length": 6.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  },
+  {
+   "kit": 1,
+   "frame": [
+    220.0,
+    110.0
+   ],
+   "seed": 4101,
+   "margin": 6.0,
+   "arranger": {
+    "id": "single"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "lcorp_zoom",
+      "source": "river",
+      "hand": "hokusai",
+      "hands": [
+       "hokusai",
+       "matisse"
+      ],
+      "trail": "mantis",
+      "effector": "rhand",
+      "length_R": 30.0,
+      "river_start": 0.05,
+      "river_share": 0.6,
+      "schedule": "push",
+      "recur": 3,
+      "zoom": 1.0,
+      "pace": 0.5,
+      "far_turn_mm": 0.0,
+      "lod": 0.8,
+      "reveal": 0.4,
+      "valley": 4.0,
+      "lead": 0.0,
+      "angle": 0.0,
+      "drawn_mm": 1500.0
+     },
+     "modulators": [
+      {
+       "id": "lcorp_style",
+       "source": "hand",
+       "hand": "lichtenberg",
+       "split_mm": 12.0,
+       "style_turn_mm": 2.2,
+       "amount": 1.0,
+       "lod_mm": 0.4
+      }
+     ]
+    }
+   ],
+   "renderer": {
+    "id": "lcorp_ink",
+    "pen": 0.3,
+    "by": "none",
+    "inks": "black,blue,red,green",
+    "min_run": 3.0
+   }
+  }
+ ]
+}

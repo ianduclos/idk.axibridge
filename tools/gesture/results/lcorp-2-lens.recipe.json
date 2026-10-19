@@ -1,0 +1,313 @@
+{
+ "kit": 1,
+ "frame": [
+  267.0,
+  180.0
+ ],
+ "seed": 2201,
+ "margin": 10.0,
+ "arranger": {
+  "id": "lcorp_lens",
+  "field": "lens",
+  "zoom": 24.0,
+  "cx": 0.55,
+  "cy": 0.5,
+  "radius": 0.22,
+  "far_turn_mm": 0.8,
+  "lod": 0.6,
+  "reveal": 0.4,
+  "valley": 2.0,
+  "slack": 0.35,
+  "turn_mm": 30.0,
+  "aware": "none",
+  "lanes": "even"
+ },
+ "parts": [
+  {
+   "voice": {
+    "id": "lcorp_zoom",
+    "source": "hand",
+    "hand": "hokusai",
+    "hands": [
+     "hokusai",
+     "matisse"
+    ],
+    "trail": "mantis",
+    "effector": "rhand",
+    "length_R": 30.0,
+    "river_start": 0.05,
+    "river_share": 1.0,
+    "schedule": "push",
+    "recur": 3,
+    "zoom": 24.0,
+    "pace": 0.5,
+    "far_turn_mm": 0.0,
+    "lod": 0.8,
+    "reveal": 0.4,
+    "valley": 4.0,
+    "lead": 0.0,
+    "angle": 0.0,
+    "drawn_mm": 1500.0
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "lcorp_zoom",
+    "source": "hand",
+    "hand": "matisse",
+    "hands": [
+     "hokusai",
+     "matisse"
+    ],
+    "trail": "mantis",
+    "effector": "rhand",
+    "length_R": 30.0,
+    "river_start": 0.05,
+    "river_share": 1.0,
+    "schedule": "push",
+    "recur": 3,
+    "zoom": 24.0,
+    "pace": 0.5,
+    "far_turn_mm": 0.0,
+    "lod": 0.8,
+    "reveal": 0.4,
+    "valley": 4.0,
+    "lead": 0.0,
+    "angle": 0.0,
+    "drawn_mm": 1500.0
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "lcorp_zoom",
+    "source": "hand",
+    "hand": "dancer_amber",
+    "hands": [
+     "hokusai",
+     "matisse"
+    ],
+    "trail": "mantis",
+    "effector": "rhand",
+    "length_R": 30.0,
+    "river_start": 0.05,
+    "river_share": 1.0,
+    "schedule": "push",
+    "recur": 3,
+    "zoom": 24.0,
+    "pace": 0.5,
+    "far_turn_mm": 0.0,
+    "lod": 0.8,
+    "reveal": 0.4,
+    "valley": 4.0,
+    "lead": 0.0,
+    "angle": 0.0,
+    "drawn_mm": 1500.0
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "lcorp_zoom",
+    "source": "hand",
+    "hand": "mime_dragon",
+    "hands": [
+     "hokusai",
+     "matisse"
+    ],
+    "trail": "mantis",
+    "effector": "rhand",
+    "length_R": 30.0,
+    "river_start": 0.05,
+    "river_share": 1.0,
+    "schedule": "push",
+    "recur": 3,
+    "zoom": 24.0,
+    "pace": 0.5,
+    "far_turn_mm": 0.0,
+    "lod": 0.8,
+    "reveal": 0.4,
+    "valley": 4.0,
+    "lead": 0.0,
+    "angle": 0.0,
+    "drawn_mm": 1500.0
+   },
+   "modulators": []
+  },
+  {
+   "voice": {
+    "id": "lcorp_zoom",
+    "source": "hand",
+    "hand": "trail_slime",
+    "hands": [
+     "hokusai",
+     "matisse"
+    ],
+    "trail": "mantis",
+    "effector": "rhand",
+    "length_R": 30.0,
+    "river_start": 0.05,
+    "river_share": 1.0,
+    "schedule": "push",
+    "recur": 3,
+    "zoom": 24.0,
+    "pace": 0.5,
+    "far_turn_mm": 0.0,
+    "lod": 0.8,
+    "reveal": 0.4,
+    "valley": 4.0,
+    "lead": 0.0,
+    "angle": 0.0,
+    "drawn_mm": 1500.0
+   },
+   "modulators": []
+  }
+ ],
+ "renderer": {
+  "id": "lcorp_ink",
+  "pen": 0.3,
+  "by": "none",
+  "inks": "black,blue,red,green",
+  "min_run": 3.0
+ },
+ "label": "lcorp lens",
+ "score": {
+  "version": 1,
+  "layers": [
+   {
+    "id": "L0",
+    "role": "field",
+    "technique": "lcorp_lens",
+    "part": null,
+    "pen": null,
+    "params": {
+     "field": "lens",
+     "zoom": 24.0,
+     "cx": 0.55,
+     "cy": 0.5,
+     "radius": 0.22
+    },
+    "label": "zoom field (not inked)"
+   },
+   {
+    "id": "L1",
+    "role": "line",
+    "technique": "lcorp_zoom",
+    "part": 0,
+    "pen": null,
+    "params": {
+     "source": "hand",
+     "hand": "hokusai",
+     "trail": "mantis"
+    },
+    "label": "hand:hokusai"
+   },
+   {
+    "id": "L2",
+    "role": "line",
+    "technique": "lcorp_zoom",
+    "part": 1,
+    "pen": null,
+    "params": {
+     "source": "hand",
+     "hand": "matisse",
+     "trail": "mantis"
+    },
+    "label": "hand:matisse"
+   },
+   {
+    "id": "L3",
+    "role": "line",
+    "technique": "lcorp_zoom",
+    "part": 2,
+    "pen": null,
+    "params": {
+     "source": "hand",
+     "hand": "dancer_amber",
+     "trail": "mantis"
+    },
+    "label": "hand:dancer_amber"
+   },
+   {
+    "id": "L4",
+    "role": "line",
+    "technique": "lcorp_zoom",
+    "part": 3,
+    "pen": null,
+    "params": {
+     "source": "hand",
+     "hand": "mime_dragon",
+     "trail": "mantis"
+    },
+    "label": "hand:mime_dragon"
+   },
+   {
+    "id": "L5",
+    "role": "line",
+    "technique": "lcorp_zoom",
+    "part": 4,
+    "pen": null,
+    "params": {
+     "source": "hand",
+     "hand": "trail_slime",
+     "trail": "mantis"
+    },
+    "label": "hand:trail_slime"
+   }
+  ],
+  "relations": [
+   {
+    "kind": "exaggerate",
+    "src": "L0",
+    "dst": "L2",
+    "at": [
+     159.42,
+     60.26
+    ],
+    "s": [
+     316.95,
+     463.8
+    ],
+    "note": "opened to z=9.8 while crossing the field"
+   },
+   {
+    "kind": "exaggerate",
+    "src": "L0",
+    "dst": "L3",
+    "at": [
+     148.18,
+     88.36
+    ],
+    "s": [
+     188.1,
+     646.05
+    ],
+    "note": "opened to z=23.9 while crossing the field"
+   },
+   {
+    "kind": "exaggerate",
+    "src": "L0",
+    "dst": "L4",
+    "at": [
+     145.55,
+     125.68
+    ],
+    "s": [
+     236.25,
+     430.95
+    ],
+    "note": "opened to z=8.3 while crossing the field"
+   }
+  ],
+  "decisions": {
+   "field": "lens",
+   "zoom": 24.0,
+   "lanes": "even",
+   "n_lines": 5,
+   "far_turn_mm": 0.8,
+   "reveal": 0.4,
+   "density": "middle: one line per lane, the field opens them"
+  }
+ }
+}
