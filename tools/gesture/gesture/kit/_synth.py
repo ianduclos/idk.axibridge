@@ -86,7 +86,7 @@ from .core import Ink, Mark, RecipeError, Sheet
 SCORE_VERSION = 2
 _TOP = ("version", "label", "notes", "frame", "seed", "margin", "base", "layers", "relations", "devices",
         "decisions", "renderer", "parts")      # "parts" is derived on output, ignored on input
-_LAYER = ("id", "role", "pen", "label", "region", "part", "lines", "composer", "lock", "renderer")
+_LAYER = ("id", "role", "pen", "label", "region", "part", "lines", "composer", "lock", "renderer", "seed", "pin")
 _REL = ("id", "kind", "src", "dst", "p", "params", "note", "except", "roles", "not_roles", "budget")
 NEUTRAL = ("silent", "spent", "cross")      # outcomes that change nothing: not counted against a budget
 UNSEEN = "unseen"
@@ -166,6 +166,16 @@ def validate(score: Mapping, *, library=None) -> dict:
                 raise RecipeError(f"{where} ({lid}): region must be [x, y, w, h] inside the frame")
             out["region"] = [float(v) for v in reg]
         if L.get("lock"):
+            out["lock"] = True
+        if L.get("seed") is not None:
+            sd = L["seed"]
+            if isinstance(sd, bool) or not isinstance(sd, int) or not 0 <= sd <= core.SEED_MAX:
+                raise RecipeError(f"{where} ({lid}): seed must be an int in [0, {core.SEED_MAX}]")
+            out["seed"] = int(sd)
+        if L.get("pin") is not None:
+            if L.get("composer") is not None:
+                raise RecipeError(f"{where} ({lid}): a composer layer is held still by its seed, not a pin")
+            out["pin"] = _valid_pin(L["pin"], f"{where} ({lid})")
             out["lock"] = True
         if L.get("renderer") is not None and kinds[0] not in ("lines", "relations"):
             raise RecipeError(f"{where} ({lid}): a layer-level renderer is for lines layers and relation-grown ones "
@@ -278,6 +288,33 @@ def validate(score: Mapping, *, library=None) -> dict:
     return out
 
 
+def _valid_pin(pin, where) -> dict:
+    """A pinned layer's geometry: {"marks": [{"points", "channels"?, "meta"?}]} (not for composer layers)."""
+    if not isinstance(pin, Mapping) or not isinstance(pin.get("marks"), (list, tuple)):
+        raise RecipeError(f"{where}: pin is {{\"marks\": [...]}}")
+    marks = []
+    for j, m in enumerate(pin["marks"]):
+        if not isinstance(m, Mapping):
+            raise RecipeError(f"{where}: pin mark {j} must be a dict")
+        a = np.asarray(m.get("points"), float)
+        if a.ndim != 2 or a.shape[1] != 2 or len(a) < 2 or not np.all(np.isfinite(a)):
+            raise RecipeError(f"{where}: pin mark {j} points are ≥2 [x, y]")
+        ch = {}
+        for name, v in dict(m.get("channels") or {}).items():
+            b = np.asarray(v, float)
+            if b.shape != (len(a),) or not np.all(np.isfinite(b)):
+                raise RecipeError(f"{where}: pin mark {j} channel {name!r} must have one finite value per point")
+            ch[str(name)] = [round(float(x), 5) for x in b]
+        marks.append({"points": [[round(float(x), 4), round(float(y), 4)] for x, y in a], "channels": ch,
+                      "meta": json.loads(json.dumps(dict(m.get("meta") or {}), default=float))})
+    return {"marks": marks}
+
+
+def _layer_seed(rec, L, k) -> int:
+    """Layer k's own seed: `seed` when the layer gives one (a re-rolled layer), else sheet seed + k."""
+    return int(L["seed"]) if L.get("seed") is not None else core.part_seed(rec["seed"], k)
+
+
 # ---------------------------------------------------------------------------
 # the executor
 # ---------------------------------------------------------------------------
@@ -363,6 +400,53 @@ def _tag(marks, L, k, rec=None, sealed=None) -> list[Mark]:
     return out
 
 
+def _pinned(rec, L, k) -> list[Mark]:
+    """A pinned layer's marks, rebuilt from the pin (channels and meta kept), with its layer tags."""
+    t = _layer_tags(rec, L, k)
+    out = []
+    for i, m in enumerate(L["pin"]["marks"]):
+        meta = {**m.get("meta", {}), **{a: b for a, b in t.items()
+                                         if not (a == "colour" and (m.get("meta") or {}).get("own_pen"))
+                                         and not (a == "pen_mm" and "pen_mm" in (m.get("meta") or {}))}}
+        meta.setdefault("mid", f"{L['id']}:{i}")
+        meta.setdefault("mid_s0", 0.0)
+        out.append(Mark(np.asarray(m["points"], float), {a: np.asarray(b, float) for a, b in m["channels"].items()},
+                        meta))
+    return out
+
+
+def _mark_json(m: Mark) -> dict:
+    return {"points": [[round(float(x), 4), round(float(y), 4)] for x, y in m.points],
+            "channels": {a: [round(float(x), 5) for x in b] for a, b in m.channels.items()},
+            "meta": json.loads(json.dumps(core._jsonable(dict(m.meta)), default=float))}
+
+
+def pin(score: Mapping, ids, *, library=None) -> dict:
+    """Lock layers in place: each layer in `ids` gets `lock`, its own `seed` frozen, and (unless it is a
+    sealed composer, which hears nobody) a `pin` holding its marks as they stand at the end of its own
+    step (its part grown, its own relations played). A pinned layer no longer regrows, so edits upstream
+    don't move it; later layers still meet it. Unpin by removing `pin`."""
+    rec = validate(score, library=library)
+    rec.pop("parts", None)
+    ids = list(ids)
+    have = {L["id"] for L in rec["layers"]}
+    bad = sorted(set(ids) - have)
+    if bad:
+        raise RecipeError(f"pin: no layer(s) {bad}")
+    sh = run(rec, library=library, capture=set(ids))
+    cap = sh.meta["captured"]
+    for L in rec["layers"]:
+        if L["id"] not in set(ids):
+            continue
+        k = [x["id"] for x in rec["layers"]].index(L["id"])
+        L["lock"], L["seed"] = True, _layer_seed(rec, L, k)
+        if "composer" not in L:
+            # a sealed composer hears nobody: its frozen seed already holds its drawing still (and keeps its
+            # own inks); every other layer keeps its geometry as it stands at the end of its step
+            L["pin"] = {"marks": [_mark_json(m) for m in cap[L["id"]]]}
+    return validate(rec, library=library)
+
+
 def _region(rec, L) -> tuple:
     if L.get("region"):
         return tuple(L["region"])
@@ -376,13 +460,15 @@ def _grow_layer(rec, L, k, state, lib, sealed) -> list[Mark]:
     box = _region(rec, L)
     if "part" in L:
         p = core.Part(k, L["part"], L["part"].get("renderer", rec["renderer"]), (W, H), rec["seed"], state, box)
+        if L.get("seed") is not None:
+            p.seed = int(L["seed"])
         return p.run(box)
     if "lines" in L:
         return [Mark(np.asarray(line, float), {}, {"lines": True}) for line in L["lines"]]
     if "composer" not in L:
         return []                       # grown only by its relations
     x0, y0, w, h = box
-    sub = {**copy.deepcopy(L["composer"]), "frame": [w, h], "seed": core.part_seed(rec["seed"], k)}
+    sub = {**copy.deepcopy(L["composer"]), "frame": [w, h], "seed": _layer_seed(rec, L, k)}
     sh = core.run(sub, library=lib)
     for e in sh.meta.get("library", []):
         state.used.setdefault((e["kind"], e["id"]), e)
@@ -498,8 +584,9 @@ def _keep_meta(new, tags) -> list[Mark]:
     return out
 
 
-def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
-    """Play a v2 score → Sheet (deterministic in the score alone)."""
+def run(score: Mapping, *, library=None, cache: bool = True, capture=()) -> Sheet:
+    """Play a v2 score → Sheet (deterministic in the score alone). `capture`: layer ids whose marks,
+    as they stand at the end of their own step, go to `sheet.meta["captured"]` (what `pin` stores)."""
     from . import library as _lib  # noqa: PLC0415
     from ._devices import apply_devices  # noqa: PLC0415
     t0 = time.perf_counter()
@@ -513,6 +600,7 @@ def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
     log: list[dict] = []
     sealed: dict[str, dict] = {}
     spent: dict[str, int] = {}
+    captured: dict[str, list] = {}
     ltags = {L["id"]: {**_layer_tags(rec, L, k), "_L": L} for k, L in enumerate(layers)}
     key = _h("synth", core.KIT_VERSION, rec["frame"], rec["seed"], rec["margin"], rec["renderer"])
     hits = 0
@@ -527,6 +615,15 @@ def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
             ground, log, sealed, spent = dict(g), list(lg), dict(sl), dict(sp)
             state.used = dict(used)
             hits += 1
+            if capture and L["id"] in capture:
+                captured[L["id"]] = list(ground[L["id"]])
+            continue
+        if "pin" in L:                  # locked: its geometry as pinned; its own step's relations already played
+            ground[L["id"]] = _pinned(rec, L, k)
+            if capture and L["id"] in capture:
+                captured[L["id"]] = list(ground[L["id"]])
+            if cache:
+                _CACHE[key] = (dict(ground), list(log), dict(state.used), dict(sealed), dict(spent))
             continue
         ground[L["id"]] = _tag(_grow_layer(rec, L, k, state, lib, sealed), L, k, rec, sealed)
         if L["id"] in sealed:
@@ -539,6 +636,8 @@ def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
             if get_relation(R["kind"]).phase == "contact":
                 for s_id, d_id in _pairs(R, k, layers, pos):
                     _apply(rec, R, s_id, d_id, k, ground, state, log, unseen, ltags, spent)
+        if capture and L["id"] in capture:
+            captured[L["id"]] = list(ground[L["id"]])
         if cache:
             _CACHE[key] = (dict(ground), list(log), dict(state.used), dict(sealed), dict(spent))
             while len(_CACHE) > _CACHE_MAX:
@@ -571,7 +670,7 @@ def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
             jobs = _own_pen_jobs(jobs, lib)
         for spec, ms, own_colour in jobs:
             rnd = core.get("renderer", spec["id"])
-            rctx = core.Ctx((W, H), _region(rec, L), core.part_seed(rec["seed"], k), rec["seed"], k,
+            rctx = core.Ctx((W, H), _region(rec, L), _layer_seed(rec, L, k), rec["seed"], k,
                             "renderer", rnd.id, state)
             for i in rnd.fn(rctx, ms, **{a: b for a, b in copy.deepcopy(spec).items() if a != "id"}):
                 if not isinstance(i, Ink):
@@ -585,10 +684,12 @@ def run(score: Mapping, *, library=None, cache: bool = True) -> Sheet:
     used = [state.used[k] for k in sorted(state.used)]
     meta = {"recipe": {**rec, "parts": _derived_parts(rec)}, "library": used, "inset": rec["margin"],
             "kit": core.KIT_VERSION, "synth": SCORE_VERSION,
-            "parts": [{"index": k, "seed": core.part_seed(rec["seed"], k), "layer": L["id"], "role": L["role"],
+            "parts": [{"index": k, "seed": _layer_seed(rec, L, k), "layer": L["id"], "role": L["role"],
                        "voice": _technique(L)} for k, L in enumerate(layers)],
             "seconds": {"marks": round(t1 - t0, 3), "inks": round(t2 - t1, 3)}, "cache_hits": hits,
             "notes": {"score": played}}
+    if capture:
+        meta["captured"] = captured
     sheet = Sheet((W, H), marks, inks, meta)
     if rec["devices"]:
         sheet = apply_devices(sheet, rec["devices"])
