@@ -1,0 +1,416 @@
+{
+ "population": [
+  {
+   "version": 2,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "hand",
+     "part": 0,
+     "pen": "black",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "hand",
+     "part": 1,
+     "pen": "blue",
+     "params": {},
+     "label": ""
+    }
+   ],
+   "relations": [
+    {
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R0",
+     "outcomes": {
+      "knot_over": 2
+     },
+     "s": [
+      346.34,
+      346.34
+     ],
+     "at": [
+      94.99,
+      138.92
+     ],
+     "note": "2 event(s): knot_over 2"
+    }
+   ],
+   "log": [
+    {
+     "relation": "R0",
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "knot_over",
+     "at": [
+      96.37,
+      126.56
+     ],
+     "s": [
+      346.34,
+      346.34
+     ],
+     "s_src": [
+      267.08,
+      267.08
+     ],
+     "mark": 0,
+     "perimeter": 105.0,
+     "side": "src",
+     "s_in": 253.78581736337762,
+     "s_out": 280.1843478122573,
+     "radius": 12.84
+    },
+    {
+     "relation": "R0",
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "knot_over",
+     "at": [
+      93.61,
+      151.28
+     ],
+     "s": [
+      425.57,
+      425.57
+     ],
+     "s_src": [
+      431.06,
+      431.06
+     ],
+     "mark": 0,
+     "perimeter": 120.0,
+     "side": "src",
+     "s_in": 418.03924284967843,
+     "s_out": 444.2682160405723,
+     "radius": 12.95
+    }
+   ],
+   "decisions": {
+    "order": [
+     "L0",
+     "L1"
+    ]
+   }
+  },
+  {
+   "version": 2,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "hand",
+     "part": 0,
+     "pen": "black",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "hand",
+     "part": 1,
+     "pen": "blue",
+     "params": {},
+     "label": ""
+    }
+   ],
+   "relations": [
+    {
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R0",
+     "outcomes": {
+      "knot_under": 2
+     },
+     "s": [
+      233.57,
+      233.57
+     ],
+     "at": [
+      124.54,
+      78.8
+     ],
+     "note": "2 event(s): knot_under 2"
+    }
+   ],
+   "log": [
+    {
+     "relation": "R0",
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "knot_under",
+     "at": [
+      104.62,
+      76.73
+     ],
+     "s": [
+      233.57,
+      233.57
+     ],
+     "s_src": [
+      113.38,
+      113.38
+     ],
+     "mark": 0,
+     "perimeter": 120.0,
+     "side": "dst",
+     "s_in": 216.3125893813569,
+     "s_out": 248.709651227965,
+     "radius": 14.81
+    },
+    {
+     "relation": "R0",
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "knot_under",
+     "at": [
+      144.46,
+      80.87
+     ],
+     "s": [
+      352.76,
+      352.76
+     ],
+     "s_src": [
+      511.11,
+      511.11
+     ],
+     "mark": 0,
+     "perimeter": 120.0,
+     "side": "dst",
+     "s_in": 337.36641717057745,
+     "s_out": 368.17647582651347,
+     "radius": 15.19
+    }
+   ],
+   "decisions": {
+    "order": [
+     "L0",
+     "L1"
+    ]
+   }
+  },
+  {
+   "version": 2,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "hand",
+     "part": 0,
+     "pen": "black",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "hand",
+     "part": 1,
+     "pen": "blue",
+     "params": {},
+     "label": ""
+    }
+   ],
+   "relations": [
+    {
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R0",
+     "outcomes": {
+      "knot_under": 2
+     },
+     "s": [
+      324.87,
+      324.87
+     ],
+     "at": [
+      132.24,
+      80.2
+     ],
+     "note": "2 event(s): knot_under 2"
+    }
+   ],
+   "log": [
+    {
+     "relation": "R0",
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "knot_under",
+     "at": [
+      116.4,
+      64.9
+     ],
+     "s": [
+      324.87,
+      324.87
+     ],
+     "s_src": [
+      689.39,
+      689.39
+     ],
+     "mark": 0,
+     "perimeter": 72.5,
+     "side": "dst",
+     "s_in": 314.78266151349015,
+     "s_out": 331.5807864300338,
+     "radius": 8.32
+    },
+    {
+     "relation": "R0",
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "knot_under",
+     "at": [
+      148.08,
+      95.5
+     ],
+     "s": [
+      438.94,
+      438.94
+     ],
+     "s_src": [
+      6.91,
+      6.91
+     ],
+     "mark": 0,
+     "perimeter": 83.1,
+     "side": "dst",
+     "s_in": 430.0723527770234,
+     "s_out": 447.89197241064073,
+     "radius": 8.85
+    }
+   ],
+   "decisions": {
+    "order": [
+     "L0",
+     "L1"
+    ]
+   }
+  },
+  {
+   "version": 2,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "hand",
+     "part": 0,
+     "pen": "black",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "hand",
+     "part": 1,
+     "pen": "blue",
+     "params": {},
+     "label": ""
+    }
+   ],
+   "relations": [
+    {
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R0",
+     "outcomes": {
+      "knot_over": 2
+     },
+     "s": [
+      179.65,
+      179.65
+     ],
+     "at": [
+      122.29,
+      99.19
+     ],
+     "note": "2 event(s): knot_over 2"
+    }
+   ],
+   "log": [
+    {
+     "relation": "R0",
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "knot_over",
+     "at": [
+      157.63,
+      99.86
+     ],
+     "s": [
+      179.65,
+      179.65
+     ],
+     "s_src": [
+      459.44,
+      459.44
+     ],
+     "mark": 0,
+     "perimeter": 97.7,
+     "side": "src",
+     "s_in": 450.20166729423613,
+     "s_out": 468.7404687950633,
+     "radius": 9.19
+    },
+    {
+     "relation": "R0",
+     "kind": "dig_knot",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "knot_over",
+     "at": [
+      86.95,
+      98.53
+     ],
+     "s": [
+      602.26,
+      602.26
+     ],
+     "s_src": [
+      112.93,
+      112.93
+     ],
+     "mark": 0,
+     "perimeter": 111.7,
+     "side": "src",
+     "s_in": 99.8868345621705,
+     "s_out": 126.58469045376992,
+     "radius": 12.87
+    }
+   ],
+   "decisions": {
+    "order": [
+     "L0",
+     "L1"
+    ]
+   }
+  }
+ ]
+}

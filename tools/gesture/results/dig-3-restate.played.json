@@ -1,0 +1,134 @@
+{
+ "version": 2,
+ "layers": [
+  {
+   "id": "L0",
+   "role": "line",
+   "technique": "hand",
+   "part": 0,
+   "pen": "black",
+   "params": {},
+   "label": ""
+  },
+  {
+   "id": "L1",
+   "role": "line",
+   "technique": "hand",
+   "part": 1,
+   "pen": "red",
+   "params": {},
+   "label": ""
+  },
+  {
+   "id": "L2",
+   "role": "line",
+   "technique": "hand",
+   "part": 2,
+   "pen": "blue",
+   "params": {},
+   "label": ""
+  }
+ ],
+ "relations": [
+  {
+   "kind": "dig_restate",
+   "src": "L0",
+   "dst": "L1",
+   "relation": "R0",
+   "outcomes": {
+    "echo": 1,
+    "copies": 1
+   },
+   "s": null,
+   "at": [
+    44.49,
+    49.88
+   ],
+   "note": "2 event(s): copies 1, echo 1"
+  },
+  {
+   "kind": "dig_restate",
+   "src": "L1",
+   "dst": "L2",
+   "relation": "R1",
+   "outcomes": {
+    "shuttle": 1
+   },
+   "s": null,
+   "at": [
+    218.64,
+    115.22
+   ],
+   "note": "1 event(s): shuttle 1"
+  }
+ ],
+ "log": [
+  {
+   "relation": "R0",
+   "kind": "dig_restate",
+   "src": "L0",
+   "dst": "L1",
+   "step": 1,
+   "outcome": "echo",
+   "at": [
+    47.44,
+    21.49
+   ],
+   "s_src": [
+    944.29,
+    992.29
+   ],
+   "src_mark": 0,
+   "copies": 1,
+   "in_hand": true,
+   "stress": 0.6505
+  },
+  {
+   "relation": "R0",
+   "kind": "dig_restate",
+   "src": "L0",
+   "dst": "L1",
+   "step": 1,
+   "outcome": "copies",
+   "at": [
+    41.54,
+    78.26
+   ],
+   "s_src": [
+    0.06,
+    48.06
+   ],
+   "src_mark": 0,
+   "copies": 4,
+   "in_hand": true,
+   "stress": 0.5514
+  },
+  {
+   "relation": "R1",
+   "kind": "dig_restate",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "shuttle",
+   "at": [
+    218.64,
+    115.22
+   ],
+   "s_src": [
+    405.52,
+    453.52
+   ],
+   "src_mark": 0,
+   "copies": 6,
+   "in_hand": true,
+   "stress": 0.7304
+  }
+ ],
+ "decisions": {
+  "order": [
+   "L0",
+   "L1",
+   "L2"
+  ]
+ }
+}

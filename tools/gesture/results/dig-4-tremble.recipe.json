@@ -1,0 +1,104 @@
+{
+ "version": 2,
+ "frame": [
+  250.0,
+  175.0
+ ],
+ "seed": 16301,
+ "margin": 5.0,
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "layers": [
+  {
+   "id": "L0",
+   "role": "line",
+   "pen": "black",
+   "label": "",
+   "region": [
+    10.0,
+    15.0,
+    200.0,
+    140.0
+   ],
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_thrusting",
+     "length": 4.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  },
+  {
+   "id": "L1",
+   "role": "line",
+   "pen": "red",
+   "label": "",
+   "region": [
+    60.0,
+    40.0,
+    170.0,
+    120.0
+   ],
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_miner",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  },
+  {
+   "id": "L2",
+   "role": "line",
+   "pen": "blue",
+   "label": "",
+   "region": [
+    20.0,
+    60.0,
+    130.0,
+    100.0
+   ],
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 2.5,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  }
+ ],
+ "relations": [
+  {
+   "id": "R0",
+   "kind": "dig_tremble",
+   "src": "*",
+   "dst": "*",
+   "p": 1.0,
+   "params": {
+    "reach": 5.0,
+    "amp": 0.4,
+    "base": 0.0,
+    "wave": 5.0,
+    "burst": 0.35,
+    "burst_mm": 2.5,
+    "w_tremble": 0.75,
+    "w_still": 0.25,
+    "streak": 0.5,
+    "still_mm": 2.0,
+    "both": false
+   },
+   "note": ""
+  }
+ ],
+ "devices": [],
+ "decisions": {},
+ "label": "dig tremble 16301"
+}

@@ -1,0 +1,2924 @@
+{
+ "population": [
+  {
+   "version": 2,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "hand",
+     "part": 0,
+     "pen": "black",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "hand",
+     "part": 1,
+     "pen": "blue",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "technique": "hand",
+     "part": 2,
+     "pen": "orange",
+     "params": {},
+     "label": ""
+    }
+   ],
+   "relations": [
+    {
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R0",
+     "outcomes": {
+      "echo": 1
+     },
+     "s": null,
+     "at": [
+      35.3,
+      65.21
+     ],
+     "note": "1 event(s): echo 1"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R1",
+     "outcomes": {
+      "tremble": 9
+     },
+     "s": [
+      70.8,
+      80.8
+     ],
+     "at": [
+      102.72,
+      101.69
+     ],
+     "note": "9 event(s): tremble 9"
+    },
+    {
+     "kind": "dig_pool",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R3",
+     "outcomes": {
+      "pool_over": 1
+     },
+     "s": [
+      75.76,
+      75.76
+     ],
+     "at": [
+      154.79,
+      40.62
+     ],
+     "note": "1 event(s): pool_over 1"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "relation": "R1",
+     "outcomes": {
+      "tremble": 22,
+      "still": 3
+     },
+     "s": [
+      25.2,
+      36.41
+     ],
+     "at": [
+      74.68,
+      95.65
+     ],
+     "note": "25 event(s): still 3, tremble 22"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "relation": "R1",
+     "outcomes": {
+      "tremble": 5
+     },
+     "s": [
+      103.58,
+      113.78
+     ],
+     "at": [
+      60.56,
+      96.62
+     ],
+     "note": "5 event(s): tremble 5"
+    },
+    {
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "relation": "R2",
+     "outcomes": {
+      "stiffen": 1
+     },
+     "s": [
+      633.95,
+      651.42
+     ],
+     "at": [
+      124.05,
+      152.71
+     ],
+     "note": "1 event(s): stiffen 1"
+    }
+   ],
+   "log": [
+    {
+     "relation": "R0",
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "echo",
+     "at": [
+      35.3,
+      65.21
+     ],
+     "s_src": [
+      30.65,
+      78.65
+     ],
+     "src_mark": 0,
+     "copies": 1,
+     "in_hand": true,
+     "stress": 1.0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      154.67,
+      40.64
+     ],
+     "s": [
+      70.8,
+      80.8
+     ],
+     "side": "dst",
+     "closest": 0.35,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      134.38,
+      129.35
+     ],
+     "s": [
+      157.8,
+      242.36
+     ],
+     "side": "dst",
+     "closest": 0.05,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      139.91,
+      129.52
+     ],
+     "s": [
+      269.75,
+      279.75
+     ],
+     "side": "dst",
+     "closest": 0.45,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      119.66,
+      117.35
+     ],
+     "s": [
+      300.55,
+      312.75
+     ],
+     "side": "dst",
+     "closest": 0.39,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      113.86,
+      129.83
+     ],
+     "s": [
+      313.75,
+      343.35
+     ],
+     "side": "dst",
+     "closest": 0.25,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      117.95,
+      140.01
+     ],
+     "s": [
+      384.82,
+      411.62
+     ],
+     "side": "dst",
+     "closest": 0.02,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      45.17,
+      89.86
+     ],
+     "s": [
+      0.0,
+      10.09
+     ],
+     "side": "dst",
+     "closest": 0.04,
+     "mark": 1
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      39.63,
+      76.78
+     ],
+     "s": [
+      22.09,
+      27.93
+     ],
+     "side": "dst",
+     "closest": 3.23,
+     "mark": 1
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      59.21,
+      61.84
+     ],
+     "s": [
+      46.15,
+      51.75
+     ],
+     "side": "dst",
+     "closest": 0.38,
+     "mark": 1
+    },
+    {
+     "relation": "R3",
+     "kind": "dig_pool",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "pool_over",
+     "at": [
+      154.79,
+      40.62
+     ],
+     "s": [
+      75.76,
+      75.76
+     ],
+     "s_src": [
+      726.7,
+      726.7
+     ],
+     "mark": 0,
+     "size": 10.72,
+     "side": "src",
+     "how": "coil"
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      108.53,
+      95.87
+     ],
+     "s": [
+      25.2,
+      36.41
+     ],
+     "side": "dst",
+     "closest": 0.14,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      91.64,
+      105.65
+     ],
+     "s": [
+      44.61,
+      55.41
+     ],
+     "side": "dst",
+     "closest": 0.17,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      75.11,
+      109.35
+     ],
+     "s": [
+      58.01,
+      73.41
+     ],
+     "side": "dst",
+     "closest": 0.31,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      52.83,
+      103.67
+     ],
+     "s": [
+      87.41,
+      94.21
+     ],
+     "side": "dst",
+     "closest": 4.61,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      41.21,
+      85.32
+     ],
+     "s": [
+      100.02,
+      121.22
+     ],
+     "side": "dst",
+     "closest": 0.15,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      58.33,
+      60.65
+     ],
+     "s": [
+      140.02,
+      151.82
+     ],
+     "side": "dst",
+     "closest": 0.13,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      79.26,
+      67.33
+     ],
+     "s": [
+      162.42,
+      179.83
+     ],
+     "side": "dst",
+     "closest": 0.19,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      83.83,
+      88.2
+     ],
+     "s": [
+      185.43,
+      197.03
+     ],
+     "side": "dst",
+     "closest": 0.23,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      92.24,
+      99.63
+     ],
+     "s": [
+      200.63,
+      211.23
+     ],
+     "side": "dst",
+     "closest": 0.17,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      101.81,
+      93.41
+     ],
+     "s": [
+      213.43,
+      224.03
+     ],
+     "side": "dst",
+     "closest": 0.04,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      86.55,
+      89.25
+     ],
+     "s": [
+      229.03,
+      249.24
+     ],
+     "side": "dst",
+     "closest": 0.15,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      92.4,
+      97.69
+     ],
+     "s": [
+      249.64,
+      282.24
+     ],
+     "side": "dst",
+     "closest": 0.15,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      72.09,
+      85.94
+     ],
+     "s": [
+      284.44,
+      303.24
+     ],
+     "side": "dst",
+     "closest": 0.3,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      52.03,
+      94.67
+     ],
+     "s": [
+      315.24,
+      325.84
+     ],
+     "side": "dst",
+     "closest": 0.5,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      54.53,
+      105.3
+     ],
+     "s": [
+      329.65,
+      336.05
+     ],
+     "side": "dst",
+     "closest": 4.34,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      72.31,
+      104.45
+     ],
+     "s": [
+      346.45,
+      357.25
+     ],
+     "side": "dst",
+     "closest": 0.48,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      81.53,
+      87.37
+     ],
+     "s": [
+      367.05,
+      380.85
+     ],
+     "side": "dst",
+     "closest": 0.25,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      65.25,
+      73.0
+     ],
+     "s": [
+      382.65,
+      401.06
+     ],
+     "side": "dst",
+     "closest": 0.12,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      52.48,
+      94.87
+     ],
+     "s": [
+      419.46,
+      433.06
+     ],
+     "side": "dst",
+     "closest": 0.02,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      71.72,
+      101.82
+     ],
+     "s": [
+      443.66,
+      455.26
+     ],
+     "side": "dst",
+     "closest": 0.25,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      80.09,
+      86.44
+     ],
+     "s": [
+      462.06,
+      494.87
+     ],
+     "side": "dst",
+     "closest": 0.09,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      39.87,
+      83.56
+     ],
+     "s": [
+      513.27,
+      524.27
+     ],
+     "side": "dst",
+     "closest": 0.25,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      50.2,
+      107.65
+     ],
+     "s": [
+      534.87,
+      558.48
+     ],
+     "side": "dst",
+     "closest": 0.16,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      92.89,
+      124.44
+     ],
+     "s": [
+      572.48,
+      602.88
+     ],
+     "side": "dst",
+     "closest": 0.35,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      118.18,
+      145.84
+     ],
+     "s": [
+      622.08,
+      634.89
+     ],
+     "side": "dst",
+     "closest": 0.35,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      42.02,
+      90.02
+     ],
+     "s": [
+      103.58,
+      113.78
+     ],
+     "side": "dst",
+     "closest": 2.9,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      42.49,
+      74.77
+     ],
+     "s": [
+      114.58,
+      152.98
+     ],
+     "side": "dst",
+     "closest": 0.07,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      51.01,
+      86.24
+     ],
+     "s": [
+      415.92,
+      427.92
+     ],
+     "side": "dst",
+     "closest": 0.73,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      43.04,
+      79.27
+     ],
+     "s": [
+      510.7,
+      522.7
+     ],
+     "side": "dst",
+     "closest": 0.23,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      124.22,
+      152.78
+     ],
+     "s": [
+      621.09,
+      652.48
+     ],
+     "side": "dst",
+     "closest": 0.06,
+     "mark": 0
+    },
+    {
+     "relation": "R2",
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "stiffen",
+     "at": [
+      124.05,
+      152.71
+     ],
+     "s": [
+      633.95,
+      651.42
+     ],
+     "mark": 0,
+     "grammar": "ruler",
+     "where": "around"
+    }
+   ],
+   "decisions": {
+    "order": [
+     "L0",
+     "L1",
+     "L2"
+    ]
+   }
+  },
+  {
+   "version": 2,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "hand",
+     "part": 0,
+     "pen": "black",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "hand",
+     "part": 1,
+     "pen": "blue",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "technique": "hand",
+     "part": 2,
+     "pen": "orange",
+     "params": {},
+     "label": ""
+    }
+   ],
+   "relations": [
+    {
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R0",
+     "outcomes": {
+      "echo": 1
+     },
+     "s": null,
+     "at": [
+      105.3,
+      40.85
+     ],
+     "note": "1 event(s): echo 1"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R1",
+     "outcomes": {
+      "tremble": 8
+     },
+     "s": [
+      192.41,
+      217.01
+     ],
+     "at": [
+      126.21,
+      79.47
+     ],
+     "note": "8 event(s): tremble 8"
+    },
+    {
+     "kind": "dig_pool",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R3",
+     "outcomes": {
+      "pool_under": 1
+     },
+     "s": [
+      200.23,
+      200.23
+     ],
+     "at": [
+      129.57,
+      93.91
+     ],
+     "note": "1 event(s): pool_under 1"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "relation": "R1",
+     "outcomes": {
+      "tremble": 9
+     },
+     "s": [
+      69.61,
+      95.61
+     ],
+     "at": [
+      105.63,
+      99.76
+     ],
+     "note": "9 event(s): tremble 9"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "relation": "R1",
+     "outcomes": {
+      "still": 5,
+      "tremble": 4
+     },
+     "s": [
+      100.59,
+      124.79
+     ],
+     "at": [
+      120.48,
+      117.5
+     ],
+     "note": "9 event(s): still 5, tremble 4"
+    },
+    {
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "relation": "R2",
+     "outcomes": {
+      "stiffen": 1
+     },
+     "s": [
+      152.62,
+      172.62
+     ],
+     "at": [
+      94.92,
+      132.78
+     ],
+     "note": "1 event(s): stiffen 1"
+    }
+   ],
+   "log": [
+    {
+     "relation": "R0",
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "echo",
+     "at": [
+      105.3,
+      40.85
+     ],
+     "s_src": [
+      35.34,
+      83.34
+     ],
+     "src_mark": 0,
+     "copies": 1,
+     "in_hand": true,
+     "stress": 1.0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      127.89,
+      92.88
+     ],
+     "s": [
+      192.41,
+      217.01
+     ],
+     "side": "dst",
+     "closest": 0.09,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      120.66,
+      55.7
+     ],
+     "s": [
+      221.41,
+      259.36
+     ],
+     "side": "dst",
+     "closest": 0.2,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      128.89,
+      40.06
+     ],
+     "s": [
+      266.56,
+      270.54
+     ],
+     "side": "dst",
+     "closest": 4.44,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      145.96,
+      57.82
+     ],
+     "s": [
+      279.54,
+      299.14
+     ],
+     "side": "dst",
+     "closest": 0.16,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      126.99,
+      151.86
+     ],
+     "s": [
+      392.94,
+      405.54
+     ],
+     "side": "dst",
+     "closest": 0.08,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      130.87,
+      150.99
+     ],
+     "s": [
+      413.93,
+      427.54
+     ],
+     "side": "dst",
+     "closest": 0.17,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      119.76,
+      41.69
+     ],
+     "s": [
+      0.0,
+      11.98
+     ],
+     "side": "dst",
+     "closest": 0.1,
+     "mark": 1
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      108.63,
+      44.78
+     ],
+     "s": [
+      14.37,
+      43.12
+     ],
+     "side": "dst",
+     "closest": 0.22,
+     "mark": 1
+    },
+    {
+     "relation": "R3",
+     "kind": "dig_pool",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "pool_under",
+     "at": [
+      129.57,
+      93.91
+     ],
+     "s": [
+      200.23,
+      200.23
+     ],
+     "s_src": [
+      475.82,
+      475.82
+     ],
+     "mark": 0,
+     "size": 9.07,
+     "side": "dst",
+     "how": "wet"
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      102.78,
+      153.78
+     ],
+     "s": [
+      69.61,
+      95.61
+     ],
+     "side": "dst",
+     "closest": 0.04,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      79.37,
+      138.27
+     ],
+     "s": [
+      163.42,
+      175.62
+     ],
+     "side": "dst",
+     "closest": 0.22,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      63.99,
+      83.91
+     ],
+     "s": [
+      286.63,
+      311.04
+     ],
+     "side": "dst",
+     "closest": 0.07,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      106.09,
+      65.1
+     ],
+     "s": [
+      354.64,
+      365.04
+     ],
+     "side": "dst",
+     "closest": 0.12,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      114.85,
+      73.57
+     ],
+     "s": [
+      365.64,
+      379.84
+     ],
+     "side": "dst",
+     "closest": 0.16,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      131.68,
+      94.41
+     ],
+     "s": [
+      382.84,
+      404.65
+     ],
+     "side": "dst",
+     "closest": 0.07,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      131.97,
+      148.38
+     ],
+     "s": [
+      458.05,
+      480.66
+     ],
+     "side": "dst",
+     "closest": 1.44,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      115.18,
+      74.46
+     ],
+     "s": [
+      680.88,
+      695.48
+     ],
+     "side": "dst",
+     "closest": 0.04,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      104.73,
+      65.98
+     ],
+     "s": [
+      696.08,
+      701.88
+     ],
+     "side": "dst",
+     "closest": 0.32,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      131.06,
+      135.88
+     ],
+     "s": [
+      100.59,
+      124.79
+     ],
+     "side": "dst",
+     "closest": 0.07,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      95.07,
+      132.72
+     ],
+     "s": [
+      137.59,
+      158.98
+     ],
+     "side": "dst",
+     "closest": 0.21,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      121.49,
+      81.35
+     ],
+     "s": [
+      361.96,
+      423.75
+     ],
+     "side": "dst",
+     "closest": 0.13,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      145.5,
+      121.98
+     ],
+     "s": [
+      426.35,
+      439.35
+     ],
+     "side": "dst",
+     "closest": 0.27,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      127.97,
+      149.58
+     ],
+     "s": [
+      458.35,
+      473.95
+     ],
+     "side": "dst",
+     "closest": 0.04,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      100.39,
+      122.39
+     ],
+     "s": [
+      497.94,
+      541.14
+     ],
+     "side": "dst",
+     "closest": 0.14,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      145.3,
+      122.69
+     ],
+     "s": [
+      555.54,
+      611.53
+     ],
+     "side": "dst",
+     "closest": 0.19,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      105.52,
+      121.41
+     ],
+     "s": [
+      630.73,
+      664.93
+     ],
+     "side": "dst",
+     "closest": 0.06,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      112.03,
+      69.51
+     ],
+     "s": [
+      684.33,
+      701.12
+     ],
+     "side": "dst",
+     "closest": 2.3,
+     "mark": 0
+    },
+    {
+     "relation": "R2",
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "stiffen",
+     "at": [
+      94.92,
+      132.78
+     ],
+     "s": [
+      152.62,
+      172.62
+     ],
+     "mark": 0,
+     "grammar": "stair",
+     "where": "after"
+    }
+   ],
+   "decisions": {
+    "order": [
+     "L0",
+     "L1",
+     "L2"
+    ]
+   }
+  },
+  {
+   "version": 2,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "hand",
+     "part": 0,
+     "pen": "black",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "hand",
+     "part": 1,
+     "pen": "blue",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "technique": "hand",
+     "part": 2,
+     "pen": "orange",
+     "params": {},
+     "label": ""
+    }
+   ],
+   "relations": [
+    {
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R0",
+     "outcomes": {
+      "echo": 1
+     },
+     "s": null,
+     "at": [
+      87.53,
+      152.34
+     ],
+     "note": "1 event(s): echo 1"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R1",
+     "outcomes": {
+      "tremble": 10
+     },
+     "s": [
+      0.0,
+      23.4
+     ],
+     "at": [
+      114.85,
+      112.65
+     ],
+     "note": "10 event(s): tremble 10"
+    },
+    {
+     "kind": "dig_pool",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R3",
+     "outcomes": {
+      "pool_under": 1
+     },
+     "s": [
+      79.44,
+      79.44
+     ],
+     "at": [
+      121.08,
+      119.69
+     ],
+     "note": "1 event(s): pool_under 1"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "relation": "R1",
+     "outcomes": {
+      "tremble": 11,
+      "still": 1
+     },
+     "s": [
+      0.0,
+      3.8
+     ],
+     "at": [
+      81.94,
+      119.33
+     ],
+     "note": "12 event(s): still 1, tremble 11"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "relation": "R1",
+     "outcomes": {
+      "tremble": 4
+     },
+     "s": [
+      0.0,
+      13.6
+     ],
+     "at": [
+      98.59,
+      135.89
+     ],
+     "note": "4 event(s): tremble 4"
+    },
+    {
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "relation": "R2",
+     "outcomes": {
+      "stiffen": 1
+     },
+     "s": [
+      2.0,
+      10.75
+     ],
+     "at": [
+      87.9,
+      140.01
+     ],
+     "note": "1 event(s): stiffen 1"
+    }
+   ],
+   "log": [
+    {
+     "relation": "R0",
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "echo",
+     "at": [
+      87.53,
+      152.34
+     ],
+     "s_src": [
+      71.43,
+      119.43
+     ],
+     "src_mark": 0,
+     "copies": 1,
+     "in_hand": true,
+     "stress": 1.0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      116.55,
+      108.52
+     ],
+     "s": [
+      0.0,
+      23.4
+     ],
+     "side": "dst",
+     "closest": 0.05,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      119.18,
+      99.53
+     ],
+     "s": [
+      24.2,
+      41.86
+     ],
+     "side": "dst",
+     "closest": 0.36,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      118.98,
+      106.86
+     ],
+     "s": [
+      47.54,
+      99.88
+     ],
+     "side": "dst",
+     "closest": 0.06,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      119.3,
+      101.9
+     ],
+     "s": [
+      110.48,
+      162.47
+     ],
+     "side": "dst",
+     "closest": 0.04,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      107.11,
+      111.56
+     ],
+     "s": [
+      196.56,
+      227.32
+     ],
+     "side": "dst",
+     "closest": 0.11,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      104.54,
+      95.96
+     ],
+     "s": [
+      231.32,
+      260.61
+     ],
+     "side": "dst",
+     "closest": 0.06,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      141.03,
+      92.33
+     ],
+     "s": [
+      526.14,
+      532.54
+     ],
+     "side": "dst",
+     "closest": 3.41,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      124.17,
+      128.26
+     ],
+     "s": [
+      660.22,
+      663.62
+     ],
+     "side": "dst",
+     "closest": 2.91,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      110.37,
+      145.72
+     ],
+     "s": [
+      2.85,
+      12.47
+     ],
+     "side": "dst",
+     "closest": 3.7,
+     "mark": 1
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      87.24,
+      135.87
+     ],
+     "s": [
+      29.9,
+      48.93
+     ],
+     "side": "dst",
+     "closest": 0.12,
+     "mark": 1
+    },
+    {
+     "relation": "R3",
+     "kind": "dig_pool",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "pool_under",
+     "at": [
+      121.08,
+      119.69
+     ],
+     "s": [
+      79.44,
+      79.44
+     ],
+     "s_src": [
+      36.88,
+      36.88
+     ],
+     "mark": 0,
+     "size": 15.09,
+     "side": "dst",
+     "how": "wet"
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      87.5,
+      139.4
+     ],
+     "s": [
+      0.0,
+      3.8
+     ],
+     "side": "dst",
+     "closest": 2.24,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      96.46,
+      155.13
+     ],
+     "s": [
+      11.8,
+      31.8
+     ],
+     "side": "dst",
+     "closest": 0.15,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      96.55,
+      155.04
+     ],
+     "s": [
+      36.8,
+      50.79
+     ],
+     "side": "dst",
+     "closest": 0.05,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      120.26,
+      136.68
+     ],
+     "s": [
+      81.19,
+      95.19
+     ],
+     "side": "dst",
+     "closest": 0.05,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      108.53,
+      126.24
+     ],
+     "s": [
+      98.99,
+      120.39
+     ],
+     "side": "dst",
+     "closest": 0.32,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      70.14,
+      123.49
+     ],
+     "s": [
+      123.59,
+      150.98
+     ],
+     "side": "dst",
+     "closest": 0.29,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      74.25,
+      124.89
+     ],
+     "s": [
+      157.78,
+      167.98
+     ],
+     "side": "dst",
+     "closest": 0.19,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      66.31,
+      113.15
+     ],
+     "s": [
+      171.78,
+      192.17
+     ],
+     "side": "dst",
+     "closest": 0.03,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      71.13,
+      111.45
+     ],
+     "s": [
+      195.57,
+      206.37
+     ],
+     "side": "dst",
+     "closest": 0.15,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      61.16,
+      102.22
+     ],
+     "s": [
+      209.17,
+      224.37
+     ],
+     "side": "dst",
+     "closest": 0.14,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      53.23,
+      63.42
+     ],
+     "s": [
+      253.97,
+      264.77
+     ],
+     "side": "dst",
+     "closest": 0.2,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      77.74,
+      80.82
+     ],
+     "s": [
+      292.57,
+      305.37
+     ],
+     "side": "dst",
+     "closest": 0.32,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      87.55,
+      139.59
+     ],
+     "s": [
+      0.0,
+      13.6
+     ],
+     "side": "dst",
+     "closest": 0.2,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      100.33,
+      148.94
+     ],
+     "s": [
+      28.2,
+      39.59
+     ],
+     "side": "dst",
+     "closest": 1.16,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      114.52,
+      129.85
+     ],
+     "s": [
+      91.99,
+      105.59
+     ],
+     "side": "dst",
+     "closest": 0.03,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      91.98,
+      125.17
+     ],
+     "s": [
+      117.79,
+      130.39
+     ],
+     "side": "dst",
+     "closest": 0.89,
+     "mark": 0
+    },
+    {
+     "relation": "R2",
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "stiffen",
+     "at": [
+      87.9,
+      140.01
+     ],
+     "s": [
+      2.0,
+      10.75
+     ],
+     "mark": 0,
+     "grammar": "stair",
+     "where": "around"
+    }
+   ],
+   "decisions": {
+    "order": [
+     "L0",
+     "L1",
+     "L2"
+    ]
+   }
+  },
+  {
+   "version": 2,
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "technique": "hand",
+     "part": 0,
+     "pen": "black",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "technique": "hand",
+     "part": 1,
+     "pen": "blue",
+     "params": {},
+     "label": ""
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "technique": "hand",
+     "part": 2,
+     "pen": "orange",
+     "params": {},
+     "label": ""
+    }
+   ],
+   "relations": [
+    {
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R0",
+     "outcomes": {
+      "echo": 1
+     },
+     "s": null,
+     "at": [
+      85.74,
+      70.62
+     ],
+     "note": "1 event(s): echo 1"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R1",
+     "outcomes": {
+      "tremble": 7
+     },
+     "s": [
+      34.12,
+      44.52
+     ],
+     "at": [
+      118.87,
+      92.66
+     ],
+     "note": "7 event(s): tremble 7"
+    },
+    {
+     "kind": "dig_pool",
+     "src": "L0",
+     "dst": "L1",
+     "relation": "R3",
+     "outcomes": {
+      "pool_over": 1
+     },
+     "s": [
+      672.45,
+      672.45
+     ],
+     "at": [
+      145.09,
+      43.36
+     ],
+     "note": "1 event(s): pool_over 1"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "relation": "R1",
+     "outcomes": {
+      "still": 6,
+      "tremble": 1
+     },
+     "s": [
+      0.0,
+      12.6
+     ],
+     "at": [
+      86.63,
+      114.35
+     ],
+     "note": "7 event(s): still 6, tremble 1"
+    },
+    {
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "relation": "R1",
+     "outcomes": {
+      "tremble": 2,
+      "still": 2
+     },
+     "s": [
+      203.34,
+      213.93
+     ],
+     "at": [
+      95.93,
+      84.63
+     ],
+     "note": "4 event(s): still 2, tremble 2"
+    },
+    {
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "relation": "R2",
+     "outcomes": {
+      "stiffen": 1
+     },
+     "s": [
+      198.39,
+      218.39
+     ],
+     "at": [
+      88.67,
+      66.72
+     ],
+     "note": "1 event(s): stiffen 1"
+    }
+   ],
+   "log": [
+    {
+     "relation": "R0",
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "echo",
+     "at": [
+      85.74,
+      70.62
+     ],
+     "s_src": [
+      10.63,
+      58.63
+     ],
+     "src_mark": 0,
+     "copies": 1,
+     "in_hand": true,
+     "stress": 1.0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      126.16,
+      119.34
+     ],
+     "s": [
+      34.12,
+      44.52
+     ],
+     "side": "dst",
+     "closest": 0.29,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      138.58,
+      117.61
+     ],
+     "s": [
+      196.5,
+      206.5
+     ],
+     "side": "dst",
+     "closest": 3.78,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      134.95,
+      116.14
+     ],
+     "s": [
+      242.02,
+      263.98
+     ],
+     "side": "dst",
+     "closest": 0.11,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      100.59,
+      97.33
+     ],
+     "s": [
+      533.27,
+      595.81
+     ],
+     "side": "dst",
+     "closest": 0.07,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      153.22,
+      52.67
+     ],
+     "s": [
+      645.0,
+      678.0
+     ],
+     "side": "dst",
+     "closest": 0.23,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      92.56,
+      78.11
+     ],
+     "s": [
+      0.0,
+      12.62
+     ],
+     "side": "dst",
+     "closest": 0.05,
+     "mark": 1
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "tremble",
+     "at": [
+      86.04,
+      67.44
+     ],
+     "s": [
+      29.33,
+      44.74
+     ],
+     "side": "dst",
+     "closest": 0.09,
+     "mark": 1
+    },
+    {
+     "relation": "R3",
+     "kind": "dig_pool",
+     "src": "L0",
+     "dst": "L1",
+     "step": 1,
+     "outcome": "pool_over",
+     "at": [
+      145.09,
+      43.36
+     ],
+     "s": [
+      672.45,
+      672.45
+     ],
+     "s_src": [
+      509.07,
+      509.07
+     ],
+     "mark": 0,
+     "size": 11.11,
+     "side": "src",
+     "how": "wet"
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      89.39,
+      120.78
+     ],
+     "s": [
+      0.0,
+      12.6
+     ],
+     "side": "dst",
+     "closest": 0.44,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      74.05,
+      123.65
+     ],
+     "s": [
+      28.19,
+      30.99
+     ],
+     "side": "dst",
+     "closest": 4.86,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      85.85,
+      136.99
+     ],
+     "s": [
+      36.79,
+      53.78
+     ],
+     "side": "dst",
+     "closest": 0.1,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      61.81,
+      152.18
+     ],
+     "s": [
+      81.98,
+      108.17
+     ],
+     "side": "dst",
+     "closest": 0.08,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      88.33,
+      75.69
+     ],
+     "s": [
+      200.54,
+      223.93
+     ],
+     "side": "dst",
+     "closest": 0.07,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      94.63,
+      78.29
+     ],
+     "s": [
+      228.73,
+      245.93
+     ],
+     "side": "dst",
+     "closest": 0.06,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L0",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      112.33,
+      112.88
+     ],
+     "s": [
+      250.52,
+      290.31
+     ],
+     "side": "dst",
+     "closest": 0.08,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      88.67,
+      66.47
+     ],
+     "s": [
+      203.34,
+      213.93
+     ],
+     "side": "dst",
+     "closest": 0.3,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "tremble",
+     "at": [
+      88.23,
+      79.35
+     ],
+     "s": [
+      215.73,
+      226.33
+     ],
+     "side": "dst",
+     "closest": 0.45,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      92.66,
+      77.98
+     ],
+     "s": [
+      231.13,
+      245.32
+     ],
+     "side": "dst",
+     "closest": 0.06,
+     "mark": 0
+    },
+    {
+     "relation": "R1",
+     "kind": "dig_tremble",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "still",
+     "at": [
+      114.17,
+      114.72
+     ],
+     "s": [
+      255.32,
+      287.51
+     ],
+     "side": "dst",
+     "closest": 0.18,
+     "mark": 0
+    },
+    {
+     "relation": "R2",
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "step": 2,
+     "outcome": "stiffen",
+     "at": [
+      88.67,
+      66.72
+     ],
+     "s": [
+      198.39,
+      218.39
+     ],
+     "mark": 0,
+     "grammar": "ruler",
+     "where": "around"
+    }
+   ],
+   "decisions": {
+    "order": [
+     "L0",
+     "L1",
+     "L2"
+    ]
+   }
+  }
+ ]
+}

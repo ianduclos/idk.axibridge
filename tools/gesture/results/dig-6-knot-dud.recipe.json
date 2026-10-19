@@ -1,0 +1,328 @@
+{
+ "population": [
+  {
+   "version": 2,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 16301,
+   "margin": 5.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "pen": "black",
+     "label": "",
+     "region": [
+      10.0,
+      15.0,
+      230.0,
+      145.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "river_meander",
+       "length": 4.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     }
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "pen": "blue",
+     "label": "",
+     "region": [
+      30.0,
+      30.0,
+      200.0,
+      130.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "dance_thrusting",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "dig_knot",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "count": 2,
+      "size": 6.0,
+      "size_sd": 0.3,
+      "roundest": 0.6,
+      "turns": 1.0,
+      "jitter": 0.15,
+      "side_src": 0.4,
+      "pick": "room",
+      "min_sep": 3.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "dig knot 16301"
+  },
+  {
+   "version": 2,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 16302,
+   "margin": 5.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "pen": "black",
+     "label": "",
+     "region": [
+      10.0,
+      15.0,
+      230.0,
+      145.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "river_meander",
+       "length": 4.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     }
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "pen": "blue",
+     "label": "",
+     "region": [
+      30.0,
+      30.0,
+      200.0,
+      130.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "dance_thrusting",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "dig_knot",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "count": 2,
+      "size": 6.0,
+      "size_sd": 0.3,
+      "roundest": 0.6,
+      "turns": 1.0,
+      "jitter": 0.15,
+      "side_src": 0.4,
+      "pick": "room",
+      "min_sep": 3.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "dig knot 16302"
+  },
+  {
+   "version": 2,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 16303,
+   "margin": 5.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "pen": "black",
+     "label": "",
+     "region": [
+      10.0,
+      15.0,
+      230.0,
+      145.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "river_meander",
+       "length": 4.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     }
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "pen": "blue",
+     "label": "",
+     "region": [
+      30.0,
+      30.0,
+      200.0,
+      130.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "dance_thrusting",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "dig_knot",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "count": 2,
+      "size": 6.0,
+      "size_sd": 0.3,
+      "roundest": 0.6,
+      "turns": 1.0,
+      "jitter": 0.15,
+      "side_src": 0.4,
+      "pick": "room",
+      "min_sep": 3.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "dig knot 16303"
+  },
+  {
+   "version": 2,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 16304,
+   "margin": 5.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "pen": "black",
+     "label": "",
+     "region": [
+      10.0,
+      15.0,
+      230.0,
+      145.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "river_meander",
+       "length": 4.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     }
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "pen": "blue",
+     "label": "",
+     "region": [
+      30.0,
+      30.0,
+      200.0,
+      130.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "dance_thrusting",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "dig_knot",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "count": 2,
+      "size": 6.0,
+      "size_sd": 0.3,
+      "roundest": 0.6,
+      "turns": 1.0,
+      "jitter": 0.15,
+      "side_src": 0.4,
+      "pick": "room",
+      "min_sep": 3.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "dig knot 16304"
+  }
+ ]
+}

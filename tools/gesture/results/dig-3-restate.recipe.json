@@ -1,0 +1,133 @@
+{
+ "version": 2,
+ "frame": [
+  250.0,
+  175.0
+ ],
+ "seed": 16301,
+ "margin": 5.0,
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "layers": [
+  {
+   "id": "L0",
+   "role": "line",
+   "pen": "black",
+   "label": "",
+   "region": [
+    10.0,
+    15.0,
+    200.0,
+    140.0
+   ],
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "hokusai",
+     "length": 4.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  },
+  {
+   "id": "L1",
+   "role": "line",
+   "pen": "red",
+   "label": "",
+   "region": [
+    60.0,
+    40.0,
+    170.0,
+    120.0
+   ],
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_miner",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  },
+  {
+   "id": "L2",
+   "role": "line",
+   "pen": "blue",
+   "label": "",
+   "region": [
+    20.0,
+    60.0,
+    130.0,
+    100.0
+   ],
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "river_bend",
+     "length": 2.5,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  }
+ ],
+ "relations": [
+  {
+   "id": "R0",
+   "kind": "dig_restate",
+   "src": "L0",
+   "dst": "L1",
+   "p": 1.0,
+   "params": {
+    "n": 2,
+    "span": 48.0,
+    "copies": 5.0,
+    "in_hand": true,
+    "amount": 1.4,
+    "drift": 0.8,
+    "slide": 1.5,
+    "turn": 2.0,
+    "wobble": 0.3,
+    "trim": 3.0,
+    "w_shuttle": 0.35,
+    "w_copies": 0.45,
+    "w_echo": 0.2,
+    "echo_mm": 7.0,
+    "keep_own": true
+   },
+   "note": ""
+  },
+  {
+   "id": "R1",
+   "kind": "dig_restate",
+   "src": "L1",
+   "dst": "L2",
+   "p": 1.0,
+   "params": {
+    "n": 1,
+    "span": 48.0,
+    "copies": 5.0,
+    "in_hand": true,
+    "amount": 1.4,
+    "drift": 0.8,
+    "slide": 1.5,
+    "turn": 2.0,
+    "wobble": 0.3,
+    "trim": 3.0,
+    "w_shuttle": 0.35,
+    "w_copies": 0.45,
+    "w_echo": 0.2,
+    "echo_mm": 7.0,
+    "keep_own": true
+   },
+   "note": ""
+  }
+ ],
+ "devices": [],
+ "decisions": {},
+ "label": "dig restate 16301"
+}

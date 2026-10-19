@@ -1,0 +1,764 @@
+{
+ "population": [
+  {
+   "version": 2,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 16301,
+   "margin": 5.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "pen": "black",
+     "label": "",
+     "region": [
+      10.0,
+      15.0,
+      200.0,
+      140.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "river_meander",
+       "length": 4.0,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "pen": "blue",
+     "label": "",
+     "region": [
+      60.0,
+      40.0,
+      170.0,
+      120.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "dance_thrusting",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "pen": "orange",
+     "label": "",
+     "region": [
+      20.0,
+      60.0,
+      130.0,
+      100.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "trail_slime",
+       "length": 2.5,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "p": 1.0,
+     "params": {
+      "n": 1,
+      "span": 48.0,
+      "copies": 5.0,
+      "in_hand": true,
+      "amount": 1.4,
+      "drift": 0.8,
+      "slide": 1.5,
+      "turn": 2.0,
+      "wobble": 0.3,
+      "trim": 3.0,
+      "w_shuttle": 0.0,
+      "w_copies": 0.0,
+      "w_echo": 1.0,
+      "echo_mm": 7.0,
+      "keep_own": true
+     },
+     "note": ""
+    },
+    {
+     "id": "R1",
+     "kind": "dig_tremble",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "reach": 5.0,
+      "amp": 0.4,
+      "base": 0.0,
+      "wave": 5.0,
+      "burst": 0.35,
+      "burst_mm": 2.5,
+      "w_tremble": 0.75,
+      "w_still": 0.25,
+      "streak": 0.5,
+      "still_mm": 2.0,
+      "both": false
+     },
+     "note": ""
+    },
+    {
+     "id": "R2",
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "count": 1,
+      "stretch": 20.0,
+      "unit": 2.6,
+      "w_stair": 0.6,
+      "w_ruler": 0.4,
+      "w_after": 0.5,
+      "w_around": 0.5,
+      "pick": "room",
+      "min_sep": 3.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R3",
+     "kind": "dig_pool",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "count": 1,
+      "size": 11.0,
+      "size_sd": 0.2,
+      "roundness": 1.0,
+      "side_src": 0.4,
+      "w_wet": 0.6,
+      "w_coil": 0.4,
+      "spacing": 0.7,
+      "pick": "room",
+      "sheet_max": 1,
+      "min_sep": 3.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "dig combo 16301"
+  },
+  {
+   "version": 2,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 16302,
+   "margin": 5.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "pen": "black",
+     "label": "",
+     "region": [
+      10.0,
+      15.0,
+      200.0,
+      140.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "river_meander",
+       "length": 4.0,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "pen": "blue",
+     "label": "",
+     "region": [
+      60.0,
+      40.0,
+      170.0,
+      120.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "dance_thrusting",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "pen": "orange",
+     "label": "",
+     "region": [
+      20.0,
+      60.0,
+      130.0,
+      100.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "trail_slime",
+       "length": 2.5,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "p": 1.0,
+     "params": {
+      "n": 1,
+      "span": 48.0,
+      "copies": 5.0,
+      "in_hand": true,
+      "amount": 1.4,
+      "drift": 0.8,
+      "slide": 1.5,
+      "turn": 2.0,
+      "wobble": 0.3,
+      "trim": 3.0,
+      "w_shuttle": 0.0,
+      "w_copies": 0.0,
+      "w_echo": 1.0,
+      "echo_mm": 7.0,
+      "keep_own": true
+     },
+     "note": ""
+    },
+    {
+     "id": "R1",
+     "kind": "dig_tremble",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "reach": 5.0,
+      "amp": 0.4,
+      "base": 0.0,
+      "wave": 5.0,
+      "burst": 0.35,
+      "burst_mm": 2.5,
+      "w_tremble": 0.75,
+      "w_still": 0.25,
+      "streak": 0.5,
+      "still_mm": 2.0,
+      "both": false
+     },
+     "note": ""
+    },
+    {
+     "id": "R2",
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "count": 1,
+      "stretch": 20.0,
+      "unit": 2.6,
+      "w_stair": 0.6,
+      "w_ruler": 0.4,
+      "w_after": 0.5,
+      "w_around": 0.5,
+      "pick": "room",
+      "min_sep": 3.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R3",
+     "kind": "dig_pool",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "count": 1,
+      "size": 11.0,
+      "size_sd": 0.2,
+      "roundness": 1.0,
+      "side_src": 0.4,
+      "w_wet": 0.6,
+      "w_coil": 0.4,
+      "spacing": 0.7,
+      "pick": "room",
+      "sheet_max": 1,
+      "min_sep": 3.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "dig combo 16302"
+  },
+  {
+   "version": 2,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 16303,
+   "margin": 5.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "pen": "black",
+     "label": "",
+     "region": [
+      10.0,
+      15.0,
+      200.0,
+      140.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "river_meander",
+       "length": 4.0,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "pen": "blue",
+     "label": "",
+     "region": [
+      60.0,
+      40.0,
+      170.0,
+      120.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "dance_thrusting",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "pen": "orange",
+     "label": "",
+     "region": [
+      20.0,
+      60.0,
+      130.0,
+      100.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "trail_slime",
+       "length": 2.5,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "p": 1.0,
+     "params": {
+      "n": 1,
+      "span": 48.0,
+      "copies": 5.0,
+      "in_hand": true,
+      "amount": 1.4,
+      "drift": 0.8,
+      "slide": 1.5,
+      "turn": 2.0,
+      "wobble": 0.3,
+      "trim": 3.0,
+      "w_shuttle": 0.0,
+      "w_copies": 0.0,
+      "w_echo": 1.0,
+      "echo_mm": 7.0,
+      "keep_own": true
+     },
+     "note": ""
+    },
+    {
+     "id": "R1",
+     "kind": "dig_tremble",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "reach": 5.0,
+      "amp": 0.4,
+      "base": 0.0,
+      "wave": 5.0,
+      "burst": 0.35,
+      "burst_mm": 2.5,
+      "w_tremble": 0.75,
+      "w_still": 0.25,
+      "streak": 0.5,
+      "still_mm": 2.0,
+      "both": false
+     },
+     "note": ""
+    },
+    {
+     "id": "R2",
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "count": 1,
+      "stretch": 20.0,
+      "unit": 2.6,
+      "w_stair": 0.6,
+      "w_ruler": 0.4,
+      "w_after": 0.5,
+      "w_around": 0.5,
+      "pick": "room",
+      "min_sep": 3.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R3",
+     "kind": "dig_pool",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "count": 1,
+      "size": 11.0,
+      "size_sd": 0.2,
+      "roundness": 1.0,
+      "side_src": 0.4,
+      "w_wet": 0.6,
+      "w_coil": 0.4,
+      "spacing": 0.7,
+      "pick": "room",
+      "sheet_max": 1,
+      "min_sep": 3.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "dig combo 16303"
+  },
+  {
+   "version": 2,
+   "frame": [
+    250.0,
+    175.0
+   ],
+   "seed": 16304,
+   "margin": 5.0,
+   "renderer": {
+    "id": "wire",
+    "pen": 0.4
+   },
+   "layers": [
+    {
+     "id": "L0",
+     "role": "line",
+     "pen": "black",
+     "label": "",
+     "region": [
+      10.0,
+      15.0,
+      200.0,
+      140.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "river_meander",
+       "length": 4.0,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    },
+    {
+     "id": "L1",
+     "role": "line",
+     "pen": "blue",
+     "label": "",
+     "region": [
+      60.0,
+      40.0,
+      170.0,
+      120.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "dance_thrusting",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    },
+    {
+     "id": "L2",
+     "role": "line",
+     "pen": "orange",
+     "label": "",
+     "region": [
+      20.0,
+      60.0,
+      130.0,
+      100.0
+     ],
+     "part": {
+      "voice": {
+       "id": "hand",
+       "hand": "trail_slime",
+       "length": 2.5,
+       "joins": "smooth"
+      },
+      "modulators": [],
+      "renderer": {
+       "id": "dig_wet",
+       "style": "e",
+       "pen": 0.4,
+       "wet": "reference",
+       "fill": "spiral"
+      }
+     }
+    }
+   ],
+   "relations": [
+    {
+     "id": "R0",
+     "kind": "dig_restate",
+     "src": "L0",
+     "dst": "L1",
+     "p": 1.0,
+     "params": {
+      "n": 1,
+      "span": 48.0,
+      "copies": 5.0,
+      "in_hand": true,
+      "amount": 1.4,
+      "drift": 0.8,
+      "slide": 1.5,
+      "turn": 2.0,
+      "wobble": 0.3,
+      "trim": 3.0,
+      "w_shuttle": 0.0,
+      "w_copies": 0.0,
+      "w_echo": 1.0,
+      "echo_mm": 7.0,
+      "keep_own": true
+     },
+     "note": ""
+    },
+    {
+     "id": "R1",
+     "kind": "dig_tremble",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "reach": 5.0,
+      "amp": 0.4,
+      "base": 0.0,
+      "wave": 5.0,
+      "burst": 0.35,
+      "burst_mm": 2.5,
+      "w_tremble": 0.75,
+      "w_still": 0.25,
+      "streak": 0.5,
+      "still_mm": 2.0,
+      "both": false
+     },
+     "note": ""
+    },
+    {
+     "id": "R2",
+     "kind": "dig_stiffen",
+     "src": "L1",
+     "dst": "L2",
+     "p": 1.0,
+     "params": {
+      "count": 1,
+      "stretch": 20.0,
+      "unit": 2.6,
+      "w_stair": 0.6,
+      "w_ruler": 0.4,
+      "w_after": 0.5,
+      "w_around": 0.5,
+      "pick": "room",
+      "min_sep": 3.0
+     },
+     "note": ""
+    },
+    {
+     "id": "R3",
+     "kind": "dig_pool",
+     "src": "*",
+     "dst": "*",
+     "p": 1.0,
+     "params": {
+      "count": 1,
+      "size": 11.0,
+      "size_sd": 0.2,
+      "roundness": 1.0,
+      "side_src": 0.4,
+      "w_wet": 0.6,
+      "w_coil": 0.4,
+      "spacing": 0.7,
+      "pick": "room",
+      "sheet_max": 1,
+      "min_sep": 3.0
+     },
+     "note": ""
+    }
+   ],
+   "devices": [],
+   "decisions": {},
+   "label": "dig combo 16304"
+  }
+ ]
+}

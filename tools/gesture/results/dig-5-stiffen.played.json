@@ -1,0 +1,154 @@
+{
+ "version": 2,
+ "layers": [
+  {
+   "id": "L0",
+   "role": "line",
+   "technique": "hand",
+   "part": 0,
+   "pen": "black",
+   "params": {},
+   "label": ""
+  },
+  {
+   "id": "L1",
+   "role": "line",
+   "technique": "hand",
+   "part": 1,
+   "pen": "blue",
+   "params": {},
+   "label": ""
+  },
+  {
+   "id": "L2",
+   "role": "line",
+   "technique": "hand",
+   "part": 2,
+   "pen": "orange",
+   "params": {},
+   "label": ""
+  }
+ ],
+ "relations": [
+  {
+   "kind": "dig_stiffen",
+   "src": "L0",
+   "dst": "L1",
+   "relation": "R0",
+   "outcomes": {
+    "stiffen": 1
+   },
+   "s": [
+    65.73,
+    85.73
+   ],
+   "at": [
+    154.8,
+    40.65
+   ],
+   "note": "1 event(s): stiffen 1"
+  },
+  {
+   "kind": "dig_stiffen",
+   "src": "L0",
+   "dst": "L2",
+   "relation": "R0",
+   "outcomes": {
+    "stiffen": 1
+   },
+   "s": [
+    125.79,
+    145.79
+   ],
+   "at": [
+    58.3,
+    60.66
+   ],
+   "note": "1 event(s): stiffen 1"
+  },
+  {
+   "kind": "dig_stiffen",
+   "src": "L1",
+   "dst": "L2",
+   "relation": "R0",
+   "outcomes": {
+    "stiffen": 1
+   },
+   "s": [
+    632.28,
+    649.35
+   ],
+   "at": [
+    124.31,
+    152.88
+   ],
+   "note": "1 event(s): stiffen 1"
+  }
+ ],
+ "log": [
+  {
+   "relation": "R0",
+   "kind": "dig_stiffen",
+   "src": "L0",
+   "dst": "L1",
+   "step": 1,
+   "outcome": "stiffen",
+   "at": [
+    154.8,
+    40.65
+   ],
+   "s": [
+    65.73,
+    85.73
+   ],
+   "mark": 0,
+   "grammar": "stair",
+   "where": "around"
+  },
+  {
+   "relation": "R0",
+   "kind": "dig_stiffen",
+   "src": "L0",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "stiffen",
+   "at": [
+    58.3,
+    60.66
+   ],
+   "s": [
+    125.79,
+    145.79
+   ],
+   "mark": 0,
+   "grammar": "stair",
+   "where": "after"
+  },
+  {
+   "relation": "R0",
+   "kind": "dig_stiffen",
+   "src": "L1",
+   "dst": "L2",
+   "step": 2,
+   "outcome": "stiffen",
+   "at": [
+    124.31,
+    152.88
+   ],
+   "s": [
+    632.28,
+    649.35
+   ],
+   "mark": 0,
+   "grammar": "stair",
+   "where": "around"
+  }
+ ],
+ "decisions": {
+  "order": [
+   "L0",
+   "L1",
+   "L2"
+  ]
+ }
+}

@@ -1,0 +1,102 @@
+{
+ "version": 2,
+ "frame": [
+  250.0,
+  175.0
+ ],
+ "seed": 16301,
+ "margin": 5.0,
+ "renderer": {
+  "id": "wire",
+  "pen": 0.4
+ },
+ "layers": [
+  {
+   "id": "L0",
+   "role": "line",
+   "pen": "black",
+   "label": "",
+   "region": [
+    10.0,
+    15.0,
+    200.0,
+    140.0
+   ],
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "river_meander",
+     "length": 4.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  },
+  {
+   "id": "L1",
+   "role": "line",
+   "pen": "blue",
+   "label": "",
+   "region": [
+    60.0,
+    40.0,
+    170.0,
+    120.0
+   ],
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "dance_thrusting",
+     "length": 3.0,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  },
+  {
+   "id": "L2",
+   "role": "line",
+   "pen": "orange",
+   "label": "",
+   "region": [
+    20.0,
+    60.0,
+    130.0,
+    100.0
+   ],
+   "part": {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_slime",
+     "length": 2.5,
+     "joins": "smooth"
+    },
+    "modulators": []
+   }
+  }
+ ],
+ "relations": [
+  {
+   "id": "R0",
+   "kind": "dig_stiffen",
+   "src": "*",
+   "dst": "*",
+   "p": 1.0,
+   "params": {
+    "count": 1,
+    "stretch": 20.0,
+    "unit": 2.6,
+    "w_stair": 0.6,
+    "w_ruler": 0.4,
+    "w_after": 0.5,
+    "w_around": 0.5,
+    "pick": "room",
+    "min_sep": 3.0
+   },
+   "note": ""
+  }
+ ],
+ "devices": [],
+ "decisions": {},
+ "label": "dig stiffen 16301"
+}
