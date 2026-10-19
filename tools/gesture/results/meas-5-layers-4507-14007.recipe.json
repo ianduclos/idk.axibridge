@@ -1,0 +1,217 @@
+{
+ "panels": [
+  {
+   "drawing_source": "tools/gesture/results/ccolour-3-4507.recipe.json",
+   "drawing": {
+    "kit": 1,
+    "frame": [
+     205.0,
+     205.0
+    ],
+    "seed": 4507,
+    "margin": 5.0,
+    "arranger": {
+     "id": "ccolour",
+     "density": -1.0,
+     "pens": 0,
+     "mode": "auto",
+     "colouring": "composed",
+     "acts": "core,traverse,counter,container,intruder"
+    },
+    "parts": [
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "dance_thrusting",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "river_bend",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "trail_miner",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "dancer_madeline",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "mime_mantis",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "fly_fru",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "meander69",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "hokusai",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "dance_staccato",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "mime_roadrunner",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "river_belt",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     },
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "trail_slime",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     }
+    ],
+    "renderer": {
+     "id": "oehlen_found_ink",
+     "pen": 0.4
+    },
+    "label": "ccolour",
+    "notes": "frame 205\u00d7205: square: an all-over field, or one core against a counterweight"
+   },
+   "devices": [
+    {
+     "id": "meas_ledger",
+     "place": "beside",
+     "side": "right",
+     "size": 105,
+     "index": true,
+     "bars": "source"
+    },
+    {
+     "id": "meas_air",
+     "place": "over",
+     "level": "step",
+     "ink": "red",
+     "pen": 0.12,
+     "number_every": 0,
+     "ring": 0.0
+    }
+   ]
+  },
+  {
+   "drawing_source": "tools/gesture/results/cimpro-4-sheet-14007.recipe.json",
+   "drawing": {
+    "kit": 1,
+    "frame": [
+     300.0,
+     200.0
+    ],
+    "seed": 14007,
+    "margin": 0.0,
+    "arranger": {
+     "id": "cimpro",
+     "upto": 0,
+     "moves_max": 60,
+     "min_moves": 4,
+     "appetite": null,
+     "cell": 4.0,
+     "hands_k": 3,
+     "step": 0.35,
+     "inset": 7.0,
+     "heavy": [
+      1.6,
+      2.8
+     ],
+     "allow": ""
+    },
+    "parts": [
+     {
+      "voice": {
+       "id": "hand",
+       "hand": "river_bend",
+       "length": 3.0,
+       "joins": "smooth"
+      },
+      "modulators": []
+     }
+    ],
+    "renderer": {
+     "id": "oehlen_found_ink",
+     "pen": 0.4
+    },
+    "label": "cimpro 14007"
+   },
+   "devices": [
+    {
+     "id": "meas_arcs",
+     "place": "beside",
+     "side": "bottom",
+     "size": 46
+    },
+    {
+     "id": "meas_arcs",
+     "place": "over",
+     "ink": "red",
+     "kinds": "cross,cover,counterweight"
+    }
+   ]
+  }
+ ]
+}

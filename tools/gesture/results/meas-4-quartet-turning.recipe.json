@@ -1,0 +1,108 @@
+{
+ "note": "quartet seed 15500 (first of 15500-15503)",
+ "drawing_source": null,
+ "drawing": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 15500,
+  "margin": 10.0,
+  "arranger": {
+   "id": "meas_boxes",
+   "boxes": [
+    0.0,
+    0.05,
+    0.62,
+    0.9,
+    0.3,
+    0.0,
+    0.7,
+    0.75,
+    0.12,
+    0.35,
+    0.5,
+    0.65,
+    0.55,
+    0.3,
+    0.45,
+    0.7
+   ],
+   "roles": ""
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "river_oxbow",
+     "length": 2.4,
+     "joins": "smooth"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "meas_ink",
+     "pen": 0.35,
+     "ink": "blue"
+    }
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "trail_miner",
+     "length": 2.6,
+     "joins": "smooth"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "meas_ink",
+     "pen": 0.35,
+     "ink": "orange"
+    }
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "fly_open",
+     "length": 1.4,
+     "joins": "smooth"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "meas_ink",
+     "pen": 0.35,
+     "ink": "black"
+    }
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "mime_mantis",
+     "length": 2.0,
+     "joins": "smooth"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "meas_ink",
+     "pen": 0.35,
+     "ink": "red"
+    }
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.4
+  },
+  "label": "meas quartet 15500"
+ },
+ "devices": [
+  {
+   "id": "meas_turning",
+   "place": "beside",
+   "side": "bottom",
+   "size": 64,
+   "name": 4,
+   "label_h": 2.0
+  }
+ ]
+}

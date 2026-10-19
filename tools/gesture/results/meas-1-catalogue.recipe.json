@@ -1,0 +1,283 @@
+{
+ "note": "every device on the same drawing; first row onwards: process family (meas_*), then the general family (devices_measg*.py)",
+ "drawing_source": null,
+ "drawing": {
+  "kit": 1,
+  "frame": [
+   267.0,
+   180.0
+  ],
+  "seed": 15310,
+  "margin": 10.0,
+  "arranger": {
+   "id": "meas_boxes",
+   "boxes": [
+    0.0,
+    0.3,
+    1.0,
+    0.42,
+    0.04,
+    0.0,
+    0.52,
+    0.6,
+    0.58,
+    0.02,
+    0.4,
+    0.62,
+    0.1,
+    0.62,
+    0.34,
+    0.38
+   ],
+   "roles": "found,line,line,line"
+  },
+  "parts": [
+   {
+    "voice": {
+     "id": "river_zoom",
+     "mode": "magnify",
+     "schedule": "push",
+     "recur": 3,
+     "zoom": 24.0,
+     "start": 0.05,
+     "river": 1.0,
+     "pace": 0.5,
+     "max_mm": 9000.0,
+     "far_mm_per_km": 0.8,
+     "course": "free",
+     "angle": 0.0,
+     "smooth_w": 0.0,
+     "valley_w": 100.0,
+     "turn_mm": 45.0,
+     "frames": 5,
+     "span_w": 1600.0,
+     "pan": 0.0,
+     "heading": "linear",
+     "tile": "SB19",
+     "rank": 0,
+     "stems": "grwl_far_sb19"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "meas_ink",
+     "pen": 0.3,
+     "ink": "blue"
+    }
+   },
+   {
+    "voice": {
+     "id": "drift",
+     "hands": [
+      "trail_miner",
+      "dance_staccato",
+      "meander69"
+     ],
+     "blend": "mixture",
+     "plateau": 0.12,
+     "length": 5.0,
+     "joins": "smooth"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "meas_ink",
+     "pen": 0.35,
+     "ink": "black"
+    }
+   },
+   {
+    "voice": {
+     "id": "dance",
+     "trail": "levitation",
+     "effectors": "hands+head",
+     "t0": 0.0,
+     "seconds": 14.0,
+     "cut": "phrase"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "meas_ink",
+     "pen": 0.3,
+     "ink": "orange"
+    }
+   },
+   {
+    "voice": {
+     "id": "hand",
+     "hand": "fly_open",
+     "length": 1.6,
+     "joins": "smooth"
+    },
+    "modulators": [],
+    "renderer": {
+     "id": "meas_ink",
+     "pen": 0.3,
+     "ink": "black"
+    }
+   }
+  ],
+  "renderer": {
+   "id": "wire",
+   "pen": 0.4
+  },
+  "label": "meas catalogue drawing 15310"
+ },
+ "devices": [
+  {
+   "cell": "meas_stations",
+   "family": "process",
+   "specs": [
+    {
+     "id": "meas_stations",
+     "place": "beside",
+     "side": "bottom",
+     "size": 30
+    }
+   ]
+  },
+  {
+   "cell": "meas_roll",
+   "family": "process",
+   "specs": [
+    {
+     "id": "meas_roll",
+     "place": "beside",
+     "side": "bottom",
+     "size": 44
+    }
+   ]
+  },
+  {
+   "cell": "meas_inventory",
+   "family": "process",
+   "specs": [
+    {
+     "id": "meas_inventory",
+     "place": "beside",
+     "side": "right",
+     "size": 70,
+     "by": "line"
+    }
+   ]
+  },
+  {
+   "cell": "meas_air",
+   "family": "process",
+   "specs": [
+    {
+     "id": "meas_air",
+     "place": "over",
+     "level": "line"
+    }
+   ]
+  },
+  {
+   "cell": "meas_arcs",
+   "family": "process",
+   "specs": [
+    {
+     "id": "meas_arcs",
+     "place": "beside",
+     "side": "right",
+     "size": 60,
+     "ink": "source"
+    },
+    {
+     "id": "meas_arcs",
+     "place": "over",
+     "ink": "source"
+    }
+   ]
+  },
+  {
+   "cell": "meas_ledger",
+   "family": "process",
+   "specs": [
+    {
+     "id": "meas_ledger",
+     "place": "beside",
+     "side": "right",
+     "size": 120,
+     "by": "line",
+     "index": true
+    }
+   ]
+  },
+  {
+   "cell": "meas_turning",
+   "family": "process",
+   "specs": [
+    {
+     "id": "meas_turning",
+     "place": "beside",
+     "side": "bottom",
+     "size": 60,
+     "name": 4
+    }
+   ]
+  },
+  {
+   "cell": "scale_ruler",
+   "family": "general",
+   "specs": [
+    {
+     "id": "scale_ruler",
+     "place": "margin",
+     "side": "bottom",
+     "size": 18
+    }
+   ]
+  },
+  {
+   "cell": "arc_ticks",
+   "family": "general",
+   "specs": [
+    {
+     "id": "arc_ticks",
+     "place": "over"
+    }
+   ]
+  },
+  {
+   "cell": "density_isoline",
+   "family": "general",
+   "specs": [
+    {
+     "id": "density_isoline",
+     "place": "under"
+    }
+   ]
+  },
+  {
+   "cell": "heading_rose",
+   "family": "general",
+   "specs": [
+    {
+     "id": "heading_rose",
+     "place": "beside",
+     "side": "right",
+     "size": 60
+    }
+   ]
+  },
+  {
+   "cell": "misfit_grid",
+   "family": "general",
+   "specs": [
+    {
+     "id": "misfit_grid",
+     "place": "under"
+    }
+   ]
+  },
+  {
+   "cell": "survey_marks",
+   "family": "general",
+   "specs": [
+    {
+     "id": "survey_marks",
+     "place": "over"
+    }
+   ]
+  }
+ ]
+}
