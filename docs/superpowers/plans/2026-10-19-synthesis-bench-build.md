@@ -75,7 +75,20 @@ Checkpoint images (seeds 15101–15108, unpicked): round-15 listen / integ16 dia
 speaker's hand, listeners follow). Lead's read written first → review page →
 **keep going** (Ian chose not to block here).
 
-### S2b. arch, then ccolour (Opus for arch, Codex Sol 6.1 for ccolour)
+### S2 contract (lead, done 66fc62c)
+
+`kit/_writers.py`: writers register like relations and return score
+fragments for a region and a ground; `compose` merges them and records each
+writer in `decisions.writers`; `recompose` asks again around locked layers.
+A layer may carry its own `seed` (the per-layer die) and a `pin` (its marks
+after its own step), which is what a lock stores; sealed composers lock by
+seed alone.
+
+### S2b. ccolour, then arch (one Opus thread)
+
+Changed while building: arch is ccolour's composer with its roles swapped
+(it imports ccolour's decisions), so both go to one Opus thread, ccolour
+first, rather than arch to Opus and ccolour to Codex.
 
 - arch: carry, reverse and ride as three relations (today arch collapses them
   into ride), answer from arch and the chorus; arch writes a score.
