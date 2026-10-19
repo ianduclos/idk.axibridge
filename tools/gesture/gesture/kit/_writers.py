@@ -33,6 +33,11 @@ Rules a writer keeps
   and prefix, which is what `recompose` reads back.
 - Determinism: draw only from `wctx.rng(*tags)` (seeded by the score seed,
   the writer id and its prefix).
+- Pens around locks (Ian, 2026-10-19): when `wctx.keep` is not empty the writer
+  builds its palette around the pens of the kept layers (`palette_around`), so a
+  kept line belongs to the recomposed drawing instead of reading as a foreign
+  pen. Draw the palette as usual first (the random stream stays the same), then
+  substitute.
 """
 from __future__ import annotations
 
@@ -125,6 +130,35 @@ class WCtx:
         """Play ground + fragment so far (cached prefixes make repeated plays cheap)."""
         from . import _synth  # noqa: PLC0415
         return _synth.run(self.score(fragment), library=self.library)
+
+
+def hue(c: str) -> str:
+    return str(c).split("-")[0]
+
+
+def palette_around(palette, kept, *, hue_of=hue) -> tuple[list, dict]:
+    """Ian, 2026-10-19 ("build around locked pens"): the palette a writer drew, with the pens of its
+    kept layers substituted in. Each kept pen not already in the palette takes the slot of a pen of
+    its own hue if there is one, else the first slot no earlier kept pen holds (a palette full of
+    kept pens grows). Returns (new palette, {old pen: new pen}) so the writer can rewrite every pen
+    it planned from the old palette. Deterministic, no random draws."""
+    pal = list(palette)
+    held: set[int] = set()
+    for c in dict.fromkeys(str(x) for x in kept if x):
+        if c in pal:
+            held.add(pal.index(c))
+            continue
+        same = [j for j, q in enumerate(pal) if hue_of(q) == hue_of(c) and j not in held]
+        free = [j for j in range(len(pal)) if j not in held]
+        j = same[0] if same else (free[0] if free else None)
+        if j is None:
+            pal.append(c)
+            held.add(len(pal) - 1)
+            continue
+        pal[j] = c
+        held.add(j)
+    mapping = {a: b for a, b in zip(palette, pal) if a != b}
+    return pal, mapping
 
 
 def _merge(frame, seed, margin, ground, fragment) -> dict:

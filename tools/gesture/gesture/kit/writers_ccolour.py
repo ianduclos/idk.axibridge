@@ -44,7 +44,7 @@ import numpy as np
 
 from . import arrangers_arch as ar
 from . import arrangers_ccolour as cc
-from ._writers import WCtx, writer
+from ._writers import WCtx, palette_around, writer
 from .core import Ctx, P, fit
 
 ROLES = ("found", "made", "cover", "container", "counter", "traverse", "passer", "flicker", "intruder")
@@ -112,6 +112,20 @@ class _Score:
         return self.layers, self.rels
 
 
+def _swap_pens(obj, swap: dict):
+    """A copy of the plan with every pen name in `swap` replaced (own, line pens, lend, the passer's and
+    the swell's inks …): pen names are the only plan strings that are Flexoki ink names."""
+    if not swap:
+        return obj
+    if isinstance(obj, dict):
+        return {k: _swap_pens(v, swap) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_swap_pens(v, swap) for v in obj]
+    if isinstance(obj, tuple):
+        return tuple(_swap_pens(v, swap) for v in obj)
+    return swap.get(obj, obj) if isinstance(obj, str) else obj
+
+
 def _abs_box(o, fr, F):
     """Fractions of the composer's frame (cx, cy, w, h) → an absolute [x, y, w, h] region."""
     cx, cy, bw, bh = fr[:4]
@@ -136,8 +150,13 @@ def _write(wctx: WCtx, plan: dict, *, arch: bool, colouring: str, awareness: boo
     reg = [_r(v) for v in wctx.region]
     base = int(wctx.seed)
     sc = _Score(wctx)
-    pp = plan["pens"]
     legend = colouring == "legend"
+    if wctx.keep and not legend:      # Ian 2026-10-19: recompose builds its palette around the locked pens
+        pal, swap = palette_around(plan["pens"]["palette"], [L.get("pen") for L in wctx.keep
+                                                             if L.get("role") != "unseen"])
+        plan = _swap_pens(plan, swap)
+        plan["pens"]["palette"] = pal
+    pp = plan["pens"]
     own = dict(pp["own"])
     line_pens = list(pp["line_pens"])
     pl = plan["play"]

@@ -62,6 +62,20 @@ S0′ (2026-10-19), all opt-in — a score that uses none of it plays exactly as
 - `replay(score_or_sheet, drop=…, keep_only=…, drop_kinds=…, keep_only_kinds=…)`
   plays counterfactuals.
 
+S0″ (2026-10-19), opt-in the same way:
+- side-specific wildcard filters `src_except` / `src_roles` / `src_not_roles` and
+  `dst_except` / `dst_roles` / `dst_not_roles` narrow only that "*" side (the plain
+  keys narrow both), so "ground × mine, never ground × ground" is
+  `{"src": "*", "dst": "*", "dst_except": [ground ids]}`;
+- `budget_groups` {name: int} at the score's top and `budget_group: name` on a
+  relation: its firings count against the shared group as well as its own
+  `budget`; `rctx.remaining()` is the tighter of the two;
+- a relation's own `seed` (int) replaces the sheet seed in its random stream
+  (`rctx.rng`), so the bench's relation die re-rolls its outcomes alone.
+- Reminder (by design since round 16): `src: "*"` with a named dst, on a contact
+  relation, fires when the dst is placed (every earlier layer) AND again when each
+  LATER layer is placed (that layer as src). Narrow it with `src_…` filters.
+
 Cache: the executor's state after each layer is cached by a hash of
 everything that led to it, so editing a late layer or a relation that acts
 late re-runs only from there (the bench's live preview). `run(..., cache=False)`
@@ -85,9 +99,11 @@ from .core import Ink, Mark, RecipeError, Sheet
 
 SCORE_VERSION = 2
 _TOP = ("version", "label", "notes", "frame", "seed", "margin", "base", "layers", "relations", "devices",
-        "decisions", "renderer", "parts")      # "parts" is derived on output, ignored on input
+        "decisions", "renderer", "parts", "budget_groups")      # "parts" is derived on output, ignored on input
 _LAYER = ("id", "role", "pen", "label", "region", "part", "lines", "composer", "lock", "renderer", "seed", "pin")
-_REL = ("id", "kind", "src", "dst", "p", "params", "note", "except", "roles", "not_roles", "budget")
+_SIDE_FILTERS = tuple(f"{side}_{k}" for side in ("src", "dst") for k in ("except", "roles", "not_roles"))
+_REL = ("id", "kind", "src", "dst", "p", "params", "note", "except", "roles", "not_roles", "budget",
+        *_SIDE_FILTERS, "budget_group", "seed")
 NEUTRAL = ("silent", "spent", "cross", "unplaced")   # outcomes that change nothing: not counted against a budget
 UNSEEN = "unseen"
 DEFAULT_MARGIN = 5.0
@@ -217,6 +233,11 @@ def validate(score: Mapping, *, library=None) -> dict:
         layers.append(out)
 
     pos = {lid: k for k, lid in enumerate(ids)}
+    groups = score.get("budget_groups") or {}
+    if not isinstance(groups, Mapping) or not all(
+            isinstance(g, str) and g.replace("_", "").replace("-", "").isalnum()
+            and isinstance(b, int) and not isinstance(b, bool) and 0 <= b <= 100_000 for g, b in groups.items()):
+        raise RecipeError("score: budget_groups is {name: int in [0, 100000]} (firings shared by its relations)")
     relations, rids = [], []
     for j, R in enumerate(score.get("relations") or []):
         where = f"relation {j}"
@@ -259,17 +280,33 @@ def validate(score: Mapping, *, library=None) -> dict:
         # wildcard filters: which layers a "*" side may stand for (opt-in; absent = every visible layer)
         if any(R.get(k) is not None for k in ("except", "roles", "not_roles")) and "*" not in (src, dst):
             raise RecipeError(f"{where} ({rid}): except / roles / not_roles filter a \"*\" side; this relation has none")
-        if R.get("except") is not None:
-            ex = R["except"]
-            if isinstance(ex, str) or not isinstance(ex, (list, tuple)) or not all(v in pos for v in ex):
-                raise RecipeError(f"{where} ({rid}): except is a list of layer ids; have {ids}")
-            rout["except"] = [str(v) for v in ex]
-        for k2 in ("roles", "not_roles"):
+        for side, v in (("src", src), ("dst", dst)):          # S0″: a filter for one side only
+            if v != "*" and any(R.get(f"{side}_{k}") is not None for k in ("except", "roles", "not_roles")):
+                raise RecipeError(f"{where} ({rid}): {side}_except / {side}_roles / {side}_not_roles filter a "
+                                  f"\"*\" {side}; this relation's {side} is {v!r}")
+        for k2 in ("except", *(f"{side}_except" for side in ("src", "dst"))):
+            if R.get(k2) is not None:
+                ex = R[k2]
+                if isinstance(ex, str) or not isinstance(ex, (list, tuple)) or not all(v in pos for v in ex):
+                    raise RecipeError(f"{where} ({rid}): {k2} is a list of layer ids; have {ids}")
+                rout[k2] = [str(v) for v in ex]
+        for k2 in ("roles", "not_roles", *(f"{side}_{k}" for side in ("src", "dst") for k in ("roles", "not_roles"))):
             if R.get(k2) is not None:
                 v = R[k2]
                 if isinstance(v, str) or not isinstance(v, (list, tuple)) or not all(isinstance(x, str) for x in v):
                     raise RecipeError(f"{where} ({rid}): {k2} is a list of role names")
                 rout[k2] = [str(x) for x in v]
+        if R.get("seed") is not None:            # S0″: the relation's own die (its outcomes re-rolled alone)
+            sd = R["seed"]
+            if isinstance(sd, bool) or not isinstance(sd, int) or not 0 <= sd <= core.SEED_MAX:
+                raise RecipeError(f"{where} ({rid}): seed must be an int in [0, {core.SEED_MAX}]")
+            rout["seed"] = int(sd)
+        if R.get("budget_group") is not None:
+            g = R["budget_group"]
+            if g not in groups:
+                raise RecipeError(f"{where} ({rid}): budget_group {g!r} is not in the score's budget_groups "
+                                  f"{sorted(groups)}")
+            rout["budget_group"] = str(g)
         if R.get("budget") is not None:
             b = R["budget"]
             if isinstance(b, bool) or not isinstance(b, int) or not 0 <= b <= 100_000:
@@ -285,6 +322,8 @@ def validate(score: Mapping, *, library=None) -> dict:
     out = {"version": SCORE_VERSION, "frame": [W, H], "seed": int(seed), "margin": margin,
            "renderer": renderer, "layers": layers, "relations": relations,
            "devices": copy.deepcopy(devices), "decisions": copy.deepcopy(dict(score.get("decisions") or {}))}
+    if groups:
+        out["budget_groups"] = {str(g): int(b) for g, b in groups.items()}
     for k in ("label", "notes"):
         if score.get(k):
             out[k] = str(score[k])
@@ -334,14 +373,18 @@ def _h(*objs) -> str:
     return hashlib.sha1(json.dumps(objs, sort_keys=True, default=str).encode()).hexdigest()
 
 
-def _wild_ok(R, L) -> bool:
-    """May a "*" side of R stand for layer L (the opt-in except / roles / not_roles filters)?"""
-    return (L["id"] not in R.get("except", ()) and ("roles" not in R or L["role"] in R["roles"])
-            and L["role"] not in R.get("not_roles", ()))
+def _wild_ok(R, L, side=None) -> bool:
+    """May a "*" side of R stand for layer L (the opt-in except / roles / not_roles filters, and, S0″,
+    `src_…` / `dst_…` ones that narrow one side only)?"""
+    for pre in ("", *((f"{side}_",) if side else ())):
+        if (L["id"] in R.get(pre + "except", ()) or (pre + "roles" in R and L["role"] not in R[pre + "roles"])
+                or L["role"] in R.get(pre + "not_roles", ())):
+            return False
+    return True
 
 
-def _visible(layers, k, R=None) -> list[str]:
-    return [L["id"] for L in layers[:k] if L["role"] != UNSEEN and (R is None or _wild_ok(R, L))]
+def _visible(layers, k, R=None, side=None) -> list[str]:
+    return [L["id"] for L in layers[:k] if L["role"] != UNSEEN and (R is None or _wild_ok(R, L, side))]
 
 
 def _pairs(R, k, layers, pos) -> list[tuple[str, str]]:
@@ -350,15 +393,15 @@ def _pairs(R, k, layers, pos) -> list[tuple[str, str]]:
     vis_cur = layers[k]["role"] != UNSEEN
     S, D = R["src"], R["dst"]
     if S == "*" and D == "*":
-        return [(i, cur) for i in _visible(layers, k, R)] if vis_cur and _wild_ok(R, layers[k]) else []
+        return [(i, cur) for i in _visible(layers, k, R, "src")] if vis_cur and _wild_ok(R, layers[k], "dst") else []
     if S == "*":
         if D == cur:
-            return [(i, D) for i in _visible(layers, k, R)]
-        return [(cur, D)] if vis_cur and pos[D] < k and _wild_ok(R, layers[k]) else []
+            return [(i, D) for i in _visible(layers, k, R, "src")]
+        return [(cur, D)] if vis_cur and pos[D] < k and _wild_ok(R, layers[k], "src") else []
     if D == "*":
         if S == cur:
-            return [(S, j) for j in _visible(layers, k, R)]
-        return [(S, cur)] if vis_cur and pos[S] < k and _wild_ok(R, layers[k]) else []
+            return [(S, j) for j in _visible(layers, k, R, "dst")]
+        return [(S, cur)] if vis_cur and pos[S] < k and _wild_ok(R, layers[k], "dst") else []
     return [(S, D)] if max(pos[S], pos[D]) == k else []
 
 
@@ -524,7 +567,12 @@ def _apply(rec, R, src_id, dst_id, k, ground, state, log, unseen, ltags, spent):
     rel = get_relation(R["kind"])
     budget = R.get("budget")
     left = None if budget is None else max(int(budget) - spent.get(R["id"], 0), 0)
-    rctx = RCtx(tuple(rec["frame"]), rec["seed"], R["id"], R["kind"], src_id, dst_id, k, state, ground, left)
+    grp = R.get("budget_group")
+    if grp is not None:                 # S0″: a budget several relations share; the tighter of the two holds
+        g_left = max(int(rec["budget_groups"][grp]) - spent.get(f"group:{grp}", 0), 0)
+        left = g_left if left is None else min(left, g_left)
+    rctx = RCtx(tuple(rec["frame"]), int(R.get("seed", rec["seed"])), R["id"], R["kind"], src_id, dst_id, k, state,
+                ground, left)
     srcs = src_id.split("+") if isinstance(R["src"], list) else None
     base = {"relation": R["id"], "kind": R["kind"], "src": srcs[0] if srcs else src_id, "dst": dst_id, "step": k}
     if srcs:
@@ -539,7 +587,7 @@ def _apply(rec, R, src_id, dst_id, k, ground, state, log, unseen, ltags, spent):
         src = [m for lid in srcs for m in ground[lid]]
     elif src_id == "*":
         order = list(ground)
-        src = [m for lid in order[:order.index(dst_id)] if lid not in unseen and _wild_ok(R, ltags[lid]["_L"])
+        src = [m for lid in order[:order.index(dst_id)] if lid not in unseen and _wild_ok(R, ltags[lid]["_L"], "src")
                for m in ground[lid]]
     else:
         src = list(ground[src_id])
@@ -573,6 +621,8 @@ def _apply(rec, R, src_id, dst_id, k, ground, state, log, unseen, ltags, spent):
         log.append(ev)
         if ev["outcome"] not in NEUTRAL:
             spent[R["id"]] = spent.get(R["id"], 0) + 1
+            if grp is not None:
+                spent[f"group:{grp}"] = spent.get(f"group:{grp}", 0) + 1
 
 
 def _keep_meta(new, tags) -> list[Mark]:
@@ -585,6 +635,14 @@ def _keep_meta(new, tags) -> list[Mark]:
                 if not (a == "colour" and m.meta.get("own_pen")) and not (a == "pen_mm" and "pen_mm" in m.meta)}
         out.append(m if all(m.meta.get(a) == b for a, b in want.items()) else m.evolve(meta=want))
     return out
+
+
+def _lib_key(lib) -> list:
+    """What makes two libraries draw differently (S4: the app pins snapshots and entry hashes), so the
+    per-layer cache never hands one library's lines to another."""
+    pins = getattr(lib, "pins", None) or {}
+    return [str(getattr(lib, "root", "")), getattr(lib, "snapshot_id", None),
+            sorted(f"{k[0]}/{k[1]}@{v}" for k, v in pins.items()) if isinstance(pins, Mapping) else None]
 
 
 def run(score: Mapping, *, library=None, cache: bool = True, capture=()) -> Sheet:
@@ -605,7 +663,8 @@ def run(score: Mapping, *, library=None, cache: bool = True, capture=()) -> Shee
     spent: dict[str, int] = {}
     captured: dict[str, list] = {}
     ltags = {L["id"]: {**_layer_tags(rec, L, k), "_L": L} for k, L in enumerate(layers)}
-    key = _h("synth", core.KIT_VERSION, rec["frame"], rec["seed"], rec["margin"], rec["renderer"])
+    key = _h("synth", core.KIT_VERSION, rec["frame"], rec["seed"], rec["margin"], rec["renderer"], _lib_key(lib),
+             rec.get("budget_groups"))
     hits = 0
     for k, L in enumerate(layers):
         acting = [R for R in rec["relations"]

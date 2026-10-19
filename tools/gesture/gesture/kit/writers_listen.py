@@ -32,7 +32,9 @@ because placements now happen at play time with their own relation streams. A wr
 draws from `wctx.rng("compose")`.
 
 Locks (`wctx.keep`): kept found/speaker layers open the sheet (and count as speakers); other kept
-layers follow the speakers; all are included verbatim and heard like any earlier layer.
+layers follow the speakers; all are included verbatim and heard like any earlier layer. The palette
+is built around the kept pens (`_writers.palette_around`, after listen's own draws, so the stream is
+unchanged): a kept line belongs to the recomposed drawing (Ian, 2026-10-19).
 
 On a ground (another writer's layers already on the sheet), every relation this writer adds leaves
 the ground's own pairs alone (`except`: the ground's ids); the ground's own `*` relations already
@@ -46,7 +48,7 @@ import numpy as np
 from scipy.ndimage import binary_dilation
 
 from . import _synth
-from ._writers import writer
+from ._writers import palette_around, writer
 from .arrangers_ccolour import DARK, HUE, _pick, _u
 from .arrangers_listen import CAP, LATER, LISTEN_HANDS, SPLICED, STEP, VOCAB, WEIGHTS, light_of
 from .arrangers_oehlen_found import arclen, cover_polygon, resample
@@ -92,6 +94,9 @@ class _ListenWriter:
         # the same draws, in the same order, as Composer.__init__
         self.palette = self._palette(pens)
         self.mode = "mono" if len(self.palette) < 2 else _pick(rng, ["accent", "pair", "mono"], [0.55, 0.3, 0.15])
+        if wctx.keep:                   # Ian 2026-10-19: recompose builds its palette around the locked pens
+            kept = [next((d for d in DARK if HUE[d] == HUE.get(L.get("pen"), "")), None) for L in wctx.keep]
+            self.palette, _ = palette_around(self.palette, [c for c in kept if c])
         a = (0.0 if self.W >= self.H else 90.0) + _u(rng, -35, 35) + (180.0 if rng.random() < 0.5 else 0.0)
         self.flow = np.array([math.cos(math.radians(a)), math.sin(math.radians(a))])
         self.flow_deg = round(a % 360.0, 1)

@@ -163,3 +163,22 @@ documents the base in the margin.
 3. **Review gate**: publish the review pages and keep going; stop only before
    the S4 freeze.
 4. **Chromium**: install at the start of S4.
+
+## Decisions at the start of S4 (Ian, 2026-10-19, questions UI)
+
+The S2 review page had no notes yet; Ian chose to build on and record the
+review later. His answers to the open questions (all the lead's
+recommendations):
+
+5. **Recompose builds its palette around the locked pens.** A kept line
+   belongs to the new drawing instead of reading as a foreign pen
+   (`_writers.palette_around`; listen, ccolour and arch use it).
+6. **Ripple is a bench setting, `all` by default**: all / direct / none.
+   `all` is Follow as decided; `direct` holds (pins) every layer except the
+   edited one and its direct listeners; `none` holds every other layer.
+   History makes any edit reversible.
+7. **S0″ before the freeze**, golden-verified: side-specific wildcard filters
+   (`src_except` / `src_roles` / `src_not_roles`, `dst_…`), `budget_group`
+   with score-level `budget_groups`, plus a relation's own `seed` (the
+   relation die). Round 16 and a plain compose of the S2 writers replay
+   bit-identically (`experiments/s0prime_golden.py`, `s0dprime_golden.py`).

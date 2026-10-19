@@ -36,7 +36,8 @@ Relations register in files named `relations_<prefix>.py` (discovered with
 the rest of the kit). Ids are global; `relation_list()` shows them.
 
 Wildcards, budgets, several sources (S0′, 2026-10-19): a relation's "*" side can
-be narrowed with `except` (layer ids) and `roles` / `not_roles`; `budget` caps its
+be narrowed with `except` (layer ids) and `roles` / `not_roles` (S0″: `src_…` / `dst_…`
+for one side only); `budget` caps its
 firings (non-neutral outcomes) across all pairs, read with `rctx.remaining()`; a
 grow relation may hear a list of earlier layers (`"src": ["L1", "L2"]`, marks
 merged in that order, each tagged `score_layer` so the relation can split them).
@@ -110,7 +111,8 @@ class RCtx:
 
     def remaining(self) -> int | None:
         """How many more changes this relation may make across the whole sheet (the score's `budget`
-        key, counted over every pair by the executor), or None when it has no budget. A relation
+        key, counted over every pair by the executor; with a `budget_group`, the tighter of its own
+        and the group's), or None when it has no budget. A relation
         that honours it stops changing lines once this reaches 0 in one application; the executor
         skips further applications by itself."""
         return self.left
