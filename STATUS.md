@@ -3,9 +3,10 @@ project: idk.axibridge
 state: active
 updated: 2026-10-19
 machine: mac+pi
-summary: The synthesis bench is designed (with Ian's decisions) and its score-v2 executor exists; round 16 built and reviewed its first parts (awareness relations, distinct hands, documents), and listen already runs with distinct-hand voices and a balance dial; next is building the bench itself.
+summary: The synthesis bench's research core is built — the score contract's gaps are closed (round 16 still replays bit-identically), and listen, ccolour and arch now write scores the executor plays, with follow, locks and recompose; the S2 review page awaits Ian's notes, then S4 builds the app bench.
 next:
-  - Synthesis bench in a fresh session — S0′ contract gaps, S2 listen as a score writer, then the app bench (see HANDOFF)
+  - Ian — notes on the S2 review page (https://claude.ai/artifact/NtcsSUmoqrurwjYM4HSutR), incl. recompose palette and how far one edit should ripple
+  - S4 app bench in a fresh session (plan docs/superpowers/plans/2026-10-19-synthesis-bench-build.md; see HANDOFF)
   - Relaunch AxiBridge.app and try Gesture Studies bench v3, the Measure layer and river_zoom's relay mode — Ian
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
   - Sync the idkpi clone with main
@@ -13,6 +14,15 @@ handoff_for: claude
 ---
 
 # idk.axibridge — status
+
+**Synthesis bench, 19 October (S0′ + S2):** the score contract's ten gaps
+are closed, all opt-in (the 72 round-16 scores replay bit-identically,
+`experiments/s0prime_golden.py`). Composers now write scores
+(`kit/_writers.py`: compose / recompose; layers can be pinned or re-seeded):
+listen (balance dial, follow, the void as a relation), ccolour and arch
+(carry / ride / reverse distinct). Every kit study works as a sealed layer.
+Record: `tools/gesture/results/s2-2026-10-19.md`; review page in HANDOFF.
+Research suite green; app untouched.
 
 **Gesture bank, 19 October (synthesis-bench design + round 16):** the
 synthesis bench is designed with Ian's four decisions
