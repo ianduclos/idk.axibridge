@@ -122,3 +122,25 @@ def test_place_and_determinism():
     xs = np.vstack([k.points for k in a.inks])[:, 0]
     assert xs.max() < 0.36 * 267
     assert len(a.inks) == len(b.inks) and all(np.array_equal(p.points, q.points) for p, q in zip(a.inks, b.inks))
+
+
+def test_line_outside_never_runs_through_a_swell():
+    """Ian (2026-10-19): no line through the middle of a swell. `line: outside` (swell), `swell_line: outside`
+    (swell_dots with line = swell, arch_ink's swell marks): the line's ink stays outside every mass."""
+    import json
+    from pathlib import Path
+
+    import shapely
+    from gesture import kit
+    studies = Path(__file__).resolve().parents[3] / "axibridge/sources/_gesture_studies/studies"
+    for sid in ("bold_swell", "swell_sentence"):
+        r = json.loads((studies / sid / "study.json").read_text())["recipe"]
+        r["renderer"]["line" if sid == "bold_swell" else "swell_line"] = "outside"
+        sh = kit.run(r)
+        masses = shapely.union_all([shapely.Polygon(i.points) for i in sh.inks if i.filled and len(i.points) >= 4
+                                    and str(i.meta.get("role", "")).startswith("swell")])   # dots: the line may pass
+        lines = [i for i in sh.inks if i.meta.get("role") == "line"]
+        assert lines and masses.area > 0
+        inside = sum(shapely.LineString(i.points).intersection(masses.buffer(-0.6)).length for i in lines
+                     if len(i.points) >= 2)
+        assert inside < 0.5, (sid, inside)
