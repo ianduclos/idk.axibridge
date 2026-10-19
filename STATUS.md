@@ -1,20 +1,30 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-10-18
+updated: 2026-10-19
 machine: mac+pi
-summary: The gesture bank closed round 13 (interlocking regimes and lines through many hands, now kit techniques) and moves to full dynamic compositions in round 14; MCP/live-sync and the 8 October integration still await Ian's native acceptance.
+summary: The gesture bank closed its research rounds with round 15 (listening relations, revived keeps, measuring devices) and the Gesture Studies bench is now v3 with 31 studies and an optional Measure layer; next is the synthesis-bench design and round 16 (awareness first).
 next:
+  - Relaunch AxiBridge.app and try Gesture Studies bench v3 (gallery, dice/Shuffle/locks, history, Measure layer) — Ian
+  - Synthesis-bench design notes from docs/synthesis-bench/inventory-2026-10-19.md in a fresh session (see HANDOFF)
+  - Gesture bank round 16, awareness first, then distinct hands, archaeology, device documents
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
-  - Check recovery close/relaunch, nested groups, Assets and Mosca 2 in the native app
-  - Decide the parked MCP follow-ups in docs/reviews/mcp-server-2026-10-12.md
-  - Compare Mosca 2 matched page interventions with contact-off, then judge output on paper
-  - Sync the idkpi clone with main (Pi is reachable again)
-  - Gesture bank round 14 in a fresh session: docs/superpowers/plans/2026-10-18-round14-plan.md (Oehlen composition study, then full dynamic compositions and the Amazon river zooming in and out along itself)
+  - Sync the idkpi clone with main (Pi reachable again)
 handoff_for: Codex
 ---
 
 # idk.axibridge — status
+
+**Gesture bank, 19 October (round 15 + study bench v3):** round 15 (listening
+relations between layers, the zoom on any line + style transfer, past keeps in
+new roles, measuring devices) is reviewed: arch, listen and the devices are
+keepers, awareness is the axis. The Gesture Studies bench is v3: every control
+alive or dimmed with its reason, dice/Shuffle/locks, a history strip, a
+thumbnail gallery, pen-colour previews, three new studies (arch, listen,
+river_zoom) and an optional Measure layer of 13 devices kept on its own pen.
+The synthesis bench (Ian composes and edits the substructure) is next; its
+technique inventory is in `docs/synthesis-bench/`. Records:
+`tools/gesture/results/round15-*.md`, `docs/superpowers/specs/2026-10-19-*`.
 
 **Gesture bank, 18 October (round 13 closed):** seven approaches on two axes
 (interlocking regimes; a line that changes hands), then two studies built as
