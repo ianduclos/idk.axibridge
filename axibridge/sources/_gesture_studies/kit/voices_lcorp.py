@@ -1,4 +1,4 @@
-# FROZEN from research commit ecd64f8: tools/gesture/gesture/kit/voices_lcorp.py
+# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/voices_lcorp.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Round 15, thread B (`lcorp`): line corpora as compositional technique.
 

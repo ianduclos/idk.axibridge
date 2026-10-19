@@ -416,6 +416,11 @@ def preview_generator(body: GenerateBody) -> dict[str, Any]:
         # a source that knows each path's ink (Gesture Studies): runs of
         # consecutive `lines` with their colour and pen width
         result["styles"] = runs
+    extra = getattr(src, "preview_extra", None)
+    if extra is not None and (more := extra(doc)):
+        # anything else the source reports beside its preview (Gesture
+        # Studies: what each measuring device read, which layer is Measure)
+        result.update({k: v for k, v in more.items() if k not in result})
     if isinstance(src, ProcessModule):
         params = src.Params(**body.params)
         run = src.trajectory(params)

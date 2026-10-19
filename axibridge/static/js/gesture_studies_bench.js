@@ -28,6 +28,15 @@
 //   timer after 1 s; previews are cached by their params (history and undo
 //   are instant); studies that drew in under ~1 s preview while dragging;
 // - a gallery of every study as a thumbnail, grouped by family.
+//
+// Measure (bench v3 move G, 2026-10-19): the round-15 measuring devices as an
+// optional layer — Ian: "a selection of these to be added as a separate layer",
+// the pen's flight "has to be optional". Off by default; each device a toggle
+// with its placement (over / under / margin / beside) and two or three params.
+// The devices live in the params (`devices`), so undo, history and the preview
+// cache include them; Keep with any device on makes a group (the drawing + a
+// Measure layer on its own pen) through /api/gesture-studies/keep. A device
+// that finds nothing to read in the study says so instead of drawing nothing.
 import { api } from './api.js';
 import { actions } from './main.js';
 import { benchProjectEpoch, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from './bench_host.js';
@@ -541,6 +550,7 @@ function buildControls() {
   $('gs-save-name').value = `${st.label} — variation`;
   active.builtFor = null;
   active.info = null;
+  $('gs-measure-devices').dataset.sig = '';
   renderPinned(); renderInfo();
   renderControls();
 }
@@ -656,13 +666,17 @@ function renderControls() {
   $('gs-shuffle').disabled = active.keeping;
   renderStatus();
   $('gesture-studies-keep').textContent = active.keeping ? 'Keeping…'
-    : isVoices(active.draft.params.study) ? 'Keep as group' : 'Keep as layer';
+    : isVoices(active.draft.params.study) || devicesOn().length ? 'Keep as group' : 'Keep as layer';
   renderPinned();
+  renderMeasure();
   renderHistory();
 }
 function renderStatus() {
   const label = active.draft.params.study.label;
-  const voices = active.output?.layers?.length ? ` · ${active.output.layers.length} voices` : '';
+  const out = active.output;
+  const nVoices = (out?.layers || []).filter((_, i) => i !== out.measure_layer).length;
+  const voices = isVoices(active.draft.params.study) && nVoices ? ` · ${nVoices} voices` : '';
+  const measured = out?.measure_layer != null ? ' · with Measure' : '';
   let text;
   if (active.error) text = 'Preview unavailable — retry below';
   else if (active.renderedKey !== key()) {
@@ -670,9 +684,181 @@ function renderStatus() {
     text = `Drawing ${label}…${s >= 1 ? ` ${Math.floor(s)} s` : ''}`;
   } else {
     const o = active.output;
-    text = `${label}${voices} · ${o.lines.length.toLocaleString()} ink paths · ${o.points.toLocaleString()} points${o.decimated ? ' · simplified preview' : ''}`;
+    text = `${label}${voices}${measured} · ${o.lines.length.toLocaleString()} ink paths · ${o.points.toLocaleString()} points${o.decimated ? ' · simplified preview' : ''}`;
   }
   $('process-status').textContent = text;
+}
+
+// ---------------------------------------------------------------- Measure (devices)
+const PLACES = ['over', 'under', 'margin', 'beside'];
+const SIDES = { margin: ['bottom', 'top', 'left', 'right'], beside: ['right', 'bottom'] };
+const SIZE = { margin: 22, beside: 60 };
+const DEVICE_FAMILIES = [['process', "From the drawing's process"], ['general', 'General']];
+const deviceList = () => catalogue?.devices || [];
+const devicesOn = () => (active?.draft.params.devices || []);
+const specOf = id => devicesOn().find(d => d.id === id) || null;
+const deviceEntry = id => deviceList().find(d => d.id === id);
+function paramValue(entry, spec, name) {
+  if (spec && Object.prototype.hasOwnProperty.call(spec, name)) return spec[name];
+  if (Object.prototype.hasOwnProperty.call(entry.default, name)) return entry.default[name];
+  return entry.params.find(x => x.name === name)?.default;
+}
+// The devices in the catalogue's order, so the same set is the same request.
+function setDevices(p, list) {
+  const order = deviceList().map(d => d.id);
+  p.devices = [...list].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  if (!p.devices.length) delete p.devices;
+}
+function toggleDevice(id, on) {
+  const memory = active.draft.deviceMemory || (active.draft.deviceMemory = {});
+  change(p => {
+    const list = (p.devices || []).filter(d => d.id !== id);
+    const was = (p.devices || []).find(d => d.id === id);
+    if (was) memory[id] = copy(was);
+    if (on) list.push(copy(memory[id] || deviceEntry(id).default));
+    setDevices(p, list);
+  });
+}
+function editDevice(id, fn) {
+  change(p => {
+    const list = copy(p.devices || []);
+    const spec = list.find(d => d.id === id);
+    if (!spec) return;
+    fn(spec);
+    setDevices(p, list);
+  });
+}
+function placeDevice(entry, place) {
+  editDevice(entry.id, spec => {
+    spec.place = place;
+    if (SIDES[place]) {
+      const same = entry.default.place === place;
+      spec.side = same ? entry.default.side : SIDES[place][0];
+      spec.size = same ? entry.default.size : SIZE[place];
+    } else { delete spec.side; delete spec.size; }
+  });
+}
+// The one drawn_by-like string control: '' (straight) or a library hand.
+function deviceParamEl(entry, spec, param) {
+  const v = paramValue(entry, spec, param.name);
+  const wrap = document.createElement('div');
+  wrap.className = 'gs-field gs-device-param'; wrap.dataset.param = param.name;
+  const head = document.createElement('div'); head.className = 'gs-field-head';
+  const label = document.createElement('label'); label.textContent = param.label || param.name;
+  wrap.title = param.help || '';
+  const id = `gs-dev-${entry.id}-${param.name}`;
+  label.htmlFor = id;
+  head.append(label);
+  let control;
+  const set = value => editDevice(entry.id, s => { s[param.name] = value; });
+  if (param.type === 'int' || param.type === 'float') {
+    control = document.createElement('input');
+    control.type = 'range'; control.min = String(param.min); control.max = String(param.max); control.step = 'any';
+    control.value = String(v); paintFill(control);
+    const out = document.createElement('output'); out.textContent = fmt(v); head.append(out);
+    const q = quantiser({ ...param, step: param.type === 'int' ? 1 : (param.max - param.min) / 100 });
+    control.oninput = () => { out.textContent = fmt(q(control.value)); paintFill(control); };
+    control.onchange = () => set(q(control.value));
+  } else if (param.type === 'bool') {
+    control = document.createElement('input'); control.type = 'checkbox'; control.checked = !!v;
+    control.onchange = () => set(control.checked);
+    const l = document.createElement('label'); l.className = 'gs-check';
+    l.append(control, document.createTextNode(param.label || param.name));
+    head.replaceChildren(l);
+    control.id = id;
+    wrap.append(head);
+    return wrap;
+  } else if (param.type === 'choice') {
+    control = document.createElement('div');
+    control.className = 'gs-switch'; control.setAttribute('role', 'group'); control.setAttribute('aria-label', `${entry.label}: ${param.name}`);
+    for (const c of param.choices) {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = c; b.dataset.value = c;
+      b.setAttribute('aria-pressed', String(c === v));
+      b.onclick = () => set(c);
+      control.append(b);
+    }
+  } else {                                       // drawn_by: straight, or a hand of this library
+    control = selectEl([['', 'straight (machine)'], ...libraryList('hand').map(h => [h.id, h.label])], v ?? '');
+    control.value = v ?? '';
+    control.onchange = () => set(control.value);
+  }
+  control.id = id;
+  wrap.append(head, control);
+  return wrap;
+}
+function deviceNote(entry) {
+  const out = active.output;
+  if (!out || active.renderedKey !== key()) return null;
+  return (out.devices || []).find(n => n.id === entry.id) || null;
+}
+function deviceRow(entry) {
+  const spec = specOf(entry.id);
+  const row = document.createElement('div');
+  row.className = 'gs-device'; row.dataset.device = entry.id;
+  row.classList.toggle('gs-device-on', !!spec);
+  const head = document.createElement('div'); head.className = 'gs-device-head';
+  const l = document.createElement('label'); l.className = 'gs-check gs-device-toggle';
+  const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!spec;
+  cb.setAttribute('aria-label', `Measure: ${entry.label}`);
+  cb.onchange = () => toggleDevice(entry.id, cb.checked);
+  l.append(cb, document.createTextNode(entry.label));
+  l.title = entry.doc;
+  head.append(l);
+  const slowText = entry.slow && (entry.id !== 'meas_ledger' || paramValue(entry, spec, 'drawn_by')) ? entry.slow : '';
+  const note = spec ? deviceNote(entry) : null;
+  const took = note?.seconds >= 2 ? ` · ${Math.round(note.seconds)} s` : '';
+  if (slowText || took) {
+    const b = document.createElement('span'); b.className = 'gs-badge gs-device-slow';
+    b.textContent = `slow${took}`; b.title = slowText || 'This device took a while on this drawing';
+    head.append(b);
+  }
+  row.append(head);
+  if (spec) {
+    const body = document.createElement('div'); body.className = 'gs-device-body';
+    const place = document.createElement('div');
+    place.className = 'gs-switch gs-place'; place.setAttribute('role', 'group'); place.setAttribute('aria-label', `${entry.label}: placement`);
+    for (const pl of PLACES) {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = pl; b.dataset.value = pl;
+      b.setAttribute('aria-pressed', String(spec.place === pl));
+      b.onclick = () => { if (spec.place !== pl) placeDevice(entry, pl); };
+      place.append(b);
+    }
+    body.append(place);
+    if (SIDES[spec.place]) {
+      const side = selectEl(SIDES[spec.place].map(x => [x, `${spec.place === 'beside' ? 'beside, ' : 'margin, '}${x}`]), spec.side);
+      side.value = spec.side; side.className = 'gs-side'; side.setAttribute('aria-label', `${entry.label}: side`);
+      side.onchange = () => editDevice(entry.id, s => { s.side = side.value; });
+      body.append(side);
+    }
+    for (const param of entry.shown) body.append(deviceParamEl(entry, spec, param));
+    row.append(body);
+    if (note && (note.error || !note.inks)) {
+      const why = document.createElement('p'); why.className = 'gs-why gs-device-note'; why.setAttribute('role', 'status');
+      why.textContent = note.error ? `Could not draw here: ${note.error}` : entry.empty;
+      row.append(why);
+    }
+  }
+  return row;
+}
+function renderMeasure() {
+  const host = $('gs-measure-devices');
+  $('gs-measure').hidden = !deviceList().length;
+  if (!host || !deviceList().length) return;
+  const notes = active.renderedKey === key() ? active.output?.devices : null;
+  const sig = JSON.stringify([devicesOn(), notes, pinnedSnapshot()]);
+  if (host.dataset.sig === sig) return;
+  const focused = document.activeElement?.closest?.('.gs-device')?.dataset.device;
+  host.dataset.sig = sig;
+  host.replaceChildren();
+  for (const [family, title] of DEVICE_FAMILIES) {
+    const list = deviceList().filter(d => d.family === family);
+    if (!list.length) continue;
+    const g = document.createElement('div'); g.className = 'gs-device-family'; g.setAttribute('role', 'group'); g.setAttribute('aria-label', title);
+    const h = document.createElement('h5'); h.textContent = title; g.append(h);
+    for (const entry of list) g.append(deviceRow(entry));
+    host.append(g);
+  }
+  if (focused) host.querySelector(`.gs-device[data-device="${CSS.escape(focused)}"] input[type=checkbox]`)?.focus({ preventScroll: true });
 }
 
 // ---------------------------------------------------------------- history strip
@@ -852,7 +1038,9 @@ export function initGestureStudiesBench() {
       <button id="gs-shuffle" type="button" title="Vary every unlocked control within its bounds">${svgIcon(ICON.shuffle)}<span>Shuffle</span></button>
     </section>
     <section class="gs-section" aria-label="Controls"><div id="gs-controls"></div></section>
-    <section id="gs-measure" class="gs-section gs-measure" aria-label="Measure" hidden><h4>Measure</h4><div id="gs-measure-devices"></div></section>
+    <section id="gs-measure" class="gs-section gs-measure" aria-label="Measure" hidden><h4>Measure</h4>
+      <p class="hint">Readings of this drawing, laid over, under, in a margin or beside it. Off until you turn one on; Keep puts them on their own Measure layer and pen.</p>
+      <div id="gs-measure-devices"></div></section>
     <details id="gs-advanced" class="gs-advanced"><summary>Advanced</summary>
       <div id="gs-advanced-body">
       <details id="gs-about"><summary>About this study</summary><p class="hint" id="gs-notes"></p><p class="hint" id="gs-source"></p></details>
@@ -919,11 +1107,12 @@ export async function openGestureStudiesBench({ mod, params, contextKey, onKeep,
   const input = copy({ ...mod.defaults, ...params });
   input.values = input.values || {};
   delete input.voice;              // a chorus voice layer resumes the whole chorus
+  delete input.show;               // a kept drawing / Measure layer resumes the whole measured study
   const inputKey = JSON.stringify(input);
   const context = `${benchProjectEpoch()}:${contextKey || `new:${mod.id}`}`;
   let draft = drafts.get(context);
   if (!draft || (inputKey !== draft.inputKey && inputKey !== JSON.stringify(draft.params))) {
-    draft = { params: input, inputKey, undo: [], redo: [], memory: {}, locks: {}, history: [] };
+    draft = { params: input, inputKey, undo: [], redo: [], memory: {}, locks: {}, history: [], deviceMemory: {} };
     drafts.set(context, draft);
   }
   active = { mod, draft, external: params, onKeep, onClose, renderedKey: null, inFlight: false, queued: false,
@@ -993,7 +1182,7 @@ function installPresetControls() {
     mod: owner.mod,
     getParams: () => {
       const p = copy(owner.draft.params);
-      for (const k of ['library', 'pins', 'sampled', 'voice']) delete p[k];
+      for (const k of ['library', 'pins', 'sampled', 'voice', 'show']) delete p[k];
       return p;
     },
     isBusy: () => active !== owner || owner.keeping || owner.savingGallery || owner.inFlight,
@@ -1045,6 +1234,7 @@ function draw(output, exact, expected) {
     if (voice.color) {
       g.classList.add('gs-voice'); g.style.setProperty('--gs-voice', voice.color);
       g.dataset.voice = voice.name || '';
+      if (voice === output.layers?.[output.measure_layer]) g.classList.add('gs-measure-ink');
     }
     let sub = null, subRun = -1;
     for (const line of output.lines.slice(at, at + voice.paths)) {
@@ -1052,7 +1242,8 @@ function draw(output, exact, expected) {
       if (subRun !== r) {
         sub = document.createElementNS(NS, 'g'); subRun = r;
         const run = runs[r];
-        if (run?.color && !voice.color) { sub.classList.add('gs-ink'); sub.style.setProperty('--gs-ink', run.color); }
+        // a run's own colour wins (a voice's runs carry its ink; the Measure layer mixes inks)
+        if (run?.color) { sub.classList.add('gs-ink'); sub.style.setProperty('--gs-ink', run.color); }
         if (run?.width) sub.style.strokeWidth = String(run.width);
         g.append(sub);
       }
@@ -1127,14 +1318,16 @@ async function keep() {
   const owner = active, exact = canonParams(owner.draft.params);
   owner.keeping = true; clearBenchError(); renderControls();
   try {
-    if (isVoices(exact.study)) {
-      // one undo step on the server: a group named after the study, a layer per voice on its own pen
+    if (isVoices(exact.study) || exact.devices?.length) {
+      // one undo step on the server: a group named after the study, a layer per voice on its own pen,
+      // and with devices on, a Measure layer of the device inks on its own pen
       const res = await api.post('/api/gesture-studies/keep', { params: exact });
       await actions.refreshProject();
       await actions.refreshResolved();
       actions.setSelectionTargets([{ kind: 'group', id: res.group.id }]);
-      const pens = new Set(res.layers.map(l => l.pen_id)).size;
-      if (active === owner) $('gesture-studies-kept').textContent = `Kept · group ${res.group.name} · ${res.layers.length} layers on ${pens} pens`;
+      const pens = new Set(res.layers.map(l => l.pen_id || '')).size;
+      const measure = res.layers.some(l => l.name === 'Measure') ? ' (with Measure)' : '';
+      if (active === owner) $('gesture-studies-kept').textContent = `Kept · group ${res.group.name} · ${res.layers.length} layers on ${pens} pens${measure}`;
     } else {
       const layer = await owner.onKeep(exact);
       if (active === owner) $('gesture-studies-kept').textContent = `Kept · ${layer?.name || 'layer'}`;

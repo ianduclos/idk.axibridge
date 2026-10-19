@@ -1,4 +1,4 @@
-# FROZEN from research commit ecd64f8: tools/gesture/gesture/kit/dev_chorus.py
+# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/dev_chorus.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Developments (round 10): call and response, mixed — a chorus.
 

@@ -1,4 +1,4 @@
-# FROZEN from research commit ecd64f8: tools/gesture/gesture/kit/renderers_revisit.py
+# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/renderers_revisit.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Signs grown from the line, at events written by `revisit_notate`
 (round 12, thread `revisit`). The round-7 operators (`gesture/signs.py`

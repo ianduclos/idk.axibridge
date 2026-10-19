@@ -1,4 +1,4 @@
-# FROZEN from research commit ecd64f8: tools/gesture/gesture/kit/arrangers_rules.py
+# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/arrangers_rules.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Round 13, thread I-a `rules` — rules from the sheets, played as breakable rules.
 

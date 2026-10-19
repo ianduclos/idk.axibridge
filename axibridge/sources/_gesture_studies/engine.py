@@ -270,6 +270,95 @@ def render_voices_styled(recipe: dict, lib: FL.FrozenLibrary,
     return out
 
 
+# ---------------------------------------------------------------------------
+# measuring devices (study bench v3, move G): laid on the finished sheet
+# ---------------------------------------------------------------------------
+
+MEASURE = "measure"       # the tag of a device ink (every other ink is tagged by part / voice)
+_MEASURED: "OrderedDict[str, tuple]" = OrderedDict()
+_MEASURED_MAX = 4
+
+
+def drawing_sheet(engine: str, recipe: dict, lib: FL.FrozenLibrary):
+    """The finished drawing as a kit Sheet. Kit: its run. Hand Drift: its paths
+    as marks + inks in drawing order (one part), so the devices that read the
+    pen's order and the finished ink have them; it records no score or clock."""
+    if engine != "hand_drift":
+        return run_kit(recipe, lib)
+    paths = run_hand_drift(recipe, lib)
+    pen = float(recipe["pen"])
+    marks, inks = [], []
+    for i, p in enumerate(paths):
+        pts = np.asarray(p.points, dtype=np.float64)
+        marks.append(_core.Mark(pts, {}, {"part": 0, "voice": "hand_drift"}))
+        inks.append(_core.Ink(pts, closed=len(pts) >= 4 and bool(np.allclose(pts[0], pts[-1])),
+                              filled=bool(p.filled), pen=pen, meta={"part": 0, "hd": i}))
+    W, H = frame_of(engine, recipe)
+    return _core.Sheet((W, H), marks, inks, {"recipe": {"seed": int(recipe["seed"]), "frame": [W, H]},
+                                             "library": [], "notes": {}})
+
+
+def measured_sheet(engine: str, recipe: dict, lib: FL.FrozenLibrary, devices: list[dict]):
+    """(sheet with the devices laid on it, a note per device); the last few kept."""
+    from . import devices as D  # noqa: PLC0415
+    key = json.dumps([engine, _sheet_key(recipe, lib), devices], sort_keys=True, separators=(",", ":"))
+    with _SHEETS_LOCK:
+        hit = _MEASURED.get(key)
+        if hit is not None:
+            _MEASURED.move_to_end(key)
+            return hit
+    base = drawing_sheet(engine, recipe, lib)
+    report_progress(0.96, "measuring")
+    out = D.apply(base, devices, lib, memo_key=json.dumps([engine, _sheet_key(recipe, lib)]))
+    with _SHEETS_LOCK:
+        _MEASURED[key] = out
+        while len(_MEASURED) > _MEASURED_MAX:
+            _MEASURED.popitem(last=False)
+    return out
+
+
+def render_measured(engine: str, recipe: dict, lib: FL.FrozenLibrary, devices: list[dict],
+                    inks: list[str] | None = None):
+    """A study with devices → ((W, H) grown by any `beside` panel,
+    [(tag, Path, (colour, width))] in pen order, the device notes). The tag is
+    MEASURE for a device ink, else the part (or, with `inks`, the voice index).
+    Drawing and devices are fitted inside the frame as ONE drawing, so the
+    drawing and its Measure layer stay in register; Hand Drift's own paths are
+    used as they are (not simplified twice)."""
+    sheet, notes = measured_sheet(engine, recipe, lib, devices)
+    W, H = sheet.frame
+
+    def tag(ink):
+        if ink.meta.get("layer") == "device":
+            return MEASURE
+        if inks:
+            name = ink_name(ink)
+            if name not in inks:
+                raise ValueError(f"the drawing uses the pen {name!r}, which is not one of this study's inks {inks}")
+            return inks.index(name)
+        return int(ink.meta.get("part", 0))
+
+    if engine == "hand_drift":
+        hd = run_hand_drift(recipe, lib)
+        pen = float(recipe["pen"])
+        dev = _tagged([k for k in sheet.inks if k.meta.get("layer") == "device"], tag)
+        it = iter(dev)
+        tagged = []
+        for k in sheet.inks:
+            if k.meta.get("layer") == "device":
+                nxt = next((t for t in it if t[2] is k), None)
+                if nxt is not None:
+                    tagged.append(nxt)
+            else:
+                tagged.append((0, hd[int(k.meta["hd"])], k))
+        styles = [ink_style(k) if t == MEASURE else (INK, pen) for t, _, k in tagged]
+    else:
+        tagged = _tagged(sheet.inks, tag)
+        styles = [ink_style(k) for _, _, k in tagged]
+    fitted = _fit_inside([p for _, p, _ in tagged], W, H)
+    return (float(W), float(H)), [(t, p, s) for (t, _, _), p, s in zip(tagged, fitted, styles)], notes
+
+
 def render(engine: str, recipe: dict, lib: FL.FrozenLibrary) -> list[Path]:
     """A resolved, validated recipe → app paths inside its frame."""
     return render_styled(engine, recipe, lib)[0]

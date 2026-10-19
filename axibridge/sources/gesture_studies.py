@@ -27,6 +27,15 @@ is edited, renamed, deleted or the library is refrozen:
               (null = all of them, the bench preview). Keep makes one layer per
               voice in a group; each resolves the same pinned recipe and keeps
               only its own voice's ink.
+- `devices` — measuring devices laid on the finished drawing (study bench v3,
+              move G; `_gesture_studies/devices.py`): `[{"id", "place":
+              over|under|margin|beside, "side", "size", …params}]`, checked
+              against the frozen device registry. `beside` grows the frame.
+              Off (empty) by default: Ian, "has to be optional".
+- `show`    — with devices: `all` (the bench preview), `drawing` (the
+              drawing's layer of a kept group) or `measure` (its Measure
+              layer: the device inks alone, on their own pen). Every member of
+              the group resolves the same sheet, so they stay in register.
 
 Output: the study's frame in mm (`placement_frame`, fitted onto the bed when
 kept); ink paths simplified at 0.01 mm; closed rings closed exactly, outline
@@ -50,6 +59,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 from ..model import Layer, PathDocument
 from ..registry import SourceModule, register_source
+from ._gesture_studies import devices as DV
 from ._gesture_studies import frozen_library as FL
 from ._gesture_studies import studies as ST
 
@@ -87,6 +97,9 @@ class GestureStudiesParams(BaseModel):
                             json_schema_extra=_HIDDEN)
     sampled: dict[str, Any] | None = Field(default=None, title="Sampled combination", json_schema_extra=_HIDDEN)
     voice: int | None = Field(default=None, ge=0, le=15, title="Voice", json_schema_extra=_HIDDEN)
+    devices: list[dict[str, Any]] = Field(default_factory=list, max_length=13, title="Measuring devices",
+                                          json_schema_extra=_HIDDEN)
+    show: Literal["all", "drawing", "measure"] = Field(default="all", title="Show", json_schema_extra=_HIDDEN)
 
     _recipe: dict | None = PrivateAttr(default=None)
     _run: dict | None = PrivateAttr(default=None)
@@ -98,13 +111,18 @@ class GestureStudiesParams(BaseModel):
             ST.check_study(self.study, lib)
             self._recipe = ST.resolve(self.study, self.values, lib)
             self._run = ST.run_recipe(self.study, self._recipe, lib, self.sampled)
+            self.devices = DV.check_specs(self.devices, lib)
+            if self.show != "all" and not self.devices:
+                raise ST.StudyError("only a study with measuring devices shows its drawing or its measure alone")
+            if self.show == "measure" and self.voice is not None:
+                raise ST.StudyError("the Measure layer draws the devices of every voice: it takes no voice")
             if self.voice is not None:
                 n = len(ST.voices_of(self.study, self._run))
                 if not n:
                     raise ST.StudyError("only a voices study (the chorus) draws one voice per layer")
                 if self.voice >= n:
                     raise ST.StudyError(f"voice {self.voice} is not sung: this chorus has {n} voices")
-        except (ST.StudyError, FL._kl.LibraryError, FL._kl.PolicyError) as e:
+        except (ST.StudyError, DV.DeviceError, FL._kl.LibraryError, FL._kl.PolicyError) as e:
             raise ValueError(str(e)) from None
         return self
 
@@ -136,7 +154,7 @@ class GestureStudiesSource(SourceModule):
     def placement_frame(self, params: dict) -> tuple[float, float] | None:
         from ._gesture_studies.engine import frame_of  # noqa: PLC0415
         p = GestureStudiesParams(**params)
-        return frame_of(_engine(p), p.run_recipe)
+        return DV.grown_frame(frame_of(_engine(p), p.run_recipe), p.devices)
 
     def complete_params(self, params: dict) -> dict:
         """Pin the library at Keep: the snapshot the layer resolves against and
@@ -147,7 +165,8 @@ class GestureStudiesSource(SourceModule):
         combination it drew."""
         p = GestureStudiesParams(**params)
         lib = p.frozen_library()
-        named = ST.named_entries(p.study, p.values, lib)
+        named = sorted(set(ST.named_entries(p.study, p.values, lib))
+                       | {("hand", h) for h in DV.named_hands(p.devices) if h in lib.ids("hand")})
         have = {(x.kind, x.id): x.model_dump() for x in p.pins}
         pins = [have.get((k, i)) or lib.pin(k, i) for k, i in named]
         out = {**params, "library": lib.snapshot_id, "pins": pins}
@@ -161,8 +180,8 @@ class GestureStudiesSource(SourceModule):
         if hit is not None:
             return hit
         t0 = time.perf_counter()
-        doc, styles = self._generate(params)
-        _remember_styles(doc, styles)
+        doc, styles, notes = self._generate(params)
+        _remember_styles(doc, styles, notes)
         if time.perf_counter() - t0 >= SLOW_SECONDS:
             _slow_put(key, doc)
         return doc
@@ -171,9 +190,20 @@ class GestureStudiesSource(SourceModule):
         """How the bench draws `doc` (one this source generated): runs of
         consecutive paths, in the document's path order, each with its ink's
         colour and pen width (bench v3: "each ink in its pen colour at its width")."""
-        return _STYLES.get(id(doc))
+        return (_STYLES.get(id(doc)) or {}).get("runs")
 
-    def _generate(self, params: GestureStudiesParams) -> tuple[PathDocument, list[tuple[str, float]]]:
+    def preview_extra(self, doc: PathDocument) -> dict | None:
+        """What else the bench shows beside the preview: per measuring device,
+        how many inks it drew (none = nothing to read) or why it refused, its
+        seconds; and which of the document's layers is the Measure layer."""
+        meta = _STYLES.get(id(doc)) or {}
+        if meta.get("devices") is None:
+            return None
+        names = [layer.name for layer in doc.layers]
+        return {"devices": meta["devices"], "measure_layer": names.index(MEASURE_NAME)
+                if MEASURE_NAME in names else None}
+
+    def _generate(self, params: GestureStudiesParams):
         from ._gesture_studies import engine  # noqa: PLC0415
         lib = params.frozen_library()
         recipe = params.run_recipe
@@ -182,10 +212,12 @@ class GestureStudiesSource(SourceModule):
         W, H = engine.frame_of(eng, recipe)
         tag = f"gesture_studies {st.id} v{st.version} (kit {frozen_from()}, library {lib.snapshot_id})"
         voices = ST.voices_of(st, recipe)
+        if params.devices:
+            return self._generate_measured(params, eng, recipe, lib, tag, voices)
         if not voices:
             paths, styles = engine.render_styled(eng, recipe, lib)
             return (PathDocument(layers=[Layer(id=1, name=st.label, color=_INK, paths=paths)] if paths else [],
-                                 width=W, height=H, source=tag), styles)
+                                 width=W, height=H, source=tag), styles, None)
         by_voice = engine.render_voices_styled(recipe, lib, st.inks)
         want = [v for v in voices if params.voice is None or v["index"] == params.voice]
         layers = [Layer(id=v["index"] + 1, name=f"{st.label} · {v['ink']}", color=v["color"],
@@ -193,7 +225,44 @@ class GestureStudiesSource(SourceModule):
         # a voice is drawn in its voice's ink (its pen), at each ink's own width
         styles = [(v["color"], w) for v in want for _, (_, w) in by_voice.get(v["index"], [])]
         return (PathDocument(layers=[x for x in layers if x.paths], width=W, height=H,
-                             source=tag + ("" if params.voice is None else f" voice {params.voice}")), styles)
+                             source=tag + ("" if params.voice is None else f" voice {params.voice}")), styles, None)
+
+    def _generate_measured(self, params: GestureStudiesParams, eng: str, recipe: dict, lib, tag: str,
+                           voices: list[dict]):
+        """A study with measuring devices: the drawing's layer(s) — one per
+        voice for a voices study — and a Measure layer holding the device inks,
+        in pen order (the Measure layer first when every device sits under).
+        `show` keeps the drawing's or the Measure's alone (a kept group's members)."""
+        from ._gesture_studies import engine  # noqa: PLC0415
+        st = params.study
+        (W, H), items, notes = engine.render_measured(eng, recipe, lib, params.devices,
+                                                      st.inks if voices else None)
+        measure = [(p, s) for t, p, s in items if t == engine.MEASURE]
+        groups: list[tuple[Layer, list[tuple[str, float]]]] = []
+        if params.show != "measure":
+            if not voices:
+                drawn = [(p, s) for t, p, s in items if t != engine.MEASURE]
+                groups.append((Layer(id=1, name=st.label, color=_INK, paths=[p for p, _ in drawn]),
+                               [s for _, s in drawn]))
+            else:
+                for v in voices:
+                    if params.voice is not None and v["index"] != params.voice:
+                        continue
+                    drawn = [(p, s) for t, p, s in items if t == v["index"]]
+                    groups.append((Layer(id=v["index"] + 1, name=f"{st.label} · {v['ink']}", color=v["color"],
+                                         paths=[p for p, _ in drawn]), [(v["color"], w) for _, (_, w) in drawn]))
+        if params.show != "drawing":
+            mlayer = (Layer(id=99, name=MEASURE_NAME, color=measure_colour([s for _, s in measure]),
+                            paths=[p for p, _ in measure]), [s for _, s in measure])
+            under = all(d["place"] == "under" for d in params.devices)
+            groups = [mlayer, *groups] if under else [*groups, mlayer]
+        groups = [g for g in groups if g[0].paths]
+        suffix = {"all": "", "drawing": " drawing", "measure": " measure"}[params.show]
+        if params.voice is not None:
+            suffix += f" voice {params.voice}"
+        doc = PathDocument(layers=[layer for layer, _ in groups], width=W, height=H,
+                           source=f"{tag} + {len(params.devices)} devices{suffix}")
+        return doc, [s for _, styles in groups for s in styles], notes
 
 
 # ---------------------------------------------------------------------------
@@ -203,7 +272,8 @@ class GestureStudiesSource(SourceModule):
 # ---------------------------------------------------------------------------
 
 SLOW_SECONDS = 2.0
-_STYLES: dict[int, list[dict]] = {}
+MEASURE_NAME = "Measure"
+_STYLES: dict[int, dict] = {}
 _SLOW: "OrderedDict[str, PathDocument]" = OrderedDict()
 _SLOW_LOCK = threading.Lock()
 
@@ -219,10 +289,20 @@ def _runs(styles: list[tuple[str, float]]) -> list[dict]:
     return out
 
 
-def _remember_styles(doc: PathDocument, styles: list[tuple[str, float]]) -> None:
+def measure_colour(styles: list[tuple[str, float]]) -> str:
+    """The Measure layer's colour (its pen): the ink most of its paths are drawn in."""
+    if not styles:
+        return _INK
+    count: dict[str, int] = {}
+    for colour, _ in styles:
+        count[colour] = count.get(colour, 0) + 1
+    return max(count, key=lambda c: (count[c], c == _INK))
+
+
+def _remember_styles(doc: PathDocument, styles: list[tuple[str, float]], notes: list[dict] | None = None) -> None:
     # keyed by the document object (gencache hands the same object back), and
     # forgotten with it, so the table never outgrows the caches holding documents
-    _STYLES[id(doc)] = _runs(styles)
+    _STYLES[id(doc)] = {"runs": _runs(styles), "devices": notes}
     weakref.finalize(doc, _STYLES.pop, id(doc), None)
 
 

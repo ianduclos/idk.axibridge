@@ -279,7 +279,10 @@ def test_gallery_dice_and_history(ui, server):
     assert 'gs-inactive' in nib.get_attribute('class')
     assert 'acts when Regimes is field' in nib.locator('.gs-why').text_content()
     assert 'gs-inactive' not in control(ui, 'hand_1').get_attribute('class')
-    assert not ui.locator('#gs-measure').is_visible()          # Measure comes later (devices)
+    # Measure is there, every device off ("has to be optional")
+    assert ui.locator('#gs-measure').is_visible()
+    assert ui.locator('#gs-measure .gs-device-toggle input').count() == 13
+    assert ui.locator('#gs-measure .gs-device-toggle input:checked').count() == 0
     assert ui.locator('#gs-history .gs-history-item').count() == 1
 
     # the gallery: every study as a card, grouped by family; a card opens its study
@@ -342,4 +345,75 @@ def test_gallery_dice_and_history(ui, server):
     ui.click('#gesture-studies-undo')
     ready(ui)
     assert recipe(ui)['values'].get('parts.0.voice.hand', hand) != hand
+    assert not ui.errors
+
+
+def device(page, label):
+    return page.get_by_label(f'Measure: {label}', exact=True)
+
+
+def test_measure_devices_preview_and_keep_as_a_group(ui, server):
+    """Bench v3 move G: a device is a toggle with a placement; it previews as
+    its own run (its own colour and width) and Keep makes a group of the
+    drawing and a Measure layer on its own pen. One that has nothing to read
+    in the study says so."""
+    open_bench(ui)
+    ui.select_option('#gs-study', 'river_zoom')
+    ready(ui)
+    families = ui.locator('#gs-measure .gs-device-family h5').all_text_contents()
+    assert families == ["From the drawing's process", 'General']
+    assert ui.locator('#gesture-studies-keep').text_content() == 'Keep as layer'
+    plain = ink(ui)
+    width = float(ui.locator('#process-canvas').get_attribute('viewBox').split()[2])
+    assert not ui.locator('#process-canvas .gs-measure-ink').count()
+
+    # the rose sits beside the drawing: the sheet grows, the drawing stays
+    device(ui, 'Heading rose').check()
+    ready(ui)
+    assert recipe(ui)['devices'] == [{'id': 'heading_rose', 'place': 'beside', 'side': 'right', 'size': 60.0}]
+    assert float(ui.locator('#process-canvas').get_attribute('viewBox').split()[2]) == width + 60
+    assert ui.locator('#process-canvas .gs-measure-ink polyline').count() > 0
+    assert plain in ink(ui)                                          # the drawing itself is unchanged
+    row = ui.locator('#gs-measure .gs-device[data-device="heading_rose"]')
+    assert row.locator('.gs-place button[aria-pressed="true"]').text_content() == 'beside'
+    assert ui.locator('#gesture-studies-keep').text_content() == 'Keep as group'
+
+    # placement: in the bottom margin instead (the sheet is its own size again)
+    row.locator('.gs-place button', has_text='margin').click()
+    ready(ui)
+    assert recipe(ui)['devices'][0]['place'] == 'margin'
+    assert float(ui.locator('#process-canvas').get_attribute('viewBox').split()[2]) == width
+
+    # a process device with nothing to read in this study says so
+    device(ui, 'Arcs of the score').check()
+    ready(ui)
+    note = ui.locator('#gs-measure .gs-device[data-device="meas_arcs"] .gs-device-note')
+    assert 'no score' in note.text_content()
+    shot(ui, 'measure-nothing-to-read')
+    # undo takes the device off again, in one step
+    ui.click('#gesture-studies-undo')
+    ready(ui)
+    assert [d['id'] for d in recipe(ui)['devices']] == ['heading_rose']
+    assert not device(ui, 'Arcs of the score').is_checked()
+
+    # the river's own km along the line, beside the bottom
+    device(ui, 'Stations (river km / dance seconds)').check()
+    ready(ui)
+    assert [d['id'] for d in recipe(ui)['devices']] == ['meas_stations', 'heading_rose']
+    assert not ui.locator('#gs-measure .gs-device[data-device="meas_stations"] .gs-device-note').count()
+    shot(ui, 'measure-river-km')
+
+    # Keep: a group of the drawing and a Measure layer, the Measure on its own pen
+    assert not _get(f'{server}/api/project')['layers']
+    ui.click('#gesture-studies-keep')
+    ui.wait_for_function("() => document.querySelector('#gesture-studies-kept').textContent.includes('Kept')")
+    assert 'with Measure' in ui.locator('#gesture-studies-kept').text_content()
+    proj = _get(f'{server}/api/project')
+    assert len(proj['groups']) == 1 and proj['groups'][0]['name'] == 'Amazon, zooming'
+    layers = proj['layers']
+    assert [layer['name'] for layer in layers] == ['Amazon, zooming', 'Measure']
+    assert {layer['group_id'] for layer in layers} == {proj['groups'][0]['id']}
+    assert layers[1]['pen_id'] and layers[1]['pen_id'] != layers[0]['pen_id']
+    assert [layer['source']['params']['show'] for layer in layers] == ['drawing', 'measure']
+    shot(ui, 'measure-kept')
     assert not ui.errors

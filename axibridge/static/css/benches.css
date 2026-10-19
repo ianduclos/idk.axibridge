@@ -317,6 +317,20 @@
 .gesture-studies-ink .draw-line { stroke-width:inherit; }
 .gesture-studies-ink .gs-voice .draw-line { stroke:var(--gs-voice); }
 .gesture-studies-ink .gs-ink .draw-line { stroke:var(--gs-ink); }
+/* Measure (bench v3 move G): one row per device, its controls only while it is on */
+#process-gesture-studies .gs-measure > .hint { margin:var(--space-1) 0 var(--space-2); font-size:var(--type-note); }
+#process-gesture-studies .gs-device-family h5 { margin:var(--space-2) 0 var(--space-1); font-size:var(--type-note); font-weight:600; color:var(--ink-soft); }
+#process-gesture-studies .gs-device { padding:2px 0; }
+#process-gesture-studies .gs-device-on { padding:var(--space-1) var(--space-2) var(--space-2); margin:var(--space-1) 0; border:1px solid var(--bench-edge); border-radius:4px; }
+#process-gesture-studies .gs-device-head { display:flex; align-items:center; gap:var(--space-2); }
+#process-gesture-studies .gs-device-toggle { flex:1; min-width:0; margin:0; font-size:inherit; }
+#process-gesture-studies .gs-device-body { display:grid; gap:var(--space-1); margin-top:var(--space-1); }
+#process-gesture-studies .gs-device-body > .gs-side { width:100%; min-width:0; }
+#process-gesture-studies .gs-device-param { margin:var(--space-1) 0 0; }
+#process-gesture-studies .gs-device-param .gs-field-head > label { font-size:var(--type-note); }
+#process-gesture-studies .gs-device-param > input[type=range], #process-gesture-studies .gs-device-param > select,
+#process-gesture-studies .gs-device-param > .gs-switch { width:100%; min-width:0; box-sizing:border-box; }
+#process-gesture-studies .gs-device-slow { flex:none; }
 #process-gesture-studies .gs-pinned { margin:var(--space-2) 0; padding:var(--space-2); border:1px solid var(--bench-edge); border-radius:4px; font-size:var(--type-note); }
 #process-gesture-studies .gs-pinned[hidden], #process-gesture-studies .gs-summary[hidden] { display:none; }
 #process-gesture-studies .gs-pinned button { margin-top:var(--space-1); }

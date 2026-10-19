@@ -46,6 +46,11 @@ into the app. It writes:
    freeze is faithful). `tests/test_gesture_studies.py` runs the recipe through
    the frozen copy in the app venv and compares.
 
+4. `tests/fixtures/gesture_studies/devices/<device>.json` — the measuring
+   devices' parity fixture (study bench v3, move G): every device the bench
+   offers, at its default spec, on a built-in study it can read (see
+   `device_fixtures`), checked frozen == research here first.
+
 New hands, tempos or dance trails learned in the research library appear in
 every study's hand / tempo / dance controls after a rerun of this script and a
 restart: the controls list whatever the current snapshot holds.
@@ -95,7 +100,12 @@ KIT_MODULES = ("__init__", "core", "library", "arrangers_base", "modulators_base
                "voices_passage", "voices_accrue", "voices_gmorph", "voices_handover",
                "arrangers_listen", "voices_rzoom", "renderers_rzoom",
                # the same zoom callable on other hands, or as a modulator over any voice
-               "voices_lcorp", "modulators_lcorp")
+               "voices_lcorp", "modulators_lcorp",
+               # round 15 measuring devices (study bench v3 move G, 2026-10-19): the device contract
+               # (`_devices`, over the `_score` above), the process reader and the 13 devices
+               "_devices", "devices_meas_read", "devices_meas_air", "devices_meas_arcs",
+               "devices_meas_inventory", "devices_meas_ledger", "devices_meas_roll", "devices_meas_stations",
+               "devices_meas_turning", "devices_measg1", "devices_measg2")
 # research modules (tools/gesture/gesture/<name>.py) they import, transitively
 RESEARCH_MODULES = ("core", "curvature", "clothoid", "grammar", "hybrid", "regime", "penrender",
                     "regime_field", "gesture_timing", "broadnib",
@@ -105,6 +115,12 @@ DATA_KINDS = ("river_stems",)                         # data a technique reads b
                                                       # frozen like the generative kinds, policy gate included
 META_KINDS = ("corpus",)                              # index entries the policy gate reads
 SAMPLE_POINTS = 800                                   # strided parity sample per study
+# the built-in study each device's parity fixture is laid on: one that gives it something to read
+# (and quick to draw: the app test reruns every fixture)
+DEVICE_BASES = {"process": "listen",                  # a recorded score, many hands, steps
+                "general": "river_zoom",              # one finished drawing
+                "meas_stations": "river_zoom",        # river km along the line
+                "meas_ledger": "river_zoom"}          # matisse drawing the rules of a few rows (~4 s)
 
 CALLIGRAPHY_STUB = '''"""app: the research `calligraphy` module reduced to the one name the kit
 library imports. The full module needs PIL and reads the scans; the app only
@@ -285,6 +301,7 @@ def parity_fixtures(src_root: Path, commit: str) -> None:
     from axibridge.sources._gesture_studies.kit import sampler as frozen_sampler  # noqa: PLC0415
     from gesture.kit import sampler as research_sampler  # noqa: PLC0415
     order = json.loads((STUDIES / "index.json").read_text())["order"]
+    bases: dict = {}
     for sid in order:
         study = json.loads((STUDIES / sid / "study.json").read_text())
         sampled = None
@@ -316,6 +333,47 @@ def parity_fixtures(src_root: Path, commit: str) -> None:
         (FIXTURES / f"{sid}.json").write_text(json.dumps(out, separators=(",", ":")) + "\n")
         print(f"fixture {sid:<22} {len(out['inks']):5d} inks {out['n_points']:7d} points "
               f"({sheet.meta['seconds']['marks'] + sheet.meta['seconds']['inks']:.1f} s)")
+        if sid in set(DEVICE_BASES.values()):
+            bases[sid] = (recipe, sheet, mine)
+    device_fixtures(commit, bases, lib)
+
+
+def device_fixtures(commit: str, bases: dict, lib) -> None:
+    """4. `tests/fixtures/gesture_studies/devices/<device>.json` — every measuring
+    device the app offers, at the bench's default spec, laid by the HEAD research
+    `apply_devices` on a built-in study's research sheet (`DEVICE_BASES`: one that
+    gives the device something to read). The frozen copy, on the frozen sheet,
+    with the frozen library as the kit's default, must reproduce it exactly here;
+    `tests/test_gesture_studies_devices.py` reruns it in the app venv."""
+    import shapely  # noqa: PLC0415
+    from gesture.kit import _devices as research_devices  # noqa: PLC0415
+    from axibridge.sources._gesture_studies import devices as app_devices  # noqa: PLC0415
+    from axibridge.sources._gesture_studies import frozen_library as frozen_lib  # noqa: PLC0415
+    out_dir = FIXTURES / "devices"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    known = {d["id"] for d in research_devices.device_list()}
+    for entry in app_devices.catalogue():
+        did = entry["id"]
+        if did not in known:
+            raise SystemExit(f"{did}: the app offers a device the research registry does not have")
+        base = DEVICE_BASES.get(did, DEVICE_BASES["process" if entry["family"] == "process" else "general"])
+        recipe, sheet, mine = bases[base]
+        spec = [app_devices.check_specs([entry["default"]], frozen_lib.FrozenLibrary())[0]]
+        theirs = research_devices.apply_devices(sheet, spec)
+        ours, notes = app_devices.apply(mine, spec, frozen_lib.FrozenLibrary())
+        dev = [k for k in theirs.inks if (k.meta or {}).get("layer") == "device"]
+        if not dev:
+            raise SystemExit(f"{did}: draws nothing on {base}; pick a base it can read")
+        their_sum = _summary(type(theirs)(theirs.frame, [], dev, {}))
+        our_sum = _summary(type(ours)(ours.frame, [], [k for k in ours.inks
+                                                       if (k.meta or {}).get("layer") == "device"], {}))
+        if their_sum != our_sum or tuple(theirs.frame) != tuple(ours.frame):
+            raise SystemExit(f"{did}: the frozen device does not reproduce the research device on {base}")
+        out = {"device": did, "study": base, "spec": spec, "frame": list(theirs.frame), "research_commit": commit,
+               "numpy": np.__version__, "geos": shapely.geos_version_string, **their_sum}
+        (out_dir / f"{did}.json").write_text(json.dumps(out, separators=(",", ":")) + "\n")
+        print(f"device  {did:<22} on {base:<14} {len(dev):5d} inks {out['n_points']:7d} points "
+              f"({notes[0].get('seconds', 0):.2f} s)")
 
 
 def main() -> None:

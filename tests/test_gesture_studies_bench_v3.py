@@ -20,7 +20,13 @@ def params(sid, values=None, **extra):
 
 
 def test_preview_names_each_inks_colour_and_width():
-    c = TestClient(create_app())
+    # with the app's lifespan: a bare TestClient's progress events reach the event
+    # bus of a loop an earlier TestClient closed ("Event loop is closed", order-dependent)
+    with TestClient(create_app()) as c:
+        _preview_names(c)
+
+
+def _preview_names(c):
     out = c.post("/api/generators/preview", json={"module": "gesture_studies", "params": params("limb_signs")}).json()
     runs = out["styles"]
     assert sum(r["paths"] for r in runs) == len(out["lines"])

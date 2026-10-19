@@ -496,6 +496,21 @@ study dropdown inside; each study shows only its own controls.
   copy reproduces the research kit exactly; writes the parity fixtures in
   `tests/fixtures/gesture_studies/`). Adding a kit module a new study needs:
   append it to `KIT_MODULES` / `RESEARCH_MODULES` there.
+- **Measure** (bench v3 move G, 2026-10-19; `_gesture_studies/devices.py`):
+  the 13 round-15 measuring devices (`kit/_devices.py` contract, `kit/devices_*`)
+  frozen with the kit; parity fixtures in `tests/fixtures/gesture_studies/devices/`.
+  A layer's `devices` param (`[{"id", "place": over|under|margin|beside, "side",
+  "size", …params}]`, empty = off) is checked against the frozen registry
+  (`check_specs`: numbers bounded, choices closed, inks Flexoki names, the
+  ledger's `drawn_by` a library hand, pinned at Keep). The engine lays them on
+  the finished sheet (`render_measured`; `beside` grows the frame, drawing and
+  devices fitted as one) and the preview reports each device's run, its inks
+  count (0 = nothing to read: the bench says so) and `measure_layer`. Keep with
+  devices on (`POST /api/gesture-studies/keep`) makes a group: the drawing (or
+  one layer per voice) with `show: "drawing"` plus ONE "Measure" layer
+  (`show: "measure"`) on its own pen, one undo step; the Measure layer sits
+  below when every device is `under`. Slow: the hand-drawn ledger (~30 s on a
+  busy study) and the misfit grid (1–15 s); the rest under 0.25 s.
 - **Cost** (app venv, default values): Hand Drift 0.4 s, Drawing and its
   measure 0.3 s, Three voices 0.8 s, Conversation 1.6 s, Danced chain 4 s,
   Annotated page 4 s, Two voices 10 s, Shape atlas ~60 s (drawn by a hand;

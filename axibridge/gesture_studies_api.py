@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from .gesture_studies_store import gesture_study_store
 from .gesture_studies_thumbs import thumbnails
+from .sources._gesture_studies import devices as DV
 from .sources._gesture_studies import frozen_library as FL
 from .sources._gesture_studies import studies as ST
 
@@ -48,6 +49,7 @@ def list_studies() -> dict[str, Any]:
                 + [_out(s, False) for s in saved["items"]],
                 "warnings": saved["warnings"],
                 "library": {k: FL.options(k) for k in ("hand", "tempo", "dance_trail")},
+                "devices": DV.catalogue(),
                 "snapshot": FL.current_snapshot(), "frozen_from": frozen_from()}
     return _call(build)
 
@@ -134,11 +136,16 @@ class KeepVoices(BaseModel):
 def keep_voices(body: KeepVoices) -> dict[str, Any]:
     """Keep a voices study (the chorus) as ONE undo step: a group named after
     the study, one ordinary `gesture_studies` layer per voice inside it, each
-    on its own pen (pinned once, so every voice resolves the same recipe)."""
+    on its own pen (pinned once, so every voice resolves the same recipe).
+    With measuring devices on (`params.devices`, any study): the group also
+    holds one "Measure" layer of the device inks on its own pen (bench v3, G)."""
     from .session import session  # noqa: PLC0415
 
     def keep():
-        group, layers = session.keep_gesture_study_voices(body.params)
+        if body.params.get("devices"):
+            group, layers = session.keep_gesture_study_measured(body.params)
+        else:
+            group, layers = session.keep_gesture_study_voices(body.params)
         return {"group": group.model_dump(), "layers": [layer.model_dump() for layer in layers]}
     return _call(keep)
 

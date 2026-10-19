@@ -1,4 +1,4 @@
-# FROZEN from research commit ecd64f8: tools/gesture/gesture/kit/voices_handover.py
+# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/voices_handover.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Handover with a visible morph (round 13, thread II-b `handover`).
 

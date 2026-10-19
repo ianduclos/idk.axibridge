@@ -1,4 +1,4 @@
-# FROZEN from research commit ecd64f8: tools/gesture/gesture/kit/measure_next.py
+# FROZEN from research commit 9ab70ac: tools/gesture/gesture/kit/measure_next.py
 # Written by tools/gesture_studies/freeze.py; do not edit by hand (changes marked "app:").
 """Measurement, next versions (round 11, exploration `measure_next`).
 
