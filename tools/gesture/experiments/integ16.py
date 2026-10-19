@@ -67,6 +67,40 @@ class SpeakersComposer(HdistComposer):
 
 HdistComposer.use_hdist = lambda self, length: True
 
+SHARES = ("none", "one", "speakers", "all")
+
+
+def dial(share: str):
+    """The balance dial as a composer class: how many grown lines are distinct hands.
+    none: listen's own lines · one: only the first speaker · speakers: every speaker (length ≥ 3 R)
+    · all: every grown line. Distinct-hand lines draw their own randomness from ctx.rng, so the
+    composition's own draws stay the same as listen's whatever the setting."""
+    if share not in SHARES:
+        raise ValueError(f"share must be one of {SHARES}")
+
+    class DialComposer(ab.BridgeComposer):
+        n_grown = 0
+
+        def hand_line(self, hand, length, wh):
+            i = self.n_grown
+            self.n_grown += 1
+            on = (share == "all" or (share == "speakers" and float(length) >= 3.0)
+                  or (share == "one" and i == 0))
+            if not on:
+                return super().hand_line(hand, length, wh)
+            k = self.k
+            self.k += 1
+            box = (0.0, 0.0, float(wh[0]), float(wh[1]))
+            spec = {"id": "hdist_zoom", "source": "hand", "hand": hand,
+                    "drawn_mm": round(float(length) * MM_PER_LENGTH, 1),
+                    "recur": int(self.ctx.rng("hdist_recur", k).integers(1, 4))}
+            marks = _part(self.ctx, 400 + k, spec, box).voice(box)
+            pts = max((m.points for m in marks), key=lambda q: al.arclen(q)[-1])
+            return al.resample(pts, al.STEP), 400 + k
+
+    DialComposer.__name__ = f"DialComposer_{share}"
+    return DialComposer
+
 
 def compose(seed: int, cls=HdistComposer):
     """`aware_bridge.compose`, with the composer class swapped."""
@@ -112,6 +146,19 @@ def balance(seeds=range(15101, 15109)):
                               "all awareness · 15101–15108, unpicked").save(OUT / "balance.jpg", quality=85)
 
 
+def dial_compare(seeds=range(15101, 15109), shares=("one", "speakers")):
+    """The same seeds at two dial settings, side by side; all awareness on."""
+    OUT.mkdir(parents=True, exist_ok=True)
+    cells = []
+    for seed in seeds:
+        for share in shares:
+            sh = synth.run(score(seed, cls=dial(share)))
+            p = synth.preview(sh, OUT / f"dial-{share}-{seed}.jpg", px_per_mm=4, label=f"{seed} · {share}")
+            cells.append(Image.open(p))
+    kit.contact(cells, len(shares), title=f"balance dial: {' | '.join(shares)} · same seeds side by side · "
+                                          "all awareness · 15101–15108, unpicked").save(OUT / "dial.jpg", quality=85)
+
+
 def main(seeds=range(15101, 15109)):
     OUT.mkdir(parents=True, exist_ok=True)
     pop, rows = [], []
@@ -134,4 +181,4 @@ def main(seeds=range(15101, 15109)):
 
 
 if __name__ == "__main__":
-    balance() if sys.argv[1:] == ["balance"] else main()
+    {"balance": balance, "dial": dial_compare}.get(sys.argv[1] if sys.argv[1:] else "", main)()
