@@ -1,0 +1,566 @@
+{
+ "roles": [
+  [
+   15006,
+   "traverse",
+   "danced chain as the traverse (T2): edge to edge through core and blank, beads at the dancer's pauses"
+  ],
+  [
+   15002,
+   "intruder",
+   "bold swell as the heavy intruder (T3): round masses at the core's edge, the only weight on the sheet"
+  ],
+  [
+   15005,
+   "flicker",
+   "limb signs as figure flicker (T7): the line stops, writes a figure, goes on"
+  ],
+  [
+   15001,
+   "passer",
+   "the passer: accrue 3966's free hand outside, the core's hand and the container's pen inside the container"
+  ]
+ ],
+ "recipes": {
+  "15006": {
+   "kit": 1,
+   "frame": [
+    205.0,
+    205.0
+   ],
+   "seed": 15006,
+   "margin": 5.0,
+   "arranger": {
+    "id": "arch",
+    "families": "danced,swell,flicker,passer",
+    "density": -1.0,
+    "pens": 0,
+    "mode": "auto",
+    "duet": 0.25,
+    "acts": "container,counter"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "meander69",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "arch_ink",
+    "pen": 0.4,
+    "nib_style": "e"
+   },
+   "label": "arch",
+   "notes": "frame 205\u00d7205: square: an all-over field, or one core against a counterweight"
+  },
+  "15002": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 15002,
+   "margin": 5.0,
+   "arranger": {
+    "id": "arch",
+    "families": "danced,swell,flicker,passer",
+    "density": -1.0,
+    "pens": 0,
+    "mode": "auto",
+    "duet": 0.25,
+    "acts": "container,counter"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "meander69",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "arch_ink",
+    "pen": 0.4,
+    "nib_style": "e"
+   },
+   "label": "arch",
+   "notes": "frame 300\u00d7200: landscape: a core and a reserved blank side by side"
+  },
+  "15005": {
+   "kit": 1,
+   "frame": [
+    300.0,
+    200.0
+   ],
+   "seed": 15005,
+   "margin": 5.0,
+   "arranger": {
+    "id": "arch",
+    "families": "danced,swell,flicker,passer",
+    "density": -1.0,
+    "pens": 0,
+    "mode": "auto",
+    "duet": 0.25,
+    "acts": "container,counter"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "meander69",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "arch_ink",
+    "pen": 0.4,
+    "nib_style": "e"
+   },
+   "label": "arch",
+   "notes": "frame 300\u00d7200: landscape: a core and a reserved blank side by side"
+  },
+  "15001": {
+   "kit": 1,
+   "frame": [
+    205.0,
+    205.0
+   ],
+   "seed": 15001,
+   "margin": 5.0,
+   "arranger": {
+    "id": "arch",
+    "families": "danced,swell,flicker,passer",
+    "density": -1.0,
+    "pens": 0,
+    "mode": "auto",
+    "duet": 0.25,
+    "acts": "container,counter"
+   },
+   "parts": [
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_thrusting",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_bend",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_miner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dancer_madeline",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_mantis",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "fly_fru",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "meander69",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "hokusai",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "dance_staccato",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "mime_roadrunner",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "river_belt",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    },
+    {
+     "voice": {
+      "id": "hand",
+      "hand": "trail_slime",
+      "length": 3.0,
+      "joins": "smooth"
+     },
+     "modulators": []
+    }
+   ],
+   "renderer": {
+    "id": "arch_ink",
+    "pen": 0.4,
+    "nib_style": "e"
+   },
+   "label": "arch",
+   "notes": "frame 205\u00d7205: square: an all-over field, or one core against a counterweight"
+  }
+ }
+}
