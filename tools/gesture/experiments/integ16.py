@@ -43,6 +43,8 @@ class HdistComposer(ab.BridgeComposer):
     """listen, with every grown line drawn by hdist_zoom (distinct hands) and no private overlaps."""
 
     def hand_line(self, hand, length, wh):
+        if not self.use_hdist(length):
+            return super().hand_line(hand, length, wh)
         k = self.k
         self.k += 1
         box = (0.0, 0.0, float(wh[0]), float(wh[1]))
@@ -52,6 +54,18 @@ class HdistComposer(ab.BridgeComposer):
         marks = _part(self.ctx, 400 + k, spec, box).voice(box)
         pts = max((m.points for m in marks), key=lambda q: al.arclen(q)[-1])
         return al.resample(pts, al.STEP), 400 + k
+
+
+class SpeakersComposer(HdistComposer):
+    """Balance (Ian: "a bit too chaotic when everything is this way, so its a matter of balance"):
+    only the speakers (listen grows them at length ≥ 3 R) are distinct hands; listeners, refusers
+    and the later small layers keep listen's own calmer lines."""
+
+    def use_hdist(self, length):
+        return float(length) >= 3.0
+
+
+HdistComposer.use_hdist = lambda self, length: True
 
 
 def compose(seed: int, cls=HdistComposer):
@@ -85,6 +99,19 @@ def score(seed: int, specs=None, cls=HdistComposer) -> dict:
             "decisions": {**C.score.to_json()["decisions"], "voices": "hdist_zoom", "mm_per_length": MM_PER_LENGTH}}
 
 
+def balance(seeds=range(15101, 15109)):
+    """Speakers distinct, listeners calm; all awareness on."""
+    OUT.mkdir(parents=True, exist_ok=True)
+    pop = []
+    for seed in seeds:
+        sh = synth.run(score(seed, cls=SpeakersComposer))
+        p = synth.preview(sh, OUT / f"balance-{seed}.jpg", px_per_mm=5,
+                          label=f"{seed} · distinct-hand speakers, listen's listeners · all awareness")
+        pop.append(Image.open(p))
+    kit.contact(pop, 2, title="balance: only the speakers are distinct hands; listeners keep listen's lines · "
+                              "all awareness · 15101–15108, unpicked").save(OUT / "balance.jpg", quality=85)
+
+
 def main(seeds=range(15101, 15109)):
     OUT.mkdir(parents=True, exist_ok=True)
     pop, rows = [], []
@@ -107,4 +134,4 @@ def main(seeds=range(15101, 15109)):
 
 
 if __name__ == "__main__":
-    main()
+    balance() if sys.argv[1:] == ["balance"] else main()
