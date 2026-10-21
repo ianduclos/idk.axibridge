@@ -23,7 +23,7 @@ const NS = "http://www.w3.org/2000/svg";
 const BED = { w: 300, h: 218 };
 const HIT_PX = 9;          // screen-pixel hit radius for anchor/handle knobs (zoom-invariant)
 const DRAG_PX = 3;         // pointer movement past this counts as a drag, not a plain click
-const MAX_HANDLE_MM = 60;  // UI-side clamp: a wild drag can't produce an absurd handle length
+const MAX_HANDLE_MM = 400; // UI-side clamp, past the bed diagonal (~371 mm): arms stretch freely, only a runaway drag is caught
 
 let on = false;
 let wired = false;
