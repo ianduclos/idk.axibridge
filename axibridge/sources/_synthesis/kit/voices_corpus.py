@@ -1,4 +1,4 @@
-# FROZEN from research commit c712045: tools/gesture/gesture/kit/voices_corpus.py
+# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/voices_corpus.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Voices from corpora (round 9, thread voices_corpus, 2026-10-17).
 

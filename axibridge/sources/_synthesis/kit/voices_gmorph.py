@@ -1,4 +1,4 @@
-# FROZEN from research commit c712045: tools/gesture/gesture/kit/voices_gmorph.py
+# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/voices_gmorph.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """A grammar morphed continuously: one hand whose gesture type changes along its line (round 13, II-a).
 

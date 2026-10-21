@@ -1,4 +1,4 @@
-# FROZEN from research commit c712045: tools/gesture/gesture/earth_lines.py
+# FROZEN from research commit d5ccd75: tools/gesture/gesture/earth_lines.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Earth and physics lines as structures, and regime fields born from their data.
 

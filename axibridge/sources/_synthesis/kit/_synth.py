@@ -1,4 +1,4 @@
-# FROZEN from research commit c712045: tools/gesture/gesture/kit/_synth.py
+# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/_synth.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """The score, version 2, and its executor (round 16 contract, lead-owned).
 
@@ -77,6 +77,18 @@ S0″ (2026-10-19), opt-in the same way:
 - Reminder (by design since round 16): `src: "*"` with a named dst, on a contact
   relation, fires when the dst is placed (every earlier layer) AND again when each
   LATER layer is placed (that layer as src). Narrow it with `src_…` filters.
+
+Pins (S4, `pin`): a locked layer's `pin` is {"marks": [mark…], "final"?: [mark…]},
+a mark being {"points": [[x, y]…], "channels": {name: [v…]}, "meta": {…}} at full
+float precision. `marks` is the layer as grown (laid down at its step), `final`
+its lines once the score had played (the layer ends as these), given only when
+they differ. A final mark may instead be shared with the grown one it came from,
+so a pin stores each line once (2026-10-21): {"of": i, "points": items,
+"channels": {name: items}, "meta": {…}}, where items list the values in order
+and an item {"copy": [start, n]} stands for `marks[i]`'s same array from
+`start`, n values long (bitwise equal: what a cut kept, the channels a bend
+left alone). `pin` writes a shared mark only where it is smaller; a literal
+final mark (every pin before 2026-10-21) still reads as before.
 
 Cache: the executor's state after each layer is cached by a hash of
 everything that led to it, so editing a late layer or a relation that acts
@@ -335,7 +347,8 @@ def validate(score: Mapping, *, library=None) -> dict:
 def _valid_pin(pin, where) -> dict:
     """A pinned layer's geometry: {"marks": [mark…], "final"?: [mark…]}, a mark being {"points",
     "channels"?, "meta"?} (not for composer layers). `marks`: the layer once grown; `final`: its lines
-    when the whole score had played, when those differ."""
+    when the whole score had played, when those differ, each literal or shared with a grown mark
+    ({"of": i, …}, see the module docstring; kept shared)."""
     if not isinstance(pin, Mapping) or not isinstance(pin.get("marks"), (list, tuple)):
         raise RecipeError(f"{where}: pin is {{\"marks\": [...]}}")
     bad = sorted(set(pin) - {"marks", "final"})
@@ -345,13 +358,122 @@ def _valid_pin(pin, where) -> dict:
     if pin.get("final") is not None:
         if not isinstance(pin["final"], (list, tuple)):
             raise RecipeError(f"{where}: pin final is a list of marks")
-        out["final"] = _valid_marks(pin["final"], f"{where} (final)")
+        final = []
+        for j, m in enumerate(pin["final"]):
+            w = f"{where} (final)"
+            if not isinstance(m, Mapping) or "of" not in m:
+                final += _valid_marks([m], w, j)
+                continue
+            i = m["of"]
+            if isinstance(i, bool) or not isinstance(i, int) or not 0 <= i < len(out["marks"]):
+                raise RecipeError(f"{w}: pin mark {j} 'of' is the index of a grown mark")
+            bad = sorted(set(m) - {"of", "points", "channels", "meta"})
+            if bad:
+                raise RecipeError(f"{w}: pin mark {j} has unknown key(s) {bad}")
+            g = out["marks"][i]
+            sh = {"of": i, "points": _valid_items(m.get("points"), g["points"], f"{w}: pin mark {j} points"),
+                  "channels": {str(c): _valid_items(v, g["channels"].get(str(c)), f"{w}: pin mark {j} channel {c!r}")
+                               for c, v in dict(m.get("channels") or {}).items()},
+                  "meta": json.loads(json.dumps(dict(m.get("meta") or {}), default=float))}
+            _valid_marks([_unshared(sh, out["marks"])], w, j)          # what it stands for is a valid mark
+            final.append(sh)
+        out["final"] = final
     return out
 
 
-def _valid_marks(raw, where) -> list:
+def _valid_items(items, src, where) -> list:
+    """A shared array: values, and {"copy": [start, n]} runs inside `src` (that grown array)."""
+    if not isinstance(items, (list, tuple)):
+        raise RecipeError(f"{where}: a list of values and {{\"copy\": [start, n]}} runs")
+    out = []
+    for it in items:
+        if isinstance(it, Mapping):
+            c = it.get("copy")
+            if (set(it) != {"copy"} or not isinstance(c, (list, tuple)) or len(c) != 2
+                    or not all(isinstance(v, int) and not isinstance(v, bool) for v in c)
+                    or c[0] < 0 or c[1] < 1 or src is None or c[0] + c[1] > len(src)):
+                raise RecipeError(f"{where}: a run is {{\"copy\": [start, n]}} inside the grown mark's array")
+            out.append({"copy": [int(c[0]), int(c[1])]})
+            continue
+        try:
+            out.append([float(v) for v in it] if isinstance(it, (list, tuple)) else float(it))
+        except (TypeError, ValueError):
+            raise RecipeError(f"{where}: {it!r} is not a value") from None
+    return out
+
+
+def _unshared(m: Mapping, grown: list) -> dict:
+    """A final mark as a literal one (a shared mark's runs copied out of `grown[m["of"]]`)."""
+    if "of" not in m:
+        return m
+    g = grown[m["of"]]
+
+    def expand(items, src):
+        out = []
+        for it in items:
+            if isinstance(it, Mapping):
+                a, n = it["copy"]
+                out += src[a:a + n]
+            else:
+                out.append(it)
+        return out
+    return {"points": expand(m["points"], g["points"]),
+            "channels": {c: expand(v, g["channels"].get(c) or []) for c, v in m["channels"].items()},
+            "meta": m["meta"]}
+
+
+def _share(final: list, grown: list) -> list:
+    """`pin`'s final marks, each shared with the grown mark it came from (same `mid`) where that is
+    smaller: every run of values bitwise equal to a run of that mark's array becomes a copy."""
+    def bits(v):
+        return np.asarray(v, float).tobytes()
+
+    def items(vals, src):
+        at: dict[bytes, list[int]] = {}
+        sb = [bits(v) for v in src]
+        for j, b in enumerate(sb):
+            at.setdefault(b, []).append(j)
+        vb = [bits(v) for v in vals]
+        out, i = [], 0
+        while i < len(vals):
+            best, start = 0, -1
+            for j in at.get(vb[i], ())[:64]:
+                n = 0
+                while i + n < len(vals) and j + n < len(sb) and sb[j + n] == vb[i + n]:
+                    n += 1
+                if n > best:
+                    best, start = n, j
+            run = {"copy": [start, best]}
+            if best and _size(run) < _size(vals[i:i + best]):
+                out.append(run)
+                i += best
+            else:
+                out.append(vals[i])
+                i += 1
+        return out
+
+    out = []
+    for m in final:
+        best = (_size(m), m)
+        for i, g in enumerate(grown):
+            if g["meta"].get("mid") is None or g["meta"].get("mid") != m["meta"].get("mid"):
+                continue
+            sh = {"of": i, "points": items(m["points"], g["points"]),
+                  "channels": {c: items(v, g["channels"].get(c) or []) for c, v in m["channels"].items()},
+                  "meta": m["meta"]}
+            if _size(sh) < best[0]:
+                best = (_size(sh), sh)
+        out.append(best[1])
+    return out
+
+
+def _size(obj) -> int:
+    return len(json.dumps(obj, separators=(",", ":")))
+
+
+def _valid_marks(raw, where, first: int = 0) -> list:
     marks = []
-    for j, m in enumerate(raw):
+    for j, m in enumerate(raw, first):
         if not isinstance(m, Mapping):
             raise RecipeError(f"{where}: pin mark {j} must be a dict")
         a = np.asarray(m.get("points"), float)
@@ -470,6 +592,7 @@ def _pinned(rec, L, k, which: str = "marks") -> list[Mark]:
     t = _layer_tags(rec, L, k)
     out = []
     for i, m in enumerate(L["pin"][which]):
+        m = _unshared(m, L["pin"]["marks"])
         meta = {**m.get("meta", {}), **{a: b for a, b in t.items()
                                          if not (a == "colour" and (m.get("meta") or {}).get("own_pen"))
                                          and not (a == "pen_mm" and "pen_mm" in (m.get("meta") or {}))}}
@@ -495,7 +618,9 @@ def pin(score: Mapping, ids, *, library=None) -> dict:
     the other layers stays (a crossing that cuts them); when the score has played, it is reset to its
     final lines. So locking alone changes nothing on the sheet, and no edit anywhere moves a locked line
     (S4, 2026-10-19; before, the pin held the end of its step and skipped its contact relations, which
-    dropped the cuts it made in earlier layers). Unpin by removing `pin`."""
+    dropped the cuts it made in earlier layers). The final lines are shared with the grown ones where
+    they kept them (each line stored once, 2026-10-21; see the module docstring). Unpin by removing
+    `pin`."""
     rec = validate(score, library=library)
     rec.pop("parts", None)
     ids = list(ids)
@@ -516,7 +641,7 @@ def pin(score: Mapping, ids, *, library=None) -> dict:
             L["pin"] = {"marks": [_mark_json(m) for m in cap[L["id"]]]}
             final = [_mark_json(m) for m in sh.meta["captured_final"][L["id"]]]
             if final != L["pin"]["marks"]:
-                L["pin"]["final"] = final
+                L["pin"]["final"] = _share(final, L["pin"]["marks"])      # each line stored once
     return validate(rec, library=library)
 
 

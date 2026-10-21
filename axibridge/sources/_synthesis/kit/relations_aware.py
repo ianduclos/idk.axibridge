@@ -1,4 +1,4 @@
-# FROZEN from research commit c712045: tools/gesture/gesture/kit/relations_aware.py
+# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/relations_aware.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 16 thread A `aware`: awareness as composable relations (v2 score).
 

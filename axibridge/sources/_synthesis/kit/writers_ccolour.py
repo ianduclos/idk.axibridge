@@ -1,4 +1,4 @@
-# FROZEN from research commit c712045: tools/gesture/gesture/kit/writers_ccolour.py
+# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/writers_ccolour.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """S2b (synthesis bench, 2026-10-19): `ccolour` and `arch` as score WRITERS.
 

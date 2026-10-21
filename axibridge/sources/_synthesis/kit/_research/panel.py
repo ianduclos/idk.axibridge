@@ -1,4 +1,4 @@
-# FROZEN from research commit c712045: tools/gesture/gesture/panel.py
+# FROZEN from research commit d5ccd75: tools/gesture/gesture/panel.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """The measurement panel: one dimensionless feature vector per Drawing (stage 2).
 

@@ -1,4 +1,4 @@
-# FROZEN from research commit c712045: tools/gesture/gesture/subpixel.py
+# FROZEN from research commit d5ccd75: tools/gesture/gesture/subpixel.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Sub-pixel centreline refinement: a post-pass for ANY extractor's output.
 

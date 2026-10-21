@@ -1,4 +1,4 @@
-# FROZEN from research commit c712045: tools/gesture/gesture/kit/devices_meas_ledger.py
+# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/devices_meas_ledger.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `meas_ledger` (round 15, thread D `meas`): the ledger, third
 version. Round 10's ledger tabulated one line by deciles of its length; this

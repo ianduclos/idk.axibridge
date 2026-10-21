@@ -1,4 +1,4 @@
-# FROZEN from research commit c712045: tools/gesture/gesture/tremor.py
+# FROZEN from research commit d5ccd75: tools/gesture/gesture/tremor.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Tremor layer: fine-scale lateral line character below the grammar's σ = 2 w.
 
