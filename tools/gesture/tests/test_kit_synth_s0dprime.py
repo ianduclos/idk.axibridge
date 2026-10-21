@@ -4,6 +4,7 @@ writers building their palette around locked pens (Ian's answer to the S2 recomp
 Opt-in like S0′: round 16 replays bit-identically (`experiments/s0prime_golden.py`) and a plain
 compose of the S2 writers is unchanged (`experiments/s0dprime_golden.py`)."""
 import copy
+import json
 import sys
 from pathlib import Path
 
@@ -175,3 +176,25 @@ def test_a_held_sheet_moves_only_the_edited_layer():
         return out
     a, b = by_layer(synth.run(held, cache=False)), by_layer(synth.run(ed, cache=False))
     assert {k for k in set(a) | set(b) if a.get(k) != b.get(k)} == {edited}
+
+
+def test_a_pin_stores_each_line_once_and_old_pins_still_play():
+    """A final mark shares what it kept of its grown mark ({"of", "copy" runs}); written out literally (every
+    pin before 2026-10-21) it plays the same sheet, and the shared pin is smaller."""
+    s = compose("listen", frame=[250, 175], seed=15102)
+    held = synth.pin(s, [L["id"] for L in s["layers"] if L["role"] != "unseen"])
+    shared = [m for L in held["layers"] for m in (L.get("pin") or {}).get("final", []) if "of" in m]
+    assert shared and any(isinstance(it, dict) for m in shared for it in m["points"] + sum(m["channels"].values(), []))
+    old = copy.deepcopy(held)
+    for L in old["layers"]:
+        if "final" in (L.get("pin") or {}):
+            L["pin"]["final"] = [synth._unshared(m, L["pin"]["marks"]) for m in L["pin"]["final"]]
+    assert json.dumps(synth.validate(old)) != json.dumps(synth.validate(held))   # a literal pin stays literal
+    assert _inks(synth.run(old, cache=False)) == _inks(synth.run(held, cache=False))
+    assert len(json.dumps(held)) < 0.8 * len(json.dumps(old))
+    bad = copy.deepcopy(held)
+    L = next(L for L in bad["layers"] if any("of" in m for m in L.get("pin", {}).get("final", [])))
+    m = next(m for m in L["pin"]["final"] if "of" in m)
+    m["points"] = [{"copy": [0, 10 ** 6]}]
+    with pytest.raises(RecipeError, match="copy"):
+        synth.validate(bad)

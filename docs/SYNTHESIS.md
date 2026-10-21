@@ -78,9 +78,15 @@ laid down as grown and every relation plays as before (what it does to the
 other layers stays); when the score has played it is reset to its final
 lines. So locking alone changes nothing on the sheet, and no edit anywhere
 moves a locked line (ripple `none` moves only the edited layer). A pin
-costs its lines twice in the score (about 1.4 MB for a fully held listen
-sheet); the played log may still name a gap in a held line that the reset
-then hides.
+stores each line once (2026-10-21): a final line is kept as what changed
+from the grown line it came from — `{"of": i, …}` with `{"copy": [start, n]}`
+runs for every stretch of points or channel values that is bitwise the
+grown mark's (what a cut kept, the channels a bend left alone); a literal
+final mark, as every earlier pin wrote, still plays the same. The points a
+contact relation bent (sympathy, hesitate, make_room …) are new lines and
+are stored as such, so a fully held listen sheet is about 0.9–1.6 MB
+(was 1.2–2.1 MB; about 25–30 % less). The played log may still name a gap
+in a held line that the reset then hides.
 
 ## Endpoints (`/api/synthesis`, none touches the machine)
 
