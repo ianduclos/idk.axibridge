@@ -229,3 +229,18 @@ def test_deterministic_across_processes():
         assert p.returncode == 0, p.stderr
         outs.add(p.stdout.strip())
     assert len(outs) == 1
+
+
+def test_relation_params_say_when_they_act():
+    """`when` (Gesture Studies' dialect) on relation params reaches the catalogue; a key or value that is not a
+    sibling's is refused at registration."""
+    from gesture.kit.core import KitError
+    specs = {r["id"]: {p["name"]: p for p in r["params"]} for r in relation_list()}
+    assert specs["answer"]["delay"]["when"] == {"all": [{"key": "by", "is": "stress"},
+                                                        {"key": "listen_by", "is": "time"}]}
+    assert specs["steer"]["nib_w"]["when"]["say"] == "acts when a timing tempo is given"
+    assert "when" not in specs["answer"]["by"]
+    for bad in ({"key": "nope", "is": 1}, {"key": "mode", "is": "sideways"}, {"key": "mode", "is": "a", "not": "b"}):
+        with pytest.raises(KitError, match="when"):
+            relation("_when_probe", phase="grow", params=[
+                P("mode", "choice", "a", choices=("a", "b")), P("x", "float", 1.0, min=0.0, max=2.0, when=bad)])

@@ -272,19 +272,34 @@ def _poly_intervals(m: Mark, poly: np.ndarray, step: float = 0.2):
 # paste
 # ---------------------------------------------------------------------------
 
+# when a param acts at all (`when`, the bench dims it otherwise; see core.Param)
+_CALL = {"key": "by", "is": "call"}
+_STRESS = {"key": "by", "is": "stress"}
+_STRESS_SPACE = {"all": [_STRESS, {"key": "listen_by", "is": "space"}]}
+_STRESS_TIME = {"all": [_STRESS, {"key": "listen_by", "is": "time"}]}
+_CLIP = {"key": "mode", "is": "clip"}
+_LAID = {"key": "mode", "not": "keep"}
+_BREAKS = {"key": "breaks", "is": True}
+_ZONE = {"key": "zone", "not": [], "say": "acts when a zone is given"}
+_ZONE_PEN = {"all": [{"key": "zone", "not": []}, {"key": "zone_pen", "is": True}],
+             "say": "acts when a zone is given and zone_pen is on"}
+_TIMING = {"key": "timing", "not": "", "say": "acts when a timing tempo is given"}
+
+
 @relation("paste", phase="grow", params=[
-    P("from_box", "floats", [], "the src part's own box [x, y, w, h] (its region)"),
-    P("to", "floats", [], "where it lands: [cx, cy, w, h, angle°] (w/h at the src's aspect)"),
+    P("from_box", "floats", [], "the src part's own box [x, y, w, h] (its region)", when=_LAID),
+    P("to", "floats", [], "where it lands: [cx, cy, w, h, angle°] (w/h at the src's aspect)", when=_LAID),
     P("mode", "choice", "clip", "clip: cut to the rotated rectangle (found matter) | whole: kept whole, shrunk "
       "and moved inside `bounds` (a traverse) | keep: unchanged (a placeholder for a locked layer)",
       choices=("clip", "whole", "keep")),
-    P("bounds", "floats", [], "the paper's inner box [x, y, w, h] (empty = the sheet less 5 mm)"),
-    P("min_stub", "float", 4.0, "clip: a piece the rectangle shortened below this is dropped, mm", min=0.0, max=50.0),
-    P("inner_stub", "float", 3.0, "clip: same, at the paper's inner box, mm", min=0.0, max=50.0),
+    P("bounds", "floats", [], "the paper's inner box [x, y, w, h] (empty = the sheet less 5 mm)", when=_LAID),
+    P("min_stub", "float", 4.0, "clip: a piece the rectangle shortened below this is dropped, mm", min=0.0, max=50.0,
+      when=_CLIP),
+    P("inner_stub", "float", 3.0, "clip: same, at the paper's inner box, mm", min=0.0, max=50.0, when=_CLIP),
     P("text_mm", "float", 5.0, "clip: pieces smaller than this are lettering (never ridden, never cut short)",
-      min=0.0, max=30.0),
+      min=0.0, max=30.0, when=_CLIP),
     P("kind", "choice", "printed", "what the found matter is (catch and carry read it)",
-      choices=("river", "chart", "printed", "line")),
+      choices=("river", "chart", "printed", "line"), when=_LAID),
 ], doc="found_play's paste: a part laid into a rotated rectangle and cut to it, or kept whole inside the paper")
 def paste(rctx, src, dst, *, from_box, to, mode, bounds, min_stub, inner_stub, text_mm, kind):
     if mode == "keep" or not src or len(to) < 5 or len(from_box) < 4:
@@ -338,21 +353,24 @@ def paste(rctx, src, dst, *, from_box, to, mode, bounds, min_stub, inner_stub, t
 @relation("answer", phase="grow", params=[
     P("by", "choice", "call", "call: grow out of the last call heard (found_play) | stress: speak only where the "
       "src is quiet nearby (the chorus)", choices=("call", "stress")),
-    P("answer_p", "float", 0.6, "call: chance the line takes the call (else it refuses it)", min=0.0, max=1.0),
-    P("call_reach", "float", 90.0, "call: a line's end in the air is heard this far, mm", min=0.0, max=400.0),
+    P("answer_p", "float", 0.6, "call: chance the line takes the call (else it refuses it)", min=0.0, max=1.0,
+      when=_CALL),
+    P("call_reach", "float", 90.0, "call: a line's end in the air is heard this far, mm", min=0.0, max=400.0,
+      when=_CALL),
     P("trace_mm", "float", 18.0, "call: the answer traces the caller's last stretch this long, mm", min=2.0,
-      max=200.0),
+      max=200.0, when=_CALL),
     P("ride_gap", "float", 0.9, "call: the trace starts this far beside the caller (×2, closing), mm", min=0.0,
-      max=5.0),
-    P("step", "float", 0.3, "call: resampling step, mm", min=0.1, max=1.0),
-    P("box", "floats", [], "call: the line's own box [x, y, w, h] it may move inside (empty = the sheet)"),
-    P("bounds", "floats", [], "call: the paper's inner box (empty = the sheet less 5 mm)"),
+      max=5.0, when=_CALL),
+    P("step", "float", 0.3, "call: resampling step, mm", min=0.1, max=1.0, when=_CALL),
+    P("box", "floats", [], "call: the line's own box [x, y, w, h] it may move inside (empty = the sheet)", when=_CALL),
+    P("bounds", "floats", [], "call: the paper's inner box (empty = the sheet less 5 mm)", when=_CALL),
     P("listen_by", "choice", "space", "stress: hear what passes near (space) or along the course (time)",
-      choices=("space", "time")),
-    P("radius", "float", 15.0, "stress: how near the other voice is heard, mm", min=0.5, max=200.0),
-    P("answer", "float", 0.8, "stress: bonus for a stress beside a quiet passage", min=0.0, max=5.0),
-    P("delay", "float", 0.05, "stress (time): how long after a call the reply may come", min=0.0, max=0.5),
-    P("window", "float", 0.012, "stress (time): quiet margin either side", min=0.0, max=0.2),
+      choices=("space", "time"), when=_STRESS),
+    P("radius", "float", 15.0, "stress: how near the other voice is heard, mm", min=0.5, max=200.0, when=_STRESS_SPACE),
+    P("answer", "float", 0.8, "stress: bonus for a stress beside a quiet passage", min=0.0, max=5.0, when=_STRESS),
+    P("delay", "float", 0.05, "stress (time): how long after a call the reply may come", min=0.0, max=0.5,
+      when=_STRESS_TIME),
+    P("window", "float", 0.012, "stress (time): quiet margin either side", min=0.0, max=0.2, when=_STRESS_TIME),
 ], doc="call and response: grow out of an earlier line's end in the air (or refuse it), or stress only where "
        "the other voice is quiet (the chorus)")
 def answer(rctx, src, dst, *, by, answer_p, call_reach, trace_mm, ride_gap, step, box, bounds, listen_by, radius,
@@ -667,7 +685,7 @@ def catch(rctx, src, dst, *, rules, breaks, catches, ride, bold_pen, hair_pen, i
     P("tilt", "float", 8.0, "tilt ± deg", min=0.0, max=60.0),
     P("margin", "float", 14.0, "the cover keeps this far inside the composer's frame, mm", min=0.0, max=80.0),
     P("made_share", "float", 0.45, "break: when the densest passage is this share made ink, it cuts the made "
-      "lines too", min=0.0, max=1.0),
+      "lines too", min=0.0, max=1.0, when=_BREAKS),
     P("breaks", "bool", True, "the rule may break"),
     P("frame_box", "floats", [], "the composer's frame [x, y, w, h]; empty = the sheet"),
 ], doc="R5: a torn cover lands on the densest passage of what is on the sheet so far; its edge is drawn")
@@ -1005,15 +1023,15 @@ def touch(rctx, src, dst, *, touched, reach, spacing, **kw):
     P("frame_box", "floats", [], "the composer's frame [x, y, w, h] (its walls); empty = the sheet"),
     P("zone", "floats", [], "two sources: the zone [cx, cy, w, h, angle°] inside which the second speaks"),
     P("depth", "float", 0.2, "zone: the second hand takes over this deep inside it (share of its half size)",
-      min=0.01, max=1.0),
-    P("zone_pen", "bool", True, "zone: inside, the line takes the zone layer's pen (the third src)"),
-    P("min_run", "float", 14.0, "zone: a pen change holds at least this long, mm", min=0.0, max=200.0),
+      min=0.01, max=1.0, when=_ZONE),
+    P("zone_pen", "bool", True, "zone: inside, the line takes the zone layer's pen (the third src)", when=_ZONE),
+    P("min_run", "float", 14.0, "zone: a pen change holds at least this long, mm", min=0.0, max=200.0, when=_ZONE_PEN),
     P("timing", "str", "", "a dance tempo (e.g. staccato) weighting the line: stillness → mass, flow → nib "
       "(empty = none)"),
-    P("amount", "float", 0.75, "timing: how heavy", min=0.0, max=2.0),
-    P("mass_w", "float", 3.4, "timing: mass width, mm", min=1.0, max=30.0),
-    P("nib_w", "float", 1.1, "timing: nib width, mm", min=0.1, max=10.0),
-    P("seed", "int", 0, "timing: its die", min=0, max=2**31 - 1),
+    P("amount", "float", 0.75, "timing: how heavy", min=0.0, max=2.0, when=_TIMING),
+    P("mass_w", "float", 3.4, "timing: mass width, mm", min=1.0, max=30.0, when=_TIMING),
+    P("nib_w", "float", 1.1, "timing: nib width, mm", min=0.1, max=10.0, when=_TIMING),
+    P("seed", "int", 0, "timing: its die", min=0, max=2**31 - 1, when=_TIMING),
 ], doc="arch's steering: a source's own turns, feature by feature, pulled from a to b; with two sources the "
        "second speaks inside a zone (the passer, in the zone's pen); a tempo can weight it (the danced traverse)")
 def steer_rel(rctx, src, dst, *, a, via, b, zoom, pull, ratio, frame_box, zone, depth, zone_pen, min_run, timing,

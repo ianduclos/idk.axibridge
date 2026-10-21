@@ -319,7 +319,10 @@ class Param:
     them, min_len..max_len) | floats (a list of floats) | weights (a dict
     from names in `choices` to floats; keys left out are 0). min/max bound
     numbers (and list items for floats, values for weights). optional=True
-    allows None."""
+    allows None. `when` (2026-10-21, relations): when the param acts at all,
+    over its sibling params, in Gesture Studies' dialect ({"key", "is" |
+    "not" | "in"}, or {"all" | "any": [...]}, with an optional "say"), so a
+    bench can dim it and say why; advice only, nothing drawn depends on it."""
 
     name: str
     type: str
@@ -332,6 +335,7 @@ class Param:
     min_len: int | None = None
     max_len: int | None = None
     optional: bool = False
+    when: Any = field(default=None, compare=False)
 
     def __post_init__(self):
         if self.type not in PARAM_TYPES:
@@ -425,6 +429,8 @@ class Param:
             d["choices"] = list(self.choices)
         if self.optional:
             d["optional"] = True
+        if self.when is not None:
+            d["when"] = copy.deepcopy(self.when)
         return d
 
 
