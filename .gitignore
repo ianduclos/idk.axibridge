@@ -4,6 +4,7 @@ __pycache__/
 .DS_Store
 *.egg-info/
 .claude/settings.local.json
+.claude/launch.json
 graphify-out/
 checkpoints/
 node_modules
