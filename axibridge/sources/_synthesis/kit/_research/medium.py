@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/medium.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/medium.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Standard preprocessing for ARTIST comparisons: remove medium.
 

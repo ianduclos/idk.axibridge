@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/core.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/core.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Shared data types for the gesture-bank research code (see ../README.md)."""
 from __future__ import annotations

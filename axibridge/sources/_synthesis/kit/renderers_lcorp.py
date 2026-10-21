@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/renderers_lcorp.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/renderers_lcorp.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 15, thread B (`lcorp`): constant-width ink, coloured as structure.
 

@@ -3,6 +3,7 @@
 import { api } from './api.js';
 import { actions } from './main.js';
 import { benchProjectEpoch, openBenchShell, closeBenchShell } from './bench_host.js';
+import { holds, reasonOf } from './when.js';
 
 const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -447,7 +448,16 @@ function renderRelation() {
   host.append(fieldLabel('Destination', select('Relation destination', spec.phase === 'grow' ? sourceOptions.slice(1) : sourceOptions, r.dst, value => relationEdit(r.id, rel => { rel.dst = value; }))));
   host.append(paramControl({ name: 'Probability', type: 'float', min: 0, max: 1, default: 1 }, r.p, value => relationEdit(r.id, rel => { rel.p = value; }), `R:${r.id}:p`));
   const params = el('details', stats?.fired === 0 ? 'sy-dormant' : ''); params.open = true; params.append(el('summary', '', 'Parameters'));
-  for (const p of spec.params) params.append(paramControl(p, r.params[p.name], value => relationEdit(r.id, rel => { rel.params[p.name] = value; }), `R:${r.id}:${p.name}`));
+  // a param that does nothing right now is dimmed and says why (`when`, the Gesture Studies dialect)
+  const sibling = name => spec.params.find(q => q.name === name);
+  for (const p of spec.params) {
+    const field = paramControl(p, r.params[p.name], value => relationEdit(r.id, rel => { rel.params[p.name] = value; }), `R:${r.id}:${p.name}`);
+    if (!holds(p.when, name => r.params[name] ?? sibling(name)?.default)) {
+      field.classList.add('sy-inactive');
+      field.append(el('p', 'sy-why', reasonOf(p.when, name => sibling(name)?.label || name)));
+    }
+    params.append(field);
+  }
   host.append(params);
   const filters = el('details'); filters.append(el('summary', '', 'Filters and budgets'));
   for (const prefix of ['', 'src_', 'dst_']) for (const key of ['except', 'roles', 'not_roles']) {

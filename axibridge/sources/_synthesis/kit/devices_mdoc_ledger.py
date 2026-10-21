@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/devices_mdoc_ledger.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/devices_mdoc_ledger.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `mdoc_ledger` (round 16, thread D `mdoc`): the relation ledger,
 the round-15 ledger's sibling. Where `meas_ledger` keeps the books of what

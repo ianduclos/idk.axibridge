@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/lognormal.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/lognormal.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Kinematic hand model: sigma-lognormal pulses (results/lognormal-2026-10-16.md).
 

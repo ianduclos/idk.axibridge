@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/relations_base.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/relations_base.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Reference relations for the v2 score (round 16 phase 0, lead-owned):
 the control and the round-15 behaviour, so the contract is tested end to end.

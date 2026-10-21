@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/_writers.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/_writers.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Score writers (S2 contract, lead-owned, 2026-10-19): composers that write scores instead of drawing.
 

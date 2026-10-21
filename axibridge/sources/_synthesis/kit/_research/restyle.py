@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/restyle.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/restyle.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Restyle as translation: keep a line's structure, redraw it in a hand.
 

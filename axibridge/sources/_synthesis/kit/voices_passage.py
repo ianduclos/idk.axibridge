@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/voices_passage.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/voices_passage.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Study B: a continuous line passing through many real learned hands.
 

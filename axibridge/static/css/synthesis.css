@@ -106,5 +106,7 @@
 @media (max-height:800px) { #sy-arcs { height:150px; } .sy-toolbar { padding:7px 12px; } .sy-arc-heading .sy-note { font-size:10px; } }
 @media (max-width:1100px) { #sy-editors { grid-template-columns:minmax(0,1fr) 310px; } .sy-title .sy-note { display:none; } .sy-arc-heading { flex-wrap:wrap; gap:4px; } .sy-arc-heading .sy-note { order:3; flex-basis:100%; } .sy-save-label input { width:110px; } }
 .sy-dormant { opacity:.65; }
+.sy-why { margin:2px 0 0; font-size:11px; color:var(--flexoki-500); font-style:italic; }
+.sy-inactive > :not(.sy-why):not(.sy-field-head), .sy-inactive .sy-field-head > span { opacity:.42; }
 .sy-dormant:focus-within, .sy-dormant:hover { opacity:1; }
 #process-synthesis .sy-control-lock .tool-icon { width:13px; height:13px; opacity:.75; }

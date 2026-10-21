@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/_devices.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/_devices.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Measuring devices (round 15 contract, lead-owned): layers that read a
 finished drawing and lay their reading beside, over, under or in the margin

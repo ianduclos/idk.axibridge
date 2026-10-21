@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/_relations.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/_relations.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Relations (round 16 contract, lead-owned): what one layer of a score does
 because of another. The synthesis bench's substructure is a list of layers
@@ -133,6 +133,8 @@ def relation(id: str, *, phase: str, params=(), doc: str = ""):
     for p in params:
         if not isinstance(p, Param):
             raise KitError(f"relation {id!r}: params must be P(...)")
+        if p.when is not None:
+            _check_when(p.when, {q.name: q for q in params}, f"relation {id!r} param {p.name!r}: when")
 
     def wrap(fn):
         if id in _RELATIONS and _RELATIONS[id].fn is not fn:
@@ -140,6 +142,33 @@ def relation(id: str, *, phase: str, params=(), doc: str = ""):
         _RELATIONS[id] = Relation(id, fn, phase, tuple(params), doc)
         return fn
     return wrap
+
+
+def _check_when(w, params: Mapping, where: str, depth: int = 0) -> None:
+    """A param's `when` (Gesture Studies' dialect, see `core.Param`): every key a sibling param, every
+    value one that param takes."""
+    if depth > 4 or not isinstance(w, Mapping):
+        raise KitError(f"{where} must be an object (nested at most 4 deep)")
+    say = w.get("say")
+    if say is not None and (not isinstance(say, str) or not 0 < len(say) <= 120):
+        raise KitError(f"{where}: say is a short sentence")
+    ops = [k for k in ("is", "not", "in", "all", "any") if k in w]
+    if set(w) - {"key", "is", "not", "in", "all", "any", "say"} or len(ops) != 1:
+        raise KitError(f"{where} takes key + one of is / not / in, or all / any (got {sorted(w)})")
+    op = ops[0]
+    if op in ("all", "any"):
+        if "key" in w or not isinstance(w[op], list) or not 1 <= len(w[op]) <= 8:
+            raise KitError(f"{where}: {op} is a list of 1-8 conditions, without a key")
+        for x in w[op]:
+            _check_when(x, params, where, depth + 1)
+        return
+    if w.get("key") not in params:
+        raise KitError(f"{where}: key {w.get('key')!r} names no sibling param")
+    for v in (w[op] if op == "in" else [w[op]]):
+        try:
+            params[w["key"]].validate(v, where=where)
+        except RecipeError as e:
+            raise KitError(f"{where}: {v!r} is not a value of {w['key']!r} ({e})") from None
 
 
 def get_relation(id: str) -> Relation:

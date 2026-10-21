@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/regime_field.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/regime_field.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Regime fields r(x, y) ∈ [0, 2] over a sheet, hand fields, and the
 composition pipeline that turns structure + fields into plotter polylines.

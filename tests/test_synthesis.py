@@ -248,6 +248,29 @@ def test_catalogue(client):
     assert cat["inks"]["black"].startswith("#") and cat["library"]["hand"]
 
 
+def test_catalogue_relation_params_say_when_they_act(client):
+    """`when` on a relation param, in the Gesture Studies dialect (key + is / not / in, all / any, say), naming
+    a sibling param with a value that param takes."""
+    from axibridge.sources._gesture_studies import studies as ST
+    cat = {r["id"]: {p["name"]: p for p in r["params"]} for r in client.get("/api/synthesis").json()["relations"]}
+    assert cat["answer"]["radius"]["when"] == {"all": [{"key": "by", "is": "stress"},
+                                                       {"key": "listen_by", "is": "space"}]}
+    assert cat["paste"]["min_stub"]["when"] == {"key": "mode", "is": "clip"}
+    assert "when" not in cat["answer"]["by"] and "when" not in cat["crossing"]["reach"]
+    seen = 0
+    for rid, ps in cat.items():
+        for name, p in ps.items():
+            if "when" not in p:
+                continue
+            seen += 1
+            ST._when_shape(p["when"], f"{rid}.{name}")              # the same shape a study's control takes
+            for key in ST.when_keys(p["when"]):
+                assert key in ps and key != name, (rid, name, key)
+            defaults = {k: q["default"] for k, q in ps.items()}
+            ST.when_holds(p["when"], defaults.get)                   # evaluates over the siblings' values
+    assert seen >= 20
+
+
 def test_a_study_opens_as_one_sealed_layer_drawing_the_study(client):
     from axibridge.sources import gesture_studies as GS
     from axibridge.sources._gesture_studies import studies as ST

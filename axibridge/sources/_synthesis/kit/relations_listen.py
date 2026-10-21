@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/relations_listen.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/relations_listen.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Synthesis bench S2a: listen's vocabulary as score relations (grow), and its void (contact).
 

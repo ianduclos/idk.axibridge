@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/_synth.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/_synth.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """The score, version 2, and its executor (round 16 contract, lead-owned).
 

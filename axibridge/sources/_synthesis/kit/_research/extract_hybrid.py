@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/extract_hybrid.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/extract_hybrid.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Bake-off hybrid: one extractor's TOPOLOGY + sub-pixel centre refinement.
 

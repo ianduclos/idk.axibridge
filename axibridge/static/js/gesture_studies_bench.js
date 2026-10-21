@@ -42,6 +42,7 @@ import { actions } from './main.js';
 import { benchProjectEpoch, openBenchShell, closeBenchShell, clearBenchError, showBenchError } from './bench_host.js';
 import { openGallerySave } from './gallery.js';
 import { createPresetControls } from './module_library.js';
+import { canon, holds, reasonOf } from './when.js';
 
 const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
@@ -84,11 +85,6 @@ async function loadCatalogue() {
   return catalogue;
 }
 // Key-order-independent JSON, so a resumed snapshot matches its catalogue study.
-function canon(v) {
-  if (Array.isArray(v)) return `[${v.map(canon).join(',')}]`;
-  if (v && typeof v === 'object') return `{${Object.keys(v).sort().map(k => `${JSON.stringify(k)}:${canon(v[k])}`).join(',')}}`;
-  return JSON.stringify(v);
-}
 // The params as sent and cached: values in key order, so the same values are the same request.
 function canonParams(p) {
   const out = copy(p);
@@ -185,35 +181,8 @@ function penWidth(study) {
   return Number(r.renderer?.pen ?? r.pen ?? 0.4) || 0.4;
 }
 function fmt(v) { return typeof v === 'number' ? String(Math.round(v * 1e6) / 1e6) : String(v); }
-function labelOf(v) {
-  if (v === true) return 'on';
-  if (v === false) return 'off';
-  if (Array.isArray(v)) return v.join(', ');
-  return String(v);
-}
 
 // ---------------------------------------------------------------- `when`: does a control act now?
-function holds(w, read) {
-  if (!w) return true;
-  if (w.all) return w.all.every(x => holds(x, read));
-  if (w.any) return w.any.some(x => holds(x, read));
-  const v = read(w.key);
-  if ('is' in w) return canon(v) === canon(w.is);
-  if ('not' in w) return canon(v) !== canon(w.not);
-  return (w.in || []).some(x => canon(x) === canon(v));
-}
-function reasonOf(w, byKey) {
-  if (w.say) return w.say;
-  const part = x => {
-    if (x.all) return x.all.map(part).join(' and ');
-    if (x.any) return x.any.map(part).join(', or ');
-    const name = byKey.get(x.key)?.label || x.key;
-    if ('is' in x) return `${name} is ${labelOf(x.is)}`;
-    if ('not' in x) return `${name} is not ${labelOf(x.not)}`;
-    return `${name} is ${x.in.map(labelOf).join(' or ')}`;
-  };
-  return `acts when ${part(w)}`;
-}
 function acts(c) {
   const params = active.draft.params;
   const byKey = new Map(shownControls().map(x => [keyOf(x), x]));
@@ -703,7 +672,7 @@ function renderControls() {
       const on = holds(c.when, k => (byKey.has(k) ? valueOf(params, byKey.get(k)) : undefined));
       el.classList.toggle('gs-inactive', !on);
       const why = el.querySelector('.gs-why');
-      if (why) { why.hidden = on; why.textContent = on ? '' : reasonOf(c.when, byKey); }
+      if (why) { why.hidden = on; why.textContent = on ? '' : reasonOf(c.when, k => byKey.get(k)?.label); }
     }
     active.builtFor = stateKey();
   }

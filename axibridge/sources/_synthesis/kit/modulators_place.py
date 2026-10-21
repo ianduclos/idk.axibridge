@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/modulators_place.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/modulators_place.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Synthesis bench S2a: `place`, a written placement for a whole line (listen's speakers and river).
 

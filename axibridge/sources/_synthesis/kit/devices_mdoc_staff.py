@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/devices_mdoc_staff.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/devices_mdoc_staff.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `mdoc_staff` (round 16, thread D `mdoc`, its own): the score as
 a score. A process only this bench has: the drawing is played, in order,

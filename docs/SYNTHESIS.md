@@ -92,7 +92,7 @@ in a held line that the reset then hides.
 
 | Method | Path | Body → result |
 |---|---|---|
-| GET | `` | catalogue: `relations` (id, phase grow/contact, doc, params with type/min/max/choices), `writers` (id, doc, params), `techniques` {voice, modulator, renderer: [spec]}, `library` {hand, tempo, dance_trail: options}, `devices`, `inks` (Flexoki name → hex), `roles`, `gallery` (writers, every kit study as `study:<id>`), `saved`, `limits`, `snapshot`, `frozen_from`, `default_frame` |
+| GET | `` | catalogue: `relations` (id, phase grow/contact, doc, params with type/min/max/choices and, where a param acts only for some value of another, `when`), `writers` (id, doc, params), `techniques` {voice, modulator, renderer: [spec]}, `library` {hand, tempo, dance_trail: options}, `devices`, `inks` (Flexoki name → hex), `roles`, `gallery` (writers, every kit study as `study:<id>`), `saved`, `limits`, `snapshot`, `frozen_from`, `default_frame` |
 | POST | `/start` | `{gallery: "writer:listen" \| "study:leaf_miner" \| "saved:<id>", seed?, params?}` → `{score}` |
 | POST | `/compose` | `{writer, seed, params?, frame?, region?, ground?}` → `{score}` |
 | POST | `/recompose` | `{score, seed, locked: [layer ids], locked_relations: [ids], writer_index?, params?}` → `{score, dropped}` — locked layers are pinned first; the writer builds its palette around their pens (Ian); a locked relation is kept when both ends survive |
@@ -123,6 +123,10 @@ again with `replace` swaps the group.
   between layers to add one, click an arc to edit it, drag a layer to
   reorder; a relation that never fired is dashed). Selecting in one selects
   in the other and highlights the layer's lines on the canvas.
+- **Dead controls**: a relation param that does nothing right now (its
+  `when`, Gesture Studies' dialect — `{key, is | not | in}`, `all` / `any`,
+  `say` — over the relation's other params; `static/js/when.js` evaluates it
+  for both benches) is dimmed and says why ("acts when by is stress").
 - **Dice**: per control, per layer (its `seed`, or its hand), per relation
   (its `seed`), per sheet (the score `seed`).
 - **Locks** at three levels: a control (Shuffle leaves it), a layer

@@ -275,3 +275,35 @@ def test_saved_gallery_and_resume_replace_or_keep_as_new(ui, server):
     assert {group['id'] for group in project['groups']} == {group_id, added['group']['id']}
     assert len(project['layers']) == len(replaced['layers']) + len(added['layers'])
     assert not ui.errors
+
+
+def test_relation_param_that_does_nothing_is_dimmed_and_says_why(ui):
+    """A relation param whose `when` does not hold reads dimmed with its reason; it acts again once it holds."""
+    open_bench(ui)
+    start(ui)
+    ui.locator('#sy-add-relation').click()
+    ui.get_by_label('Relation kind', exact=True).select_option('steer')
+    drawn(ui, lambda: ui.get_by_role('button', name='Add relation', exact=True).click())
+    panel = ui.locator('#sy-relation-panel')
+
+    def field(name):
+        return panel.locator('.sy-field', has=ui.get_by_label(name, exact=True))
+
+    def opacity(name):
+        return float(field(name).get_by_label(name, exact=True).evaluate('el => getComputedStyle(el).opacity'))
+    assert field('nib_w').locator('.sy-why').inner_text() == 'acts when a timing tempo is given'
+    assert opacity('nib_w') < 1
+    assert field('pull').locator('.sy-why').count() == 0 and opacity('pull') == 1
+    field('nib_w').scroll_into_view_if_needed()
+    shot(ui, 'relation-param-dimmed')
+
+    def tempo():
+        panel.get_by_label('timing', exact=True).fill('staccato')
+        panel.get_by_label('timing', exact=True).press('Tab')
+    changed, _ = drawn(ui, tempo)
+    assert next(r for r in changed['relations'] if r['kind'] == 'steer')['params']['timing'] == 'staccato'
+    ui.wait_for_function("() => ![...document.querySelectorAll('#sy-relation-panel .sy-why')]"
+                         ".some(p => p.textContent.includes('timing'))", timeout=TIMEOUT)
+    assert opacity('nib_w') == 1
+    assert field('depth').locator('.sy-why').inner_text() == 'acts when a zone is given'
+    assert not ui.errors

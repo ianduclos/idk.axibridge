@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/voices_rivers.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/voices_rivers.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """River voices (round 11, exploration 1a, hands_rivers): loops that close on
 themselves, and braided bundles. results/hands_rivers-2026-10-17.md.

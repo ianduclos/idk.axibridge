@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/renderers_rzoom.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/renderers_rzoom.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 14, thread c1 (`rzoom`): ink the zooming river by its zoom.
 

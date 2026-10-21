@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/devices_mdoc_census.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/devices_mdoc_census.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Device `mdoc_census` (round 16, thread D `mdoc`): where every crossing
 went, and which way.

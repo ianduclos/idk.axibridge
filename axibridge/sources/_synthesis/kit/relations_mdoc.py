@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/relations_mdoc.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/relations_mdoc.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 16 thread D (`mdoc`): a TEST relation, so the process documents can
 be built and checked against every crossing outcome before thread A's
@@ -56,9 +56,12 @@ def _nearest_on(points: np.ndarray, polys: list[np.ndarray], step: float = 0.05)
     P("streak", "float", 0.4, "chance the previous outcome repeats", min=0.0, max=0.95),
     P("gap", "float", 1.2, "gap either side beyond the pen's half width, mm", min=0.0, max=6.0),
     P("pen", "float", 0.35, "the other line's pen width, mm", min=0.05, max=3.0),
-    P("stop_mm", "float", 5.0, "stop: how long the dst stays away after arriving, mm", min=1.0, max=30.0),
-    P("reach", "float", 9.0, "sympathy: half-length of the stretch that leans, mm", min=2.0, max=40.0),
-    P("gain", "float", 0.35, "sympathy: share of the local distance taken up", min=0.0, max=1.0),
+    P("stop_mm", "float", 5.0, "stop: how long the dst stays away after arriving, mm", min=1.0, max=30.0,
+      when={"key": "w_stop", "not": 0}),
+    P("reach", "float", 9.0, "sympathy: half-length of the stretch that leans, mm", min=2.0, max=40.0,
+      when={"key": "w_sympathy", "not": 0}),
+    P("gain", "float", 0.35, "sympathy: share of the local distance taken up", min=0.0, max=1.0,
+      when={"key": "w_sympathy", "not": 0}),
     P("min_sep", "float", 3.0, "crossings closer than this along a line count once, mm", min=0.0, max=20.0),
 ], doc="TEST relation (thread D): every crossing outcome, drawn per crossing, so documents can read them")
 def mdoc_outcomes(rctx, src, dst, *, w_under, w_over, w_cross, w_stop, w_sympathy, streak, gap, pen, stop_mm,

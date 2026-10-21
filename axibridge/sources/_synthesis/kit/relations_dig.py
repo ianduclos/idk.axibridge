@@ -1,4 +1,4 @@
-# FROZEN from research commit d5ccd75: tools/gesture/gesture/kit/relations_dig.py
+# FROZEN from research commit 6f96418: tools/gesture/gesture/kit/relations_dig.py
 # Written by tools/synthesis/freeze.py; do not edit by hand (changes marked "app:").
 """Round 16 C `dig`: archaeology further — early techniques as v2 relations.
 
@@ -238,7 +238,8 @@ def coil_mark(m: Mark, s0: float, at, size: float, spacing: float, rng) -> Mark 
     P("w_wet", "float", 0.6, "weight: the pool is ink (line → nib → wet mass; ink with dig_wet)", min=0.0, max=1.0),
     P("w_coil", "float", 0.4, "weight: the pool is built from the line itself (a coil wound out from the "
       "crossing, one contiguous spiral)", min=0.0, max=1.0),
-    P("spacing", "float", 0.7, "coil ring spacing, mm (≈ 1.5–2 pens keeps every ring legible)", min=0.2, max=4.0),
+    P("spacing", "float", 0.7, "coil ring spacing, mm (≈ 1.5–2 pens keeps every ring legible)", min=0.2, max=4.0,
+      when={"key": "w_coil", "not": 0}),
     P("pick", "choice", "room", "which crossing: room (the most isolated) | first | random",
       choices=("room", "first", "random")),
     P("sheet_max", "int", 1, "pools on the whole sheet, all pairs together (the single weight)", min=0, max=12),
@@ -422,7 +423,8 @@ def _copy(seg: np.ndarray, rng, *, drift, slide, turn, wobble, trim) -> np.ndarr
     P("span", "float", 48.0, "length of a restated stretch, mm", min=6.0, max=160.0),
     P("copies", "float", 5.0, "statements per stretch (mean; drawn ±40 %)", min=1.0, max=20.0),
     P("in_hand", "bool", True, "each copy re-spoken in the dst's own hand (its fine turning)"),
-    P("amount", "float", 1.4, "how much fine turning the dst's hand owns in a copy", min=0.0, max=3.0),
+    P("amount", "float", 1.4, "how much fine turning the dst's hand owns in a copy", min=0.0, max=3.0,
+      when={"key": "in_hand", "is": True}),
     P("drift", "float", 0.8, "σ across the stretch, mm", min=0.0, max=10.0),
     P("slide", "float", 1.5, "σ along the stretch, mm", min=0.0, max=20.0),
     P("turn", "float", 2.0, "σ of the turn, degrees", min=0.0, max=30.0),
@@ -432,7 +434,7 @@ def _copy(seg: np.ndarray, rng, *, drift, slide, turn, wobble, trim) -> np.ndarr
       min=0.0, max=1.0),
     P("w_copies", "float", 0.45, "weight: separate copies, nearly on top of the stretch", min=0.0, max=1.0),
     P("w_echo", "float", 0.2, "weight: one copy, set off at a distance (an echo)", min=0.0, max=1.0),
-    P("echo_mm", "float", 7.0, "how far an echo is set off, mm", min=1.0, max=40.0),
+    P("echo_mm", "float", 7.0, "how far an echo is set off, mm", min=1.0, max=40.0, when={"key": "w_echo", "not": 0}),
     P("keep_own", "bool", True, "the dst keeps its own line (false: the layer is only the restatement)"),
 ], doc="a later voice restates an earlier one's stressed stretch, in its own hand and pen")
 def dig_restate(rctx, src, dst, *, n, span, copies, in_hand, amount, drift, slide, turn, wobble, trim,
@@ -515,7 +517,8 @@ def _unit_noise(n: int, sigma: float, rng) -> np.ndarray:
       "turning is smoothed away)",
       min=0.0, max=1.0),
     P("streak", "float", 0.5, "chance an encounter repeats the previous outcome", min=0.0, max=1.0),
-    P("still_mm", "float", 2.0, "how much a still line smooths its own turning, mm", min=0.2, max=10.0),
+    P("still_mm", "float", 2.0, "how much a still line smooths its own turning, mm", min=0.2, max=10.0,
+      when={"key": "w_still", "not": 0}),
     P("both", "bool", False, "the earlier line answers too (mutual nerves)"),
 ], doc="near another line the dst trembles (bursty tremor v2) or goes still; elsewhere its own small tremor")
 def dig_tremble(rctx, src, dst, *, reach, amp, base, wave, burst, burst_mm, w_tremble, w_still, streak,
