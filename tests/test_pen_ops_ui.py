@@ -355,3 +355,56 @@ def test_every_op_is_pure(run):
       M.joinEnds(sp, 'end', other, 'start');
       return true;""")
     assert got is True
+
+
+# ---- fix round 1 (review): smooth never ends one-armed; refits never reshape untouched segments
+
+def test_smooth_anchor_with_a_null_arm_grows_the_opposite_arm(run):
+    got = run("""
+      const smo = M.applyArmDrag(H.A(0, 0, null, null, 'smooth'), 'out', [20, 20], false);
+      const end = M.applyArmDrag(H.A(0, 0, null, null, 'smooth'), 'out', [20, 20], false, {isEnd: true});
+      const sym = M.applyArmDrag(H.A(0, 0, null, null, 'symmetric'), 'in', [3, 4], false, {isEnd: false});
+      return {smo, end, sym};""")
+    assert got["smo"]["in_handle"] == [-20, -20]
+    assert got["end"]["in_handle"] is None           # an open end has no arm outward
+    assert got["sym"]["out_handle"] == [-3, -4]
+
+
+def test_split_a_line_then_bend_keeps_the_new_anchor_smooth(run):
+    got = run("""
+      const line = {anchors: [H.A(0, 0), H.A(100, 0, null, null, 'smooth')], closed: false, kind: 'bezier'};
+      const split = M.splitSegment(line, 0, 0.5);
+      const bent = M.bendSegment(split, 0, 0.5, [25, 10]);
+      return {mid: bent.anchors[1], last: M.bendSegment(split, 1, 0.5, [75, 10]).anchors[2]};""")
+    mid = got["mid"]
+    assert mid["in_handle"] is not None and mid["out_handle"] is not None
+    (ix, iy), (ox, oy) = mid["in_handle"], mid["out_handle"]
+    assert abs(ix * oy - iy * ox) < 1e-9 and ix * ox + iy * oy < 0   # opposite: no kink
+    # the open last anchor is explicit smooth but an end: no arm grows outward
+    assert got["last"]["in_handle"] is not None and got["last"]["out_handle"] is None
+
+
+def test_delete_anchor_never_reshapes_the_untouched_neighbour_segment(run):
+    got = run("""
+      const sp = {anchors: [H.A(0, 0, null, [10, 0]), H.A(50, 0, [-10, 0], [10, 0], 'symmetric'),
+                            H.A(100, 20, [-10, -5], [10, 5]), H.A(150, 0, [-10, 0], null)],
+                  closed: false, kind: 'bezier'};
+      const out = M.deleteAnchor(sp, 2);
+      return {before: H.ctrl(sp, 0), after: H.ctrl(out, 0), b: out.anchors[1]};""")
+    assert got["after"] == got["before"]            # segment A-B is untouched
+    b = got["b"]
+    assert b["in_handle"] == [-10, 0] and b["join"] == "smooth"
+    ox, oy = b["out_handle"]
+    assert abs(oy) < 1e-12 and ox > 0               # the fitted arm kept its direction
+
+
+def test_split_segment_downgrades_symmetric_neighbours_it_shortened(run):
+    got = run("""
+      const sp = {anchors: [H.A(0, 0, [-20, 0], [20, 0], 'symmetric'), H.A(100, 0, [-20, 0], [20, 0], 'symmetric')],
+                  closed: false, kind: 'bezier'};
+      const out = M.splitSegment(sp, 0, 0.3);
+      const a = out.anchors[0];
+      const dragged = M.applyArmDrag(a, 'out', a.out_handle, false);
+      return {ja: a.join, jb: out.anchors[2].join, keptIn: dragged.in_handle};""")
+    assert got["ja"] == "smooth" and got["jb"] == "smooth"
+    assert got["keptIn"] == pytest.approx([-20, 0])  # the next drag no longer snaps it back

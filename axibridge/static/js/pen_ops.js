@@ -112,13 +112,16 @@ export function classifyJoin(anchor) {
 
 /**
  * Set one arm to `vec` and move the other per the anchor's join:
- * symmetric → exact opposite; smooth → opposite angle at its own length
- * (an absent other arm stays absent); corner → untouched.
+ * symmetric → exact opposite; smooth → opposite angle at its own length;
+ * corner → untouched. A smooth/symmetric anchor whose other arm is absent
+ * GROWS it (opposite, at the dragged length) so it never ends one-armed —
+ * unless `opts.isEnd` (an open subpath's end anchor has no arm outward).
  * `breakJoin` leaves the other arm alone and returns join "corner".
  * @param {Anchor} anchor @param {"in"|"out"} which @param {Vec} vec @param {boolean} breakJoin
+ * @param {{isEnd?: boolean}} [opts]
  * @returns {Anchor}
  */
-export function applyArmDrag(anchor, which, vec, breakJoin) {
+export function applyArmDrag(anchor, which, vec, breakJoin, opts = {}) {
   const out = cloneAnchor(anchor);
   const key = which === "in" ? "in_handle" : "out_handle";
   const otherKey = which === "in" ? "out_handle" : "in_handle";
@@ -129,11 +132,13 @@ export function applyArmDrag(anchor, which, vec, breakJoin) {
     return out;
   }
   const kind = classifyJoin(anchor);
-  if (kind === "symmetric") {
+  const other = anchor[otherKey];
+  if (kind === "corner" || (!other && opts.isEnd)) return out;
+  if (kind === "symmetric" || !other) {
     out[otherKey] = [-v[0], -v[1]];
-  } else if (kind === "smooth") {
-    const other = anchor[otherKey], vl = hyp(v);
-    if (other && vl > 1e-12) {
+  } else {
+    const vl = hyp(v);
+    if (vl > 1e-12) {
       const L = hyp(other);
       out[otherKey] = [(-v[0] / vl) * L, (-v[1] / vl) * L];
     }
@@ -161,8 +166,16 @@ export function splitSegment(subpath, segIndex, t) {
   const r0 = lerp(q0, q1, t), r1 = lerp(q1, q2, t);
   const s = lerp(r0, r1, t);
   const straight = !A.out_handle && !B.in_handle;
-  if (A.out_handle) A.out_handle = [q0[0] - p0[0], q0[1] - p0[1]];
-  if (B.in_handle) B.in_handle = [q2[0] - p3[0], q2[1] - p3[1]];
+  // an arm the split shortens can no longer be the exact mirror of its
+  // partner: explicit "symmetric" would snap it back on the next drag
+  if (A.out_handle) {
+    A.out_handle = [q0[0] - p0[0], q0[1] - p0[1]];
+    if (A.join === "symmetric") A.join = "smooth";
+  }
+  if (B.in_handle) {
+    B.in_handle = [q2[0] - p3[0], q2[1] - p3[1]];
+    if (B.join === "symmetric") B.join = "smooth";
+  }
   const mid = {
     x: s[0], y: s[1],
     in_handle: straight ? null : [r0[0] - s[0], r0[1] - s[1]],
@@ -235,8 +248,10 @@ export function bendSegment(subpath, segIndex, t, target) {
   const p2 = [c[2][0] + k2 * d[0], c[2][1] + k2 * d[1]];
   const i = segIndex, j = (segIndex + 1) % n;
   const A = sp.anchors[i], B = sp.anchors[j];
-  sp.anchors[i] = applyArmDrag(A, "out", [p1[0] - A.x, p1[1] - A.y], false);
-  sp.anchors[j] = applyArmDrag(sp.anchors[j], "in", [p2[0] - B.x, p2[1] - B.y], false);
+  sp.anchors[i] = applyArmDrag(A, "out", [p1[0] - A.x, p1[1] - A.y], false,
+                               { isEnd: !sp.closed && i === 0 });
+  sp.anchors[j] = applyArmDrag(sp.anchors[j], "in", [p2[0] - B.x, p2[1] - B.y], false,
+                               { isEnd: !sp.closed && j === n - 1 });
   return sp;
 }
 
@@ -279,6 +294,17 @@ export function curvatureHandles(subpath) {
 }
 
 // ---------------------------------------------------------------- delete with refit
+
+/** Unit direction of an anchor's `key` arm; when it is absent on a
+ * smooth/symmetric anchor, the opposite of its other arm (so a refit arm
+ * never kinks a smooth point). Null when neither gives a direction. */
+function armDir(a, key, otherKey) {
+  const h = a[key];
+  if (!isZero(h)) return [h[0] / hyp(h), h[1] / hyp(h)];
+  const o = a[otherKey];
+  if (classifyJoin(a) !== "corner" && !isZero(o)) return [-o[0] / hyp(o), -o[1] / hyp(o)];
+  return null;
+}
 
 /** Unit direction a segment leaves p0 in (first control distinct from p0). */
 function startDir(c) {
@@ -336,8 +362,8 @@ function fitArmLengths(pts, P0, P3, d1, d2) {
  * Remove anchor i. An open end is just dropped (the neighbour's arm toward it
  * goes too); otherwise the two segments through it are refit as one: 64
  * samples of the old pair, least-squares on the new segment's two arm
- * lengths with the outer arms' directions kept. Neighbours are re-mirrored
- * per their joins. A closed subpath wraps its neighbours around. A result
+ * lengths with the outer arms' directions kept, set directly (far arms never move;
+ * explicit "symmetric" drops to "smooth"). A closed subpath wraps. A result
  * with < 2 anchors is returned as-is — the caller drops it.
  * @param {Subpath} subpath @param {number} i
  * @returns {Subpath}
@@ -366,17 +392,21 @@ export function deleteAnchor(subpath, i) {
     for (let k = 0; k < 32; k++) pts.push(bez(ca, k / 32));
     for (let k = 1; k <= 32; k++) pts.push(bez(cb, k / 32));
     const P0 = [prev.x, prev.y], P3 = [next.x, next.y];
-    const d1 = isZero(prev.out_handle) ? startDir(ca) : [prev.out_handle[0] / hyp(prev.out_handle), prev.out_handle[1] / hyp(prev.out_handle)];
-    const rb = [cb[3], cb[2], cb[1], cb[0]];
-    const d2 = isZero(next.in_handle) ? startDir(rb) : [next.in_handle[0] / hyp(next.in_handle), next.in_handle[1] / hyp(next.in_handle)];
+    const d1 = armDir(prev, "out_handle", "in_handle") || startDir(ca);
+    const d2 = armDir(next, "in_handle", "out_handle") || startDir([cb[3], cb[2], cb[1], cb[0]]);
     if (d1 && d2 && dist(P0, P3) > 1e-9) {
       const [alpha, beta] = fitArmLengths(pts, P0, P3, d1, d2);
       newOut = [d1[0] * alpha, d1[1] * alpha];
       newIn = [d2[0] * beta, d2[1] * beta];
     }
   }
-  sp.anchors[pi] = newOut ? applyArmDrag(prev, "out", newOut, false) : { ...prev, out_handle: null };
-  sp.anchors[ni] = newIn ? applyArmDrag(next, "in", newIn, false) : { ...next, in_handle: null };
+  // set the fitted arms directly: their directions are kept, so smoothness
+  // survives, and the far arms (the untouched segments) never move. Only the
+  // lengths changed, so an explicit "symmetric" can no longer hold.
+  const refit = (a, key, arm) => ({ ...a, [key]: arm,
+                                     join: arm && a.join === "symmetric" ? "smooth" : a.join });
+  sp.anchors[pi] = refit(prev, "out_handle", newOut);
+  sp.anchors[ni] = refit(next, "in_handle", newIn);
   sp.anchors.splice(i, 1);
   return sp;
 }
