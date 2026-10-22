@@ -209,6 +209,25 @@ second idea as an extra toggle.
    is never crossed. "Let it wander" widens the soft band to 3× the knob and
    the ceiling to 5×.
 
+## C, settled with Ian before planning (2026-10-22)
+
+- **All 44 library hands are offered, as they are** (Ian). Nine of them
+  sometimes turn back on themselves (near-180° corner tokens); those turns
+  stay. This narrows Settled 3: the hand still never lifts the pen (one path
+  in, one continuous path out, closed stays closed), but near-retraces inside
+  the line are allowed.
+- **Two equal knobs: "stray" and "bend size"** (Ian). Stray is how far the
+  line may depart (soft band + ceiling, Settled 5); bend size is the scale of
+  the hand's own bends, independent of stray.
+- **Corners round a little** (Ian): a sharp corner in the input softens the
+  way a real hand would, always within the stray ceiling.
+- Lead's calls: the default mode follows the line by offsetting it sideways
+  with the hand's own turning (fast, exact ceiling); "let it wander" uses the
+  same engine with a wider band and longer departures, not a slow pursuit
+  search; wander's tempo is the hand's own (no extra dropdown); the dropdown
+  shows labels; each subpath gets its own seed; a kept layer pins the hand's
+  hash and keeps it across refreezes, as Gesture Studies does.
+
 ## Left to the builder
 
 - The data model for curvature-pen subpaths (e.g. a per-subpath mode, points
