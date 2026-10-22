@@ -318,6 +318,22 @@ The contract, and why each clause exists:
   never carry them. It runs on every slider drag: keep it cheap and never
   raise.
 
+### The Hand effect (2026-10-22)
+
+`effects/hand.py` (+ `effects/_hand/engine.py`) redraws any layer as one of the
+frozen Gesture Studies hands: each path is an intention, and the chosen library
+hand follows it, straying off it in its own bends. Two knobs: **Stray (mm)**
+(0.1–30, default 3) is the hard ceiling on how far the line may leave yours,
+**Bend size (mm)** (3–200, default 20) is the scale of the hand's own bends.
+**Let it wander** switches the engine's mode from `follow` to `wander` (looser,
+longer departures, same ceiling). Seed and Step (point spacing) sit under Fine
+tuning. Closed paths stay exactly closed and `filled` is kept. Deterministic:
+one RNG stream per path from `seed` and `ctx.seed`. The hand picker is the
+`library-hand` field format. **Pinning**: the hidden `pin` param
+(`"<hand>@<hash>"`) is written by `complete_params` when a layer is kept, so a
+library refreeze never redraws it (a vanished pinned version falls back to the
+current hand with a warning).
+
 ## Writing a Transform
 
 Document-level ops over **resolved** geometry. Since v2 these power the
