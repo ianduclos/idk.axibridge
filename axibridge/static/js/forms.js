@@ -3,15 +3,32 @@
 // This is the other half of the "declared parameter schema" contract: every
 // module/backend ships its Params schema, and this renders it. Supported
 // field shapes: number/integer (slider+spinbox when bounded), boolean,
-// string, enum, and `format: "asset"` strings (a select over the project's
-// uploaded image assets). `title` labels the control, `description` becomes
-// a tooltip.
+// string, enum, `format: "asset"` strings (a select over the project's
+// uploaded image assets) and `format: "library-hand"` strings (a select over
+// the frozen Gesture Studies hands, shown by label, stored by id). `title`
+// labels the control, `description` becomes a tooltip.
 
 import { api } from "./api.js";
 import { S, actions, rememberDetails } from "./main.js";
 import { rotToDisplay, rotToStored, sizeFactor } from "./viewmap.js";
 
 const UPLOAD = ['M12 16V4', 'm7 9 5-5 5 5', 'M20 16v4H4v-4'];
+
+// The frozen library's hands ({id, label, ...}), fetched once per page from
+// the Gesture Studies endpoint and shared by every library-hand control. A
+// failed fetch is forgotten so the next render can try again.
+let libraryHands = null;
+function loadLibraryHands() {
+  if (!libraryHands) {
+    libraryHands = api.get("/api/gesture-studies").then((r) => {
+      const hands = r?.library?.hand;
+      if (!Array.isArray(hands) || !hands.length) throw new Error("no library hands");
+      return hands;
+    });
+    libraryHands.catch(() => { libraryHands = null; });
+  }
+  return libraryHands;
+}
 
 function uploadButton(title, onClick) {
   const NS = "http://www.w3.org/2000/svg";
@@ -185,6 +202,38 @@ export function renderForm(container, schema, values, onChange, opts = {}) {
       };
       ctl.appendChild(up);
       ctl.appendChild(file);
+    } else if (spec.format === "library-hand" || s.format === "library-hand") {
+      // a select over the library's hands (label shown, id stored); until the
+      // list arrives it holds just the current id, and if it never does the
+      // control falls back to a plain text field — never block the form.
+      const sel = document.createElement("select");
+      const current = val ?? "";
+      const only = document.createElement("option");
+      only.value = current; only.textContent = current;
+      sel.appendChild(only);
+      sel.onchange = () => set(sel.value);
+      ctl.appendChild(sel);
+      loadLibraryHands().then((hands) => {
+        const keep = sel.value;
+        sel.innerHTML = "";
+        for (const h of hands) {
+          const o = document.createElement("option");
+          o.value = h.id; o.textContent = h.label || h.id;
+          sel.appendChild(o);
+        }
+        if (keep && !hands.some((h) => h.id === keep)) { // withdrawn / unknown: show it, don't silently drop
+          const o = document.createElement("option");
+          o.value = keep; o.textContent = `${keep} (missing)`;
+          sel.appendChild(o);
+        }
+        sel.value = keep;
+      }, () => {
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.value = sel.value;
+        inp.onchange = () => set(inp.value);
+        sel.replaceWith(inp);
+      });
     } else if (spec.format === "font" || s.format === "font") {
       // bundled + system-discovered + uploaded fonts (system_fonts.py /
       // asset_store.font_names()), grouped so the one guaranteed-available

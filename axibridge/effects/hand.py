@@ -9,16 +9,36 @@ Pure and deterministic: seeded from `seed` and `ctx.seed`, one stream per path.
 from __future__ import annotations
 
 import logging
+from functools import lru_cache
+from typing import Any
 
 import numpy as np
 from pydantic import BaseModel, Field
 
 from ..model import Path
 from ..registry import EffectContext, EffectModule, register_effect
+from ..sources._gesture_studies import frozen_library as FL
 from ._hand.engine import follow, load_hand
 
 log = logging.getLogger(__name__)
 _unknown_logged: set[str] = set()
+_stale_pin_logged: set[str] = set()
+
+
+@lru_cache(maxsize=8)
+def _hashes(snapshot_id: str) -> dict[str, str]:
+    """{hand id: hash} of every hand a control may offer in one snapshot."""
+    return {o["id"]: o["hash"] for o in FL.options("hand", snapshot_id)}
+
+
+def _current_hash(hand_id: str) -> str | None:
+    """The current snapshot's hash for `hand_id`, or None (unknown, withdrawn,
+    or the library can't be read). Cheap: the index, the snapshot and this
+    table are all cached, and it runs on every kept effect edit."""
+    try:
+        return _hashes(FL.current_snapshot()).get(hand_id)
+    except Exception:   # never let a library problem block an edit
+        return None
 
 
 class HandParams(BaseModel):
@@ -47,6 +67,21 @@ class HandEffect(EffectModule):
     description = "Redraws the layer as one of your Gesture Studies hands following the line."
     Params = HandParams
 
+    def complete_params(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Pin the chosen hand at Keep: `pin = "<hand>@<hash>"` from the current
+        snapshot when there is no pin or it names another hand. A pin that
+        already names the hand is kept (a refreeze never changes a kept layer);
+        an unknown hand is left unpinned."""
+        hand = params.get("hand", HandParams.model_fields["hand"].default)
+        pin = params.get("pin")
+        if isinstance(pin, str) and isinstance(hand, str) and pin.partition("@")[0] == hand:
+            return params
+        h = _current_hash(hand) if isinstance(hand, str) else None
+        out = {k: v for k, v in params.items() if k != "pin"}
+        if h is not None:
+            out["pin"] = f"{hand}@{h}"
+        return out
+
     def apply(self, paths: list[Path], params: HandParams, ctx: EffectContext) -> list[Path]:
         pin_hash = None
         if params.pin:
@@ -54,6 +89,14 @@ class HandEffect(EffectModule):
             if pid == params.hand:
                 pin_hash = h
         grammar = load_hand(params.hand, pin_hash)
+        if grammar is None and pin_hash is not None:
+            # the pinned version is gone (the library is append-only, so this
+            # is rare): draw with the current one rather than silently not at all
+            grammar = load_hand(params.hand, None)
+            if grammar is not None and params.pin not in _stale_pin_logged:
+                _stale_pin_logged.add(params.pin)
+                log.warning("hand effect: pinned %s is not in the library; using the current %r",
+                            params.pin, params.hand)
         if grammar is None:
             if params.hand not in _unknown_logged:
                 _unknown_logged.add(params.hand)

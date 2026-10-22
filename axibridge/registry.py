@@ -298,6 +298,13 @@ class EffectModule(ABC):
     @abstractmethod
     def apply(self, paths: list[Path], params: BaseModel, ctx: EffectContext) -> list[Path]: ...
 
+    def complete_params(self, params: dict[str, Any]) -> dict[str, Any]:
+        """Complete a step's params before a layer keeps them (default: as
+        given). The Hand effect pins its library hand's hash here, so a later
+        refreeze never changes a kept layer. Runs on every kept effect edit,
+        slider drags included, so it must be cheap and must never raise."""
+        return params
+
     def available(self) -> tuple[bool, str]:
         return True, ""
 
@@ -340,6 +347,8 @@ _PRESET_EXCLUSIONS: dict[tuple[str, str], tuple[str, ...]] = {
     # a kept layer's library pins are captured state, not a portable setting
     # (and a Sampler's stored combination, a chorus layer's voice)
     ("source", "gesture_studies"): ("library", "pins", "sampled", "voice"),
+    # a kept Hand step's library pin, for the same reason
+    ("effect", "hand"): ("pin",),
 }
 
 _REPRESENTATIVE_PARAMS: dict[tuple[str, str], dict[str, Any]] = {

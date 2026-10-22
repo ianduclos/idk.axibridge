@@ -43,6 +43,7 @@ Rendering rules (`static/js/forms.js`):
 | `str` + `json_schema_extra={"format": "textarea"}` | multiline textarea |
 | `enum`/`Literal` | dropdown |
 | `str` + `json_schema_extra={"format": "asset"}` | dropdown over uploaded image assets, with inline upload |
+| `str` + `json_schema_extra={"format": "library-hand"}` | dropdown over the frozen Gesture Studies hands (label shown, id stored); a text field if the list can't be fetched |
 
 `title` is the label; `description` the tooltip. **Always bound numerics** —
 unbounded values reach an open-loop machine with no limit switches.
@@ -305,6 +306,13 @@ The contract, and why each clause exists:
   contexts, so fall back to the bed constants.
 - Declare missing optional deps via `available()` rather than import-time
   crashes; the UI greys you out with your reason.
+- **`complete_params(params) -> params`** (optional, default identity) runs on
+  every step a layer keeps — `Session.update_layer`'s `effects` patch is the
+  one write path (add, edit, reorder, apply a preset), never a preview. The
+  Hand effect pins `pin = "<hand>@<hash>"` there so a later library refreeze
+  never changes a kept layer; list such captured fields in
+  `registry._PRESET_EXCLUSIONS` so presets never carry them. It runs on every
+  slider drag: keep it cheap and never raise.
 
 ## Writing a Transform
 

@@ -38,7 +38,7 @@ from .compose import (
 from .render_work import RenderWork, checkpoint
 from .machine import manager
 from .model import Layer, Path, PathDocument
-from .registry import effective_time_axis, field_bounds, fold_time_axis, get_source
+from .registry import effective_time_axis, field_bounds, fold_time_axis, get_effect, get_source
 from .stores import Pen, pen_library, settings_store
 from .svg_io import doc_from_svg, doc_from_vpype, doc_to_vpype
 
@@ -967,6 +967,8 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
                     # The visible tween parent is the UI handle for the group;
                     # the actual placement lives on the A/B keyframes.
                     effective_patch["transform"] = layer.transform.model_dump()
+            if "effects" in effective_patch:
+                effective_patch["effects"] = self._completed_effects(effective_patch["effects"])
             data = layer.model_dump()
             for k, v in effective_patch.items():
                 if k not in allowed:
@@ -2766,12 +2768,37 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
 
     @staticmethod
     def _completed(module: Any, params: dict[str, Any]) -> dict[str, Any]:
-        """A source may complete a recipe before it is stored in a layer
-        (``complete_params``): Gesture Studies pins its frozen-library
-        snapshot and entry hashes so a later refreeze never changes the layer.
-        Previews never pass through here; only what a layer keeps does."""
+        """A source or effect may complete its params before a layer stores
+        them (``complete_params``): Gesture Studies pins its frozen-library
+        snapshot and entry hashes, the Hand effect its hand's hash, so a later
+        refreeze never changes the layer. Previews never pass through here;
+        only what a layer keeps does."""
         complete = getattr(module, "complete_params", None)
         return complete(params) if complete is not None else params
+
+    @classmethod
+    def _completed_effects(cls, steps: Any) -> Any:
+        """Every effect step a layer is about to keep, completed by its module
+        (``EffectModule.complete_params``): the Hand effect pins its library
+        hand's hash. THE one place kept effect params pass through — adding a
+        step, editing one, reordering, applying a preset all arrive here as an
+        ``effects`` patch. Steps of unknown effects (and malformed steps) are
+        left for the layer model to accept or reject as before."""
+        if not isinstance(steps, list):
+            return steps
+        out = []
+        for step in steps:
+            if isinstance(step, EffectStep):
+                step = step.model_dump()
+            if isinstance(step, dict) and isinstance(step.get("params", {}), dict):
+                try:
+                    module = get_effect(step.get("effect"))
+                except KeyError:
+                    module = None
+                if module is not None:
+                    step = {**step, "params": cls._completed(module, dict(step.get("params") or {}))}
+            out.append(step)
+        return out
 
     @staticmethod
     def _rolled_seed(module: Any, params: dict[str, Any]) -> dict[str, Any]:
