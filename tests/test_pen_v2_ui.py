@@ -755,3 +755,250 @@ def test_shift_pressed_just_before_release_snaps_the_point(ui):
     p, q = sps[0]["anchors"]
     assert _is_15(_angle_deg(q["x"] - p["x"], q["y"] - p["y"])), (p, q)
     assert not ui.errors
+
+
+# ---------------------------------------------------------------- curvature pen (P1)
+
+CURVE_CLICKS = [(-90, 30), (-30, -40), (30, 35), (90, -30)]
+
+
+def _curvature_mode(page):
+    page.click('#tool-toggle button[data-tool="pen"]')
+    page.click('#pen-mode button[data-pen-mode="curvature"]')
+    page.wait_for_function(
+        "() => document.querySelector('#pen-mode [data-pen-mode=curvature]').classList.contains('on')")
+
+
+def _draw_curvature_path(page, clicks=CURVE_CLICKS):
+    """Click points in curvature mode, commit, reselect with the pen.
+    Returns the clicks in mm."""
+    _curvature_mode(page)
+    to_mm = _mm_mapper(page)
+    mm = []
+    for dx, dy in clicks:
+        x, y = _canvas_point(page, dx, dy)
+        mm.append(to_mm(x, y))
+        page.mouse.click(x, y)
+    page.keyboard.press("Enter")
+    _wait_api(page, lambda s: len(s[0]["anchors"]) == len(clicks), "committed")
+    _reselect_pen(page, len(clicks))
+    return mm
+
+
+def _curvature_rule(sp):
+    """The arms the curvature pen derives: tangent ∥ next − prev, a third of
+    each side's chord; an open end points a third along its own chord."""
+    A = sp["anchors"]
+    out = []
+    for i, a in enumerate(A):
+        p = A[i - 1] if i > 0 else None
+        n = A[i + 1] if i < len(A) - 1 else None
+        if p and n and a.get("join") != "corner":
+            tan = (n["x"] - p["x"], n["y"] - p["y"])
+            tl = math.hypot(*tan)
+            lo = math.hypot(n["x"] - a["x"], n["y"] - a["y"]) / 3
+            li = math.hypot(p["x"] - a["x"], p["y"] - a["y"]) / 3
+            out.append(([-tan[0] / tl * li, -tan[1] / tl * li], [tan[0] / tl * lo, tan[1] / tl * lo]))
+        else:
+            out.append(([(p["x"] - a["x"]) / 3, (p["y"] - a["y"]) / 3] if p else None,
+                        [(n["x"] - a["x"]) / 3, (n["y"] - a["y"]) / 3] if n else None))
+    return out
+
+
+def _assert_curvature_arms(sp):
+    for a, (want_in, want_out) in zip(sp["anchors"], _curvature_rule(sp)):
+        for got, want in ((a["in_handle"], want_in), (a["out_handle"], want_out)):
+            if want is None:
+                assert got is None, (a, want_in, want_out)
+            else:
+                assert got == [_approx(want[0]), _approx(want[1])], (a, want_in, want_out)
+
+
+def test_curvature_mode_line_passes_through_clicks(ui):
+    clicks = _draw_curvature_path(ui)
+    sp = _subpaths(ui)[0]
+    assert sp["kind"] == "curvature"
+    assert not sp["closed"]
+    for a, (cx, cy) in zip(sp["anchors"], clicks):
+        assert math.hypot(a["x"] - cx, a["y"] - cy) <= 0.05, (a, cx, cy)
+    _assert_curvature_arms(sp)
+    pts = _resolved_points(ui)
+    for c in clicks:
+        assert _dist_to_polyline(c, pts) <= 0.05, c
+    # a smooth curve, not the polyline through the clicks
+    assert max(_dist_to_polyline(p, clicks) for p in pts) > 1
+    # the curvature subpath shows its points, never arm knobs
+    assert ui.locator(".pen-handle-knob").count() == 0
+    assert not ui.errors
+
+
+def test_moving_a_curvature_point_rebends_neighbours(ui):
+    _draw_curvature_path(ui)
+    before = _subpaths(ui)[0]["anchors"]
+    sx, sy = _anchor_screen(ui, 0, 1)
+    ui.mouse.move(sx, sy)
+    ui.mouse.down()
+    ui.mouse.move(sx + 10, sy - 10)
+    ui.mouse.move(sx + 30, sy - 25)
+    ui.mouse.up()
+    sps = _wait_api(ui, lambda s: abs(s[0]["anchors"][1]["x"] - before[1]["x"]) > 1, "point moved")
+    after = sps[0]["anchors"]
+    assert sps[0]["kind"] == "curvature"
+    for i in (0, 2):
+        assert (after[i]["x"], after[i]["y"]) == (_approx(before[i]["x"]), _approx(before[i]["y"]))
+    assert after[0]["out_handle"] != [_approx(v) for v in before[0]["out_handle"]]
+    assert after[2]["in_handle"] != [_approx(v) for v in before[2]["in_handle"]]
+    assert after[2]["out_handle"] != [_approx(v) for v in before[2]["out_handle"]]
+    _assert_curvature_arms(sps[0])
+    _undo(ui)  # one drag, one undo step
+    _wait_api(ui, lambda s: s[0]["anchors"][1]["x"] == _approx(before[1]["x"]), "drag undone")
+    assert not ui.errors
+
+
+def test_curvature_mode_persists_and_leaves_layers_alone(ui):
+    _draw_three_anchor_path(ui)      # a Bézier layer, drawn in the default mode
+    assert ui.locator('#pen-mode [data-pen-mode="bezier"]').get_attribute("class") == "on"
+    bez = _subpaths(ui)
+    ui.click('#pen-mode button[data-pen-mode="curvature"]')
+    ui.click('#tool-toggle button[data-tool="select"]')
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    assert "on" in ui.locator('#pen-mode [data-pen-mode="curvature"]').get_attribute("class")
+    assert "on" not in (ui.locator('#pen-mode [data-pen-mode="bezier"]').get_attribute("class") or "")
+    time.sleep(0.3)
+    assert _subpaths(ui) == bez       # switching mode never reshapes a layer
+    assert ui.locator(".pen-handle-knob").count() > 0  # a Bézier layer keeps its knobs
+    assert not ui.errors
+
+
+def test_curvature_double_click_and_j_flip_corner_smooth(ui):
+    _draw_curvature_path(ui)
+    ui.mouse.dblclick(*_anchor_screen(ui, 0, 1))
+    sps = _wait_api(ui, lambda s: s[0]["anchors"][1].get("join") == "corner", "a corner")
+    assert sps[0]["kind"] == "curvature"
+    _assert_curvature_arms(sps[0])   # the corner's arms point along its own chords
+    ui.wait_for_function("() => document.querySelectorAll('rect.pen-anchor.corner').length === 3")
+    # J on a curvature point: corner ⇄ smooth only
+    ui.keyboard.press("j")
+    sps = _wait_api(ui, lambda s: s[0]["anchors"][1].get("join") == "smooth", "smooth again")
+    _assert_curvature_arms(sps[0])
+    ui.keyboard.press("j")
+    sps = _wait_api(ui, lambda s: s[0]["anchors"][1].get("join") == "corner", "corner again")
+    _assert_curvature_arms(sps[0])
+    assert not ui.errors
+
+
+def test_curvature_insert_and_delete_rederive_arms(ui):
+    _draw_curvature_path(ui)
+    sp = _subpaths(ui)[0]
+    ui.mouse.click(*_mm_to_screen(ui, *_bez(sp, 1, 0.5)))
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 5, "a fifth point")
+    assert sps[0]["kind"] == "curvature"
+    _assert_curvature_arms(sps[0])
+    ui.keyboard.press("Backspace")   # the new point is selected
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 4, "point removed")
+    assert sps[0]["kind"] == "curvature"
+    _assert_curvature_arms(sps[0])
+    assert not ui.errors
+
+
+def test_curvature_line_drag_adds_a_point_and_moves_it(ui):
+    _draw_curvature_path(ui)
+    sp = _subpaths(ui)[0]
+    gx, gy = _mm_to_screen(ui, *_bez(sp, 1, 0.5))
+    ui.mouse.move(gx, gy)
+    ui.mouse.down()
+    ui.mouse.move(gx + 10, gy + 10)
+    ui.mouse.move(gx + 20, gy + 30)
+    ui.mouse.up()
+    to_mm = _mm_mapper(ui)
+    want = to_mm(gx + 20, gy + 30)
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 5 and
+                    math.hypot(s[0]["anchors"][2]["x"] - want[0], s[0]["anchors"][2]["y"] - want[1]) < 0.5,
+                    "a point added and dragged")
+    assert sps[0]["kind"] == "curvature"
+    _assert_curvature_arms(sps[0])
+    _undo(ui)  # insert + drag is one gesture, one undo step
+    _wait_api(ui, lambda s: len(s[0]["anchors"]) == 4, "undone in one step")
+    assert not ui.errors
+
+
+def test_option_drag_on_curvature_point_makes_it_bezier(ui):
+    _draw_curvature_path(ui)
+    sx, sy = _anchor_screen(ui, 0, 1)
+    ui.keyboard.down("Alt")
+    ui.mouse.move(sx, sy)
+    ui.mouse.down()
+    ui.mouse.move(sx + 10, sy)
+    ui.mouse.move(sx + 40, sy)
+    ui.mouse.up()
+    ui.keyboard.up("Alt")
+    to_mm = _mm_mapper(ui)   # the view may be portrait: map, don't assume
+    o, tip = to_mm(sx, sy), to_mm(sx + 40, sy)
+    sps = _wait_api(ui, lambda s: s[0]["kind"] == "bezier", "converted to Bézier")
+    a = sps[0]["anchors"][1]
+    assert a["out_handle"] == [pytest.approx(tip[0] - o[0], abs=0.3), pytest.approx(tip[1] - o[1], abs=0.3)]
+    ui.wait_for_function("() => document.querySelectorAll('.pen-handle-knob').length > 0")
+    assert not ui.errors
+
+
+def test_curvature_close_click_makes_a_closed_smooth_loop(ui):
+    _curvature_mode(ui)
+    for dx, dy in [(-60, 30), (0, -40), (60, 30)]:
+        _pen_anchor(ui, dx, dy)
+    _pen_anchor(ui, -60, 30)   # back on the first point closes it
+    sps = _wait_api(ui, lambda s: s[0]["closed"], "closed")
+    assert sps[0]["kind"] == "curvature"
+    A = sps[0]["anchors"]
+    assert len(A) == 3
+    for i, a in enumerate(A):  # every point is smooth, wrapping round the loop
+        p, n = A[i - 1], A[(i + 1) % 3]
+        tan = (n["x"] - p["x"], n["y"] - p["y"])
+        cross = a["out_handle"][0] * tan[1] - a["out_handle"][1] * tan[0]
+        assert abs(cross) < 1e-6 and a["out_handle"][0] * tan[0] + a["out_handle"][1] * tan[1] > 0
+    assert not ui.errors
+
+
+def test_curvature_double_click_while_drawing_makes_a_corner(ui):
+    _curvature_mode(ui)
+    _pen_anchor(ui, -60, 30)
+    x, y = _canvas_point(ui, 0, -40)
+    ui.mouse.dblclick(x, y)
+    _pen_anchor(ui, 60, 30)
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 3, "three points, not four")
+    assert sps[0]["anchors"][1]["join"] == "corner"
+    _assert_curvature_arms(sps[0])
+    assert not ui.errors
+
+
+def test_joining_curvature_and_bezier_lines_gives_bezier(ui):
+    _draw_three_anchor_path(ui)          # Bézier line along y = 0 (canvas centre)
+    ui.click('#pen-mode button[data-pen-mode="curvature"]')
+    ui.click('#tool-toggle button[data-tool="select"]')
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    ui.wait_for_function("() => document.querySelectorAll('.pen-anchor').length === 3")
+    for dx, dy in [(-90, 80), (0, 60), (90, 80)]:
+        _pen_anchor(ui, dx, dy)
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s) == 2, "a second line")
+    assert sps[1]["kind"] == "curvature"
+    _reselect_pen(ui, 6)
+    # continue the curvature line from its end, then click the Bézier line's end
+    ui.mouse.click(*_anchor_screen(ui, 1, 2))
+    ui.mouse.click(*_anchor_screen(ui, 0, 2))
+    sps = _wait_api(ui, lambda s: len(s) == 1, "joined into one")
+    assert sps[0]["kind"] == "bezier"
+    assert len(sps[0]["anchors"]) == 6   # 3 + 3, the two ends meeting in one point
+    assert not ui.errors
+
+
+def test_continuing_a_curvature_line_rebends_it_whole(ui):
+    _draw_curvature_path(ui, CURVE_CLICKS[:3])
+    ui.mouse.click(*_anchor_screen(ui, 0, 2))   # its open end: continue from there
+    _pen_anchor(ui, *CURVE_CLICKS[3])
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 4, "continued")
+    assert len(sps) == 1 and sps[0]["kind"] == "curvature"
+    _assert_curvature_arms(sps[0])   # the old end is now smooth, bent toward the new point
+    assert sps[0]["anchors"][2]["join"] == "smooth"
+    assert not ui.errors

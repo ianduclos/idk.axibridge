@@ -791,6 +791,9 @@ input[type="range"].fine::-moz-range-thumb {
   color: var(--ink-soft); padding: 4px 10px;
 }
 .seg button:hover:not(:disabled) { background: var(--bench-rise); color: var(--ink); }
+/* the pen's mode buttons sit in the pen bar's own segment, like the shape
+   bar's kinds; the group is only for addressing (and, later, more modes) */
+#pen-mode { display: contents; }
 /* the occlusion channel groups: four one-letter segments, tight, because they
    are a channel picker rather than four sentences */
 .group-seg button { padding: 3px 9px; min-width: 2.2em; }

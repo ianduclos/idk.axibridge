@@ -24,10 +24,10 @@
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
 import { renderPenOverlay } from "./pen_overlay.js";
-import { clickPoint, commitContinue, cont, dragToken, flipCornerSmooth, forgetClick, hitSegment,
+import { DBL_MS, clickPoint, commitContinue, cont, dragToken, flipCornerSmooth, forgetClick, hitSegment,
          hitOpenEnd, hitAnchor, insertPoint, joinInto, noteClick, onDblClick, onPointKeydown,
          selected, setCont, setSelected, startBend, applyBend, validateEditState } from "./pen_edit.js";
-import { snapAngle } from "./pen_ops.js";
+import { curvatureHandles, snapAngle } from "./pen_ops.js";
 import { kickRegen, queueRegenerate, whenIdle } from "./pen_queue.js";
 
 const $ = (id) => document.getElementById(id);
@@ -42,6 +42,14 @@ export let on = false;
 let wired = false;
 let activePenLayerId = null;
 let subtract = false; // add/subtract mode — subtract commits as a bite via shape_op
+// The pen bar's drawing mode, kept for the session: "bezier" (click a
+// corner, drag out arms) or "curvature" (click the points the line passes
+// through; curvatureHandles shapes the bends). It decides how NEW points are
+// placed; a committed subpath carries its own `kind`, which decides how it
+// is edited — switching modes never reshapes a layer.
+export let penMode = "bezier";
+let lastPendingClick = null; // {at, x, y}: curvature mode's previous plain click on the canvas,
+                             // so a second one on that point makes it a corner
 export let pending = [];   // uncommitted PenAnchor-shaped objects: {x,y,in_handle,out_handle}
 let hoverPt = null;  // last known bed-mm pointer position, for the hover rubber-band
 export let gesture = null;  // in-progress pointer gesture — see onDown
@@ -71,6 +79,9 @@ export function initPenMode() {
   window.addEventListener("keyup", (e) => onPlaceSpace(e, false), true);
   const sub = $("pen-subtract");
   if (sub) sub.onclick = () => setSubtract(!subtract);
+  for (const b of document.querySelectorAll("#pen-mode [data-pen-mode]")) {
+    /** @type {HTMLElement} */ (b).onclick = () => setPenMode(/** @type {HTMLElement} */ (b).dataset.penMode);
+  }
   // glyphs are sized in screen px, so any change to px-per-mm (zoom, pan
   // clamp, window resize) re-renders them
   const onView = () => { if (on) redraw(); };
@@ -96,6 +107,37 @@ function setSubtract(v) {
       : "Adding — click or press E to subtract this shape out of the target layer";
   }
   redraw(); // pending path flips to rust while subtracting
+}
+
+/** @param {string | undefined} mode */
+function setPenMode(mode) {
+  if (mode !== "bezier" && mode !== "curvature") return;
+  // a path being drawn keeps the shape it shows: leaving curvature mode
+  // freezes the bends it has so far into ordinary arms
+  if (penMode === "curvature" && mode !== "curvature" && !committing) pending = shapedPending();
+  penMode = mode;
+  lastPendingClick = null;
+  for (const b of document.querySelectorAll("#pen-mode [data-pen-mode]")) {
+    const isOn = /** @type {HTMLElement} */ (b).dataset.penMode === penMode;
+    b.classList.toggle("on", isOn);
+    b.setAttribute("aria-pressed", String(isOn));
+  }
+  redraw();
+}
+
+/**
+ * The pending anchors as they would commit — what the overlay previews. In
+ * curvature mode pending holds bare on-curve points, and their arms come
+ * from the curvature rule over them plus `extra` (a point being placed, or
+ * the pointer); a continued line's end keeps its arm into its own line.
+ * @param {any[]} [extra] @param {boolean} [closed]
+ */
+export function shapedPending(extra = [], closed = false) {
+  const pts = [...pending, ...extra];
+  if (penMode !== "curvature") return pts;
+  const shaped = curvatureHandles({ anchors: pts, closed, kind: "curvature" }).anchors;
+  if (cont && shaped.length) shaped[0] = { ...shaped[0], in_handle: pts[0].in_handle };
+  return shaped;
 }
 
 export function activatePenMode() {
@@ -282,12 +324,13 @@ function hitExisting(editor, e) {
   const subpaths = layer.source.params.subpaths || [];
   for (let si = 0; si < subpaths.length; si++) {
     const anchors = subpaths[si].anchors;
+    const knobs = subpaths[si].kind !== "curvature"; // a curvature line shows no arm knobs
     for (let ai = 0; ai < anchors.length; ai++) {
       const a = anchors[ai];
-      if (a.out_handle && hitDist(editor, a.x + a.out_handle[0], a.y + a.out_handle[1], e) <= HIT_PX) {
+      if (knobs && a.out_handle && hitDist(editor, a.x + a.out_handle[0], a.y + a.out_handle[1], e) <= HIT_PX) {
         return { kind: "handle", side: "out", si, ai };
       }
-      if (a.in_handle && hitDist(editor, a.x + a.in_handle[0], a.y + a.in_handle[1], e) <= HIT_PX) {
+      if (knobs && a.in_handle && hitDist(editor, a.x + a.in_handle[0], a.y + a.in_handle[1], e) <= HIT_PX) {
         return { kind: "handle", side: "in", si, ai };
       }
       if (hitDist(editor, a.x, a.y, e) <= HIT_PX) {
@@ -306,16 +349,18 @@ function hitExisting(editor, e) {
 // anchors/handles you've placed but haven't finished yet are just as
 // re-editable, entirely locally (nothing here touches the server).
 function hitPending(editor, e) {
+  // curvature mode: the points are all there is — their arms are derived
+  const arms = penMode !== "curvature";
   for (let ai = 0; ai < pending.length; ai++) {
     const a = pending[ai];
-    if (a.out_handle && hitDist(editor, a.x + a.out_handle[0], a.y + a.out_handle[1], e) <= HIT_PX) {
+    if (arms && a.out_handle && hitDist(editor, a.x + a.out_handle[0], a.y + a.out_handle[1], e) <= HIT_PX) {
       return { kind: "handle", side: "out", ai };
     }
-    if (a.in_handle && hitDist(editor, a.x + a.in_handle[0], a.y + a.in_handle[1], e) <= HIT_PX) {
+    if (arms && a.in_handle && hitDist(editor, a.x + a.in_handle[0], a.y + a.in_handle[1], e) <= HIT_PX) {
       return { kind: "handle", side: "in", ai };
     }
     if (hitDist(editor, a.x, a.y, e) <= HIT_PX) {
-      return e.altKey ? { kind: "handle", side: "out", ai } : { kind: "anchor", ai };
+      return e.altKey && arms ? { kind: "handle", side: "out", ai } : { kind: "anchor", ai };
     }
   }
   return null;
@@ -488,6 +533,23 @@ function onUp(e) {
     forgetClick();
     g.shift = e.shiftKey; // the commit follows Shift as it is at release
     pending.push(tentativeAnchor(g));
+    lastPendingClick = penMode === "curvature" ? { at: performance.now(), x: e.clientX, y: e.clientY } : null;
+    redraw();
+    return;
+  }
+
+  // curvature mode: a second click on a point just clicked (a double-click)
+  // makes it a corner, or a corner smooth again
+  if (g.kind === "anchor" && g.target === "pending" && !g.moved && penMode === "curvature") {
+    const prev = lastPendingClick;
+    const now = performance.now();
+    if (prev && now - prev.at < DBL_MS && Math.hypot(e.clientX - prev.x, e.clientY - prev.y) <= HIT_PX) {
+      const a = pending[g.ai];
+      pending[g.ai] = { ...a, join: a.join === "corner" ? null : "corner" };
+      lastPendingClick = null;
+    } else {
+      lastPendingClick = { at: now, x: e.clientX, y: e.clientY };
+    }
     redraw();
     return;
   }
@@ -495,7 +557,7 @@ function onUp(e) {
   if (g.kind === "close") {
     // drag on the closing click curves the closing segment via the first
     // anchor's in_handle only; a plain click (no drag) closes straight
-    if (g.moved && g.dragTo) {
+    if (g.moved && g.dragTo && penMode !== "curvature") {
       const first = pending[0];
       first.in_handle = clampHandle(g.dragTo[0] - first.x, g.dragTo[1] - first.y);
     }
@@ -549,7 +611,8 @@ function tentativeAnchor(g) {
     [x, y] = clampBed(prev.x + sx, prev.y + sy);
   }
   const anchor = { x, y, in_handle: null, out_handle: null };
-  if (g.moved && g.dragTo) {
+  // curvature mode places a bare point: a drag pulls no arms
+  if (g.moved && g.dragTo && penMode !== "curvature") {
     let [dx, dy] = g.shift ? snapAngle(g.dragTo[0] - x, g.dragTo[1] - y, 15)
                            : [g.dragTo[0] - x, g.dragTo[1] - y];
     [dx, dy] = clampHandle(dx, dy);
@@ -584,7 +647,13 @@ function applyAnchorEdit(anchor, g, bx, by, mirror) {
 function applyEditDrag(g, bx, by, mirror) {
   const layer = activeLayer();
   if (!layer) return;
-  applyAnchorEdit(layer.source.params.subpaths[g.si].anchors[g.ai], g, bx, by, mirror);
+  const subpaths = layer.source.params.subpaths;
+  // an arm pulled by hand (⌥ on a point) makes a curvature line an ordinary
+  // Bézier one, which keeps the arms it has — the rule would undo the pull
+  if (g.kind === "handle" && subpaths[g.si].kind === "curvature") subpaths[g.si].kind = "bezier";
+  applyAnchorEdit(subpaths[g.si].anchors[g.ai], g, bx, by, mirror);
+  // a curvature point moved: its neighbours re-bend around it
+  if (subpaths[g.si].kind === "curvature") subpaths[g.si] = curvatureHandles(subpaths[g.si]);
 }
 
 function applyPendingEditDrag(g, bx, by, mirror) {
@@ -640,7 +709,9 @@ export async function commitPenSubpath(subpath, opts = {}) {
 
 async function commitSubpath(closed) {
   if (!pending.length || committing) return;
-  const subpath = { anchors: pending.map((a) => ({ ...a })), closed };
+  const subpath = penMode === "curvature"
+    ? curvatureHandles({ anchors: pending, closed, kind: "curvature" })
+    : { anchors: pending.map((a) => ({ ...a })), closed };
   gesture = null;
   redraw();
   committing = true;
@@ -677,15 +748,37 @@ function gestureView() {
   return null;
 }
 
+// Curvature mode's preview: every pending point re-bends as the next one
+// moves, so the whole pending path is reshaped with the point being placed
+// (or the pointer, or the closing click) included, then split back into the
+// placed points and the previewed one.
+function curvatureView() {
+  if (gesture?.kind === "place") {
+    const shaped = shapedPending([tentativeAnchor(gesture)]);
+    return { pending: shaped.slice(0, -1), gesture: { kind: "place", anchor: shaped[shaped.length - 1] } };
+  }
+  if (gesture?.kind === "close" && pending.length >= 2) {
+    const shaped = shapedPending([], true);
+    return { pending: shaped, gesture: { kind: "close", first: shaped[0] } };
+  }
+  if (!gesture && hoverPt && pending.length) {
+    return { pending: shapedPending([{ x: hoverPt[0], y: hoverPt[1], in_handle: null, out_handle: null }])
+      .slice(0, -1), gesture: null };
+  }
+  return { pending: shapedPending(), gesture: null };
+}
+
 export function redraw() {
   if (!on) { renderPenOverlay(null); announcePending(); return; }
   const layer = activeLayer();
   validateEditState(layer);
+  const view = penMode === "curvature" ? curvatureView() : { pending, gesture: gestureView() };
   renderPenOverlay({
     editor: actions.canvas(),
     layerSubpaths: layer ? layer.source.params.subpaths || [] : null,
-    pending,
-    gesture: gestureView(),
+    pending: view.pending,
+    gesture: view.gesture,
+    curvature: penMode === "curvature",
     // no hover rubber-band while any gesture is in flight
     hover: gesture ? null : hoverPt,
     subtract,

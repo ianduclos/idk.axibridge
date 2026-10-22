@@ -8,6 +8,11 @@
 //   double-click a point  → corner ⇄ smooth
 //   click an open end     → continue the line from there; clicking an open
 //                           end (its own other end, or another line's) joins
+// A curvature-pen subpath (`kind: "curvature"`) is edited the same way, but
+// its arms are always the curvature rule's: every edit that changes one
+// re-runs curvatureHandles (editSubpaths) before it is queued, a corner is
+// only an explicit `join: "corner"`, and a drag on its line adds a point
+// there and moves it (the curvature pen's push-pull) instead of bending.
 // Every committed edit is one regenerate (pen_queue.js); edits write the
 // point's classified `join` explicitly so a later edit keeps what the user saw.
 //
@@ -18,11 +23,11 @@
 import { actions } from "./main.js";
 import { applyArmDrag, bendSegment, classifyJoin, curvatureHandles, deleteAnchor, joinEnds,
          nearestOnSubpath, reverseSubpath, splitSegment } from "./pen_ops.js";
-import { HIT_PX, activeLayer, committing, gesture, hitDist, isTyping, on, pending, redraw,
-         setCommitting, setGesture, setPending } from "./pen.js";
+import { HIT_PX, activeLayer, committing, gesture, hitDist, isTyping, on, pending, penMode, redraw,
+         setCommitting, setGesture, setPending, shapedPending } from "./pen.js";
 import { queueRegenerate, whenIdle } from "./pen_queue.js";
 
-const DBL_MS = 400;        // a second click on the same spot within this is a double-click
+export const DBL_MS = 400;        // a second click on the same spot within this is a double-click
 const BEND_END_T = 0.05;   // a segment grab closer than this (in t) to an end drags that point instead
 const NEXT_JOIN = { corner: "smooth", smooth: "symmetric", symmetric: "corner" }; // J's cycle
 
@@ -95,15 +100,25 @@ export function hitOpenEnd(editor, e, skip) {
   return null;
 }
 
+/** A curvature subpath with its arms re-derived; any other one as it is. */
+const reshape = (sp) => (sp.kind === "curvature" ? curvatureHandles(sp) : sp);
+
 // Replace one subpath list on the local project and queue its regenerate.
+// Every subpath the edit replaced is reshaped first, so a curvature line's
+// arms always follow its points; untouched ones (the same objects) are left
+// exactly as they are.
 function editSubpaths(layer, subpaths, { coalesce = false } = {}) {
-  layer.source.params.subpaths = subpaths;
+  const before = new Set(layer.source.params.subpaths || []);
+  layer.source.params.subpaths = subpaths.map((s) => (before.has(s) ? s : reshape(s)));
   queueRegenerate(layer, { coalesce });
 }
 
 // A copy of `sp` with the anchors at `indices` carrying their classified join
 // explicitly, so the edit about to happen keeps the point type the user saw.
+// Not on a curvature subpath: there only an explicit corner is a corner, and
+// labelling a one-armed open end "corner" would stick once it is continued.
 function withJoins(sp, indices) {
+  if (sp.kind === "curvature") return sp;
   const n = sp.anchors.length;
   // a closed line wraps; an open one has nothing before its start or after its end
   const pick = new Set(sp.closed ? indices.map((i) => ((i % n) + n) % n)
@@ -147,6 +162,19 @@ export function startBend(g) {
   if (g.t < BEND_END_T || g.t > 1 - BEND_END_T) {
     const ai = g.t < BEND_END_T ? g.seg : (g.seg + 1) % sp.anchors.length;
     const a = sp.anchors[ai];
+    Object.assign(g, { kind: "anchor", target: "committed", si: g.si, ai,
+                       offset: [a.x - g.downBed[0], a.y - g.downBed[1]], moved: true });
+    return false;
+  }
+  if (sp.kind === "curvature") {
+    // the curvature pen's push-pull: a point is added where the line was
+    // grabbed and the drag moves it (same token: insert + drag = one undo)
+    const split = splitSegment(sp, g.seg, g.t);
+    const ai = g.seg + 1;
+    const a = split.anchors[ai];
+    editSubpaths(layer, layer.source.params.subpaths.map((s, i) => (i === g.si ? split : s)),
+                 { coalesce: g.token });
+    selected = { layerId: layer.id, si: g.si, ai };
     Object.assign(g, { kind: "anchor", target: "committed", si: g.si, ai,
                        offset: [a.x - g.downBed[0], a.y - g.downBed[1]], moved: true });
     return false;
@@ -208,14 +236,18 @@ function setPoint(layer, si, ai, anchor) {
   editSubpaths(layer, subpaths);
 }
 
+// A curvature point is a corner only when it says so; the rule draws its arms.
+const flipCurvatureJoin = (a) => ({ ...a, join: a.join === "corner" ? "smooth" : "corner" });
+
 export function flipCornerSmooth(si, ai) {
   const layer = penLayer();
   const sp = layer?.source.params.subpaths?.[si];
   if (!sp?.anchors[ai]) { redraw(); return; }
   const a = sp.anchors[ai];
-  const next = classifyJoin(a) === "corner"
-    ? { ...a, ...curvatureArms(sp, ai), join: "smooth" }
-    : { ...a, join: "corner" }; // arms stay: the drawn shape doesn't change
+  const next = sp.kind === "curvature" ? flipCurvatureJoin(a)
+    : classifyJoin(a) === "corner"
+      ? { ...a, ...curvatureArms(sp, ai), join: "smooth" }
+      : { ...a, join: "corner" }; // arms stay: the drawn shape doesn't change
   setPoint(layer, si, ai, next);
   selected = { layerId: layer.id, si, ai };
   redraw();
@@ -227,7 +259,9 @@ function cycleJoin(si, ai) {
   const a = sp.anchors[ai];
   const join = NEXT_JOIN[classifyJoin(a)];
   let next;
-  if (join === "corner") {
+  if (sp.kind === "curvature") {
+    next = flipCurvatureJoin(a); // corner ⇄ smooth only: symmetric means nothing here
+  } else if (join === "corner") {
     next = { ...a, join };
   } else {
     // re-mirror the arms to match the new join, led by the out arm
@@ -309,11 +343,16 @@ function armContinue(layer, si, end) {
 }
 
 // The continued line with the placed points spliced onto its end (or, from
-// the start, prepended — the line keeps its direction).
+// the start, prepended — the line keeps its direction). A curvature line
+// continued in curvature mode stays one and is re-bent whole; any other mix
+// is a Bézier line that keeps the shape it showed (points placed in
+// curvature mode keep the bends they were drawn with).
 function mergedContinue(sp) {
   const oriented = cont.end === "start" ? reverseSubpath(sp) : sp;
-  const anchors = [...oriented.anchors.slice(0, -1), ...pending.map((a) => ({ ...a }))];
-  const merged = { ...oriented, anchors };
+  const curvature = sp.kind === "curvature" && penMode === "curvature";
+  const placed = curvature ? pending : shapedPending();
+  const anchors = [...oriented.anchors.slice(0, -1), ...placed.map((a) => ({ ...a }))];
+  const merged = reshape({ ...oriented, anchors, kind: curvature ? "curvature" : "bezier" });
   return cont.end === "start" ? reverseSubpath(merged) : merged;
 }
 
@@ -339,15 +378,23 @@ export async function joinInto(g) {
   const meet = { x: C.x, y: C.y, in_handle: null, out_handle: null, join: "corner" };
   const merged = mergedContinue(subpaths[cont.si]);
   merged.anchors = cont.end === "end" ? [...merged.anchors, meet] : [meet, ...merged.anchors];
+  // a curvature result has no corner where the ends met: it is smooth like
+  // every other point the curvature pen placed
+  const smoothMeet = (sp, i) => (sp.kind === "curvature"
+    ? { ...sp, anchors: sp.anchors.map((a, j) => (j === i ? { ...a, join: null } : a)) } : sp);
   let next;
   if (g.si === cont.si) {
     // same object on both sides: joinEnds closes it. Closing fewer than
     // three points would only draw the same line back on itself — ignore it.
     if (merged.anchors.length - 1 < 3) { redraw(); return; }
-    const closed = joinEnds(merged, cont.end, merged, cont.end === "end" ? "start" : "end");
+    const closed = smoothMeet(joinEnds(merged, cont.end, merged, cont.end === "end" ? "start" : "end"), 0);
     next = subpaths.map((s, i) => (i === g.si ? closed : s));
   } else {
-    const joined = joinEnds(merged, cont.end, target, g.end);
+    // joining a curvature line to a Bézier one gives a Bézier line: it keeps
+    // the drawn shape of both
+    const kind = merged.kind === "curvature" && target.kind === "curvature" ? "curvature" : "bezier";
+    const joined = smoothMeet({ ...joinEnds(merged, cont.end, target, g.end), kind },
+                              merged.anchors.length - 1);
     const keep = Math.min(cont.si, g.si);
     next = subpaths.flatMap((s, i) => (i === keep ? [joined] : (i === cont.si || i === g.si) ? [] : [s]));
   }

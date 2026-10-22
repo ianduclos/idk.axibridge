@@ -16,7 +16,7 @@ September 2026 are project-authored SVG geometry, styled alongside Lucide.
 
 ## Lucide icons — ISC
 
-The tool icons are Lucide icon path data, inlined as SVG — six in the canvas
+The tool icons are Lucide icon path data, inlined as SVG — seven in the canvas
 toolbar's markup (`axibridge/static/index.html`) and two built in JS for the
 layer list (`static/js/compose.js`, the `EYE` / `EYE_OFF` constants). Inlined rather than
 loaded as a sprite or font on purpose: the frontend has no build step, and an
@@ -24,8 +24,8 @@ inline `<svg>` inherits `currentColor`, so the toolbar's inverted active state
 themes for free. Stroke width and joins are overridden in `style.css`
 (`.tool-icon`) — the paths themselves are unmodified.
 
-Icons used: `mouse-pointer-2`, `pencil`, `pen-tool`, `brush`, `eraser`,
-`check`, `eye`, `eye-off`.
+Icons used: `mouse-pointer-2`, `pencil`, `pen-tool`, `spline`, `brush`,
+`eraser`, `check`, `eye`, `eye-off`.
 
 ```
 ISC License

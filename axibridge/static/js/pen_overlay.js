@@ -27,17 +27,21 @@ export const PX = { anchor: 7, anchorFirst: 9, knob: 5, ringGap: 3 };
  *   tentative in-arm. Any other gesture renders nothing extra.
  * @typedef {{
  *   editor: any,
- *   layerSubpaths: {anchors: Anchor[], closed?: boolean}[] | null,
+ *   layerSubpaths: {anchors: Anchor[], closed?: boolean, kind?: string}[] | null,
  *   pending: Anchor[],
  *   gesture: GestureView,
  *   hover: number[] | null,
  *   subtract: boolean,
  *   selected?: {si: number, ai: number} | null,
  *   continuing?: boolean,
+ *   curvature?: boolean,
  * }} PenOverlayState
  *   selected: the committed point J / Delete act on — drawn with a ring.
  *   continuing: pending[0] is an existing line's end being continued, not a
  *   close target, so it is drawn at the ordinary point size.
+ *   curvature: the pending path is a curvature-pen path — its arms are
+ *   derived, so they are not drawn (nor are a committed curvature
+ *   subpath's: `kind: "curvature"`).
  */
 
 /** @type {SVGGElement | null} */
@@ -83,7 +87,7 @@ function pendingSegmentsD(anchors) {
  */
 export function renderPenOverlay(state) {
   if (!state) { if (overlay) overlay.innerHTML = ""; return; }
-  const { editor, layerSubpaths, pending, gesture, hover, subtract, selected, continuing } = state;
+  const { editor, layerSubpaths, pending, gesture, hover, subtract, selected, continuing, curvature } = state;
   const g = ensureOverlay(editor);
   g.innerHTML = "";
   g.classList.toggle("subtracting", subtract); // pending paths render rust
@@ -114,7 +118,7 @@ export function renderPenOverlay(state) {
   // committed anchors/arms of the active (selected) layer — the overlay that
   // makes re-editing possible
   for (const sp of layerSubpaths || []) {
-    for (const a of sp.anchors) drawArms(a);
+    if (sp.kind !== "curvature") for (const a of sp.anchors) drawArms(a);
     for (const a of sp.anchors) drawAnchor(a, PX.anchor, "pen-anchor");
   }
   const sel = selected ? layerSubpaths?.[selected.si]?.anchors[selected.ai] : null;
@@ -127,7 +131,7 @@ export function renderPenOverlay(state) {
   // anchors/arms on top
   const pendingD = pendingSegmentsD(pending);
   if (pendingD) g.appendChild(svgEl("path", { d: pendingD, class: "pen-pending-path", fill: "none" }));
-  for (const a of pending) drawArms(a);
+  if (!curvature) for (const a of pending) drawArms(a);
   pending.forEach((a, i) => drawAnchor(a, i === 0 && !continuing ? PX.anchorFirst : PX.anchor,
                                        "pen-pending-anchor"));
 
@@ -142,7 +146,7 @@ export function renderPenOverlay(state) {
         d: `M ${last.x},${last.y} ${segmentD(last, t)}`, class: "pen-pending-path", fill: "none",
       }));
     }
-    if (t.out_handle) drawArm(t, t.out_handle);
+    if (t.out_handle && !curvature) drawArm(t, t.out_handle);
     drawAnchor(t, PX.anchor, "pen-pending-anchor");
   } else if (gesture?.kind === "close" && pending.length >= 2) {
     // live preview of the closing segment (last anchor → first anchor),
@@ -153,7 +157,7 @@ export function renderPenOverlay(state) {
     g.appendChild(svgEl("path", {
       d: `M ${last.x},${last.y} ${segmentD(last, first)}`, class: "pen-pending-path", fill: "none",
     }));
-    if (first.in_handle) drawArm(first, first.in_handle);
+    if (first.in_handle && !curvature) drawArm(first, first.in_handle);
   } else if (!gesture && pending.length && hover) {
     // hover rubber-band: preview the next segment from the last pending
     // anchor to the pointer, shaped by that anchor's own out-arm
