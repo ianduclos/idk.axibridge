@@ -213,6 +213,32 @@ def test_huge_messy_input_is_fast_finite_and_editable(make, closed, detail):
         anchors=[pen.PenAnchor(**a) for a in anchors], closed=closed)]))
 
 
+@pytest.mark.parametrize("make", [_random_walk, _white_noise, _jitter_line])
+def test_over_cap_refits_are_bounded(make, monkeypatch):
+    # machine-independent guard on the runtime: an over-cap input costs at
+    # most three fitting passes over the stroke (asked tolerance, a
+    # predicted one, one fallback), never a search
+    tols: list[float] = []
+    real = curvefit._fit_range
+
+    def spy(line, i0, i1, t1, t2, tol, limit):
+        if not tols or tols[-1] != tol:
+            tols.append(tol)
+        return real(line, i0, i1, t1, t2, tol, limit)
+
+    monkeypatch.setattr(curvefit, "_fit_range", spy)
+    anchors = fit_bezier(make(), closed=False, detail=1.0)
+    assert len(anchors) <= pen._MAX_ANCHORS
+    assert len(tols) <= 3, tols
+
+
+def test_over_cap_fit_stays_reasonably_fine():
+    # the cap coarsens only as far as it must: the random walk needs ~0.07 mm
+    # to fit 2000 anchors; landing far coarser would throw detail away
+    anchors = fit_bezier(_random_walk(), closed=False, detail=1.0)
+    assert 1000 <= len(anchors) <= pen._MAX_ANCHORS
+
+
 def _antiparallel(a) -> bool:
     (ix, iy), (ox, oy) = a["in_handle"], a["out_handle"]
     return (ix * ox + iy * oy) / (math.hypot(ix, iy) * math.hypot(ox, oy)) < -0.999

@@ -55,8 +55,9 @@ TANGENT_WINDOW_MM = 1.0
 # a test pins the two together). A fit must always come back editable, so
 # past it the tolerance is coarsened, and past THAT the weakest corners go.
 MAX_ANCHORS = 2000
-_TOL_CEILING = 64.0     # mm; coarser than this, just fit one cubic per span
-_TOL_BISECT_STEPS = 5   # log-bisection steps between tolerance and ceiling (~25%)
+# Over the cap, the next tolerance is predicted from how far the failed pass
+# got, aiming at this share of the cap (so the guess has room to be off).
+_CAP_TARGET = 0.8
 
 # A "smooth" join promises collinear, opposed handles; anything further off
 # than this (cosine of the angle between in and out handle) says "corner".
@@ -265,11 +266,12 @@ def _one_sided_tangent(line: _Line, i: int, toward: int) -> np.ndarray | None:
 
 
 def _fit_range(line: _Line, i0: int, i1: int, t1: np.ndarray, t2: np.ndarray,
-               tol: float, limit: int) -> list[np.ndarray] | None:
-    """Fit q[i0..i1] with cubics; returns their control points in order, or
-    None as soon as more than ``limit`` are needed (a doomed pass stops
-    early). Iterative (an explicit stack) so a 20000-point stroke can't hit
-    the recursion limit."""
+               tol: float, limit: int) -> tuple[list[np.ndarray] | None, int]:
+    """Fit q[i0..i1] with cubics; returns (their control points in order,
+    i1). As soon as more than ``limit`` are needed it stops and returns
+    (None, end index of the last cubic it did fit), so a doomed pass is
+    cut short but still says how far it got. Iterative (an explicit stack)
+    so a 20000-point stroke can't hit the recursion limit."""
     out: list[np.ndarray] = []
     stack = [(i0, i1, t1, t2)]
     q, s = line.q, line.s
@@ -280,7 +282,7 @@ def _fit_range(line: _Line, i0: int, i1: int, t1: np.ndarray, t2: np.ndarray,
         if len(pts) == 2:
             out.append(_generate(pts, np.array([0.0, 1.0]), ta, tb, arclen))
             if len(out) > limit:
-                return None
+                return None, b
             continue
         u = (s[a:b + 1] - s[a]) / arclen if arclen > 0 else np.linspace(0.0, 1.0, len(pts))
         ctrl = _generate(pts, u, ta, tb, arclen)
@@ -297,7 +299,7 @@ def _fit_range(line: _Line, i0: int, i1: int, t1: np.ndarray, t2: np.ndarray,
         if err <= tol:
             out.append(ctrl)
             if len(out) > limit:
-                return None
+                return None, b
             continue
         k = a + min(max(split, 1), len(pts) - 2)
         tc = _center_tangent(line, k, a, b)
@@ -309,7 +311,7 @@ def _fit_range(line: _Line, i0: int, i1: int, t1: np.ndarray, t2: np.ndarray,
         # emitted) first
         stack.append((k, b, -tc, tb))
         stack.append((a, k, ta, tc))
-    return out
+    return out, i1
 
 
 # ---------------------------------------------------------------- public
@@ -414,36 +416,37 @@ def fit_bezier(points: Sequence[Sequence[float]], closed: bool, detail: float) -
     budget = MAX_ANCHORS - (0 if closed else 1)
 
     def fit_all(tol: float):
+        """(cubics, joins) within budget, or the full-stroke cubic count
+        extrapolated from how far along the stroke the pass got."""
         cubics: list[np.ndarray] = []
         joins: list[str | None] = []  # join of each cubic's START anchor
         for a, b, ca, t_out, t_in in spans:
-            segs = _fit_range(line, a, b, t_out, t_in, tol, budget - len(cubics))
+            segs, reached = _fit_range(line, a, b, t_out, t_in, tol, budget - len(cubics))
             if segs is None:
-                return None
+                covered = max(float(line.s[reached]), 1e-9)
+                return (budget + 1) * max(line.length / covered, 1.0)
             for j, ctrl in enumerate(segs):
                 cubics.append(ctrl)
                 joins.append(("corner" if ca else "smooth") if j == 0 else "smooth")
         return cubics, joins
 
-    # Over the pen source's cap at the asked tolerance: find (roughly) the
-    # finest tolerance that fits, by log-bisection up to the ceiling. Past
-    # the ceiling every span is one cubic, which the corner cap above keeps
-    # within budget. When the corners alone fill the cap, go straight there.
+    # Over the pen source's cap at the asked tolerance: refit once at a
+    # predicted coarser tolerance, then once more with the guess sharpened,
+    # then one cubic per span (which the corner cap above keeps within
+    # budget). The prediction assumes the cubic count scales as tol^-1/2
+    # (smooth curves go as tol^-1/4, noise-dominated strokes as ~tol^-1),
+    # so it errs coarse; an over-cap fit needs to be editable and close,
+    # not the finest possible. When the corners alone fill the cap, skip to
+    # one cubic per span.
     fit = fit_all(tol)
-    if fit is None:
-        fit = fit_all(_TOL_CEILING) if len(spans) < budget else None
-        if fit is None:
-            fit = fit_all(math.inf)
-        else:
-            lo, hi = math.log(tol), math.log(_TOL_CEILING)
-            for _ in range(_TOL_BISECT_STEPS):
-                mid = (lo + hi) / 2.0
-                got = fit_all(math.exp(mid))
-                if got is None:
-                    lo = mid
-                else:
-                    hi, fit = mid, got
-    if fit is None:  # unreachable: one cubic per span always fits
+    for _ in range(2):
+        if not isinstance(fit, float) or len(spans) >= budget:
+            break
+        tol *= max((fit / (_CAP_TARGET * budget)) ** 2, 1.5)
+        fit = fit_all(tol)
+    if isinstance(fit, float):
+        fit = fit_all(math.inf)
+    if isinstance(fit, float):  # unreachable: one cubic per span always fits
         raise ValueError("curve fit cannot meet the anchor cap")
     cubics, joins = fit
 
