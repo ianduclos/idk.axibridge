@@ -323,12 +323,18 @@ The contract, and why each clause exists:
 `effects/hand.py` (+ `effects/_hand/engine.py`) redraws any layer as one of the
 frozen Gesture Studies hands: each path is an intention, and the chosen library
 hand follows it, straying off it in its own bends. Two knobs: **Stray (mm)**
-(0.1–30, default 3) is the hard ceiling on how far the line may leave yours,
+(0.1–30, default 3) sets how far the line leaves yours — the typical departure
+is about the stray (RMS 0.6 × stray in `follow`, 1.8 × in `wander`) and the
+**hard ceiling is 2 × stray in `follow`, 5 × stray in `wander`** (no output
+point is ever farther from your line; `engine.MODES` holds the factors);
 **Bend size (mm)** (3–200, default 20) is the scale of the hand's own bends.
 **Let it wander** switches the engine's mode from `follow` to `wander` (looser,
-longer departures, same ceiling). Seed and Step (point spacing) sit under Fine
-tuning. Closed paths stay exactly closed and `filled` is kept. Deterministic:
-one RNG stream per path from `seed` and `ctx.seed`. The hand picker is the
+longer departures, the wider ceiling). Seed and Step (point spacing) sit under
+Fine tuning. Closed paths stay exactly closed and `filled` is kept, and their
+mean offset is zero, so a closed shape neither insets nor balloons as a whole.
+Deterministic: one RNG stream per path from `seed` and `ctx.seed`. The hand's
+stroke does not depend on stray, so it is memoised (`engine._hand_heading`,
+an LRU scaled by `AXIBRIDGE_CACHE_BUDGET`): a stray drag or tween is numpy only. The hand picker is the
 `library-hand` field format. **Pinning**: the hidden `pin` param
 (`"<hand>@<hash>"`) is written by `complete_params` when a layer is kept, so a
 library refreeze never redraws it (a vanished pinned version falls back to the

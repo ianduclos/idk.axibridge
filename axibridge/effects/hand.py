@@ -1,7 +1,8 @@
 """Hand — redraw any layer as one of the frozen Gesture Studies hands.
 
 Each path is an intention; the chosen library hand follows it, wandering off
-by up to `stray_mm` in its own bends (`bend_mm`). The work is done by
+by about `stray_mm` (never beyond 2 × it, 5 × when wandering) in its own
+bends (`bend_mm`). The work is done by
 `effects/_hand/engine.py`; this module is the parameters and the plumbing.
 Pure and deterministic: seeded from `seed` and `ctx.seed`, one stream per path.
 """
