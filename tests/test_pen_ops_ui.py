@@ -340,6 +340,21 @@ def test_knife_crossings_are_where_knife_cuts(run):
     assert len(got["curve"]) == 1 and got["curve"][0] == pytest.approx(got["cutAt"])
 
 
+def test_knife_through_an_open_end_cuts_nothing(run):
+    got = run("""
+      const line = {anchors: [H.A(0, 0), H.A(50, 0), H.A(100, 0)], closed: false, kind: 'curvature'};
+      return {end: M.knifeCrossings(line, [100, -10], [100, 10]),
+              start: M.knifeCrossings(line, [0, -10], [0, 10]),
+              mid: M.knifeCrossings(line, [50, -10], [50, 10]),
+              cutEnd: M.knife(line, [100, -10], [100, 10]),
+              cutStart: M.knife(line, [0, -10], [0, 10])};""")
+    assert got["end"] == [] and got["start"] == []
+    assert got["mid"] == [pytest.approx([50, 0])]           # an inner point still cuts
+    for cut in (got["cutEnd"], got["cutStart"]):
+        assert len(cut) == 1 and cut[0]["kind"] == "curvature"
+        assert [a["join"] for a in cut[0]["anchors"]] == [None, None, None]
+
+
 def test_join_ends(run):
     got = run("""
       const s1 = {anchors: [H.A(0, 0, null, [3, 0]), H.A(10, 0, [-2, 1], null)], closed: false, kind: 'bezier'};

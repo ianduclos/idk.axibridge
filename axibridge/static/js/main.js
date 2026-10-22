@@ -132,6 +132,18 @@ const oops = (e) => {
   }
 };
 
+// A passing word from a tool ("Select a pen layer to cut"), shown in the
+// status line under the sheet — visible from any tab, unlike the job log —
+// replacing the last one rather than stacking, and gone after a few seconds.
+let hintTimer;
+const hint = (text) => {
+  const h = $("canvas-hint");
+  if (!h) return;
+  h.textContent = text;
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => { h.textContent = ""; }, 4000);
+};
+
 // ---- canvas ------------------------------------------------------------------
 
 const canvas = new CanvasEditor($("canvas"), {
@@ -165,6 +177,7 @@ const canvas = new CanvasEditor($("canvas"), {
 export const actions = {
   oops,
   log,
+  hint,
   debounce,
   canvas: () => canvas,
   setSeqProgress, // forms.js's inline sequence-asset upload rides the same gen-progress bar

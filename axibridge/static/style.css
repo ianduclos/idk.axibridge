@@ -507,6 +507,8 @@ main {
 }
 .warn { color: var(--ochre); }
 #global-error { color: var(--rust); margin-left: auto; }
+#canvas-hint { color: var(--ink); }
+#canvas-hint:empty { display: none; }
 /* 7a: empty (ordinary live single-frame) collapses — same idiom as
    #machine-state .readout:empty — so it costs no width when there's nothing
    to say. Non-empty gets the --live accent, matching #doc-preview-label,

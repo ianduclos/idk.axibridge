@@ -54,19 +54,24 @@ export function initSketch() {
   // keeps focus, so the arrows go on nudging it
   let byPointer = false;
   detail.addEventListener("pointerdown", () => { byPointer = true; });
+  // a click that moved nothing fires no `change`: the flag must not outlive
+  // it, or the next arrow key's change would blur the slider
+  detail.addEventListener("pointerup", () => { setTimeout(() => { byPointer = false; }, 0); });
   detail.addEventListener("change", () => {
     if (byPointer) detail.blur();
     byPointer = false;
   });
   detail.addEventListener("keydown", (e) => {
     if (SLIDER_KEYS.has(e.key)) return;
-    // hand any other key to the document as if the slider had no focus
-    e.preventDefault();
+    // hand any other key to the document as if the slider had no focus; the
+    // original is cancelled only if a handler cancelled the copy, so the
+    // browser's own shortcuts (⌘C, ⌘R, ⌘±) still work
     e.stopPropagation();
     detail.blur();
-    document.body.dispatchEvent(new KeyboardEvent("keydown", {
+    const copy = new KeyboardEvent("keydown", {
       key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey,
-      altKey: e.altKey, repeat: e.repeat, bubbles: true, cancelable: true }));
+      altKey: e.altKey, repeat: e.repeat, bubbles: true, cancelable: true });
+    if (!document.body.dispatchEvent(copy)) e.preventDefault();
   });
 }
 

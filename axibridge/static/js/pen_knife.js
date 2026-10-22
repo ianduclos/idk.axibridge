@@ -51,7 +51,7 @@ export function finishKnife(g, e) {
   g.shift = e.shiftKey; // the cut follows Shift as it is at release
   const layer = penLayer();
   if (!layer) {
-    actions.log("Select a pen layer to cut");
+    actions.hint("Select a pen layer to cut");
     redraw();
     return;
   }

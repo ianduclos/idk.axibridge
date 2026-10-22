@@ -453,12 +453,18 @@ function segCrossings(c, a, b) {
   return out;
 }
 
-/** Every crossing of the subpath with segment a–b, as {k, t} (segment, cubic t). */
+/** Every crossing of the subpath with segment a–b, as {k, t} (segment, cubic
+ *  t). An open line's own end points are not crossings: cutting there would
+ *  leave the line as it was. */
 function crossingsOf(subpath, a, b) {
   const out = [];
   if (dist(a, b) < 1e-12) return out;
-  for (let k = 0; k < segCount(subpath); k++) {
-    for (const t of segCrossings(segCtrl(subpath, k), a, b)) out.push({ k, t });
+  const last = segCount(subpath) - 1;
+  for (let k = 0; k <= last; k++) {
+    for (const t of segCrossings(segCtrl(subpath, k), a, b)) {
+      if (!subpath.closed && ((k === 0 && t < T_EPS) || (k === last && t > 1 - T_EPS))) continue;
+      out.push({ k, t });
+    }
   }
   return out;
 }

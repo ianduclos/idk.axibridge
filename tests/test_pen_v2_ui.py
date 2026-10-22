@@ -1473,9 +1473,11 @@ def test_knife_missing_everything_changes_nothing(ui):
 def test_knife_without_a_pen_layer_says_so(ui):
     ui.click('#tool-toggle button[data-tool="pen"]')
     _knife_mode(ui)
-    _drag(ui, _canvas_point(ui, 0, -60), _canvas_point(ui, 0, 60))
-    ui.wait_for_function(
-        "() => document.getElementById('job-log').textContent.includes('Select a pen layer to cut')")
+    for _ in range(3):   # said in the status line under the sheet, once, however often
+        _drag(ui, _canvas_point(ui, 0, -60), _canvas_point(ui, 0, 60))
+    hint = ui.locator("#canvas-status").get_by_text("Select a pen layer to cut")
+    hint.wait_for(state="visible")
+    assert hint.count() == 1
     assert _get(f"{ui.base}/api/project")["layers"] == []
     assert not ui.errors
 
@@ -1495,4 +1497,65 @@ def test_knife_cuts_a_curvature_line_without_reshaping_it(ui):
         after = _resolved_points(ui)
     assert max(_dist_to_polyline(p, before) for p in after) <= 0.05
     assert max(_dist_to_polyline(p, after) for p in before) <= 0.05
+    assert not ui.errors
+
+
+def test_one_cut_crosses_two_lines_and_leaves_other_layers(ui):
+    _straight_line(ui, dy=-30)                              # layer A, first line
+    _pen_anchor(ui, -100, 30)                               # A stays the target: a second line
+    _pen_anchor(ui, 100, 30)
+    ui.keyboard.press("Enter")
+    _wait_api(ui, lambda s: len(s) == 2, "two lines on A")
+    a_id = _layer(ui)["id"]
+    p, q = _screen_to_mm(ui, *_canvas_point(ui, -60, 60)), _screen_to_mm(ui, *_canvas_point(ui, 60, 60))
+    other_pen = {"subpaths": [{"anchors": [_bare(*p), _bare(*q)], "closed": False}]}
+    b_id = _post(f"{ui.base}/api/layers/generate", {"module": "pen", "params": other_pen})["id"]
+    c_id = _post(f"{ui.base}/api/layers/generate",
+                 {"module": "polygon", "params": {"sides": 4, "radius": 20}})["id"]
+    before = {l["id"]: l["source"]["params"] for l in _get(f"{ui.base}/api/project")["layers"]}
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 3")
+    ui.click('#tool-toggle button[data-tool="pen"]')     # A is still the selected layer
+    ui.wait_for_function("() => document.querySelectorAll('.pen-anchor').length === 4")
+    _knife_mode(ui)
+    regens = []
+    ui.on("request", lambda r: regens.append(r.url) if "/regenerate" in r.url else None)
+    _drag(ui, _canvas_point(ui, 10, -100), _canvas_point(ui, 10, 100))      # across all three
+    ui.wait_for_timeout(300)
+
+    def a_subpaths():
+        return next(l for l in _get(f"{ui.base}/api/project")["layers"] if l["id"] == a_id)["source"]["params"]["subpaths"]
+    deadline = time.time() + 8
+    while len(a_subpaths()) != 4 and time.time() < deadline:
+        time.sleep(0.1)
+    assert len(a_subpaths()) == 4                           # both lines cut, in one release
+    _settled(ui, "cut")
+    assert len(regens) == 1 and a_id in regens[0], regens   # one request: one undo step
+    after = {l["id"]: l["source"]["params"] for l in _get(f"{ui.base}/api/project")["layers"]}
+    assert after[b_id] == before[b_id] and after[c_id] == before[c_id]
+    assert not ui.errors
+
+
+def test_slider_keeps_focus_after_a_click_that_moved_nothing(ui):
+    _sketch_mode(ui)
+    box = ui.locator("#pen-detail").bounding_box()
+    ui.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)   # on the thumb at 0.5
+    assert float(ui.locator("#pen-detail").input_value()) == pytest.approx(0.5, abs=0.02)
+    v0 = float(ui.locator("#pen-detail").input_value())
+    ui.keyboard.press("ArrowRight")
+    ui.keyboard.press("ArrowRight")
+    v2 = float(ui.locator("#pen-detail").input_value())
+    v1_step = v2 - v0
+    ui.keyboard.press("ArrowRight")
+    assert float(ui.locator("#pen-detail").input_value()) > v2 > v0, v1_step
+    assert not ui.errors
+
+
+def test_slider_hands_back_keys_without_cancelling_them(ui):
+    _sketch_mode(ui)
+    ui.evaluate("""() => window.addEventListener('keydown', (e) => {
+        if (e.key === 'c' && e.isTrusted) window.__copyKey = e; }, true)""")
+    ui.focus("#pen-detail")
+    ui.keyboard.press("Meta+c")   # a browser shortcut nobody on the page handles
+    assert ui.evaluate("() => window.__copyKey.target.id") == "pen-detail"
+    assert ui.evaluate("() => window.__copyKey && window.__copyKey.defaultPrevented") is False
     assert not ui.errors
