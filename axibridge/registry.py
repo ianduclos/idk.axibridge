@@ -430,7 +430,7 @@ _EFFECT_LIBRARY_CATEGORIES = {
     "bitmap": "agnostic", "coherent_jitter": "agnostic",
     "continue_strokes": "line", "contract_expand": "agnostic",
     "depth_displace": "agnostic", "eigen_fill": "shape",
-    "eyelets": "line", "fat_tube": "line", "freehand": "line",
+    "eyelets": "line", "fat_tube": "line", "freehand": "line", "hand": "line",
     "hatch_fill": "shape", "invert": "shape", "multipass": "agnostic",
     "offset_fill": "shape", "offset_fill_v2": "shape",
     "parasite_line": "line", "perspective": "agnostic",
