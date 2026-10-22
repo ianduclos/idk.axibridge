@@ -1257,6 +1257,10 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 .pen-sketch-path { vector-effect: non-scaling-stroke; stroke: var(--live); stroke-width: 1px; fill: none;
                    stroke-linejoin: round; stroke-linecap: round; }
 .subtracting .pen-sketch-path { stroke: var(--rust); }
+/* knife mode: the cut line being dragged, and where it will cut */
+.pen-knife-line { vector-effect: non-scaling-stroke; stroke: var(--rust); stroke-width: 1.5px;
+                  stroke-dasharray: 6px 4px; fill: none; }
+.pen-knife-dot { fill: var(--rust); stroke: none; }
 .pen-pending-anchor { fill: var(--live); stroke: none; }
 .pen-pending-anchor.smooth { fill: var(--bench); stroke: var(--live); stroke-width: 1.5px; }
 .pen-selected-ring { fill: none; stroke: var(--live); stroke-width: 1.5px; }

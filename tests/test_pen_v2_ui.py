@@ -1342,3 +1342,157 @@ def test_slider_moved_during_the_first_fit_is_kept(ui):
     _wait_api(ui, lambda s: [(round(a["x"], 6), round(a["y"], 6)) for a in s[0]["anchors"]] == want,
               "the committed line follows the slider")
     assert not ui.errors
+
+
+# ---------------------------------------------------------------- knife (K1)
+
+def _knife_mode(page):
+    page.click('#pen-mode button[data-pen-mode="knife"]')
+    page.wait_for_function(
+        "() => document.querySelector('#pen-mode [data-pen-mode=knife]').getAttribute('aria-pressed') === 'true'")
+
+
+def _straight_line(page, dy=0):
+    """A two-point open line across the canvas middle, reselected with the pen."""
+    page.click('#tool-toggle button[data-tool="pen"]')
+    _pen_anchor(page, -100, dy)
+    _pen_anchor(page, 100, dy)
+    page.keyboard.press("Enter")
+    _reselect_pen(page, 2)
+
+
+def _drag(page, a, b, steps=6, on_mid=None):
+    page.mouse.move(*a)
+    page.mouse.down()
+    for k in range(1, steps + 1):
+        page.mouse.move(a[0] + (b[0] - a[0]) * k / steps, a[1] + (b[1] - a[1]) * k / steps)
+        if on_mid and k == steps // 2:
+            on_mid()
+    page.mouse.up()
+
+
+def _edit_rev(page):
+    return _get(f"{page.base}/api/project")["edit_rev"]
+
+
+def test_knife_button_is_a_pen_mode(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    btn = ui.locator('#pen-mode button[data-pen-mode="knife"]')
+    assert btn.get_attribute("aria-pressed") == "false"
+    assert btn.locator("svg.tool-icon").count() == 1
+    # a path being drawn is finished first, as for sketch mode
+    for dx in (-60, 0, 60):
+        _pen_anchor(ui, dx, -40)
+    _knife_mode(ui)
+    sps = _wait_api(ui, lambda s: len(s) == 1, "the pending path committed")
+    assert len(sps[0]["anchors"]) == 3
+    assert _pen_active(ui)
+    assert ui.locator('#pen-mode [data-pen-mode="bezier"]').get_attribute("aria-pressed") == "false"
+    assert not ui.locator("#pen-detail").is_visible()
+    assert not ui.errors
+
+
+def test_knife_cuts_open_line_in_two(ui):
+    _straight_line(ui)
+    _settled(ui, "line")
+    _knife_mode(ui)
+    a, b = _canvas_point(ui, 10, -40), _canvas_point(ui, 10, 40)
+    seen = {}
+
+    def mid():
+        seen["line"] = ui.locator(".pen-overlay .pen-knife-line").count()
+        seen["dots"] = ui.locator(".pen-overlay .pen-knife-dot").count()
+        seen["dash"] = ui.evaluate(
+            "() => getComputedStyle(document.querySelector('.pen-knife-line')).strokeDasharray")
+    _drag(ui, a, b, on_mid=mid)
+    assert seen["line"] == 1 and seen["dots"] == 1, seen     # the cut and where it lands
+    assert seen["dash"] not in ("none", ""), seen
+
+    sps = _wait_api(ui, lambda s: len(s) == 2, "cut in two")
+    assert all(not sp["closed"] and len(sp["anchors"]) == 2 for sp in sps)
+    cut = _screen_to_mm(ui, *_canvas_point(ui, 10, 0))
+    end, start = sps[0]["anchors"][-1], sps[1]["anchors"][0]
+    assert (end["x"], end["y"]) == (start["x"], start["y"])
+    assert math.hypot(end["x"] - cut[0], end["y"] - cut[1]) < 0.5, (end, cut)
+    assert ui.locator(".pen-overlay .pen-knife-line").count() == 0
+    assert _pen_active(ui)                                    # the knife stays up
+
+    _settled(ui, "cut")
+    ui.keyboard.press("Meta+z")                               # one undo step
+    _wait_api(ui, lambda s: len(s) == 1 and len(s[0]["anchors"]) == 2, "uncut")
+    assert not ui.errors
+
+
+def test_knife_shift_snaps_the_cut_to_15_degrees(ui):
+    _straight_line(ui)
+    _knife_mode(ui)
+    a, b = _canvas_point(ui, 10, -40), _canvas_point(ui, 17, 40)   # ~5° off square
+    ui.keyboard.down("Shift")
+    _drag(ui, a, b)
+    ui.keyboard.up("Shift")
+    sps = _wait_api(ui, lambda s: len(s) == 2, "cut in two")
+    am = _screen_to_mm(ui, *a)
+    cut = sps[0]["anchors"][-1]
+    ang = _angle_deg(cut["x"] - am[0], cut["y"] - am[1])
+    assert abs(ang / 15 - round(ang / 15)) * 15 < 1e-3, ang
+    assert not ui.errors
+
+
+def test_knife_through_closed_shape_opens_it(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    for dx, dy in [(-60, -40), (60, -40), (60, 40), (-60, 40)]:
+        _pen_anchor(ui, dx, dy)
+    _pen_anchor(ui, -60, -40)                                 # close it
+    _wait_api(ui, lambda s: s[0]["closed"], "closed square")
+    _reselect_pen(ui, 4)
+    _knife_mode(ui)
+    _drag(ui, _canvas_point(ui, -90, 0), _canvas_point(ui, 90, 0))
+    sps = _wait_api(ui, lambda s: len(s) == 2, "cut in two")
+    assert [sp["closed"] for sp in sps] == [False, False]
+    assert not ui.errors
+
+
+def test_knife_missing_everything_changes_nothing(ui):
+    _straight_line(ui)
+    before = _settled(ui, "line")
+    _knife_mode(ui)
+    rev = _edit_rev(ui)
+    regens = []
+    ui.on("request", lambda r: regens.append(r.url) if "/regenerate" in r.url else None)
+    _drag(ui, _canvas_point(ui, -40, -120), _canvas_point(ui, 40, -60))   # misses the line
+    x, y = _canvas_point(ui, 0, 0)
+    _drag(ui, (x, y - 1), (x, y + 1))                         # a zero-length drag on it
+    ui.wait_for_timeout(800)                                  # pumps the request events
+    assert regens == []
+    assert _edit_rev(ui) == rev
+    assert _subpaths(ui) == before
+    assert ui.locator(".pen-overlay .pen-knife-line").count() == 0
+    assert not ui.errors
+
+
+def test_knife_without_a_pen_layer_says_so(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    _knife_mode(ui)
+    _drag(ui, _canvas_point(ui, 0, -60), _canvas_point(ui, 0, 60))
+    ui.wait_for_function(
+        "() => document.getElementById('job-log').textContent.includes('Select a pen layer to cut')")
+    assert _get(f"{ui.base}/api/project")["layers"] == []
+    assert not ui.errors
+
+
+def test_knife_cuts_a_curvature_line_without_reshaping_it(ui):
+    _draw_curvature_path(ui)
+    _settled(ui, "curvature line")
+    before = _resolved_points(ui)
+    _knife_mode(ui)
+    _drag(ui, _canvas_point(ui, 0, -120), _canvas_point(ui, 0, 120))
+    sps = _wait_api(ui, lambda s: len(s) == 2, "cut in two")
+    assert [sp["kind"] for sp in sps] == ["bezier", "bezier"]
+    deadline = time.time() + 5
+    after = _resolved_points(ui)
+    while after == before and time.time() < deadline:
+        time.sleep(0.1)
+        after = _resolved_points(ui)
+    assert max(_dist_to_polyline(p, before) for p in after) <= 0.05
+    assert max(_dist_to_polyline(p, after) for p in before) <= 0.05
+    assert not ui.errors

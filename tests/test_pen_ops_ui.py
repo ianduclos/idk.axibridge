@@ -322,6 +322,24 @@ def test_knife_keeps_curved_geometry(run):
     assert got["dev"] < 0.05
 
 
+def test_knife_crossings_are_where_knife_cuts(run):
+    got = run(_CUBIC + """
+      const line = {anchors: [H.A(0, 0), H.A(100, 0)], closed: false, kind: 'bezier'};
+      const square = {anchors: [H.A(0, 0), H.A(100, 0), H.A(100, 100), H.A(0, 100)], closed: true, kind: 'bezier'};
+      const curve = M.knifeCrossings(sp, [50, -50], [50, 100]);
+      const cut = M.knife(sp, [50, -50], [50, 100]);
+      return {line: M.knifeCrossings(line, [40, -10], [40, 10]),
+              miss: M.knifeCrossings(line, [40, 5], [40, 10]),
+              square: M.knifeCrossings(square, [-10, 50], [110, 50]),
+              corner: M.knifeCrossings(square, [-10, -10], [10, 10]),
+              curve, cutAt: [cut[0].anchors[cut[0].anchors.length - 1].x, cut[0].anchors[cut[0].anchors.length - 1].y]};""")
+    assert got["line"] == [pytest.approx([40, 0])]
+    assert got["miss"] == []
+    assert sorted(map(tuple, got["square"])) == [pytest.approx((0, 50)), pytest.approx((100, 50))]
+    assert got["corner"] == [pytest.approx([0, 0])]       # a cut through a point is one crossing
+    assert len(got["curve"]) == 1 and got["curve"][0] == pytest.approx(got["cutAt"])
+
+
 def test_join_ends(run):
     got = run("""
       const s1 = {anchors: [H.A(0, 0, null, [3, 0]), H.A(10, 0, [-2, 1], null)], closed: false, kind: 'bezier'};

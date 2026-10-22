@@ -453,6 +453,31 @@ function segCrossings(c, a, b) {
   return out;
 }
 
+/** Every crossing of the subpath with segment a–b, as {k, t} (segment, cubic t). */
+function crossingsOf(subpath, a, b) {
+  const out = [];
+  if (dist(a, b) < 1e-12) return out;
+  for (let k = 0; k < segCount(subpath); k++) {
+    for (const t of segCrossings(segCtrl(subpath, k), a, b)) out.push({ k, t });
+  }
+  return out;
+}
+
+/**
+ * Where segment a–b crosses the subpath — the points knife() would cut at
+ * (the knife preview's dots). A crossing through a point is one point.
+ * @param {Subpath} subpath @param {Vec} a @param {Vec} b
+ * @returns {Vec[]}
+ */
+export function knifeCrossings(subpath, a, b) {
+  const out = [];
+  for (const { k, t } of crossingsOf(subpath, a, b)) {
+    const p = /** @type {Vec} */ (bez(segCtrl(subpath, k), t));
+    if (!out.some((q) => dist(p, q) < 1e-9)) out.push(p);
+  }
+  return out;
+}
+
 /**
  * Cut the subpath along segment a–b. Every crossing becomes a shared end
  * point (split via de Casteljau, so the drawn shape is unchanged); all
@@ -467,12 +492,10 @@ export function knife(subpath, a, b) {
   if (dist(a, b) < 1e-12 || segCount(subpath) === 0) return [cloneSubpath(subpath)];
   const marks = [];   // anchor indices that are cut points
   const splits = [];  // {k, t} interior crossings
-  for (let k = 0; k < segCount(subpath); k++) {
-    for (const t of segCrossings(segCtrl(subpath, k), a, b)) {
-      if (t > 1 - T_EPS) marks.push((k + 1) % n0);
-      else if (t < T_EPS) marks.push(k);
-      else splits.push({ k, t });
-    }
+  for (const { k, t } of crossingsOf(subpath, a, b)) {
+    if (t > 1 - T_EPS) marks.push((k + 1) % n0);
+    else if (t < T_EPS) marks.push(k);
+    else splits.push({ k, t });
   }
   if (!marks.length && !splits.length) return [cloneSubpath(subpath)];
   // split last-first so earlier indices stay valid; same-segment splits

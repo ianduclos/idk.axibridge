@@ -17,7 +17,8 @@
 //
 // Editing gestures on a committed pen layer (insert, bend, corner/smooth,
 // select + J / Delete, continue/join — pen v2 E1–E6) live in pen_edit.js,
-// sketch mode's capture, fit and live re-fit (P3) in pen_sketch.js, and the
+// sketch mode's capture, fit and live re-fit (P3) in pen_sketch.js, the
+// knife (K1) in pen_knife.js, and the
 // ordered regenerate queue every committed edit goes through in
 // pen_queue.js. This file keeps the drawing state, placement and the pointer
 // dispatch that routes each gesture to its handler.
@@ -31,11 +32,12 @@ import { DBL_MS, clickPoint, commitContinue, cont, dragToken, flipCornerSmooth, 
 import { classifyJoin, curvatureHandles, reverseSubpath, snapAngle } from "./pen_ops.js";
 import { kickRegen, queueRegenerate, whenIdle } from "./pen_queue.js";
 import { addSketchSamples, endRefit, finishSketch, initSketch, sketchView, startSketch } from "./pen_sketch.js";
+import { finishKnife, knifeView, moveKnife, startKnife } from "./pen_knife.js";
 
 const $ = (id) => document.getElementById(id);
 const BED = { w: 300, h: 218 };
 export const HIT_PX = 9;   // screen-pixel hit radius for anchor/handle knobs (zoom-invariant)
-const DRAG_PX = 3;         // pointer movement past this counts as a drag, not a plain click
+export const DRAG_PX = 3;  // pointer movement past this counts as a drag, not a plain click
 const MAX_HANDLE_MM = 400; // UI-side clamp, past the bed diagonal (~371 mm): arms stretch freely, only a runaway drag is caught
 
 // Drawing state is owned here and read live by pen_edit.js / pen_queue.js
@@ -46,8 +48,9 @@ let activePenLayerId = null;
 export let subtract = false; // add/subtract mode — subtract commits as a bite via shape_op
 // The pen bar's drawing mode, kept for the session: "bezier" (click a
 // corner, drag out arms), "curvature" (click the points the line passes
-// through; curvatureHandles shapes the bends) or "sketch" (drag freehand;
-// the stroke is fitted into a Bézier line). It decides how NEW points are
+// through; curvatureHandles shapes the bends), "sketch" (drag freehand;
+// the stroke is fitted into a Bézier line) or "knife" (drag a straight cut
+// across the active pen layer's lines). It decides how NEW points are
 // placed; a committed subpath carries its own `kind`, which decides how it
 // is edited — switching modes never reshapes a layer.
 export let penMode = "bezier";
@@ -116,12 +119,12 @@ function setSubtract(v) {
 
 /** @param {string | undefined} mode */
 function setPenMode(mode) {
-  if (mode !== "bezier" && mode !== "curvature" && mode !== "sketch") return;
+  if (!["bezier", "curvature", "sketch", "knife"].includes(mode)) return;
   if (mode !== penMode) endRefit();
-  // sketch mode places no points: a path being drawn is finished first, the
-  // way a tool switch finishes it (Ruling 14) — committed while the mode it
-  // was drawn in still shapes it, and the pen stays up
-  if (mode === "sketch" && mode !== penMode && !committing) finishPending(true);
+  // sketch and knife modes place no points: a path being drawn is finished
+  // first, the way a tool switch finishes it (Ruling 14) — committed while
+  // the mode it was drawn in still shapes it, and the pen stays up
+  if ((mode === "sketch" || mode === "knife") && mode !== penMode && !committing) finishPending(true);
   // a path being drawn keeps the shape it shows; only new points follow the
   // new mode. Leaving curvature mode freezes its bends into ordinary arms;
   // entering it, the points placed so far become corners that keep their
@@ -447,6 +450,14 @@ function onDown(e, wrap) {
   const editor = actions.canvas();
   const downScreen = { x: e.clientX, y: e.clientY };
 
+  // knife mode: every press is a cut line, wherever it starts
+  if (penMode === "knife") {
+    setSelected(null);
+    const bed = editor.toBed(e);
+    gesture = startKnife(bed.x, bed.y, e);
+    return;
+  }
+
   // closing click: back on the first pending anchor. A plain click commits
   // closed immediately; a click-DRAG curves JUST the closing segment by
   // pulling the first anchor's in_handle — one spline, so the already-drawn
@@ -521,6 +532,12 @@ function onMove(e) {
   e.stopPropagation();
   if (gesture.kind === "sketch") {
     addSketchSamples(gesture, editor, e, clampBed);
+    redraw();
+    return;
+  }
+  if (gesture.kind === "knife") {
+    const bed = editor.toBed(e);
+    moveKnife(gesture, bed.x, bed.y, e);
     redraw();
     return;
   }
@@ -610,6 +627,7 @@ function onUp(e) {
   kickRegen(); // every path below ends the gesture, so any owed project sync runs now
 
   if (g.kind === "sketch") { forgetClick(); finishSketch(g); return; }
+  if (g.kind === "knife") { forgetClick(); finishKnife(g, e); return; }
 
   if (g.kind === "place") {
     forgetClick();
@@ -869,6 +887,7 @@ export function redraw() {
     selected: selected && layer?.id === selected.layerId ? { si: selected.si, ai: selected.ai } : null,
     continuing: !!cont,
     sketch: sketchView(gesture),
+    knife: knifeView(gesture),
   });
   announcePending();
 }

@@ -17,7 +17,7 @@ const NS = "http://www.w3.org/2000/svg";
 /** Screen-pixel glyph sizes: anchor width/diameter, the pending subpath's
  *  first anchor (the close target), an arm knob's diameter, and the gap
  *  between a selected point and its ring. */
-export const PX = { anchor: 7, anchorFirst: 9, knob: 5, ringGap: 3 };
+export const PX = { anchor: 7, anchorFirst: 9, knob: 5, ringGap: 3, knifeDot: 6 };
 
 /**
  * @typedef {{x:number, y:number, in_handle:number[]|null, out_handle:number[]|null, join?:string}} Anchor
@@ -36,6 +36,7 @@ export const PX = { anchor: 7, anchorFirst: 9, knob: 5, ringGap: 3 };
  *   continuing?: boolean,
  *   curvature?: boolean,
  *   sketch?: number[][] | null,
+ *   knife?: {a: number[], b: number[], dots: number[][]} | null,
  * }} PenOverlayState
  *   selected: the committed point J / Delete act on — drawn with a ring.
  *   continuing: pending[0] is an existing line's end being continued, not a
@@ -45,6 +46,8 @@ export const PX = { anchor: 7, anchorFirst: 9, knob: 5, ringGap: 3 };
  *   subpath's: `kind: "curvature"`).
  *   sketch: the freehand stroke being dragged in sketch mode (bed mm
  *   samples), drawn as a thin polyline until it is fitted.
+ *   knife: the cut line being dragged in knife mode (a → b, bed mm) and the
+ *   points where it crosses the active layer's lines — where it will cut.
  */
 
 /** @type {SVGGElement | null} */
@@ -91,7 +94,7 @@ function pendingSegmentsD(anchors) {
 export function renderPenOverlay(state) {
   if (!state) { if (overlay) overlay.innerHTML = ""; return; }
   const { editor, layerSubpaths, pending, gesture, hover, subtract, selected, continuing, curvature,
-          sketch } = state;
+          sketch, knife } = state;
   const g = ensureOverlay(editor);
   g.innerHTML = "";
   g.classList.toggle("subtracting", subtract); // pending paths render rust
@@ -142,6 +145,14 @@ export function renderPenOverlay(state) {
   if (sketch && sketch.length >= 2) {
     g.appendChild(svgEl("polyline", { points: sketch.map((p) => `${p[0]},${p[1]}`).join(" "),
                                       class: "pen-sketch-path" }));
+  }
+
+  if (knife) {
+    g.appendChild(svgEl("line", { x1: knife.a[0], y1: knife.a[1], x2: knife.b[0], y2: knife.b[1],
+                                  class: "pen-knife-line" }));
+    for (const [x, y] of knife.dots) {
+      g.appendChild(svgEl("circle", { cx: x, cy: y, r: (PX.knifeDot / 2) * mm, class: "pen-knife-dot" }));
+    }
   }
 
   if (gesture?.kind === "place") {
