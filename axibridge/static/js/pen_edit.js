@@ -6,8 +6,9 @@
 //   click a point         → select it (ring); J cycles its join, Backspace/
 //                           Delete removes it with a refit of its neighbours
 //   double-click a point  → corner ⇄ smooth
-//   click an open end     → continue the line from there; clicking an open
-//                           end (its own other end, or another line's) joins
+//   click an open end     → continue the line from there (Bézier/curvature
+//                           modes; sketch and knife only select); clicking an
+//                           open end (its own other end, or another line's) joins
 // A curvature-pen subpath (`kind: "curvature"`) is edited the same way, but
 // its arms are always the curvature rule's: every edit that changes one
 // re-runs curvatureHandles (editSubpaths) before it is queued, a corner is
@@ -26,6 +27,7 @@ import { applyArmDrag, bendSegment, classifyJoin, curvatureHandles, deleteAnchor
 import { HIT_PX, activeLayer, committing, gesture, hitDist, isTyping, on, pending, penMode, redraw,
          setCommitting, setGesture, setPending, shapedPending } from "./pen.js";
 import { queueRegenerate, whenIdle } from "./pen_queue.js";
+import { endRefit } from "./pen_sketch.js";
 
 export const DBL_MS = 400;        // a second click on the same spot within this is a double-click
 const BEND_END_T = 0.05;   // a segment grab closer than this (in t) to an end drags that point instead
@@ -317,18 +319,21 @@ export function onPointKeydown(e) {
   if (!sel) return;
   e.preventDefault();
   e.stopPropagation();
+  endRefit(); // a key edit is the next pen action
   if (isJ) cycleJoin(sel.si, sel.ai);
   else deletePoint(sel.si, sel.ai);
 }
 
 // -- E6 continue / join ------------------------------------------------------------
 
-export function clickPoint(si, ai) {
+/** Select a committed point; `arm` (the mode places points) also arms a
+ *  continue when it is an open end. */
+export function clickPoint(si, ai, { arm = true } = {}) {
   const layer = penLayer();
   const sp = layer?.source.params.subpaths?.[si];
   if (!sp?.anchors[ai]) { redraw(); return; }
   selected = { layerId: layer.id, si, ai };
-  if (isOpenEnd(sp, ai) && sp.anchors.length >= 2) armContinue(layer, si, ai === 0 ? "start" : "end");
+  if (arm && isOpenEnd(sp, ai) && sp.anchors.length >= 2) armContinue(layer, si, ai === 0 ? "start" : "end");
   redraw();
 }
 

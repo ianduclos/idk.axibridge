@@ -127,12 +127,14 @@ function setPenMode(mode) {
   if ((mode === "sketch" || mode === "knife") && mode !== penMode && !committing) finishPending(true);
   // a path being drawn keeps the shape it shows; only new points follow the
   // new mode. Leaving curvature mode freezes its bends into ordinary arms;
-  // entering it, the points placed so far become corners that keep their
-  // own arms (`fixed`) — the curvature rule never reshapes them. (A
-  // continued line's own end, pending[0], is the line's, not a placed point.)
+  // entering it, the points placed so far keep their own arms and their
+  // type (`fixed` alone keeps the curvature rule off them; a round point
+  // stays round, and a later arm drag still moves it as smooth/symmetric —
+  // Ruling 18). (A continued line's own end, pending[0], is the line's, not
+  // a placed point.)
   if (!committing && mode !== penMode) {
     pending = mode === "curvature"
-      ? pending.map((a, i) => (cont && i === 0 ? a : { ...a, join: "corner", fixed: true }))
+      ? pending.map((a, i) => (cont && i === 0 ? a : { ...a, join: classifyJoin(a), fixed: true }))
       : shapedPending();
   }
   penMode = mode;
@@ -324,7 +326,7 @@ function onKeydown(e) {
     e.preventDefault();
     endRefit();
     commitPendingPath();
-  } else if (e.key === "Backspace" && pending.length && !gesture) {
+  } else if ((e.key === "Backspace" || e.key === "Delete") && pending.length && !gesture) {
     e.preventDefault();
     endRefit();
     // continuing: pending[0] is the line's own end, not a placed point
@@ -651,8 +653,11 @@ function onUp(e) {
   }
 
   // curvature mode: a second click on a point just clicked (a double-click)
-  // makes it a corner, or a corner smooth again
-  if (g.kind === "anchor" && g.target === "pending" && !g.moved && penMode === "curvature") {
+  // makes it a corner, or a corner smooth again. Not the continued end
+  // (pending[0] while continuing): that is the committed line's own point,
+  // so its double-click flips it on the line, below, as in every mode.
+  if (g.kind === "anchor" && g.target === "pending" && !g.moved && penMode === "curvature" &&
+      !(cont && g.ai === 0)) {
     const prev = lastPendingClick;
     const now = performance.now();
     if (prev && now - prev.at < DBL_MS && Math.hypot(e.clientX - prev.x, e.clientY - prev.y) <= HIT_PX) {
@@ -682,8 +687,10 @@ function onUp(e) {
   if (g.kind === "segment" && !g.moved) { noteClick(e); insertPoint(g); return; }
 
   // a plain click on a point: the second of a pair flips corner ⇄ smooth,
-  // a single one selects it (and arms a continue on an open end). The
-  // continued end itself is pending[0], so its double-click arrives here too.
+  // a single one selects it (and, when the mode places points, arms a
+  // continue on an open end — sketch and knife modes place none, so there a
+  // click only selects). The continued end itself is pending[0], so its
+  // double-click arrives here too.
   if (g.kind === "anchor" && !g.moved) {
     if (noteClick(e)) {
       const hit = hitAnchor(actions.canvas(), e);
@@ -694,7 +701,10 @@ function onUp(e) {
         return;
       }
     }
-    if (g.target === "committed") { clickPoint(g.si, g.ai); return; }
+    if (g.target === "committed") {
+      clickPoint(g.si, g.ai, { arm: penMode === "bezier" || penMode === "curvature" });
+      return;
+    }
   }
 
   // a drag's last move already queued its final frame — nothing is
@@ -785,6 +795,9 @@ function applyPendingEditDrag(g, bx, by, e) {
 export async function commitPenSubpath(subpath, opts = {}) {
   const bite = opts.subtract ?? subtract;
   let committedId = null;
+  // queued edits (a drag's last frame) land first: their snapshots predate
+  // this subpath, and one posted after it would drop it again
+  await whenIdle();
   try {
     const id = currentTargetLayerId();
     const target = id ? S.state.project.layers.find((l) => l.id === id) : null;

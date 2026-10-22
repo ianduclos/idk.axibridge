@@ -1047,7 +1047,9 @@ def test_switching_to_curvature_mid_draw_keeps_drawn_points(ui):
     ui.keyboard.press("Enter")
     sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 3, "committed")
     a = sps[0]["anchors"][1]
-    assert a["join"] == "corner" and a["in_handle"] == [-v for v in a["out_handle"]]  # its arms kept
+    # its arms kept, and its type: a frozen point stays what it was drawn as
+    # (Ruling 18) — `fixed` protects it from the curvature rule, not a label
+    assert a["join"] == "symmetric" and a["in_handle"] == [-v for v in a["out_handle"]]
     assert sps[0]["kind"] == "bezier"   # drawn arms survive only on a Bézier line
     assert not ui.errors
 
@@ -1686,4 +1688,87 @@ def test_pending_arm_plain_drag_mirrors_symmetric(ui):
     assert a["out_handle"] == [pytest.approx(t[0] - o[0], abs=0.4), pytest.approx(t[1] - o[1], abs=0.4)]
     assert a["in_handle"] == [pytest.approx(-a["out_handle"][0], abs=1e-6),
                               pytest.approx(-a["out_handle"][1], abs=1e-6)]
+    assert not ui.errors
+
+
+# ---------------------------------------------------------------- final review fixes
+
+def test_sketch_mode_click_on_an_open_end_only_selects(ui):
+    _draw_three_anchor_path(ui)
+    ui.click('#pen-mode button[data-pen-mode="sketch"]')
+    ui.mouse.click(*_anchor_screen(ui, 0, 0))
+    ui.wait_for_function("() => document.querySelectorAll('.pen-selected-ring').length === 1")
+    assert ui.locator(".pen-pending-anchor").count() == 0   # selected, no continue armed
+
+    # a drag from the line's other open end moves that point — no straight join
+    before = _subpaths(ui)[0]["anchors"]
+    sx, sy = _anchor_screen(ui, 0, 2)
+    ui.mouse.move(sx, sy)
+    ui.mouse.down()
+    ui.mouse.move(sx + 10, sy + 15)
+    ui.mouse.move(sx + 20, sy + 30)
+    ui.mouse.up()
+    sps = _wait_api(ui, lambda s: abs(s[0]["anchors"][2]["y"] - before[2]["y"]) > 1, "end moved")
+    assert len(sps) == 1 and not sps[0]["closed"] and len(sps[0]["anchors"]) == 3
+    _settled(ui, "end drag")
+
+    # a sketch is a fitted subpath of its own
+    _wiggle(ui)
+    sps = _wait_api(ui, lambda s: len(s) == 2, "sketch committed")
+    assert len(sps[0]["anchors"]) == 3 and not sps[0]["closed"]
+
+    # back in Bézier mode nothing is pending: the next click starts a new path
+    ui.click('#pen-mode button[data-pen-mode="bezier"]')
+    assert ui.locator(".pen-pending-anchor").count() == 0
+    _pen_anchor(ui, 0, 90)
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 1")
+    assert not ui.errors
+
+
+def test_a_commit_waits_for_a_queued_drag(ui):
+    _draw_three_anchor_path(ui)
+    _settled(ui, "drawn")
+    _slow_network(ui, project_ms=0, regen_ms=1500)
+    before = _subpaths(ui)[0]["anchors"]
+    sx, sy = _anchor_screen(ui, 0, 0)
+    ui.mouse.move(sx, sy)
+    ui.mouse.down()
+    for k in range(1, 6):
+        ui.mouse.move(sx, sy + 6 * k)
+    ui.mouse.up()
+    # a new path finished while the drag's last frame is still queued
+    _pen_anchor(ui, -60, 90)
+    _pen_anchor(ui, 60, 90)
+    ui.keyboard.press("Enter")
+    ui.wait_for_function(
+        "() => document.querySelector('#tool-toggle [data-tool=select]').classList.contains('on')",
+        timeout=15000)
+    time.sleep(2.0)
+    sps = _settled(ui, "drag + commit")
+    assert len(sps) == 2, sps                       # the queued frame did not drop the new path
+    moved = sps[0]["anchors"][0]
+    assert math.hypot(moved["x"] - before[0]["x"], moved["y"] - before[0]["y"]) > 1  # the drag landed too
+    assert not [e for e in ui.errors if "status of 409" not in e]
+
+
+def test_curvature_double_click_on_an_open_end_flips_it(ui):
+    _draw_curvature_path(ui)
+    ui.mouse.dblclick(*_anchor_screen(ui, 0, 0))
+    sps = _wait_api(ui, lambda s: s[0]["anchors"][0].get("join") == "corner", "the end is a corner")
+    assert len(sps[0]["anchors"]) == len(CURVE_CLICKS) and sps[0]["kind"] == "curvature"
+    _assert_curvature_arms(sps[0])
+    assert ui.locator(".pen-pending-anchor").count() == 0   # no continue left armed
+    assert not ui.errors
+
+
+def test_delete_pops_a_pending_point_like_backspace(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    for dx in (-60, 0, 60):
+        _pen_anchor(ui, dx, -40)
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 3")
+    ui.keyboard.press("Delete")
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 2")
+    ui.keyboard.press("Backspace")
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 1")
+    assert _get(f"{ui.base}/api/project")["layers"] == []   # nothing was committed or deleted
     assert not ui.errors
