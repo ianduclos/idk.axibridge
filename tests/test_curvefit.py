@@ -13,6 +13,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from axibridge.app import create_app
+from axibridge import curvefit
 from axibridge.curvefit import fit_bezier
 from axibridge.sources import pen
 
@@ -171,18 +172,78 @@ def test_rejects_non_finite_points():
         fit_bezier([(0, 0), (float("nan"), 1), (3, 3)], closed=False, detail=0.5)
 
 
-def test_large_noisy_stroke_is_fast_and_finite():
+def _random_walk(n=20000):
     rng = random.Random(3)
     pts, x, y, a = [], 150.0, 100.0, 0.0
-    for _ in range(20000):
+    for _ in range(n):
         a += rng.uniform(-0.4, 0.4)
         x += 0.05 * math.cos(a) + rng.uniform(-0.03, 0.03)
         y += 0.05 * math.sin(a) + rng.uniform(-0.03, 0.03)
         pts.append((x, y))
+    return pts
+
+
+def _white_noise(n=20000):
+    rng = random.Random(5)
+    return [(rng.uniform(0, 300), rng.uniform(0, 218)) for _ in range(n)]
+
+
+def _jitter_line(n=20000):
+    rng = random.Random(9)
+    return [(10 + 280 * i / (n - 1) + rng.uniform(-0.3, 0.3), 100 + rng.uniform(-0.3, 0.3))
+            for i in range(n)]
+
+
+def test_fitter_cap_matches_the_pen_source():
+    assert curvefit.MAX_ANCHORS == pen._MAX_ANCHORS
+
+
+@pytest.mark.parametrize("make", [_random_walk, _white_noise, _jitter_line])
+@pytest.mark.parametrize("closed", [False, True])
+@pytest.mark.parametrize("detail", [0.0, 1.0])
+def test_huge_messy_input_is_fast_finite_and_editable(make, closed, detail):
+    # always an editable path: never more anchors than the pen source accepts
+    pts = make()
     t0 = time.perf_counter()
-    anchors = fit_bezier(pts, closed=False, detail=1.0)
-    assert time.perf_counter() - t0 < 10.0
-    assert len(anchors) >= 2 and _all_finite(anchors)
+    anchors = fit_bezier(pts, closed=closed, detail=detail)
+    assert time.perf_counter() - t0 < 3.0
+    assert 2 <= len(anchors) <= pen._MAX_ANCHORS
+    assert _all_finite(anchors)
+    pen.PenSource().generate(pen.PenParams(subpaths=[pen.PenSubpath(
+        anchors=[pen.PenAnchor(**a) for a in anchors], closed=closed)]))
+
+
+def _antiparallel(a) -> bool:
+    (ix, iy), (ox, oy) = a["in_handle"], a["out_handle"]
+    return (ix * ox + iy * oy) / (math.hypot(ix, iy) * math.hypot(ox, oy)) < -0.999
+
+
+@pytest.mark.parametrize("pts, closed", [
+    ([(10, 10), (30, 20)], True),
+    ([(10, 10), (30, 20), (10, 10.0000001)], True),
+    (_quarter_circle(), False),
+    (_square()[0], True),
+    ([(150 + 40 * math.cos(2 * math.pi * i / 400), 100 + 40 * math.sin(2 * math.pi * i / 400))
+      for i in range(400)], True),
+    (_white_noise(300), True),
+])
+def test_join_labels_match_the_handles(pts, closed):
+    # "smooth" is a promise the handles are collinear: a retracing cusp
+    # (both handles pointing the same way) must say "corner"
+    for a in fit_bezier(pts, closed=closed, detail=0.5):
+        if a["in_handle"] is not None and a["out_handle"] is not None and a["join"] == "smooth":
+            assert _antiparallel(a), a
+
+
+def test_two_point_loop_is_cornered():
+    anchors = fit_bezier([(10, 10), (30, 20)], closed=True, detail=0.5)
+    assert len(anchors) == 2
+    assert all(a["join"] == "corner" for a in anchors)
+
+
+def test_non_finite_handle_raises_rather_than_vanishing():
+    with pytest.raises(ValueError):
+        curvefit._anchor((1.0, 2.0), (float("nan"), 0.0), (1.0, 0.0), "smooth")
 
 
 @pytest.fixture

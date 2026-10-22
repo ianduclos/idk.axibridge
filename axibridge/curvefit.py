@@ -51,6 +51,17 @@ CORNER_WINDOW_MM = 2.0
 # enough that a one-sided chord on a curve (error ~ chord / 2r) stays small.
 TANGENT_WINDOW_MM = 1.0
 
+# The pen source refuses a path with more anchors than this (pen._MAX_ANCHORS;
+# a test pins the two together). A fit must always come back editable, so
+# past it the tolerance is coarsened, and past THAT the weakest corners go.
+MAX_ANCHORS = 2000
+_TOL_CEILING = 64.0     # mm; coarser than this, just fit one cubic per span
+_TOL_BISECT_STEPS = 5   # log-bisection steps between tolerance and ceiling (~25%)
+
+# A "smooth" join promises collinear, opposed handles; anything further off
+# than this (cosine of the angle between in and out handle) says "corner".
+_SMOOTH_COS = -0.9995
+
 _DUP_EPS = 1e-6         # mm; consecutive points closer than this are one point
 _NEWTON_PASSES = 4      # Schneider's maxIterations
 _REPARAM_FACTOR = 3.0   # try reparameterising only when within this x tolerance
@@ -108,7 +119,7 @@ def _turn(back: np.ndarray, fwd: np.ndarray) -> np.ndarray:
 def _find_corners(line: _Line) -> list[int]:
     """Indices (into the distinct points) whose turn angle exceeds
     CORNER_ANGLE, one per bend: the sharpest sample wins and suppresses any
-    other candidate within the window of it."""
+    other candidate within the window of it. Strongest corner first."""
     n = line.n
     if n < 3 or line.length <= 0:
         return []
@@ -144,7 +155,7 @@ def _find_corners(line: _Line) -> list[int]:
         if all(abs(si - t) >= w for t in near):
             bisect.insort(taken, si)
             accepted.append(int(i))
-    return sorted(accepted)
+    return accepted
 
 
 # ---------------------------------------------------------------- Schneider
@@ -254,9 +265,11 @@ def _one_sided_tangent(line: _Line, i: int, toward: int) -> np.ndarray | None:
 
 
 def _fit_range(line: _Line, i0: int, i1: int, t1: np.ndarray, t2: np.ndarray,
-               tol: float) -> list[np.ndarray]:
-    """Fit q[i0..i1] with cubics; returns their control points in order. Iterative (an explicit stack) so a 20000-point stroke
-    can't hit the recursion limit."""
+               tol: float, limit: int) -> list[np.ndarray] | None:
+    """Fit q[i0..i1] with cubics; returns their control points in order, or
+    None as soon as more than ``limit`` are needed (a doomed pass stops
+    early). Iterative (an explicit stack) so a 20000-point stroke can't hit
+    the recursion limit."""
     out: list[np.ndarray] = []
     stack = [(i0, i1, t1, t2)]
     q, s = line.q, line.s
@@ -266,6 +279,8 @@ def _fit_range(line: _Line, i0: int, i1: int, t1: np.ndarray, t2: np.ndarray,
         arclen = float(s[b] - s[a])
         if len(pts) == 2:
             out.append(_generate(pts, np.array([0.0, 1.0]), ta, tb, arclen))
+            if len(out) > limit:
+                return None
             continue
         u = (s[a:b + 1] - s[a]) / arclen if arclen > 0 else np.linspace(0.0, 1.0, len(pts))
         ctrl = _generate(pts, u, ta, tb, arclen)
@@ -281,6 +296,8 @@ def _fit_range(line: _Line, i0: int, i1: int, t1: np.ndarray, t2: np.ndarray,
                     break
         if err <= tol:
             out.append(ctrl)
+            if len(out) > limit:
+                return None
             continue
         k = a + min(max(split, 1), len(pts) - 2)
         tc = _center_tangent(line, k, a, b)
@@ -299,15 +316,21 @@ def _fit_range(line: _Line, i0: int, i1: int, t1: np.ndarray, t2: np.ndarray,
 
 
 def _anchor(p, in_h, out_h, join) -> dict:
-    def h(v):
-        if v is None:
-            return None
+    """One PenAnchor-shaped dict. Non-finite numbers raise: they would mean
+    a fitter bug, and an anchor must never quietly lose a handle over one."""
+    def xy(v):
         x, y = float(v[0]), float(v[1])
         if not (math.isfinite(x) and math.isfinite(y)):
-            return None
+            raise ValueError(f"curve fit produced a non-finite value: {(x, y)}")
         return (x, y)
-    return {"x": float(p[0]), "y": float(p[1]), "in_handle": h(in_h),
-            "out_handle": h(out_h), "join": join}
+    x, y = xy(p)
+    in_h = None if in_h is None else xy(in_h)
+    out_h = None if out_h is None else xy(out_h)
+    if join == "smooth" and in_h is not None and out_h is not None:
+        li, lo = math.hypot(*in_h), math.hypot(*out_h)
+        if li > 0 and lo > 0 and (in_h[0] * out_h[0] + in_h[1] * out_h[1]) / (li * lo) > _SMOOTH_COS:
+            join = "corner"  # e.g. a two-point loop retracing itself: a cusp
+    return {"x": x, "y": y, "in_handle": in_h, "out_handle": out_h, "join": join}
 
 
 def _clean(points: Sequence[Sequence[float]], closed: bool) -> np.ndarray:
@@ -332,7 +355,9 @@ def fit_bezier(points: Sequence[Sequence[float]], closed: bool, detail: float) -
     ``detail`` in [0, 1] picks the tolerance (see ``detail_tolerance``).
     Interior joins between fitted cubics are ``"smooth"``, sharp turns
     ``"corner"``; an open fit's end anchors carry ``join=None`` and no
-    outward handle. Always returns at least two anchors.
+    outward handle. Always returns at least two anchors and never more than
+    MAX_ANCHORS: past that the tolerance is coarsened, then the weakest
+    corners are dropped, so the result is always an editable pen path.
     """
     tol = detail_tolerance(detail)
     pts = _clean(points, closed)
@@ -343,7 +368,10 @@ def fit_bezier(points: Sequence[Sequence[float]], closed: bool, detail: float) -
 
     line = _Line(pts, closed)
     n = line.n
-    corners = _find_corners(line)
+    # Corners don't depend on the tolerance, so coarsening can't remove them:
+    # keep only as many (strongest first) as the cap has room for, leaving
+    # an open stroke its two end anchors.
+    corners = sorted(_find_corners(line)[:MAX_ANCHORS - (0 if closed else 2)])
     if closed and corners and corners[0] != 0:
         # start the loop on a corner so no segment runs through the seam
         pts = np.roll(pts, -corners[0], axis=0)
@@ -365,8 +393,7 @@ def fit_bezier(points: Sequence[Sequence[float]], closed: bool, detail: float) -
     else:
         breaks = [(0, False)] + [(c, True) for c in corners] + [(n - 1, False)]
 
-    cubics: list[np.ndarray] = []
-    joins: list[str | None] = []  # join of each cubic's START anchor
+    spans = []  # (start, end, start is corner, tangent out of start, tangent into end)
     for (a, ca), (b, cb) in zip(breaks, breaks[1:]):
         # Smooth breakpoints only occur on loops (an open stroke's ends are
         # one-sided); both segments meeting there share one tangent, so the
@@ -381,9 +408,44 @@ def fit_bezier(points: Sequence[Sequence[float]], closed: bool, detail: float) -
         t_in = t_in if t_in is not None else _one_sided_tangent(line, b, a)
         if t_out is None or t_in is None:  # unreachable after de-duplication
             t_out, t_in = np.array([1.0, 0.0]), np.array([-1.0, 0.0])
-        for j, ctrl in enumerate(_fit_range(line, a, b, t_out, t_in, tol)):
-            cubics.append(ctrl)
-            joins.append(("corner" if ca else "smooth") if j == 0 else "smooth")
+        spans.append((a, b, ca, t_out, t_in))
+
+    # an open fit has one more anchor than cubics; a loop has as many
+    budget = MAX_ANCHORS - (0 if closed else 1)
+
+    def fit_all(tol: float):
+        cubics: list[np.ndarray] = []
+        joins: list[str | None] = []  # join of each cubic's START anchor
+        for a, b, ca, t_out, t_in in spans:
+            segs = _fit_range(line, a, b, t_out, t_in, tol, budget - len(cubics))
+            if segs is None:
+                return None
+            for j, ctrl in enumerate(segs):
+                cubics.append(ctrl)
+                joins.append(("corner" if ca else "smooth") if j == 0 else "smooth")
+        return cubics, joins
+
+    # Over the pen source's cap at the asked tolerance: find (roughly) the
+    # finest tolerance that fits, by log-bisection up to the ceiling. Past
+    # the ceiling every span is one cubic, which the corner cap above keeps
+    # within budget. When the corners alone fill the cap, go straight there.
+    fit = fit_all(tol)
+    if fit is None:
+        fit = fit_all(_TOL_CEILING) if len(spans) < budget else None
+        if fit is None:
+            fit = fit_all(math.inf)
+        else:
+            lo, hi = math.log(tol), math.log(_TOL_CEILING)
+            for _ in range(_TOL_BISECT_STEPS):
+                mid = (lo + hi) / 2.0
+                got = fit_all(math.exp(mid))
+                if got is None:
+                    lo = mid
+                else:
+                    hi, fit = mid, got
+    if fit is None:  # unreachable: one cubic per span always fits
+        raise ValueError("curve fit cannot meet the anchor cap")
+    cubics, joins = fit
 
     if not closed:
         anchors = [_anchor(cubics[0][0], None, cubics[0][1] - cubics[0][0], None)]
