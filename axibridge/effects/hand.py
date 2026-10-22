@@ -67,17 +67,28 @@ class HandEffect(EffectModule):
     description = "Redraws the layer as one of your Gesture Studies hands following the line."
     Params = HandParams
 
-    def complete_params(self, params: dict[str, Any]) -> dict[str, Any]:
-        """Pin the chosen hand at Keep: `pin = "<hand>@<hash>"` from the current
-        snapshot when there is no pin or it names another hand. A pin that
-        already names the hand is kept (a refreeze never changes a kept layer);
-        an unknown hand is left unpinned."""
+    def complete_params(self, params: dict[str, Any],
+                        previous: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        """Pin the chosen hand at Keep, and keep that pin while the hand is
+        unchanged (a refreeze never changes a kept layer). In order: a pin
+        that names the hand stays; else a pin naming the hand on one of the
+        layer's previous Hand steps is carried over (an edit that omits the
+        pin — an agent's patch, a preset or defaults applied — keeps it, and
+        matching by hand survives reorder and add); else the current
+        snapshot's hash; an unknown hand is left unpinned."""
         hand = params.get("hand", HandParams.model_fields["hand"].default)
-        pin = params.get("pin")
-        if isinstance(pin, str) and isinstance(hand, str) and pin.partition("@")[0] == hand:
+        if not isinstance(hand, str):
             return params
-        h = _current_hash(hand) if isinstance(hand, str) else None
+        pin = params.get("pin")
+        if isinstance(pin, str) and pin.partition("@")[0] == hand:
+            return params
         out = {k: v for k, v in params.items() if k != "pin"}
+        for prev in previous or ():
+            old = prev.get("pin") if isinstance(prev, dict) else None
+            if isinstance(old, str) and old.partition("@")[0] == hand:
+                out["pin"] = old
+                return out
+        h = _current_hash(hand)
         if h is not None:
             out["pin"] = f"{hand}@{h}"
         return out

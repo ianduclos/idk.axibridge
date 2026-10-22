@@ -135,7 +135,10 @@ def test_pinned_hash_survives_snapshot_change(client, monkeypatch):
                         lambda hid, ph: calls.append((hid, ph)) or real(hid, ph))
     session._shaped_cache.clear()
     after = session.resolved()[layer["id"]]
+    # the proof: resolve asked the library for the PINNED version
     assert ("matisse", h) in calls
+    # smoke check only — the real library still has one matisse, so the
+    # current and pinned versions draw alike either way
     assert [p.points for p in after] == [p.points for p in before]
 
 
@@ -209,3 +212,83 @@ def test_tween_of_stray_morphs(client, monkeypatch):
     assert 6.0 in strays
     mid = next(p for p in seen if p.stray_mm == 6.0)
     assert mid.pin == a["effects"][0]["params"]["pin"]
+
+
+def _refreeze(monkeypatch):
+    """Simulate a library refreeze: the current snapshot names new versions."""
+    monkeypatch.setattr(hand_mod, "_current_hash", lambda hand_id: "ffffffffffff")
+
+
+def test_patch_without_pin_keeps_the_kept_pin(client, monkeypatch):
+    layer = _layer_with_hand(client)
+    pinned = layer["effects"][0]["params"]["pin"]
+    _refreeze(monkeypatch)
+    params = {k: v for k, v in layer["effects"][0]["params"].items() if k != "pin"}
+    step = {"effect": "hand", "enabled": True, "params": {**params, "stray_mm": 5.0}}
+    out = client.patch(f"/api/layers/{layer['id']}", json={"effects": [step]}).json()
+    assert out["effects"][0]["params"]["pin"] == pinned
+    # explicit None (what preset/defaults resolve returns) is the same as missing
+    step["params"]["pin"] = None
+    out = client.patch(f"/api/layers/{layer['id']}", json={"effects": [step]}).json()
+    assert out["effects"][0]["params"]["pin"] == pinned
+
+
+def test_pin_kept_across_reorder_and_add(client, monkeypatch):
+    layer = _layer_with_hand(client)
+    pinned = layer["effects"][0]["params"]["pin"]
+    _refreeze(monkeypatch)
+    params = {k: v for k, v in layer["effects"][0]["params"].items() if k != "pin"}
+    steps = [{"effect": "freehand", "enabled": True, "params": {}},
+             {"effect": "hand", "enabled": True, "params": params}]
+    out = client.patch(f"/api/layers/{layer['id']}", json={"effects": steps}).json()
+    assert out["effects"][1]["params"]["pin"] == pinned
+
+
+def test_preset_apply_with_hand_unchanged_keeps_pin(client, monkeypatch):
+    layer = _layer_with_hand(client)
+    pinned = layer["effects"][0]["params"]["pin"]
+    made = client.post("/api/module-library/presets", json={
+        "kind": "effect", "module": "hand", "name": "Loose",
+        "params": {"hand": "matisse", "stray_mm": 9.0}}).json()
+    _refreeze(monkeypatch)
+    resolved = client.post("/api/module-library/resolve", json={
+        "kind": "effect", "module": "hand", "preset_id": made["id"],
+        "current_params": layer["effects"][0]["params"]}).json()["params"]
+    assert resolved.get("pin") is None
+    step = {**layer["effects"][0], "params": resolved}
+    out = client.patch(f"/api/layers/{layer['id']}", json={"effects": [step]}).json()
+    assert out["effects"][0]["params"]["stray_mm"] == 9.0
+    assert out["effects"][0]["params"]["pin"] == pinned
+
+
+def test_changing_hand_after_refreeze_pins_current(client, monkeypatch):
+    layer = _layer_with_hand(client)
+    _refreeze(monkeypatch)
+    other = next(o["id"] for o in FL.options("hand") if o["id"] != "matisse")
+    step = {**layer["effects"][0], "params": {**layer["effects"][0]["params"], "hand": other}}
+    out = client.patch(f"/api/layers/{layer['id']}", json={"effects": [step]}).json()
+    assert out["effects"][0]["params"]["pin"] == f"{other}@ffffffffffff"
+    step = {**layer["effects"][0], "params": {"hand": other}}
+    out = client.patch(f"/api/layers/{layer['id']}", json={"effects": [step]}).json()
+    assert out["effects"][0]["params"]["pin"] == f"{other}@ffffffffffff"
+
+
+def test_tween_between_two_hands_steps_hand_and_pin_together(client, monkeypatch):
+    other = next(o["id"] for o in FL.options("hand") if o["id"] != "matisse")
+    a = _layer_with_hand(client, seed=4)
+    b = _layer_with_hand(client, seed=4, hand=other)
+    pa, pb = a["effects"][0]["params"]["pin"], b["effects"][0]["params"]["pin"]
+    tw = session.create_tween_layer(a["id"], b["id"])
+    seen = []
+    real = hand_mod.HandEffect.apply
+    monkeypatch.setattr(hand_mod.HandEffect, "apply",
+                        lambda self, paths, params, ctx: seen.append(params) or real(self, paths, params, ctx))
+    for t, (hand, pin) in ((0.4, ("matisse", pa)), (0.6, (other, pb))):
+        session.set_tween_params(tw.id, {"t": t})
+        session._shaped_cache.clear()
+        session._tween_cache.clear()
+        seen.clear()
+        session.resolved()
+        mids = [p for p in seen if p.stray_mm == 3.0 and (p.hand, p.pin) == (hand, pin)]
+        assert mids, (t, [(p.hand, p.pin) for p in seen])
+        assert all(p.pin.partition("@")[0] == p.hand for p in seen)

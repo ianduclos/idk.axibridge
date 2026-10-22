@@ -298,11 +298,15 @@ class EffectModule(ABC):
     @abstractmethod
     def apply(self, paths: list[Path], params: BaseModel, ctx: EffectContext) -> list[Path]: ...
 
-    def complete_params(self, params: dict[str, Any]) -> dict[str, Any]:
+    def complete_params(self, params: dict[str, Any],
+                        previous: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         """Complete a step's params before a layer keeps them (default: as
-        given). The Hand effect pins its library hand's hash here, so a later
-        refreeze never changes a kept layer. Runs on every kept effect edit,
-        slider drags included, so it must be cheap and must never raise."""
+        given). `previous` is the params of every step of this same effect
+        the layer kept before the edit (any order), so a module can carry
+        captured state the editor didn't send. The Hand effect pins its
+        library hand's hash here, so a later refreeze never changes a kept
+        layer. Runs on every kept effect edit, slider drags included, so it
+        must be cheap and must never raise."""
         return params
 
     def available(self) -> tuple[bool, str]:

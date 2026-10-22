@@ -306,13 +306,17 @@ The contract, and why each clause exists:
   contexts, so fall back to the bed constants.
 - Declare missing optional deps via `available()` rather than import-time
   crashes; the UI greys you out with your reason.
-- **`complete_params(params) -> params`** (optional, default identity) runs on
-  every step a layer keeps — `Session.update_layer`'s `effects` patch is the
-  one write path (add, edit, reorder, apply a preset), never a preview. The
-  Hand effect pins `pin = "<hand>@<hash>"` there so a later library refreeze
-  never changes a kept layer; list such captured fields in
-  `registry._PRESET_EXCLUSIONS` so presets never carry them. It runs on every
-  slider drag: keep it cheap and never raise.
+- **`complete_params(params, previous=None) -> params`** (optional, default
+  identity) runs on every step a layer keeps — `Session.update_layer`'s
+  `effects` patch is the one write path (add, edit, reorder, apply a preset),
+  never a preview. `previous` is the params of the layer's steps of the same
+  effect before the edit. The Hand effect pins `pin = "<hand>@<hash>"` there
+  so a later library refreeze never changes a kept layer: an edit that omits
+  the pin (an agent's patch, a preset or defaults applied) keeps the layer's
+  existing pin while the hand is unchanged; only a new hand pins the current
+  hash. List such captured fields in `registry._PRESET_EXCLUSIONS` so presets
+  never carry them. It runs on every slider drag: keep it cheap and never
+  raise.
 
 ## Writing a Transform
 

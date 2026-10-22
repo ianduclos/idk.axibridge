@@ -968,7 +968,8 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
                     # the actual placement lives on the A/B keyframes.
                     effective_patch["transform"] = layer.transform.model_dump()
             if "effects" in effective_patch:
-                effective_patch["effects"] = self._completed_effects(effective_patch["effects"])
+                effective_patch["effects"] = self._completed_effects(
+                    effective_patch["effects"], layer.effects)
             data = layer.model_dump()
             for k, v in effective_patch.items():
                 if k not in allowed:
@@ -2776,14 +2777,16 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
         complete = getattr(module, "complete_params", None)
         return complete(params) if complete is not None else params
 
-    @classmethod
-    def _completed_effects(cls, steps: Any) -> Any:
+    @staticmethod
+    def _completed_effects(steps: Any, before: list[EffectStep]) -> Any:
         """Every effect step a layer is about to keep, completed by its module
         (``EffectModule.complete_params``): the Hand effect pins its library
         hand's hash. THE one place kept effect params pass through — adding a
         step, editing one, reordering, applying a preset all arrive here as an
-        ``effects`` patch. Steps of unknown effects (and malformed steps) are
-        left for the layer model to accept or reject as before."""
+        ``effects`` patch. Each module also sees the params of the layer's
+        previous steps of the same effect (``before``), so captured state an
+        editor omitted survives the edit. Steps of unknown effects (and
+        malformed steps) are left for the layer model to accept or reject."""
         if not isinstance(steps, list):
             return steps
         out = []
@@ -2796,7 +2799,9 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
                 except KeyError:
                     module = None
                 if module is not None:
-                    step = {**step, "params": cls._completed(module, dict(step.get("params") or {}))}
+                    previous = [dict(s.params) for s in before if s.effect == module.id]
+                    params = module.complete_params(dict(step.get("params") or {}), previous)
+                    step = {**step, "params": params}
             out.append(step)
         return out
 
