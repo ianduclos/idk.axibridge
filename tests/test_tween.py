@@ -326,6 +326,24 @@ def test_pen_morph_survives_join_and_kind():
     assert mid[0]["kind"] == "curvature" and mid[0]["anchors"][0]["join"] == "smooth"
 
 
+def test_pen_morph_untagged_vs_tagged_still_morphs():
+    old = _pen_subpath([(0, 0), (10, 0)])
+    for sp in old:
+        sp["kind"] = "bezier"
+        for an in sp["anchors"]:
+            an["join"] = None
+    new = _pen_subpath([(20, 0), (30, 0)])
+    for sp in new:
+        sp["kind"] = "curvature"
+        for an in sp["anchors"]:
+            an["join"] = "smooth"
+    mid = _blend_geometry(old, new, 0.5)
+    assert mid is not _NO_BLEND
+    assert mid[0]["anchors"][0]["x"] == pytest.approx(10.0)
+    assert _blend_geometry(old, new, 0.4)[0]["anchors"][0]["join"] is None
+    assert _blend_geometry(old, new, 0.6)[0]["anchors"][0]["join"] == "smooth"
+
+
 def test_pen_tween_falls_back_to_step_on_structure_mismatch():
     a = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 0), (10, 0)])})
     b = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 20), (10, 20), (20, 20)])})

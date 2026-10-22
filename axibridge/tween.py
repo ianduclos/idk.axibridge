@@ -399,6 +399,8 @@ def _blend_geometry(a: Any, b: Any, t: float) -> Any:
         return a if t < 0.5 else b
     if a is None and b is None:
         return None
+    if (a is None and isinstance(b, str)) or (isinstance(a, str) and b is None):
+        return a if t < 0.5 else b  # untagged ↔ tagged `join` steps; never blocks the morph
     # a handle pair — including corner (None) ↔ curve: None acts as [0,0], so
     # the anchor's handle grows out of / retracts into the point continuously
     if _is_handle(a) and _is_handle(b) and not (a is None and b is None):
