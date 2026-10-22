@@ -1559,3 +1559,59 @@ def test_slider_hands_back_keys_without_cancelling_them(ui):
     assert ui.evaluate("() => window.__copyKey.target.id") == "pen-detail"
     assert ui.evaluate("() => window.__copyKey && window.__copyKey.defaultPrevented") is False
     assert not ui.errors
+
+
+# ---------------------------------------------------------------- direct arm grab (A2)
+
+def _middle_anchor(page):
+    return _subpaths(page)[0]["anchors"][1]
+
+
+def _drag_out_knob(page, dx, dy, alt=False):
+    """Grab the middle anchor's out-arm knob (the topmost: it was drawn by
+    dragging upward) and drag it by (dx, dy) screen px."""
+    knob = page.evaluate("""() => {
+        const ks = [...document.querySelectorAll('.pen-handle-knob')]
+          .map((k) => k.getBoundingClientRect())
+          .map((r) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 }));
+        ks.sort((a, b) => a.y - b.y);
+        return ks[0];
+    }""")
+    if alt:
+        page.keyboard.down("Alt")
+    page.mouse.move(knob["x"], knob["y"])
+    page.mouse.down()
+    page.mouse.move(knob["x"] + dx / 2, knob["y"] + dy / 2)
+    page.mouse.move(knob["x"] + dx, knob["y"] + dy)
+    page.mouse.up()
+    if alt:
+        page.keyboard.up("Alt")
+
+
+def test_plain_drag_moves_arm_and_mirrors_symmetric(ui):
+    _draw_three_anchor_path(ui)
+    before = _middle_anchor(ui)
+    assert before["in_handle"] == [pytest.approx(-before["out_handle"][0], abs=1e-6),
+                                   pytest.approx(-before["out_handle"][1], abs=1e-6)]
+    _drag_out_knob(ui, 25, -15)
+    a = _wait_api(ui, lambda s: s[0]["anchors"][1]["out_handle"] != before["out_handle"],
+                  "the out arm moved by a plain drag")[0]["anchors"][1]
+    assert a["out_handle"] != before["out_handle"]
+    assert a["in_handle"] == [pytest.approx(-a["out_handle"][0], abs=1e-6),
+                              pytest.approx(-a["out_handle"][1], abs=1e-6)]
+    assert a.get("join") in (None, "symmetric", "smooth")
+    _undo(ui)   # one drag, one undo step
+    _wait_api(ui, lambda s: s[0]["anchors"][1]["out_handle"] == before["out_handle"],
+              "undone in one step")
+    assert not ui.errors
+
+
+def test_alt_drag_breaks_to_corner(ui):
+    _draw_three_anchor_path(ui)
+    before = _middle_anchor(ui)
+    _drag_out_knob(ui, 25, -15, alt=True)
+    a = _wait_api(ui, lambda s: s[0]["anchors"][1]["out_handle"] != before["out_handle"],
+                  "the out arm moved by an alt drag")[0]["anchors"][1]
+    assert a["join"] == "corner"
+    assert a["in_handle"] == before["in_handle"]
+    assert not ui.errors

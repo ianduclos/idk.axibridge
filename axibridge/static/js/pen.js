@@ -10,8 +10,8 @@
 // Once committed, re-editing an anchor/handle on the SELECTED pen layer is a
 // live, coalesced regenerate per drag (one ⌘Z per drag), mirroring canvas.js's
 // own drag-then-commit split. The anchors/handles of the CURRENT, still-
-// uncommitted subpath are ALSO re-editable the same way (same Option /
-// Shift+Option scheme) before you ever commit — pure local state, no server
+// uncommitted subpath are ALSO re-editable the same way (same
+// arm-drag scheme) before you ever commit — pure local state, no server
 // round-trip, so you can tune a curve while still drawing it rather than
 // only after it's already a real layer.
 //
@@ -29,7 +29,7 @@ import { renderPenOverlay } from "./pen_overlay.js";
 import { DBL_MS, clickPoint, commitContinue, cont, dragToken, flipCornerSmooth, forgetClick, hitSegment,
          hitOpenEnd, hitAnchor, insertPoint, joinInto, noteClick, onDblClick, onPointKeydown,
          selected, setCont, setSelected, startBend, applyBend, validateEditState } from "./pen_edit.js";
-import { classifyJoin, curvatureHandles, reverseSubpath, snapAngle } from "./pen_ops.js";
+import { applyArmDrag, classifyJoin, curvatureHandles, reverseSubpath, snapAngle } from "./pen_ops.js";
 import { kickRegen, queueRegenerate, whenIdle } from "./pen_queue.js";
 import { addSketchSamples, endRefit, finishSketch, initSketch, sketchView, startSketch } from "./pen_sketch.js";
 import { finishKnife, knifeView, moveKnife, startKnife } from "./pen_knife.js";
@@ -387,10 +387,8 @@ export function hitDist(editor, x, y, e) {
 
 // An existing (committed) anchor or handle knob under the pointer, on the
 // active pen layer — how re-editing an already-committed shape is found.
-// Handle knobs are always FOUND here regardless of modifiers (so a plain
-// drag that starts on one doesn't fall through and accidentally begin a new
-// anchor) — but onMove only applies the edit while Option is held (handles
-// only move with Option; see the modifier scheme note on onMove).
+// Handle knobs are found regardless of modifiers: a plain drag on one moves
+// the arm, Option breaks the point to a corner (see onMove).
 function hitExisting(editor, e) {
   const layer = activeLayer();
   if (!layer) return null;
@@ -587,9 +585,9 @@ function onMove(e) {
       gesture.moved = true;
     }
     if (gesture.target === "pending") {
-      applyPendingEditDrag(gesture, bx, by, false);
+      applyPendingEditDrag(gesture, bx, by, null);
     } else {
-      applyEditDrag(gesture, bx, by, false);
+      applyEditDrag(gesture, bx, by, null);
       gesture.dirty = true;
       const layer = activeLayer();
       if (layer) queueRegenerate(layer, { coalesce: gesture.token });
@@ -598,19 +596,16 @@ function onMove(e) {
     return;
   }
 
-  // gesture.kind === "handle": Option gates ALL handle manipulation, checked
-  // continuously (every move, not just at the initial grab) so toggling it
-  // mid-drag works — without it, this drag is inert (release harmlessly,
-  // nothing has changed). Shift+Option additionally full-mirrors the OPPOSITE
-  // handle (exact reflection — same angle AND length), the classic symmetric
-  // smooth node. Applies identically whether the anchor is still pending or
-  // already committed — only WHERE the edit lands (locally vs. a server
-  // regenerate) differs.
-  if (!e.altKey) return;
+  // gesture.kind === "handle": a plain drag moves the arm, following the
+  // point's join (symmetric mirrors, smooth keeps the other arm's length,
+  // corner leaves it); Option, read continuously so toggling it mid-drag
+  // works, breaks the point to a corner; Shift snaps the arm's angle to 15°.
+  // Identical whether the anchor is still pending or already committed —
+  // only WHERE the edit lands (locally vs. a server regenerate) differs.
   if (gesture.target === "pending") {
-    applyPendingEditDrag(gesture, bx, by, e.shiftKey);
+    applyPendingEditDrag(gesture, bx, by, e);
   } else {
-    applyEditDrag(gesture, bx, by, e.shiftKey);
+    applyEditDrag(gesture, bx, by, e);
     gesture.dirty = true;
     const layer = activeLayer();
     if (layer) queueRegenerate(layer, { coalesce: gesture.token });
@@ -725,7 +720,7 @@ function tentativeAnchor(g) {
 // Core edit math, shared by committed-layer and pending-subpath editing —
 // only how the anchor OBJECT is located (and whether a server round-trip
 // follows) differs between the two callers below.
-function applyAnchorEdit(anchor, g, bx, by, mirror) {
+function applyAnchorEdit(anchor, g, bx, by, e, isEnd = false) {
   if (g.kind === "anchor") {
     // offset: a point grabbed from its line (a near-end bend) keeps the
     // grab's distance instead of jumping onto the pointer
@@ -734,30 +729,32 @@ function applyAnchorEdit(anchor, g, bx, by, mirror) {
     anchor.x = x; anchor.y = y;
     return;
   }
-  const [dx, dy] = clampHandle(bx - anchor.x, by - anchor.y);
-  const draggedKey = `${g.side}_handle`;
-  const otherKey = `${g.side === "out" ? "in" : "out"}_handle`;
-  anchor[draggedKey] = [dx, dy];
-  if (!mirror) return;
-  // Full symmetric mirror (Shift+Option): the opposite handle becomes an exact
-  // reflection — same angle AND length — the classic smooth-node behaviour.
-  anchor[otherKey] = [-dx, -dy];
+  let [dx, dy] = [bx - anchor.x, by - anchor.y];
+  if (e?.shiftKey) [dx, dy] = snapAngle(dx, dy, 15);
+  const next = applyArmDrag(anchor, g.side, clampHandle(dx, dy), !!e?.altKey, { isEnd });
+  // the join is written explicitly: the result is what the point now is
+  next.join = classifyJoin(next);
+  anchor.in_handle = next.in_handle;
+  anchor.out_handle = next.out_handle;
+  anchor.join = next.join;
 }
 
-function applyEditDrag(g, bx, by, mirror) {
+function applyEditDrag(g, bx, by, e) {
   const layer = activeLayer();
   if (!layer) return;
   const subpaths = layer.source.params.subpaths;
-  // an arm pulled by hand (⌥ on a point) makes a curvature line an ordinary
-  // Bézier one, which keeps the arms it has — the rule would undo the pull
-  if (g.kind === "handle" && subpaths[g.si].kind === "curvature") subpaths[g.si].kind = "bezier";
-  applyAnchorEdit(subpaths[g.si].anchors[g.ai], g, bx, by, mirror);
+  const sp = subpaths[g.si];
+  // an arm pulled by hand makes a curvature line an ordinary Bézier one,
+  // which keeps the arms it has — the rule would undo the pull
+  if (g.kind === "handle" && sp.kind === "curvature") sp.kind = "bezier";
+  const n = sp.anchors.length;
+  applyAnchorEdit(sp.anchors[g.ai], g, bx, by, e, !sp.closed && (g.ai === 0 || g.ai === n - 1));
   // a curvature point moved: its neighbours re-bend around it
-  if (subpaths[g.si].kind === "curvature") subpaths[g.si] = curvatureHandles(subpaths[g.si]);
+  if (sp.kind === "curvature") subpaths[g.si] = curvatureHandles(sp);
 }
 
-function applyPendingEditDrag(g, bx, by, mirror) {
-  applyAnchorEdit(pending[g.ai], g, bx, by, mirror);
+function applyPendingEditDrag(g, bx, by, e) {
+  applyAnchorEdit(pending[g.ai], g, bx, by, e, g.ai === 0 || g.ai === pending.length - 1);
 }
 
 // -- commit: one finished subpath -> append to the active pen layer, or create one --
