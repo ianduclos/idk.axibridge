@@ -13,6 +13,7 @@ import { api } from "./api.js";
 import { S, actions } from "./main.js";
 import { commitPenSubpath, on, redraw, setCommitting, subtract } from "./pen.js";
 import { queueRegenerate, whenIdle } from "./pen_queue.js";
+import { bedSubpaths, editable, setBedSubpaths } from "./pen_space.js";
 
 const $ = (id) => document.getElementById(id);
 const MIN_STEP_MM = 0.2;   // a sample closer than this to the last kept one is dropped
@@ -123,8 +124,12 @@ const fit = (points, closed, detail) =>
 
 // An anchor list as plain values, so the client's copy and the server's
 // (which spells out `join: null`) compare equal when they are the same line.
+// Rounded to a nanometre: on a moved layer the line is read back through its
+// placement (pen_space.js), which may differ in the last float bits.
+const nm = (v) => Math.round(v * 1e6) / 1e6;
+const arm = (h) => (h ? [nm(h[0]), nm(h[1])] : null);
 const sig = (anchors) => JSON.stringify((anchors || []).map(
-  (a) => [a.x, a.y, a.in_handle ?? null, a.out_handle ?? null, a.join ?? null]));
+  (a) => [nm(a.x), nm(a.y), arm(a.in_handle), arm(a.out_handle), a.join ?? null]));
 
 // -- commit ----------------------------------------------------------------------
 
@@ -155,7 +160,7 @@ export async function finishSketch(g) {
   // a pen subpath appended to (or starting) a pen layer is re-fittable; a
   // bite or a shape-layer union is a shape op, not a subpath, and is not
   const layer = id ? S.state?.project?.layers.find((x) => x.id === id) : null;
-  const subpaths = layer?.source?.generator === "pen" ? layer.source.params.subpaths || [] : [];
+  const subpaths = layer?.source?.generator === "pen" ? bedSubpaths(layer) : [];
   if (on && !bite && subpaths.length) {
     lastFit = { layerId: id, si: subpaths.length - 1, points, closed,
                 token: `pen-refit-${id.slice(0, 16)}-${NONCE}-${++seq}`, seq: 0,
@@ -194,11 +199,11 @@ async function runRefit() {
 // in between ends the re-fit rather than being overwritten.
 function applyRefit(run, anchors) {
   const layer = S.state?.project?.layers.find((x) => x.id === run.layerId);
-  const sp = layer?.source?.generator === "pen" ? layer.source.params.subpaths?.[run.si] : null;
-  if (!sp || sig(sp.anchors) !== sig(run.anchors)) { endRefit(); return; }
+  const sp = layer?.source?.generator === "pen" ? bedSubpaths(layer)[run.si] : null;
+  if (!sp || !editable(layer) || sig(sp.anchors) !== sig(run.anchors)) { endRefit(); return; }
   run.anchors = anchors;
-  layer.source.params.subpaths = layer.source.params.subpaths.map(
-    (s, i) => (i === run.si ? { ...s, anchors, kind: "bezier" } : s));
+  setBedSubpaths(layer, bedSubpaths(layer).map(
+    (s, i) => (i === run.si ? { ...s, anchors, kind: "bezier" } : s)));
   queueRegenerate(layer, { coalesce: run.token });
   redraw();
 }

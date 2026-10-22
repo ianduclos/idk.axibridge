@@ -21,7 +21,9 @@
 // knife (K1) in pen_knife.js, and the
 // ordered regenerate queue every committed edit goes through in
 // pen_queue.js. This file keeps the drawing state, placement and the pointer
-// dispatch that routes each gesture to its handler.
+// dispatch that routes each gesture to its handler. Every one of them works
+// in bed mm, where the ink is seen: a layer's subpaths are read and written
+// only through pen_space.js, which places them by the layer's transform.
 
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
@@ -31,6 +33,7 @@ import { DBL_MS, clickPoint, commitContinue, cont, dragToken, flipCornerSmooth, 
          selected, setCont, setSelected, startBend, applyBend, validateEditState } from "./pen_edit.js";
 import { applyArmDrag, classifyJoin, curvatureHandles, reverseSubpath, snapAngle } from "./pen_ops.js";
 import { kickRegen, queueRegenerate, whenIdle } from "./pen_queue.js";
+import { bedSubpaths, editable, setBedSubpaths, toLocal } from "./pen_space.js";
 import { addSketchSamples, endRefit, finishSketch, initSketch, sketchView, startSketch } from "./pen_sketch.js";
 import { finishKnife, knifeView, moveKnife, startKnife } from "./pen_knife.js";
 
@@ -154,7 +157,7 @@ const bare = ({ fixed, ...a }) => a; // pending-only marker, never sent
 
 /** The line being continued, oriented to end at the continued end. */
 function continuedLine() {
-  const sp = cont ? activeLayer()?.source.params.subpaths?.[cont.si] : null;
+  const sp = cont ? bedSubpaths(activeLayer())[cont.si] : null;
   if (!sp) return null;
   return cont.end === "start" ? reverseSubpath(sp) : sp;
 }
@@ -340,18 +343,27 @@ function onKeydown(e) {
 
 // -- targeting: which layer (if any) anchor re-editing applies to ------------
 
+// pen, shape AND brush layers are targets: a brush layer converts to a
+// shape layer on commit (the pen silhouette unions/bites into the blob)
+const isTargetKind = (l) => l?.source?.type === "generator" &&
+  (l.source.generator === "pen" || l.source.generator === "shape" || l.source.generator === "brush");
+
+/** The selected pen/shape/brush layer when its placement squashes it flat —
+ *  the pen can't edit it (pen_space.js), so it draws a new layer instead. */
+function flatSelection() {
+  const project = S.state?.project;
+  const sel = project && S.selection.length === 1 ? project.layers.find((l) => l.id === S.selection[0]) : null;
+  return isTargetKind(sel) && !editable(sel) ? sel : null;
+}
+
 function currentTargetLayerId() {
   const project = S.state?.project;
   if (!project) return null;
-  if (activePenLayerId && !project.layers.some((l) => l.id === activePenLayerId)) {
-    activePenLayerId = null; // the active layer was deleted — never assume
-  }
+  const active = activePenLayerId ? project.layers.find((l) => l.id === activePenLayerId) : null;
+  // the active layer was deleted, or squashed flat (never editable) — never assume
+  if (activePenLayerId && (!active || !editable(active))) activePenLayerId = null;
   const sel = S.selection.length === 1 ? project.layers.find((l) => l.id === S.selection[0]) : null;
-  // pen, shape AND brush layers are targets: a brush layer converts to a
-  // shape layer on commit (the pen silhouette unions/bites into the blob)
-  if (sel && sel.source?.type === "generator" &&
-      (sel.source?.generator === "pen" || sel.source?.generator === "shape" ||
-       sel.source?.generator === "brush")) {
+  if (isTargetKind(sel) && editable(sel)) {
     activePenLayerId = sel.id; // selecting a different pen layer retargets to it
     return sel.id;
   }
@@ -392,9 +404,7 @@ export function hitDist(editor, x, y, e) {
 // Handle knobs are found regardless of modifiers: a plain drag on one moves
 // the arm, Option breaks the point to a corner (see onMove).
 function hitExisting(editor, e) {
-  const layer = activeLayer();
-  if (!layer) return null;
-  const subpaths = layer.source.params.subpaths || [];
+  const subpaths = bedSubpaths(activeLayer());
   for (let si = 0; si < subpaths.length; si++) {
     const anchors = subpaths[si].anchors;
     const knobs = subpaths[si].kind !== "curvature"; // a curvature line shows no arm knobs
@@ -447,6 +457,7 @@ function onDown(e, wrap) {
   e.stopPropagation();
   wrap.setPointerCapture(e.pointerId);
   endRefit(); // any press on the canvas is the next pen action
+  if (flatSelection()) actions.hint("This layer is flattened — the pen can't edit it, so it draws a new layer");
   const editor = actions.canvas();
   const downScreen = { x: e.clientX, y: e.clientY };
 
@@ -492,7 +503,7 @@ function onDown(e, wrap) {
   } else {
     const hit = hitExisting(editor, e);
     if (hit) {
-      const a = activeLayer().source.params.subpaths[hit.si].anchors[hit.ai];
+      const a = bedSubpaths(activeLayer())[hit.si].anchors[hit.ai];
       gesture = { ...hit, target: "committed", downScreen, token: dragToken(),
                   grab: grabOffset(editor, e, hit, a) };
       return;
@@ -770,15 +781,18 @@ function applyAnchorEdit(anchor, g, bx, by, e, isEnd = false) {
 function applyEditDrag(g, bx, by, e) {
   const layer = activeLayer();
   if (!layer) return;
-  const subpaths = layer.source.params.subpaths;
-  const sp = subpaths[g.si];
+  const subpaths = bedSubpaths(layer);
+  if (!subpaths[g.si]?.anchors[g.ai]) return;
+  // the views are read-only: the edit is made on a copy and written back
+  const sp = { ...subpaths[g.si], anchors: subpaths[g.si].anchors.map((a) => ({ ...a })) };
   // an arm pulled by hand makes a curvature line an ordinary Bézier one,
   // which keeps the arms it has — the rule would undo the pull
   if (g.kind === "handle" && sp.kind === "curvature") sp.kind = "bezier";
   const n = sp.anchors.length;
   applyAnchorEdit(sp.anchors[g.ai], g, bx, by, e, !sp.closed && (g.ai === 0 || g.ai === n - 1));
   // a curvature point moved: its neighbours re-bend around it
-  if (sp.kind === "curvature") subpaths[g.si] = curvatureHandles(sp);
+  const edited = sp.kind === "curvature" ? curvatureHandles(sp) : sp;
+  setBedSubpaths(layer, subpaths.map((s, i) => (i === g.si ? edited : s)));
 }
 
 function applyPendingEditDrag(g, bx, by, e) {
@@ -806,17 +820,23 @@ export async function commitPenSubpath(subpath, opts = {}) {
       actions.log("subtract: nothing to bite into — select a pen, brush or shape layer");
       return null;
     }
+    // the subpath was drawn on the bed; the target keeps it in its own frame
+    const local = target ? toLocal(target, [subpath])?.[0] : subpath;
+    if (!local) {
+      actions.hint("This layer is flattened — the pen can't edit it");
+      return null;
+    }
     if (target && (bite || gen !== "pen")) {
       // region semantics: one op onto the mass. A plain pen/brush target
       // converts to a shape layer inside the same server-side undo step
       // (session.append_shape_op) — "erase from a pen shape commits the shape".
       await api.post(`/api/layers/${target.id}/shape_op`,
                      { op: { kind: "pen", mode: bite ? "subtract" : "add",
-                             anchors: subpath.anchors, closed: subpath.closed } });
+                             anchors: local.anchors, closed: local.closed } });
       activePenLayerId = target.id;
       committedId = target.id;
     } else if (target) {
-      const subpaths = [...(target.source.params.subpaths || []), subpath];
+      const subpaths = [...(target.source.params.subpaths || []), local];
       // no coalesce: one finished shape = one ⌘Z, exactly like draw.js's per-stroke commit
       await api.post(`/api/layers/${target.id}/regenerate`, { params: { ...target.source.params, subpaths } });
       committedId = target.id;
@@ -905,7 +925,7 @@ export function redraw() {
   const view = penMode === "curvature" ? curvatureView() : { pending, gesture: gestureView() };
   renderPenOverlay({
     editor: actions.canvas(),
-    layerSubpaths: layer ? layer.source.params.subpaths || [] : null,
+    layerSubpaths: layer ? bedSubpaths(layer) : null,
     pending: view.pending,
     gesture: view.gesture,
     curvature: penMode === "curvature",

@@ -19,7 +19,9 @@
 //
 // pen.js owns the drawing state (on, pending, gesture, committing) and the
 // pointer dispatch; this module owns the edit state (the selected point, the
-// continue, the last click) and is called from that dispatch.
+// continue, the last click) and is called from that dispatch. Like every pen
+// gesture it works in bed mm: subpaths are read with bedSubpaths and written
+// with editSubpaths (pen_space.js), never through the layer's params directly.
 
 import { actions } from "./main.js";
 import { applyArmDrag, bendSegment, classifyJoin, curvatureHandles, deleteAnchor, joinEnds,
@@ -27,6 +29,7 @@ import { applyArmDrag, bendSegment, classifyJoin, curvatureHandles, deleteAnchor
 import { HIT_PX, activeLayer, committing, gesture, hitDist, isTyping, on, pending, penMode, redraw,
          setCommitting, setGesture, setPending, shapedPending } from "./pen.js";
 import { queueRegenerate, whenIdle } from "./pen_queue.js";
+import { bedSubpaths, setBedSubpaths } from "./pen_space.js";
 import { endRefit } from "./pen_sketch.js";
 
 export const DBL_MS = 400;        // a second click on the same spot within this is a double-click
@@ -59,7 +62,7 @@ function penLayer() {
 export function hitAnchor(editor, e) {
   const layer = penLayer();
   if (!layer) return null;
-  const subpaths = layer.source.params.subpaths || [];
+  const subpaths = bedSubpaths(layer);
   for (let si = 0; si < subpaths.length; si++) {
     const anchors = subpaths[si].anchors;
     for (let ai = 0; ai < anchors.length; ai++) {
@@ -76,7 +79,7 @@ export function hitSegment(editor, e) {
   const bed = editor.toBed(e);
   const pxPerMm = editor.pxPerMm();
   let best = null;
-  (layer.source.params.subpaths || []).forEach((sp, si) => {
+  bedSubpaths(layer).forEach((sp, si) => {
     const r = nearestOnSubpath(sp, bed.x, bed.y);
     if (r.segIndex < 0) return;
     const px = r.dist * pxPerMm;
@@ -89,7 +92,7 @@ export function hitSegment(editor, e) {
 export function hitOpenEnd(editor, e, skip) {
   const layer = penLayer();
   if (!layer) return null;
-  const subpaths = layer.source.params.subpaths || [];
+  const subpaths = bedSubpaths(layer);
   for (let si = 0; si < subpaths.length; si++) {
     const sp = subpaths[si];
     if (sp.closed || sp.anchors.length < 2) continue;
@@ -105,13 +108,13 @@ export function hitOpenEnd(editor, e, skip) {
 /** A curvature subpath with its arms re-derived; any other one as it is. */
 const reshape = (sp) => (sp.kind === "curvature" ? curvatureHandles(sp) : sp);
 
-// Replace one subpath list on the local project and queue its regenerate.
-// Every subpath the edit replaced is reshaped first, so a curvature line's
-// arms always follow its points; untouched ones (the same objects) are left
-// exactly as they are.
+// Replace one subpath list (bed mm) on the local project and queue its
+// regenerate. Every subpath the edit replaced is reshaped first, so a
+// curvature line's arms always follow its points; untouched ones (the same
+// views bedSubpaths handed out) are left exactly as they are.
 function editSubpaths(layer, subpaths, { coalesce = false } = {}) {
-  const before = new Set(layer.source.params.subpaths || []);
-  layer.source.params.subpaths = subpaths.map((s) => (before.has(s) ? s : reshape(s)));
+  const before = new Set(bedSubpaths(layer));
+  setBedSubpaths(layer, subpaths.map((s) => (before.has(s) ? s : reshape(s))));
   queueRegenerate(layer, { coalesce });
 }
 
@@ -134,10 +137,10 @@ const isOpenEnd = (sp, ai) => !sp.closed && (ai === 0 || ai === sp.anchors.lengt
 
 export function insertPoint(g) {
   const layer = penLayer();
-  const sp = layer?.source.params.subpaths?.[g.si];
+  const sp = bedSubpaths(layer)[g.si];
   if (!sp) { redraw(); return; }
   const split = splitSegment(withJoins(sp, [g.seg, g.seg + 1]), g.seg, g.t);
-  editSubpaths(layer, layer.source.params.subpaths.map((s, i) => (i === g.si ? split : s)));
+  editSubpaths(layer, bedSubpaths(layer).map((s, i) => (i === g.si ? split : s)));
   // the new point is selected: Backspace takes it straight back out
   selected = { layerId: layer.id, si: g.si, ai: g.seg + 1 };
   redraw();
@@ -159,7 +162,7 @@ function segPoint(sp, k, t) {
 // with `g` rewritten into an "anchor" gesture.
 export function startBend(g) {
   const layer = penLayer();
-  const sp = layer?.source.params.subpaths?.[g.si];
+  const sp = bedSubpaths(layer)[g.si];
   if (!sp) { setGesture(null); return false; }
   if (g.t < BEND_END_T || g.t > 1 - BEND_END_T) {
     const ai = g.t < BEND_END_T ? g.seg : (g.seg + 1) % sp.anchors.length;
@@ -174,7 +177,7 @@ export function startBend(g) {
     const split = splitSegment(sp, g.seg, g.t);
     const ai = g.seg + 1;
     const a = split.anchors[ai];
-    editSubpaths(layer, layer.source.params.subpaths.map((s, i) => (i === g.si ? split : s)),
+    editSubpaths(layer, bedSubpaths(layer).map((s, i) => (i === g.si ? split : s)),
                  { coalesce: g.token });
     selected = { layerId: layer.id, si: g.si, ai };
     Object.assign(g, { kind: "anchor", target: "committed", si: g.si, ai,
@@ -189,11 +192,11 @@ export function startBend(g) {
 
 export function applyBend(g, bx, by) {
   const layer = penLayer();
-  if (!layer || !layer.source.params.subpaths?.[g.si]) return;
+  if (!layer || !bedSubpaths(layer)[g.si]) return;
   // always from the grab-time shape, so the bend tracks the pointer exactly
   const bent = bendSegment(g.base, g.seg, g.t, [bx + g.grabOff[0], by + g.grabOff[1]]);
   g.dirty = true;
-  editSubpaths(layer, layer.source.params.subpaths.map((s, i) => (i === g.si ? bent : s)),
+  editSubpaths(layer, bedSubpaths(layer).map((s, i) => (i === g.si ? bent : s)),
                { coalesce: g.token });
 }
 
@@ -232,7 +235,7 @@ function curvatureArms(sp, ai) {
 }
 
 function setPoint(layer, si, ai, anchor) {
-  const subpaths = layer.source.params.subpaths.map((s, i) => (i === si
+  const subpaths = bedSubpaths(layer).map((s, i) => (i === si
     ? { ...s, anchors: s.anchors.map((a, j) => (j === ai ? anchor : a)) }
     : s));
   editSubpaths(layer, subpaths);
@@ -243,7 +246,7 @@ const flipCurvatureJoin = (a) => ({ ...a, join: a.join === "corner" ? "smooth" :
 
 export function flipCornerSmooth(si, ai) {
   const layer = penLayer();
-  const sp = layer?.source.params.subpaths?.[si];
+  const sp = bedSubpaths(layer)[si];
   if (!sp?.anchors[ai]) { redraw(); return; }
   const a = sp.anchors[ai];
   const next = sp.kind === "curvature" ? flipCurvatureJoin(a)
@@ -257,7 +260,7 @@ export function flipCornerSmooth(si, ai) {
 
 function cycleJoin(si, ai) {
   const layer = penLayer();
-  const sp = layer.source.params.subpaths[si];
+  const sp = bedSubpaths(layer)[si];
   const a = sp.anchors[ai];
   const join = NEXT_JOIN[classifyJoin(a)];
   let next;
@@ -282,13 +285,13 @@ function cycleJoin(si, ai) {
 
 function deletePoint(si, ai) {
   const layer = penLayer();
-  const sp = layer.source.params.subpaths[si];
+  const sp = bedSubpaths(layer)[si];
   const rest = deleteAnchor(withJoins(sp, [ai - 1, ai + 1]), ai);
   // a line left with fewer than two points is gone; an emptied layer stays
   // as an empty pen layer (a blank target, like the "＋ empty layer" button)
   const subpaths = rest.anchors.length < 2
-    ? layer.source.params.subpaths.filter((_, i) => i !== si)
-    : layer.source.params.subpaths.map((s, i) => (i === si ? rest : s));
+    ? bedSubpaths(layer).filter((_, i) => i !== si)
+    : bedSubpaths(layer).map((s, i) => (i === si ? rest : s));
   setPending([]);
   cont = null;
   selected = null;
@@ -301,7 +304,7 @@ function selectedPoint() {
   if (!selected) return null;
   const layer = penLayer();
   const a = layer?.id === selected.layerId
-    ? layer.source.params.subpaths?.[selected.si]?.anchors[selected.ai] : null;
+    ? bedSubpaths(layer)[selected.si]?.anchors[selected.ai] : null;
   if (!a) { selected = null; return null; }
   return selected;
 }
@@ -330,7 +333,7 @@ export function onPointKeydown(e) {
  *  continue when it is an open end. */
 export function clickPoint(si, ai, { arm = true } = {}) {
   const layer = penLayer();
-  const sp = layer?.source.params.subpaths?.[si];
+  const sp = bedSubpaths(layer)[si];
   if (!sp?.anchors[ai]) { redraw(); return; }
   selected = { layerId: layer.id, si, ai };
   if (arm && isOpenEnd(sp, ai) && sp.anchors.length >= 2) armContinue(layer, si, ai === 0 ? "start" : "end");
@@ -339,7 +342,7 @@ export function clickPoint(si, ai, { arm = true } = {}) {
 
 // pending = [the line's end point], oriented so placed points follow it
 function armContinue(layer, si, end) {
-  const sp = layer.source.params.subpaths[si];
+  const sp = bedSubpaths(layer)[si];
   const a = end === "start" ? sp.anchors[0] : sp.anchors[sp.anchors.length - 1];
   const copy = { ...a, in_handle: a.in_handle ? [...a.in_handle] : null,
                  out_handle: a.out_handle ? [...a.out_handle] : null };
@@ -364,11 +367,11 @@ function mergedContinue(sp) {
 /** @param {{stay?: boolean}} [opts] stay: keep the pen up afterwards */
 export async function commitContinue({ stay = false } = {}) {
   const layer = penLayer();
-  if (!layer || !cont || !layer.source.params.subpaths?.[cont.si]) {
+  if (!layer || !cont || !bedSubpaths(layer)[cont.si]) {
     setPending([]); cont = null; redraw(); return;
   }
   const si = cont.si;
-  const subpaths = layer.source.params.subpaths.map((s, i) => (i === si ? mergedContinue(s) : s));
+  const subpaths = bedSubpaths(layer).map((s, i) => (i === si ? mergedContinue(s) : s));
   await commitEdit(layer, subpaths, { stay });
 }
 
@@ -377,7 +380,7 @@ export async function commitContinue({ stay = false } = {}) {
 // Its own other end closes the line; another line's end makes them one.
 export async function joinInto(g) {
   const layer = penLayer();
-  const subpaths = layer?.source.params.subpaths;
+  const subpaths = layer ? bedSubpaths(layer) : null;
   if (!cont || !subpaths?.[cont.si] || !subpaths[g.si]) { redraw(); return; }
   const target = subpaths[g.si];
   const C = g.end === "start" ? target.anchors[0] : target.anchors[target.anchors.length - 1];
@@ -435,7 +438,7 @@ async function commitEdit(layer, subpaths, { stay = false } = {}) {
 export function validateEditState(layer) {
   if (selected) selectedPoint();
   if (cont && !committing) {
-    const sp = layer?.id === cont.layerId ? layer.source.params.subpaths?.[cont.si] : null;
+    const sp = layer?.id === cont.layerId ? bedSubpaths(layer)[cont.si] : null;
     if (!sp || sp.closed || sp.anchors.length < 2) { cont = null; setPending([]); }
   }
 }

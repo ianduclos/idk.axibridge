@@ -441,3 +441,41 @@ def test_split_segment_downgrades_symmetric_neighbours_it_shortened(run):
       return {ja: a.join, jb: out.anchors[2].join, keptIn: dragged.in_handle};""")
     assert got["ja"] == "smooth" and got["jb"] == "smooth"
     assert got["keptIn"] == pytest.approx([-20, 0])  # the next drag no longer snaps it back
+
+
+# ---------------------------------------------------------------- placement
+
+def test_map_subpath_places_the_curve_exactly_and_inverts(run):
+    got = run("""
+      const sp = H.freeze({anchors: [H.A(10, 20, null, [15, -5]), H.A(60, 40, [-10, -10], [10, 10], 'symmetric'),
+                                     H.A(90, 10, [-5, 5], null)], closed: false, kind: 'curvature'});
+      const c = Math.cos(0.6) * 1.7, s = Math.sin(0.6) * 1.7;
+      const m = {a: c, b: s, c: -s * 0.5, d: c * 0.5, e: 33, f: -12};   // rotation, scale and shear
+      const map = (p) => [m.a * p[0] + m.c * p[1] + m.e, m.b * p[0] + m.d * p[1] + m.f];
+      const placed = M.mapSubpath(sp, m);
+      let worst = 0;
+      for (let k = 0; k < 2; k++) {
+        const c0 = H.ctrl(sp, k), c1 = H.ctrl(placed, k);
+        for (let i = 0; i <= 20; i++) worst = Math.max(worst, H.dist(map(H.at(c0, i / 20)), H.at(c1, i / 20)));
+      }
+      const back = M.mapSubpath(placed, M.invertAffine(m));
+      let round = 0;
+      sp.anchors.forEach((a, i) => { round = Math.max(round, H.dist([a.x, a.y], [back.anchors[i].x, back.anchors[i].y])); });
+      return {worst, round, kind: placed.kind, join: placed.anchors[1].join, keys: Object.keys(placed.anchors[0]).sort(),
+              mid: M.classifyJoin(placed.anchors[1]),
+              id: M.mulAffine(m, M.invertAffine(m))};""")
+    assert got["worst"] < 1e-9                    # the mapped cubic IS the mapped curve
+    assert got["round"] < 1e-9
+    assert got["kind"] == "curvature" and got["join"] == "symmetric"
+    assert got["mid"] == "symmetric"              # mirrored arms stay mirrored under any linear map
+    assert got["keys"] == ["in_handle", "join", "out_handle", "x", "y"]
+    for k, v in {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}.items():
+        assert got["id"][k] == pytest.approx(v, abs=1e-9)
+
+
+def test_invert_affine_refuses_a_flattened_placement(run):
+    got = run("""
+      return [M.invertAffine({a: 1, b: 0, c: 0, d: 0, e: 0, f: 5}),
+              M.invertAffine({a: 2, b: 4, c: 1, d: 2, e: 0, f: 0}),
+              M.invertAffine({a: NaN, b: 0, c: 0, d: 1, e: 0, f: 0})];""")
+    assert got == [None, None, None]

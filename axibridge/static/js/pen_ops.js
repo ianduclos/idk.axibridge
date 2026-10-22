@@ -574,3 +574,41 @@ export function joinEnds(subpath, otherEnd, subpath2, end2) {
   const anchors = [...s1.anchors.slice(0, -1), m, ...s2.anchors.slice(1)];
   return cloneSubpath({ ...s1, closed: false }, anchors);
 }
+
+// ---------------------------------------------------------------- placement
+
+/** @typedef {{a:number, b:number, c:number, d:number, e:number, f:number}} Affine
+ *  SVG matrix(a b c d e f), as compose.py's Affine: x' = a·x + c·y + e,
+ *  y' = b·x + d·y + f. */
+
+/** l ∘ r: apply r first, then l. @param {Affine} l @param {Affine} r @returns {Affine} */
+export function mulAffine(l, r) {
+  return { a: l.a * r.a + l.c * r.b, b: l.b * r.a + l.d * r.b,
+           c: l.a * r.c + l.c * r.d, d: l.b * r.c + l.d * r.d,
+           e: l.a * r.e + l.c * r.f + l.e, f: l.b * r.e + l.d * r.f + l.f };
+}
+
+/** The inverse placement, or null when `m` is not finite or flattens the
+ *  plane (|det| < 1e-12, groups.py's own bound). @param {Affine} m @returns {Affine|null} */
+export function invertAffine(m) {
+  const det = m.a * m.d - m.b * m.c;
+  if (![m.a, m.b, m.c, m.d, m.e, m.f, det].every(Number.isFinite) || Math.abs(det) < 1e-12) return null;
+  return { a: m.d / det, b: -m.b / det, c: -m.c / det, d: m.a / det,
+           e: (m.c * m.f - m.d * m.e) / det, f: (m.b * m.e - m.a * m.f) / det };
+}
+
+/**
+ * `sp` placed by `m`: anchor positions take the whole affine, the relative
+ * arms only its linear part (a, b, c, d). A cubic Bézier is affine-invariant,
+ * so the mapped subpath draws exactly the mapped curve, and a join type
+ * (corner / smooth / symmetric) survives any invertible map. Every other
+ * field is carried over as it is (no defaults filled in), so a mapped
+ * subpath reaches the server shaped exactly as it was read.
+ * @param {Subpath} sp @param {Affine} m @returns {Subpath}
+ */
+export function mapSubpath(sp, m) {
+  const arm = (h) => (h ? [m.a * h[0] + m.c * h[1], m.b * h[0] + m.d * h[1]] : null);
+  return { ...sp, anchors: sp.anchors.map((a) => ({
+    ...a, x: m.a * a.x + m.c * a.y + m.e, y: m.b * a.x + m.d * a.y + m.f,
+    in_handle: arm(a.in_handle), out_handle: arm(a.out_handle) })) };
+}

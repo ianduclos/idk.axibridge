@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from test_acceptance_ui import _get, _post, frontend_mode, server, ui
+from test_acceptance_ui import _get, _patch, _post, frontend_mode, server, ui
 from test_drawing_tool_completion import _canvas_point, _pen_anchor
 
 
@@ -1771,4 +1771,234 @@ def test_delete_pops_a_pending_point_like_backspace(ui):
     ui.keyboard.press("Backspace")
     ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 1")
     assert _get(f"{ui.base}/api/project")["layers"] == []   # nothing was committed or deleted
+    assert not ui.errors
+
+
+# ------------------------------------------- a moved layer (its transform)
+# Pen params are in the layer's LOCAL frame; the ink is placed by the layer's
+# transform (and its groups'). Everything the pen shows and does happens where
+# the ink is seen — on the bed — whatever the layer's placement.
+
+def _rot_scale(deg, k, cx=150.0, cy=109.0, tx=0.0, ty=0.0):
+    c, s = math.cos(math.radians(deg)) * k, math.sin(math.radians(deg)) * k
+    return {"a": c, "b": s, "c": -s, "d": c,
+            "e": cx - (c * cx - s * cy) + tx, "f": cy - (s * cx + c * cy) + ty}
+
+
+TRANSLATE = {"a": 1, "b": 0, "c": 0, "d": 1, "e": 25, "f": 18}
+ROT_SCALE = _rot_scale(35, 0.8, tx=10, ty=-5)
+
+
+def _mul(l, r):
+    return {"a": l["a"] * r["a"] + l["c"] * r["b"], "b": l["b"] * r["a"] + l["d"] * r["b"],
+            "c": l["a"] * r["c"] + l["c"] * r["d"], "d": l["b"] * r["c"] + l["d"] * r["d"],
+            "e": l["a"] * r["e"] + l["c"] * r["f"] + l["e"],
+            "f": l["b"] * r["e"] + l["d"] * r["f"] + l["f"]}
+
+
+def _apply(m, x, y):
+    return (m["a"] * x + m["c"] * y + m["e"], m["b"] * x + m["d"] * y + m["f"])
+
+
+def _placement(page, li=0):
+    """The layer's effective placement: its groups' transforms, then its own."""
+    project = _get(f"{page.base}/api/project")
+    layer = project["layers"][li]
+    groups = {g["id"]: g for g in project.get("groups") or []}
+    chain, gid = [], layer.get("group_id")
+    while gid:
+        chain.append(groups[gid])
+        gid = groups[gid].get("parent_id")
+    m = {"a": 1, "b": 0, "c": 0, "d": 1, "e": 0, "f": 0}
+    for g in reversed(chain):
+        m = _mul(m, g["transform"])
+    return _mul(m, layer["transform"])
+
+
+def _ink_d(page, lid):
+    return page.evaluate(
+        "(id) => document.querySelector(`g.layer[data-id='${id}'] path`)?.getAttribute('d') ?? null", lid)
+
+
+def _wait_ink_change(page, lid, before):
+    page.wait_for_function(
+        "([id, d]) => { const p = document.querySelector(`g.layer[data-id='${id}'] path`);"
+        " return !!p && p.getAttribute('d') !== d; }", arg=[lid, before])
+    time.sleep(0.3)  # the pen overlay redraws off the same refresh
+
+
+def _place_layer(page, delta, grouped=False):
+    """Move the first layer the way the canvas commits a move (the selection
+    transform endpoint) — or, `grouped`, put it in a group and move the group.
+    Returns the layer's effective placement."""
+    lid = _layer(page)["id"]
+    before = _ink_d(page, lid)
+    target = {"kind": "layer", "id": lid}
+    if grouped:
+        g = _post(f"{page.base}/api/compose/groups", {"targets": [target], "name": "G"})["group"]
+        target = {"kind": "group", "id": g["id"]}
+    _post(f"{page.base}/api/compose/selection/transform", {"targets": [target], "delta": delta})
+    _wait_ink_change(page, lid, before)
+    return _placement(page)
+
+
+def _centres(page, selector):
+    return page.evaluate(f"""() => [...document.querySelectorAll({selector!r})].map((e) => {{
+        const r = e.getBoundingClientRect();
+        return [r.x + r.width / 2, r.y + r.height / 2];
+    }})""")
+
+
+def _near_any(p, pts):
+    return min(math.hypot(p[0] - q[0], p[1] - q[1]) for q in pts)
+
+
+@pytest.mark.parametrize("move,grouped", [(TRANSLATE, False), (ROT_SCALE, False), (ROT_SCALE, True)],
+                         ids=["translated", "rotated-scaled", "group-moved"])
+def test_points_sit_on_the_ink_of_a_moved_layer(ui, move, grouped):
+    _draw_three_anchor_path(ui)
+    _settled(ui, "drawn")
+    m = _place_layer(ui, move, grouped)
+    ui.wait_for_function("() => document.querySelectorAll('.pen-anchor').length === 3")
+
+    ink = [_mm_to_screen(ui, *p) for p in _resolved_points(ui)]
+    glyphs = _centres(ui, ".pen-anchor")
+    assert len(glyphs) == 3
+    for g in glyphs:
+        assert _near_any(g, ink) <= 1.0, (g, ink)
+    # the arms ride the layer too: every knob is a placed arm tip
+    tips = []
+    for a in _subpaths(ui)[0]["anchors"]:
+        for h in (a["out_handle"], a["in_handle"]):
+            if h:
+                tips.append(_mm_to_screen(ui, *_apply(m, a["x"] + h[0], a["y"] + h[1])))
+    knobs = _centres(ui, ".pen-handle-knob")
+    assert len(knobs) == len(tips) == 2
+    for k in knobs:
+        assert _near_any(k, tips) <= 1.0, (k, tips)
+    assert not ui.errors
+
+
+def test_click_on_a_moved_layers_line_adds_a_point_there(ui):
+    _draw_three_anchor_path(ui)
+    _settled(ui, "drawn")
+    m = _place_layer(ui, ROT_SCALE)
+    before_pts = _resolved_points(ui)
+    mid = _apply(m, *_bez(_subpaths(ui)[0], 1, 0.5))   # where the curved segment is seen
+    ui.mouse.click(*_mm_to_screen(ui, *mid))
+
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 4, "a fourth anchor")
+    added = _apply(m, sps[0]["anchors"][2]["x"], sps[0]["anchors"][2]["y"])
+    assert math.hypot(added[0] - mid[0], added[1] - mid[1]) < 0.3, (added, mid)
+    deadline = time.time() + 5
+    after_pts = _resolved_points(ui)
+    while after_pts == before_pts and time.time() < deadline:
+        time.sleep(0.1)
+        after_pts = _resolved_points(ui)
+    assert after_pts != before_pts
+    assert max(_dist_to_polyline(p, before_pts) for p in after_pts) <= 0.05
+    assert max(_dist_to_polyline(p, after_pts) for p in before_pts) <= 0.05
+    assert len(_get(f"{ui.base}/api/project")["layers"]) == 1
+    assert not ui.errors
+
+
+def test_new_points_on_a_moved_layer_land_where_clicked(ui):
+    _draw_three_anchor_path(ui)
+    _settled(ui, "drawn")
+    m = _place_layer(ui, ROT_SCALE)
+    clicks = [_canvas_point(ui, -40, 70), _canvas_point(ui, 40, 90)]
+    want = [_screen_to_mm(ui, *c) for c in clicks]
+    for c in clicks:
+        ui.mouse.click(*c)
+    ui.keyboard.press("Enter")
+
+    sps = _wait_api(ui, lambda s: len(s) == 2, "a second line on the moved layer")
+    got = [_apply(m, a["x"], a["y"]) for a in sps[1]["anchors"]]
+    for g, w in zip(got, want):
+        assert math.hypot(g[0] - w[0], g[1] - w[1]) <= 0.05, (got, want)
+    ink = _resolved_points(ui)
+    for w in want:
+        assert _near_any(w, ink) <= 0.05, (w, want)
+    assert len(_get(f"{ui.base}/api/project")["layers"]) == 1
+    assert not ui.errors
+
+
+def test_knife_cuts_a_moved_line_where_it_is_seen(ui):
+    _straight_line(ui)
+    _settled(ui, "line")
+    m = _place_layer(ui, TRANSLATE)
+    _knife_mode(ui)
+    a0, a1 = (_apply(m, a["x"], a["y"]) for a in _subpaths(ui)[0]["anchors"])
+    seen = (a0[0] + (a1[0] - a0[0]) * 0.6, a0[1] + (a1[1] - a0[1]) * 0.6)   # on the line as drawn
+    L = math.hypot(a1[0] - a0[0], a1[1] - a0[1])
+    n = (-(a1[1] - a0[1]) / L * 8, (a1[0] - a0[0]) / L * 8)                # 8 mm across it
+    _drag(ui, _mm_to_screen(ui, seen[0] - n[0], seen[1] - n[1]),
+          _mm_to_screen(ui, seen[0] + n[0], seen[1] + n[1]))
+
+    sps = _wait_api(ui, lambda s: len(s) == 2, "cut in two")
+    end = _apply(m, sps[0]["anchors"][-1]["x"], sps[0]["anchors"][-1]["y"])
+    assert math.hypot(end[0] - seen[0], end[1] - seen[1]) < 0.5, (end, seen)
+    assert not ui.errors
+
+
+def test_continuing_a_moved_line_extends_it_where_clicked(ui):
+    _draw_three_anchor_path(ui)
+    _settled(ui, "drawn")
+    m = _place_layer(ui, ROT_SCALE)
+    before = _subpaths(ui)[0]["anchors"]
+    end = _apply(m, before[2]["x"], before[2]["y"])
+    ui.mouse.click(*_mm_to_screen(ui, *end))                 # arm a continue at the seen end
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 1")
+    click = _canvas_point(ui, 60, 80)
+    want = _screen_to_mm(ui, *click)
+    ui.mouse.click(*click)
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 4, "the line continued")
+    assert len(sps) == 1
+    for got, was in zip(sps[0]["anchors"][:3], before):     # the line itself did not move
+        assert (got["x"], got["y"]) == (_approx(was["x"]), _approx(was["y"]))
+    new = _apply(m, sps[0]["anchors"][3]["x"], sps[0]["anchors"][3]["y"])
+    assert math.hypot(new[0] - want[0], new[1] - want[1]) <= 0.05, (new, want)
+    assert not ui.errors
+
+
+def test_a_rectangle_on_a_moved_pen_layer_lands_where_dragged(ui):
+    # the shape tool commits through the pen's own commitPenSubpath
+    _straight_line(ui)
+    _settled(ui, "line")
+    m = _place_layer(ui, ROT_SCALE)
+    ui.click('#tool-toggle button[data-tool="shape"]')
+    p0, p1 = _canvas_point(ui, -60, -40), _canvas_point(ui, 40, 30)
+    corners = [_screen_to_mm(ui, *p0), _screen_to_mm(ui, *p1)]
+    _drag(ui, p0, p1)
+    sps = _wait_api(ui, lambda s: len(s) == 2, "the rectangle appended to the moved layer")
+    got = [_apply(m, a["x"], a["y"]) for a in sps[1]["anchors"]]
+    xs, ys = sorted(c[0] for c in corners), sorted(c[1] for c in corners)
+    for g in got:   # every corner sits on the dragged box's corners, as drawn
+        assert min(abs(g[0] - xs[0]), abs(g[0] - xs[1])) <= 0.05, (got, corners)
+        assert min(abs(g[1] - ys[0]), abs(g[1] - ys[1])) <= 0.05, (got, corners)
+    assert not ui.errors
+
+
+def test_a_flattened_layer_is_left_alone(ui):
+    _straight_line(ui)
+    _settled(ui, "line")
+    layer = _layer(ui)
+    before = _ink_d(ui, layer["id"])
+    _patch(f"{ui.base}/api/layers/{layer['id']}",
+           {"transform": {"a": 1, "b": 0, "c": 0, "d": 0, "e": 0, "f": 100}})
+    _wait_ink_change(ui, layer["id"], before)
+    ui.wait_for_function("() => document.querySelectorAll('.pen-anchor').length === 0")
+    _pen_anchor(ui, -40, 60)
+    _pen_anchor(ui, 40, 60)
+    ui.keyboard.press("Enter")
+    hint = ui.locator("#canvas-status").get_by_text("flattened", exact=False)
+    hint.wait_for(state="visible")
+    layers = _get(f"{ui.base}/api/project")["layers"]
+    deadline = time.time() + 5
+    while len(layers) < 2 and time.time() < deadline:
+        time.sleep(0.1)
+        layers = _get(f"{ui.base}/api/project")["layers"]
+    assert len(layers) == 2                                     # drawn on a layer of its own
+    assert layers[0]["source"]["params"]["subpaths"] == layer["source"]["params"]["subpaths"]
     assert not ui.errors

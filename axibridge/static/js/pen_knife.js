@@ -10,6 +10,7 @@ import { actions } from "./main.js";
 import { DRAG_PX, activeLayer, redraw } from "./pen.js";
 import { knife, knifeCrossings, snapAngle } from "./pen_ops.js";
 import { queueRegenerate } from "./pen_queue.js";
+import { bedSubpaths, setBedSubpaths } from "./pen_space.js";
 
 /** The knife cuts pen layers only (a shape or brush layer has no lines to cut). */
 function penLayer() {
@@ -42,7 +43,7 @@ function cutEnd(g) {
 export function knifeView(g) {
   if (g?.kind !== "knife" || !g.moved) return null;
   const b = cutEnd(g);
-  const subpaths = penLayer()?.source.params.subpaths || [];
+  const subpaths = bedSubpaths(penLayer());
   return { a: g.a, b, dots: subpaths.flatMap((sp) => knifeCrossings(sp, g.a, b)) };
 }
 
@@ -58,7 +59,8 @@ export function finishKnife(g, e) {
   if (!g.moved) { redraw(); return; }
   const b = cutEnd(g);
   let cut = false;
-  const subpaths = (layer.source.params.subpaths || []).flatMap((sp) => {
+  // the cut is drawn on the bed: it cuts the lines where they are seen
+  const subpaths = bedSubpaths(layer).flatMap((sp) => {
     if (!knifeCrossings(sp, g.a, b).length) return [sp];
     cut = true;
     // the pieces keep the cubics they had: a curvature line's pieces become
@@ -66,7 +68,7 @@ export function finishKnife(g, e) {
     return knife(sp, g.a, b).map((p) => ({ ...p, kind: "bezier" }));
   });
   if (cut) {
-    layer.source.params.subpaths = subpaths;
+    setBedSubpaths(layer, subpaths);
     queueRegenerate(layer, { coalesce: false }); // one cut = one undo step
   }
   redraw();
