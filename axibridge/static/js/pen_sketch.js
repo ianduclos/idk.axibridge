@@ -22,7 +22,9 @@ const CLOSE_MIN_MM = 8;    // …once the stroke is long enough to be a loop at 
 const MAX_POINTS = 20000;  // what /api/geometry/fit accepts
 
 /** The most recent sketch, re-fittable until the next pen action:
- *  {layerId, si, points, closed, token, seq}. */
+ *  {layerId, si, points, closed, token, seq, anchors} — anchors: what the
+ *  line held when this tab last wrote it, so a re-fit never lands on a line
+ *  something else (the MCP, an undo elsewhere) has changed since. */
 let lastFit = null;
 let refitBusy = false;   // one fit request in flight at a time…
 let refitAgain = false;  // …and the slider moved meanwhile: fit its latest value next
@@ -38,9 +40,34 @@ export function endRefit() {
   refitAgain = false;
 }
 
+// The slider's own keys; any other key pressed while it has focus is the
+// canvas's (⌘Z, E, Enter, Escape…), not swallowed as "typing".
+const SLIDER_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End",
+                             "PageUp", "PageDown", "Tab", "Shift", "Meta", "Control", "Alt"]);
+
 export function initSketch() {
   const detail = $("pen-detail");
-  if (detail) detail.addEventListener("input", onDetailInput);
+  if (!detail) return;
+  detail.addEventListener("input", onDetailInput);
+  // a pointer drag on the slider gives the keyboard back when it ends, so the
+  // next key (⌘Z above all) reaches the canvas; focused from the keyboard it
+  // keeps focus, so the arrows go on nudging it
+  let byPointer = false;
+  detail.addEventListener("pointerdown", () => { byPointer = true; });
+  detail.addEventListener("change", () => {
+    if (byPointer) detail.blur();
+    byPointer = false;
+  });
+  detail.addEventListener("keydown", (e) => {
+    if (SLIDER_KEYS.has(e.key)) return;
+    // hand any other key to the document as if the slider had no focus
+    e.preventDefault();
+    e.stopPropagation();
+    detail.blur();
+    document.body.dispatchEvent(new KeyboardEvent("keydown", {
+      key: e.key, code: e.code, metaKey: e.metaKey, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey,
+      altKey: e.altKey, repeat: e.repeat, bubbles: true, cancelable: true }));
+  });
 }
 
 function detailValue() {
@@ -86,8 +113,13 @@ function capped(points) {
   return out;
 }
 
-const fit = (points, closed) =>
-  api.post("/api/geometry/fit", { points, closed, detail: detailValue() }).then((r) => r.anchors);
+const fit = (points, closed, detail) =>
+  api.post("/api/geometry/fit", { points, closed, detail }).then((r) => r.anchors);
+
+// An anchor list as plain values, so the client's copy and the server's
+// (which spells out `join: null`) compare equal when they are the same line.
+const sig = (anchors) => JSON.stringify((anchors || []).map(
+  (a) => [a.x, a.y, a.in_handle ?? null, a.out_handle ?? null, a.join ?? null]));
 
 // -- commit ----------------------------------------------------------------------
 
@@ -107,8 +139,9 @@ export async function finishSketch(g) {
   setCommitting(true);
   redraw();
   let id = null;
+  const detail = detailValue();
   try {
-    const anchors = await fit(points, closed);
+    const anchors = await fit(points, closed, detail);
     await whenIdle(); // a queued edit (a re-fit) lands before this commit reads the layer
     id = await commitPenSubpath({ anchors, closed, kind: "bezier" }, { subtract: bite });
   } catch (e) { actions.oops(e); }
@@ -120,7 +153,10 @@ export async function finishSketch(g) {
   const subpaths = layer?.source?.generator === "pen" ? layer.source.params.subpaths || [] : [];
   if (on && !bite && subpaths.length) {
     lastFit = { layerId: id, si: subpaths.length - 1, points, closed,
-                token: `pen-refit-${id.slice(0, 16)}-${NONCE}-${++seq}`, seq: 0 };
+                token: `pen-refit-${id.slice(0, 16)}-${NONCE}-${++seq}`, seq: 0,
+                anchors: subpaths[subpaths.length - 1].anchors };
+    // the slider moved while this fit was out: fit its value now
+    if (detailValue() !== detail) runRefit();
   }
   redraw();
 }
@@ -140,7 +176,7 @@ async function runRefit() {
   refitAgain = false;
   const mine = ++run.seq;
   let anchors = null;
-  try { anchors = await fit(run.points, run.closed); } catch (e) { actions.oops(e); }
+  try { anchors = await fit(run.points, run.closed, detailValue()); } catch (e) { actions.oops(e); }
   refitBusy = false;
   // a response another action (or a newer re-fit) has overtaken is dropped
   if (anchors && lastFit === run && run.seq === mine) applyRefit(run, anchors);
@@ -148,11 +184,14 @@ async function runRefit() {
 }
 
 // The re-fitted anchors replace that subpath in place. Every re-fit of one
-// sketch carries the sketch's token, so the whole run is one undo step.
+// sketch carries the sketch's token, so the whole run is one undo step. Only
+// while the line is still what this tab last wrote: an edit from elsewhere
+// in between ends the re-fit rather than being overwritten.
 function applyRefit(run, anchors) {
   const layer = S.state?.project?.layers.find((x) => x.id === run.layerId);
   const sp = layer?.source?.generator === "pen" ? layer.source.params.subpaths?.[run.si] : null;
-  if (!sp) { endRefit(); return; }
+  if (!sp || sig(sp.anchors) !== sig(run.anchors)) { endRefit(); return; }
+  run.anchors = anchors;
   layer.source.params.subpaths = layer.source.params.subpaths.map(
     (s, i) => (i === run.si ? { ...s, anchors, kind: "bezier" } : s));
   queueRegenerate(layer, { coalesce: run.token });

@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from test_acceptance_ui import _get, frontend_mode, server, ui
+from test_acceptance_ui import _get, _post, frontend_mode, server, ui
 from test_drawing_tool_completion import _canvas_point, _pen_anchor
 
 
@@ -1222,4 +1222,123 @@ def test_closed_sketch_commits_closed_and_subtracts(ui):
     while _layer(ui)["source"]["generator"] != "shape" and time.time() < deadline:
         time.sleep(0.1)
     assert _layer(ui)["source"]["generator"] == "shape"
+    assert not ui.errors
+
+
+# ---------------------------------------------------------------- Task 8 review fixes
+
+def _bare(x, y):
+    return {"x": x, "y": y, "in_handle": None, "out_handle": None}
+
+
+def test_external_edit_ends_refit(ui):
+    """An edit from elsewhere (the MCP, an undo in another window) between
+    the sketch and the slider: the slider must not overwrite that line."""
+    _sketch_mode(ui)
+    _wiggle(ui)
+    _wait_api(ui, lambda s: len(s) == 1, "sketch committed")
+    _settled(ui, "sketch")
+    layer = _layer(ui)
+    line = {"anchors": [_bare(20, 20), _bare(80, 20)], "closed": False, "kind": "bezier"}
+    _post(f"{ui.base}/api/layers/{layer['id']}/regenerate",
+          {"params": {**layer["source"]["params"], "subpaths": [line]}})
+    ui.wait_for_function("() => document.querySelectorAll('.pen-anchor').length === 2")
+
+    regens = []
+    ui.on("request", lambda r: regens.append(r.url) if "/regenerate" in r.url else None)
+    ui.locator("#pen-detail").fill("1")
+    ui.wait_for_timeout(1000)   # pumps the request events, unlike time.sleep
+    assert regens == []
+    assert [(a["x"], a["y"]) for a in _subpaths(ui)[0]["anchors"]] == [(20, 20), (80, 20)]
+    assert not ui.errors
+
+
+def test_cmd_z_works_after_the_detail_slider(ui):
+    _sketch_mode(ui)
+    _wiggle(ui)
+    original = _wait_api(ui, lambda s: len(s) == 1, "sketch committed")[0]["anchors"]
+    _settled(ui, "sketch")
+
+    # a pointer drag on the slider hands the keyboard back when it ends
+    box = ui.locator("#pen-detail").bounding_box()
+    y = box["y"] + box["height"] / 2
+    ui.mouse.move(box["x"] + box["width"] / 2, y)
+    ui.mouse.down()
+    ui.mouse.move(box["x"] + box["width"] * 0.8, y)
+    ui.mouse.move(box["x"] + box["width"] - 1, y)
+    ui.mouse.up()
+    _wait_api(ui, lambda s: s[0]["anchors"] != original, "slider refit")
+    _settled(ui, "refit")
+    ui.keyboard.press("Meta+z")
+    _wait_api(ui, lambda s: s[0]["anchors"] == original, "⌘Z after a slider drag")
+
+    # focused from the keyboard, arrows still nudge it, and ⌘Z still undoes
+    _wiggle(ui, dx0=-100, length=200)
+    second = _wait_api(ui, lambda s: len(s) == 2, "second sketch")[1]["anchors"]
+    _settled(ui, "second sketch")
+    ui.focus("#pen-detail")
+    val = lambda: float(ui.locator("#pen-detail").input_value())  # noqa: E731
+    ui.keyboard.press("Home")
+    v0 = val()
+    ui.keyboard.press("ArrowRight")
+    v1 = val()
+    ui.keyboard.press("ArrowRight")
+    v2 = val()
+    assert v0 == 0 and v0 < v1 < v2, (v0, v1, v2)
+    _wait_api(ui, lambda s: s[1]["anchors"] != second, "arrow refit")
+    _settled(ui, "arrow refit")
+    ui.keyboard.press("Meta+z")
+    _wait_api(ui, lambda s: s[1]["anchors"] == second, "⌘Z with the slider focused")
+    assert not ui.errors
+
+
+def test_entering_sketch_mode_commits_the_pending_path(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    for dx in (-60, 0, 60):
+        _pen_anchor(ui, dx, -40)
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 3")
+    ui.click('#pen-mode button[data-pen-mode="sketch"]')
+    sps = _wait_api(ui, lambda s: len(s) == 1, "the bezier path committed")
+    assert len(sps[0]["anchors"]) == 3 and not sps[0]["closed"]
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 0")
+    assert _pen_active(ui)    # still the pen, now in sketch mode
+    assert ui.locator('#pen-mode [data-pen-mode="sketch"]').get_attribute("aria-pressed") == "true"
+
+    ui.click('#pen-mode button[data-pen-mode="curvature"]')
+    for dx in (-60, 0, 60):
+        ui.mouse.click(*_canvas_point(ui, dx, 60))
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 3")
+    ui.click('#pen-mode button[data-pen-mode="sketch"]')
+    sps = _wait_api(ui, lambda s: len(s) == 2, "the curvature path committed")
+    assert sps[1]["kind"] == "curvature" and len(sps[1]["anchors"]) == 3
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 0")
+    assert _pen_active(ui)
+    assert not ui.errors
+
+
+def test_slider_moved_during_the_first_fit_is_kept(ui):
+    _sketch_mode(ui)
+    bodies = []
+    ui.on("request", lambda r: bodies.append(r.post_data_json) if "/api/geometry/fit" in r.url else None)
+    ui.evaluate("""() => {
+        const orig = window.fetch;
+        window.fetch = async (url, opts) => {
+            if (String(url).includes('/api/geometry/fit') && !window.__fitDelayed) {
+                window.__fitDelayed = true;
+                await new Promise((r) => setTimeout(r, 800));
+            }
+            return orig(url, opts);
+        };
+    }""")
+    _wiggle(ui)
+    ui.locator("#pen-detail").fill("1")   # while the commit's fit is still out
+    deadline = time.time() + 8
+    while len(bodies) < 2 and time.time() < deadline:
+        ui.wait_for_timeout(100)
+    assert len(bodies) >= 2, bodies
+    assert bodies[0]["detail"] == 0.5 and bodies[-1]["detail"] == 1
+    expected = _post(f"{ui.base}/api/geometry/fit", bodies[-1])["anchors"]
+    want = [(round(a["x"], 6), round(a["y"], 6)) for a in expected]
+    _wait_api(ui, lambda s: [(round(a["x"], 6), round(a["y"], 6)) for a in s[0]["anchors"]] == want,
+              "the committed line follows the slider")
     assert not ui.errors

@@ -356,14 +356,15 @@ function mergedContinue(sp) {
   return cont.end === "start" ? reverseSubpath(merged) : merged;
 }
 
-export async function commitContinue() {
+/** @param {{stay?: boolean}} [opts] stay: keep the pen up afterwards */
+export async function commitContinue({ stay = false } = {}) {
   const layer = penLayer();
   if (!layer || !cont || !layer.source.params.subpaths?.[cont.si]) {
     setPending([]); cont = null; redraw(); return;
   }
   const si = cont.si;
   const subpaths = layer.source.params.subpaths.map((s, i) => (i === si ? mergedContinue(s) : s));
-  await commitEdit(layer, subpaths);
+  await commitEdit(layer, subpaths, { stay });
 }
 
 // Continue the line into an open end: a straight segment from the last
@@ -403,7 +404,7 @@ export async function joinInto(g) {
 
 // A continue/join is a commit like a finished path: one regenerate (one undo
 // step), then the drawing tool completes. A failed write keeps the draft.
-async function commitEdit(layer, subpaths) {
+async function commitEdit(layer, subpaths, { stay = false } = {}) {
   const draft = { pending, cont };
   setPending([]);
   cont = null;
@@ -421,7 +422,7 @@ async function commitEdit(layer, subpaths) {
     return;
   }
   redraw();
-  actions.completeDrawingTool(layer.id, "pen");
+  if (!stay) actions.completeDrawingTool(layer.id, "pen");
 }
 
 // Drop a point selection or a continue that no longer points at anything —

@@ -118,6 +118,10 @@ function setSubtract(v) {
 function setPenMode(mode) {
   if (mode !== "bezier" && mode !== "curvature" && mode !== "sketch") return;
   if (mode !== penMode) endRefit();
+  // sketch mode places no points: a path being drawn is finished first, the
+  // way a tool switch finishes it (Ruling 14) — committed while the mode it
+  // was drawn in still shapes it, and the pen stays up
+  if (mode === "sketch" && mode !== penMode && !committing) finishPending(true);
   // a path being drawn keeps the shape it shows; only new points follow the
   // new mode. Leaving curvature mode freezes its bends into ordinary arms;
   // entering it, the points placed so far become corners that keep their
@@ -213,14 +217,21 @@ export function deactivatePenMode() {
   // A direct tool switch still finishes a usable open path. The successful
   // commit path clears pending before it asks the broker to select, and the
   // committing guard prevents that automatic deactivation from saving twice.
+  if (!finishPending()) renderPenOverlay(null);
+}
+
+/** Commit the pending path as an open line, as leaving the tool does (a
+ *  lone point, or a continue that placed nothing, is dropped). `stay` keeps
+ *  the pen up afterwards. Returns whether a commit started. */
+function finishPending(stay = false) {
   if (!committing && pending.length >= 2) {
-    if (cont) commitContinue();
-    else commitSubpath(false);
-  } else {
-    pending = [];
-    setCont(null);
-    renderPenOverlay(null);
+    if (cont) commitContinue({ stay });
+    else commitSubpath(false, { stay });
+    return true;
   }
+  pending = [];
+  setCont(null);
+  return false;
 }
 
 // The broker calls this before leaving for Select, so one Escape both clears
@@ -778,7 +789,7 @@ export async function commitPenSubpath(subpath, opts = {}) {
   return committedId;
 }
 
-async function commitSubpath(closed) {
+async function commitSubpath(closed, { stay = false } = {}) {
   if (!pending.length || committing) return;
   // points kept from Bézier mode (`fixed`) keep their arms only on a Bézier line
   const subpath = penMode === "curvature"
@@ -793,7 +804,7 @@ async function commitSubpath(closed) {
   if (!id) { redraw(); return; }
   pending = [];
   redraw();
-  actions.completeDrawingTool(id, "pen");
+  if (!stay) actions.completeDrawingTool(id, "pen");
 }
 
 // -- overlay: rendering lives in pen_overlay.js; this side only gathers state --
