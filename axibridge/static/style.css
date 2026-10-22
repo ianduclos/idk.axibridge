@@ -1237,7 +1237,7 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
    filled, smooth hollow). shapes.js reuses .pen-pending-path for its live
    preview outside the overlay group, so vector-effect sits on each rule. */
 .pen-anchor, .pen-pending-anchor, .pen-handle-line, .pen-handle-knob,
-.pen-pending-path, .pen-rubber-band { vector-effect: non-scaling-stroke; }
+.pen-pending-path, .pen-rubber-band, .pen-selected-ring { vector-effect: non-scaling-stroke; }
 .pen-anchor { fill: var(--bench); stroke: var(--live); stroke-width: 1.5px; }
 .pen-anchor.symmetric { fill: var(--live); }
 .pen-handle-line { stroke: var(--live); stroke-width: 1px; stroke-dasharray: 4px 3px; opacity: 0.7; }
@@ -1247,6 +1247,7 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 .subtracting .pen-pending-path, .subtracting .pen-rubber-band { stroke: var(--rust); }
 .pen-pending-anchor { fill: var(--live); stroke: none; }
 .pen-pending-anchor.smooth { fill: var(--bench); stroke: var(--live); stroke-width: 1.5px; }
+.pen-selected-ring { fill: none; stroke: var(--live); stroke-width: 1.5px; }
 
 /* A/B capture-series toolbar segment */
 #ab-capture input { width: 3.4em; border: none; border-left: 1px solid var(--bench-edge); border-right: 1px solid var(--bench-edge); }

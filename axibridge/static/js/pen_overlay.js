@@ -15,8 +15,9 @@ import { classifyJoin } from "./pen_ops.js";
 const NS = "http://www.w3.org/2000/svg";
 
 /** Screen-pixel glyph sizes: anchor width/diameter, the pending subpath's
- *  first anchor (the close target), and an arm knob's diameter. */
-export const PX = { anchor: 7, anchorFirst: 9, knob: 5 };
+ *  first anchor (the close target), an arm knob's diameter, and the gap
+ *  between a selected point and its ring. */
+export const PX = { anchor: 7, anchorFirst: 9, knob: 5, ringGap: 3 };
 
 /**
  * @typedef {{x:number, y:number, in_handle:number[]|null, out_handle:number[]|null, join?:string}} Anchor
@@ -31,8 +32,12 @@ export const PX = { anchor: 7, anchorFirst: 9, knob: 5 };
  *   gesture: GestureView,
  *   hover: number[] | null,
  *   subtract: boolean,
- *   selected?: any,
+ *   selected?: {si: number, ai: number} | null,
+ *   continuing?: boolean,
  * }} PenOverlayState
+ *   selected: the committed point J / Delete act on — drawn with a ring.
+ *   continuing: pending[0] is an existing line's end being continued, not a
+ *   close target, so it is drawn at the ordinary point size.
  */
 
 /** @type {SVGGElement | null} */
@@ -78,7 +83,7 @@ function pendingSegmentsD(anchors) {
  */
 export function renderPenOverlay(state) {
   if (!state) { if (overlay) overlay.innerHTML = ""; return; }
-  const { editor, layerSubpaths, pending, gesture, hover, subtract } = state;
+  const { editor, layerSubpaths, pending, gesture, hover, subtract, selected, continuing } = state;
   const g = ensureOverlay(editor);
   g.innerHTML = "";
   g.classList.toggle("subtracting", subtract); // pending paths render rust
@@ -112,13 +117,19 @@ export function renderPenOverlay(state) {
     for (const a of sp.anchors) drawArms(a);
     for (const a of sp.anchors) drawAnchor(a, PX.anchor, "pen-anchor");
   }
+  const sel = selected ? layerSubpaths?.[selected.si]?.anchors[selected.ai] : null;
+  if (sel) {
+    g.appendChild(svgEl("circle", { cx: sel.x, cy: sel.y, r: (PX.anchor / 2 + PX.ringGap) * mm,
+                                    class: "pen-selected-ring" }));
+  }
 
   // the current uncommitted subpath: the segments placed so far, then
   // anchors/arms on top
   const pendingD = pendingSegmentsD(pending);
   if (pendingD) g.appendChild(svgEl("path", { d: pendingD, class: "pen-pending-path", fill: "none" }));
   for (const a of pending) drawArms(a);
-  pending.forEach((a, i) => drawAnchor(a, i === 0 ? PX.anchorFirst : PX.anchor, "pen-pending-anchor"));
+  pending.forEach((a, i) => drawAnchor(a, i === 0 && !continuing ? PX.anchorFirst : PX.anchor,
+                                       "pen-pending-anchor"));
 
   if (gesture?.kind === "place") {
     // live preview of the anchor being placed: the actual curve segment from

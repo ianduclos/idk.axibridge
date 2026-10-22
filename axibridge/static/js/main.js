@@ -239,6 +239,10 @@ export const actions = {
       crop: cropRectFor(S.state.project),
       view: S.state.project.view,
     });
+    // setData re-renders the whole canvas, pen overlay included — put the
+    // pen's points straight back rather than leave them gone until the
+    // next resolve lands
+    refreshPenOverlay();
     renderHeader();
     renderPlotTab(); // target list may have changed
   },
@@ -455,6 +459,7 @@ export const actions = {
     canvas.setSelection(ids);
     renderLayerList();
     renderSelReadout();
+    refreshPenOverlay(); // the pen edits the selected layer: its points (and point selection) follow
   },
 };
 

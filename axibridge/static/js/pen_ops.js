@@ -82,7 +82,7 @@ function bezD2(c, t) {
 const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
 
-function reverseSubpath(sp) {
+export function reverseSubpath(sp) {
   const anchors = sp.anchors.slice().reverse().map((a) => {
     const c = cloneAnchor(a);
     return { ...c, in_handle: c.out_handle, out_handle: c.in_handle };
