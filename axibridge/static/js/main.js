@@ -22,7 +22,7 @@ import { initMenu } from "./menu.js";
 import { initDrawMode, activateDrawMode, deactivateDrawMode } from "./draw.js";
 import { initBrushMode, activateBrushMode, deactivateBrushMode, handleBrushEscape } from "./brush.js";
 import { initPenMode, activatePenMode, deactivatePenMode, handlePenEscape, refreshPenOverlay,
-         commitPendingPath } from "./pen.js";
+         commitPendingPath, handlePenHistoryKey, penSettled, penLayerSelectionChanged } from "./pen.js";
 import { initShapeMode, activateShapeMode, deactivateShapeMode, handleShapeEscape } from "./shapes.js";
 import { initProcessPopup } from "./process.js";
 
@@ -401,10 +401,12 @@ export const actions = {
   },
 
   setSelectionTargets(targets) {
+    const before = S.selection;
     S.selectionTargets = normalizeTargets(S.state.project,targets);
     S.selection = memberIds(S.state.project,S.selectionTargets).filter(id => !S.state.project.layers.find(l => l.id === id)?.animation_owner_id);
     canvas.setSelection(S.selection);
     renderLayerList(); renderSelReadout();
+    if (before.length !== S.selection.length || before.some((id, i) => id !== S.selection[i])) penLayerSelectionChanged();
   },
   enterGroup(id) {
     S.groupContext = id; actions.setSelectionTargets([]);
@@ -454,12 +456,16 @@ export const actions = {
     } catch(e) { oops(e); }
   },
   setSelection(ids) {
+    const changed = ids.length !== S.selection.length || ids.some((id, i) => id !== S.selection[i]);
     S.selectionTargets = ids.map(id => ({kind:"layer",id}));
     S.selection = ids;
     canvas.setSelection(ids);
     renderLayerList();
     renderSelReadout();
-    refreshPenOverlay(); // the pen edits the selected layer: its points (and point selection) follow
+    // the pen edits the selected layer: its points follow, and a point
+    // selection / continue made on the old selection goes with it
+    if (changed) penLayerSelectionChanged();
+    else refreshPenOverlay();
   },
 };
 
@@ -756,8 +762,17 @@ async function historyStep(direction) {
     else oops(err);
   }
 }
-const undoStep = () => historyStep("undo");
-const redoStep = () => historyStep("redo");
+// Under the pen, undo first takes back the last placed point of a pending
+// path; otherwise the step waits for the pen's queued edits to land.
+async function penAwareHistoryStep(direction) {
+  if (toolMode === "pen") {
+    if (handlePenHistoryKey(direction === "redo")) return;
+    await penSettled();
+  }
+  await historyStep(direction);
+}
+const undoStep = () => penAwareHistoryStep("undo");
+const redoStep = () => penAwareHistoryStep("redo");
 $("btn-undo").onclick = undoStep;
 $("btn-redo").onclick = redoStep;
 
@@ -1236,7 +1251,14 @@ function applyPanelCollapse() {
 document.addEventListener("keydown", async (e) => {
   const t = e.target;
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-  if (toolMode !== "select" || [...document.querySelectorAll('dialog[open], [role="dialog"], [aria-modal="true"]')].some(el => el.getClientRects().length)) return;
+  if ([...document.querySelectorAll('dialog[open], [role="dialog"], [aria-modal="true"]')].some(el => el.getClientRects().length)) return;
+  // the pen keeps ⌘Z / ⇧⌘Z (nothing else of the Select-mode keys)
+  if (toolMode === "pen" && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
+    e.preventDefault();
+    await (e.shiftKey ? redoStep() : undoStep());
+    return;
+  }
+  if (toolMode !== "select") return;
   if (e.key === "Escape" && S.groupContext) { e.preventDefault(); actions.exitGroup(); return; }
   if (!e.metaKey && !e.ctrlKey && !e.altKey && /^[1-5]$/.test(e.key)) {
     e.preventDefault(); document.querySelector(`#tabs button[data-tab="${["compose","assets","plot","pens","settings"][Number(e.key)-1]}"]`).click(); return;

@@ -52,6 +52,11 @@ let hoverPt = null;  // last known bed-mm pointer position, for the hover rubber
 let gesture = null;  // in-progress pointer gesture — see onDown
 let committing = false;
 let selected = null; // {layerId, si, ai}: the committed point J / Backspace act on
+let dragSeq = 0;
+// per page load, so a token never matches one from before a reload
+const DRAG_NONCE = Math.random().toString(36).slice(2, 10);
+/** A fresh coalesce token: every drag is its own undo step (Ruling 10). */
+const dragToken = () => `pen-${DRAG_NONCE}-${++dragSeq}`;
 let lastClick = null; // {at, x, y}: the previous plain click, for double-click detection
 let cont = null;     // {layerId, si, end: "start"|"end"}: continuing that open line —
                      // pending[0] is then a copy of its end point, oriented so
@@ -130,6 +135,44 @@ export function refreshPenOverlay() {
   redraw();
 }
 
+/**
+ * ⌘Z / ⇧⌘Z (or Edit ▸ Undo/Redo) while the pen is up. Returns true when the
+ * pen consumed it: ⌘Z drops the last PLACED point of a pending path (never
+ * pending[0] while continuing — that is the line's own end), ⇧⌘Z is a no-op
+ * mid-path, and both wait while a gesture or commit is in flight. Otherwise
+ * the caller runs a normal history step — after `penSettled()`, so no queued
+ * edit lands on top of the undo. That step can move or remove the selected
+ * point or the continued line, so both are let go here.
+ * @param {boolean} redo
+ */
+export function handlePenHistoryKey(redo) {
+  if (!on) return false;
+  if (gesture || committing) return true;
+  if (pending.length > (cont ? 1 : 0)) {
+    if (!redo) { pending.pop(); redraw(); }
+    return true;
+  }
+  pending = [];
+  cont = null;
+  selected = null;
+  redraw();
+  return false;
+}
+
+/** Resolves once every queued pen edit has landed (and the project synced). */
+export function penSettled() {
+  return whenIdle();
+}
+
+/** The layer selection changed: a point selection or a continue belongs to
+ *  the layer it was made on, so both go. */
+export function penLayerSelectionChanged() {
+  if (cont) pending = [];
+  cont = null;
+  selected = null;
+  redraw();
+}
+
 export function handlePenEscape() {
   if (gesture) { gesture = null; redraw(); return true; }
   if (pending.length) { pending = []; cont = null; selected = null; redraw(); return true; }
@@ -160,7 +203,8 @@ const isTyping = (t) => t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" 
 
 function onKeydown(e) {
   if (!on || committing) return;
-  if (isTyping(e.target)) return;
+  // ⌘Backspace / ⌘Enter / ⌘E are not these keys
+  if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
   if (e.key === "Enter" && pending.length && !gesture) {
     e.preventDefault();
     commitPendingPath();
@@ -372,7 +416,7 @@ function onDown(e, wrap) {
   } else {
     const hit = hitExisting(editor, e);
     if (hit) {
-      gesture = { ...hit, target: "committed", downScreen };
+      gesture = { ...hit, target: "committed", downScreen, token: dragToken() };
       return;
     }
     // on a line of the active pen layer: a click adds a point, a drag bends
@@ -381,7 +425,7 @@ function onDown(e, wrap) {
     if (seg) {
       const bed = editor.toBed(e);
       gesture = { kind: "segment", si: seg.si, seg: seg.seg, t: seg.t, downBed: [bed.x, bed.y],
-                  moved: false, downScreen };
+                  moved: false, downScreen, token: dragToken() };
       return;
     }
   }
@@ -447,7 +491,7 @@ function onMove(e) {
       applyEditDrag(gesture, bx, by, false);
       gesture.dirty = true;
       const layer = activeLayer();
-      if (layer) queueRegenerate(layer, { coalesce: true });
+      if (layer) queueRegenerate(layer, { coalesce: gesture.token });
     }
     redraw();
     return;
@@ -468,7 +512,7 @@ function onMove(e) {
     applyEditDrag(gesture, bx, by, e.shiftKey);
     gesture.dirty = true;
     const layer = activeLayer();
-    if (layer) queueRegenerate(layer, { coalesce: true });
+    if (layer) queueRegenerate(layer, { coalesce: gesture.token });
   }
   redraw();
 }
@@ -518,18 +562,16 @@ function onUp(e) {
     if (g.target === "committed") { clickPoint(g.si, g.ai); return; }
   }
 
-  // final frame closes out the coalesced drag run — still coalesce=true, so
-  // it folds into the SAME undo entry as the moves during this drag rather
-  // than opening a new one on release. Skipped entirely if nothing was ever
-  // actually applied (e.g. a handle grabbed but Option never held) — no
-  // point creating a checkpoint for a drag that changed nothing.
-  const layer = activeLayer();
-  if (g.dirty && layer) queueRegenerate(layer, { coalesce: true });
+  // a drag's last move already queued its final frame — nothing is
+  // re-snapshotted here (a refresh that landed after that move would make a
+  // re-snapshot the OLDER frame). The project sync the drag deferred runs now.
+  kickRegen();
   redraw();
 }
 
 function onCancel() {
   gesture = null;
+  kickRegen();
   redraw();
 }
 
@@ -587,44 +629,70 @@ function applyPendingEditDrag(g, bx, by, mirror) {
 // is one undo step either way); a discrete edit is always its own request and
 // its own undo step.
 
-let regenQueue = []; // [{layerId, params, coalesce}]
+let regenQueue = []; // [{layerId, params, coalesce}] — coalesce: false | drag token
 let regenBusy = false;
+let syncOwed = false; // posted edits the local project hasn't been re-read after
 let idleWaiters = [];
 
 function queueRegenerate(layer, { coalesce }) {
   const params = JSON.parse(JSON.stringify(layer.source.params));
   const last = regenQueue[regenQueue.length - 1];
-  if (coalesce && last?.coalesce && last.layerId === layer.id) last.params = params;
+  if (coalesce && last && last.coalesce === coalesce && last.layerId === layer.id) last.params = params;
   else regenQueue.push({ layerId: layer.id, params, coalesce });
+  kickRegen();
+}
+
+function kickRegen() {
   if (!regenBusy) drainRegen();
 }
 
+// The local project is AHEAD of the server while edits are queued, so it is
+// only replaced by a fresh read when nothing is queued and no gesture is in
+// flight; mid-run, only the ink repaints (refreshResolved). An edit made
+// during that final read is put back on top of it (reapplyQueued).
 async function drainRegen() {
   regenBusy = true;
   let ok = true;
-  while (regenQueue.length) {
-    const job = regenQueue.shift();
-    try {
-      await api.post(`/api/layers/${job.layerId}/regenerate`, { params: job.params, coalesce: job.coalesce });
-    } catch (e) {
-      actions.oops(e);
-      regenQueue = []; // later snapshots build on the one that failed
-      ok = false;
-    }
-    // a live drag repaints every frame; queued discrete edits wait for the
-    // last one, so a refresh never swaps a stale project in under a newer
-    // local edit that the next snapshot builds on
-    if (!regenQueue.length || job.coalesce) {
+  while (regenQueue.length || (syncOwed && !gesture)) {
+    if (regenQueue.length) {
+      const job = regenQueue.shift();
       try {
-        await actions.refreshProject();
-        await actions.refreshResolved();
-      } catch (e) { actions.oops(e); }
+        await api.post(`/api/layers/${job.layerId}/regenerate`, { params: job.params, coalesce: job.coalesce });
+      } catch (e) {
+        actions.oops(e);
+        regenQueue = []; // later snapshots build on the one that failed
+        ok = false;
+      }
+      syncOwed = true;
+      if (regenQueue.length || gesture) {
+        if (job.coalesce) {
+          try { await actions.refreshResolved(); } catch (e) { actions.oops(e); } // live drag repaint
+        }
+        continue;
+      }
     }
+    syncOwed = false;
+    try {
+      await actions.refreshProject();
+      reapplyQueued();
+      await actions.refreshResolved();
+    } catch (e) { actions.oops(e); }
   }
   regenBusy = false;
   const waiters = idleWaiters;
   idleWaiters = [];
   for (const w of waiters) w(ok);
+}
+
+// Each queued job's params are the newest local state of its layer: lay them
+// back over a just-read project so a refresh never erases a queued edit.
+function reapplyQueued() {
+  const layers = S.state?.project?.layers || [];
+  for (const job of regenQueue) {
+    const layer = layers.find((l) => l.id === job.layerId);
+    if (layer) layer.source.params = JSON.parse(JSON.stringify(job.params));
+  }
+  if (regenQueue.length) redraw();
 }
 
 /** Resolves (true = every queued edit landed) once the queue is empty. */
@@ -642,7 +710,9 @@ function editSubpaths(layer, subpaths, { coalesce = false } = {}) {
 // explicitly, so the edit about to happen keeps the point type the user saw.
 function withJoins(sp, indices) {
   const n = sp.anchors.length;
-  const pick = new Set(indices.map((i) => ((i % n) + n) % n));
+  // a closed line wraps; an open one has nothing before its start or after its end
+  const pick = new Set(sp.closed ? indices.map((i) => ((i % n) + n) % n)
+    : indices.filter((i) => i >= 0 && i < n));
   return { ...sp, anchors: sp.anchors.map((a, i) => (pick.has(i) ? { ...a, join: classifyJoin(a) } : a)) };
 }
 
@@ -699,7 +769,7 @@ function applyBend(g, bx, by) {
   const bent = bendSegment(g.base, g.seg, g.t, [bx + g.grabOff[0], by + g.grabOff[1]]);
   g.dirty = true;
   editSubpaths(layer, layer.source.params.subpaths.map((s, i) => (i === g.si ? bent : s)),
-               { coalesce: true });
+               { coalesce: g.token });
 }
 
 // -- E2 corner ⇄ smooth, E4 select + J, E5 delete ------------------------------
@@ -876,7 +946,9 @@ async function joinInto(g) {
   merged.anchors = cont.end === "end" ? [...merged.anchors, meet] : [meet, ...merged.anchors];
   let next;
   if (g.si === cont.si) {
-    // same object on both sides: joinEnds closes it
+    // same object on both sides: joinEnds closes it. Closing fewer than
+    // three points would only draw the same line back on itself — ignore it.
+    if (merged.anchors.length - 1 < 3) { redraw(); return; }
     const closed = joinEnds(merged, cont.end, merged, cont.end === "end" ? "start" : "end");
     next = subpaths.map((s, i) => (i === g.si ? closed : s));
   } else {

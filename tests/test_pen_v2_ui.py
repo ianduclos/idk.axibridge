@@ -114,12 +114,22 @@ def _subpaths(page):
 def _wait_api(page, pred, what, timeout=8.0):
     """Poll the project until `pred(subpaths)` holds — committed edits land
     through an async regenerate."""
+    def ok(sps):
+        try:
+            return sps is not None and pred(sps)
+        except (IndexError, KeyError):
+            return False
+
+    def read():
+        layers = _get(f"{page.base}/api/project")["layers"]
+        return layers[0]["source"]["params"]["subpaths"] if layers else None
+
     deadline = time.time() + timeout
-    sps = _subpaths(page)
-    while not pred(sps) and time.time() < deadline:
+    sps = read()
+    while not ok(sps) and time.time() < deadline:
         time.sleep(0.1)
-        sps = _subpaths(page)
-    assert pred(sps), (what, sps)
+        sps = read()
+    assert ok(sps), (what, sps)
     return sps
 
 
@@ -389,4 +399,195 @@ def test_join_two_open_lines(ui):
     assert got in (want, want[::-1]), (got, want)  # A → B → C → D, nothing merged away
     assert not sps[0]["closed"]
     assert len(_get(f"{ui.base}/api/project")["layers"]) == 1
+    assert not ui.errors
+
+
+# ---------------------------------------------------------------- fix round 1
+
+def _settled(page, what, timeout=8.0):
+    """Wait until the project stops changing (queued edits have all landed)."""
+    deadline = time.time() + timeout
+    last = _subpaths(page)
+    while time.time() < deadline:
+        time.sleep(0.4)
+        cur = _subpaths(page)
+        if cur == last:
+            return cur
+        last = cur
+    raise AssertionError(f"{what}: never settled")
+
+
+def _slow_network(page, project_ms=300, regen_ms=200):
+    """Delay the project refresh and every regenerate in the page's own
+    fetch, so key presses land while an earlier edit's refresh is in flight —
+    the window where a refresh could swap stale state in under a newer edit."""
+    page.evaluate("""([pm, rm]) => {
+        const orig = window.fetch;
+        const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+        window.fetch = async (url, opts) => {
+            const u = String(url), get = !opts || !opts.method || opts.method === 'GET';
+            if (get && /\/api\/project$/.test(u)) await wait(pm);
+            if (u.includes('/regenerate')) await wait(rm);
+            return orig(url, opts);
+        };
+    }""", [project_ms, regen_ms])
+
+
+def test_rapid_j_presses_all_land(ui):
+    _draw_three_anchor_path(ui)
+    ui.mouse.click(*_anchor_screen(ui, 0, 1))
+    ui.wait_for_function("() => document.querySelectorAll('.pen-selected-ring').length === 1")
+    for _ in range(4):  # symmetric → corner → smooth → symmetric → corner, no waiting
+        ui.keyboard.press("j")
+    _wait_api(ui, lambda s: s[0]["anchors"][1].get("join") == "corner", "four presses land on corner")
+    sps = _settled(ui, "J run")
+    assert sps[0]["anchors"][1]["join"] == "corner"
+    ui.wait_for_function("() => document.querySelectorAll('rect.pen-anchor.corner').length === 3")
+
+    # presses spaced to land inside the previous edit's refresh: four more
+    # (corner → smooth → symmetric → corner → smooth), every one counted
+    _slow_network(ui)
+    for _ in range(4):
+        ui.keyboard.press("j")
+        ui.wait_for_timeout(300)
+    _wait_api(ui, lambda s: s[0]["anchors"][1].get("join") == "smooth", "slow presses land on smooth")
+    sps = _settled(ui, "slow J run")
+    assert sps[0]["anchors"][1]["join"] == "smooth", sps
+    ui.wait_for_function("() => document.querySelectorAll('circle.pen-anchor.smooth').length === 1")
+    # an edit landing while a repaint is still being read cancels that read
+    # by design (409 render_cancelled, handled silently by main.js); the
+    # browser still logs the status line — anything else is a real error
+    assert not [e for e in ui.errors if "status of 409" not in e]
+
+
+def test_two_bends_are_two_undo_steps(ui):
+    _draw_three_anchor_path(ui)
+    _zoom(ui, 300)
+    before = _subpaths(ui)
+
+    def bend(dx):
+        grab = _mm_to_screen(ui, *_bez(_subpaths(ui)[0], 1, 0.5))
+        ui.mouse.move(*grab)
+        ui.mouse.down()
+        for k in range(1, 7):
+            ui.mouse.move(grab[0] + dx * k, grab[1])
+        ui.mouse.up()
+
+    bend(5)
+    first = _wait_api(ui, lambda s: s != before, "first bend")
+    first = _settled(ui, "first bend")
+    bend(-5)
+    _wait_api(ui, lambda s: s != first, "second bend")
+    _settled(ui, "second bend")
+
+    _undo(ui)
+    _wait_api(ui, lambda s: s == first, "one undo takes back only the second bend")
+    _undo(ui)
+    _wait_api(ui, lambda s: s == before, "a second undo takes back the first")
+    assert not ui.errors
+
+
+def test_cmd_z_under_the_pen(ui):
+    _draw_three_anchor_path(ui)
+    _zoom(ui, 300)
+    ui.mouse.click(*_mm_to_screen(ui, *_bez(_subpaths(ui)[0], 1, 0.5)))
+    _wait_api(ui, lambda s: len(s[0]["anchors"]) == 4, "inserted")
+    _settled(ui, "insert")
+    ui.keyboard.press("Meta+z")
+    _wait_api(ui, lambda s: len(s[0]["anchors"]) == 3, "⌘Z undid the insert")
+    assert _pen_active(ui)
+    ui.keyboard.press("Meta+Shift+z")
+    _wait_api(ui, lambda s: len(s[0]["anchors"]) == 4, "⇧⌘Z redid it")
+
+    # while placing, ⌘Z drops the last placed point — and ⌘Backspace is not
+    # a plain Backspace
+    _pen_anchor(ui, -200, -150)
+    _pen_anchor(ui, -150, -150)
+    _pen_anchor(ui, -100, -150)
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 3")
+    ui.keyboard.press("Meta+Backspace")
+    time.sleep(0.2)
+    assert ui.locator(".pen-pending-anchor").count() == 3
+    ui.keyboard.press("Meta+z")
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 2")
+    assert len(_subpaths(ui)[0]["anchors"]) == 4  # the layer was not undone
+    ui.keyboard.press("Escape")
+
+    # continuing: ⌘Z drops placed points but never the line's own end
+    _reselect_pen(ui, 4)
+    ui.mouse.click(*_anchor_screen(ui, 0, 3))
+    _pen_anchor(ui, 120, 100)
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 2")
+    ui.keyboard.press("Meta+z")
+    ui.wait_for_function("() => document.querySelectorAll('.pen-pending-anchor').length === 1")
+    assert len(_subpaths(ui)[0]["anchors"]) == 4
+    assert not ui.errors
+
+
+def test_deselecting_the_layer_drops_the_point_selection(ui):
+    _draw_three_anchor_path(ui)
+    ui.mouse.click(*_anchor_screen(ui, 0, 1))
+    ui.wait_for_function("() => document.querySelectorAll('.pen-selected-ring').length === 1")
+    ui.locator("#layer-list .layer-row.selected .lname").click(modifiers=["Meta"])  # ⌘-click: deselect
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row.selected').length === 0")
+    ui.wait_for_function("() => document.querySelectorAll('.pen-selected-ring').length === 0")
+    ui.keyboard.press("j")
+    ui.keyboard.press("Backspace")
+    time.sleep(0.5)
+    a = _subpaths(ui)[0]["anchors"]
+    assert len(a) == 3 and a[1].get("join") is None
+    assert len(_get(f"{ui.base}/api/project")["layers"]) == 1
+    assert not ui.errors
+
+
+def test_deleting_an_open_end_leaves_the_far_end_alone(ui):
+    _draw_three_anchor_path(ui)
+    ui.mouse.click(*_anchor_screen(ui, 0, 0))
+    ui.wait_for_function("() => document.querySelectorAll('.pen-selected-ring').length === 1")
+    ui.keyboard.press("Backspace")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 2, "first point gone")
+    assert sps[0]["anchors"][1].get("join") is None  # untouched: no join written
+    assert not ui.errors
+
+
+def test_a_two_point_line_does_not_close_on_itself(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    _pen_anchor(ui, -40, 0)
+    _pen_anchor(ui, 40, 0)
+    ui.keyboard.press("Enter")
+    _reselect_pen(ui, 2)
+    before = _subpaths(ui)
+    ui.mouse.click(*_anchor_screen(ui, 0, 1))
+    ui.mouse.click(*_anchor_screen(ui, 0, 0))
+    time.sleep(0.6)
+    sps = _subpaths(ui)
+    assert not sps[0]["closed"] and len(sps[0]["anchors"]) == 2
+    assert [(a["x"], a["y"]) for a in sps[0]["anchors"]] == [(a["x"], a["y"]) for a in before[0]["anchors"]]
+    assert not ui.errors
+
+
+def test_join_into_an_earlier_line_keeps_the_others(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    lines = [((-90, -60), (-30, -60)), ((-90, 0), (-30, 0)), ((30, 60), (90, 60))]
+    for i, (p, q) in enumerate(lines):
+        if i:
+            ui.click('#tool-toggle button[data-tool="pen"]')
+            ui.wait_for_function(f"() => document.querySelectorAll('.pen-anchor').length === {2 * i}")
+        _pen_anchor(ui, *p)
+        _pen_anchor(ui, *q)
+        ui.keyboard.press("Enter")
+        _wait_api(ui, lambda s, n=i + 1: len(s) == n, f"{i + 1} lines")
+        ui.wait_for_function(
+            "() => document.querySelector('#tool-toggle [data-tool=select]').classList.contains('on')")
+    three = _subpaths(ui)
+    _reselect_pen(ui, 6)
+
+    ui.mouse.click(*_anchor_screen(ui, 2, 0))   # continue line 3 from its start…
+    ui.mouse.click(*_anchor_screen(ui, 0, 1))   # …into line 1's end
+    sps = _wait_api(ui, lambda s: len(s) == 2, "lines 1 and 3 joined")
+    assert sps[1] == three[1] or [(a["x"], a["y"]) for a in sps[1]["anchors"]] == \
+        [(a["x"], a["y"]) for a in three[1]["anchors"]]  # line 2 untouched
+    got = [(round(a["x"], 3), round(a["y"], 3)) for a in sps[0]["anchors"]]
+    want = [(round(a["x"], 3), round(a["y"], 3)) for a in three[0]["anchors"] + three[2]["anchors"]]
+    assert got in (want, want[::-1]), (got, want)
     assert not ui.errors
