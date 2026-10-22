@@ -35,6 +35,7 @@ export const PX = { anchor: 7, anchorFirst: 9, knob: 5, ringGap: 3 };
  *   selected?: {si: number, ai: number} | null,
  *   continuing?: boolean,
  *   curvature?: boolean,
+ *   sketch?: number[][] | null,
  * }} PenOverlayState
  *   selected: the committed point J / Delete act on — drawn with a ring.
  *   continuing: pending[0] is an existing line's end being continued, not a
@@ -42,6 +43,8 @@ export const PX = { anchor: 7, anchorFirst: 9, knob: 5, ringGap: 3 };
  *   curvature: the pending path is a curvature-pen path — its arms are
  *   derived, so they are not drawn (nor are a committed curvature
  *   subpath's: `kind: "curvature"`).
+ *   sketch: the freehand stroke being dragged in sketch mode (bed mm
+ *   samples), drawn as a thin polyline until it is fitted.
  */
 
 /** @type {SVGGElement | null} */
@@ -87,7 +90,8 @@ function pendingSegmentsD(anchors) {
  */
 export function renderPenOverlay(state) {
   if (!state) { if (overlay) overlay.innerHTML = ""; return; }
-  const { editor, layerSubpaths, pending, gesture, hover, subtract, selected, continuing, curvature } = state;
+  const { editor, layerSubpaths, pending, gesture, hover, subtract, selected, continuing, curvature,
+          sketch } = state;
   const g = ensureOverlay(editor);
   g.innerHTML = "";
   g.classList.toggle("subtracting", subtract); // pending paths render rust
@@ -134,6 +138,11 @@ export function renderPenOverlay(state) {
   if (!curvature) for (const a of pending) drawArms(a);
   pending.forEach((a, i) => drawAnchor(a, i === 0 && !continuing ? PX.anchorFirst : PX.anchor,
                                        "pen-pending-anchor"));
+
+  if (sketch && sketch.length >= 2) {
+    g.appendChild(svgEl("polyline", { points: sketch.map((p) => `${p[0]},${p[1]}`).join(" "),
+                                      class: "pen-sketch-path" }));
+  }
 
   if (gesture?.kind === "place") {
     // live preview of the anchor being placed: the actual curve segment from

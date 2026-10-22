@@ -794,6 +794,11 @@ input[type="range"].fine::-moz-range-thumb {
 /* the pen's mode buttons sit in the pen bar's own segment, like the shape
    bar's kinds; the group is only for addressing (and, later, more modes) */
 #pen-mode { display: contents; }
+/* sketch mode's Detail slider; the toolbar's label rule sets display, so
+   [hidden] needs restating (the `.seg[hidden]` trap again) */
+#pen-detail-wrap { padding: 0 8px; }
+#pen-detail-wrap[hidden] { display: none; }
+#pen-detail { width: 90px; }
 /* the occlusion channel groups: four one-letter segments, tight, because they
    are a channel picker rather than four sentences */
 .group-seg button { padding: 3px 9px; min-width: 2.2em; }
@@ -1248,6 +1253,10 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 .pen-pending-path { stroke: var(--live); stroke-width: 2px; fill: none; }
 .pen-rubber-band { stroke: var(--live); stroke-width: 1.5px; stroke-dasharray: 6px 4px; fill: none; opacity: 0.7; }
 .subtracting .pen-pending-path, .subtracting .pen-rubber-band { stroke: var(--rust); }
+/* sketch mode: the stroke as it is drawn, before it is fitted */
+.pen-sketch-path { vector-effect: non-scaling-stroke; stroke: var(--live); stroke-width: 1px; fill: none;
+                   stroke-linejoin: round; stroke-linecap: round; }
+.subtracting .pen-sketch-path { stroke: var(--rust); }
 .pen-pending-anchor { fill: var(--live); stroke: none; }
 .pen-pending-anchor.smooth { fill: var(--bench); stroke: var(--live); stroke-width: 1.5px; }
 .pen-selected-ring { fill: none; stroke: var(--live); stroke-width: 1.5px; }

@@ -17,7 +17,8 @@
 //
 // Editing gestures on a committed pen layer (insert, bend, corner/smooth,
 // select + J / Delete, continue/join — pen v2 E1–E6) live in pen_edit.js,
-// and the ordered regenerate queue every committed edit goes through in
+// sketch mode's capture, fit and live re-fit (P3) in pen_sketch.js, and the
+// ordered regenerate queue every committed edit goes through in
 // pen_queue.js. This file keeps the drawing state, placement and the pointer
 // dispatch that routes each gesture to its handler.
 
@@ -29,6 +30,7 @@ import { DBL_MS, clickPoint, commitContinue, cont, dragToken, flipCornerSmooth, 
          selected, setCont, setSelected, startBend, applyBend, validateEditState } from "./pen_edit.js";
 import { classifyJoin, curvatureHandles, reverseSubpath, snapAngle } from "./pen_ops.js";
 import { kickRegen, queueRegenerate, whenIdle } from "./pen_queue.js";
+import { addSketchSamples, endRefit, finishSketch, initSketch, sketchView, startSketch } from "./pen_sketch.js";
 
 const $ = (id) => document.getElementById(id);
 const BED = { w: 300, h: 218 };
@@ -41,10 +43,11 @@ const MAX_HANDLE_MM = 400; // UI-side clamp, past the bed diagonal (~371 mm): ar
 export let on = false;
 let wired = false;
 let activePenLayerId = null;
-let subtract = false; // add/subtract mode — subtract commits as a bite via shape_op
+export let subtract = false; // add/subtract mode — subtract commits as a bite via shape_op
 // The pen bar's drawing mode, kept for the session: "bezier" (click a
-// corner, drag out arms) or "curvature" (click the points the line passes
-// through; curvatureHandles shapes the bends). It decides how NEW points are
+// corner, drag out arms), "curvature" (click the points the line passes
+// through; curvatureHandles shapes the bends) or "sketch" (drag freehand;
+// the stroke is fitted into a Bézier line). It decides how NEW points are
 // placed; a committed subpath carries its own `kind`, which decides how it
 // is edited — switching modes never reshapes a layer.
 export let penMode = "bezier";
@@ -82,6 +85,7 @@ export function initPenMode() {
   for (const b of document.querySelectorAll("#pen-mode [data-pen-mode]")) {
     /** @type {HTMLElement} */ (b).onclick = () => setPenMode(/** @type {HTMLElement} */ (b).dataset.penMode);
   }
+  initSketch();
   // glyphs are sized in screen px, so any change to px-per-mm (zoom, pan
   // clamp, window resize) re-renders them
   const onView = () => { if (on) redraw(); };
@@ -99,6 +103,7 @@ function onPlaceSpace(e, down) {
 
 function setSubtract(v) {
   subtract = v;
+  endRefit();
   const b = $("pen-subtract");
   if (b) {
     b.classList.toggle("on", subtract);
@@ -111,7 +116,8 @@ function setSubtract(v) {
 
 /** @param {string | undefined} mode */
 function setPenMode(mode) {
-  if (mode !== "bezier" && mode !== "curvature") return;
+  if (mode !== "bezier" && mode !== "curvature" && mode !== "sketch") return;
+  if (mode !== penMode) endRefit();
   // a path being drawn keeps the shape it shows; only new points follow the
   // new mode. Leaving curvature mode freezes its bends into ordinary arms;
   // entering it, the points placed so far become corners that keep their
@@ -129,6 +135,8 @@ function setPenMode(mode) {
     b.classList.toggle("on", isOn);
     b.setAttribute("aria-pressed", String(isOn));
   }
+  const detail = $("pen-detail-wrap");
+  if (detail) detail.hidden = penMode !== "sketch";
   redraw();
 }
 
@@ -195,6 +203,7 @@ export function deactivatePenMode() {
   on = false;
   $("canvas-wrap")?.classList.remove("pen-mode");
   gesture = null;
+  endRefit();
   kickRegen(); // a sync may be owed that only a released gesture lets run
   hoverPt = null;
   setSelected(null);
@@ -236,6 +245,7 @@ export function refreshPenOverlay() {
  */
 export function handlePenHistoryKey(redo) {
   if (!on) return false;
+  endRefit();
   if (gesture || committing) return true;
   if (pending.length > (cont ? 1 : 0)) {
     if (!redo) { pending.pop(); redraw(); }
@@ -256,6 +266,7 @@ export function penSettled() {
 /** The layer selection changed: a point selection or a continue belongs to
  *  the layer it was made on, so both go. */
 export function penLayerSelectionChanged() {
+  endRefit();
   if (cont) pending = [];
   setCont(null);
   setSelected(null);
@@ -263,6 +274,7 @@ export function penLayerSelectionChanged() {
 }
 
 export function handlePenEscape() {
+  endRefit();
   if (gesture) { gesture = null; kickRegen(); redraw(); return true; }
   if (pending.length) { pending = []; setCont(null); setSelected(null); redraw(); return true; }
   if (selected) { setSelected(null); redraw(); return true; }
@@ -296,9 +308,11 @@ function onKeydown(e) {
   if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
   if (e.key === "Enter" && pending.length && !gesture) {
     e.preventDefault();
+    endRefit();
     commitPendingPath();
   } else if (e.key === "Backspace" && pending.length && !gesture) {
     e.preventDefault();
+    endRefit();
     // continuing: pending[0] is the line's own end, not a placed point
     if (pending.length > (cont ? 1 : 0)) pending.pop();
     redraw();
@@ -418,6 +432,7 @@ function onDown(e, wrap) {
   e.preventDefault();
   e.stopPropagation();
   wrap.setPointerCapture(e.pointerId);
+  endRefit(); // any press on the canvas is the next pen action
   const editor = actions.canvas();
   const downScreen = { x: e.clientX, y: e.clientY };
 
@@ -458,8 +473,9 @@ function onDown(e, wrap) {
       return;
     }
     // on a line of the active pen layer: a click adds a point, a drag bends
-    // it — which one is only known once the pointer moves (or doesn't)
-    const seg = hitSegment(editor, e);
+    // it — which one is only known once the pointer moves (or doesn't).
+    // Not in sketch mode: there a stroke may start anywhere, lines included.
+    const seg = penMode === "sketch" ? null : hitSegment(editor, e);
     if (seg) {
       const bed = editor.toBed(e);
       gesture = { kind: "segment", si: seg.si, seg: seg.seg, t: seg.t, downBed: [bed.x, bed.y],
@@ -473,6 +489,8 @@ function onDown(e, wrap) {
   setSelected(null);
   const bed = editor.toBed(e);
   const [x, y] = clampBed(bed.x, bed.y);
+  // sketch mode: the drag is a freehand stroke (Shift / Space aids don't apply)
+  if (penMode === "sketch") { gesture = startSketch(x, y); redraw(); return; }
   gesture = { kind: "place", x, y, alt: e.altKey, moved: false, downScreen,
               shift: e.shiftKey, space: false, lastBed: [x, y] };
 }
@@ -490,6 +508,12 @@ function onMove(e) {
   }
   e.preventDefault();
   e.stopPropagation();
+  if (gesture.kind === "sketch") {
+    addSketchSamples(gesture, editor, e, clampBed);
+    redraw();
+    return;
+  }
+
   const bed = editor.toBed(e);
   const [bx, by] = clampBed(bed.x, bed.y);
 
@@ -573,6 +597,8 @@ function onUp(e) {
   const g = gesture;
   gesture = null;
   kickRegen(); // every path below ends the gesture, so any owed project sync runs now
+
+  if (g.kind === "sketch") { forgetClick(); finishSketch(g); return; }
 
   if (g.kind === "place") {
     forgetClick();
@@ -831,6 +857,7 @@ export function redraw() {
     subtract,
     selected: selected && layer?.id === selected.layerId ? { si: selected.si, ai: selected.ai } : null,
     continuing: !!cont,
+    sketch: sketchView(gesture),
   });
   announcePending();
 }

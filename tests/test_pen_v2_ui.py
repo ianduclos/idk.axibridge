@@ -1069,3 +1069,157 @@ def test_curvature_continue_of_a_smooth_bezier_end_has_no_kink(ui):
     assert abs(i[0] * o[1] - i[1] * o[0]) < 1e-6 and i[0] * o[0] + i[1] * o[1] < 0  # collinear, opposite
     assert math.hypot(*o) == pytest.approx(math.hypot(n["x"] - j["x"], n["y"] - j["y"]) / 3, abs=1e-6)
     assert not ui.errors
+
+
+# ---------------------------------------------------------------- sketch, then fit (P3)
+
+def _sketch_mode(page):
+    page.click('#tool-toggle button[data-tool="pen"]')
+    page.click('#pen-mode button[data-pen-mode="sketch"]')
+
+
+def _screen_to_mm(page, x, y):
+    return page.evaluate("""([x, y]) => {
+        const world = document.querySelector('.pen-overlay').parentNode;
+        const p = document.getElementById('canvas').createSVGPoint();
+        p.x = x; p.y = y;
+        const m = p.matrixTransform(world.getScreenCTM().inverse());
+        return [m.x, m.y];
+    }""", [x, y])
+
+
+def _wiggle(page, dx0=-120, length=240, amp=25, wave=60, step=3, on_mid=None):
+    """Drag a freehand sine wave across the canvas; returns the screen points."""
+    x0, y0 = _canvas_point(page, dx0, 0)
+    pts = [(x0 + i, y0 + amp * math.sin(2 * math.pi * i / wave)) for i in range(0, length + 1, step)]
+    page.mouse.move(*pts[0])
+    page.mouse.down()
+    for k, p in enumerate(pts[1:], 1):
+        page.mouse.move(*p)
+        if on_mid and k == len(pts) // 2:
+            on_mid()
+    page.mouse.up()
+    return pts
+
+
+def _fit_requests(page):
+    seen = []
+    page.on("request", lambda r: seen.append(r.url) if "/api/geometry/fit" in r.url else None)
+    return seen
+
+
+def test_sketch_commits_fitted_path(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    assert not ui.locator("#pen-detail").is_visible()    # Detail is a sketch-mode control
+    ui.click('#pen-mode button[data-pen-mode="sketch"]')
+    assert ui.locator('#pen-mode [data-pen-mode="sketch"]').get_attribute("aria-pressed") == "true"
+    assert ui.locator("#pen-detail").is_visible()
+
+    mid = {}
+    pts = _wiggle(ui, on_mid=lambda: mid.setdefault(
+        "preview", ui.locator(".pen-overlay .pen-sketch-path").count()))
+    assert mid["preview"] == 1                            # the stroke shows while it is drawn
+
+    sps = _wait_api(ui, lambda s: len(s) == 1, "sketch committed")
+    sp = sps[0]
+    assert sp.get("kind", "bezier") == "bezier" and not sp["closed"]
+    assert len(sp["anchors"]) >= 2
+    mm = [_screen_to_mm(ui, *p) for p in pts]
+    xs, ys = [p[0] for p in mm], [p[1] for p in mm]
+    for a in sp["anchors"]:
+        assert min(xs) - 2 <= a["x"] <= max(xs) + 2, a
+        assert min(ys) - 2 <= a["y"] <= max(ys) + 2, a
+    assert _pen_active(ui)                                # the pen stays up for the next stroke
+    assert ui.locator("#pen-detail").is_visible()
+    assert ui.locator(".pen-overlay .pen-sketch-path").count() == 0
+    assert not ui.errors
+
+
+def test_detail_slider_refits_last_sketch_one_undo(ui):
+    _sketch_mode(ui)
+    _wiggle(ui)
+    sps = _wait_api(ui, lambda s: len(s) == 1, "sketch committed")
+    original = sps[0]["anchors"]
+
+    with ui.expect_response(lambda r: "/regenerate" in r.url):
+        ui.locator("#pen-detail").fill("0")
+    low = _wait_api(ui, lambda s: len(s) == 1, "refit 0")[0]["anchors"]
+    with ui.expect_response(lambda r: "/regenerate" in r.url):
+        ui.locator("#pen-detail").fill("1")
+    high = _wait_api(ui, lambda s: len(s[0]["anchors"]) > len(low), "refit 1")[0]["anchors"]
+    assert len(high) > len(low)
+
+    _undo(ui)   # the whole slider run is one undo step
+    _wait_api(ui, lambda s: s[0]["anchors"] == original, "refits undone")
+    assert not ui.errors
+
+
+def test_other_action_ends_refit(ui):
+    _sketch_mode(ui)
+    _wiggle(ui)
+    sps = _wait_api(ui, lambda s: len(s) == 1, "sketch committed")
+    before = sps[0]["anchors"]
+
+    _pen_anchor(ui, 0, 150)          # a new click: the next pen action
+    fits = _fit_requests(ui)
+    ui.locator("#pen-detail").fill("1")
+    time.sleep(0.8)
+    assert fits == []
+    assert _subpaths(ui)[0]["anchors"] == before
+    assert not ui.errors
+
+
+def test_short_sketch_does_nothing(ui):
+    _sketch_mode(ui)
+    fits = _fit_requests(ui)
+    x, y = _canvas_point(ui, 0, 0)
+    ui.mouse.move(x, y)
+    ui.mouse.down()
+    ui.mouse.move(x + 1, y)
+    ui.mouse.up()
+    time.sleep(0.5)
+    assert fits == []
+    assert _get(f"{ui.base}/api/project")["layers"] == []
+    assert not ui.errors
+
+
+def test_open_sketch_in_subtract_mode_does_nothing(ui):
+    _sketch_mode(ui)
+    _wiggle(ui)
+    _wait_api(ui, lambda s: len(s) == 1, "sketch committed")
+    ui.click("#pen-subtract")
+    fits = _fit_requests(ui)
+    _wiggle(ui, dx0=-60, length=120)
+    ui.wait_for_function(
+        "() => /closed/i.test(document.getElementById('job-log').textContent)")
+    time.sleep(0.3)
+    assert fits == []
+    assert len(_subpaths(ui)) == 1
+    assert not ui.errors
+
+
+def _loop(page, dx=0, dy=0, r=40, n=72):
+    """Drag a closed freehand circle (ends where it began)."""
+    cx, cy = _canvas_point(page, dx, dy)
+    pts = [(cx + r * math.cos(2 * math.pi * k / n), cy + r * math.sin(2 * math.pi * k / n))
+           for k in range(n + 1)]
+    page.mouse.move(*pts[0])
+    page.mouse.down()
+    for p in pts[1:]:
+        page.mouse.move(*p)
+    page.mouse.up()
+
+
+def test_closed_sketch_commits_closed_and_subtracts(ui):
+    _sketch_mode(ui)
+    _loop(ui)
+    sps = _wait_api(ui, lambda s: len(s) == 1, "loop committed")
+    assert sps[0]["closed"] and len(sps[0]["anchors"]) >= 2
+
+    ui.click("#pen-subtract")
+    _loop(ui, dx=40, r=25)       # a bite out of the loop, like the pen's subtract
+    deadline = time.time() + 8
+    while _layer(ui)["source"]["generator"] != "shape" and time.time() < deadline:
+        time.sleep(0.1)
+    assert _layer(ui)["source"]["generator"] == "shape"
+    assert not ui.errors
