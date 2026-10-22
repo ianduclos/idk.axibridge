@@ -64,11 +64,16 @@ class PenParams(BaseModel):
 
 
 def _clamp_xy(x: float, y: float) -> XY:
-    return (min(BED_WIDTH, max(0.0, float(x))), min(BED_HEIGHT, max(0.0, float(y))))
+    """Bound an anchor to a margin of one bed-size around the bed. Params are
+    in the layer's LOCAL frame (its transform is applied at resolve), so a
+    moved layer legitimately holds local points off the bed; a hard bed clamp
+    would displace them. Plot-time safety is machine.check_envelope's job."""
+    return (min(2 * BED_WIDTH, max(-BED_WIDTH, float(x))),
+            min(2 * BED_HEIGHT, max(-BED_HEIGHT, float(y))))
 
 
 def _prepare_subpaths(subpaths: list[PenSubpath]) -> list[PenSubpath]:
-    """Bed-clamp every anchor position (never trust the client, mirroring
+    """Bound every anchor position (see _clamp_xy) (never trust the client, mirroring
     drawing.py's _prepare_strokes) and cap total anchor count."""
     total = sum(len(sp.anchors) for sp in subpaths)
     if total > _MAX_ANCHORS:

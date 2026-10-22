@@ -144,14 +144,22 @@ def test_degenerate_coincident_anchors_does_not_hang():
     assert all(pt == (5.0, 5.0) for pt in path.points)
 
 
-def test_bed_clamp_on_anchor_positions():
+def test_local_frame_margin_keeps_off_bed_anchors_and_bounds_wild_ones():
+    # params are layer-local: a moved layer holds points beyond the bed edge
     doc = _gen(subpaths=[{
-        "anchors": [_corner(-50, -50), _corner(1000, 1000)],
+        "anchors": [_corner(-50, -50), _corner(450, 300)],
         "closed": False,
     }])
     pts = doc.layers[0].paths[0].points
-    assert pts[0] == (0.0, 0.0)
-    assert pts[-1] == (300.0, 218.0)
+    assert pts[0] == (-50.0, -50.0)
+    assert pts[-1] == (450.0, 300.0)
+    doc = _gen(subpaths=[{
+        "anchors": [_corner(-1e6, -1e6), _corner(1e6, 1e6)],
+        "closed": False,
+    }])
+    pts = doc.layers[0].paths[0].points
+    assert pts[0] == (-300.0, -218.0)
+    assert pts[-1] == (600.0, 436.0)
 
 
 def test_join_and_kind_round_trip_and_do_not_change_geometry():
