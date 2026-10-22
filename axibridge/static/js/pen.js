@@ -17,9 +17,9 @@
 
 import { api } from "./api.js";
 import { S, actions } from "./main.js";
+import { renderPenOverlay } from "./pen_overlay.js";
 
 const $ = (id) => document.getElementById(id);
-const NS = "http://www.w3.org/2000/svg";
 const BED = { w: 300, h: 218 };
 const HIT_PX = 9;          // screen-pixel hit radius for anchor/handle knobs (zoom-invariant)
 const DRAG_PX = 3;         // pointer movement past this counts as a drag, not a plain click
@@ -30,8 +30,6 @@ let wired = false;
 let activePenLayerId = null;
 let subtract = false; // add/subtract mode — subtract commits as a bite via shape_op
 let pending = [];   // uncommitted PenAnchor-shaped objects: {x,y,in_handle,out_handle}
-let overlay = null; // persistent <g> appended to editor.world (NOT canvas.js's own
-                     // this.overlay, which _renderSelection() clears/repopulates itself)
 let hoverPt = null;  // last known bed-mm pointer position, for the hover rubber-band
 let gesture = null;  // in-progress pointer gesture — see onDown
 let committing = false;
@@ -48,6 +46,11 @@ export function initPenMode() {
   document.addEventListener("keydown", onKeydown);
   const sub = $("pen-subtract");
   if (sub) sub.onclick = () => setSubtract(!subtract);
+  // glyphs are sized in screen px, so any change to px-per-mm (zoom, pan
+  // clamp, window resize) re-renders them
+  const onView = () => { if (on) redraw(); };
+  document.addEventListener("canvas-view-change", onView);
+  window.addEventListener("resize", onView);
 }
 
 function setSubtract(v) {
@@ -75,7 +78,7 @@ export function deactivatePenMode() {
   hoverPt = null;
   // The request owns this draft until it resolves. If the user changes tools
   // meanwhile, keep it available for retry when the Pen tool is reopened.
-  if (committing) { clearOverlay(); announcePending(); return; }
+  if (committing) { renderPenOverlay(null); announcePending(); return; }
   // A direct tool switch still finishes a usable open path. The successful
   // commit path clears pending before it asks the broker to select, and the
   // committing guard prevents that automatic deactivation from saving twice.
@@ -83,7 +86,7 @@ export function deactivatePenMode() {
     commitSubpath(false);
   } else {
     pending = [];
-    clearOverlay();
+    renderPenOverlay(null);
   }
 }
 
@@ -482,57 +485,7 @@ async function commitSubpath(closed) {
   actions.completeDrawingTool(id, "pen");
 }
 
-// -- overlay: committed anchors/handles (re-edit) + pending shape + rubber-band --
-
-function svgEl(tag, attrs) {
-  const e = document.createElementNS(NS, tag);
-  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
-  return e;
-}
-const svgLine = (x1, y1, x2, y2, cls) => svgEl("line", { x1, y1, x2, y2, class: cls });
-const svgCircle = (cx, cy, r, cls) => svgEl("circle", { cx, cy, r, class: cls });
-// Anchors render as small squares (Photoshop-style), not circles — keeps
-// them visually distinct from the round handle knobs at a glance.
-const svgSquare = (cx, cy, size, cls) =>
-  svgEl("rect", { x: cx - size / 2, y: cy - size / 2, width: size, height: size, class: cls });
-const ANCHOR_SIZE = 2.4, ANCHOR_SIZE_FIRST = 3.2; // bed mm
-const cubicPath = (p0, p1, p2, p3, cls) =>
-  svgEl("path", { d: `M ${p0[0]},${p0[1]} C ${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${p3[0]},${p3[1]}`, class: cls, fill: "none" });
-
-// One cubic segment between two anchors — SVG draws it directly (native "C"
-// commands), no need to flatten client-side like the server does for the
-// real Path geometry.
-function segmentD(a, b) {
-  const p1 = a.out_handle ? [a.x + a.out_handle[0], a.y + a.out_handle[1]] : [a.x, a.y];
-  const p2 = b.in_handle ? [b.x + b.in_handle[0], b.y + b.in_handle[1]] : [b.x, b.y];
-  return `C ${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${b.x},${b.y}`;
-}
-
-// The already-placed segments of the pending subpath. This is what makes
-// the shape visible AS you place each anchor, not just once it commits.
-function pendingSegmentsD(anchors) {
-  if (anchors.length < 2) return null;
-  let d = `M ${anchors[0].x},${anchors[0].y}`;
-  for (let i = 0; i < anchors.length - 1; i++) d += ` ${segmentD(anchors[i], anchors[i + 1])}`;
-  return d;
-}
-
-function ensureOverlay(editor) {
-  if (overlay && overlay.isConnected) return overlay;
-  overlay = svgEl("g", { class: "pen-overlay" });
-  editor.world.appendChild(overlay);
-  return overlay;
-}
-
-function clearOverlay() {
-  if (overlay) overlay.innerHTML = "";
-}
-
-function drawHandle(g, a, h) {
-  const hx = a.x + h[0], hy = a.y + h[1];
-  g.appendChild(svgLine(a.x, a.y, hx, hy, "pen-handle-line"));
-  g.appendChild(svgCircle(hx, hy, 0.7, "pen-handle-knob"));
-}
+// -- overlay: rendering lives in pen_overlay.js; this side only gathers state --
 
 // Every mutation of `pending` goes through redraw(), so this is the one place
 // that has to announce "there is / isn't something to commit" — the toolbar's
@@ -542,75 +495,33 @@ function announcePending() {
     { detail: { count: on ? pending.length : 0 } }));
 }
 
-function redraw() {
-  if (!on) { clearOverlay(); announcePending(); return; }
-  const editor = actions.canvas();
-  const g = ensureOverlay(editor);
-  g.innerHTML = "";
-  g.classList.toggle("subtracting", subtract); // pending paths render rust
-
-  // committed anchors/handles for the active (selected) pen layer — the
-  // "post-commit overlay" that makes re-editing possible
-  const layer = activeLayer();
-  if (layer) {
-    for (const sp of layer.source.params.subpaths || []) {
-      for (const a of sp.anchors) {
-        if (a.out_handle) drawHandle(g, a, a.out_handle);
-        if (a.in_handle) drawHandle(g, a, a.in_handle);
-      }
-      for (const a of sp.anchors) {
-        g.appendChild(svgSquare(a.x, a.y, ANCHOR_SIZE, "pen-anchor" + ((a.in_handle || a.out_handle) ? " smooth" : "")));
-      }
-    }
-  }
-
-  // the current uncommitted subpath: the segments placed so far, then
-  // anchors/handles on top
-  const pendingD = pendingSegmentsD(pending);
-  if (pendingD) g.appendChild(svgEl("path", { d: pendingD, class: "pen-pending-path", fill: "none" }));
-  for (const a of pending) {
-    if (a.out_handle) drawHandle(g, a, a.out_handle);
-    if (a.in_handle) drawHandle(g, a, a.in_handle);
-  }
-  for (let i = 0; i < pending.length; i++) {
-    const a = pending[i];
-    g.appendChild(svgSquare(a.x, a.y, i === 0 ? ANCHOR_SIZE_FIRST : ANCHOR_SIZE, "pen-pending-anchor"));
-  }
-
-  if (gesture?.kind === "place") {
-    // live preview of the anchor being placed: the actual curve segment
-    // from the last already-placed anchor (using tentativeAnchor's in/out
-    // handles, exactly what commit will use), plus its own handle guide —
-    // not just a bare drag-handle line with no sense of the resulting shape
-    const tentative = tentativeAnchor(gesture);
-    if (pending.length) {
-      const last = pending[pending.length - 1];
-      g.appendChild(svgEl("path", {
-        d: `M ${last.x},${last.y} ${segmentD(last, tentative)}`, class: "pen-pending-path", fill: "none",
-      }));
-    }
-    if (tentative.out_handle) drawHandle(g, tentative, tentative.out_handle);
-    g.appendChild(svgSquare(tentative.x, tentative.y, ANCHOR_SIZE, "pen-pending-anchor"));
-  } else if (gesture?.kind === "close" && pending.length >= 2) {
-    // live preview of the closing segment (last anchor → first anchor),
-    // curved by the first anchor's tentative in_handle — the first anchor's
-    // OWN out_handle (first segment) is left as-is, so only this one spline moves
+// What the overlay should preview of the gesture in flight — computed HERE,
+// from the same tentativeAnchor/clampHandle the commit uses, so the preview
+// and the committed result never drift apart.
+function gestureView() {
+  if (gesture?.kind === "place") return { kind: "place", anchor: tentativeAnchor(gesture) };
+  if (gesture?.kind === "close" && pending.length >= 2) {
     const first = { ...pending[0] };
-    const last = pending[pending.length - 1];
     if (gesture.moved && gesture.dragTo) {
       first.in_handle = clampHandle(gesture.dragTo[0] - first.x, gesture.dragTo[1] - first.y);
     }
-    g.appendChild(svgEl("path", {
-      d: `M ${last.x},${last.y} ${segmentD(last, first)}`, class: "pen-pending-path", fill: "none",
-    }));
-    if (first.in_handle) drawHandle(g, first, first.in_handle);
-  } else if (!gesture && pending.length && hoverPt) {
-    // hover rubber-band: preview the next segment from the last pending
-    // anchor to the pointer, shaped by that anchor's own out_handle
-    const last = pending[pending.length - 1];
-    const p1 = last.out_handle ? [last.x + last.out_handle[0], last.y + last.out_handle[1]] : [last.x, last.y];
-    g.appendChild(cubicPath([last.x, last.y], p1, hoverPt, hoverPt, "pen-rubber-band"));
+    return { kind: "close", first };
   }
+  return null;
+}
 
+function redraw() {
+  if (!on) { renderPenOverlay(null); announcePending(); return; }
+  const layer = activeLayer();
+  renderPenOverlay({
+    editor: actions.canvas(),
+    layerSubpaths: layer ? layer.source.params.subpaths || [] : null,
+    pending,
+    gesture: gestureView(),
+    // no hover rubber-band while any gesture is in flight
+    hover: gesture ? null : hoverPt,
+    subtract,
+    selected: null,
+  });
   announcePending();
 }
