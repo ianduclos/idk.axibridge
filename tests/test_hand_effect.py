@@ -292,3 +292,22 @@ def test_tween_between_two_hands_steps_hand_and_pin_together(client, monkeypatch
         mids = [p for p in seen if p.stray_mm == 3.0 and (p.hand, p.pin) == (hand, pin)]
         assert mids, (t, [(p.hand, p.pin) for p in seen])
         assert all(p.pin.partition("@")[0] == p.hand for p in seen)
+
+
+def test_pinning_a_legacy_step_is_not_a_use(client, monkeypatch):
+    """A layer kept before pins existed gets its hand pinned on the next edit
+    of ANY step; that completion is not the user applying Hand again."""
+    layer = _layer_with_hand(client)
+    session.project.layer(layer["id"]).effects[0].params.pop("pin")     # a legacy, unpinned step
+    used = []
+    monkeypatch.setattr("axibridge.api.record_module_use", lambda kind, mod: used.append((kind, mod)))
+    legacy = {k: v for k, v in layer["effects"][0]["params"].items() if k != "pin"}
+    steps = [{"effect": "hand", "enabled": True, "params": legacy},
+             {"effect": "freehand", "enabled": True, "params": {}}]
+    out = client.patch(f"/api/layers/{layer['id']}", json={"effects": steps}).json()
+    assert PIN.match(out["effects"][0]["params"]["pin"])
+    assert used == [("effect", "freehand")]
+    used.clear()
+    steps[0]["params"] = {**out["effects"][0]["params"], "stray_mm": 6.0}  # a real edit still counts
+    client.patch(f"/api/layers/{layer['id']}", json={"effects": steps})
+    assert used == [("effect", "hand")]

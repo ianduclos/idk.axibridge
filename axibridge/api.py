@@ -959,8 +959,11 @@ def patch_layer(layer_id: str, patch: dict[str, Any]) -> dict[str, Any]:
             before = session.project.layer(layer_id)
             # Match settings as a multiset: reorder, removal and enable toggles
             # do not masquerade as applying a tool. Identical copies still count.
-            old = Counter((step.effect, json.dumps(step.params, sort_keys=True))
-                          for step in before.effects)
+            # The old steps are compared as they would be kept now, so state a
+            # module completes on its own (pinning a legacy Hand step while
+            # another step is edited) is not a use either.
+            old = Counter((step["effect"], json.dumps(step["params"], sort_keys=True))
+                          for step in session._completed_effects(list(before.effects), before.effects))
             updated = session.update_layer(layer_id, patch)
             new = Counter((step.effect, json.dumps(step.params, sort_keys=True))
                           for step in updated.effects)
