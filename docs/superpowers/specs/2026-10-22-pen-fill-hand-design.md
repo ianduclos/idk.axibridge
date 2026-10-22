@@ -179,6 +179,36 @@ second idea as an extra toggle.
 - A fill that silently picks the wrong area (e.g. a gap-tolerance that leaks
   into the neighbouring area without showing it).
 
+## Settled after the builder check (the lead's calls, not Ian's — he can overturn any)
+
+1. **One point setting, three values.** Each anchor has a `join`:
+   `corner` (arms independent, or none), `smooth` (arms stay opposite in
+   angle, lengths free) or `symmetric` (opposite and equal). Round = smooth or
+   symmetric; square = corner. E2's double-click flips corner ⇄ smooth; E4's
+   switch cycles all three. Every arm drag (A2's plain drag and the existing ⌥
+   drag) obeys the point's `join`; holding ⌥ during the drag breaks it for that
+   drag and sets the point to `corner`. Old anchors have no `join` and are
+   classified on load for display and editing only — both arms present,
+   collinear and equal length (within 1e-6) → symmetric; collinear → smooth;
+   otherwise corner — never changing their geometry.
+2. **The fit control is live for the most recent result only.** A "detail"
+   slider in the pen tool's options sets how closely sketch-then-fit (and B's
+   fitted boundary) follows. Moving it right after a sketch or a fill click
+   re-fits that result in place (the browser keeps the raw stroke or area
+   outline only until the next action; nothing raw is saved in the project).
+   Each re-fit is one coalesced undo step.
+3. **The hand never lifts the pen.** One input path in, one continuous path
+   out; a closed path stays closed (seek + snap, as `freehand` does) and keeps
+   `filled`. Only hands that produce a continuous line are offered; tempo
+   entries may vary speed (the density of the hand's own wobble) but never
+   insert lifts or retraces. "Let it wander" stays one continuous path.
+4. **Knife and join act on the active pen layer only**, like every other pen
+   gesture. Joining ends from different layers is out of scope.
+5. **Stray is a tendency with a ceiling.** The knob is a soft band the hand
+   tends to stay within (its character is kept); a hard ceiling at 2× the knob
+   is never crossed. "Let it wander" widens the soft band to 3× the knob and
+   the ceiling to 5×.
+
 ## Left to the builder
 
 - The data model for curvature-pen subpaths (e.g. a per-subpath mode, points
