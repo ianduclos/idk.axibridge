@@ -486,6 +486,7 @@ function onUp(e) {
 
   if (g.kind === "place") {
     forgetClick();
+    g.shift = e.shiftKey; // the commit follows Shift as it is at release
     pending.push(tentativeAnchor(g));
     redraw();
     return;

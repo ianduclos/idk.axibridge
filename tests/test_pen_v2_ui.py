@@ -738,3 +738,20 @@ def test_shift_leaves_the_first_point_in_place_and_snaps_its_arm(ui):
     want = to_mm(x, y)
     assert first["x"] == pytest.approx(want[0], abs=0.05) and first["y"] == pytest.approx(want[1], abs=0.05)
     assert _is_15(_angle_deg(*first["out_handle"]))
+
+
+def test_shift_pressed_just_before_release_snaps_the_point(ui):
+    """The commit follows Shift as it is at release, not at the last move."""
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    _pen_anchor(ui, -60, 0)
+    x, y = _canvas_point(ui, 50, 37)   # an off-grid direction from the first point
+    ui.mouse.move(x, y)
+    ui.mouse.down()
+    ui.keyboard.down("Shift")          # no pointer move after this
+    ui.mouse.up()
+    ui.keyboard.up("Shift")
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 2, "committed")
+    p, q = sps[0]["anchors"]
+    assert _is_15(_angle_deg(q["x"] - p["x"], q["y"] - p["y"])), (p, q)
+    assert not ui.errors
