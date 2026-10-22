@@ -934,9 +934,16 @@ def test_option_drag_on_curvature_point_makes_it_bezier(ui):
     ui.keyboard.up("Alt")
     to_mm = _mm_mapper(ui)   # the view may be portrait: map, don't assume
     o, tip = to_mm(sx, sy), to_mm(sx + 40, sy)
-    sps = _wait_api(ui, lambda s: s[0]["kind"] == "bezier", "converted to Bézier")
+    want = (tip[0] - o[0], tip[1] - o[1])
+
+    def at_final_arm(s):   # "bezier" is true after the first drag frame: wait for the last
+        h = s[0]["anchors"][1]["out_handle"]
+        return (s[0]["kind"] == "bezier" and h is not None
+                and abs(h[0] - want[0]) <= 0.3 and abs(h[1] - want[1]) <= 0.3)
+
+    sps = _wait_api(ui, at_final_arm, "converted to Bézier with the dragged arm")
     a = sps[0]["anchors"][1]
-    assert a["out_handle"] == [pytest.approx(tip[0] - o[0], abs=0.3), pytest.approx(tip[1] - o[1], abs=0.3)]
+    assert a["out_handle"] == [pytest.approx(want[0], abs=0.3), pytest.approx(want[1], abs=0.3)]
     ui.wait_for_function("() => document.querySelectorAll('.pen-handle-knob').length > 0")
     assert not ui.errors
 
@@ -2001,4 +2008,27 @@ def test_a_flattened_layer_is_left_alone(ui):
         layers = _get(f"{ui.base}/api/project")["layers"]
     assert len(layers) == 2                                     # drawn on a layer of its own
     assert layers[0]["source"]["params"]["subpaths"] == layer["source"]["params"]["subpaths"]
+    assert not ui.errors
+
+
+def test_points_left_of_a_layer_moved_right_are_not_clamped(ui):
+    # A layer moved +100 mm in x: a point seen at bed x 50 is local x -50. The
+    # source must keep it (a bed clamp in the local frame would drag it to 0).
+    _straight_line(ui)
+    _settled(ui, "line")
+    move = {"a": 1, "b": 0, "c": 0, "d": 1, "e": 100, "f": 0}
+    _place_layer(ui, move)
+    want = [(50.0, 100.0), (60.0, 130.0)]
+    for w in want:
+        ui.mouse.click(*_mm_to_screen(ui, *w))
+    ui.keyboard.press("Enter")
+
+    _wait_api(ui, lambda s: len(s) == 2, "a second line on the moved layer")
+    deadline = time.time() + 5
+    ink = _resolved_points(ui)
+    while time.time() < deadline and min(p[0] for p in ink) > 50.5:
+        time.sleep(0.1)
+        ink = _resolved_points(ui)
+    for w in want:
+        assert _near_any(w, ink) <= 0.05, (w, ink)
     assert not ui.errors
