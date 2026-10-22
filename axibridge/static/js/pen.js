@@ -27,7 +27,7 @@ import { renderPenOverlay } from "./pen_overlay.js";
 import { DBL_MS, clickPoint, commitContinue, cont, dragToken, flipCornerSmooth, forgetClick, hitSegment,
          hitOpenEnd, hitAnchor, insertPoint, joinInto, noteClick, onDblClick, onPointKeydown,
          selected, setCont, setSelected, startBend, applyBend, validateEditState } from "./pen_edit.js";
-import { curvatureHandles, snapAngle } from "./pen_ops.js";
+import { classifyJoin, curvatureHandles, reverseSubpath, snapAngle } from "./pen_ops.js";
 import { kickRegen, queueRegenerate, whenIdle } from "./pen_queue.js";
 
 const $ = (id) => document.getElementById(id);
@@ -112,9 +112,16 @@ function setSubtract(v) {
 /** @param {string | undefined} mode */
 function setPenMode(mode) {
   if (mode !== "bezier" && mode !== "curvature") return;
-  // a path being drawn keeps the shape it shows: leaving curvature mode
-  // freezes the bends it has so far into ordinary arms
-  if (penMode === "curvature" && mode !== "curvature" && !committing) pending = shapedPending();
+  // a path being drawn keeps the shape it shows; only new points follow the
+  // new mode. Leaving curvature mode freezes its bends into ordinary arms;
+  // entering it, the points placed so far become corners that keep their
+  // own arms (`fixed`) — the curvature rule never reshapes them. (A
+  // continued line's own end, pending[0], is the line's, not a placed point.)
+  if (!committing && mode !== penMode) {
+    pending = mode === "curvature"
+      ? pending.map((a, i) => (cont && i === 0 ? a : { ...a, join: "corner", fixed: true }))
+      : shapedPending();
+  }
   penMode = mode;
   lastPendingClick = null;
   for (const b of document.querySelectorAll("#pen-mode [data-pen-mode]")) {
@@ -125,19 +132,57 @@ function setPenMode(mode) {
   redraw();
 }
 
+/** @param {any} a */
+const bare = ({ fixed, ...a }) => a; // pending-only marker, never sent
+
+/** The line being continued, oriented to end at the continued end. */
+function continuedLine() {
+  const sp = cont ? activeLayer()?.source.params.subpaths?.[cont.si] : null;
+  if (!sp) return null;
+  return cont.end === "start" ? reverseSubpath(sp) : sp;
+}
+
 /**
- * The pending anchors as they would commit — what the overlay previews. In
- * curvature mode pending holds bare on-curve points, and their arms come
- * from the curvature rule over them plus `extra` (a point being placed, or
- * the pointer); a continued line's end keeps its arm into its own line.
+ * The pending anchors with the arms they commit with — the ONE source of
+ * both the overlay's preview and every commit (commitSubpath, pen_edit's
+ * mergedContinue), so the two cannot drift. Bézier mode: pending as it is.
+ * Curvature mode: pending holds bare on-curve points (plus `extra`: a point
+ * being placed, or the pointer) and the curvature rule draws their arms,
+ * except points placed in Bézier mode before the switch (`fixed`), which
+ * keep their own. Continuing a curvature line, the rule runs over the
+ * line's points as well, so the junction bends exactly as the commit
+ * re-bends the whole line; continuing a Bézier line, the junction keeps its
+ * arm into the line and, at a smooth end, its new arm carries straight on.
  * @param {any[]} [extra] @param {boolean} [closed]
  */
 export function shapedPending(extra = [], closed = false) {
   const pts = [...pending, ...extra];
-  if (penMode !== "curvature") return pts;
-  const shaped = curvatureHandles({ anchors: pts, closed, kind: "curvature" }).anchors;
-  if (cont && shaped.length) shaped[0] = { ...shaped[0], in_handle: pts[0].in_handle };
-  return shaped;
+  if (penMode !== "curvature" || !pts.length) return pts.map(bare);
+  const line = continuedLine();
+  let shaped;
+  if (line?.kind === "curvature") {
+    const head = line.anchors.slice(0, -1);
+    shaped = curvatureHandles({ anchors: [...head, ...pts], closed: false, kind: "curvature" })
+      .anchors.slice(head.length);
+  } else {
+    shaped = curvatureHandles({ anchors: pts, closed, kind: "curvature" }).anchors;
+    if (cont) shaped[0] = junctionArms(pts, shaped[0]);
+  }
+  return shaped.map((a, i) => bare(pts[i].fixed ? pts[i] : a));
+}
+
+// A Bézier line's end continued in curvature mode: the arm into the line
+// stays; a smooth/symmetric end's new arm leaves straight opposite it (a
+// third of the new chord), so the line carries on without a kink.
+function junctionArms(pts, shaped0) {
+  const end = pts[0], inArm = end.in_handle;
+  const out = { ...shaped0, in_handle: inArm };
+  const li = inArm ? Math.hypot(inArm[0], inArm[1]) : 0;
+  if (li > 1e-9 && pts.length > 1 && classifyJoin(end) !== "corner") {
+    const L = Math.hypot(pts[1].x - end.x, pts[1].y - end.y) / 3;
+    out.out_handle = [(-inArm[0] / li) * L, (-inArm[1] / li) * L];
+  }
+  return out;
 }
 
 export function activatePenMode() {
@@ -709,9 +754,11 @@ export async function commitPenSubpath(subpath, opts = {}) {
 
 async function commitSubpath(closed) {
   if (!pending.length || committing) return;
+  // points kept from Bézier mode (`fixed`) keep their arms only on a Bézier line
   const subpath = penMode === "curvature"
-    ? curvatureHandles({ anchors: pending, closed, kind: "curvature" })
-    : { anchors: pending.map((a) => ({ ...a })), closed };
+    ? { anchors: shapedPending([], closed), closed,
+        kind: pending.some((a) => a.fixed) ? "bezier" : "curvature" }
+    : { anchors: pending.map(bare), closed };
   gesture = null;
   redraw();
   committing = true;

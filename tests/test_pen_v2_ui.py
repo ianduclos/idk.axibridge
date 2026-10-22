@@ -1002,3 +1002,70 @@ def test_continuing_a_curvature_line_rebends_it_whole(ui):
     _assert_curvature_arms(sps[0])   # the old end is now smooth, bent toward the new point
     assert sps[0]["anchors"][2]["join"] == "smooth"
     assert not ui.errors
+
+
+def _pending_first_control(page):
+    """The first pending segment's out control point, read off the overlay
+    (screen px): `M x,y C p1x,p1y ...` in bed mm, mapped to the screen."""
+    d = page.evaluate("() => document.querySelector('.pen-pending-path').getAttribute('d')")
+    p1 = d.split("C", 1)[1].split()[0].split(",")
+    return float(p1[0]), float(p1[1])
+
+
+def test_continuing_a_curvature_line_previews_what_it_commits(ui):
+    _draw_curvature_path(ui, CURVE_CLICKS[:3])
+    ui.mouse.click(*_anchor_screen(ui, 0, 2))   # continue from its open end
+    _pen_anchor(ui, 100, 60)                    # off the line's own direction
+    shown = _pending_first_control(ui)          # the junction's out control, as previewed
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 4, "continued")
+    j = sps[0]["anchors"][2]
+    committed = (j["x"] + j["out_handle"][0], j["y"] + j["out_handle"][1])
+    assert shown == (pytest.approx(committed[0], abs=1e-3), pytest.approx(committed[1], abs=1e-3))
+    assert not ui.errors
+
+
+def _bezier_line_with_smooth_end(page):
+    """A Bézier line whose last point was dragged out (symmetric arms)."""
+    page.click('#tool-toggle button[data-tool="pen"]')
+    _pen_anchor(page, -60, 0)
+    x, y = _canvas_point(page, 0, 0)
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.mouse.move(x + 5, y - 12)
+    page.mouse.move(x + 10, y - 25)
+    page.mouse.up()
+
+
+def test_switching_to_curvature_mid_draw_keeps_drawn_points(ui):
+    _bezier_line_with_smooth_end(ui)
+    before = ui.evaluate("() => document.querySelector('.pen-pending-path').getAttribute('d')")
+    ui.click('#pen-mode button[data-pen-mode="curvature"]')
+    after = ui.evaluate("() => document.querySelector('.pen-pending-path').getAttribute('d')")
+    assert after == before   # nothing drawn changes; only new points follow the mode
+    _pen_anchor(ui, 60, 40)
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 3, "committed")
+    a = sps[0]["anchors"][1]
+    assert a["join"] == "corner" and a["in_handle"] == [-v for v in a["out_handle"]]  # its arms kept
+    assert sps[0]["kind"] == "bezier"   # drawn arms survive only on a Bézier line
+    assert not ui.errors
+
+
+def test_curvature_continue_of_a_smooth_bezier_end_has_no_kink(ui):
+    _bezier_line_with_smooth_end(ui)
+    ui.keyboard.press("Enter")
+    _wait_api(ui, lambda s: len(s[0]["anchors"]) == 2, "committed")
+    _reselect_pen(ui, 2)
+    ui.click('#pen-mode button[data-pen-mode="curvature"]')
+    ui.mouse.click(*_anchor_screen(ui, 0, 1))   # continue from the smooth end
+    _pen_anchor(ui, 60, 40)
+    _pen_anchor(ui, 120, 0)
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 4, "continued")
+    assert sps[0]["kind"] == "bezier"
+    j, n = sps[0]["anchors"][1], sps[0]["anchors"][2]
+    i, o = j["in_handle"], j["out_handle"]
+    assert abs(i[0] * o[1] - i[1] * o[0]) < 1e-6 and i[0] * o[0] + i[1] * o[1] < 0  # collinear, opposite
+    assert math.hypot(*o) == pytest.approx(math.hypot(n["x"] - j["x"], n["y"] - j["y"]) / 3, abs=1e-6)
+    assert not ui.errors

@@ -343,15 +343,15 @@ function armContinue(layer, si, end) {
 }
 
 // The continued line with the placed points spliced onto its end (or, from
-// the start, prepended — the line keeps its direction). A curvature line
-// continued in curvature mode stays one and is re-bent whole; any other mix
-// is a Bézier line that keeps the shape it showed (points placed in
-// curvature mode keep the bends they were drawn with).
+// the start, prepended — the line keeps its direction). The placed points
+// come from shapedPending, the same arms the preview showed. A curvature
+// line continued in curvature mode stays one (editSubpaths re-bends it
+// whole, which is what shapedPending previewed); any other mix — or points
+// kept from Bézier mode (`fixed`) — is a Bézier line that keeps its shape.
 function mergedContinue(sp) {
   const oriented = cont.end === "start" ? reverseSubpath(sp) : sp;
-  const curvature = sp.kind === "curvature" && penMode === "curvature";
-  const placed = curvature ? pending : shapedPending();
-  const anchors = [...oriented.anchors.slice(0, -1), ...placed.map((a) => ({ ...a }))];
+  const curvature = sp.kind === "curvature" && penMode === "curvature" && !pending.some((a) => a.fixed);
+  const anchors = [...oriented.anchors.slice(0, -1), ...shapedPending()];
   const merged = reshape({ ...oriented, anchors, kind: curvature ? "curvature" : "bezier" });
   return cont.end === "start" ? reverseSubpath(merged) : merged;
 }
