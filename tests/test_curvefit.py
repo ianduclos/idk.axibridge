@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import math
 import random
-import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -201,12 +200,11 @@ def test_fitter_cap_matches_the_pen_source():
 @pytest.mark.parametrize("make", [_random_walk, _white_noise, _jitter_line])
 @pytest.mark.parametrize("closed", [False, True])
 @pytest.mark.parametrize("detail", [0.0, 1.0])
-def test_huge_messy_input_is_fast_finite_and_editable(make, closed, detail):
-    # always an editable path: never more anchors than the pen source accepts
-    pts = make()
-    t0 = time.perf_counter()
-    anchors = fit_bezier(pts, closed=closed, detail=detail)
-    assert time.perf_counter() - t0 < 3.0
+def test_huge_messy_input_is_finite_and_editable(make, closed, detail):
+    # always an editable path: never more anchors than the pen source accepts.
+    # No wall-clock assert (the Pi runs this suite on a slower CPU): the
+    # runtime guard is test_over_cap_refits_are_bounded's fit-pass count.
+    anchors = fit_bezier(make(), closed=closed, detail=detail)
     assert 2 <= len(anchors) <= pen._MAX_ANCHORS
     assert _all_finite(anchors)
     pen.PenSource().generate(pen.PenParams(subpaths=[pen.PenSubpath(
