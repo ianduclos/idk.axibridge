@@ -174,10 +174,14 @@ Contract:
   uses them to decide how an arm drag or a point move propagates. Tween morphs
   them like other hidden geometry, but `None`-vs-string joins step at t=0.5.
   `axibridge/curvefit.py` `fit_bezier(points, closed, detail)` backs
-  `POST /api/geometry/fit` (pure; sketch strokes and Backspace point removal
-  re-fit through it; result never exceeds the pen's 2000-anchor cap). Every
-  commit is a `regenerate` with a `coalesce` token (`bool | str`), so a gesture
-  run is one undo step. Frontend split in `static/js/`: `pen.js` (dispatch,
+  `POST /api/geometry/fit` (pure; sketch strokes and the Detail slider's
+  re-fit go through it; result never exceeds the pen's 2000-anchor cap).
+  Backspace/Delete point removal re-fits the neighbours client-side instead
+  (`deleteAnchor` in `pen_ops.js`). Every committed edit is a `regenerate`;
+  a gesture run (a drag, one sketch's re-fits) sends a `coalesce` token
+  (`regenerate`'s `coalesce` is `bool | str`) so it is one undo step, while a
+  discrete edit (insert, J, delete, a finished path) sends `false` and is its
+  own step. Frontend split in `static/js/`: `pen.js` (dispatch,
   modes bezier/curvature/sketch/knife), `pen_ops.js` (pure maths),
   `pen_overlay.js` (constant-screen-size rendering), `pen_edit.js` (edit
   gestures), `pen_queue.js` (ordered regenerate queue), `pen_sketch.js`
