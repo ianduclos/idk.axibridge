@@ -409,7 +409,7 @@ function hitExisting(editor, e) {
         // it (Illustrator-style "convert a corner into a curve"), rather
         // than moving the anchor — the way to give an anchor a handle it
         // doesn't have yet, since there's no knob to grab until one exists.
-        return e.altKey ? { kind: "handle", side: "out", si, ai } : { kind: "anchor", si, ai };
+        return e.altKey ? { kind: "handle", side: "out", si, ai, fromPoint: true } : { kind: "anchor", si, ai };
       }
     }
   }
@@ -431,7 +431,7 @@ function hitPending(editor, e) {
       return { kind: "handle", side: "in", ai };
     }
     if (hitDist(editor, a.x, a.y, e) <= HIT_PX) {
-      return e.altKey && arms ? { kind: "handle", side: "out", ai } : { kind: "anchor", ai };
+      return e.altKey && arms ? { kind: "handle", side: "out", ai, fromPoint: true } : { kind: "anchor", ai };
     }
   }
   return null;
@@ -483,13 +483,16 @@ function onDown(e, wrap) {
   if (pending.length) {
     const hit = hitPending(editor, e);
     if (hit) {
-      gesture = { ...hit, target: "pending", downScreen: { x: e.clientX, y: e.clientY } };
+      gesture = { ...hit, target: "pending", downScreen: { x: e.clientX, y: e.clientY },
+                  grab: grabOffset(editor, e, hit, pending[hit.ai]) };
       return;
     }
   } else {
     const hit = hitExisting(editor, e);
     if (hit) {
-      gesture = { ...hit, target: "committed", downScreen, token: dragToken() };
+      const a = activeLayer().source.params.subpaths[hit.si].anchors[hit.ai];
+      gesture = { ...hit, target: "committed", downScreen, token: dragToken(),
+                  grab: grabOffset(editor, e, hit, a) };
       return;
     }
     // on a line of the active pen layer: a click adds a point, a drag bends
@@ -513,6 +516,15 @@ function onDown(e, wrap) {
   if (penMode === "sketch") { gesture = startSketch(x, y); redraw(); return; }
   gesture = { kind: "place", x, y, alt: e.altKey, moved: false, downScreen,
               shift: e.shiftKey, space: false, lastBed: [x, y] };
+}
+
+// Where the pointer sat relative to the knob it grabbed (knob − pointer, mm),
+// so an arm drag moves by the pointer's travel instead of jumping to it.
+function grabOffset(editor, e, hit, a) {
+  const h = hit.kind === "handle" && !hit.fromPoint && a ? a[`${hit.side}_handle`] : null;
+  if (!h) return [0, 0]; // no knob under the pointer: Option-pulling an arm out of the point itself
+  const bed = editor.toBed(e);
+  return [a.x + h[0] - bed.x, a.y + h[1] - bed.y];
 }
 
 const movedPast = (g, e) => Math.hypot(e.clientX - g.downScreen.x, e.clientY - g.downScreen.y) > DRAG_PX;
@@ -602,6 +614,11 @@ function onMove(e) {
   // works, breaks the point to a corner; Shift snaps the arm's angle to 15°.
   // Identical whether the anchor is still pending or already committed —
   // only WHERE the edit lands (locally vs. a server regenerate) differs.
+  // a dead zone, so a click on a knob never nudges its arm
+  if (!gesture.moved) {
+    if (!movedPast(gesture, e)) return;
+    gesture.moved = true;
+  }
   if (gesture.target === "pending") {
     applyPendingEditDrag(gesture, bx, by, e);
   } else {
@@ -729,7 +746,8 @@ function applyAnchorEdit(anchor, g, bx, by, e, isEnd = false) {
     anchor.x = x; anchor.y = y;
     return;
   }
-  let [dx, dy] = [bx - anchor.x, by - anchor.y];
+  const grab = g.grab || [0, 0];
+  let [dx, dy] = [bx + grab[0] - anchor.x, by + grab[1] - anchor.y];
   if (e?.shiftKey) [dx, dy] = snapAngle(dx, dy, 15);
   const next = applyArmDrag(anchor, g.side, clampHandle(dx, dy), !!e?.altKey, { isEnd });
   // the join is written explicitly: the result is what the point now is

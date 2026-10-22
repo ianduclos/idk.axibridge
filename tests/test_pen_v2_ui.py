@@ -1615,3 +1615,75 @@ def test_alt_drag_breaks_to_corner(ui):
     assert a["join"] == "corner"
     assert a["in_handle"] == before["in_handle"]
     assert not ui.errors
+
+
+def _knob_screen(page):
+    return page.evaluate("""() => {
+        const ks = [...document.querySelectorAll('.pen-handle-knob')]
+          .map((k) => k.getBoundingClientRect())
+          .map((r) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 }));
+        ks.sort((a, b) => a.y - b.y);
+        return ks[0];
+    }""")
+
+
+def test_click_on_a_knob_with_a_wobble_leaves_the_arm_alone(ui):
+    _draw_three_anchor_path(ui)
+    before = _middle_anchor(ui)
+    reqs = []
+    ui.on("request", lambda r: reqs.append(r.url) if "/regenerate" in r.url else None)
+    knob = _knob_screen(ui)
+    # grab 4 px off the knob centre and wobble 1 px: a click, not a drag
+    ui.mouse.move(knob["x"] + 4, knob["y"])
+    ui.mouse.down()
+    ui.mouse.move(knob["x"] + 5, knob["y"])
+    ui.mouse.up()
+    time.sleep(0.6)
+    assert reqs == []
+    assert _middle_anchor(ui)["out_handle"] == before["out_handle"]
+    assert not ui.errors
+
+
+def test_arm_drag_keeps_the_grab_offset(ui):
+    _draw_three_anchor_path(ui)
+    before = _middle_anchor(ui)
+    knob = _knob_screen(ui)
+    to_mm = _mm_mapper(ui)
+    ui.mouse.move(knob["x"] + 5, knob["y"])     # grabbed off-centre
+    ui.mouse.down()
+    ui.mouse.move(knob["x"] + 15, knob["y"] - 10)
+    ui.mouse.move(knob["x"] + 35, knob["y"] - 20)
+    ui.mouse.up()
+    a0, b0 = to_mm(knob["x"], knob["y"]), to_mm(knob["x"] + 30, knob["y"] - 20)
+    want = [before["out_handle"][0] + b0[0] - a0[0], before["out_handle"][1] + b0[1] - a0[1]]
+    a = _wait_api(ui, lambda s: s[0]["anchors"][1]["out_handle"] != before["out_handle"],
+                  "arm moved")[0]["anchors"][1]
+    assert a["out_handle"] == [pytest.approx(want[0], abs=0.4), pytest.approx(want[1], abs=0.4)]
+    assert not ui.errors
+
+
+def test_pending_arm_plain_drag_mirrors_symmetric(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    _pen_anchor(ui, -30, 0)
+    x, y = _canvas_point(ui, 0, 0)
+    ui.mouse.move(x, y)
+    ui.mouse.down()
+    ui.mouse.move(x, y - 12)
+    ui.mouse.move(x, y - 25)
+    ui.mouse.up()
+    ui.wait_for_function("() => document.querySelectorAll('.pen-handle-knob').length > 0")
+    knob = _knob_screen(ui)
+    to_mm = _mm_mapper(ui)
+    ui.mouse.move(knob["x"], knob["y"])
+    ui.mouse.down()
+    ui.mouse.move(knob["x"] + 12, knob["y"] - 5)
+    ui.mouse.move(knob["x"] + 30, knob["y"] - 10)
+    ui.mouse.up()
+    _pen_anchor(ui, 30, 0)
+    ui.keyboard.press("Enter")
+    a = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 3, "committed")[0]["anchors"][1]
+    o, t = to_mm(x, y), to_mm(knob["x"] + 30, knob["y"] - 10)
+    assert a["out_handle"] == [pytest.approx(t[0] - o[0], abs=0.4), pytest.approx(t[1] - o[1], abs=0.4)]
+    assert a["in_handle"] == [pytest.approx(-a["out_handle"][0], abs=1e-6),
+                              pytest.approx(-a["out_handle"][1], abs=1e-6)]
+    assert not ui.errors
