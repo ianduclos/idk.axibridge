@@ -94,6 +94,7 @@ export function deactivatePenMode() {
   on = false;
   $("canvas-wrap")?.classList.remove("pen-mode");
   gesture = null;
+  kickRegen(); // a sync may be owed that only a released gesture lets run
   hoverPt = null;
   setSelected(null);
   // The request owns this draft until it resolves. If the user changes tools
@@ -161,7 +162,7 @@ export function penLayerSelectionChanged() {
 }
 
 export function handlePenEscape() {
-  if (gesture) { gesture = null; redraw(); return true; }
+  if (gesture) { gesture = null; kickRegen(); redraw(); return true; }
   if (pending.length) { pending = []; setCont(null); setSelected(null); redraw(); return true; }
   if (selected) { setSelected(null); redraw(); return true; }
   return false;
@@ -456,6 +457,7 @@ function onUp(e) {
   e.stopPropagation();
   const g = gesture;
   gesture = null;
+  kickRegen(); // every path below ends the gesture, so any owed project sync runs now
 
   if (g.kind === "place") {
     forgetClick();

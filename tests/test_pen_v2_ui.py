@@ -591,3 +591,32 @@ def test_join_into_an_earlier_line_keeps_the_others(ui):
     want = [(round(a["x"], 3), round(a["y"], 3)) for a in three[0]["anchors"] + three[2]["anchors"]]
     assert got in (want, want[::-1]), (got, want)
     assert not ui.errors
+
+
+# ---------------------------------------------------------------- stale sync
+
+def _ink_signature(page):
+    return page.evaluate("""() => [...document.querySelectorAll('#canvas path')]
+        .filter((p) => !p.closest('.pen-overlay'))
+        .map((p) => p.getAttribute('d')).join('|')""")
+
+
+def test_ink_syncs_when_a_gesture_ends_during_a_regenerate(ui):
+    _draw_three_anchor_path(ui)
+    time.sleep(0.5)
+    before = _ink_signature(ui)
+    _slow_network(ui, project_ms=0, regen_ms=800)
+    ui.mouse.click(*_anchor_screen(ui, 0, 1))
+    ui.wait_for_function("() => document.querySelectorAll('.pen-selected-ring').length === 1")
+    ui.keyboard.press("Delete")
+    time.sleep(0.2)  # the regenerate is in flight...
+    ui.mouse.move(*_canvas_point(ui, -100, -80))
+    ui.mouse.down()  # ...a gesture is held while it lands, so the drain parks
+    time.sleep(1.2)
+    ui.mouse.up()    # and only the gesture's end can run the owed sync
+    _wait_api(ui, lambda s: len(s[0]["anchors"]) == 2, "the point is gone")
+    deadline = time.time() + 6
+    while _ink_signature(ui) == before and time.time() < deadline:
+        time.sleep(0.1)
+    assert _ink_signature(ui) != before, "the ink never caught up with the edit"
+    assert not ui.errors
