@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import json
+import math
 from collections import Counter
 from functools import wraps
 import os
@@ -24,13 +25,13 @@ import threading
 import time
 import zipfile
 from pathlib import Path as FsPath
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
-from . import calibration, compose, depth_pro, gencache, logbuf, project_io, svg_io, system_fonts, trajectory
+from . import calibration, compose, curvefit, depth_pro, gencache, logbuf, project_io, svg_io, system_fonts, trajectory
 from .assets import AssetStore, SEQUENCE_FRAME_RE, asset_store, safe_asset_name
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
@@ -1014,6 +1015,37 @@ def append_shape_op(layer_id: str, body: ShapeOpBody) -> dict[str, Any]:
         raise _fail(e, 404)
     except Exception as e:
         raise _fail(e, 400)
+
+
+def _nonfinite_as_text(v: Any) -> Any:
+    """A NaN/inf float becomes its text before validation, so the 422 that
+    ``allow_inf_nan=False`` raises echoes a JSON-safe string: echoing the
+    float itself makes FastAPI's error response unserialisable (a 500)."""
+    return repr(v) if isinstance(v, float) and not math.isfinite(v) else v
+
+
+#: one fit-input coordinate (mm): finite, and generously past the bed so a
+#: sketch that strays off the paper still fits (the pen source bed-clamps)
+FitCoord = Annotated[float, Field(ge=-10_000.0, le=10_000.0, allow_inf_nan=False),
+                     BeforeValidator(_nonfinite_as_text)]
+
+
+class FitBody(BaseModel):
+    points: list[tuple[FitCoord, FitCoord]] = Field(min_length=2, max_length=20_000)
+    closed: bool = False
+    #: 0 = fewest anchors (2 mm tolerance), 1 = closest (0.05 mm)
+    detail: Annotated[float, Field(ge=0.0, le=1.0, allow_inf_nan=False),
+                      BeforeValidator(_nonfinite_as_text)] = 0.5
+
+
+@router.post("/geometry/fit")
+def fit_geometry(body: FitBody) -> dict[str, Any]:
+    """Fit a sampled stroke with cubic Beziers and return pen anchors
+    (``PenAnchor``-shaped). Pure computation: touches no project state."""
+    try:
+        return {"anchors": curvefit.fit_bezier(body.points, body.closed, body.detail)}
+    except ValueError as e:
+        raise _fail(e, 422)
 
 
 @router.delete("/layers/{layer_id}")
