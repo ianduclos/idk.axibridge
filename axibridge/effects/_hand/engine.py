@@ -46,7 +46,7 @@ def load_hand(hand_id: str, pin_hash: str | None):
     try:
         lib = FL.FrozenLibrary(None, {("hand", hand_id): pin_hash} if pin_hash else None)
         return lib.load("hand", hand_id, purpose="generate")
-    except (_kl.LibraryError, _kl.PolicyError, KeyError, ValueError):
+    except (_kl.LibraryError, _kl.PolicyError):   # unknown id / version, withdrawn
         return None
 
 
@@ -94,17 +94,59 @@ def _gauss(a: np.ndarray, sigma: float, closed: bool) -> np.ndarray:
 
 
 def _seg_cross(p0, p1, q0, q1):
-    """The crossing point of segments p0p1 and q0q1, or None (parallel)."""
+    """The crossing point of segments p0p1 and q0q1, or None when they do
+    not cross (or are parallel)."""
     r, q = p1 - p0, q1 - q0
     den = r[0] * q[1] - r[1] * q[0]
     if abs(den) < 1e-15:
         return None
     w = q0 - p0
     t = (w[0] * q[1] - w[1] * q[0]) / den
-    return p0 + np.clip(t, 0.0, 1.0) * r
+    u = (w[0] * r[1] - w[1] * r[0]) / den
+    if not (-1e-9 <= t <= 1 + 1e-9 and -1e-9 <= u <= 1 + 1e-9):
+        return None
+    return p0 + t * r
 
 
-def _unfold(out: np.ndarray, closed: bool, window: int) -> np.ndarray:
+def _crossings(ring: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Segment index pairs (a < b) of a polyline that cross, adjacent ones excluded."""
+    import shapely  # noqa: PLC0415 — only needed here
+
+    segs = shapely.linestrings(np.stack([ring[:-1], ring[1:]], axis=1))
+    a, b = shapely.STRtree(segs).query(segs, predicate="intersects")
+    keep = b - a >= 2
+    if len(ring) > 3 and np.array_equal(ring[0], ring[-1]):     # closed: first & last segments touch
+        keep &= ~((a == 0) & (b == len(segs) - 1))
+    return a[keep], b[keep]
+
+
+def _protected(P: np.ndarray, closed: bool, tol: int, window: int) -> np.ndarray:
+    """Per segment of the resampled input: True where no fold may be cut —
+    within `tol` samples of a place where the INPUT crosses itself, and
+    along the whole body of each input loop short enough (≤ window + 2·tol
+    samples) for a fold span to land inside it. Those loops are the input's
+    own (a cursive curl, a knot), not folds of the offset."""
+    ring = np.vstack([P, P[:1]]) if closed else P
+    nseg = len(ring) - 1
+    prot = np.zeros(nseg, bool)
+    if nseg < 4:
+        return prot
+    a, b = _crossings(ring)
+    for i, j in zip(a.tolist(), b.tolist()):
+        if closed and j - i > nseg - (j - i):         # the short way round is across the seam
+            i, j = j, i + nseg
+        if j - i <= window + 2 * tol:
+            spans = [(i - tol, j + tol)]
+        else:
+            spans = [(i - tol, i + tol), (j - tol, j + tol)]
+        for lo, hi in spans:
+            r = np.arange(lo, hi + 1)
+            prot[r % nseg if closed else r[(r >= 0) & (r < nseg)]] = True
+    return prot
+
+
+def _unfold(out: np.ndarray, closed: bool, window: int,
+            protect: np.ndarray | None = None) -> np.ndarray:
     """Cut the loops an inward offset folds into at a bend tighter than it.
 
     A crossing between two segments at most `window` samples apart along the
@@ -112,25 +154,28 @@ def _unfold(out: np.ndarray, closed: bool, window: int) -> np.ndarray:
     cannot loop any other way): the points between are replaced by the
     crossing, which leaves a clean inner corner — the arms meeting, as an
     inside offset of a corner does. Crossings farther apart are the line
-    meeting itself (a spiral, close hatching) and stay. Open ends are never
-    touched; a closed line keeps its starting sample when it survives."""
-    import shapely  # noqa: PLC0415 — only needed here
+    meeting itself (a spiral, close hatching) and stay, as does any crossing
+    whose span holds a `protect`ed segment (where the input itself loops).
+    Open ends are never touched; a closed line keeps its starting sample
+    when it survives."""
 
     M = len(out)
     ring = np.vstack([out, out[:1]]) if closed else out
     nseg = len(ring) - 1
     if nseg < 4:
         return out
-    segs = shapely.linestrings(np.stack([ring[:-1], ring[1:]], axis=1))
-    a, b = shapely.STRtree(segs).query(segs, predicate="intersects")
-    keep = a < b
-    a, b = a[keep], b[keep]
+    a, b = _crossings(ring)
     gap = b - a
     if closed:
         fwd = gap <= nseg - gap
         a, b = np.where(fwd, a, b), np.where(fwd, b, a)
         gap = np.minimum(gap, nseg - gap)
     sel = (gap >= 2) & (gap <= window)
+    if protect is not None and np.any(protect) and np.any(sel):
+        ext = np.concatenate([protect, protect]) if closed else protect
+        c = np.concatenate([[0], np.cumsum(ext)])
+        hi = np.minimum(a + gap + 1, len(ext))
+        sel &= (c[hi] - c[a]) == 0
     if not np.any(sel):
         return out
     a, gap = a[sel], gap[sel]
@@ -163,8 +208,8 @@ def _unfold(out: np.ndarray, closed: bool, window: int) -> np.ndarray:
             continue
         pts.append(ring[cur:i + 1])
         ids.append(idx[cur:i + 1])
-        x = _seg_cross(ring[i], ring[i + 1], ring[j], ring[j + 1]) if j == i + g else None
-        if x is None:
+        x = _seg_cross(ring[i], ring[i + 1], ring[j], ring[j + 1])
+        if x is None:                                 # merged spans that do not cross directly
             x = 0.5 * (ring[i + 1] + ring[j])
         pts.append(x[None, :])
         ids.append(idx[i + 1:i + 2])
@@ -176,6 +221,22 @@ def _unfold(out: np.ndarray, closed: bool, window: int) -> np.ndarray:
         r0 = int(np.argmin(rid))
         res = np.roll(res, -r0, axis=0)
     return res
+
+
+def _clamp(out: np.ndarray, work: np.ndarray, C: float, step: float, closed: bool) -> np.ndarray:
+    """The hard ceiling: every point of `out` farther than C from the input
+    polyline `work` (closed: ends at its start) is pulled straight toward its
+    nearest input sample (spacing step/2, end points included) until exactly
+    C from it, so its true distance to the polyline is ≤ C. Others untouched."""
+    dense = _resample(work, step / 2, closed)
+    dense = np.vstack([dense, work[-1:]])
+    dist, idx = cKDTree(dense).query(out)
+    far = dist > C
+    if np.any(far):
+        out = out.copy()
+        q = dense[idx[far]]
+        out[far] = q + (out[far] - q) * (C / dist[far])[:, None]
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -303,17 +364,11 @@ def follow(points: np.ndarray, closed: bool, grammar, rng: np.random.Generator,
         d[inward] = np.sign(d[inward]) * m * np.tanh(np.abs(d[inward]) / m)
     t = np.where(ok[:, None], t / np.maximum(tn, 1e-12)[:, None], 0.0)
     nrm = np.column_stack([-t[:, 1], t[:, 0]])
-    out = _unfold(base + nrm * d[:, None], closed, int(np.ceil(4 * C / ds)))
+    win, tol = int(np.ceil(4 * C / ds)), int(np.ceil(C / ds))
+    out = _unfold(base + nrm * d[:, None], closed, win, _protected(P, closed, tol, win))
 
     # 9. the hard ceiling: never farther than C from the input
-    dense = _resample(work, step / 2, closed)
-    if not closed:
-        dense = np.vstack([dense, work[-1:]])
-    dist, idx = cKDTree(dense).query(out)
-    far = dist > C
-    if np.any(far):
-        q = dense[idx[far]]
-        out[far] = q + (out[far] - q) * (C / dist[far])[:, None]
+    out = _clamp(out, work, C, step, closed)
 
     # 10. ends / closure exact
     if closed:
