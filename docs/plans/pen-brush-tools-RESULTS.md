@@ -1,5 +1,7 @@
 # Results: pen tool (brush deferred)
 
+Follow-up: pen v2 (joins, curvature/sketch/knife modes, curve fitting) is in `docs/superpowers/plans/2026-10-22-pen-v2.md`.
+
 Implements `docs/plans/pen-brush-tools.md` Parts 0 and 1 (toolbar segment +
 pen tool). **Part 2 (brush) was deliberately deferred to a separate pass** —
 Ian asked to start with pen only. Branch `feat/pen-tool`, 7 commits (source +

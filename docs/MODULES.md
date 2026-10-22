@@ -168,6 +168,21 @@ Contract:
   A/B could morph. That's still a genuine design decision (resample vs. keep
   stepping mismatches) and is deliberately left for later — the structural
   case covers the common workflow.
+- **Pen v2 (2026-10-22).** `PenAnchor.join` (`"corner"|"smooth"|"symmetric"|None`)
+  and `PenSubpath.kind` (`"bezier"|"curvature"`) are stored intent only:
+  `generate()` still flattens from the handles and never reads them; the UI
+  uses them to decide how an arm drag or a point move propagates. Tween morphs
+  them like other hidden geometry, but `None`-vs-string joins step at t=0.5.
+  `axibridge/curvefit.py` `fit_bezier(points, closed, detail)` backs
+  `POST /api/geometry/fit` (pure; sketch strokes and Backspace point removal
+  re-fit through it; result never exceeds the pen's 2000-anchor cap). Every
+  commit is a `regenerate` with a `coalesce` token (`bool | str`), so a gesture
+  run is one undo step. Frontend split in `static/js/`: `pen.js` (dispatch,
+  modes bezier/curvature/sketch/knife), `pen_ops.js` (pure maths),
+  `pen_overlay.js` (constant-screen-size rendering), `pen_edit.js` (edit
+  gestures), `pen_queue.js` (ordered regenerate queue), `pen_sketch.js`
+  (sketch + Detail re-fit), `pen_knife.js` (knife). Gestures are listed in the
+  pen button's tooltip; plan: `docs/superpowers/plans/2026-10-22-pen-v2.md`.
 - **Process sources** (`axibridge/process.py`): a generator that UNFOLDS.
   Subclass `ProcessModule`, declare a bounded step param as `time_axis`, and
   write `run()` yielding one `Step` per tick — the marks ADDED at that step,
