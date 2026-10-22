@@ -312,6 +312,20 @@ def test_pen_tween_morphs_shape_continuously_not_stepped():
     assert _mean_y(session.resolved()[tw.id]) == pytest.approx(12.0, abs=1e-6)
 
 
+def test_pen_morph_survives_join_and_kind():
+    def tagged(y):
+        sp = _pen_subpath([(0, y), (10, y)])
+        for item in sp:
+            item["kind"] = "curvature"
+            for an in item["anchors"]:
+                an["join"] = "smooth"
+        return sp
+    mid = _blend_geometry(tagged(0), tagged(20), 0.5)
+    assert mid is not _NO_BLEND
+    assert mid[0]["anchors"][0]["y"] == pytest.approx(10.0)
+    assert mid[0]["kind"] == "curvature" and mid[0]["anchors"][0]["join"] == "smooth"
+
+
 def test_pen_tween_falls_back_to_step_on_structure_mismatch():
     a = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 0), (10, 0)])})
     b = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 20), (10, 20), (20, 20)])})

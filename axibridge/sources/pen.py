@@ -11,6 +11,7 @@ sources".
 from __future__ import annotations
 
 import math
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -39,11 +40,14 @@ class PenAnchor(BaseModel):
     y: float
     in_handle: tuple[float, float] | None = None   # delta from (x,y); None = no incoming curve
     out_handle: tuple[float, float] | None = None  # delta from (x,y); None = no outgoing curve
+    # editing intent only (how handles move together); generate() never reads it
+    join: Literal["corner", "smooth", "symmetric"] | None = None
 
 
 class PenSubpath(BaseModel):
     anchors: list[PenAnchor] = Field(default_factory=list)
     closed: bool = False
+    kind: Literal["bezier", "curvature"] = "bezier"  # editing mode; geometry-neutral
 
 
 class PenParams(BaseModel):
@@ -74,8 +78,9 @@ def _prepare_subpaths(subpaths: list[PenSubpath]) -> list[PenSubpath]:
         anchors = []
         for a in sp.anchors:
             x, y = _clamp_xy(a.x, a.y)
-            anchors.append(PenAnchor(x=x, y=y, in_handle=a.in_handle, out_handle=a.out_handle))
-        out.append(PenSubpath(anchors=anchors, closed=sp.closed))
+            anchors.append(PenAnchor(x=x, y=y, in_handle=a.in_handle, out_handle=a.out_handle,
+                                     join=a.join))
+        out.append(PenSubpath(anchors=anchors, closed=sp.closed, kind=sp.kind))
     return out
 
 

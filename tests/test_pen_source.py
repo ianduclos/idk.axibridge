@@ -1,6 +1,9 @@
 """Pen (Bezier anchors) source: docs/plans/pen-brush-tools.md Part 1 contract."""
 
+import copy
+
 import pytest
+from pydantic import ValidationError
 
 from axibridge.registry import get_source, sources
 
@@ -149,3 +152,31 @@ def test_bed_clamp_on_anchor_positions():
     pts = doc.layers[0].paths[0].points
     assert pts[0] == (0.0, 0.0)
     assert pts[-1] == (300.0, 218.0)
+
+
+def test_join_and_kind_round_trip_and_do_not_change_geometry():
+    base = {"subpaths": [{"anchors": [
+        {"x": 10, "y": 10, "out_handle": [20, 0]},
+        {"x": 60, "y": 40, "in_handle": [-10, -20], "out_handle": [10, 20]},
+        {"x": 110, "y": 10}], "closed": False}]}
+    tagged = copy.deepcopy(base)
+    tagged["subpaths"][0]["kind"] = "curvature"
+    for a, j in zip(tagged["subpaths"][0]["anchors"], ["corner", "symmetric", "corner"]):
+        a["join"] = j
+    src = get_source("pen")
+    p_old = src.Params(**base)
+    p_new = src.Params(**tagged)
+    pts = lambda doc: [p.points for l in doc.layers for p in l.paths]
+    assert pts(src.generate(p_old)) == pts(src.generate(p_new))
+    assert p_new.subpaths[0].kind == "curvature"
+    assert [a.join for a in p_new.subpaths[0].anchors] == ["corner", "symmetric", "corner"]
+    assert p_old.subpaths[0].anchors[0].join is None and p_old.subpaths[0].kind == "bezier"
+    from axibridge.sources.pen import _prepare_subpaths
+    prepared = _prepare_subpaths(p_new.subpaths)
+    assert prepared[0].kind == "curvature"
+    assert [a.join for a in prepared[0].anchors] == ["corner", "symmetric", "corner"]
+
+
+def test_bad_join_value_is_refused():
+    with pytest.raises(ValidationError):
+        get_source("pen").Params(subpaths=[{"anchors": [{"x": 1, "y": 1, "join": "wobbly"}]}])
