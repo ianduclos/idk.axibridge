@@ -620,3 +620,121 @@ def test_ink_syncs_when_a_gesture_ends_during_a_regenerate(ui):
         time.sleep(0.1)
     assert _ink_signature(ui) != before, "the ink never caught up with the edit"
     assert not ui.errors
+
+
+# ---------------------------------------------------------------- placement aids (P4, P5)
+
+def _mm_mapper(page):
+    """screen px -> mm from the bed rectangle. The view may be portrait
+    (display-only rotate(90), origin top-right), so read it off the rect."""
+    x, y, w, h = page.evaluate("""() => { const b = document.querySelector('.bed-rect').getBoundingClientRect();
+        return [b.x, b.y, b.width, b.height]; }""")
+    if h > w:
+        k = h / 300
+        return lambda sx, sy: ((sy - y) / k, (x + w - sx) / k)
+    k = w / 300
+    return lambda sx, sy: ((sx - x) / k, (sy - y) / k)
+
+
+def _angle_deg(dx, dy):
+    return math.degrees(math.atan2(dy, dx))
+
+
+def _is_15(deg):
+    return abs(deg / 15 - round(deg / 15)) * 15 < 1e-6
+
+
+def test_space_slides_anchor_while_placing(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    _pen_anchor(ui, -60, 0)
+    ax, ay = _canvas_point(ui, 0, 0)
+    bx, by = ax, ay - 40           # the arm is pulled up 40 px
+    cx, cy = ax + 70, by + 25      # then Space carries the whole point
+    ui.mouse.move(ax, ay)
+    ui.mouse.down()
+    ui.mouse.move(bx, by - 10)
+    ui.mouse.move(bx, by)
+    ui.keyboard.down("Space")
+    ui.mouse.move(bx + 30, by + 10)
+    ui.mouse.move(cx, cy)
+    ui.keyboard.up("Space")
+    ui.mouse.up()
+    assert ui.evaluate("() => window.scrollY") == 0
+    to_mm = _mm_mapper(ui)
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 2, "committed")
+    a = sps[0]["anchors"][1]
+    want = to_mm(ax + (cx - bx), ay + (cy - by))
+    assert (a["x"], a["y"]) == (pytest.approx(want[0], abs=0.05), pytest.approx(want[1], abs=0.05))
+    arm = to_mm(bx, by)
+    o = to_mm(ax, ay)
+    assert a["out_handle"] == [pytest.approx(arm[0] - o[0], abs=0.05),
+                               pytest.approx(arm[1] - o[1], abs=0.05)]
+    assert not ui.errors
+
+
+def test_arm_pulls_again_after_space_is_released(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    _pen_anchor(ui, -60, 0)
+    ax, ay = _canvas_point(ui, 0, 0)
+    ui.mouse.move(ax, ay)
+    ui.mouse.down()
+    ui.mouse.move(ax, ay - 20)
+    ui.keyboard.down("Space")
+    ui.mouse.move(ax + 40, ay + 20)   # point slides by (40, 40)
+    ui.keyboard.up("Space")
+    ui.mouse.move(ax + 40, ay - 10)   # arm now pulls from the moved point
+    ui.mouse.up()
+    to_mm = _mm_mapper(ui)
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 2, "committed")
+    a = sps[0]["anchors"][1]
+    want = to_mm(ax + 40, ay + 40)
+    assert a["x"] == pytest.approx(want[0], abs=0.05) and a["y"] == pytest.approx(want[1], abs=0.05)
+    o = to_mm(ax + 40, ay + 40)
+    tip = to_mm(ax + 40, ay - 10)
+    assert a["out_handle"] == [pytest.approx(tip[0] - o[0], abs=0.05),
+                               pytest.approx(tip[1] - o[1], abs=0.05)]
+
+
+def test_shift_snaps_new_point_to_15_degrees(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    _pen_anchor(ui, -60, 0)
+    x, y = _canvas_point(ui, 50, 37)   # an off-grid direction from the first point
+    ui.keyboard.down("Shift")
+    ui.mouse.move(x, y)
+    ui.mouse.down()
+    ui.mouse.move(x + 20, y + 3)
+    ui.mouse.move(x + 41, y - 13)      # an off-grid arm
+    ui.mouse.up()
+    ui.keyboard.up("Shift")
+    to_mm = _mm_mapper(ui)
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 2, "committed")
+    p, q = sps[0]["anchors"]
+    assert _is_15(_angle_deg(q["x"] - p["x"], q["y"] - p["y"])), (p, q)
+    raw = to_mm(x, y)
+    assert math.hypot(q["x"] - p["x"], q["y"] - p["y"]) == pytest.approx(
+        math.hypot(raw[0] - p["x"], raw[1] - p["y"]), abs=0.05)  # length kept
+    assert _is_15(_angle_deg(*q["out_handle"])), q["out_handle"]
+    assert not ui.errors
+
+
+def test_shift_leaves_the_first_point_in_place_and_snaps_its_arm(ui):
+    ui.click('#tool-toggle button[data-tool="pen"]')
+    x, y = _canvas_point(ui, -20, 10)
+    ui.keyboard.down("Shift")
+    ui.mouse.move(x, y)
+    ui.mouse.down()
+    ui.mouse.move(x + 10, y - 4)
+    ui.mouse.move(x + 33, y - 11)
+    ui.mouse.up()
+    ui.keyboard.up("Shift")
+    _pen_anchor(ui, 60, 0)
+    to_mm = _mm_mapper(ui)
+    ui.keyboard.press("Enter")
+    sps = _wait_api(ui, lambda s: len(s[0]["anchors"]) == 2, "committed")
+    first = sps[0]["anchors"][0]
+    want = to_mm(x, y)
+    assert first["x"] == pytest.approx(want[0], abs=0.05) and first["y"] == pytest.approx(want[1], abs=0.05)
+    assert _is_15(_angle_deg(*first["out_handle"]))

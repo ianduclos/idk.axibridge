@@ -27,6 +27,7 @@ import { renderPenOverlay } from "./pen_overlay.js";
 import { clickPoint, commitContinue, cont, dragToken, flipCornerSmooth, forgetClick, hitSegment,
          hitOpenEnd, hitAnchor, insertPoint, joinInto, noteClick, onDblClick, onPointKeydown,
          selected, setCont, setSelected, startBend, applyBend, validateEditState } from "./pen_edit.js";
+import { snapAngle } from "./pen_ops.js";
 import { kickRegen, queueRegenerate, whenIdle } from "./pen_queue.js";
 
 const $ = (id) => document.getElementById(id);
@@ -63,6 +64,11 @@ export function initPenMode() {
   // capture phase: a selected point owns J / Backspace / Delete before any
   // other document listener (the app's own Backspace deletes LAYERS)
   document.addEventListener("keydown", onPointKeydown, true);
+  // Space during a place drag slides the point itself (P4). Capture phase on
+  // window so it beats every other Space handler (page scroll, a focused
+  // button's click, the canvas's own pan); only while a place drag is live.
+  window.addEventListener("keydown", (e) => onPlaceSpace(e, true), true);
+  window.addEventListener("keyup", (e) => onPlaceSpace(e, false), true);
   const sub = $("pen-subtract");
   if (sub) sub.onclick = () => setSubtract(!subtract);
   // glyphs are sized in screen px, so any change to px-per-mm (zoom, pan
@@ -70,6 +76,14 @@ export function initPenMode() {
   const onView = () => { if (on) redraw(); };
   document.addEventListener("canvas-view-change", onView);
   window.addEventListener("resize", onView);
+}
+
+/** @param {KeyboardEvent} e @param {boolean} down */
+function onPlaceSpace(e, down) {
+  if (!on || gesture?.kind !== "place" || e.code !== "Space") return;
+  e.preventDefault();
+  e.stopPropagation();
+  gesture.space = down;
 }
 
 function setSubtract(v) {
@@ -369,7 +383,8 @@ function onDown(e, wrap) {
   setSelected(null);
   const bed = editor.toBed(e);
   const [x, y] = clampBed(bed.x, bed.y);
-  gesture = { kind: "place", x, y, alt: e.altKey, moved: false, downScreen };
+  gesture = { kind: "place", x, y, alt: e.altKey, moved: false, downScreen,
+              shift: e.shiftKey, space: false, lastBed: [x, y] };
 }
 
 const movedPast = (g, e) => Math.hypot(e.clientX - g.downScreen.x, e.clientY - g.downScreen.y) > DRAG_PX;
@@ -390,6 +405,16 @@ function onMove(e) {
 
   if (gesture.kind === "place" || gesture.kind === "close") {
     if (movedPast(gesture, e)) gesture.moved = true;
+    if (gesture.kind === "place") {
+      gesture.shift = e.shiftKey;
+      if (gesture.space) {
+        // Space: the pointer carries the point; the arm keeps its vector
+        // because the arm tip follows the pointer by the same delta
+        const [sx, sy] = clampBed(gesture.x + bx - gesture.lastBed[0], gesture.y + by - gesture.lastBed[1]);
+        gesture.x = sx; gesture.y = sy;
+      }
+      gesture.lastBed = [bx, by];
+    }
     gesture.dragTo = [bx, by];
     redraw();
     return;
@@ -514,9 +539,19 @@ function onCancel() {
 // used both to finalize it on pointerup AND to preview it live during the
 // drag, so the two never drift apart.
 function tentativeAnchor(g) {
-  const anchor = { x: g.x, y: g.y, in_handle: null, out_handle: null };
+  let [x, y] = [g.x, g.y];
+  const prev = pending[pending.length - 1];
+  if (g.shift && prev) {
+    // Shift: the new point's direction from the previous point snaps to 15°
+    // (distance kept)
+    const [sx, sy] = snapAngle(x - prev.x, y - prev.y, 15);
+    [x, y] = clampBed(prev.x + sx, prev.y + sy);
+  }
+  const anchor = { x, y, in_handle: null, out_handle: null };
   if (g.moved && g.dragTo) {
-    const [dx, dy] = clampHandle(g.dragTo[0] - g.x, g.dragTo[1] - g.y);
+    let [dx, dy] = g.shift ? snapAngle(g.dragTo[0] - x, g.dragTo[1] - y, 15)
+                           : [g.dragTo[0] - x, g.dragTo[1] - y];
+    [dx, dy] = clampHandle(dx, dy);
     anchor.out_handle = [dx, dy];
     if (!g.alt) anchor.in_handle = [-dx, -dy]; // symmetric unless Option broke it
   }
