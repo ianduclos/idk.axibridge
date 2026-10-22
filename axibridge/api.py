@@ -40,7 +40,7 @@ from .machine import SoftLimits, manager
 from .process import ProcessModule
 from .registry import describe_modules, get_effect, get_source, progress_scope
 from .render_work import RenderCancelled, checkpoint
-from .session import session
+from .session import _regen_coalesce_key, session
 from .stores import Pen, pen_library, settings_store
 from .gallery_api import router as gallery_router
 from .gesture_studies_api import router as gesture_studies_router
@@ -977,8 +977,11 @@ def patch_layer(layer_id: str, patch: dict[str, Any]) -> dict[str, Any]:
 
 class RegenerateBody(BaseModel):
     params: dict[str, Any] | None = None
-    #: latched live-edit: consecutive regenerates of one layer share one undo entry
-    coalesce: bool = False
+    #: latched live-edit: consecutive regenerates of one layer share one undo
+    #: entry. ``True`` folds every coalesced regenerate of the layer; a short
+    #: string token folds only regenerates carrying the same token (the pen
+    #: sends a fresh one per drag, so each drag is its own undo step).
+    coalesce: bool | Annotated[str, Field(min_length=1, max_length=64)] = False
 
 
 @router.post("/layers/{layer_id}/regenerate")
@@ -986,7 +989,8 @@ def regenerate_layer(layer_id: str, body: RegenerateBody) -> dict[str, Any]:
     try:
         with progress_scope(_gen_progress_sink()):
             with session.render_work.mutation(), session._lock:
-                continuing = body.coalesce and session._coalesce_key == ("regen", layer_id)
+                key = _regen_coalesce_key(layer_id, body.coalesce)
+                continuing = key is not None and session._coalesce_key == key
                 layer = session.regenerate_layer(layer_id, body.params, coalesce=body.coalesce)
                 module_id = layer.source.generator
                 payload = layer.model_dump()

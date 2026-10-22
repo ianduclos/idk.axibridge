@@ -248,6 +248,16 @@ from .recovery_state import RecoveryStateMixin
 from .groups import tween_frames, validate_hierarchy, placed_project, world, inverse, chain, descendants
 
 
+
+def _regen_coalesce_key(layer_id: str, coalesce: bool | str) -> tuple | None:
+    """Undo-run key of a regenerate: ``True`` → one run per layer; a token →
+    one run per (layer, token); falsy → no folding."""
+    if coalesce is True:
+        return ("regen", layer_id)
+    if isinstance(coalesce, str) and coalesce:
+        return ("regen", layer_id, coalesce)
+    return None
+
 class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMixin, RecoveryStateMixin):
     def __init__(self) -> None:
         self._lock = threading.RLock()
@@ -795,10 +805,14 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
 
     @_interrupt_preview
     def regenerate_layer(self, layer_id: str, params: dict[str, Any] | None = None,
-                         coalesce: bool = False) -> CanvasLayer:
+                         coalesce: bool | str = False) -> CanvasLayer:
         """``coalesce=True`` (the bench's latched live-edit) folds consecutive
         regenerates of the same layer into one undo entry — undo returns to
-        the moment the slider run started, not one notch back."""
+        the moment the slider run started, not one notch back.
+
+        A string is a gesture token: only regenerates carrying the SAME token
+        fold together, so each pen drag (a fresh token) is its own undo step
+        even when two drags on one layer follow each other directly."""
         with self._lock:
             layer = self.project.layer(layer_id)
             if layer.source.type not in ("generator", "baked") or not layer.source.generator:
@@ -813,7 +827,7 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
                 })
             src = get_source(layer.source.generator)
             doc = gencache.generate_cached(src, self._effective_gen_params(candidate))
-            self._checkpoint(("regen", layer_id) if coalesce else None)
+            self._checkpoint(_regen_coalesce_key(layer_id, coalesce))
             if params is not None:
                 layer.source.params = params
             self.source_geometry[layer.id] = [p for lyr in doc.layers for p in lyr.paths]

@@ -287,7 +287,9 @@ regenerate replaces the list, the snapshot keeps the old one. Every mutating
 carrying the same key (e.g. `("regen", layer_id)`) collapse into the run's
 first entry instead of stacking one per intermediate value, so dragging a
 slider or a pen/brush anchor is one ⌘Z, not a hundred; any other checkpoint
-in between resets the key. **Consolidate** bakes a layer's
+in between resets the key. `coalesce` may also be a short string token (key
+`("regen", layer_id, token)`): the pen sends a fresh token per drag, so two
+drags back to back on one layer are two ⌘Z, not one. **Consolidate** bakes a layer's
 transform + effect stack into its source geometry (resolved output is
 bit-identical; the layer's `source.type` becomes `"baked"` but keeps
 generator provenance, so *regenerate* explicitly reverts the bake).

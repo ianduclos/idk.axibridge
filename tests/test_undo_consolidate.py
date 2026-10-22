@@ -201,6 +201,48 @@ def test_coalesce_run_breaks_on_other_mutation():
     assert session.project.layer(layer.id).source.params["sides"] == 3
 
 
+def test_a_coalesce_token_folds_only_its_own_run():
+    """A string coalesce is a gesture token: one drag is one undo step, and
+    the NEXT drag on the same layer (a fresh token) is its own step — where
+    `True` would fold the two drags together."""
+    layer = session.add_generated_layer("polygon", {"sides": 3, "radius": 10})
+    session.clear_history()
+    for sides in (4, 5):
+        session.regenerate_layer(layer.id, {"sides": sides, "radius": 10}, coalesce="drag-1")
+    for sides in (6, 7):
+        session.regenerate_layer(layer.id, {"sides": sides, "radius": 10}, coalesce="drag-2")
+    assert session.undo()
+    assert session.project.layer(layer.id).source.params["sides"] == 5
+    assert session.undo()
+    assert session.project.layer(layer.id).source.params["sides"] == 3
+    assert not session.undo()
+
+
+def test_a_coalesce_token_never_folds_into_a_true_run():
+    layer = session.add_generated_layer("polygon", {"sides": 3, "radius": 10})
+    session.clear_history()
+    session.regenerate_layer(layer.id, {"sides": 4, "radius": 10}, coalesce=True)
+    session.regenerate_layer(layer.id, {"sides": 5, "radius": 10}, coalesce="drag-1")
+    assert session.undo()
+    assert session.project.layer(layer.id).source.params["sides"] == 4
+
+
+def test_regenerate_api_takes_a_bounded_coalesce_token(client):
+    lid = client.post("/api/layers/generate",
+                      json={"module": "polygon", "params": {"sides": 3, "radius": 10}}).json()["id"]
+    session.clear_history()
+    for sides, token in ((4, "pen-a"), (5, "pen-a"), (6, "pen-b")):
+        r = client.post(f"/api/layers/{lid}/regenerate",
+                        json={"params": {"sides": sides, "radius": 10}, "coalesce": token})
+        assert r.status_code == 200, r.text
+    assert client.post("/api/undo").status_code == 200
+    assert session.project.layer(lid).source.params["sides"] == 5
+    assert client.post("/api/undo").status_code == 200
+    assert session.project.layer(lid).source.params["sides"] == 3
+    assert client.post(f"/api/layers/{lid}/regenerate",
+                       json={"params": {"sides": 4}, "coalesce": "x" * 65}).status_code == 422
+
+
 def test_plain_regenerates_still_checkpoint_each():
     layer = session.add_generated_layer("polygon", {"sides": 3, "radius": 10})
     session.clear_history()
