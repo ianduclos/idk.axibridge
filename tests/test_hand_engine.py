@@ -237,3 +237,89 @@ def test_figure8_keeps_its_lobes_when_wandering(hands):
     for h, g in hands.items():
         out = E.follow(pts, True, g, np.random.default_rng(0), 20.0, 20.0, True)
         assert _loops(out)[0] >= n0, h
+
+
+# --- closed shapes keep their size; folds never eat the line ---
+
+def _circle(r: float, n: int = 64) -> np.ndarray:
+    t = np.linspace(0.0, 2 * np.pi, n)
+    p = np.column_stack([100.0 + r * np.cos(t), 100.0 + r * np.sin(t)])
+    p[-1] = p[0]
+    return p
+
+
+def _area(p: np.ndarray) -> float:
+    return float(shapely.make_valid(shapely.Polygon(p)).area)
+
+
+def test_closed_shapes_keep_their_area(hands):
+    """A closed line must not inset (and fold inside-out) or balloon as a
+    whole: the ring's mean offset is zero. Small circles at the defaults
+    were the worst case (σ of the drift filters ≫ the ring)."""
+    for r in (3.0, 6.0):
+        pts = _circle(r)
+        a0 = _area(pts)
+        for h, g in hands.items():
+            for seed in range(3):
+                out = E.follow(pts, True, g, np.random.default_rng([seed, 0]), 3.0, 20.0, False)
+                ratio = _area(out) / a0
+                assert 0.6 <= ratio <= 1.6, (r, h, seed, ratio)
+    rect = np.array([[20.0, 20.0], [60.0, 20.0], [60.0, 55.0], [20.0, 55.0], [20.0, 20.0]])
+    a0 = _area(rect)
+    for h, g in hands.items():
+        for seed in range(3):
+            out = E.follow(rect, True, g, np.random.default_rng([seed, 1]), 8.0, 20.0, True)
+            ratio = _area(out) / a0
+            assert 0.6 <= ratio <= 1.6, ("rect", h, seed, ratio)
+
+
+# the contact-sheet drawing: tighter than FIXTURES (a 40x35 square, a zigzag
+# with 10 mm runs), where a too-wide fold window used to cut most of the line
+SHEET = {
+    "s_curve": (np.array([(5 + 110 * i / 80, 20 + 14 * np.sin(i / 80 * 2 * np.pi * 1.2))
+                          for i in range(81)]), False),
+    "square": (np.array([(10, 40), (50, 40), (50, 75), (10, 75), (10, 40)], float), True),
+    "zigzag": (np.array([(65, 45), (75, 75), (85, 45), (95, 75), (105, 45), (115, 75)], float), False),
+}
+
+
+def test_unfold_never_eats_the_line(hands):
+    """Cutting folds removes small loops, never most of the line."""
+    for h, g in hands.items():
+        for seed in range(2):
+            for name, (pts, closed) in (*FIXTURES.items(), *SHEET.items()):
+                for stray, wander in ((3.0, False), (8.0, True)):
+                    out = E.follow(pts, closed, g, np.random.default_rng([seed, 2]), stray, 20.0, wander)
+                    kept = E._arclen(out)[-1] / E._arclen(pts)[-1]
+                    assert kept >= 0.7, (h, seed, name, stray, wander, kept)
+
+
+# --- the hand's stroke is memoised (stray drags and tweens are numpy only) ---
+
+def test_heading_stream_is_memoised(hands, monkeypatch):
+    g = hands["matisse"]
+    pts, closed = FIXTURES["s_curve"]
+    calls = []
+    real = E._draw_heading
+    monkeypatch.setattr(E, "_draw_heading", lambda *a: calls.append(1) or real(*a))
+    E.clear_heading_cache()
+    E.follow(pts, closed, g, np.random.default_rng([4, 0]), 3.0, 20.0, False)
+    rng = np.random.default_rng([4, 0])
+    cached = E.follow(pts, closed, g, rng, 9.0, 20.0, False)       # another stray: same stroke
+    assert len(calls) == 1
+    E.clear_heading_cache()
+    rng2 = np.random.default_rng([4, 0])
+    fresh = E.follow(pts, closed, g, rng2, 9.0, 20.0, False)
+    assert len(calls) == 2
+    assert np.array_equal(cached, fresh)
+    assert rng.bit_generator.state == rng2.bit_generator.state     # a hit leaves the rng where drawing would
+    E.follow(pts, closed, g, np.random.default_rng([5, 0]), 9.0, 20.0, False)   # another seed: drawn
+    E.follow(pts, closed, g, np.random.default_rng([4, 0]), 9.0, 30.0, False)   # another bend: drawn
+    assert len(calls) == 4
+
+
+def test_long_strokes_are_cancellable(hands, monkeypatch):
+    calls = []
+    monkeypatch.setattr(E, "checkpoint", lambda: calls.append(1))
+    E._draw_heading(hands["matisse"], np.random.default_rng(0), 400.0, 5.0, 0.3)
+    assert len(calls) >= 2
