@@ -344,6 +344,38 @@ def test_pen_morph_untagged_vs_tagged_still_morphs():
     assert _blend_geometry(old, new, 0.6)[0]["anchors"][0]["join"] == "smooth"
 
 
+def test_pen_tween_morphs_when_only_one_side_carries_join_and_kind():
+    # Stored pen params are raw client JSON: a keyframe saved before the new
+    # tool has no `join`/`kind` keys at all, while an edit by the new tool
+    # writes `join` on the anchors it touched and `kind` on some subpaths.
+    # The key sets differ, but the shape is the same — it must morph, not step.
+    a = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 0), (10, 0), (20, 0)])})
+    b = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 20), (10, 20), (20, 20)])})
+    edited = _pen_subpath([(0, 20), (10, 20), (20, 20)])
+    edited[0]["anchors"][1]["join"] = "smooth"   # one dragged anchor only
+    edited[0]["kind"] = "curvature"
+    session.regenerate_layer(b.id, {"subpaths": edited})
+    tw = session.create_tween_layer(a.id, b.id)
+    session.set_tween_params(tw.id, {"t": 0.5})
+    assert _mean_y(session.resolved()[tw.id]) == pytest.approx(10.0, abs=1e-6)
+    session.set_tween_params(tw.id, {"t": 0.4})
+    assert _mean_y(session.resolved()[tw.id]) == pytest.approx(8.0, abs=1e-6)
+    # the direct (capture/staging) blend agrees
+    from axibridge.tween import blend_generator_params
+    out = blend_generator_params(session.project.layer(a.id), session.project.layer(b.id), 0.5)
+    assert out["subpaths"][0]["anchors"][0]["y"] == pytest.approx(10.0)
+
+
+def test_drawing_strokes_still_morph_through_the_normalised_blend():
+    # drawing's points are tuple-typed: the model-normalised comparison must
+    # still hand the structural blend lists, not tuples it can't recurse into
+    from axibridge.tween import blend_generator_params
+    a = session.add_generated_layer("drawing", {"strokes": [[[0, 0, 0], [10, 0, 0.1]]]})
+    b = session.add_generated_layer("drawing", {"strokes": [[[0, 20, 0], [10, 20, 0.1]]]})
+    out = blend_generator_params(a, session.project.layer(b.id), 0.5)
+    assert out["strokes"][0][1][1] == pytest.approx(10.0)
+
+
 def test_pen_tween_falls_back_to_step_on_structure_mismatch():
     a = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 0), (10, 0)])})
     b = session.add_generated_layer("pen", {"subpaths": _pen_subpath([(0, 20), (10, 20), (20, 20)])})

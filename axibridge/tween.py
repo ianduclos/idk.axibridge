@@ -432,6 +432,30 @@ def _blend_module_params(module, pa, pb, t):
                        t, model().model_dump())
 
 
+def _blend_source_params(src, pa, pb, t):
+    """:func:`_blend_module_params` for a SOURCE, plus the captured-geometry
+    morph: a hidden shape field (pen ``subpaths`` / drawing ``strokes``) can't
+    be scalar-lerped (lerp_params steps it at t=0.5), so it is deep-lerped
+    structurally on top — when A and B share shape, the drawn form eases from
+    A to B instead of jump-cutting.
+
+    Both sides are compared as the MODEL normalises them, never as stored:
+    stored params are raw client JSON, and an optional editing-intent key (pen
+    ``join`` / ``kind``) present on one side only must not read as a structure
+    mismatch. JSON-mode dumps, so tuple-typed points (drawing's ``[x, y, t]``)
+    arrive as lists the structural blend recurses into."""
+    out = _blend_module_params(src, pa, pb, t)
+    fields = _geometry_param_fields(src)
+    if fields:
+        model = src.Params
+        ja, jb = model(**pa).model_dump(mode="json"), model(**pb).model_dump(mode="json")
+        for field in fields:
+            blended = _blend_geometry(ja.get(field), jb.get(field), t)
+            if blended is not _NO_BLEND:
+                out[field] = blended  # else keep lerp_params' stepped value (structure mismatch)
+    return out
+
+
 def blend_generator_params(la: CanvasLayer, lb: CanvasLayer, t: float) -> dict[str, Any] | None:
     """Same-generator param blend, or None when A/B aren't the same generator.
 
@@ -443,19 +467,14 @@ def blend_generator_params(la: CanvasLayer, lb: CanvasLayer, t: float) -> dict[s
     NOTE: this is the *direct* (non-nested) blend used by the capture/staging
     tray. The live tween resolve path goes through :func:`effective_generator`
     (which also reduces nested same-generator tweens) via ``_source_paths_at``
-    — that path applies the same captured-geometry deep-lerp separately, on
-    the effective (post-reduction) param dicts."""
+    — that path applies the same captured-geometry deep-lerp (one helper,
+    :func:`_blend_source_params`) on the effective (post-reduction) dicts."""
     if not _same_generator(la, lb):
         return None
     src = get_source(la.source.generator)
     pa = la.source.params or {}
     pb = lb.source.params or {}
-    out = _blend_module_params(src, pa, pb, t)
-    for field in _geometry_param_fields(src):
-        blended = _blend_geometry(pa.get(field), pb.get(field), t)
-        if blended is not _NO_BLEND:
-            out[field] = blended  # else keep lerp_params' stepped value (structure mismatch)
-    return out
+    return _blend_source_params(src, pa, pb, t)
 
 
 def map_window(master_t: float, window_from: float = 0.0, window_to: float = 1.0) -> float:
@@ -664,16 +683,10 @@ def _source_paths_at(la: CanvasLayer, lb: CanvasLayer,
     if ega is not None and egb is not None and ega[0] == egb[0]:
         gen = ega[0]
         src = get_source(gen)
-        params = _blend_module_params(src, ega[1], egb[1], t)
-        # Captured-geometry morph (pen/drawing): a hidden shape field can't be
-        # scalar-lerped by lerp_params above (it stepped at t=0.5 there), so
-        # deep-lerp it structurally on the same reduced param dicts — for a
-        # direct (non-nested) pair ega[1]/egb[1] ARE la/lb's own params, so
-        # this reproduces blend_generator_params' morph exactly.
-        for field in _geometry_param_fields(src):
-            blended = _blend_geometry(ega[1].get(field), egb[1].get(field), t)
-            if blended is not _NO_BLEND:
-                params[field] = blended
+        # Includes the captured-geometry morph (pen/drawing), on the same
+        # reduced param dicts — for a direct (non-nested) pair ega[1]/egb[1]
+        # ARE la/lb's own params, so this is blend_generator_params' morph.
+        params = _blend_source_params(src, ega[1], egb[1], t)
         # frame_offset is a layer-level lerped quantity (like the transform):
         # fold the interpolated offset into the generator's TIME AXIS so an
         # A/B pair with identical params but different offsets plays through
