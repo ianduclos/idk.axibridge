@@ -1,18 +1,35 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-10-19
+updated: 2026-10-27
 machine: mac+pi
-summary: The synthesis bench is built (S4) — a writer proposes a score of layers and relations, Ian edits it in a layer stack and an arc-diagram editor, locks, recomposes and keeps it as a group — tests green, ready for Ian's check in the relaunched app.
+summary: Pen v2 and the Hand effect are built on local branches pen-v2 and hand-effect (full suite 2446 passed), waiting for Ian's check and a merge into main; the synthesis bench (S4) is on main, also awaiting Ian's check.
 next:
-  - Ian — relaunch AxiBridge.app and try Compose → Synthesis → Bench (see HANDOFF "Synthesis bench: S4 built")
-  - Ian — notes on the S2 review page (https://claude.ai/artifact/NtcsSUmoqrurwjYM4HSutR), then the S2 review record
+  - Ian — relaunch AxiBridge.app, try the pen fixes and the Hand effect, then say merge (see HANDOFF "Pen v2 + Hand effect")
+  - Merge pen-v2 + hand-effect into main, then write and build the fill tool (spec part B)
+  - Ian — relaunch and try Compose → Synthesis → Bench (see HANDOFF "Synthesis bench: S4 built")
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
   - Sync the idkpi clone with main
 handoff_for: ian
 ---
 
 # idk.axibridge — status
+
+
+**Pen v2 + Hand effect, 22 October:** designed with Ian on a Pen Lab
+brainstorm page, then built task by task with a review after each and a
+final whole-branch review. Pen (`pen-v2`): round/square points at constant
+screen size, insert/bend/J/delete/continue/join, Space and Shift aids,
+curvature, sketch-then-fit with a Detail slider, knife, direct arm drag
+(revertible), one ⌘Z per gesture (regenerate `coalesce` tokens), ⌘Z under
+the pen, a server curve fitter (`/api/geometry/fit`), and moved layers now
+edit where their ink is seen. Hand (`hand-effect`, on top of pen-v2): an
+effect that redraws any line with one of the 44 frozen Gesture Studies hands
+— stray (2×/5× ceiling, Ian-confirmed), bend size, wander; kept layers keep
+their hand's hash. Earlier the same session, on main: synthesis pins store
+each line once, relation params carry `when` and the bench dims inactive
+ones, Bézier arms stretch to 400 mm. Rulings and deferred items:
+`docs/superpowers/plans/2026-10-22-*-RESULTS.md`. Not merged, not pushed.
 
 **Synthesis bench, 19 October (S4):** the app bench is built. Ian's answers at
 the start: palettes around locked pens, a ripple setting (all / direct /
