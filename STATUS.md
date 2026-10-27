@@ -3,10 +3,9 @@ project: idk.axibridge
 state: active
 updated: 2026-10-27
 machine: mac+pi
-summary: Ian accepted Pen v2 and the Hand effect on 27 October; their local branches await merge. The fill tool is next. Synthesis S4 awaits Ian's check. The Mac runs AxiBridge; the Pi receives plot jobs only.
+summary: Ian accepted Pen v2 and the Hand effect, now merged into main. The approved fill tool is being built on codex/fill-tool with task reviews. Synthesis S4 awaits Ian's check. The Mac runs AxiBridge; the Pi receives plot jobs only.
 next:
-  - Merge accepted pen-v2 + hand-effect into main when Ian authorizes the merge
-  - Build the fill tool (spec part B), requested by Ian on 27 October
+  - Finish and review the fill tool on codex/fill-tool (approved plan, requested by Ian on 27 October)
   - Ian — relaunch and try Compose → Synthesis → Bench (see HANDOFF "Synthesis bench: S4 built")
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
 handoff_for: ian
@@ -19,6 +18,13 @@ to proceed with the fill tool. The Mac runs AxiBridge and sends resolved plot
 jobs to the Pi's `axicli` runtime. The historical Pi development clone is outside
 the active workflow; syncing it is not a feature-delivery task. Older entries
 mentioning pending Pi sync describe the previous assumption, now superseded.
+
+**27 October integration:** Ian authorized both merges; `main` now includes
+Pen v2 and Hand through `8d62de5` (fast-forwards, no push). Pre-merge full suite:
+2,444 passed, three skipped, two pre-existing browser-test failures; both failed
+tests pass individually. The tracebacks identify an expected cancelled-render
+409 counted as an error and an immediate assertion racing library-card loading.
+These test issues are being addressed alongside fill verification.
 
 **Pen v2 + Hand effect, 22 October:** designed with Ian on a Pen Lab
 brainstorm page, then built task by task with a review after each and a
