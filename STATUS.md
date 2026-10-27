@@ -3,18 +3,22 @@ project: idk.axibridge
 state: active
 updated: 2026-10-27
 machine: mac+pi
-summary: Pen v2 and the Hand effect are built on local branches pen-v2 and hand-effect (full suite 2446 passed), waiting for Ian's check and a merge into main; the synthesis bench (S4) is on main, also awaiting Ian's check.
+summary: Ian accepted Pen v2 and the Hand effect on 27 October; their local branches await merge. The fill tool is next. Synthesis S4 awaits Ian's check. The Mac runs AxiBridge; the Pi receives plot jobs only.
 next:
-  - Ian — relaunch AxiBridge.app, try the pen fixes and the Hand effect, then say merge (see HANDOFF "Pen v2 + Hand effect")
-  - Merge pen-v2 + hand-effect into main, then write and build the fill tool (spec part B)
+  - Merge accepted pen-v2 + hand-effect into main when Ian authorizes the merge
+  - Build the fill tool (spec part B), requested by Ian on 27 October
   - Ian — relaunch and try Compose → Synthesis → Bench (see HANDOFF "Synthesis bench: S4 built")
   - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
-  - Sync the idkpi clone with main
 handoff_for: ian
 ---
 
 # idk.axibridge — status
 
+**27 October clarification:** Ian confirmed Pen v2 + Hand effect work and asked
+to proceed with the fill tool. The Mac runs AxiBridge and sends resolved plot
+jobs to the Pi's `axicli` runtime. The historical Pi development clone is outside
+the active workflow; syncing it is not a feature-delivery task. Older entries
+mentioning pending Pi sync describe the previous assumption, now superseded.
 
 **Pen v2 + Hand effect, 22 October:** designed with Ian on a Pen Lab
 brainstorm page, then built task by task with a review after each and a
@@ -133,7 +137,7 @@ was relaunched on it 2026-10-13. Freshness tests fail the normal suite when the
 app drifts from what the MCP calls. Usage: `docs/MCP.md`; decisions and
 deferred findings: `docs/reviews/mcp-server-2026-10-12.md`.
 
-**Housekeeping, 13–16 October:** local MCP allow-list written (19 tools; `project`, `save_project`, `call_api` and motion stay prompted — `docs/MCP.md` Safety); 20 merged local branches deleted, old graphify snapshots pruned; `main` pushed to origin 2026-10-16. The idkpi clone has not been synced yet.
+**Housekeeping, 13–16 October:** local MCP allow-list written (19 tools; `project`, `save_project`, `call_api` and motion stay prompted — `docs/MCP.md` Safety); 20 merged local branches deleted, old graphify snapshots pruned; `main` pushed to origin 2026-10-16.
 
 **Cleanup integration, 8 October:** locally integrated `codex/mosca2-bench`,
 `codex/recovery-groups-usability` and all eleven `codex/territory02` commits.

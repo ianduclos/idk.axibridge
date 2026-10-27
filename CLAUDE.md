@@ -20,13 +20,13 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
   installed (NOT on PyPI; see `launch/axibridge.command` for the install URL).
   Never "fix" an import error by switching interpreters. The `[fast]` extra
   (`scikit-fmm`) is installed here but optional everywhere: the pure-Python
-  Eikonal solver is the tested reference and the Pi runs without it.
+  Eikonal solver is the tested reference; it remains usable without the extra.
 - **Frontend: edit `axibridge/static/**` — that is still the source.** The
   server serves the BUILT output (`axibridge/static_dist/`, from
   `npm run build`) when it exists and the SOURCE when it doesn't. One rule,
   in `app.frontend_dir()`, no env var, no third mode; the source fallback is
-  what keeps the Pi (no Node) working. **The trap: a stale `static_dist/`
-  shadows your edits.** If a JS change does nothing, either re-run the build
+  what keeps source-only installations working without Node. **The trap:
+  a stale `static_dist/` shadows your edits.** If a JS change does nothing, either re-run the build
   or delete it — `create_app()` logs which frontend is live at startup.
 - Tests isolate machine-level stores via `AXIBRIDGE_CONFIG_DIR`
   (set in `tests/conftest.py` before any axibridge import — keep it first).
@@ -34,7 +34,7 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
   `tests/test_acceptance_ui.py` drives the real UI in headless chromium
   against a real server on a temp port. They need the browser once per
   machine — `.venv/bin/python -m playwright install chromium` — and skip
-  cleanly without it, which is how the Pi stays backend-only. They assert
+  cleanly without it, supporting headless test environments. They assert
   what the user sees, never how it is built; keep them that way or they
   will fight the next redesign instead of protecting it.
 - Driving the UI with Playwright: use `wait_until="domcontentloaded"`; the
@@ -82,7 +82,7 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
 | Module registry (Source / Effect / Transform) | `axibridge/registry.py` |
 | Module browsers, starting-settings presets and stars/tags | `axibridge/module_library.py`, `module_library_api.py`; workflow in `docs/MODULE-LIBRARY.md` |
 | Layer interpolation (tween layers, param/affine lerp; keyframe chains — `TweenParams.keys`, one layer, isometric segments, per-segment easing; the master timeline scrubs `follow_master` tweens via `session.resolved(master_t=…)`) | `axibridge/tween.py` |
-| Content-keyed `generate()` memo; all cache budgets scale with the `AXIBRIDGE_CACHE_BUDGET` env float (default 1.0; 0.25 on the Pi). Multi-frame tween/shaped/occlusion caches: ARCHITECTURE.md "Caching" | `axibridge/gencache.py` |
+| Content-keyed `generate()` memo; all cache budgets scale with the `AXIBRIDGE_CACHE_BUDGET` env float (default 1.0). Multi-frame tween/shaped/occlusion caches: ARCHITECTURE.md "Caching" | `axibridge/gencache.py` |
 | Generators / effects / plot-pass ops | `axibridge/sources/` `effects/` `transforms/` |
 | Backends (native / simulator / saxi) + port arbitration | `axibridge/backends/`, `machine.py` |
 | Pen library & machine settings (global JSON stores) | `axibridge/stores.py` |
@@ -166,6 +166,11 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
   suite hardware-free; hardware checks are run manually (connect, firmware
   string, pen cycle, a small jog over the API). Raw EBB commands bypass soft
   limits and desync dead reckoning by design.
+- **Deployment: the Mac runs AxiBridge; the Pi receives plot jobs only.**
+  Composition, resolving, the UI and MCP run on the Mac. Feature changes require
+  no app deployment or repository sync on the Pi. A historical development clone
+  there is outside the active workflow. Change the Pi runtime only for an
+  explicitly requested execution/backend task.
 - **Mac → Pi workflow**: the AxiDraw can hang off a Raspberry Pi (`ssh idkpi`
   over Tailscale; EBB on `/dev/ttyACM0`; AxiDraw API venv at
   `~/axibridge/.venv`, NOT a full axibridge install — its old systemd unit is
@@ -183,10 +188,8 @@ npm run typecheck                      # tsc --noEmit; a lint pass, never a comp
   wrapup skill keeps them current; this section only holds durable
   operating notes.
 - The repo lives on GitHub (`github.com/ianduclos/idk.axibridge`, private);
-  `main` is the shared trunk with a full dev clone on idkpi
-  (`~/idk.axibridge`). The `.claude/skills/pi` skill is the runbook for
-  Pi work and scheduled unattended Claude runs; keep Mac and Pi in
-  lockstep after merges.
+  `main` is the shared trunk. For explicitly requested Pi execution work,
+  consult `.claude/skills/pi`; deployment roles are defined in Hardware notes.
 - The generator/effect direction (uncanny, Cohen, Oehlen regime collision)
   is documented in `docs/IDEAS-generators.md` + `docs/IDEAS-oehlen-pass.md`
   with shipped/pending ledgers; the ROADMAP's "Oehlen pass" section is the
