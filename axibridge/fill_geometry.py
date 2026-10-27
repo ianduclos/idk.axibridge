@@ -1,8 +1,11 @@
 """Pick bounded planar faces and capture them as editable pen rings.
 
-Limits: 2,000 input segments, 20,000 noded segments, 2,000,000 gap
+Limits: 20,000 input segments, 50,000 noded segments, 250,000 bbox
+candidate pairs before each native union, 2,000,000 gap
 candidate comparisons (plus at most twice as many adjacency visits for
-local-branch exclusion), 20,000 ring vertices, and 2,000 output anchors.
+local-branch exclusion), 20,000 raw/expanded ring vertices, and 2,000 output
+anchors. Fitting samples long edges at <=0.5 mm to observe between-vertex
+curve deviation without changing original corners.
 GEOS calls are atomic; checkpoints surround them and bound Python loops.
 Boundary clicks return None; the API should explain that a click must be
 strictly inside a face. Gap repair adds connectors only at degree-one nodes;
@@ -18,14 +21,17 @@ from collections import Counter, defaultdict
 
 from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import polygonize, unary_union
+from shapely.strtree import STRtree
 
 from .curvefit import detail_tolerance, fit_bezier
 from .model import Path
 from .render_work import checkpoint
 from .sources.pen import PenSubpath, _flatten_subpath
 
-MAX_SEGMENTS = 2000
-MAX_NODED_SEGMENTS = 20000
+MAX_SEGMENTS = 20000
+MAX_NODED_SEGMENTS = 50000
+MAX_CANDIDATE_PAIRS = 250000
+MAX_FIT_EDGE_MM = 0.5
 MAX_GAP_COMPARISONS = 2000000
 MAX_RING_VERTICES = 20000
 MAX_ANCHORS = 2000
@@ -34,6 +40,22 @@ MAX_ANCHORS = 2000
 def _bounded(value, lower, upper, name):
     if not math.isfinite(value) or not lower <= value <= upper:
         raise ValueError(f'{name} must be finite and between {lower} and {upper}')
+
+
+def _preflight_union(segments):
+    """Bound potential intersection work before entering native noding."""
+    checkpoint()
+    tree = STRtree(segments)
+    candidates = 0
+    for index, segment in enumerate(segments):
+        checkpoint()
+        # Query one bbox at a time: never allocate a drawing-wide pair array.
+        for other in tree.query(segment):
+            if other > index:
+                candidates += 1
+                if candidates > MAX_CANDIDATE_PAIRS:
+                    raise ValueError('Fill geometry candidate pair limit exceeded; simplify the drawing')
+    checkpoint()
 
 
 def _edges(geometry):
@@ -73,6 +95,7 @@ def find_face(paths: list[Path], point, gap_mm: float) -> Polygon | None:
     if not segments:
         return None
     checkpoint()
+    _preflight_union(segments)
     noded = unary_union(segments)
     checkpoint()
     edges = _edges(noded)
@@ -131,6 +154,7 @@ def find_face(paths: list[Path], point, gap_mm: float) -> Polygon | None:
                 connectors.append(LineString([source,(x,y)]))
         if connectors:
             checkpoint()
+            _preflight_union([*edges, *connectors])
             noded = unary_union([noded,*connectors])
             checkpoint()
             _edges(noded)  # bound polygonization input after repairs too
@@ -166,12 +190,28 @@ def fit_face(face: Polygon, detail: float) -> list[dict]:
     result = []
     flattened = []
     count = 0
+    sampled_count = 0
     for ring in rings:
         checkpoint()
         for point in ring.coords:
             for coordinate in point:
                 _bounded(coordinate,-1000000,1000000,'Ring coordinate')
-        anchors = fit_bezier(list(ring.coords),closed=True,detail=detail)
+        # Sparse long edges otherwise permit cubic bulges between the
+        # fitter's observed samples. Add collinear observations; preserve
+        # every original corner and retain the same validation tolerance.
+        coords = list(ring.coords)
+        sampled = []
+        sampled_count += 1  # repeated closing point
+        for a, b in zip(coords, coords[1:]):
+            checkpoint()
+            steps = max(1, math.ceil(math.dist(a, b) / MAX_FIT_EDGE_MM))
+            sampled_count += steps
+            if sampled_count > MAX_RING_VERTICES:
+                raise ValueError('Fill resampled ring vertex limit exceeded; simplify the drawing')
+            sampled.extend((a[0] + (b[0]-a[0])*i/steps,
+                            a[1] + (b[1]-a[1])*i/steps) for i in range(steps))
+        sampled.append(coords[-1])
+        anchors = fit_bezier(sampled,closed=True,detail=detail)
         count += len(anchors)
         if count > MAX_ANCHORS:
             raise ValueError('Fill anchor limit exceeded; simplify the drawing or lower Detail')

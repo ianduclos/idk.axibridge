@@ -66,7 +66,7 @@ def test_bad_fit_refused(monkeypatch):
 
 def test_workload_limit():
     with pytest.raises(ValueError,match='limit'):
-        find_face([line((i,0),(i,1)) for i in range(2001)],(0,0),0)
+        find_face([line((i,0),(i,1)) for i in range(20001)],(0,0),0)
 
 
 def test_cancellation_checkpoint(monkeypatch):
@@ -109,7 +109,7 @@ def test_fit_rejects_lost_hole(monkeypatch):
 
 def test_degenerate_segments_still_count_towards_limit():
     with pytest.raises(ValueError,match='input segment limit'):
-        find_face([line(*([(0,0)]*2002))],(1,1),0)
+        find_face([line(*([(0,0)]*20002))],(1,1),0)
 
 
 @pytest.mark.parametrize('gap', [-.1, 5.1, float('nan'), float('inf')])
@@ -130,3 +130,44 @@ def test_gap_closure_ignores_shortcuts_along_local_bent_branch():
     face = find_face([bent],(2,2),.21)
     assert face is not None
     assert face.area > 99
+
+
+def test_more_than_two_thousand_ordinary_segments_are_supported():
+    points = [(i/250,0) for i in range(2501)]
+    points += [(10,10),(0,10),(0,0)]
+    assert find_face([line(*points)],(5,5),0).area == 100
+
+
+def test_crossing_workload_is_refused_before_native_union(monkeypatch):
+    called = []
+    monkeypatch.setattr('axibridge.fill_geometry.unary_union',lambda *a: called.append(True))
+    paths = [line((0,i),(1000,1000-i)) for i in range(800)]
+    with pytest.raises(ValueError,match='candidate pair limit'):
+        find_face(paths,(1,1),0)
+    assert not called
+
+
+def test_rounded_sparse_boundary_succeeds_at_max_detail():
+    face = Polygon([(120,40),(180,40),(180,100),(120,100)]).buffer(2,quad_segs=8)
+    result = fit_face(face,1)
+    fitted = Polygon(_flatten_subpath(PenSubpath(**result[0]),.05))
+    assert fitted.is_valid
+    assert fitted.exterior.hausdorff_distance(face.exterior) <= .1
+
+
+def test_repaired_union_is_preflighted_too(monkeypatch):
+    from axibridge.fill_geometry import _preflight_union
+    calls = []
+    def record(segments):
+        calls.append(len(segments))
+        return _preflight_union(segments)
+    monkeypatch.setattr('axibridge.fill_geometry._preflight_union',record)
+    assert find_face([line((0,0),(10,0),(10,10),(0,10),(0,.2))],(2,2),.21) is not None
+    assert len(calls) == 2
+    assert calls[1] > calls[0]
+
+
+def test_expanded_fit_samples_are_bounded():
+    face = Polygon([(0,0),(3000,0),(3000,3000),(0,3000)])
+    with pytest.raises(ValueError,match='resampled ring vertex limit'):
+        fit_face(face,1)
