@@ -116,3 +116,17 @@ def test_degenerate_segments_still_count_towards_limit():
 def test_gap_is_bounded(gap):
     with pytest.raises(ValueError,match='Gap'):
         find_face([square()],(1,1),gap)
+
+
+def test_gap_closure_is_invariant_under_collinear_sampling():
+    sparse = line((0,0),(10,0),(10,10),(0,10),(0,.2))
+    dense = line((0,0),(.01,0),(10,0),(10,10),(0,10),(0,.21),(0,.2))
+    assert find_face([sparse],(2,2),.21).area == 100
+    assert find_face([dense],(2,2),.21).area == 100
+
+
+def test_gap_closure_ignores_shortcuts_along_local_bent_branch():
+    bent = line((0,0),(.01,.01),(.02,0),(10,0),(10,10),(0,10),(0,.22),(.01,.21),(0,.2))
+    face = find_face([bent],(2,2),.21)
+    assert face is not None
+    assert face.area > 99

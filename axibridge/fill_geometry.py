@@ -1,16 +1,20 @@
 """Pick bounded planar faces and capture them as editable pen rings.
 
 Limits: 2,000 input segments, 20,000 noded segments, 2,000,000 gap
-candidate comparisons, 20,000 ring vertices, and 2,000 output anchors.
+candidate comparisons (plus at most twice as many adjacency visits for
+local-branch exclusion), 20,000 ring vertices, and 2,000 output anchors.
 GEOS calls are atomic; checkpoints surround them and bound Python loops.
 Boundary clicks return None; the API should explain that a click must be
 strictly inside a face. Gap repair adds connectors only at degree-one nodes;
 it never moves existing geometry or closes already closed narrow holes.
+Targets reachable along existing linework within Gap are local branches,
+not gaps; connectors that merely retrace existing linework are excluded.
 """
 from __future__ import annotations
 
 import math
-from collections import Counter
+import heapq
+from collections import Counter, defaultdict
 
 from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import polygonize, unary_union
@@ -77,9 +81,30 @@ def find_face(paths: list[Path], point, gap_mm: float) -> Polygon | None:
         dangling = sorted(p for p,degree in degrees.items() if degree == 1)
         if len(dangling)*len(edges) > MAX_GAP_COMPARISONS:
             raise ValueError('Fill geometry gap search limit exceeded; simplify the drawing or set Gap to zero')
+        adjacency = defaultdict(list)
+        for edge in edges:
+            a, b = edge.coords[0], edge.coords[-1]
+            adjacency[a].append((b, edge.length))
+            adjacency[b].append((a, edge.length))
         connectors = []
         for source in dangling:
             checkpoint()
+            # The endpoint's own nearby branch is not a gap, even when a
+            # bend makes a tiny shortcut shorter than the intended bridge.
+            # Dijkstra visits only the existing graph within Gap; at most
+            # twice the edge count is examined per dangling endpoint.
+            reached = {source: 0.0}
+            queue = [(0.0, source)]
+            while queue:
+                checkpoint()
+                travelled, node = heapq.heappop(queue)
+                if travelled != reached[node]:
+                    continue
+                for neighbour, length in adjacency[node]:
+                    distance = travelled + length
+                    if distance <= gap_mm and distance < reached.get(neighbour, math.inf):
+                        reached[neighbour] = distance
+                        heapq.heappush(queue, (distance, neighbour))
             start = Point(source)
             candidates = []
             for index,edge in enumerate(edges):
@@ -87,9 +112,19 @@ def find_face(paths: list[Path], point, gap_mm: float) -> Polygon | None:
                     checkpoint()
                 if source in (edge.coords[0],edge.coords[-1]):
                     continue
-                target = edge.interpolate(edge.project(start))
+                projection = edge.project(start)
+                local_distance = min(
+                    reached.get(edge.coords[0], math.inf) + projection,
+                    reached.get(edge.coords[-1], math.inf) + edge.length - projection,
+                )
+                if local_distance <= gap_mm:
+                    continue
+                target = edge.interpolate(projection)
                 distance = start.distance(target)
                 if 0 < distance <= gap_mm:
+                    connector = LineString([source, target.coords[0]])
+                    if noded.covers(connector):
+                        continue
                     candidates.append((distance,target.x,target.y))
             if candidates:
                 _,x,y = min(candidates)
