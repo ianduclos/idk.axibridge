@@ -33,6 +33,7 @@ from pydantic import BaseModel, BeforeValidator, Field
 
 from . import calibration, compose, curvefit, depth_pro, gencache, logbuf, project_io, svg_io, system_fonts, trajectory
 from .assets import AssetStore, SEQUENCE_FRAME_RE, asset_store, safe_asset_name
+from .fill_geometry import MAX_ANCHORS, MAX_RING_VERTICES
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
 from .events import bus
@@ -1053,6 +1054,66 @@ def fit_geometry(body: FitBody) -> dict[str, Any]:
         return {"anchors": curvefit.fit_bezier(body.points, body.closed, body.detail)}
     except ValueError as e:
         raise _fail(e, 422)
+
+
+# Face picks share stroke-fit coordinate bounds; all controls reject NaN/inf.
+FaceUnit = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False),
+                     BeforeValidator(_nonfinite_as_text)]
+
+
+class FaceBody(BaseModel):
+    point: tuple[FitCoord, FitCoord]
+    gap_mm: Annotated[float, Field(ge=0, le=5, allow_inf_nan=False),
+                      BeforeValidator(_nonfinite_as_text)] = 0
+    detail: FaceUnit = 1
+    master_t: FaceUnit | None = None
+
+
+class FillBody(FaceBody):
+    revision: int = Field(ge=0, strict=True)
+
+
+class FaceFitBody(BaseModel):
+    # The helper additionally bounds the combined vertices and output anchors.
+    rings: list[Annotated[
+        list[tuple[FitCoord, FitCoord]],
+        Field(min_length=4, max_length=MAX_RING_VERTICES),
+    ]] = Field(min_length=1, max_length=MAX_ANCHORS)
+    detail: FaceUnit = 1
+
+
+@router.post("/geometry/face")
+@_preview_render
+def preview_face(body: FaceBody) -> dict[str, Any]:
+    try:
+        return session.preview_fill_face(**body.model_dump())
+    except ValueError as e:
+        raise _fail(e, 422)
+
+
+@router.post("/geometry/face/fit")
+@_preview_render
+def refit_face(body: FaceFitBody) -> dict[str, Any]:
+    from shapely.geometry import Polygon
+    from .fill_geometry import fit_face
+    try:
+        if any(len(ring) < 4 or ring[0] != ring[-1] for ring in body.rings):
+            raise ValueError("Face rings must be closed and have at least four vertices")
+        if sum(map(len, body.rings)) > MAX_RING_VERTICES:
+            raise ValueError("Fill ring vertex limit exceeded; simplify the drawing")
+        return {"subpaths": fit_face(Polygon(body.rings[0], body.rings[1:]), body.detail)}
+    except ValueError as e:
+        raise _fail(e, 422)
+
+
+@router.post("/layers/fill")
+def commit_face(body: FillBody) -> dict[str, Any]:
+    try:
+        return session.add_fill_layer(**body.model_dump()).model_dump()
+    except ValueError as e:
+        raise _fail(e, 422)
+    except RuntimeError as e:
+        raise _fail(e, 409)
 
 
 @router.delete("/layers/{layer_id}")

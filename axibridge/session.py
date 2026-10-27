@@ -755,6 +755,57 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
             self.source_geometry[layer.id] = paths
         return layer
 
+    def preview_fill_face(
+        self, point: tuple[float, float], gap_mm: float = 0.0,
+        detail: float = 1.0, master_t: float | None = None,
+    ) -> dict[str, Any]:
+        """Capture a face from the same resolved paper geometry as the canvas."""
+        from shapely.geometry import Point, Polygon
+        from .fill_geometry import find_face, fit_face
+        from .sources.pen import PenSubpath, _flatten_subpath
+
+        with self._lock:
+            resolved = self.resolved(master_t=master_t)
+            face = find_face([p for paths in resolved.values() for p in paths], point, gap_mm)
+            if face is None:
+                raise ValueError("Click strictly inside a bounded face; no face found here")
+            subpaths = fit_face(face, detail)
+            flat = [_flatten_subpath(PenSubpath(**sp), .05) for sp in subpaths]
+            if not Polygon(flat[0], flat[1:]).contains(Point(point)):
+                raise ValueError("Curve fit excluded the clicked point; raise Detail and try again")
+            # PenSource protects ordinary captures with an anchor clamp. A found
+            # face must instead refuse any displacement of its paper geometry.
+            src = get_source("pen")
+            params = self._completed(src, {"subpaths": subpaths, "flatten_tol": .05})
+            doc = gencache.generate_cached(src, params)
+            paths = [p for layer in doc.layers for p in layer.paths]
+            if [p.points for p in paths] != flat:
+                raise ValueError("Selected face exceeds pen coordinate limits; move the source closer to the paper")
+            return {"revision": self.edit_rev,
+                    "rings": [list(r.coords) for r in [face.exterior, *face.interiors]],
+                    "subpaths": subpaths}
+
+    @_interrupt_preview
+    def add_fill_layer(
+        self, point: tuple[float, float], revision: int, gap_mm: float = 0.0,
+        detail: float = 1.0, master_t: float | None = None,
+    ) -> CanvasLayer:
+        """Recompute and freeze one face, validating before the sole checkpoint."""
+        with self._lock:
+            if revision != self.edit_rev:
+                raise RuntimeError("Drawing changed; preview the face again")
+            candidate = self.preview_fill_face(point, gap_mm, detail, master_t)
+            src = get_source("pen")
+            params = self._completed(src, {"subpaths": candidate["subpaths"], "flatten_tol": .05})
+            doc = gencache.generate_cached(src, params)
+            paths = [p for layer in doc.layers for p in layer.paths]
+            layer = CanvasLayer(name="Found face", source=LayerSource(
+                type="generator", generator="pen", params=params), transform=Affine())
+            self._checkpoint()
+            self.project.layers.append(layer)
+            self.source_geometry[layer.id] = paths
+            return layer
+
     def add_linedraw_components(
         self, doc: PathDocument, params: dict[str, Any],
         source_layer_id: str | None, project: Project,
