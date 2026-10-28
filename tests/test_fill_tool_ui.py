@@ -380,3 +380,97 @@ def test_separate_detail_gestures_have_separate_undo_steps(ui):
     ui.keyboard.press('Meta+z')
     ui.wait_for_timeout(250)
     assert _get(ui.base+'/api/project')['layers'][-1]['source']['params']==values[0]
+
+
+def wait_held(page, held):
+    for _ in range(100):
+        if held:
+            return
+        page.wait_for_timeout(50)
+    assert held, 'face response did not arrive'
+
+
+def test_fill_detail_defaults_to_full_precision(ui):
+    ui.click('[data-tool=fill]')
+    assert ui.locator('#fill-detail').input_value()=='1'
+
+
+@pytest.mark.parametrize('clicks',[1,2])
+def test_quick_single_click_commits_its_pending_preview_once(ui,clicks):
+    seed(ui)
+    held=[]
+    writes=[]
+    def hold(route):
+        held.append((route,route.fetch()))
+    ui.route('**/api/geometry/face',hold)
+    ui.on('request',lambda r:writes.append(r.post_data_json) if r.url.endswith('/api/layers/fill') else None)
+    ui.click('[data-tool=fill]')
+    ui.mouse.click(*point(ui))
+    if clicks==2:
+        ui.mouse.click(*point(ui))
+    wait_held(ui,held)
+    assert len(held)==1
+    assert len(_get(ui.base+'/api/project')['layers'])==1
+    route,response=held.pop()
+    route.fulfill(response=response)
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 2",timeout=3000)
+    assert len(writes)==1
+    assert writes[0]['point']==pytest.approx([90,80],abs=.1)
+    assert writes[0]['detail']==1
+    assert not ui.errors
+
+
+@pytest.mark.parametrize('cancel',['move','detail','gap','selection','project','timeline','escape','tool'])
+def test_quick_click_intent_is_cancelled_before_held_preview_returns(ui,cancel):
+    seed(ui,follow=cancel=='timeline')
+    held=[]
+    def hold(route):
+        held.append((route,route.fetch()))
+    ui.route('**/api/geometry/face',hold)
+    ui.click('[data-tool=fill]')
+    ui.mouse.click(*point(ui))
+    wait_held(ui,held)
+    assert held
+    if cancel=='move':
+        ui.mouse.move(*point(ui,95,85))
+    elif cancel in ['detail','gap']:
+        ui.locator('#fill-'+cancel).evaluate('(e)=>{e.value=.5;e.dispatchEvent(new Event("input",{bubbles:true}));}')
+    elif cancel=='selection':
+        ui.locator('#layer-list .layer-row').click()
+    elif cancel=='project':
+        from test_acceptance_ui import _patch
+        source=_get(ui.base+'/api/project')['layers'][0]
+        _patch(ui.base+'/api/layers/'+source['id'],{'name':'intent cancelled'})
+        ui.wait_for_timeout(150)
+    elif cancel=='timeline':
+        ui.locator('#tl-scrub').evaluate('(e)=>{e.value=.8;e.dispatchEvent(new Event("input",{bubbles:true}));}')
+    elif cancel=='escape':
+        ui.keyboard.press('Escape')
+    else:
+        ui.click('[data-tool=pen]')
+    # Option/pointer changes may queue another hover, but none may create.
+    for route,response in list(held):
+        route.fulfill(response=response)
+    ui.unroute('**/api/geometry/face',hold)
+    ui.wait_for_timeout(250)
+    assert len(_get(ui.base+'/api/project')['layers'])==1
+
+
+def test_quick_click_with_gap_requires_review_and_second_click(ui):
+    seed(ui,hole=False,gap=1)
+    held=[]
+    def hold(route):
+        held.append((route,route.fetch()))
+    ui.route('**/api/geometry/face',hold)
+    ui.click('[data-tool=fill]')
+    ui.fill('#fill-gap','1.2')
+    ui.mouse.click(*point(ui))
+    wait_held(ui,held)
+    assert held
+    route,response=held.pop()
+    route.fulfill(response=response)
+    ui.wait_for_selector('.fill-candidate')
+    assert 'review' in ui.locator('#fill-status').inner_text().lower()
+    assert len(_get(ui.base+'/api/project')['layers'])==1
+    ui.mouse.click(*point(ui))
+    ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 2")

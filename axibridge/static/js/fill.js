@@ -5,6 +5,7 @@ import { S, actions } from './main.js';
 const $ = id => document.getElementById(id);
 let on = false, wired = false, epoch = 0, lifecycle = 0, timer, abort;
 let candidate = null, pointer = null, lastPointer = null, latest = null, busy = false, ownRefresh = false;
+let read = null, intent = null;
 let refitting = false, queuedFit = null, gestureToken = null;
 const nonce = Math.random().toString(36).slice(2);
 let serial = 0;
@@ -19,6 +20,7 @@ const detail = () => Math.max(0, Math.min(1, Number($('fill-detail').value)));
 const gap = () => Math.max(0, Math.min(5, Number($('fill-gap').value)));
 const layer = () => latest && S.state?.project.layers.find(l => l.id === latest.id);
 function clearCandidate() {
+  read = null; intent = null;
   ++epoch; clearTimeout(timer); abort?.abort(); abort = null; candidate = null;
   document.querySelector('.fill-candidate')?.remove();
   if (wired) $('fill-status').textContent = latest ? 'Boundary created — choose a fill' : 'Hover a bounded face';
@@ -36,7 +38,7 @@ function controls() {
 }
 export function refreshFillState() {
   if (!wired || !on) return;
-  if (candidate && candidate.stamp !== stamp()) clearCandidate();
+  if ((read && read.stamp !== stamp()) || (intent && !currentIntent(intent))) clearCandidate();
   if (latest && ((!ownRefresh && latest.stamp !== stamp()) || latest.masterT !== S.masterT || S.selection.length !== 1 || S.selection[0] !== latest.id)) endResult();
   drawCandidate();
 }
@@ -51,20 +53,45 @@ function drawCandidate() {
   p.setAttribute('d', candidate.rings.map(r => `M ${r.map(pt=>pt.join(',')).join(' L ')} Z`).join(' '));
   actions.canvas().world.appendChild(p);
 }
-function preview(p) {
-  clearCandidate();
+const faceBody = p => ({point:[...p], gap_mm:gap(), detail:detail(), master_t:S.masterT});
+function sameFace(a, b, tolerance = 1e-9) {
+  return a && b && Math.abs(a.point[0]-b.point[0]) < tolerance && Math.abs(a.point[1]-b.point[1]) < tolerance
+    && a.gap_mm === b.gap_mm && a.detail === b.detail && a.master_t === b.master_t;
+}
+function currentIntent(i) {
+  return on && !busy && !refitting && i.lifecycle === lifecycle && i.stamp === stamp()
+    && i.selection === JSON.stringify(S.selection) && sameFace(i.body,faceBody(i.body.point));
+}
+function preview(p, review = false) {
   if (!on || busy || !p || !Number.isFinite(gap()) || !Number.isFinite(detail())) return;
-  const mine = epoch, state = stamp();
+  const body = faceBody(p), state = stamp();
+  // A quick click reuses the exact hover already being read, including its
+  // immutable options. Repeated clicks must not cancel or duplicate that read.
+  if (read && read.stamp === state && sameFace(read.body,body)) {
+    read.review ||= review;
+    return;
+  }
+  clearCandidate();
+  const mine = epoch, reading = {body, stamp:state, review}; read = reading;
   timer = setTimeout(async () => {
     const controller = new AbortController(); abort = controller;
-    const body = {point:p, gap_mm:gap(), detail:detail(), master_t:S.masterT};
     try {
       const result = await api.post('/api/geometry/face',body,{signal:controller.signal});
       if (!on || mine !== epoch || state !== stamp()) return;
       candidate = {...result, body, stamp:state}; drawCandidate();
-      $('fill-status').textContent = 'Click highlighted face';
+      $('fill-status').textContent = reading.review
+        ? 'Review repaired face — click again to create' : 'Click highlighted face';
+      const queued = intent, shown = candidate;
+      if (queued && currentIntent(queued) && sameFace(queued.body,body) && result.revision === S.state.project.edit_rev) {
+        // Give the exact returned face a paint before writing it. Recheck all
+        // captured intent after painting: movement or an edit may abandon it.
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          if (intent === queued && candidate === shown && currentIntent(queued)) writeCandidate(shown);
+        }));
+      }
     } catch(e) {
       if (mine !== epoch || !on || state !== stamp() || e.name === 'AbortError') return;
+      intent = null; read = null;
       $('fill-status').textContent = e.message;
     }
   }, 80);
@@ -85,13 +112,28 @@ async function sync(run, expectedRev) {
   }
   controls();
 }
-async function commit(e) {
+function commit(e) {
   if (!on || e.button !== 0) return;
   e.preventDefault(); e.stopPropagation();
   if (busy || refitting) return;
   refreshFillState();
-  if (!candidate) { preview(pointer); return; }
-  const c = candidate, run = lifecycle, selection = JSON.stringify(S.selection), expectedRev = S.state.project.edit_rev + 1;
+  const p = actions.canvas().toBed(e), at = [p.x,p.y], body = faceBody(at);
+  pointer = lastPointer = at;
+  if (intent && currentIntent(intent) && sameFace(intent.body,body)) return;
+  if (candidate && candidate.stamp === stamp() && sameFace(candidate.body,body,.01)) {
+    writeCandidate(candidate);
+    return;
+  }
+  preview(at,body.gap_mm > 0);
+  if (body.gap_mm === 0) {
+    intent = {body, stamp:stamp(), selection:JSON.stringify(S.selection), lifecycle};
+    $('fill-status').textContent = 'Finding face for this click…';
+  } else $('fill-status').textContent = 'Review repaired face before clicking again';
+}
+async function writeCandidate(c) {
+  if (!on || busy || refitting || candidate !== c || c.stamp !== stamp()) return;
+  intent = null;
+  const run = lifecycle, selection = JSON.stringify(S.selection), expectedRev = S.state.project.edit_rev + 1;
   endResult();
   busy = true; controls();
   try {
@@ -157,7 +199,7 @@ export function initFillMode() {
   wrap.addEventListener('pointermove',e=>{
     if (!on) return;
     const p = actions.canvas().toBed(e);
-    if (candidate && pointer && Math.hypot(pointer[0]-p.x,pointer[1]-p.y) < 0.01) return;
+    if (pointer && Math.hypot(pointer[0]-p.x,pointer[1]-p.y) < 0.01) return;
     pointer = lastPointer = [p.x,p.y];
     if (!busy) preview(pointer);
   },true);
@@ -167,7 +209,7 @@ export function initFillMode() {
   $('fill-gap').addEventListener('input',()=>preview(lastPointer));
   const slider = $('fill-detail');
   slider.addEventListener('pointerdown',()=>{gestureToken=`fill-detail-${nonce}-${++serial}`;});
-  slider.addEventListener('input',()=>{ if(latest) requestRefit(); else preview(lastPointer); });
+  slider.addEventListener('input',()=>{ if(intent) clearCandidate(); if(latest) requestRefit(); else preview(lastPointer); });
   slider.addEventListener('change',()=>{gestureToken=null;slider.blur();});
   slider.addEventListener('keydown',e=>{
     if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); requestRefit(); return; }
