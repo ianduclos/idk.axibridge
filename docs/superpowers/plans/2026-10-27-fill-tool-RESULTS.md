@@ -1,6 +1,6 @@
 # Fill tool — results and decisions
 
-Implemented on `codex/fill-tool` from `8d62de5`, after Ian accepted Pen v2 and Hand and authorized their local integration. This branch remains separate from main; no push or hardware action is part of delivery.
+Implemented on `codex/fill-tool` from `8d62de5`, after Ian accepted Pen v2 and Hand and authorized their local integration. Published to GitHub and subsequently merged into main via [PR #1](https://github.com/ianduclos/idk.axibridge/pull/1) as `87dd6a2` on 28 October, explicitly authorized by Ian. No native activation or hardware action occurred.
 
 ## Delivered behavior
 
@@ -28,7 +28,7 @@ The first Fill full run also exposed a lifecycle gap: a bare TestClient inherite
 
 **Native activation is pending.** The original live project/backend were not replaced; a recovery checkpoint and full read-only snapshot are retained in the ignored plan workspace. Recheck current state, checkpoint again, use the normal launcher with simulator/no auto-connect, restore kept content/history, compare sources, and verify the live backend before user acceptance. The Pi receives print jobs only. No hardware or machine motion occurred.
 
-Ian explicitly requested wrap-up and GitHub publication. Publish Fill as a draft with this incomplete gate disclosed; do not merge. Main contains only the previously accepted Pen/Hand integration and existing history. Keep the feature worktree and its ignored recovery ledger for continuation.
+Ian explicitly requested wrap-up and GitHub publication, then authorized merging the published draft. PR #1 is merged into main; the known incomplete verification gate and native activation remain follow-ups. Keep the feature worktree and its ignored recovery ledger for continuation. The historical publication ruling below records the decision before that later merge authorization.
 
 ## Rulings made by the primary
 

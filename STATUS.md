@@ -3,18 +3,19 @@ project: idk.axibridge
 state: active
 updated: 2026-10-28
 machine: mac+pi
-summary: Pen v2 and Hand are accepted and merged locally; Fill is implemented and reviewed on codex/fill-tool, with final verification and native activation pending.
+summary: Pen v2, Hand and Fill are merged and pushed to main; final Fill verification and native activation remain pending.
 next:
-  - Diagnose the Gallery browser failure and stalled full-suite run on codex/fill-tool before acceptance or merge
+  - Diagnose the Gallery browser failure and stalled full-suite run on main before acceptance
   - Preserve the live project and activate Fill through its normal app launcher after verification
-  - Ian — check Fill in the native app, then decide its main merge
+  - Ian — check Fill in the native app after activation
   - Ian — Synthesis S4 and fresh-session MCP live-sync acceptance remain open
 handoff_for: Codex-hub
 ---
 
 # idk.axibridge — status
 
-**28 October Fill wrap-up:** Fill is implemented on `codex/fill-tool`, with task
+**28 October Fill wrap-up:** Fill is merged into `main` via [PR #1](https://github.com/ianduclos/idk.axibridge/pull/1)
+(`87dd6a2`), explicitly authorized by Ian after publication, with task
 reviews and a whole-branch review. The two production review findings are fixed:
 Detail refits reject stale revisions atomically, and abandoned/superseded hover
 searches cancel per client. Focused checks passed: 145 server/regression tests,
@@ -26,10 +27,11 @@ browser tests passed. The subsequent full rerun reported a Gallery browser
 failure and stalled around 33%; its owned test processes were terminated at
 wrap-up. That run is incomplete, and the Gallery traceback was not recovered.
 **The final verification gate is not green.** Native activation was deferred;
-the original live backend/project remain untouched. The branch is being
-published as a draft at Ian's request; Fill is not merged into main.
+the original live backend/project remain untouched. The initially published
+draft was subsequently merged at Ian's explicit request. Merge does not imply
+completed verification or native activation.
 
-[Fill guide](https://github.com/ianduclos/idk.axibridge/blob/codex/fill-tool/docs/FILL-TOOL.md) · [results, decisions and recovery handoff](https://github.com/ianduclos/idk.axibridge/blob/codex/fill-tool/docs/superpowers/plans/2026-10-27-fill-tool-RESULTS.md)
+[Fill guide](https://github.com/ianduclos/idk.axibridge/blob/main/docs/FILL-TOOL.md) · [results, decisions and recovery handoff](https://github.com/ianduclos/idk.axibridge/blob/main/docs/superpowers/plans/2026-10-27-fill-tool-RESULTS.md)
 
 **27 October clarification:** Ian confirmed Pen v2 + Hand effect work and asked
 to proceed with the fill tool. The Mac runs AxiBridge and sends resolved plot
