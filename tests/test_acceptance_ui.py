@@ -136,6 +136,38 @@ def server(frontend_mode):
         proc.kill()
 
 
+def _capture_conflict(response, errors: list[str]) -> None:
+    """Only the server's explicit superseded-render response is expected."""
+    if response.status != 409:
+        return
+    pending = f"HTTP 409 {response.url}: response classification pending"
+    errors.append(pending)
+    try:
+        payload = response.json()
+    except Exception as exc:
+        # Malformed bodies and unexpected read errors must still fail tests.
+        errors[errors.index(pending)] = f"HTTP 409 {response.url}: {type(exc).__name__}: {exc}"
+        return
+    if (isinstance(payload, dict)
+            and isinstance(payload.get("detail"), dict)
+            and payload["detail"].get("code") == "render_cancelled"):
+        errors.remove(pending)
+        return
+    errors[errors.index(pending)] = f"HTTP 409 {response.url}: {payload!r}"
+
+
+def _capture_console(message, errors: list[str]) -> None:
+    if message.type != "error":
+        return
+    # Chromium's resource diagnostics have no JS arguments. Their 409s are
+    # classified from response bodies above; console.error with identical
+    # text has arguments and remains a failure.
+    if (message.text == "Failed to load resource: the server responded with a status of 409 (Conflict)"
+            and not message.args and message.location.get("url")):
+        return
+    errors.append(message.text)
+
+
 @pytest.fixture()
 def ui(server):
     """A fresh browser and page on an empty project, with console errors
@@ -157,7 +189,8 @@ def ui(server):
         _post(f"{server}/api/project/new", {"recovery_action":"discard"})
         page = browser.new_page(viewport={"width": 1500, "height": 950})
         errors: list[str] = []
-        page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+        page.on("response", lambda response: _capture_conflict(response, errors))
+        page.on("console", lambda message: _capture_console(message, errors))
         page.on("pageerror", lambda e: errors.append(str(e)))
         # domcontentloaded, never networkidle: the SSE stream never goes idle
         page.goto(server, wait_until="domcontentloaded")

@@ -138,6 +138,14 @@
         <button data-tool="pen" title="Pen — click for a corner, drag for a smooth curve. On the selected pen layer: click a line to add a point, drag it to bend; double-click a point for corner/smooth; click a point, then J to change its join or Delete to remove it; click an open end to continue or join lines"><svg class="tool-icon" viewBox="0 0 24 24"><path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z"/><path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18"/><path d="m2.3 2.3 7.286 7.286"/><circle cx="11" cy="11" r="2"/></svg> Pen</button>
         <button data-tool="brush" title="Circle brush — paint a filled mass; [ and ] resize, E toggles erase"><svg class="tool-icon" viewBox="0 0 24 24"><path d="m11 10 3 3"/><path d="M6.5 21A3.5 3.5 0 1 0 3 17.5a2.62 2.62 0 0 1-.708 1.792A1 1 0 0 0 3 21z"/><path d="M9.969 17.031l1.762-3.109a2 2 0 0 1 .434-.554L20.25 5.75a1.768 1.768 0 1 1 2.5 2.5l-7.618 8.085a2 2 0 0 1-.554.434l-3.109 1.762"/></svg> Brush</button>
         <button data-tool="shape" title="Drag out a rectangle, ellipse or line — Shift constrains, Alt draws from the centre"><svg class="tool-icon" viewBox="0 0 24 24"><path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/></svg> Shape</button>
+        <button data-tool="fill" title="Fill — hover a bounded face, then click to create an editable boundary"><svg class="tool-icon" viewBox="0 0 24 24"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5M2 13h15M22 20a2 2 0 0 1-4 0c0-1.6 2-4 2-4s2 2.4 2 4Z"/></svg> Fill</button>
+      </div>
+      <div id="fill-bar" hidden>
+        <label>Gap <input id="fill-gap" type="number" min="0" max="5" step="0.1" value="0" aria-label="Fill gap tolerance"> mm</label>
+        <label>Detail <input id="fill-detail" title="Refit the latest boundary — Enter retries the current Detail" type="range" min="0" max="1" step="0.01" value="1" aria-label="Fill detail"></label>
+        <label>Fill <select id="fill-effect" aria-label="Fill effect" disabled><option value="">None</option><option value="hatch_fill">Hatch</option><option value="offset_fill">Offset</option><option value="offset_fill_v2">Offset v2</option><option value="eigen_fill">Cymatic</option></select></label>
+        <label><input id="fill-outline" type="checkbox" checked disabled> Outline</label>
+        <span id="fill-status" role="status">Hover a bounded face</span>
       </div>
       <!-- brush-only: live radius readout + paint/erase toggle. Shown by the
            tool broker in main.js, same pattern as #pen-commit. -->

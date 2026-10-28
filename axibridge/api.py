@@ -12,6 +12,7 @@ the estimator times and the plotter draws.
 from __future__ import annotations
 
 import io
+import anyio
 import json
 import math
 from collections import Counter
@@ -27,12 +28,13 @@ import zipfile
 from pathlib import Path as FsPath
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, BeforeValidator, Field
 
 from . import calibration, compose, curvefit, depth_pro, gencache, logbuf, project_io, svg_io, system_fonts, trajectory
 from .assets import AssetStore, SEQUENCE_FRAME_RE, asset_store, safe_asset_name
+from .fill_geometry import MAX_ANCHORS, MAX_RING_VERTICES
 from .compose import PaperGuide, PlotOptions, Project
 from .estimate import EstimatorConstants, MotionParams, plan_job
 from .events import bus
@@ -40,7 +42,7 @@ from .machine import SoftLimits, manager
 from .process import ProcessModule
 from .registry import describe_modules, get_effect, get_source, progress_scope
 from .render_work import RenderCancelled, checkpoint
-from .session import _regen_coalesce_key, session
+from .session import RevisionConflict, _regen_coalesce_key, session
 from .stores import Pen, pen_library, settings_store
 from .gallery_api import router as gallery_router
 from .gesture_studies_api import router as gesture_studies_router
@@ -985,6 +987,7 @@ class RegenerateBody(BaseModel):
     #: string token folds only regenerates carrying the same token (the pen
     #: sends a fresh one per drag, so each drag is its own undo step).
     coalesce: bool | Annotated[str, Field(min_length=1, max_length=64)] = False
+    expected_revision: int | None = Field(default=None, ge=0, strict=True)
 
 
 @router.post("/layers/{layer_id}/regenerate")
@@ -994,12 +997,14 @@ def regenerate_layer(layer_id: str, body: RegenerateBody) -> dict[str, Any]:
             with session.render_work.mutation(), session._lock:
                 key = _regen_coalesce_key(layer_id, body.coalesce)
                 continuing = key is not None and session._coalesce_key == key
-                layer = session.regenerate_layer(layer_id, body.params, coalesce=body.coalesce)
+                layer = session.regenerate_layer(layer_id, body.params, coalesce=body.coalesce, expected_revision=body.expected_revision)
                 module_id = layer.source.generator
                 payload = layer.model_dump()
             if not continuing:
                 record_module_use("source", module_id)
             return payload
+    except RevisionConflict as e:
+        raise _fail(e, 409)
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:
@@ -1053,6 +1058,99 @@ def fit_geometry(body: FitBody) -> dict[str, Any]:
         return {"anchors": curvefit.fit_bezier(body.points, body.closed, body.detail)}
     except ValueError as e:
         raise _fail(e, 422)
+
+
+# Face picks share stroke-fit coordinate bounds; all controls reject NaN/inf.
+FaceUnit = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False),
+                     BeforeValidator(_nonfinite_as_text)]
+
+
+class FaceBody(BaseModel):
+    point: tuple[FitCoord, FitCoord]
+    gap_mm: Annotated[float, Field(ge=0, le=5, allow_inf_nan=False),
+                      BeforeValidator(_nonfinite_as_text)] = 0
+    detail: FaceUnit = 1
+    master_t: FaceUnit | None = None
+
+
+class FillBody(FaceBody):
+    revision: int = Field(ge=0, strict=True)
+
+
+class FaceFitBody(BaseModel):
+    # The helper additionally bounds the combined vertices and output anchors.
+    rings: list[Annotated[
+        list[tuple[FitCoord, FitCoord]],
+        Field(min_length=4, max_length=MAX_RING_VERTICES),
+    ]] = Field(min_length=1, max_length=MAX_ANCHORS)
+    detail: FaceUnit = 1
+
+
+@router.post("/geometry/face")
+async def preview_face(body: FaceBody, request: Request) -> dict[str, Any]:
+    client = request.headers.get("X-Axb-Client")
+    key = (client, "fill-preview") if client else None
+
+    def compute():
+        with session._lock:
+            checkpoint()
+            result = session.preview_fill_face(**body.model_dump())
+            checkpoint()
+            return result
+
+    try:
+        with session.render_work.scope(key) as event:
+            async def watch_disconnect():
+                # The body is consumed. Await the disconnect directly: Starlette's
+                # immediately-cancelled poll cannot traverse our middleware chain.
+                while not event.is_set():
+                    if (await request.receive())["type"] == "http.disconnect":
+                        event.set()
+                        return
+
+            error = None
+            async with anyio.create_task_group() as group:
+                group.start_soon(watch_disconnect)
+                try:
+                    result = await anyio.to_thread.run_sync(compute)
+                except (RenderCancelled, Exception) as exc:
+                    error = exc
+                finally:
+                    group.cancel_scope.cancel()
+            if error is not None:
+                raise error
+            return result
+    except RenderCancelled:
+        raise HTTPException(409, detail={
+            "code": "render_cancelled", "message": "Drawing update superseded",
+        }) from None
+    except ValueError as e:
+        raise _fail(e, 422)
+
+
+@router.post("/geometry/face/fit")
+@_preview_render
+def refit_face(body: FaceFitBody) -> dict[str, Any]:
+    from shapely.geometry import Polygon
+    from .fill_geometry import fit_face
+    try:
+        if any(len(ring) < 4 or ring[0] != ring[-1] for ring in body.rings):
+            raise ValueError("Face rings must be closed and have at least four vertices")
+        if sum(map(len, body.rings)) > MAX_RING_VERTICES:
+            raise ValueError("Fill ring vertex limit exceeded; simplify the drawing")
+        return {"subpaths": fit_face(Polygon(body.rings[0], body.rings[1:]), body.detail)}
+    except ValueError as e:
+        raise _fail(e, 422)
+
+
+@router.post("/layers/fill")
+def commit_face(body: FillBody) -> dict[str, Any]:
+    try:
+        return session.add_fill_layer(**body.model_dump()).model_dump()
+    except ValueError as e:
+        raise _fail(e, 422)
+    except RuntimeError as e:
+        raise _fail(e, 409)
 
 
 @router.delete("/layers/{layer_id}")

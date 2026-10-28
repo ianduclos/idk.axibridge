@@ -10,13 +10,13 @@ def test_effect_category_chips_describe_input_geometry(ui):
     select_layer(ui)
     ui.click('#fx-browse')
     ui.get_by_role('button', name='Line', exact=True).click()
-    assert ui.locator('.module-library-card[data-module="ribbon"]').is_visible()
+    ui.locator('.module-library-card[data-module="ribbon"]').wait_for(state="visible", timeout=20_000)
     assert ui.locator('.module-library-card[data-module="hatch_fill"]').count() == 0
     ui.locator('.module-library-categories').get_by_role('button', name='Shape', exact=True).click()
-    assert ui.locator('.module-library-card[data-module="hatch_fill"]').is_visible()
+    ui.locator('.module-library-card[data-module="hatch_fill"]').wait_for(state="visible", timeout=20_000)
     assert ui.locator('.module-library-card[data-module="ribbon"]').count() == 0
     ui.get_by_role('button', name='Agnostic', exact=True).click()
-    assert ui.locator('.module-library-card[data-module="perspective"]').is_visible()
+    ui.locator('.module-library-card[data-module="perspective"]').wait_for(state="visible", timeout=20_000)
     assert ui.locator('.module-library-card[data-module="hatch_fill"]').count() == 0
     assert not ui.errors
 

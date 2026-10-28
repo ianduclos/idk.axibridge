@@ -1,3 +1,4 @@
+import { initFillMode, activateFillMode, deactivateFillMode, handleFillEscape, refreshFillState, settleFillHistory } from "./fill.js";
 import { normalizeTargets, targetsForLayerIds, memberIds } from "./group_ui.js";
 import { initAssetsTab, setAssetProgress } from "./assets_tab.js";
 import { initRecoveryUI } from "./recovery_ui.js";
@@ -230,6 +231,7 @@ export const actions = {
       S.selection = memberIds(S.state.project,S.selectionTargets).filter(id => !S.state.project.layers.find(l => l.id === id)?.animation_owner_id);
     }
     canvas.setSelection(S.selection);
+    refreshFillState();
     // S5: refreshProject is what every mutating action calls once it's done
     // (add/edit/delete a layer, undo/redo, tween edits, staging…) — the
     // cheapest honest hook to invalidate the timeline bar's fetched-frame
@@ -289,6 +291,7 @@ export const actions = {
       // preview — drop it and its banner rather than fight over the canvas.
       if (S.docPreview && !stickySheet) clearDocPreviewState();
       S.masterT = master_t;
+      refreshFillState();
       let q = master_t == null ? "" : `?t=${encodeURIComponent(master_t)}`;
       if (opts.stats === false) q += q ? "&stats=false" : "?stats=false";
       const resolved = await api.get(`/api/compose/resolved${q}`, { signal: controller.signal });
@@ -305,6 +308,7 @@ export const actions = {
       if (requestId !== resolvedRequestId || controller.signal.aborted) return false;
       renderLayerList();
       renderSelReadout();
+      refreshFillState();
       refreshPenOverlay(); // pen's anchor/handle overlay tracks undo/redo and any other external edit
       if (opts.plan !== false) await actions.refreshPlan();
       return true;
@@ -418,6 +422,7 @@ export const actions = {
     S.selectionTargets = normalizeTargets(S.state.project,targets);
     S.selection = memberIds(S.state.project,S.selectionTargets).filter(id => !S.state.project.layers.find(l => l.id === id)?.animation_owner_id);
     canvas.setSelection(S.selection);
+    refreshFillState();
     renderLayerList(); renderSelReadout();
     if (before.length !== S.selection.length || before.some((id, i) => id !== S.selection[i])) penLayerSelectionChanged();
   },
@@ -473,6 +478,7 @@ export const actions = {
     S.selectionTargets = ids.map(id => ({kind:"layer",id}));
     S.selection = ids;
     canvas.setSelection(ids);
+    refreshFillState();
     renderLayerList();
     renderSelReadout();
     // the pen edits the selected layer: its points follow, and a point
@@ -782,6 +788,7 @@ async function penAwareHistoryStep(direction) {
     if (handlePenHistoryKey(direction === "redo")) return;
     await penSettled();
   }
+  if (toolMode === "fill") await settleFillHistory();
   await historyStep(direction);
 }
 const undoStep = () => penAwareHistoryStep("undo");
@@ -919,6 +926,7 @@ function initTabs() {
   initPenMode();  // no-op after first call (returns early if already wired)
   initBrushMode();
   initShapeMode();
+  initFillMode();
   initProcessPopup(); // likewise — the popup is static markup, wired once
   renderLayerList();
   applyPanelCollapse();
@@ -933,6 +941,7 @@ function initTabs() {
 // listener stealing events. See docs/plans/pen-brush-tools.md Part 0.
 
 const TOOL_MODES = {
+  fill: { activate: activateFillMode, deactivate: deactivateFillMode, handleEscape: handleFillEscape },
   select: {},
   draw: { activate: activateDrawMode, deactivate: deactivateDrawMode },
   pen: { activate: activatePenMode, deactivate: deactivatePenMode, handleEscape: handlePenEscape },
@@ -959,6 +968,8 @@ function setToolMode(mode) {
   if (penBar) penBar.hidden = toolMode !== "pen";
   const brushBar = $("brush-bar");
   if (brushBar) brushBar.hidden = toolMode !== "brush";
+  const fillBar = $("fill-bar");
+  if (fillBar) fillBar.hidden = toolMode !== "fill";
   const shapeBar = $("shape-bar");
   if (shapeBar) shapeBar.hidden = toolMode !== "shape";
   const repeat = $("drawing-repeat");
@@ -1266,7 +1277,7 @@ document.addEventListener("keydown", async (e) => {
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
   if ([...document.querySelectorAll('dialog[open], [role="dialog"], [aria-modal="true"]')].some(el => el.getClientRects().length)) return;
   // the pen keeps ⌘Z / ⇧⌘Z (nothing else of the Select-mode keys)
-  if (toolMode === "pen" && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
+  if ((toolMode === "pen" || toolMode === "fill") && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
     e.preventDefault();
     await (e.shiftKey ? redoStep() : undoStep());
     return;

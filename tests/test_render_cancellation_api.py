@@ -135,3 +135,66 @@ def test_delete_interrupts_estimation_after_geometry_is_finished(monkeypatch):
             assert rendering.result(timeout=3).json()['detail']['code'] == 'render_cancelled'
         finally:
             stop.set()
+
+
+def test_real_server_replacement_and_disconnect_cancel_fill_work(monkeypatch):
+    import socket
+    import time
+    import uvicorn
+    from axibridge.render_work import RenderCancelled
+
+    started = [threading.Event(), threading.Event()]
+    cancelled = [threading.Event(), threading.Event()]
+    def cooperative(point, **kwargs):
+        index = int(point[0]) - 1
+        started[index].set()
+        try:
+            while True:
+                checkpoint()
+                threading.Event().wait(.005)
+        except RenderCancelled:
+            cancelled[index].set()
+            raise
+    monkeypatch.setattr(session, 'preview_fill_face', cooperative)
+    sock = socket.socket()
+    sock.bind(('127.0.0.1', 0))
+    sock.listen()
+    port = sock.getsockname()[1]
+    server = uvicorn.Server(uvicorn.Config(create_app(), log_level='error', lifespan='off'))
+    thread = threading.Thread(target=server.run, kwargs={'sockets': [sock]}, daemon=True)
+    thread.start()
+    deadline = time.monotonic() + 3
+    while not server.started and time.monotonic() < deadline:
+        threading.Event().wait(.005)
+    assert server.started
+    def send(point):
+        conn = socket.create_connection(('127.0.0.1', port), timeout=3)
+        body = json.dumps({'point': [point, 1]}).encode()
+        conn.sendall(b'POST /api/geometry/face HTTP/1.1\r\nHost: localhost\r\nX-Axb-Client: same-tab\r\nContent-Type: application/json\r\nContent-Length: ' + str(len(body)).encode() + b'\r\n\r\n' + body)
+        return conn
+    first = second = None
+    try:
+        first = send(1)
+        assert started[0].wait(3)
+        second = send(2)
+        assert cancelled[0].wait(3)
+        assert started[1].wait(3)
+        assert b'409' in first.recv(4096)
+        second.close(); second = None
+        assert cancelled[1].wait(3)
+        deadline = time.monotonic() + 3
+        while session.render_work._events and time.monotonic() < deadline:
+            threading.Event().wait(.005)
+        assert not session.render_work._events
+    finally:
+        if first: first.close()
+        if second: second.close()
+        server.should_exit = True
+        thread.join(3)
+        sock.close()
+        # Earlier TestClient lifespans leave the singleton pointing at their
+        # closed loop; this lifespan-free server must not leak that into later tests.
+        from axibridge.events import bus
+        if bus._loop is not None and bus._loop.is_closed():
+            bus._loop = None
+        assert not thread.is_alive()

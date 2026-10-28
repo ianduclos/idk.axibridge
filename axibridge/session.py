@@ -258,6 +258,10 @@ def _regen_coalesce_key(layer_id: str, coalesce: bool | str) -> tuple | None:
         return ("regen", layer_id, coalesce)
     return None
 
+class RevisionConflict(Exception):
+    """A conditional edit targeted an outdated project revision."""
+
+
 class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMixin, RecoveryStateMixin):
     def __init__(self) -> None:
         self._lock = threading.RLock()
@@ -755,6 +759,57 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
             self.source_geometry[layer.id] = paths
         return layer
 
+    def preview_fill_face(
+        self, point: tuple[float, float], gap_mm: float = 0.0,
+        detail: float = 1.0, master_t: float | None = None,
+    ) -> dict[str, Any]:
+        """Capture a face from the same resolved paper geometry as the canvas."""
+        from shapely.geometry import Point, Polygon
+        from .fill_geometry import find_face, fit_face
+        from .sources.pen import PenSubpath, _flatten_subpath
+
+        with self._lock:
+            resolved = self.resolved(master_t=master_t)
+            face = find_face([p for paths in resolved.values() for p in paths], point, gap_mm)
+            if face is None:
+                raise ValueError("Click strictly inside a bounded face; no face found here")
+            subpaths = fit_face(face, detail)
+            flat = [_flatten_subpath(PenSubpath(**sp), .05) for sp in subpaths]
+            if not Polygon(flat[0], flat[1:]).contains(Point(point)):
+                raise ValueError("Curve fit excluded the clicked point; raise Detail and try again")
+            # PenSource protects ordinary captures with an anchor clamp. A found
+            # face must instead refuse any displacement of its paper geometry.
+            src = get_source("pen")
+            params = self._completed(src, {"subpaths": subpaths, "flatten_tol": .05})
+            doc = gencache.generate_cached(src, params)
+            paths = [p for layer in doc.layers for p in layer.paths]
+            if [p.points for p in paths] != flat:
+                raise ValueError("Selected face exceeds pen coordinate limits; move the source closer to the paper")
+            return {"revision": self.edit_rev,
+                    "rings": [list(r.coords) for r in [face.exterior, *face.interiors]],
+                    "subpaths": subpaths}
+
+    @_interrupt_preview
+    def add_fill_layer(
+        self, point: tuple[float, float], revision: int, gap_mm: float = 0.0,
+        detail: float = 1.0, master_t: float | None = None,
+    ) -> CanvasLayer:
+        """Recompute and freeze one face, validating before the sole checkpoint."""
+        with self._lock:
+            if revision != self.edit_rev:
+                raise RuntimeError("Drawing changed; preview the face again")
+            candidate = self.preview_fill_face(point, gap_mm, detail, master_t)
+            src = get_source("pen")
+            params = self._completed(src, {"subpaths": candidate["subpaths"], "flatten_tol": .05})
+            doc = gencache.generate_cached(src, params)
+            paths = [p for layer in doc.layers for p in layer.paths]
+            layer = CanvasLayer(name="Found face", source=LayerSource(
+                type="generator", generator="pen", params=params), transform=Affine())
+            self._checkpoint()
+            self.project.layers.append(layer)
+            self.source_geometry[layer.id] = paths
+            return layer
+
     def add_linedraw_components(
         self, doc: PathDocument, params: dict[str, Any],
         source_layer_id: str | None, project: Project,
@@ -805,7 +860,7 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
 
     @_interrupt_preview
     def regenerate_layer(self, layer_id: str, params: dict[str, Any] | None = None,
-                         coalesce: bool | str = False) -> CanvasLayer:
+                         coalesce: bool | str = False, expected_revision: int | None = None) -> CanvasLayer:
         """``coalesce=True`` (the bench's latched live-edit) folds consecutive
         regenerates of the same layer into one undo entry — undo returns to
         the moment the slider run started, not one notch back.
@@ -814,6 +869,10 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
         fold together, so each pen drag (a fresh token) is its own undo step
         even when two drags on one layer follow each other directly."""
         with self._lock:
+            if expected_revision is not None and (type(expected_revision) is not int or expected_revision < 0):
+                raise ValueError("expected_revision must be a nonnegative integer")
+            if expected_revision is not None and expected_revision != self.edit_rev:
+                raise RevisionConflict("Drawing changed; refit abandoned")
             layer = self.project.layer(layer_id)
             if layer.source.type not in ("generator", "baked") or not layer.source.generator:
                 raise RuntimeError("layer was not generated; nothing to regenerate")

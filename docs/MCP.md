@@ -112,6 +112,34 @@ The app is still moving, so drift is caught by tests, not by memory:
 - Tool behaviour against a real server is covered by the `tests/test_mcp_*`
   modules, so a request/response shape change fails there.
 
+## Found faces through `call_api`
+
+These geometry-only routes are available through `call_api`; no dedicated
+MCP tool is needed:
+
+- `POST /api/geometry/face`: `{point: [x,y], gap_mm: 0, detail: 1,
+  master_t: null}` returns `{revision, rings, subpaths}`. It reads the normal
+  resolved canvas, including groups, effects, visibility, occlusion and the
+  supplied ephemeral timeline time. Preview makes no project edit.
+- `POST /api/layers/fill`: the same request plus the preview's `revision`
+  recomputes the face and returns one ordinary `pen` layer in paper space.
+  Preserve the exact point, Gap, Detail and `master_t` from preview. The layer
+  is a frozen snapshot, with closed filled subpaths for exterior and holes,
+  an outline and no fill effect. Creation is one undo step and emits the
+  normal project event. A stale revision returns 409 without editing.
+- `POST /api/geometry/face/fit`: `{rings, detail: 1}` returns `{subpaths}`
+  from the original closed exterior ring followed by its hole rings. This
+  pure refit does not read page geometry or mutate the project; keep these
+  transient rings only while editing the latest found face.
+
+Gap is 0–5 mm; Detail and optional `master_t` are 0–1. Coordinates must be
+finite and within ±10,000 mm. Closed input rings, combined vertices and output
+anchors are workload bounded by `fill_geometry` limits. Missing/unbounded
+faces, boundary clicks, invalid topology, unsafe curve fits and pen coordinate
+clamping return a clear 422 without an undo entry. Increase Detail when a
+fit changes topology or excludes the click. These endpoints never move the
+machine.
+
 ## Live sync (app side)
 
 `Session.edit_rev` counts project changes for the process lifetime. After any
@@ -131,3 +159,5 @@ serving code older than the working tree, from another checkout, or with a
 frontend build older than its source, or by two or more processes at once
 (a stale `127.0.0.1` listener silently shadows a fresh `0.0.0.0` one), that
 call's result starts with a WARNING line.
+
+Ordinary `POST /api/layers/{id}/regenerate` accepts an optional strict nonnegative `expected_revision`; a stale revision returns 409 before generation or mutation. Omitting it preserves the usual unconditional behavior.

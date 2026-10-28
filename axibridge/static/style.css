@@ -1323,3 +1323,11 @@ details:not(.form-group) > summary:hover { color: var(--ink); }
 #groups-toolbar { flex: none; margin: 2px 0 6px; padding: 0; }
 #groups-toolbar button, #groups-toolbar select { min-height: 24px; height: 24px; font-size: 10px; padding: 2px 4px; }
 #groups-toolbar select { min-width: 50px; max-width: 80px; }
+
+/* Fill companions use their own row so they remain reachable in the desktop window. */
+#canvas-toolbar:has(#fill-bar:not([hidden])) { flex-wrap: wrap; }
+#fill-bar:not([hidden]) { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; order: 10; flex-basis: 100%; }
+#fill-detail { width: 90px; }
+#fill-status { font-size: var(--type-label); color: var(--ink-soft); }
+.fill-mode { cursor: crosshair; }
+.fill-candidate { fill: var(--accent); fill-opacity: .22; stroke: var(--accent); stroke-width: 1.5px; vector-effect: non-scaling-stroke; pointer-events: none; }
