@@ -1,17 +1,35 @@
 ---
 project: idk.axibridge
 state: active
-updated: 2026-10-27
+updated: 2026-10-28
 machine: mac+pi
-summary: Ian accepted Pen v2 and the Hand effect, now merged into main. The approved fill tool is being built on codex/fill-tool with task reviews. Synthesis S4 awaits Ian's check. The Mac runs AxiBridge; the Pi receives plot jobs only.
+summary: Pen v2 and Hand are accepted and merged locally; Fill is implemented and reviewed on codex/fill-tool, with final verification and native activation pending.
 next:
-  - Finish and review the fill tool on codex/fill-tool (approved plan, requested by Ian on 27 October)
-  - Ian — relaunch and try Compose → Synthesis → Bench (see HANDOFF "Synthesis bench: S4 built")
-  - Load the MCP in a fresh session and try it on the live app (see HANDOFF "MCP server + live sync")
-handoff_for: ian
+  - Diagnose the Gallery browser failure and stalled full-suite run on codex/fill-tool before acceptance or merge
+  - Preserve the live project and activate Fill through its normal app launcher after verification
+  - Ian — check Fill in the native app, then decide its main merge
+  - Ian — Synthesis S4 and fresh-session MCP live-sync acceptance remain open
+handoff_for: Codex-hub
 ---
 
 # idk.axibridge — status
+
+**28 October Fill wrap-up:** Fill is implemented on `codex/fill-tool`, with task
+reviews and a whole-branch review. The two production review findings are fixed:
+Detail refits reject stale revisions atomically, and abandoned/superseded hover
+searches cancel per client. Focused checks passed: 145 server/regression tests,
+68 source/built Fill browser tests, typecheck/build, and independent review probes.
+
+The latest completed full suite was **2,584 passed, three skipped, one failed**
+(24m25s). Its Gesture Studies setup failure was corrected and all eight bench
+browser tests passed. The subsequent full rerun reported a Gallery browser
+failure and stalled around 33%; its owned test processes were terminated at
+wrap-up. That run is incomplete, and the Gallery traceback was not recovered.
+**The final verification gate is not green.** Native activation was deferred;
+the original live backend/project remain untouched. The branch is being
+published as a draft at Ian's request; Fill is not merged into main.
+
+[Fill guide](https://github.com/ianduclos/idk.axibridge/blob/codex/fill-tool/docs/FILL-TOOL.md) · [results, decisions and recovery handoff](https://github.com/ianduclos/idk.axibridge/blob/codex/fill-tool/docs/superpowers/plans/2026-10-27-fill-tool-RESULTS.md)
 
 **27 October clarification:** Ian confirmed Pen v2 + Hand effect work and asked
 to proceed with the fill tool. The Mac runs AxiBridge and sends resolved plot
@@ -22,9 +40,9 @@ mentioning pending Pi sync describe the previous assumption, now superseded.
 **27 October integration:** Ian authorized both merges; `main` now includes
 Pen v2 and Hand through `8d62de5` (fast-forwards, no push). Pre-merge full suite:
 2,444 passed, three skipped, two pre-existing browser-test failures; both failed
-tests pass individually. The tracebacks identify an expected cancelled-render
-409 counted as an error and an immediate assertion racing library-card loading.
-These test issues are being addressed alongside fill verification.
+tests pass individually. One failure counted an uncaptured HTTP 409 as an error; its body was not
+retained, so cancellation attribution is unproven. The other raced asynchronous
+library-card loading. The Fill branch contains reviewed test-only corrections.
 
 **Pen v2 + Hand effect, 22 October:** designed with Ian on a Pen Lab
 brainstorm page, then built task by task with a review after each and a
@@ -39,7 +57,7 @@ effect that redraws any line with one of the 44 frozen Gesture Studies hands
 their hand's hash. Earlier the same session, on main: synthesis pins store
 each line once, relation params carry `when` and the bench dims inactive
 ones, Bézier arms stretch to 400 mm. Rulings and deferred items:
-`docs/superpowers/plans/2026-10-22-*-RESULTS.md`. Not merged, not pushed.
+`docs/superpowers/plans/2026-10-22-*-RESULTS.md`. Merged locally on 27 October; publishing requested on 28 October.
 
 **Synthesis bench, 19 October (S4):** the app bench is built. Ian's answers at
 the start: palettes around locked pens, a ripple setting (all / direct /

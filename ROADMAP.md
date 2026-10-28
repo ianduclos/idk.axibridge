@@ -15,6 +15,21 @@ This file tracks open work and acceptance still pending. Shipped implementation
 notes remain beside their follow-ups; see `git log` and `STATUS.md` for delivery
 history.
 
+## Fill tool — verification and native acceptance (2026-10-28)
+
+Implemented and reviewed on `codex/fill-tool`, awaiting a green final suite and
+native activation. Click a visible enclosed face to capture an ordinary frozen
+Pen shape with holes; default is outline only. Detail refits the latest result,
+and explicit Hatch / Offset / Offset v2 / Cymatic choices use existing effects.
+Exact faces accept a quick click; repaired gaps require preview confirmation.
+
+Final acceptance is blocked by a Gallery browser failure and a stalled full
+rerun; see HANDOFF. After verification, Ian checks gap/holes/Detail/undo in the
+native app and chooses whether to merge. Paper acceptance remains his. Drag
+union, subtraction and source-linked fills are deferred to keep this tool a
+bounded editable snapshot. Mac runs the app; Pi receives resolved plot jobs
+and needs no app sync. [Guide](https://github.com/ianduclos/idk.axibridge/blob/codex/fill-tool/docs/FILL-TOOL.md) · [results](https://github.com/ianduclos/idk.axibridge/blob/codex/fill-tool/docs/superpowers/plans/2026-10-27-fill-tool-RESULTS.md).
+
 ## Gesture Studies bench (2026-10-17)
 
 Ian: save the round 8–9 pieces "each with its own relevant parameters, still
