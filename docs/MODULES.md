@@ -188,6 +188,9 @@ Contract:
   gestures), `pen_queue.js` (ordered regenerate queue), `pen_sketch.js`
   (sketch + Detail re-fit), `pen_knife.js` (knife). Gestures are listed in the
   pen button's tooltip; plan: `docs/superpowers/plans/2026-10-22-pen-v2.md`.
+  The [Fill tool](FILL-TOOL.md) captures resolved faces as ordinary pen
+  subpaths, preserving exterior and hole rings. Its fitting guards live in
+  `fill_geometry.py`; latest-result raw rings are transient browser state.
 - **Process sources** (`axibridge/process.py`): a generator that UNFOLDS.
   Subclass `ProcessModule`, declare a bounded step param as `time_axis`, and
   write `run()` yielding one `Step` per tick — the marks ADDED at that step,
