@@ -9,7 +9,13 @@ from axibridge.session import session
 
 @pytest.fixture
 def client(fresh_session):
-    return TestClient(create_app())
+    from axibridge.events import bus
+    with TestClient(create_app()) as client:
+        loop = bus._loop
+        yield client
+    # Do not leave this fixture's closed loop for lifespan-free clients.
+    if bus._loop is loop and loop is not None and loop.is_closed():
+        bus._loop = None
 
 def square(x=20, y=20, size=60):
     return {'anchors': [{'x': a, 'y': b} for a,b in [(x,y),(x+size,y),(x+size,y+size),(x,y+size)]], 'closed': True}
