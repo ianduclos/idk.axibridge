@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 import pytest
-from test_acceptance_ui import _get, _post, frontend_mode, reload_app, select_layer, server, ui  # noqa: F401
+from test_acceptance_ui import _get, _post, frontend_mode, select_layer, server, ui  # noqa: F401
 
 
 def open_bench(page):
@@ -228,9 +228,7 @@ def test_a_resumed_layer_stays_pinned_until_updated_on_purpose(ui, server):
     made = _post(f'{server}/api/layers/generate', {'module': 'gesture_studies',
                                                    'params': {'study': study, 'values': {}, 'library': old}})
     assert made['source']['params']['library'] == old
-    reload_app(ui)
-    # seeding behind the page's back supersedes the OLD page's in-flight render (409 render_cancelled)
-    ui.errors[:] = [e for e in ui.errors if 'status of 409' not in e]
+    # The live project event brings the externally created layer into the page.
     ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 1", timeout=10000)
     select_layer(ui)
     ui.click('#process-resume')
