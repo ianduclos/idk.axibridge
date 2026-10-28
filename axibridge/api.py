@@ -12,6 +12,7 @@ the estimator times and the plotter draws.
 from __future__ import annotations
 
 import io
+import anyio
 import json
 import math
 from collections import Counter
@@ -27,7 +28,7 @@ import zipfile
 from pathlib import Path as FsPath
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, BeforeValidator, Field
 
@@ -41,7 +42,7 @@ from .machine import SoftLimits, manager
 from .process import ProcessModule
 from .registry import describe_modules, get_effect, get_source, progress_scope
 from .render_work import RenderCancelled, checkpoint
-from .session import _regen_coalesce_key, session
+from .session import RevisionConflict, _regen_coalesce_key, session
 from .stores import Pen, pen_library, settings_store
 from .gallery_api import router as gallery_router
 from .gesture_studies_api import router as gesture_studies_router
@@ -986,6 +987,7 @@ class RegenerateBody(BaseModel):
     #: string token folds only regenerates carrying the same token (the pen
     #: sends a fresh one per drag, so each drag is its own undo step).
     coalesce: bool | Annotated[str, Field(min_length=1, max_length=64)] = False
+    expected_revision: int | None = Field(default=None, ge=0, strict=True)
 
 
 @router.post("/layers/{layer_id}/regenerate")
@@ -995,12 +997,14 @@ def regenerate_layer(layer_id: str, body: RegenerateBody) -> dict[str, Any]:
             with session.render_work.mutation(), session._lock:
                 key = _regen_coalesce_key(layer_id, body.coalesce)
                 continuing = key is not None and session._coalesce_key == key
-                layer = session.regenerate_layer(layer_id, body.params, coalesce=body.coalesce)
+                layer = session.regenerate_layer(layer_id, body.params, coalesce=body.coalesce, expected_revision=body.expected_revision)
                 module_id = layer.source.generator
                 payload = layer.model_dump()
             if not continuing:
                 record_module_use("source", module_id)
             return payload
+    except RevisionConflict as e:
+        raise _fail(e, 409)
     except KeyError as e:
         raise _fail(e, 404)
     except Exception as e:
@@ -1083,10 +1087,43 @@ class FaceFitBody(BaseModel):
 
 
 @router.post("/geometry/face")
-@_preview_render
-def preview_face(body: FaceBody) -> dict[str, Any]:
+async def preview_face(body: FaceBody, request: Request) -> dict[str, Any]:
+    client = request.headers.get("X-Axb-Client")
+    key = (client, "fill-preview") if client else None
+
+    def compute():
+        with session._lock:
+            checkpoint()
+            result = session.preview_fill_face(**body.model_dump())
+            checkpoint()
+            return result
+
     try:
-        return session.preview_fill_face(**body.model_dump())
+        with session.render_work.scope(key) as event:
+            async def watch_disconnect():
+                # The body is consumed. Await the disconnect directly: Starlette's
+                # immediately-cancelled poll cannot traverse our middleware chain.
+                while not event.is_set():
+                    if (await request.receive())["type"] == "http.disconnect":
+                        event.set()
+                        return
+
+            error = None
+            async with anyio.create_task_group() as group:
+                group.start_soon(watch_disconnect)
+                try:
+                    result = await anyio.to_thread.run_sync(compute)
+                except (RenderCancelled, Exception) as exc:
+                    error = exc
+                finally:
+                    group.cancel_scope.cancel()
+            if error is not None:
+                raise error
+            return result
+    except RenderCancelled:
+        raise HTTPException(409, detail={
+            "code": "render_cancelled", "message": "Drawing update superseded",
+        }) from None
     except ValueError as e:
         raise _fail(e, 422)
 

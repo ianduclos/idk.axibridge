@@ -159,3 +159,5 @@ serving code older than the working tree, from another checkout, or with a
 frontend build older than its source, or by two or more processes at once
 (a stale `127.0.0.1` listener silently shadows a fresh `0.0.0.0` one), that
 call's result starts with a WARNING line.
+
+Ordinary `POST /api/layers/{id}/regenerate` accepts an optional strict nonnegative `expected_revision`; a stale revision returns 409 before generation or mutation. Omitting it preserves the usual unconditional behavior.

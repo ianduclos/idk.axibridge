@@ -181,3 +181,47 @@ def test_fill_announces_one_project_change(client, monkeypatch):
     assert response.status_code == 200
     assert [event for event in events if event['type'] == 'project'] == [
         {'type': 'project', 'rev': preview['revision'] + 1, 'origin': 'fill-test'}]
+
+
+def test_regenerate_expected_revision_is_atomic_and_strict(client):
+    layer = source()
+    url = f'/api/layers/{layer.id}/regenerate'
+    params = {'subpaths': [square(100, 100, 20)]}
+    rev = session.edit_rev
+    assert client.post(url, json={'params': params, 'expected_revision': rev}).status_code == 200
+    before = snapshot()
+    assert client.post(url, json={'params': {'subpaths': [square()]}, 'expected_revision': rev, 'coalesce': 'gesture'}).status_code == 409
+    assert snapshot() == before
+    for invalid in [-1, True, 1.5, '1']:
+        assert client.post(url, json={'expected_revision': invalid}).status_code == 422
+    assert snapshot() == before
+    assert client.post(url, json={'params': params}).status_code == 200
+
+
+def test_rejected_regenerate_does_not_change_usage_or_coalescing(client, monkeypatch):
+    from axibridge import api
+    calls = []
+    monkeypatch.setattr(api, 'record_module_use', lambda *args: calls.append(args))
+    layer = source()
+    url = f'/api/layers/{layer.id}/regenerate'
+    rev = session.edit_rev
+    first = {'subpaths': [square(100,100,20)]}
+    second = {'subpaths': [square(140,100,20)]}
+    assert client.post(url, json={'params': first, 'coalesce': 'drag'}).status_code == 200
+    assert len(calls) == 1
+    before = snapshot()
+    assert client.post(url, json={'params': second, 'coalesce': 'other', 'expected_revision': rev}).status_code == 409
+    assert snapshot() == before and len(calls) == 1
+    assert client.post(url, json={'params': second, 'coalesce': 'drag'}).status_code == 200
+    assert len(calls) == 1
+    assert session.undo()
+    assert session.project.layer(layer.id).source.params['subpaths'][0]['anchors'][0]['x'] == 20
+
+
+@pytest.mark.parametrize('invalid', [-1, True, 1.5, '1'])
+def test_session_regenerate_rejects_invalid_expected_revision(fresh_session, invalid):
+    layer = source()
+    before = snapshot()
+    with pytest.raises(ValueError):
+        session.regenerate_layer(layer.id, expected_revision=invalid)
+    assert snapshot() == before

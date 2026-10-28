@@ -474,3 +474,31 @@ def test_quick_click_with_gap_requires_review_and_second_click(ui):
     assert len(_get(ui.base+'/api/project')['layers'])==1
     ui.mouse.click(*point(ui))
     ui.wait_for_function("() => document.querySelectorAll('#layer-list .layer-row').length === 2")
+
+
+def test_held_refit_cannot_overwrite_external_regenerate(ui):
+    seed(ui, contour=True)
+    create(ui)
+    ui.wait_for_function("() => !document.querySelector('#fill-effect').disabled")
+    original = _get(ui.base + '/api/project')['layers'][-1]
+    held = []
+    ui.route('**/api/geometry/face/fit', lambda route: held.append((route, route.fetch())))
+    ui.locator('#fill-detail').evaluate('(e) => {e.value=.1;e.dispatchEvent(new Event("input",{bubbles:true}));}')
+    ui.wait_for_function("() => document.querySelector('#fill-effect').disabled")
+    for _ in range(100):
+        if held:
+            break
+        ui.wait_for_timeout(20)
+    assert held
+    changed = {**original['source']['params'], 'subpaths': [{'anchors': [{'x':210,'y':30},{'x':240,'y':30},{'x':240,'y':60},{'x':210,'y':60}], 'closed':True}]}
+    _post(ui.base + '/api/layers/' + original['id'] + '/regenerate', {'params': changed})
+    with ui.expect_response('**/regenerate') as response:
+        route, result = held.pop(); route.fulfill(response=result)
+    assert response.value.status == 409
+    ui.errors[:] = [error for error in ui.errors if not ('HTTP 409' in error and '/regenerate' in error and 'Drawing changed; refit abandoned' in error)]
+    ui.wait_for_function("() => document.querySelector('#fill-effect').disabled")
+    assert _get(ui.base + '/api/project')['layers'][-1]['source']['params']['subpaths'] == changed['subpaths']
+    ui.keyboard.press('Meta+z')
+    ui.wait_for_function("() => !document.querySelector('#fill-detail').matches(':focus')")
+    assert _get(ui.base + '/api/project')['layers'][-1]['source']['params']['subpaths'] == original['source']['params']['subpaths']
+    assert not ui.errors

@@ -258,6 +258,10 @@ def _regen_coalesce_key(layer_id: str, coalesce: bool | str) -> tuple | None:
         return ("regen", layer_id, coalesce)
     return None
 
+class RevisionConflict(Exception):
+    """A conditional edit targeted an outdated project revision."""
+
+
 class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMixin, RecoveryStateMixin):
     def __init__(self) -> None:
         self._lock = threading.RLock()
@@ -856,7 +860,7 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
 
     @_interrupt_preview
     def regenerate_layer(self, layer_id: str, params: dict[str, Any] | None = None,
-                         coalesce: bool | str = False) -> CanvasLayer:
+                         coalesce: bool | str = False, expected_revision: int | None = None) -> CanvasLayer:
         """``coalesce=True`` (the bench's latched live-edit) folds consecutive
         regenerates of the same layer into one undo entry — undo returns to
         the moment the slider run started, not one notch back.
@@ -865,6 +869,10 @@ class Session(GroupSessionMixin, GestureStudiesSessionMixin, SynthesisSessionMix
         fold together, so each pen drag (a fresh token) is its own undo step
         even when two drags on one layer follow each other directly."""
         with self._lock:
+            if expected_revision is not None and (type(expected_revision) is not int or expected_revision < 0):
+                raise ValueError("expected_revision must be a nonnegative integer")
+            if expected_revision is not None and expected_revision != self.edit_rev:
+                raise RevisionConflict("Drawing changed; refit abandoned")
             layer = self.project.layer(layer_id)
             if layer.source.type not in ("generator", "baked") or not layer.source.generator:
                 raise RuntimeError("layer was not generated; nothing to regenerate")

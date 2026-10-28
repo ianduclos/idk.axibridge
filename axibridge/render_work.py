@@ -4,7 +4,7 @@ from __future__ import annotations
 import threading
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Iterator
+from typing import Hashable, Iterator
 
 
 class RenderCancelled(BaseException):
@@ -30,22 +30,30 @@ class RenderWork:
         self._lock = threading.Lock()
         self._events: set[threading.Event] = set()
         self._waiting_mutations = 0
+        self._lanes: dict[Hashable, threading.Event] = {}
 
     @contextmanager
-    def scope(self) -> Iterator[None]:
+    def scope(self, replacement_key: Hashable | None = None) -> Iterator[threading.Event]:
         event = threading.Event()
         with self._lock:
             if self._waiting_mutations:
                 event.set()
+            if replacement_key is not None:
+                previous = self._lanes.get(replacement_key)
+                if previous is not None:
+                    previous.set()
+                self._lanes[replacement_key] = event
             self._events.add(event)
         token = _current.set(event)
         try:
             checkpoint()
-            yield
+            yield event
         finally:
             _current.reset(token)
             with self._lock:
                 self._events.discard(event)
+                if replacement_key is not None and self._lanes.get(replacement_key) is event:
+                    del self._lanes[replacement_key]
 
     @contextmanager
     def mutation(self) -> Iterator[None]:

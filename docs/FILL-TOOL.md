@@ -52,3 +52,5 @@ Preview, capture and raw-boundary refit endpoints are documented in
 [MCP](MCP.md). They are available through `call_api` and
 never move the machine. The Mac runs the app; the Pi receives resolved plot
 jobs and needs no deployment for this tool.
+
+Detail refits are conditional on the project revision captured before fitting. If another edit lands first, Fill abandons its temporary rings and refreshes the drawing. Hover previews cancel when the client disconnects or replaces its own preview; other clients and ordinary renders remain independent.

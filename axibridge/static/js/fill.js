@@ -163,16 +163,19 @@ function requestRefit() {
 }
 async function refit() {
   if (!latest || busy || refitting || !queuedFit) return;
-  const run = latest, request = queuedFit, state = stamp();
+  const run = latest, request = queuedFit, state = stamp(), baseRevision = S.state.project.edit_rev;
   queuedFit = null; refitting = true; controls();
   try {
     const fit = await api.post('/api/geometry/face/fit',{rings:run.rings,detail:request.detail});
     if (!on || latest !== run || state !== stamp() || queuedFit) return;
-    const l = layer(), expectedRev = S.state.project.edit_rev + 1;
+    const l = layer(), expectedRev = baseRevision + 1;
     busy = true; controls();
-    await api.post(`/api/layers/${run.id}/regenerate`,{params:{...l.source.params,subpaths:fit.subpaths},coalesce:request.token});
+    await api.post(`/api/layers/${run.id}/regenerate`,{params:{...l.source.params,subpaths:fit.subpaths},coalesce:request.token,expected_revision:baseRevision});
     await sync(run, expectedRev);
-  } catch(e) { if (latest === run && state === stamp()) actions.oops(e); }
+  } catch(e) {
+    if (e.status === 409) { endResult(); await sync(null, null); }
+    else if (latest === run && state === stamp()) actions.oops(e);
+  }
   finally {
     busy = false; refitting = false; controls();
     if (queuedFit && latest === run) refit();
